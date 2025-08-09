@@ -1,0 +1,40 @@
+---
+import * as i18n from "src/i18n";
+const l = i18n.l(Astro.url);
+const t = i18n.t(i18n.local(Astro.url.pathname), {
+	about: {
+		en: "About",
+		"zh-Hant": "關於",
+		"zh-Hans": "关于"
+	},
+	blog: {
+		en: "Blog",
+		"zh-Hant": "部落格",
+		"zh-Hans": "博客"
+	}
+});
+---
+
+<nav>
+	<!-- <a href={l("/about/")}><span>{t.about}</span></a> -->
+	<a href={l("", "en")} data-lang="en">English</a>
+	<a href={l("", "zh-Hant")} data-lang="zh-Hant">繁體中文</a>
+	<a href={l("", "zh-Hans")} data-lang="zh-Hans">简体中文</a>
+</nav>
+
+<style>
+	nav {
+		text-align: center;
+		background-color: #bcc2d124;
+		border-radius: 1000px;
+		padding: 1rem 2rem;
+		margin: auto;
+		width: fit-content;
+		display: flex;
+		gap: 1rem;
+	}
+
+	a {
+		text-decoration: none;
+	}
+</style>

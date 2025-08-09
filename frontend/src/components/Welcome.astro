@@ -1,0 +1,43 @@
+---
+import Logo from "../assets/img/icon/EM.svg";
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	description: {
+		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	}
+});
+---
+
+<section>
+	<img id="background" src={Logo.src} alt="" fetchpriority="high" />
+	<h1>Fastro</h1>
+	<p>{t.description}</p>
+</section>
+
+<style>
+	section {
+		text-align: center;
+		color: #ddd;
+		flex-grow: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		padding-bottom: 5rem;
+	}
+
+	img {
+		height: 3.5rem;
+	}
+
+	h1 {
+		margin-block: 1rem;
+	}
+
+	p {
+		color: #aaa;
+	}
+</style>

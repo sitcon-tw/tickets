@@ -1,0 +1,3 @@
+User-agent: *
+allow: *
+sitemap: https://example.com/sitemap.xml

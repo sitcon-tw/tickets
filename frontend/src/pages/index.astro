@@ -1,0 +1,38 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Welcome from "../components/Welcome.astro";
+import Footer from "../components/Footer.astro";
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	title: {
+		"zh-Hant": "Fastro - 毛哥EM的網站起始模板",
+		"zh-Hans": "Fastro - 毛哥EM的网站起始模板",
+		en: "Fastro - EM's Website Starter"
+	},
+	description: {
+		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	}
+});
+---
+
+<Layout i18n={t.t} path="" title={t.title} description={t.description} theme="#333" lang={lang}>
+	<main>
+		<Nav />
+		<Welcome />
+		<Footer />
+	</main>
+</Layout>
+
+<style>
+	main {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		min-height: 100svh;
+		padding: 2rem;
+	}
+</style>

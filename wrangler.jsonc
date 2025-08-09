@@ -1,0 +1,12 @@
+{
+	"name": "Fastro",
+	"compatibility_date": "2025-08-01",
+	"build": {
+		"command": "pnpm run build:frontend"
+	},
+	"assets": {
+		"directory": "./frontend/dist",
+		"html_handling": "force-trailing-slash",
+		"not_found_handling": "404-page"
+	}
+}

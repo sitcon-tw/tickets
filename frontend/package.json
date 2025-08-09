@@ -1,0 +1,15 @@
+{
+	"name": "frontend",
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro"
+	},
+	"dependencies": {
+		"@astrojs/sitemap": "^3.4.2",
+		"astro": "^5.12.6",
+		"astro-i18n-aut": "^0.7.3"
+	}
+}
