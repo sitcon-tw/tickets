@@ -1,5 +1,6 @@
 ---
 import * as i18n from "src/i18n";
+import SITCONLogo from "@assets/img/SITCON.svg";
 const l = i18n.l(Astro.url);
 const t = i18n.t(i18n.local(Astro.url.pathname), {
 	about: {
@@ -16,22 +17,27 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 ---
 
 <nav>
+	<a href={l("/")}><img src={SITCONLogo.src} alt="SITCON Logo" /></a>
+	<a class="button" href={l("/login/")}>登入</a>
 	<!-- <a href={l("/about/")}><span>{t.about}</span></a> -->
-	<a href={l("", "en")} data-lang="en">English</a>
-	<a href={l("", "zh-Hant")} data-lang="zh-Hant">繁體中文</a>
-	<a href={l("", "zh-Hans")} data-lang="zh-Hans">简体中文</a>
+
+	<!-- <div>
+		<a href={l("", "en")} data-lang="en">English</a>
+		<a href={l("", "zh-Hant")} data-lang="zh-Hant">繁體中文</a>
+		<a href={l("", "zh-Hans")} data-lang="zh-Hans">简体中文</a>
+	</div> -->
 </nav>
 
 <style>
 	nav {
-		text-align: center;
-		background-color: #bcc2d124;
-		border-radius: 1000px;
-		padding: 1rem 2rem;
-		margin: auto;
-		width: fit-content;
 		display: flex;
-		gap: 1rem;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+	}
+
+	nav > a {
+		display: block;
 	}
 
 	a {

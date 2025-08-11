@@ -1,6 +1,7 @@
 ---
 import { defaultLocale } from "src/i18n/config";
 import { localesList, l } from "src/i18n";
+import { ClientRouter } from "astro:transitions";
 const { i18n = [], path = "", favicon = true, ga = true, title, description, image, theme = "#000", lang = defaultLocale } = Astro.props;
 const site = import.meta.env.SITE;
 const links = i18n
@@ -17,7 +18,7 @@ const supportedLangs = localesList();
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} transition:name="root" transition:animate="none">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -80,7 +81,7 @@ const supportedLangs = localesList();
 						{`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', 'G-9R5PZG2VQG');`}
+gtag('config', 'G-GVRT4CHSQJ');`}
 					</script>
 				</>
 			)
@@ -96,6 +97,7 @@ gtag('config', 'G-9R5PZG2VQG');`}
 				});
 			});
 		</script>
+		<ClientRouter />
 	</body>
 </html>
 
@@ -104,6 +106,11 @@ gtag('config', 'G-9R5PZG2VQG');`}
 		margin: 0;
 		padding: 0;
 		box-sizing: border-box;
+	}
+
+	:root {
+		--black: #1d1d1f;
+		--white: #fff;
 	}
 
 	body {
@@ -119,11 +126,38 @@ gtag('config', 'G-9R5PZG2VQG');`}
 			"Open Sans",
 			"Helvetica Neue",
 			sans-serif;
-		background-color: #222;
-		color: #ddd;
+		background-color: var(--white);
+		color: var(--black);
+	}
+
+	main {
+		padding-bottom: 0;
+	}
+	nav,
+	main {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem;
 	}
 
 	a {
 		color: inherit;
+	}
+
+	.button {
+		background-color: var(--white);
+		border: 2px solid var(--black);
+		padding: 0.3rem 0.5rem;
+		text-decoration: none;
+		display: block;
+		width: fit-content;
+	}
+
+	.button:hover {
+		background-color: #efefef;
+	}
+
+	.button:active {
+		background-color: #ddd;
 	}
 </style>

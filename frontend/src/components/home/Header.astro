@@ -1,0 +1,48 @@
+---
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	description: {
+		"zh-Hant": "報名系統",
+		"zh-Hans": "报名系统",
+		en: "Registration System"
+	},
+	signFront: {
+		"zh-Hant": "已有 ",
+		"zh-Hans": "已有 ",
+		en: ""
+	},
+	signBack: {
+		"zh-Hant": " 人報名",
+		"zh-Hans": " 人报名",
+		en: " people registered"
+	}
+});
+---
+
+<section>
+	<h1>SITCON 2026 <span>{t.description}</span></h1>
+	<p class="count">{t.signFront}<span id="count">20</span>{t.signBack}</p>
+</section>
+
+<style>
+	section {
+		padding-top: 5rem;
+		text-align: center;
+	}
+	h1 {
+		font-size: 2.5rem;
+		margin-bottom: 1rem;
+	}
+	.count {
+		font-size: 1.2rem;
+	}
+	#count {
+		font-weight: bold;
+		font-size: 1.5em;
+	}
+	h1 span {
+		display: block;
+		font-size: 0.8em;
+	}
+</style>

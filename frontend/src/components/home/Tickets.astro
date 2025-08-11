@@ -1,0 +1,22 @@
+---
+import * as i18n from "src/i18n";
+import Ticket from "./Ticket.astro";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	description: {
+		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	}
+});
+---
+
+<div class="ticket-container">
+	<Ticket /><Ticket /><Ticket /><Ticket /><Ticket />
+</div>
+
+<style>
+	.ticket-container > :global(.ticket):nth-child(2n) {
+		transform: rotate(-1.17deg);
+	}
+</style>

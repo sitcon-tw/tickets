@@ -45,6 +45,9 @@ importers:
       '@astrojs/sitemap':
         specifier: ^3.4.2
         version: 3.4.2
+      '@lucide/astro':
+        specifier: ^0.539.0
+        version: 0.539.0(astro@5.12.6(@types/node@24.1.0)(rollup@4.46.2)(typescript@5.8.3))
       astro:
         specifier: ^5.12.6
         version: 5.12.6(@types/node@24.1.0)(rollup@4.46.2)(typescript@5.8.3)
@@ -402,6 +405,11 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.4':
     resolution: {integrity: sha512-VT2+G1VQs/9oz078bLrYbecdZKs912zQlkelYpuf+SXF+QvZDYJlbx/LSx+meSAwdDFnF8FVXW92AVjjkVmgFw==}
+
+  '@lucide/astro@0.539.0':
+    resolution: {integrity: sha512-PCAo48RsERkmyWX+bmssGlu0mb84cP8kLMyc1JuW5pRY4zkx7cnyZMr3RkfPFvDKJZf2/2KPoaZz8j6BjXaXcA==}
+    peerDependencies:
+      astro: ^4 || ^5
 
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
@@ -2345,6 +2353,10 @@ snapshots:
       wrap-ansi-cjs: wrap-ansi@7.0.0
 
   '@jridgewell/sourcemap-codec@1.5.4': {}
+
+  '@lucide/astro@0.539.0(astro@5.12.6(@types/node@24.1.0)(rollup@4.46.2)(typescript@5.8.3))':
+    dependencies:
+      astro: 5.12.6(@types/node@24.1.0)(rollup@4.46.2)(typescript@5.8.3)
 
   '@lukeed/ms@2.0.2': {}
 

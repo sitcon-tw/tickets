@@ -1,0 +1,60 @@
+---
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	description: {
+		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	}
+});
+import { Content as Intro } from "../markdown/intro.md";
+import { Content as Faq } from "../markdown/faq.md";
+
+import.meta.glob("../markdown/tickets/*.md", { eager: true });
+const ticket = Object.fromEntries(
+	Object.entries(await import.meta.glob("../markdown/tickets/*.md", { eager: true })).map(([path, module]) => {
+		const key = path.split("/").pop()?.replace(".md", "");
+		return [key, module];
+	})
+);
+---
+
+<section class="info">
+	<Intro />
+	<h2>票種資訊</h2>
+	{
+		Object.entries(ticket).map(([key, value]) => (
+			<section>
+				<h3>{key}</h3>
+				<value.Content />
+			</section>
+		))
+	}
+	<h2>FAQ</h2>
+	<Faq />
+</section>
+
+<style is:global>
+	section.info h2 {
+		margin-bottom: 1rem;
+	}
+	section.info p {
+		margin-bottom: 1rem;
+	}
+	section.info h3 {
+		margin-bottom: 0.5rem;
+	}
+
+	section.info h4 {
+		margin-bottom: 0.4rem;
+	}
+	li {
+		margin-bottom: 0.3rem;
+	}
+	ol,
+	ul {
+		padding-left: 1.5rem;
+		margin-bottom: 1rem;
+	}
+</style>

@@ -1,7 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
-import Welcome from "../components/Welcome.astro";
+import Header from "../components/home/Header.astro";
+import Welcome from "../components/home/Welcome.astro";
+import Tickets from "../components/home/Tickets.astro";
+import Info from "../components/home/Info.astro";
 import Footer from "../components/Footer.astro";
 import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
@@ -20,19 +23,12 @@ const t = i18n.t(lang, {
 ---
 
 <Layout i18n={t.t} path="" title={t.title} description={t.description} theme="#333" lang={lang}>
-	<main>
-		<Nav />
+	<Nav />
+	<main transition:animate="fade">
+		<Header />
 		<Welcome />
+		<Tickets />
+		<Info />
 		<Footer />
 	</main>
 </Layout>
-
-<style>
-	main {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-		min-height: 100svh;
-		padding: 2rem;
-	}
-</style>
