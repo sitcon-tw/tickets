@@ -22,11 +22,11 @@ const l = i18n.l(Astro.url);
 	<Nav />
 	<main transition:animate="fade">
 		<section>
-			<div class="login-container">
+			<div class="login-container" id="magic-link-form">
 				<h1>{t.login}</h1>
 				<label for="email">Email</label>
-				<input type="email" name="" id="email" />
-				<a class="button" href={l("/")}>{t.continue}</a>
+				<input type="email" name="email" id="email" />
+				<button id="submit-btn" class="button" type="submit" onclick="test()">Continue</button>
 			</div>
 		</section>
 	</main>
@@ -68,4 +68,39 @@ const l = i18n.l(Astro.url);
 			margin: 1rem auto;
 		}
 	</style>
+
+	<script>
+
+		// 以下的 code 根本不會 work，可以全部砍掉 -ns
+		const test = () => {console.log("test")};
+		import { authClient } from '../lib/auth-client.js';
+
+		document.addEventListener('DOMContentLoaded', function() {
+			const form = document.getElementById('magic-link-form');
+			const submitBtn = document.getElementById('submit-btn');
+
+			form.addEventListener('submit', async function(e) {
+				e.preventDefault();
+				
+				const formData = new FormData(form as HTMLFormElement);
+				const email = formData.get('email');
+
+				(submitBtn as HTMLButtonElement).disabled = true;
+				submitBtn.textContent = 'Sending...';
+
+				try {
+					await authClient.signIn.magicLink({
+						email: email as string,
+						callbackURL: window.location.origin + '/',
+					});
+
+				} catch (error) {
+					console.error('Magic link error:', error);
+				} finally {
+					(submitBtn as HTMLButtonElement).disabled = false;
+					submitBtn.textContent = 'Continue';
+				}
+			});
+		});
+	</script>
 </Layout>
