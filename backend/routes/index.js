@@ -9,11 +9,15 @@ export default async function routes(fastify, options) {
   await fastify.register(adminRoutes, { prefix: '/api/admin' });
   
   // Health check
-  fastify.get('/api/health', async (request, reply) => {
+  fastify.get('/api/health',
+  { schema: {
+    description: 'Health check endpoint',
+    tags: ['test'],
+  }},
+  async (request, reply) => {
     return { 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      version: '1.0.0'
     };
   });
 }

@@ -30,8 +30,35 @@ await fastify.register(staticPlugin, {
 	prefix: "/" // Serve files directly from root
 });
 
+// Set up Swagger for API documentation
+await fastify.register(import('@fastify/swagger'))
+
+await fastify.register(import('@fastify/swagger-ui'), {
+  routePrefix: '/docs',
+  uiConfig: {
+    docExpansion: 'full',
+    deepLinking: false
+  },
+  uiHooks: {
+    onRequest: function (request, reply, next) { next() },
+    preHandler: function (request, reply, next) { next() }
+  },
+  staticCSP: true,
+  transformStaticCSP: (header) => header,
+  transformSpecification: (swaggerObject, request, reply) => { return swaggerObject },
+  transformSpecificationClone: true
+})
+
+// Register API routes
+await fastify.register(routes);
+
 // Better Auth routes
-fastify.all("/api/auth/*", async (request, reply) => {
+fastify.all("/api/auth/*",
+	{ schema: {
+		description: 'Better Auth API - Please use the official client libraries for integration. https://www.better-auth.com/docs/plugins/magic-link',
+		tags: ['auth'],
+	}},
+	async (request, reply) => {
 	console.log(`Auth request: ${request.method} ${request.url}`);
 	try {
 		const protocol = request.headers['x-forwarded-proto'] || 'http';
@@ -80,14 +107,6 @@ fastify.all("/api/auth/*", async (request, reply) => {
 		reply.code(500);
 		return { error: 'Internal server error' };
 	}
-});
-
-// Register API routes
-await fastify.register(routes);
-
-// Sample route
-fastify.get("/api/hello", async (request, reply) => {
-	return { message: "Hello from Fastify!" };
 });
 
 const port = process.env.PORT || 3000;
