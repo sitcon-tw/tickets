@@ -60,7 +60,7 @@ fastify.all("/api/auth/*", async (request, reply) => {
 			body: body,
 		});
 
-		const response = await auh.handler(webRequest);
+		const response = await auth.handler(webRequest);
 		
 		reply.code(response.status);
 		
