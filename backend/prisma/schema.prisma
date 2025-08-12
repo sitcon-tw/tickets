@@ -20,10 +20,14 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
+  role          String    @default("viewer") // admin, checkin, viewer
+  permissions   String?   // JSON array of permissions
+  isActive      Boolean   @default(true)
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  emailCampaigns EmailCampaign[]
 
   @@unique([email])
   @@map("user")
@@ -72,4 +76,202 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+// Core business models
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  location    String?
+  startDate   DateTime
+  endDate     DateTime
+  ogImage     String?
+  landingPage String?  // JSON content
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tickets       Ticket[]
+  registrations Registration[]
+  invitationCodes InvitationCode[]
+  
+  @@map("event")
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        String
+  description String?
+  price       Int      // in cents
+  quantity    Int
+  soldCount   Int      @default(0)
+  saleStart   DateTime?
+  saleEnd     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  event         Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations Registration[]
+  formFields    TicketFormField[]
+  invitationCodes InvitationCodeTicket[]
+  
+  @@map("ticket")
+}
+
+model FormField {
+  id          String   @id @default(cuid())
+  name        String   // field identifier
+  label       String
+  type        String   // text, email, phone, select, checkbox, file, etc.
+  options     String?  // JSON array for select/checkbox options
+  placeholder String?
+  helpText    String?
+  validation  String?  // JSON validation rules
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticketFields TicketFormField[]
+  registrationData RegistrationData[]
+  
+  @@map("form_field")
+}
+
+model TicketFormField {
+  id         String  @id @default(cuid())
+  ticketId   String
+  fieldId    String
+  isRequired Boolean @default(false)
+  isVisible  Boolean @default(true)
+  order      Int     @default(0)
+  
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  field  FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  
+  @@unique([ticketId, fieldId])
+  @@map("ticket_form_field")
+}
+
+model Registration {
+  id              String   @id @default(cuid())
+  eventId         String
+  ticketId        String
+  email           String
+  phone           String?
+  status          String   @default("confirmed") // confirmed, cancelled, pending
+  paymentStatus   String   @default("pending")   // pending, paid, failed, refunded
+  checkInStatus   String   @default("not_checked") // not_checked, checked_in
+  checkInTime     DateTime?
+  referredBy      String?  // registration ID of referrer
+  referralCode    String?  // unique referral code for this registration
+  editToken       String?  // for edit functionality
+  editTokenExpiry DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  event            Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticket           Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  registrationData RegistrationData[]
+  referrals        Registration[] @relation("RegistrationReferrals")
+  referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
+  files            File[]
+  
+  @@unique([email, eventId])
+  @@unique([referralCode])
+  @@unique([editToken])
+  @@map("registration")
+}
+
+model RegistrationData {
+  id             String @id @default(cuid())
+  registrationId String
+  fieldId        String
+  value          String // JSON value for complex data types
+  
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  field        FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  
+  @@unique([registrationId, fieldId])
+  @@map("registration_data")
+}
+
+model InvitationCode {
+  id          String   @id @default(cuid())
+  eventId     String
+  code        String   @unique
+  name        String?  // description/name for this code
+  usageLimit  Int?     // null = unlimited
+  usedCount   Int      @default(0)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets InvitationCodeTicket[]
+  
+  @@map("invitation_code")
+}
+
+model InvitationCodeTicket {
+  id               String @id @default(cuid())
+  invitationCodeId String
+  ticketId         String
+  
+  invitationCode InvitationCode @relation(fields: [invitationCodeId], references: [id], onDelete: Cascade)
+  ticket         Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  @@unique([invitationCodeId, ticketId])
+  @@map("invitation_code_ticket")
+}
+
+model File {
+  id             String  @id @default(cuid())
+  registrationId String?
+  filename       String
+  originalName   String
+  mimeType       String
+  size           Int
+  path           String
+  url            String?
+  createdAt      DateTime @default(now())
+  
+  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  
+  @@map("file")
+}
+
+model EmailCampaign {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  subject      String
+  content      String   // HTML content
+  recipientFilter String? // JSON filter criteria
+  status       String   @default("draft") // draft, sending, sent, cancelled
+  sentCount    Int      @default(0)
+  totalCount   Int      @default(0)
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("email_campaign")
+}
+
+model SystemSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String // JSON value
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("system_setting")
 }

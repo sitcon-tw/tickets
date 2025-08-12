@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { auth } from "./lib/auth.js";
+import routes from "./routes/index.js";
 
 dotenv.config();
 
@@ -80,6 +81,9 @@ fastify.all("/api/auth/*", async (request, reply) => {
 		return { error: 'Internal server error' };
 	}
 });
+
+// Register API routes
+await fastify.register(routes);
 
 // Sample route
 fastify.get("/api/hello", async (request, reply) => {
