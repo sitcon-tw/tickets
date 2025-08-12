@@ -9,7 +9,7 @@ export const t = (lang, data) => {
 	return result;
 };
 export const localesList = () => Object.keys(locales);
-export const local = url => {	
+export const local = url => {
 	return localesList().find(lang => url.toString().startsWith(`/${lang}`)) || defaultLocale;
 };
 
