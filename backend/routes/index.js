@@ -11,8 +11,8 @@ export default async function routes(fastify, options) {
   // Health check
   fastify.get('/api/health',
   { schema: {
-    description: 'Health check endpoint',
-    tags: ['test'],
+    description: '狀態檢查',
+    tags: ['health'],
   }},
   async (request, reply) => {
     return { 

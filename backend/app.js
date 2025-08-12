@@ -55,7 +55,7 @@ await fastify.register(routes);
 // Better Auth routes
 fastify.all("/api/auth/*",
 	{ schema: {
-		description: 'Better Auth API - Please use the official client libraries for integration. https://www.better-auth.com/docs/plugins/magic-link',
+		description: 'Better Auth API - 請查看官網的客戶端套件說明，不要直接戳 API!!! https://www.better-auth.com/docs/plugins/magic-link',
 		tags: ['auth'],
 	}},
 	async (request, reply) => {
