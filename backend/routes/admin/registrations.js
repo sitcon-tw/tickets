@@ -12,7 +12,108 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取報名列表（支援分頁、篩選、搜尋）",
-				tags: ["admin-registrations"]
+				tags: ["admin-registrations"],
+				querystring: {
+					type: 'object',
+					properties: {
+						page: {
+							type: 'integer',
+							default: 1,
+							minimum: 1,
+							description: '頁碼'
+						},
+						limit: {
+							type: 'integer',
+							default: 20,
+							minimum: 1,
+							maximum: 100,
+							description: '每頁筆數'
+						},
+						search: {
+							type: 'string',
+							description: '搜尋關鍵字'
+						},
+						status: {
+							type: 'string',
+							enum: ['confirmed', 'cancelled', 'pending'],
+							description: '報名狀態'
+						},
+						ticketId: {
+							type: 'string',
+							description: '票種 ID 篩選'
+						},
+						eventId: {
+							type: 'string',
+							description: '活動 ID 篩選'
+						},
+						startDate: {
+							type: 'string',
+							format: 'date',
+							description: '開始日期'
+						},
+						endDate: {
+							type: 'string',
+							format: 'date',
+							description: '結束日期'
+						},
+						sort: {
+							type: 'string',
+							default: 'createdAt',
+							description: '排序欄位'
+						},
+						order: {
+							type: 'string',
+							enum: ['asc', 'desc'],
+							default: 'desc',
+							description: '排序順序'
+						}
+					}
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										email: { type: 'string' },
+										phone: { type: 'string' },
+										status: { type: 'string' },
+										createdAt: { type: 'string', format: 'date-time' },
+										ticket: {
+											type: 'object',
+											properties: {
+												id: { type: 'string' },
+												name: { type: 'string' },
+												event: {
+													type: 'object',
+													properties: {
+														id: { type: 'string' },
+														name: { type: 'string' }
+													}
+												}
+											}
+										}
+									}
+								}
+							},
+							message: { type: 'string' },
+							pagination: {
+								type: 'object',
+								properties: {
+									page: { type: 'integer' },
+									limit: { type: 'integer' },
+									total: { type: 'integer' },
+									totalPages: { type: 'integer' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

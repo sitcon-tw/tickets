@@ -8,7 +8,45 @@ export default async function eventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取活動基本資訊（名稱、時間、地點、描述、OG 圖等）",
-				tags: ["events"]
+				tags: ["events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									id: { type: 'string' },
+									name: { type: 'string' },
+									description: { type: 'string' },
+									location: { type: 'string' },
+									startDate: { type: 'string', format: 'date-time' },
+									endDate: { type: 'string', format: 'date-time' },
+									ogImage: { type: 'string' },
+									landingPage: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -49,7 +87,41 @@ export default async function eventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取可用票種列表（含價格、數量、開售時間）",
-				tags: ["events"]
+				tags: ["events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										name: { type: 'string' },
+										description: { type: 'string' },
+										price: { type: 'number' },
+										quantity: { type: 'integer' },
+										soldCount: { type: 'integer' },
+										saleStart: { type: 'string', format: 'date-time' },
+										saleEnd: { type: 'string', format: 'date-time' }
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -91,7 +163,54 @@ export default async function eventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取特定票種的表單欄位配置",
-				tags: ["events"]
+				tags: ["events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						},
+						ticketId: {
+							type: 'string',
+							description: '票種 ID'
+						}
+					},
+					required: ['eventId', 'ticketId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										name: { type: 'string' },
+										label: { type: 'string' },
+										type: { type: 'string' },
+										options: { type: 'string' },
+										placeholder: { type: 'string' },
+										helpText: { type: 'string' },
+										validation: { type: 'string' },
+										isRequired: { type: 'boolean' },
+										order: { type: 'integer' }
+									}
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -152,7 +271,63 @@ export default async function eventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "透過邀請碼進入活動頁面",
-				tags: ["events"]
+				tags: ["events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['eventId']
+				},
+				querystring: {
+					type: 'object',
+					properties: {
+						inviteCode: {
+							type: 'string',
+							description: '邀請碼'
+						}
+					}
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									event: {
+										type: 'object',
+										properties: {
+											id: { type: 'string' },
+											name: { type: 'string' },
+											description: { type: 'string' },
+											location: { type: 'string' },
+											startDate: { type: 'string', format: 'date-time' },
+											endDate: { type: 'string', format: 'date-time' }
+										}
+									},
+									availableTickets: {
+										type: 'array',
+										items: {
+											type: 'object',
+											properties: {
+												id: { type: 'string' },
+												name: { type: 'string' },
+												price: { type: 'number' },
+												quantity: { type: 'integer' }
+											}
+										}
+									},
+									hasValidInviteCode: { type: 'boolean' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

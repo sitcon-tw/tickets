@@ -8,7 +8,63 @@ export default async function invitationCodesRoutes(fastify, options) {
 		{
 			schema: {
 				description: "驗證邀請碼並返回可用票種",
-				tags: ["invitation-codes"]
+				tags: ["invitation-codes"],
+				body: {
+					type: 'object',
+					properties: {
+						inviteCode: {
+							type: 'string',
+							description: '邀請碼'
+						},
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['inviteCode', 'eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									invitationCode: {
+										type: 'object',
+										properties: {
+											id: { type: 'string' },
+											name: { type: 'string' },
+											description: { type: 'string' }
+										}
+									},
+									availableTickets: {
+										type: 'array',
+										items: {
+											type: 'object',
+											properties: {
+												id: { type: 'string' },
+												name: { type: 'string' },
+												description: { type: 'string' },
+												price: { type: 'number' },
+												quantity: { type: 'integer' },
+												soldCount: { type: 'integer' }
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

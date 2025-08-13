@@ -7,7 +7,50 @@ export default async function fileUploadRoutes(fastify, options) {
 		{
 			schema: {
 				description: "檔案上傳處理",
-				tags: ["file-upload"]
+				tags: ["file-upload"],
+				body: {
+					type: 'object',
+					properties: {
+						file: {
+							type: 'string',
+							format: 'binary',
+							description: '上傳檔案'
+						},
+						fieldName: {
+							type: 'string',
+							description: '表單欄位名稱'
+						},
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['file', 'fieldName', 'eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									fileId: { type: 'string' },
+									fileName: { type: 'string' },
+									fileSize: { type: 'integer' },
+									uploadedAt: { type: 'string', format: 'date-time' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
