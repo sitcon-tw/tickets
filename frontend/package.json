@@ -9,6 +9,7 @@
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "^12.6.3",
+		"@astrojs/node": "^9.4.0",
 		"@astrojs/sitemap": "^3.4.2",
 		"@lucide/astro": "^0.539.0",
 		"astro": "^5.12.6",
