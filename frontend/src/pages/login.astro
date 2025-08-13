@@ -69,38 +69,5 @@ const l = i18n.l(Astro.url);
 		}
 	</style>
 
-	<script>
-		// 以下的 code 根本不會 work，可以全部砍掉 -ns
-		const test = () => {
-			console.log("test");
-		};
-		import { authClient } from "../lib/auth-client.js";
-
-		document.addEventListener("DOMContentLoaded", function () {
-			const form = document.getElementById("magic-link-form");
-			const submitBtn = document.getElementById("submit-btn");
-
-			form.addEventListener("submit", async function (e) {
-				e.preventDefault();
-
-				const formData = new FormData(form as HTMLFormElement);
-				const email = formData.get("email");
-
-				(submitBtn as HTMLButtonElement).disabled = true;
-				submitBtn.textContent = "Sending...";
-
-				try {
-					await authClient.signIn.magicLink({
-						email: email as string,
-						callbackURL: window.location.origin + "/"
-					});
-				} catch (error) {
-					console.error("Magic link error:", error);
-				} finally {
-					(submitBtn as HTMLButtonElement).disabled = false;
-					submitBtn.textContent = "Continue";
-				}
-			});
-		});
-	</script>
+	<script></script>
 </Layout>
