@@ -1,7 +1,11 @@
 packages:
-    - frontend
-    - backend
+  - frontend
+  - backend
 
 onlyBuiltDependencies:
-    - esbuild
-    - sharp
+  - '@prisma/client'
+  - '@prisma/engines'
+  - better-sqlite3
+  - esbuild
+  - prisma
+  - sharp
