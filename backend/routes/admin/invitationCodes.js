@@ -12,7 +12,69 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取邀請碼列表",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin-invitation-codes"],
+				querystring: {
+					type: 'object',
+					properties: {
+						page: {
+							type: 'integer',
+							default: 1,
+							minimum: 1,
+							description: '頁碼'
+						},
+						limit: {
+							type: 'integer',
+							default: 20,
+							minimum: 1,
+							maximum: 100,
+							description: '每頁筆數'
+						},
+						eventId: {
+							type: 'string',
+							description: '活動 ID 篩選'
+						}
+					}
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										code: { type: 'string' },
+										name: { type: 'string' },
+										description: { type: 'string' },
+										usageLimit: { type: 'integer' },
+										usedCount: { type: 'integer' },
+										isActive: { type: 'boolean' },
+										event: {
+											type: 'object',
+											properties: {
+												id: { type: 'string' },
+												name: { type: 'string' }
+											}
+										}
+									}
+								}
+							},
+							message: { type: 'string' },
+							pagination: {
+								type: 'object',
+								properties: {
+									page: { type: 'integer' },
+									limit: { type: 'integer' },
+									total: { type: 'integer' },
+									totalPages: { type: 'integer' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -57,7 +119,72 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 		{
 			schema: {
 				description: "自動生成邀請碼",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin-invitation-codes"],
+				body: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						},
+						name: {
+							type: 'string',
+							description: '邀請碼名稱'
+						},
+						description: {
+							type: 'string',
+							description: '邀請碼描述'
+						},
+						count: {
+							type: 'integer',
+							minimum: 1,
+							maximum: 1000,
+							default: 1,
+							description: '生成數量'
+						},
+						usageLimit: {
+							type: 'integer',
+							minimum: 1,
+							description: '使用次數限制'
+						},
+						validFrom: {
+							type: 'string',
+							format: 'date-time',
+							description: '有效開始時間'
+						},
+						validUntil: {
+							type: 'string',
+							format: 'date-time',
+							description: '有效結束時間'
+						},
+						ticketIds: {
+							type: 'array',
+							items: { type: 'string' },
+							description: '可用票種 ID 列表'
+						}
+					},
+					required: ['eventId', 'name', 'ticketIds']
+				},
+				response: {
+					201: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										code: { type: 'string' },
+										name: { type: 'string' }
+									}
+								}
+							},
+							message: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

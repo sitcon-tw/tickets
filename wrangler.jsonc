@@ -1,5 +1,5 @@
 {
-	"name": "fastro",
+	"name": "2026-tickets",
 	"compatibility_date": "2025-08-01",
 	"build": {
 		"command": "pnpm run build:frontend"

@@ -12,7 +12,54 @@ export default async function adminEventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取活動詳細資訊",
-				tags: ["admin-events"]
+				tags: ["admin-events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									id: { type: 'string' },
+									name: { type: 'string' },
+									description: { type: 'string' },
+									startDate: { type: 'string', format: 'date-time' },
+									endDate: { type: 'string', format: 'date-time' },
+									location: { type: 'string' },
+									tickets: {
+										type: 'array',
+										items: { type: 'object' }
+									},
+									_count: {
+										type: 'object',
+										properties: {
+											registrations: { type: 'integer' },
+											invitationCodes: { type: 'integer' }
+										}
+									}
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -55,7 +102,80 @@ export default async function adminEventsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "更新活動資訊",
-				tags: ["admin-events"]
+				tags: ["admin-events"],
+				params: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['eventId']
+				},
+				body: {
+					type: 'object',
+					properties: {
+						name: {
+							type: 'string',
+							description: '活動名稱'
+						},
+						description: {
+							type: 'string',
+							description: '活動描述'
+						},
+						startDate: {
+							type: 'string',
+							format: 'date-time',
+							description: '開始時間'
+						},
+						endDate: {
+							type: 'string',
+							format: 'date-time',
+							description: '結束時間'
+						},
+						location: {
+							type: 'string',
+							description: '地點'
+						},
+						venue: {
+							type: 'string',
+							description: '場地'
+						},
+						organizer: {
+							type: 'string',
+							description: '主辦單位'
+						},
+						contactPerson: {
+							type: 'string',
+							description: '聯絡人'
+						},
+						contactEmail: {
+							type: 'string',
+							format: 'email',
+							description: '聯絡信箱'
+						},
+						contactPhone: {
+							type: 'string',
+							description: '聯絡電話'
+						},
+						website: {
+							type: 'string',
+							format: 'uri',
+							description: '官網'
+						}
+					}
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: { type: 'object' },
+							message: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

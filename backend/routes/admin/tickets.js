@@ -12,7 +12,74 @@ export default async function adminTicketsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取票種列表",
-				tags: ["admin-tickets"]
+				tags: ["admin-tickets"],
+				querystring: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID 篩選'
+						},
+						page: {
+							type: 'integer',
+							default: 1,
+							minimum: 1,
+							description: '頁碼'
+						},
+						limit: {
+							type: 'integer',
+							default: 20,
+							minimum: 1,
+							maximum: 100,
+							description: '每頁筆數'
+						}
+					}
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'array',
+								items: {
+									type: 'object',
+									properties: {
+										id: { type: 'string' },
+										name: { type: 'string' },
+										description: { type: 'string' },
+										price: { type: 'number' },
+										quantity: { type: 'integer' },
+										soldCount: { type: 'integer' },
+										event: {
+											type: 'object',
+											properties: {
+												id: { type: 'string' },
+												name: { type: 'string' }
+											}
+										},
+										_count: {
+											type: 'object',
+											properties: {
+												registrations: { type: 'integer' }
+											}
+										}
+									}
+								}
+							},
+							message: { type: 'string' },
+							pagination: {
+								type: 'object',
+								properties: {
+									page: { type: 'integer' },
+									limit: { type: 'integer' },
+									total: { type: 'integer' },
+									totalPages: { type: 'integer' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -62,7 +129,84 @@ export default async function adminTicketsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "新增票種",
-				tags: ["admin-tickets"]
+				tags: ["admin-tickets"],
+				body: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						},
+						name: {
+							type: 'string',
+							description: '票種名稱'
+						},
+						description: {
+							type: 'string',
+							description: '票種描述'
+						},
+						price: {
+							type: 'number',
+							minimum: 0,
+							description: '價格'
+						},
+						quantity: {
+							type: 'integer',
+							minimum: 1,
+							description: '數量'
+						},
+						maxPerOrder: {
+							type: 'integer',
+							minimum: 1,
+							description: '每單限購'
+						},
+						saleStartTime: {
+							type: 'string',
+							format: 'date-time',
+							description: '開售時間'
+						},
+						saleEndTime: {
+							type: 'string',
+							format: 'date-time',
+							description: '結束售票時間'
+						},
+						isVisible: {
+							type: 'boolean',
+							description: '是否可見'
+						},
+						requireInviteCode: {
+							type: 'boolean',
+							description: '是否需要邀請碼'
+						},
+						isRefundable: {
+							type: 'boolean',
+							description: '是否可退款'
+						},
+						refundDeadline: {
+							type: 'string',
+							format: 'date-time',
+							description: '退款截止日'
+						}
+					},
+					required: ['eventId', 'name', 'price', 'quantity']
+				},
+				response: {
+					201: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: { type: 'object' },
+							message: { type: 'string' }
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: { type: 'string' }
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

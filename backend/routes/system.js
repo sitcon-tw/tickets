@@ -8,7 +8,24 @@ export default async function systemRoutes(fastify, options) {
 		{
 			schema: {
 				description: "系統健康檢查",
-				tags: ["system"]
+				tags: ["system"],
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									status: { type: 'string' },
+									timestamp: { type: 'string', format: 'date-time' },
+									version: { type: 'string' },
+									uptime: { type: 'number' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -33,7 +50,24 @@ export default async function systemRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取系統版本資訊",
-				tags: ["system"]
+				tags: ["system"],
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									version: { type: 'string' },
+									buildDate: { type: 'string', format: 'date-time' },
+									nodeVersion: { type: 'string' },
+									environment: { type: 'string' }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
