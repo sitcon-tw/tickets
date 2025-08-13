@@ -5,7 +5,8 @@
 	"main": "app.js",
 	"scripts": {
 		"start": "node app.js",
-		"dev": "nodemon app.js"
+		"dev": "nodemon app.js",
+		"postinstall": "prisma generate"
 	},
 	"license": "Apache-2.0",
 	"packageManager": "pnpm@10.13.1",

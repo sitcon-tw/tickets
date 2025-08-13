@@ -5,10 +5,10 @@
 		"dev": "astro dev",
 		"build": "astro build",
 		"preview": "astro preview",
-		"astro": "astro",
-		"postinstall": "prisma generate"
+		"astro": "astro"
 	},
 	"dependencies": {
+		"@astrojs/cloudflare": "^12.6.3",
 		"@astrojs/sitemap": "^3.4.2",
 		"@lucide/astro": "^0.539.0",
 		"astro": "^5.12.6",
