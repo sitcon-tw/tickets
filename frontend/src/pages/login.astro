@@ -1,7 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import * as i18n from "src/i18n";
-import Nav from "../components/Nav.astro";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	login: {
@@ -18,24 +17,29 @@ const t = i18n.t(lang, {
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#FFF" lang={lang}>
-	<Nav />
+<Layout i18n={t.t} path="login" title={t.login} theme="#FFF" lang={lang}>
 	<main transition:animate="fade">
 		<section>
 			<div class="login-container" id="magic-link-form">
 				<h1>{t.login}</h1>
 				<label for="email">Email</label>
 				<input type="email" name="email" id="email" />
-				<button id="submit-btn" class="button" type="submit" onclick="test()">Continue</button>
+				<button id="submit-btn" class="button" type="submit" onclick="login()">{t.continue}</button>
+			</div>
+			<div class="sent-container">
+				<h2>{t.sent}</h2>
+				<p>{t.message}</p>
+			</div>
+			<div class="error-container">
+				<h2>{t.error}</h2>
+				<p>{t.errorMessage}</p>
 			</div>
 		</section>
 	</main>
 
-	<style>
-		main {
-			display: flex;
-			flex-direction: column;
-			min-height: 100vh;
+	<style is:inline>
+		body {
+			position: relative;
 		}
 		h1 {
 			margin-block: 1rem;
@@ -50,21 +54,23 @@ const l = i18n.l(Astro.url);
 			border: 2px solid var(--black);
 			width: 20rem;
 			padding: 0.5rem;
+			max-width: 100%;
 		}
 		section {
-			flex-grow: 1;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			padding-bottom: 5rem;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			max-width: 100%;
+			padding: 1rem;
 		}
 
 		.login-container {
-			margin: 2rem auto;
-			width: fit-content;
+			/* margin: 2rem auto;
+			width: fit-content; */
 		}
 
-		.button {
+		section .button {
 			margin: 1rem auto;
 		}
 	</style>

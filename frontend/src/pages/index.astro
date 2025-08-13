@@ -1,6 +1,5 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Nav from "../components/Nav.astro";
 import Header from "../components/home/Header.astro";
 import Welcome from "../components/home/Welcome.astro";
 import Tickets from "../components/home/Tickets.astro";
@@ -23,7 +22,6 @@ const t = i18n.t(lang, {
 ---
 
 <Layout i18n={t.t} path="" title={t.title} description={t.description} theme="#333" lang={lang}>
-	<Nav />
 	<main transition:animate="fade">
 		<Header />
 		<Welcome />

@@ -2,6 +2,7 @@
 import { defaultLocale } from "src/i18n/config";
 import { localesList, l } from "src/i18n";
 import { ClientRouter } from "astro:transitions";
+import Nav from "../components/Nav.astro";
 const { i18n = [], path = "", favicon = true, ga = true, title, description, image, theme = "#000", lang = defaultLocale } = Astro.props;
 const site = import.meta.env.SITE;
 const links = i18n
@@ -88,6 +89,7 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 		}
 	</head>
 	<body>
+		<Nav />
 		<slot />
 		<script define:vars={{ supportedLangs }}>
 			document.querySelectorAll("[data-lang]").forEach(link => {
@@ -128,12 +130,17 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 			sans-serif;
 		background-color: var(--white);
 		color: var(--black);
+		min-height: 100dvh;
+	}
+
+	body:has(.confirming) {
+		overflow: hidden;
 	}
 
 	main {
 		padding-bottom: 0;
 	}
-	nav,
+	nav > div,
 	main {
 		max-width: 800px;
 		margin: 0 auto;
@@ -151,6 +158,16 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 		text-decoration: none;
 		display: block;
 		width: fit-content;
+		cursor: pointer;
+		font-size: 1.1rem;
+		font-family: inherit;
+		color: inherit;
+	}
+
+	input {
+		background-color: transparent;
+		color: inherit;
+		font-family: inherit;
 	}
 
 	.button:hover {
@@ -159,5 +176,45 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 
 	.button:active {
 		background-color: #ddd;
+	}
+
+	.content h2 {
+		margin-bottom: 1rem;
+	}
+	.content p {
+		margin-bottom: 1rem;
+	}
+	.content h3 {
+		margin-bottom: 0.5rem;
+	}
+
+	.content h4 {
+		margin-bottom: 0.4rem;
+	}
+	.content li {
+		margin-bottom: 0.3rem;
+	}
+	.content ol,
+	.content ul {
+		padding-left: 1.5rem;
+		margin-bottom: 1rem;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--black: #d5d5d5;
+			--white: #1d1d1f;
+		}
+
+		.button:hover {
+			background-color: #323232;
+		}
+
+		.button:active {
+			background-color: #848484;
+		}
+		nav img {
+			filter: invert(1);
+		}
 	}
 </style>

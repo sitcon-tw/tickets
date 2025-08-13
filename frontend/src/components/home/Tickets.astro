@@ -1,22 +1,184 @@
 ---
 import * as i18n from "src/i18n";
-import Ticket from "./Ticket.astro";
+import Confirm from "../Confirm.astro";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	description: {
 		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
 		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
 		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	},
+	time: {
+		"zh-Hant": "報名時間：",
+		"zh-Hans": "报名时间：",
+		en: "Registration Time: "
+	},
+	remaining: {
+		"zh-Hant": "剩餘",
+		"zh-Hans": "剩余",
+		en: "Remaining"
 	}
 });
 ---
 
-<div class="ticket-container">
-	<Ticket /><Ticket /><Ticket /><Ticket /><Ticket />
-</div>
+<div class="tickets-container"></div>
 
-<style>
-	.ticket-container > :global(.ticket):nth-child(2n) {
+<Confirm>
+	<!-- <Ticket /> -->
+	<div class="about">
+		<div class="ticket ticketConfirm">
+			<h3>aaa</h3>
+			<p>bbb</p>
+			<p class="remain">ccc</p>
+		</div>
+		<div class="content">
+			<h2>學生票</h2>
+			<p>學生保留名額。報到時請攜帶學生證或相關身分證件，以利年會工作人員查驗。</p>
+			<p>符合下列任一條件即可索取學生票：</p>
+			<ul>
+				<li>出生日期為 2007 年 3 月 8 日（含）以後，需攜帶有照片之身份證件。（身份證、健保卡等）</li>
+				<li>持有由學校核發之 113 學年度第二學期有效學生證 或 113 學年度第二學期在學證明（或任何能夠證明 113 學年度第二學期為學生身份之文件）。</li>
+				<li>表單內容需要填寫系所 / 職稱，如您是普通高中請填寫普通科，技術型高中、綜合型高中、大學 / 科大以上請依照科系填寫。</li>
+			</ul>
+		</div>
+	</div>
+	<div class="button">確認報名</div>
+</Confirm>
+<div class="ticket" id="ticketAnimation"></div>
+
+<script define:vars={{ t }}>
+	const ticketsData = {
+		學生票: {
+			en: "Student",
+			time: "8/15 - 8/20",
+			remaining: "50 / 200"
+		},
+		一般票: {
+			en: "General",
+			time: "8/15 - 8/20",
+			remaining: "100 / 300"
+		},
+		遠道而來票: {
+			en: "Long Distance",
+			time: "8/15 - 8/20",
+			remaining: "30 / 100"
+		},
+		邀請票: {
+			en: "Invite",
+			time: "8/15 - 8/20",
+			remaining: "10 / 50"
+		},
+		開源貢獻票: {
+			en: "Open Source Contribution",
+			time: "8/15 - 8/20",
+			remaining: "5 / 20"
+		}
+	};
+
+	const ticketsContainer = document.querySelector(".tickets-container");
+
+	// Create HTML for all tickets
+	let ticketsHTML = "";
+
+	for (const [title, data] of Object.entries(ticketsData)) {
+		ticketsHTML += `<div class="ticket">
+			<h3>${title}</h3>
+			<p>${t.time}${data.time}</p>
+			<p class="remain">${t.remaining} ${data.remaining}</p>
+		</div>`;
+	}
+	if (ticketsContainer) {
+		ticketsContainer.innerHTML = ticketsHTML;
+	}
+	// track press of all tickets
+	const ticketElements = document.querySelectorAll(".ticket");
+	const confirmElement = document.querySelector(".confirm");
+	const ticketAnimation = document.getElementById("ticketAnimation");
+	const ticketConfirm = document.querySelector(".ticketConfirm");
+	let hidden = null;
+	ticketElements.forEach(ticket => {
+		ticket.addEventListener("click", () => {
+			ticketAnimation.innerHTML = ticket.innerHTML;
+			ticketConfirm.innerHTML = ticket.innerHTML;
+			hidden = ticket;
+			// get the position of ticket and put the Animation on the same place with same rotation.
+			let { top, left } = ticket.getBoundingClientRect();
+			ticketAnimation.style.top = `${top}px`;
+			ticketAnimation.style.left = `${left}px`;
+			ticketAnimation.style.transform = `${getComputedStyle(ticket).transform}`;
+			hidden.style.visibility = "hidden";
+			ticketAnimation.style.display = "block";
+			ticketConfirm.style.visibility = "hidden";
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					confirmElement.classList.add("confirming");
+					const confirmRect = ticketConfirm.getBoundingClientRect();
+					ticketAnimation.style.top = `${confirmRect.top}px`;
+					ticketAnimation.style.left = `${confirmRect.left}px`;
+					ticketAnimation.style.transform = `${getComputedStyle(ticketConfirm).transform}`;
+					// 300ms delay
+					setTimeout(() => {
+						ticketAnimation.style.display = "none";
+						ticketConfirm.style.visibility = "visible";
+					}, 300);
+				});
+			});
+		});
+	});
+
+	// remove confirm class on close
+	document.getElementById("close").addEventListener("click", () => {
+		document.querySelector(".confirm").classList.remove("confirming");
+		hidden.style.visibility = "visible";
+		ticketAnimation.style.display = "none";
+	});
+</script>
+
+<style is:global>
+	.tickets-container > .ticket:nth-child(2n) {
 		transform: rotate(-1.17deg);
+	}
+
+	.about + .button {
+		margin-top: 2rem;
+	}
+
+	.ticket {
+		border: solid 3px var(--black);
+		padding: 1rem;
+		margin: 0 auto 2rem;
+		max-width: 350px;
+		transform: rotate(1.17deg);
+		transition: transform 0.3s ease;
+		cursor: pointer;
+		background-color: var(--white);
+	}
+
+	.ticket:hover {
+		transform: rotate(1.17deg) scale(1.05);
+	}
+
+	.tickets-container > .ticket:nth-child(2n):hover {
+		transform: rotate(-1.17deg) scale(1.05);
+	}
+
+	.remain {
+		text-align: right;
+	}
+
+	#ticketAnimation {
+		display: none;
+		position: fixed;
+		transition: none;
+		z-index: 500;
+		width: 100%;
+	}
+
+	.confirming + #ticketAnimation {
+		transition: 0.3s ease-in-out;
+	}
+	.ticketConfirm {
+		visibility: hidden;
+		pointer-events: none;
 	}
 </style>

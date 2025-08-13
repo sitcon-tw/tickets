@@ -8,19 +8,19 @@ const t = i18n.t(lang, {
 		en: "Elvis Mao's Website starter template using Astro and Fastify."
 	}
 });
-import { Content as Intro } from "../markdown/intro.md";
-import { Content as Faq } from "../markdown/faq.md";
+import { Content as Intro } from "src/pages/markdown/intro.md";
+import { Content as Faq } from "src/pages/markdown/faq.md";
 
-import.meta.glob("../markdown/tickets/*.md", { eager: true });
+import.meta.glob("src/pages/markdown/tickets/*.md", { eager: true });
 const ticket = Object.fromEntries(
-	Object.entries(await import.meta.glob("../markdown/tickets/*.md", { eager: true })).map(([path, module]) => {
+	Object.entries(await import.meta.glob("src/pages/markdown/tickets/*.md", { eager: true })).map(([path, module]) => {
 		const key = path.split("/").pop()?.replace(".md", "");
 		return [key, module];
 	})
 );
 ---
 
-<section class="info">
+<section class="info content">
 	<Intro />
 	<h2>票種資訊</h2>
 	{
@@ -34,27 +34,3 @@ const ticket = Object.fromEntries(
 	<h2>FAQ</h2>
 	<Faq />
 </section>
-
-<style is:global>
-	section.info h2 {
-		margin-bottom: 1rem;
-	}
-	section.info p {
-		margin-bottom: 1rem;
-	}
-	section.info h3 {
-		margin-bottom: 0.5rem;
-	}
-
-	section.info h4 {
-		margin-bottom: 0.4rem;
-	}
-	li {
-		margin-bottom: 0.3rem;
-	}
-	ol,
-	ul {
-		padding-left: 1.5rem;
-		margin-bottom: 1rem;
-	}
-</style>
