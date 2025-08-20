@@ -87,7 +87,7 @@ export default async function registrationsRoutes(fastify, options) {
 			}
 		},
 		async (request, reply) => {
-			try {
+				try {
 				const { eventId, ticketId, inviteCode, referralCode, formData, agreedToTerms, files } = request.body;
 
 				if (!eventId || !ticketId || !formData || !agreedToTerms) {
@@ -279,7 +279,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Registration submission error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "提交報名失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "提交報名失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -359,7 +359,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Registration validation error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "表單驗證失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "表單驗證失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -489,7 +489,7 @@ export default async function registrationsRoutes(fastify, options) {
 				return successResponse({ message: "編輯連結已發送到您的信箱" });
 			} catch (error) {
 				console.error("Request edit error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "請求編輯連結失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "請求編輯連結失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -566,7 +566,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Verify edit token error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證編輯 token 失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證編輯 token 失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -692,7 +692,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Get edit registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "載入編輯頁面失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "載入編輯頁面失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -836,7 +836,7 @@ export default async function registrationsRoutes(fastify, options) {
 				return successResponse({ message: "報名資料更新成功" });
 			} catch (error) {
 				console.error("Update registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新報名資料失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新報名資料失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -964,7 +964,7 @@ export default async function registrationsRoutes(fastify, options) {
 				return successResponse({ message: "報名已成功取消，票券名額已釋出" });
 			} catch (error) {
 				console.error("Cancel registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取消報名失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取消報名失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -1037,7 +1037,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Get referral link error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -1153,7 +1153,7 @@ export default async function registrationsRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Get referral stats error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", null, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
