@@ -28,6 +28,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
@@ -61,7 +62,13 @@ export default async function invitationCodesRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							error: { type: 'string' }
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
 						}
 					}
 				}

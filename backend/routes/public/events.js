@@ -24,6 +24,7 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
@@ -43,7 +44,13 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							error: { type: 'string' }
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
 						}
 					}
 				}
@@ -103,6 +110,7 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'array',
 								items: {
@@ -183,6 +191,7 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'array',
 								items: {
@@ -207,7 +216,13 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							error: { type: 'string' }
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
 						}
 					}
 				}
@@ -296,6 +311,7 @@ export default async function eventsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {

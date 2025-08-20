@@ -64,14 +64,14 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
 									registrationId: { type: 'string' },
 									checkInCode: { type: 'string' },
 									qrCodeUrl: { type: 'string' },
-									referralLink: { type: 'string' },
-									message: { type: 'string' }
+									referralLink: { type: 'string' }
 								}
 							}
 						}
@@ -80,7 +80,13 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							error: { type: 'string' }
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
 						}
 					}
 				}
@@ -312,6 +318,7 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
@@ -397,9 +404,49 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					429: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
 									message: { type: 'string' }
 								}
 							}
@@ -517,11 +564,38 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
 									isValid: { type: 'boolean' },
 									registrationId: { type: 'string' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
 								}
 							}
 						}
@@ -594,6 +668,7 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
@@ -611,6 +686,32 @@ export default async function registrationsRoutes(fastify, options) {
 										items: { type: 'object' }
 									},
 									currentFormData: { type: 'object' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
 								}
 							}
 						}
@@ -731,9 +832,36 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
 									message: { type: 'string' }
 								}
 							}
@@ -878,9 +1006,36 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
 									message: { type: 'string' }
 								}
 							}
@@ -992,12 +1147,26 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
 									referralLink: { type: 'string' },
 									referralCode: { type: 'string' },
 									eventId: { type: 'string' }
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
 								}
 							}
 						}
@@ -1065,6 +1234,7 @@ export default async function registrationsRoutes(fastify, options) {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
 								type: 'object',
 								properties: {
@@ -1091,6 +1261,19 @@ export default async function registrationsRoutes(fastify, options) {
 											email: { type: 'string' }
 										}
 									}
+								}
+							}
+						}
+					},
+					404: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
 								}
 							}
 						}
