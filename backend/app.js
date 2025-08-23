@@ -62,7 +62,7 @@ fastify.all(
 	"/api/auth/*",
 	{
 		schema: {
-			description: "Better Auth API - 請查看官網的客戶端套件說明，不要直接戳 API!!! https://www.better-auth.com/docs/plugins/magic-link",
+			description: "send auth link: POST /api/auth/sign-in/magic-link; get session: GET /api/auth/get-session",
 			tags: ["auth"]
 		}
 	},

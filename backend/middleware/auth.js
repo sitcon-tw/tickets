@@ -1,5 +1,8 @@
 import { auth } from "../lib/auth.js";
 import { forbiddenResponse, unauthorizedResponse } from "../utils/response.js";
+import { PrismaClient } from "../generated/prisma/index.js";
+
+const prisma = new PrismaClient();
 
 export const requireAuth = async (request, reply) => {
 	try {
@@ -28,10 +31,22 @@ export const requireRole = allowedRoles => {
 
 		if (reply.sent) return; // Auth failed
 
-		const userRole = request.user.role;
+		const user = await prisma.user.findUnique({
+			where: { id: request.user.id },
+			select: { role: true }
+		});
 
-		if (!allowedRoles.includes(userRole)) {
-			const { response, statusCode } = forbiddenResponse("權限不足");
+		const userRole = user?.role || 'user';
+		console.log("User role from DB:", userRole);
+
+		const userRoles = userRole.split(',').map(role => role.trim());
+		
+		const hasPermission = allowedRoles.some(allowedRole => 
+			userRoles.includes(allowedRole)
+		);
+
+		if (!hasPermission) {
+			const { response, statusCode } = forbiddenResponse("權限不足 [R]");
 			reply.code(statusCode).send(response);
 		}
 	};
@@ -46,7 +61,7 @@ export const requirePermission = permission => {
 		const userPermissions = request.user.permissions ? JSON.parse(request.user.permissions) : [];
 
 		if (!userPermissions.includes(permission) && request.user.role !== "admin") {
-			const { response, statusCode } = forbiddenResponse("權限不足");
+			const { response, statusCode } = forbiddenResponse("權限不足 [P]");
 			reply.code(statusCode).send(response);
 		}
 	};
