@@ -12,7 +12,73 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "獲取所有表單欄位",
-				tags: ["admin-form-fields"]
+				tags: ["admin-form-fields"],
+				querystring: {
+					type: "object",
+					properties: {
+						page: { type: "integer", minimum: 1, default: 1 },
+						limit: { type: "integer", minimum: 1, maximum: 100, default: 50 }
+					}
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "array",
+								items: {
+									type: "object",
+									properties: {
+										id: { type: "string" },
+										name: { type: "string" },
+										label: { type: "string" },
+										type: { type: "string" },
+										description: { type: "string", nullable: true },
+										required: { type: "boolean" },
+										order: { type: "integer" },
+										options: { type: "string", nullable: true },
+										validation: { type: "string", nullable: true },
+										placeholder: { type: "string", nullable: true },
+										helpText: { type: "string", nullable: true },
+										isActive: { type: "boolean" },
+										createdAt: { type: "string", format: "date-time" },
+										updatedAt: { type: "string", format: "date-time" },
+										ticketFields: {
+											type: "array",
+											items: {
+												type: "object",
+												properties: {
+													id: { type: "string" },
+													isRequired: { type: "boolean" },
+													isVisible: { type: "boolean" },
+													order: { type: "integer" },
+													ticket: {
+														type: "object",
+														properties: {
+															id: { type: "string" },
+															name: { type: "string" }
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							},
+							pagination: {
+								type: "object",
+								properties: {
+									page: { type: "integer" },
+									limit: { type: "integer" },
+									total: { type: "integer" },
+									totalPages: { type: "integer" }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -26,7 +92,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 						skip,
 						take: parseInt(limit),
 						include: {
-							tickets: {
+							ticketFields: {
 								include: {
 									ticket: {
 										select: { id: true, name: true }
@@ -61,7 +127,54 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "新增表單欄位",
-				tags: ["admin-form-fields"]
+				tags: ["admin-form-fields"],
+				body: {
+					type: "object",
+					required: ["name", "label", "type"],
+					properties: {
+						name: { type: "string", minLength: 1 },
+						label: { type: "string", minLength: 1 },
+						type: { 
+							type: "string", 
+							enum: ["text", "textarea", "email", "radio", "checkbox", "select", "file", "description"] 
+						},
+						description: { type: "string" },
+						required: { type: "boolean", default: false },
+						order: { type: "integer", default: 0 },
+						options: { type: "array" },
+						validation: { type: "object" },
+						placeholder: { type: "string" },
+						helpText: { type: "string" }
+					}
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "object",
+								properties: {
+									id: { type: "string" },
+									name: { type: "string" },
+									label: { type: "string" },
+									type: { type: "string" },
+									description: { type: "string", nullable: true },
+									required: { type: "boolean" },
+									order: { type: "integer" },
+									options: { type: "string", nullable: true },
+									validation: { type: "string", nullable: true },
+									placeholder: { type: "string", nullable: true },
+									helpText: { type: "string", nullable: true },
+									isActive: { type: "boolean" },
+									createdAt: { type: "string", format: "date-time" },
+									updatedAt: { type: "string", format: "date-time" }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -111,7 +224,55 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "更新表單欄位",
-				tags: ["admin-form-fields"]
+				tags: ["admin-form-fields"],
+				params: {
+					type: "object",
+					properties: {
+						fieldId: { type: "string" }
+					},
+					required: ["fieldId"]
+				},
+				body: {
+					type: "object",
+					properties: {
+						label: { type: "string", minLength: 1 },
+						description: { type: "string" },
+						required: { type: "boolean" },
+						order: { type: "integer" },
+						options: { type: "array" },
+						validation: { type: "object" },
+						placeholder: { type: "string" },
+						helpText: { type: "string" }
+					}
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "object",
+								properties: {
+									id: { type: "string" },
+									name: { type: "string" },
+									label: { type: "string" },
+									type: { type: "string" },
+									description: { type: "string", nullable: true },
+									required: { type: "boolean" },
+									order: { type: "integer" },
+									options: { type: "string", nullable: true },
+									validation: { type: "string", nullable: true },
+									placeholder: { type: "string", nullable: true },
+									helpText: { type: "string", nullable: true },
+									isActive: { type: "boolean" },
+									createdAt: { type: "string", format: "date-time" },
+									updatedAt: { type: "string", format: "date-time" }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -151,7 +312,29 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "刪除表單欄位",
-				tags: ["admin-form-fields"]
+				tags: ["admin-form-fields"],
+				params: {
+					type: "object",
+					properties: {
+						fieldId: { type: "string" }
+					},
+					required: ["fieldId"]
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "object",
+								properties: {
+									message: { type: "string" }
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
@@ -178,7 +361,63 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "設定欄位與票種的顯示/必填關係",
-				tags: ["admin-form-fields"]
+				tags: ["admin-form-fields"],
+				params: {
+					type: "object",
+					properties: {
+						fieldId: { type: "string" }
+					},
+					required: ["fieldId"]
+				},
+				body: {
+					type: "object",
+					required: ["ticketBindings"],
+					properties: {
+						ticketBindings: {
+							type: "array",
+							items: {
+								type: "object",
+								required: ["ticketId"],
+								properties: {
+									ticketId: { type: "string" },
+									isVisible: { type: "boolean", default: true },
+									isRequired: { type: "boolean", default: false },
+									order: { type: "integer", default: 0 }
+								}
+							}
+						}
+					}
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "array",
+								items: {
+									type: "object",
+									properties: {
+										id: { type: "string" },
+										fieldId: { type: "string" },
+										ticketId: { type: "string" },
+										isVisible: { type: "boolean" },
+										isRequired: { type: "boolean" },
+										order: { type: "integer" },
+										ticket: {
+											type: "object",
+											properties: {
+												id: { type: "string" },
+												name: { type: "string" }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {

@@ -125,6 +125,8 @@ model Ticket {
 model FormField {
   id          String   @id @default(cuid())
   name        String   // field identifier
+  required   Boolean  @default(false)
+  description String?
   label       String
   type        String   // text, email, phone, select, checkbox, file, etc.
   options     String?  // JSON array for select/checkbox options
