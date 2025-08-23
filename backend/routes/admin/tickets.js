@@ -155,11 +155,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 							minimum: 1,
 							description: '數量'
 						},
-						maxPerOrder: {
-							type: 'integer',
-							minimum: 1,
-							description: '每單限購'
-						},
 						saleStartTime: {
 							type: 'string',
 							format: 'date-time',
@@ -170,22 +165,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 							format: 'date-time',
 							description: '結束售票時間'
 						},
-						isVisible: {
-							type: 'boolean',
-							description: '是否可見'
-						},
 						requireInviteCode: {
 							type: 'boolean',
 							description: '是否需要邀請碼'
-						},
-						isRefundable: {
-							type: 'boolean',
-							description: '是否可退款'
-						},
-						refundDeadline: {
-							type: 'string',
-							format: 'date-time',
-							description: '退款截止日'
 						}
 					},
 					required: ['eventId', 'name', 'price', 'quantity']
@@ -211,7 +193,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 		},
 		async (request, reply) => {
 			try {
-				const { eventId, name, description, price, quantity, maxPerOrder, saleStartTime, saleEndTime, isVisible, requireInviteCode, isRefundable, refundDeadline } = request.body;
+				const { eventId, name, description, price, quantity, saleStartTime, saleEndTime, requireInviteCode } = request.body;
 
 				if (!eventId || !name || price === undefined || quantity === undefined) {
 					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "活動ID、票種名稱、價格和數量為必填");
@@ -225,13 +207,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 						description,
 						price: parseFloat(price),
 						quantity: parseInt(quantity),
-						maxPerOrder: maxPerOrder ? parseInt(maxPerOrder) : 1,
 						saleStart: saleStartTime ? new Date(saleStartTime) : null,
 						saleEnd: saleEndTime ? new Date(saleEndTime) : null,
-						isVisible: Boolean(isVisible),
 						requireInviteCode: Boolean(requireInviteCode),
-						isRefundable: Boolean(isRefundable),
-						refundDeadline: refundDeadline ? new Date(refundDeadline) : null,
 						soldCount: 0,
 						isActive: true
 					},
@@ -263,20 +241,16 @@ export default async function adminTicketsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				const { ticketId } = request.params;
-				const { name, description, price, quantity, maxPerOrder, saleStartTime, saleEndTime, isVisible, requireInviteCode, isRefundable, refundDeadline } = request.body;
+				const { name, description, price, quantity, saleStartTime, saleEndTime, requireInviteCode } = request.body;
 
 				const updateData = {};
 				if (name !== undefined) updateData.name = name;
 				if (description !== undefined) updateData.description = description;
 				if (price !== undefined) updateData.price = parseFloat(price);
 				if (quantity !== undefined) updateData.quantity = parseInt(quantity);
-				if (maxPerOrder !== undefined) updateData.maxPerOrder = parseInt(maxPerOrder);
 				if (saleStartTime !== undefined) updateData.saleStart = saleStartTime ? new Date(saleStartTime) : null;
 				if (saleEndTime !== undefined) updateData.saleEnd = saleEndTime ? new Date(saleEndTime) : null;
-				if (isVisible !== undefined) updateData.isVisible = Boolean(isVisible);
 				if (requireInviteCode !== undefined) updateData.requireInviteCode = Boolean(requireInviteCode);
-				if (isRefundable !== undefined) updateData.isRefundable = Boolean(isRefundable);
-				if (refundDeadline !== undefined) updateData.refundDeadline = refundDeadline ? new Date(refundDeadline) : null;
 
 				updateData.updatedAt = new Date();
 
