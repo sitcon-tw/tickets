@@ -95,6 +95,8 @@ model Event {
   tickets       Ticket[]
   registrations Registration[]
   invitationCodes InvitationCode[]
+  referrals     Referral[]
+  referralUsage ReferralUsage[]
   
   @@map("event")
 }
@@ -170,7 +172,6 @@ model Registration {
   checkInStatus   String   @default("not_checked") // not_checked, checked_in
   checkInTime     DateTime?
   referredBy      String?  // registration ID of referrer
-  referralCode    String?  // unique referral code for this registration
   editToken       String?  // for edit functionality
   editTokenExpiry DateTime?
   createdAt       DateTime @default(now())
@@ -182,9 +183,10 @@ model Registration {
   referrals        Registration[] @relation("RegistrationReferrals")
   referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
   files            File[]
+  referral         Referral?
+  referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
   @@unique([email, eventId])
-  @@unique([referralCode])
   @@unique([editToken])
   @@map("registration")
 }
@@ -200,6 +202,37 @@ model RegistrationData {
   
   @@unique([registrationId, fieldId])
   @@map("registration_data")
+}
+
+model Referral {
+  id              String   @id @default(cuid())
+  code            String   @unique // unique referral code
+  registrationId  String   @unique // one referral per registration
+  eventId         String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  registration    Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  event           Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  referredUsers   ReferralUsage[]
+  
+  @@map("referral")
+}
+
+model ReferralUsage {
+  id           String   @id @default(cuid())
+  referralId   String
+  registrationId String
+  eventId      String
+  usedAt       DateTime @default(now())
+  
+  referral     Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  registration Registration @relation("ReferralUsage", fields: [registrationId], references: [id], onDelete: Cascade)
+  event        Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  @@unique([referralId, registrationId]) // prevent duplicate usage
+  @@map("referral_usage")
 }
 
 model InvitationCode {

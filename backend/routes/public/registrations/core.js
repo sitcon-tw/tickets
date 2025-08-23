@@ -191,26 +191,23 @@ export default async function coreRegistrationRoutes(fastify, options) {
 				}
 
 				// Handle referral
-				let referrer = null;
+				let referrerRegistration = null;
 				if (referralCode) {
-					referrer = await prisma.registration.findFirst({
+					const referral = await prisma.referral.findFirst({
 						where: {
-							referralCode: referralCode,
+							code: referralCode,
 							eventId: eventId,
-							status: 'confirmed'
+							isActive: true
+						},
+						include: {
+							registration: true
 						}
 					});
+					
+					if (referral && referral.registration.status === 'confirmed') {
+						referrerRegistration = referral.registration;
+					}
 				}
-
-				// Generate unique check-in code
-				let checkInCode;
-				do {
-					checkInCode = generateCheckInCode();
-					const existing = await prisma.registration.findFirst({
-						where: { referralCode: checkInCode }
-					});
-					if (!existing) break;
-				} while (true);
 
 				// Create registration with transaction
 				const registration = await prisma.$transaction(async (tx) => {
@@ -222,10 +219,49 @@ export default async function coreRegistrationRoutes(fastify, options) {
 							email: formData.email,
 							phone: formData.phone || null,
 							status: 'confirmed',
-							referredBy: referrer?.id || null,
-							referralCode: checkInCode
+							referredBy: referrerRegistration?.id || null
 						}
 					});
+
+					// Generate unique referral code
+					let referralCode;
+					do {
+						referralCode = generateCheckInCode();
+						const existing = await tx.referral.findFirst({
+							where: { code: referralCode }
+						});
+						if (!existing) break;
+					} while (true);
+
+					// Create referral record for this registration
+					const newReferral = await tx.referral.create({
+						data: {
+							code: referralCode,
+							registrationId: newRegistration.id,
+							eventId: eventId
+						}
+					});
+
+					// If this registration was referred, record the usage
+					if (referrerRegistration) {
+						const referrerReferral = await tx.referral.findFirst({
+							where: {
+								registrationId: referrerRegistration.id,
+								eventId: eventId,
+								isActive: true
+							}
+						});
+
+						if (referrerReferral) {
+							await tx.referralUsage.create({
+								data: {
+									referralId: referrerReferral.id,
+									registrationId: newRegistration.id,
+									eventId: eventId
+								}
+							});
+						}
+					}
 
 					// Get form fields for this ticket
 					const ticketFields = await tx.ticketFormField.findMany({
@@ -261,25 +297,25 @@ export default async function coreRegistrationRoutes(fastify, options) {
 						});
 					}
 
-					return newRegistration;
+					return { registration: newRegistration, referralCode };
 				});
 
-				// Generate QR code
-				const qrCodeUrl = generateQRCodeDataURL(checkInCode);
+				// Generate QR code using the referral code as check-in code
+				const qrCodeUrl = generateQRCodeDataURL(registration.referralCode);
 
 				// Send confirmation email
 				try {
-					await sendRegistrationConfirmation(registration, event, qrCodeUrl);
+					await sendRegistrationConfirmation(registration.registration, event, qrCodeUrl);
 				} catch (emailError) {
 					console.error("Failed to send confirmation email:", emailError);
 					// Don't fail the registration if email sending fails
 				}
 
 				return successResponse({
-					registrationId: registration.id,
-					checkInCode: checkInCode,
+					registrationId: registration.registration.id,
+					checkInCode: registration.referralCode,
 					qrCodeUrl: qrCodeUrl,
-					referralLink: `${process.env.FRONTEND_URL || 'http://localhost:4321'}/register?ref=${checkInCode}`,
+					referralLink: `${process.env.FRONTEND_URL || 'http://localhost:4321'}/register?ref=${registration.referralCode}`,
 					message: "報名成功！確認信件已發送至您的信箱"
 				});
 			} catch (error) {

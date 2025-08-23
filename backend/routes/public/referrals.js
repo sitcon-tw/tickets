@@ -1,5 +1,6 @@
-import prisma from "../../../config/database.js";
-import { errorResponse, successResponse } from "../../../utils/response.js";
+import prisma from "../../config/database.js";
+import { generateCheckInCode } from "../../utils/qrcode.js";
+import { errorResponse, successResponse } from "../../utils/response.js";
 
 export default async function referralRoutes(fastify, options) {
 	// 獲取專屬推薦連結
@@ -55,31 +56,33 @@ export default async function referralRoutes(fastify, options) {
 			try {
 				const { regId } = request.params;
 
-				// Find registration
-				const registration = await prisma.registration.findFirst({
+				// Find referral by registration ID
+				const referral = await prisma.referral.findFirst({
 					where: {
-						id: regId,
-						status: 'confirmed'
+						registrationId: regId,
+						isActive: true
 					},
 					include: {
-						event: true
+						registration: {
+							include: {
+								event: true
+							}
+						}
 					}
 				});
 
-				if (!registration) {
+				if (!referral || referral.registration.status !== 'confirmed') {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Use the registration's referral code (check-in code) as the referral identifier
-				const referralCode = registration.referralCode;
 				const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
-				const referralLink = `${baseUrl}/register?ref=${referralCode}`;
+				const referralLink = `${baseUrl}/register?ref=${referral.code}`;
 
 				return successResponse({
 					referralLink: referralLink,
-					referralCode: referralCode,
-					eventId: registration.eventId
+					referralCode: referral.code,
+					eventId: referral.eventId
 				});
 			} catch (error) {
 				console.error("Get referral link error:", error);
@@ -162,58 +165,131 @@ export default async function referralRoutes(fastify, options) {
 			try {
 				const { regId } = request.params;
 
-				// Find registration
-				const registration = await prisma.registration.findFirst({
+				// Find referral by registration ID
+				const referral = await prisma.referral.findFirst({
 					where: {
-						id: regId,
-						status: 'confirmed'
+						registrationId: regId,
+						isActive: true
+					},
+					include: {
+						registration: true
 					}
 				});
 
-				if (!registration) {
+				if (!referral || referral.registration.status !== 'confirmed') {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get all referrals made by this registration
-				const referrals = await prisma.registration.findMany({
+				// Get all referral usages for this referral
+				const referralUsages = await prisma.referralUsage.findMany({
 					where: {
-						referredBy: registration.id
+						referralId: referral.id
 					},
 					include: {
-						ticket: true
+						registration: {
+							include: {
+								ticket: true
+							}
+						}
 					},
 					orderBy: {
-						createdAt: 'desc'
+						usedAt: 'desc'
 					}
 				});
 
 				// Count successful referrals (confirmed registrations)
-				const successfulReferrals = referrals.filter(r => r.status === 'confirmed');
+				const successfulReferrals = referralUsages.filter(usage => usage.registration.status === 'confirmed');
 
 				// Build referral list with anonymized data for privacy
-				const referralList = referrals.map(referral => ({
-					id: referral.id,
-					status: referral.status,
-					ticketName: referral.ticket.name,
-					registeredAt: referral.createdAt,
+				const referralList = referralUsages.map(usage => ({
+					id: usage.registration.id,
+					status: usage.registration.status,
+					ticketName: usage.registration.ticket.name,
+					registeredAt: usage.usedAt,
 					// Don't expose email or other personal info
-					email: referral.email.replace(/(.{2}).*(@.*)/, '$1***$2') // Partially hide email
+					email: usage.registration.email.replace(/(.{2}).*(@.*)/, '$1***$2') // Partially hide email
 				}));
 
 				return successResponse({
-					totalReferrals: referrals.length,
+					totalReferrals: referralUsages.length,
 					successfulReferrals: successfulReferrals.length,
 					referralList: referralList,
 					referrerInfo: {
-						id: registration.id,
-						checkInCode: registration.referralCode,
-						email: registration.email.replace(/(.{2}).*(@.*)/, '$1***$2')
+						id: referral.registration.id,
+						checkInCode: referral.code,
+						email: referral.registration.email.replace(/(.{2}).*(@.*)/, '$1***$2')
 					}
 				});
 			} catch (error) {
 				console.error("Get referral stats error:", error);
 				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", error.message, 500);
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// 驗證推薦碼
+	fastify.post(
+		"/referrals/validate",
+		{
+			schema: {
+				description: "驗證推薦碼",
+				tags: ["referrals"],
+				body: {
+					type: 'object',
+					properties: {
+						referralCode: {
+							type: 'string',
+							description: '推薦碼'
+						},
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['referralCode', 'eventId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							message: { type: 'string' },
+							data: {
+								type: 'object',
+								properties: {
+									isValid: { type: 'boolean' },
+									referrerId: { type: 'string' }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		async (request, reply) => {
+			try {
+				const { referralCode, eventId } = request.body;
+
+				const referral = await prisma.referral.findFirst({
+					where: {
+						code: referralCode,
+						eventId: eventId,
+						isActive: true
+					},
+					include: {
+						registration: true
+					}
+				});
+
+				return successResponse({
+					isValid: !!(referral && referral.registration.status === 'confirmed'),
+					referrerId: referral?.registrationId || null
+				});
+			} catch (error) {
+				console.error("Validate referral code error:", error);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", error.message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
