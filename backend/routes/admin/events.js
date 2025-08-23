@@ -6,6 +6,118 @@ export default async function adminEventsRoutes(fastify, options) {
 	// Add auth middleware to all admin routes
 	fastify.addHook("preHandler", requireAdmin);
 
+	// 創建新活動
+	fastify.post(
+		"/events",
+		{
+			schema: {
+				description: "創建新活動",
+				tags: ["admin-events"],
+				body: {
+					type: 'object',
+					properties: {
+						name: {
+							type: 'string',
+							description: '活動名稱',
+							minLength: 1
+						},
+						description: {
+							type: 'string',
+							description: '活動描述'
+						},
+						startDate: {
+							type: 'string',
+							format: 'date-time',
+							description: '開始時間'
+						},
+						endDate: {
+							type: 'string',
+							format: 'date-time',
+							description: '結束時間'
+						},
+						location: {
+							type: 'string',
+							description: '地點'
+						}
+					},
+					required: ['name', 'startDate', 'endDate']
+				},
+				response: {
+					201: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							data: {
+								type: 'object',
+								properties: {
+									id: { type: 'string' },
+									name: { type: 'string' },
+									description: { type: 'string' },
+									startDate: { type: 'string', format: 'date-time' },
+									endDate: { type: 'string', format: 'date-time' },
+									location: { type: 'string' },
+									isActive: { type: 'boolean' },
+									createdAt: { type: 'string', format: 'date-time' },
+									updatedAt: { type: 'string', format: 'date-time' }
+								}
+							},
+							message: { type: 'string' }
+						}
+					},
+					400: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							error: {
+								type: 'object',
+								properties: {
+									code: { type: 'string' },
+									message: { type: 'string' }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		async (request, reply) => {
+			try {
+				const { name, description, startDate, endDate, location } = request.body;
+
+				// Validate dates
+				const start = new Date(startDate);
+				const end = new Date(endDate);
+
+				if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "無效的日期格式", null, 400);
+					return reply.code(statusCode).send(response);
+				}
+
+				if (start >= end) {
+					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "開始時間必須早於結束時間", null, 400);
+					return reply.code(statusCode).send(response);
+				}
+
+				const event = await prisma.event.create({
+					data: {
+						name,
+						description,
+						startDate: start,
+						endDate: end,
+						location,
+						isActive: true
+					}
+				});
+
+				return reply.code(201).send(successResponse(event, "活動創建成功"));
+			} catch (error) {
+				console.error("Create event error:", error);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "創建活動失敗", null, 500);
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
 	// 獲取活動詳細資訊
 	fastify.get(
 		"/events/:eventId",
