@@ -1,6 +1,7 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "@layouts/Layout.astro";
 import * as i18n from "src/i18n";
+import Nav from "@components/Nav.astro";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	term: {
@@ -28,6 +29,7 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="login" title={t.login} theme="#FFF" lang={lang}>
+	<Nav />
 	<main transition:animate="fade">
 		<section>
 			<h1>報名</h1>

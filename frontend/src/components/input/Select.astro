@@ -1,0 +1,24 @@
+---
+const { label, id, options, required = true } = Astro.props;
+---
+
+<label for={id}>{label}</label>
+<select id={id} aria-label={label} required={required}>
+	<option value="">請選擇...</option>
+	{options.map(option => <option value={option}>{option}</option>)}
+</select>
+
+<style>
+	label {
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+	select {
+		width: 100%;
+		padding: 0.4rem 0.8rem;
+		border: 1px solid var(--black);
+		border-radius: 0.25rem;
+		background-color: white;
+		max-width: 15rem;
+	}
+</style>

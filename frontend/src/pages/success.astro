@@ -1,46 +1,71 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "@layouts/Layout.astro";
+import Nav from "@components/Nav.astro";
 import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
-	term: {
-		"zh-Hant": "使用者服務條款",
-		"zh-Hans": "用户服务条款",
-		en: "Terms of Service"
+	success: {
+		"zh-Hant": "報名成功！",
+		"zh-Hans": "报名成功！",
+		en: "Registration Successful!"
 	},
-	agree: {
-		"zh-Hant": "我同意以上條款",
-		"zh-Hans": "我同意以上条款",
-		en: "I agree to the above terms"
+	emailCheck: {
+		"zh-Hant": "請檢查電子郵件確認",
+		"zh-Hans": "请检查电子邮件确认",
+		en: "Please check your email for confirmation."
 	},
-	signUp: {
-		"zh-Hant": "註冊",
-		"zh-Hans": "注册",
-		en: "Sign Up"
+	participantCount: {
+		"zh-Hant": "你是第",
+		"zh-Hans": "你是第",
+		en: "You are the "
 	},
-	newAccount: {
-		"zh-Hant": "註冊新帳號",
-		"zh-Hans": "注册新账号",
-		en: "Create New Account"
+	participantSuffix: {
+		"zh-Hant": "位參與者",
+		"zh-Hans": "位参与者",
+		en: "th participant"
+	},
+	inviteFriends: {
+		"zh-Hant": "歡迎使用以下優惠碼 邀請朋友一起參加：",
+		"zh-Hans": "欢迎使用以下优惠码 邀请朋友一起参加：",
+		en: "Use the following code to invite friends:"
+	},
+	copyInvite: {
+		"zh-Hant": "複製邀請連結",
+		"zh-Hans": "复制邀请链接",
+		en: "Copy invite link"
+	},
+	reward: {
+		"zh-Hant": "邀請三位朋友可以獲得◯◯◯",
+		"zh-Hans": "邀请三位朋友可以获得◯◯◯",
+		en: "Invite three friends to earn ◯◯◯"
+	},
+	edit: {
+		"zh-Hant": "編輯報名資訊",
+		"zh-Hans": "编辑报名信息",
+		en: "Edit registration info"
 	}
 });
 const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="login" title={t.login} theme="#FFF" lang={lang}>
+	<Nav />
 	<main transition:animate="fade">
 		<section>
-			<h1>報名成功</h1>
-			<div class="content">這裡還沒做</div>
+			<h1>{t.success}</h1>
+			<p>{t.emailCheck}</p>
+			<p>{t.participantCount} <span>40</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
+			<div class="content">ACDEFG</div>
+			<div id="copy">{t.copyInvite}</div>
+			<p>{t.reward}</p>
+			<a href="form" class="button">{t.edit}</a>
 		</section>
 	</main>
 
 	<style is:inline>
-		body {
-			position: relative;
-		}
 		h1 {
 			margin-block: 1rem;
+			font-size: 3rem;
 			text-align: center;
 		}
 
@@ -50,6 +75,7 @@ const l = i18n.l(Astro.url);
 			flex-direction: column;
 			max-height: calc(100vh - 4rem);
 			gap: 1rem;
+			text-align: center;
 		}
 
 		.button {
@@ -58,12 +84,23 @@ const l = i18n.l(Astro.url);
 		label {
 			cursor: pointer;
 		}
+		span {
+			font-size: 2em;
+		}
 		.content {
 			border: 1px solid var(--black);
-			padding: 1.5rem;
+			padding: 0.8rem 1.5rem;
 			height: 0;
 			overflow-y: auto;
 			flex: 1;
+			width: 100%;
+			max-width: 10rem;
+			margin: auto;
+		}
+		#copy {
+			text-decoration: underline;
+			cursor: pointer;
+			margin-bottom: 1.5rem;
 		}
 	</style>
 </Layout>

@@ -1,10 +1,11 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import Header from "../components/home/Header.astro";
-import Welcome from "../components/home/Welcome.astro";
-import Tickets from "../components/home/Tickets.astro";
-import Info from "../components/home/Info.astro";
-import Footer from "../components/Footer.astro";
+import Layout from "@layouts/Layout.astro";
+import Header from "@components/home/Header.astro";
+import Welcome from "@components/home/Welcome.astro";
+import Tickets from "@components/home/Tickets.astro";
+import Info from "@components/home/Info.astro";
+import Footer from "@components/Footer.astro";
+import Nav from "@components/Nav.astro";
 import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
@@ -22,6 +23,7 @@ const t = i18n.t(lang, {
 ---
 
 <Layout i18n={t.t} path="" title={t.title} description={t.description} theme="#333" lang={lang}>
+	<Nav />
 	<main transition:animate="fade">
 		<Header />
 		<Welcome />

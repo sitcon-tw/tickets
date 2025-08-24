@@ -1,0 +1,22 @@
+---
+const { label, id, question, required = true } = Astro.props;
+---
+
+<p>{question}</p>
+<input type="checkbox" id={id} aria-label={label} required={required} />
+<label for={id}>{label}</label>
+
+<style>
+	label {
+		margin-right: 1rem;
+	}
+	input[type="checkbox"] {
+		width: 100%;
+		padding: 0.4rem 0.8rem;
+		border: 1px solid var(--black);
+		border-radius: 0.25rem;
+	}
+	p {
+		margin-bottom: 1rem;
+	}
+</style>

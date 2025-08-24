@@ -1,6 +1,7 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { Content as Terms } from "src/pages/markdown/terms.md";
+import Layout from "@layouts/Layout.astro";
+import Nav from "@components/Nav.astro";
+import { Content as TermsContent } from "src/pages/markdown/terms.md";
 import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
@@ -29,11 +30,12 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="login" title={t.login} theme="#FFF" lang={lang}>
+	<Nav />
 	<main transition:animate="fade">
 		<section>
 			<h1>{t.newAccount}</h1>
 			<div class="content">
-				<Terms />
+				<TermsContent />
 			</div>
 			<div class="input">
 				<input type="checkbox" name="" id="checkbox" />
