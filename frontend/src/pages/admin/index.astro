@@ -1,0 +1,28 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminNav from "@components/AdminNav.astro";
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	title: {
+		"zh-Hant": "找不到頁面",
+		"zh-Hans": "找不到页面",
+		en: "Page Not Found"
+	},
+	description: {
+		"zh-Hant": "抱歉，您訪問的頁面不存在。",
+		"zh-Hans": "抱歉，您访问的页面不存在。",
+		en: "Sorry, the page you are looking for does not exist."
+	}
+});
+const l = i18n.l(Astro.url);
+---
+
+<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<AdminNav />
+	<main>
+		<h1>總覽</h1>
+	</main>
+
+	<style></style>
+</Layout>

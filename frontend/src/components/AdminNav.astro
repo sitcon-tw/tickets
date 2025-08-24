@@ -1,0 +1,64 @@
+---
+import * as i18n from "src/i18n";
+import SITCONLogo from "@assets/img/SITCON.svg";
+const l = i18n.l(Astro.url);
+---
+
+<aside>
+	<div class="activity">SITCON 2026</div>
+	<div class="title">票券系統</div>
+	<nav>
+		<ul>
+			<li><a href={l("/admin")}>總覽</a></li>
+			<li><a href={l("/admin/intro")}>簡介</a></li>
+			<li><a href={l("/admin/tickets")}>票種</a></li>
+			<li><a href={l("/admin/forms")}>表單</a></li>
+			<li><a href={l("/admin/invites")}>邀請碼</a></li>
+			<li><a href={l("/admin/registrations")}>報名列表</a></li>
+		</ul>
+	</nav>
+	<div class="links">
+		<div class="user">毛哥EM</div>
+		<div class="logout"><a href={l("/admin/logout")}>登出</a>・<a href="/">返回首頁</a></div>
+	</div>
+</aside>
+
+<style is:global>
+	body {
+		display: flex;
+	}
+	main {
+		padding-top: 8rem;
+		margin-left: 3rem;
+	}
+	aside {
+		background-color: var(--blackAF);
+		padding: 2rem;
+		width: 17rem;
+		display: flex;
+		flex-direction: column;
+		font-size: 1.2rem;
+	}
+	.activity {
+		font-size: 1.2rem;
+	}
+	.title {
+		font-size: 2rem;
+	}
+	nav {
+		margin-top: 2rem;
+		flex: 1;
+	}
+	nav li {
+		list-style: none;
+	}
+	nav ul {
+		padding-left: .8rem;
+	}
+	aside a {
+		text-decoration: none;
+	}
+	aside a:hover {
+		text-decoration: underline;
+	}
+</style>
