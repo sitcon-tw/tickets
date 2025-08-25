@@ -110,8 +110,17 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 	}
 
 	:root {
-		--black: oklch(21% 0.006 285.885);
-		--white: oklch(96.7% 0.001 286.375);
+		--color-gray-50: oklch(0.985 0.002 247.839);
+		--color-gray-100: oklch(0.967 0.003 264.542);
+		--color-gray-200: oklch(0.928 0.006 264.531);
+		--color-gray-300: oklch(0.872 0.01 258.338);
+		--color-gray-400: oklch(0.707 0.022 261.325);
+		--color-gray-500: oklch(0.551 0.027 264.364);
+		--color-gray-600: oklch(0.446 0.03 256.802);
+		--color-gray-700: oklch(0.373 0.034 259.733);
+		--color-gray-800: oklch(0.278 0.033 256.848);
+		--color-gray-900: oklch(0.21 0.034 264.665);
+		--color-gray-950: oklch(0.13 0.028 261.692);
 	}
 
 	body {
@@ -127,8 +136,8 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 			"Open Sans",
 			"Helvetica Neue",
 			sans-serif;
-		background-color: var(--white);
-		color: var(--black);
+		background-color: var(--color-gray-900);
+		color: var(--color-gray-100);
 		min-height: 100dvh;
 	}
 
@@ -151,30 +160,31 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 	}
 
 	.button {
-		background-color: var(--white);
-		border: 2px solid var(--black);
-		padding: 0.3rem 0.5rem;
+		background-color: var(--color-gray-700);
+		border: 2px solid var(--color-gray-500);
+		padding: 0.5rem 0.8rem;
 		text-decoration: none;
 		display: block;
 		width: fit-content;
 		cursor: pointer;
 		font-size: 1.1rem;
 		font-family: inherit;
+		border-radius: 0.5rem;
 		color: inherit;
 	}
 
 	input {
-		background-color: transparent;
+		background-color: var(--color-gray-800);
 		color: inherit;
 		font-family: inherit;
 	}
 
 	.button:hover {
-		background-color: #efefef;
+		background-color: var(--color-gray-600);
 	}
 
 	.button:active {
-		background-color: #ddd;
+		background-color: var(--color-gray-500);
 	}
 
 	.content h2 {
@@ -210,23 +220,7 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 	li {
 		margin-bottom: 0.5rem;
 	}
-
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--black: oklch(96.7% 0.001 286.375);
-			--white: oklch(21% 0.006 285.885);
-			--blackAF: oklch(14.1% 0.005 285.823);
-		}
-
-		.button:hover {
-			background-color: #323232;
-		}
-
-		.button:active {
-			background-color: #848484;
-		}
-		nav img {
-			filter: invert(1);
-		}
+	nav img {
+		filter: invert(1);
 	}
 </style>

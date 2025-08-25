@@ -5,24 +5,572 @@ import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
-		"zh-Hant": "找不到頁面",
-		"zh-Hans": "找不到页面",
-		en: "Page Not Found"
+		"zh-Hant": "管理後台總覽",
+		"zh-Hans": "管理后台总览",
+		en: "Admin Dashboard"
 	},
 	description: {
-		"zh-Hant": "抱歉，您訪問的頁面不存在。",
-		"zh-Hans": "抱歉，您访问的页面不存在。",
-		en: "Sorry, the page you are looking for does not exist."
+		"zh-Hant": "票券銷售數據分析儀表板",
+		"zh-Hans": "票券销售数据分析仪表板",
+		en: "Ticket sales analytics dashboard"
 	}
 });
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+<Layout i18n={t.t} path="" title={t.title} theme="var(--color-gray-800)" lang={lang}>
 	<AdminNav />
-	<main>
-		<h1>總覽</h1>
+	<main class="dashboard">
+		<h1 style="color: var(--color-gray-100)">總覽</h1>
+
+		<!-- Summary Cards -->
+		<div class="stats-grid">
+			<div class="stat-card">
+				<h3>總票券數</h3>
+				<div class="stat-number">500</div>
+				<div class="stat-label">張票券</div>
+			</div>
+			<div class="stat-card">
+				<h3>已售出</h3>
+				<div class="stat-number">347</div>
+				<div class="stat-label">張票券</div>
+			</div>
+			<div class="stat-card">
+				<h3>剩餘票券</h3>
+				<div class="stat-number">153</div>
+				<div class="stat-label">張票券</div>
+			</div>
+			<div class="stat-card">
+				<h3>銷售率</h3>
+				<div class="stat-number">69.4%</div>
+				<div class="stat-label">完成度</div>
+			</div>
+		</div>
+
+		<!-- Charts Section -->
+		<div class="charts-section">
+			<div class="chart-container trend">
+				<h2>票券銷售趨勢</h2>
+				<canvas id="ticketTrendsChart" width="100%" height="50px"></canvas>
+			</div>
+
+			<div class="chart-container">
+				<h2>票券類型分布</h2>
+				<canvas id="ticketDistributionChart" width="100%" height="100%"></canvas>
+			</div>
+		</div>
+
+		<!-- Ticket Progress Charts -->
+		<div class="progress-section">
+			<h2>票券銷售進度</h2>
+			<div class="progress-grid">
+				<div class="progress-card">
+					<h3>學生票</h3>
+					<div class="progress-chart-wrapper">
+						<canvas id="studentTicketProgress" width="200" height="100"></canvas>
+					</div>
+					<div class="remaining-display">
+						<div class="remaining-number">26</div>
+						<div class="remaining-label">張剩餘</div>
+					</div>
+					<div class="progress-details">
+						<div class="detail-item">
+							<span>總數</span>
+							<span>150</span>
+						</div>
+						<div class="detail-item">
+							<span>已售</span>
+							<span>124</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="progress-card">
+					<h3>普通票</h3>
+					<div class="progress-chart-wrapper">
+						<canvas id="regularTicketProgress" width="200" height="100"></canvas>
+					</div>
+					<div class="remaining-display">
+						<div class="remaining-number">57</div>
+						<div class="remaining-label">張剩餘</div>
+					</div>
+					<div class="progress-details">
+						<div class="detail-item">
+							<span>總數</span>
+							<span>200</span>
+						</div>
+						<div class="detail-item">
+							<span>已售</span>
+							<span>143</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="progress-card">
+					<h3>遠道而來票</h3>
+					<div class="progress-chart-wrapper">
+						<canvas id="distantTicketProgress" width="200" height="100"></canvas>
+					</div>
+					<div class="remaining-display">
+						<div class="remaining-number">35</div>
+						<div class="remaining-label">張剩餘</div>
+					</div>
+					<div class="progress-details">
+						<div class="detail-item">
+							<span>總數</span>
+							<span>80</span>
+						</div>
+						<div class="detail-item">
+							<span>已售</span>
+							<span>45</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="progress-card">
+					<h3>邀請票</h3>
+					<div class="progress-chart-wrapper">
+						<canvas id="inviteTicketProgress" width="200" height="100"></canvas>
+					</div>
+					<div class="remaining-display">
+						<div class="remaining-number">25</div>
+						<div class="remaining-label">張剩餘</div>
+					</div>
+					<div class="progress-details">
+						<div class="detail-item">
+							<span>總數</span>
+							<span>50</span>
+						</div>
+						<div class="detail-item">
+							<span>已售</span>
+							<span>25</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="progress-card">
+					<h3>開源貢獻票</h3>
+					<div class="progress-chart-wrapper">
+						<canvas id="opensourceTicketProgress" width="200" height="100"></canvas>
+					</div>
+					<div class="remaining-display">
+						<div class="remaining-number">10</div>
+						<div class="remaining-label">張剩餘</div>
+					</div>
+					<div class="progress-details">
+						<div class="detail-item">
+							<span>總數</span>
+							<span>20</span>
+						</div>
+						<div class="detail-item">
+							<span>已售</span>
+							<span>10</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</main>
 
-	<style></style>
+	<script>
+		import { Chart, registerables } from "chart.js";
+		Chart.register(...registerables);
+
+		// Fake data for demonstration
+		const ticketTypes = ["學生票", "普通票", "遠道而來票", "邀請票", "開源貢獻票"];
+		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
+
+		document.addEventListener("astro:page-load", () => {
+			if (!window.location.pathname.endsWith("/admin/")) return;
+
+			// Line Chart - Ticket Sales Trends Over Time
+			const trendsCtx = document.getElementById("ticketTrendsChart")?.getContext("2d");
+			if (trendsCtx) {
+				const trendsChart = new Chart(trendsCtx, {
+					type: "line",
+					data: {
+						labels: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月"],
+						datasets: [
+							{
+								label: "學生票",
+								data: [150, 145, 140, 135, 130, 128, 126, 124],
+								borderColor: colors[0],
+								backgroundColor: colors[0] + "20",
+								tension: 0.4
+							},
+							{
+								label: "普通票",
+								data: [200, 190, 180, 170, 160, 155, 148, 143],
+								borderColor: colors[1],
+								backgroundColor: colors[1] + "20",
+								tension: 0.4
+							},
+							{
+								label: "遠道而來票",
+								data: [80, 75, 70, 65, 58, 52, 48, 45],
+								borderColor: colors[2],
+								backgroundColor: colors[2] + "20",
+								tension: 0.4
+							},
+							{
+								label: "邀請票",
+								data: [50, 48, 45, 40, 35, 32, 28, 25],
+								borderColor: colors[3],
+								backgroundColor: colors[3] + "20",
+								tension: 0.4
+							},
+							{
+								label: "開源貢獻票",
+								data: [20, 18, 16, 15, 13, 12, 11, 10],
+								borderColor: colors[4],
+								backgroundColor: colors[4] + "20",
+								tension: 0.4
+							}
+						]
+					},
+					options: {
+						responsive: true,
+						plugins: {
+							title: {
+								display: true,
+								text: "剩餘票券數量變化 (過去8個月)",
+								color: "#f3f4f6" // var(--color-gray-100)
+							},
+							legend: {
+								position: "bottom",
+								labels: {
+									color: "#f3f4f6" // var(--color-gray-100)
+								}
+							}
+						},
+						scales: {
+							y: {
+								beginAtZero: true,
+								title: {
+									display: true,
+									text: "剩餘票券數量",
+									color: "#f3f4f6" // var(--color-gray-100)
+								},
+								ticks: {
+									color: "#d1d5db" // var(--color-gray-300)
+								},
+								grid: {
+									color: "#4b5563" // var(--color-gray-600)
+								}
+							},
+							x: {
+								title: {
+									display: true,
+									text: "月份",
+									color: "#f3f4f6" // var(--color-gray-100)
+								},
+								ticks: {
+									color: "#d1d5db" // var(--color-gray-300)
+								},
+								grid: {
+									color: "#4b5563" // var(--color-gray-600)
+								}
+							}
+						}
+					}
+				});
+			}
+
+			// Doughnut Chart - Ticket Distribution
+			const distributionCtx = document.getElementById("ticketDistributionChart")?.getContext("2d");
+			if (distributionCtx) {
+				const distributionChart = new Chart(distributionCtx, {
+					type: "doughnut",
+					data: {
+						labels: ticketTypes,
+						datasets: [
+							{
+								label: "剩餘票券",
+								data: [26, 57, 35, 25, 10],
+								backgroundColor: colors,
+								borderWidth: 2,
+								borderColor: "#fff"
+							}
+						]
+					},
+					options: {
+						responsive: true,
+						plugins: {
+							title: {
+								display: true,
+								text: "各類型剩餘票券分布",
+								color: "#f3f4f6" // var(--color-gray-100)
+							},
+							legend: {
+								position: "bottom",
+								labels: {
+									color: "#f3f4f6" // var(--color-gray-100)
+								}
+							},
+							tooltip: {
+								titleColor: "#f3f4f6", // var(--color-gray-100)
+								bodyColor: "#f3f4f6", // var(--color-gray-100)
+								backgroundColor: "#374151", // var(--color-gray-700)
+								borderColor: "#6b7280", // var(--color-gray-500)
+								borderWidth: 1,
+								callbacks: {
+									label: function (context) {
+										const total = context.dataset.data.reduce((a, b) => a + b, 0);
+										const percentage = ((context.parsed / total) * 100).toFixed(1);
+										return context.label + ": " + context.parsed + " 張 (" + percentage + "%)";
+									}
+								}
+							}
+						}
+					}
+				});
+			}
+
+			// Progress Charts (Half Doughnut)
+			const ticketData = [
+				{ id: "studentTicketProgress", sold: 124, total: 150, color: "#FF6384" },
+				{ id: "regularTicketProgress", sold: 143, total: 200, color: "#36A2EB" },
+				{ id: "distantTicketProgress", sold: 45, total: 80, color: "#FFCE56" },
+				{ id: "inviteTicketProgress", sold: 25, total: 50, color: "#4BC0C0" },
+				{ id: "opensourceTicketProgress", sold: 10, total: 20, color: "#9966FF" }
+			];
+
+			ticketData.forEach(ticket => {
+				const ctx = document.getElementById(ticket.id)?.getContext("2d");
+				if (ctx) {
+					const percentage = ((ticket.sold / ticket.total) * 100).toFixed(1);
+					const remaining = ticket.total - ticket.sold;
+
+					new Chart(ctx, {
+						type: "doughnut",
+						data: {
+							labels: ["已售出", "剩餘"],
+							datasets: [
+								{
+									data: [ticket.sold, remaining],
+									backgroundColor: [ticket.color, "#E5E5E5"],
+									borderWidth: 0,
+									cutout: "70%"
+								}
+							]
+						},
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							circumference: 180,
+							rotation: 270,
+							plugins: {
+								legend: {
+									display: false
+								},
+								tooltip: {
+									titleColor: "#f3f4f6", // var(--color-gray-100)
+									bodyColor: "#f3f4f6", // var(--color-gray-100)
+									backgroundColor: "#374151", // var(--color-gray-700)
+									borderColor: "#6b7280", // var(--color-gray-500)
+									borderWidth: 1,
+									callbacks: {
+										label: function (context) {
+											return context.label + ": " + context.parsed + " 張";
+										}
+									}
+								}
+							}
+						},
+						plugins: [
+							{
+								afterDraw: function (chart) {
+									const ctx = chart.ctx;
+									const width = chart.width;
+									const height = chart.height;
+
+									ctx.restore();
+									const fontSize = (height / 100).toFixed(2);
+									ctx.font = `bold ${fontSize}em sans-serif`;
+									ctx.textBaseline = "middle";
+									ctx.fillStyle = ticket.color;
+
+									const text = percentage + "%";
+									const textX = Math.round((width - ctx.measureText(text).width) / 2);
+									const textY = height / 1.4;
+
+									ctx.fillText(text, textX, textY);
+									ctx.save();
+								}
+							}
+						]
+					});
+				}
+			});
+		});
+	</script>
+
+	<style>
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 1.5rem;
+			margin-bottom: 3rem;
+		}
+
+		.stat-card {
+			background: var(--color-gray-800);
+			padding: 1.5rem;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			text-align: center;
+		}
+
+		.stat-card h3 {
+			margin: 0 0 1rem 0;
+			color: var(--color-gray-300);
+			font-size: 0.9rem;
+			font-weight: 500;
+		}
+
+		.stat-number {
+			font-size: 2.5rem;
+			font-weight: bold;
+			color: var(--color-gray-100);
+			margin-bottom: 0.5rem;
+		}
+
+		.stat-label {
+			color: var(--color-gray-100);
+			font-size: 0.8rem;
+		}
+
+		.charts-section {
+			display: flex;
+			gap: 2rem;
+			margin-bottom: 3rem;
+			flex-wrap: wrap;
+		}
+
+		.chart-container {
+			background: var(--color-gray-800);
+			padding: 1.5rem;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			flex: 1;
+		}
+		.trend {
+			flex: 2;
+		}
+
+		.chart-container h2 {
+			margin: 0 0 1rem 0;
+			color: var(--color-gray-100);
+			font-size: 1.2rem;
+		}
+
+		.progress-section {
+			background: var(--color-gray-800);
+			padding: 1.5rem;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.progress-section h2 {
+			margin: 0 0 1.5rem 0;
+			color: var(--color-gray-100);
+			font-size: 1.2rem;
+		}
+
+		.progress-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+			gap: 1.5rem;
+		}
+
+		.progress-card {
+			background: var(--color-gray-700);
+			padding: 1.5rem;
+			border-radius: 12px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			text-align: center;
+		}
+
+		.progress-card h3 {
+			margin: 0 0 1.5rem 0;
+			color: var(--color-gray-200);
+			font-size: 1.1rem;
+			font-weight: 600;
+		}
+
+		.progress-chart-wrapper {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 1rem;
+		}
+
+		.remaining-display {
+			margin-bottom: 1.5rem;
+			padding: 1rem;
+			background: var(--color-gray-600);
+			border-radius: 8px;
+		}
+
+		.remaining-number {
+			font-size: 2.5rem;
+			font-weight: bold;
+			color: var(--color-gray-100);
+			line-height: 1;
+		}
+
+		.remaining-label {
+			font-size: 0.9rem;
+			color: var(--color-gray-300);
+			margin-top: 0.25rem;
+		}
+
+		.progress-details {
+			display: flex;
+			justify-content: space-around;
+			gap: 1rem;
+		}
+
+		.detail-item {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 0.25rem;
+		}
+
+		.detail-item span:first-child {
+			color: var(--color-gray-300);
+			font-size: 0.85rem;
+			font-weight: 500;
+		}
+
+		.detail-item span:last-child {
+			font-weight: 600;
+			color: var(--color-gray-200);
+			font-size: 1.1rem;
+		}
+
+		@media (max-width: 768px) {
+			.charts-section {
+				grid-template-columns: 1fr;
+			}
+
+			.stats-grid {
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.progress-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.progress-details {
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+
+			.detail-item {
+				flex-direction: row;
+				justify-content: space-between;
+			}
+		}
+	</style>
 </Layout>

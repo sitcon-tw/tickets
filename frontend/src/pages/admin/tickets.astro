@@ -1,0 +1,857 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminNav from "@components/AdminNav.astro";
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	title: {
+		"zh-Hant": "管理後台",
+		"zh-Hans": "管理后台",
+		en: "Admin Dashboard"
+	},
+	description: {
+		"zh-Hant": "票券管理系統後台總覽",
+		"zh-Hans": "票券管理系统后台总览",
+		en: "Ticket management system admin dashboard"
+	}
+});
+const l = i18n.l(Astro.url);
+---
+
+<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<AdminNav />
+	<main>
+		<h1>票種</h1>
+
+		<section class="ticket-overview">
+			<div class="table-container">
+				<table class="tickets-table">
+					<thead>
+						<tr>
+							<th>票種</th>
+							<th>販售時間</th>
+							<th>狀態</th>
+							<th>數量</th>
+							<th>剩餘</th>
+							<th>無效票</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tickets-tbody">
+						<!-- Tickets will be rendered here by JavaScript -->
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="add-ticket-section">
+			<button class="button add-ticket-btn" id="add-ticket-btn">
+				<span>+ 新增票種</span>
+			</button>
+		</section>
+	</main>
+
+	<!-- HTML Templates -->
+	<template id="ticket-row-template">
+		<tr>
+			<td data-label="票種" class="ticket-name">
+				<span class="display-value"></span>
+				<input type="text" class="edit-input" style="display: none;" />
+			</td>
+			<td data-label="販售時間" class="time-cell">
+				<span class="display-value"></span>
+				<input type="text" class="edit-input" style="display: none;" />
+			</td>
+			<td data-label="狀態">
+				<span class="display-value">
+					<span class="status-badge"></span>
+				</span>
+				<select class="edit-input none" style="display: none;">
+					<option value="販售中">販售中</option>
+					<option value="結束販售">結束販售</option>
+				</select>
+			</td>
+			<td data-label="數量">
+				<span class="display-value"></span>
+				<input type="text" class="edit-input" style="display: none;" />
+			</td>
+			<td data-label="剩餘">
+				<span class="display-value"></span>
+				<input type="number" class="edit-input" style="display: none;" />
+			</td>
+			<td data-label="無效票">
+				<span class="display-value"></span>
+				<input type="number" class="edit-input" style="display: none;" />
+			</td>
+			<td data-label="操作" class="actions-cell">
+				<div class="action-buttons">
+					<button class="edit-btn button">編輯</button>
+					<button class="save-btn button" style="display: none;">儲存</button>
+					<button class="cancel-btn button" style="display: none;">取消</button>
+					<button class="delete-btn button delete">刪除</button>
+				</div>
+			</td>
+		</tr>
+	</template>
+
+	<template id="new-ticket-row-template">
+		<tr data-editing="true">
+			<td data-label="票種" class="ticket-name">
+				<span class="display-value" style="display: none;">新票種</span>
+				<input type="text" class="edit-input" value="新票種" placeholder="輸入票種名稱" />
+			</td>
+			<td data-label="販售時間" class="time-cell">
+				<span class="display-value" style="display: none;">2025/01/01 00:00 ~ 2025/12/31 23:59</span>
+				<input type="text" class="edit-input" value="2025/01/01 00:00 ~ 2025/12/31 23:59" placeholder="販售時間" />
+			</td>
+			<td data-label="狀態">
+				<span class="display-value" style="display: none;">
+					<span class="status-badge active">販售中</span>
+				</span>
+				<select class="edit-input">
+					<option value="販售中" selected>販售中</option>
+					<option value="結束販售">結束販售</option>
+				</select>
+			</td>
+			<td data-label="數量">
+				<span class="display-value" style="display: none;">0</span>
+				<input type="text" class="edit-input" value="0" placeholder="票券數量" />
+			</td>
+			<td data-label="剩餘">
+				<span class="display-value" style="display: none;">0</span>
+				<input type="number" class="edit-input" value="0" placeholder="剩餘數量" />
+			</td>
+			<td data-label="無效票">
+				<span class="display-value" style="display: none;">0</span>
+				<input type="number" class="edit-input" value="0" placeholder="無效票數" />
+			</td>
+			<td data-label="操作" class="actions-cell">
+				<div class="action-buttons">
+					<button class="edit-btn button" style="display: none;">編輯</button>
+					<button class="save-btn button">儲存</button>
+					<button class="cancel-btn button">取消</button>
+					<button class="delete-btn button delete">刪除</button>
+				</div>
+			</td>
+		</tr>
+	</template>
+
+	<script is:inline>
+		// Demo ticket data - fetch from frontend
+		const DEMO_TICKETS = [
+			{
+				id: 1,
+				name: "學生票（第二波）",
+				saleTime: "2025/02/09 20:00 ~ 2025/11/01 00:00",
+				status: "販售中",
+				total: 426,
+				sold: 426,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 2,
+				name: "普通票（第二波）",
+				saleTime: "2025/02/09 20:00 ~ 2025/02/22 23:59",
+				status: "結束販售",
+				total: 47,
+				sold: 47,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 3,
+				name: "小石放煙火",
+				saleTime: "2025/01/01 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: 10,
+				sold: 10,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 4,
+				name: "學生票（第一波）",
+				saleTime: "2025/01/12 20:00 ~ 2025/01/25 23:59",
+				status: "結束販售",
+				total: 530,
+				sold: 530,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 5,
+				name: "一般票（第一波）",
+				saleTime: "2025/01/12 20:00 ~ 2025/01/25 23:59",
+				status: "結束販售",
+				total: 70,
+				sold: 70,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 6,
+				name: "講者邀請票",
+				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: 90,
+				sold: 90,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 7,
+				name: "邀請票",
+				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: "不限定數量",
+				sold: "不限定數量",
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 8,
+				name: "邀請票（遠道而來票）",
+				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: 100,
+				sold: 100,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 9,
+				name: "邀請票（SITCON x OSCVPass 開源貢獻票）",
+				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: 100,
+				sold: 100,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 10,
+				name: "邀請票（CfP 抽獎活動）",
+				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
+				status: "結束販售",
+				total: 20,
+				sold: 20,
+				remaining: 0,
+				invalid: 0
+			},
+			{
+				id: 11,
+				name: "測試票",
+				saleTime: "~ 2026/03/07 00:00",
+				status: "販售中",
+				total: "不限定數量",
+				sold: 0,
+				remaining: "不限定數量",
+				invalid: 0
+			}
+		];
+
+		// State management
+		class TicketManager {
+			constructor() {
+				this.tickets = [...DEMO_TICKETS];
+				this.editingRow = null;
+				this.originalData = {};
+				this.nextId = Math.max(...this.tickets.map(t => t.id)) + 1;
+				this.init();
+			}
+
+			init() {
+				this.renderTickets();
+				this.bindEvents();
+			}
+
+			bindEvents() {
+				// Add ticket button
+				document.getElementById("add-ticket-btn").addEventListener("click", () => {
+					this.addNewTicket();
+				});
+
+				// Delegate events for dynamic content
+				document.getElementById("tickets-tbody").addEventListener("click", e => {
+					const button = e.target.closest("button");
+					if (!button) return;
+
+					if (button.classList.contains("edit-btn")) {
+						this.editRow(button);
+					} else if (button.classList.contains("save-btn")) {
+						this.saveRow(button);
+					} else if (button.classList.contains("cancel-btn")) {
+						this.cancelEdit(button);
+					} else if (button.classList.contains("delete-btn")) {
+						this.deleteRow(button);
+					}
+				});
+			}
+
+			renderTickets() {
+				const tbody = document.getElementById("tickets-tbody");
+				tbody.innerHTML = "";
+
+				this.tickets.forEach(ticket => {
+					const row = this.createTicketRow(ticket);
+					tbody.appendChild(row);
+				});
+			}
+
+			createTicketRow(ticket) {
+				const template = document.getElementById("ticket-row-template");
+				const row = template.content.cloneNode(true).querySelector("tr");
+
+				row.dataset.ticketId = ticket.id;
+
+				// Fill in the data
+				const cells = row.querySelectorAll("td");
+				cells[0].querySelector(".display-value").textContent = ticket.name;
+				cells[0].querySelector(".edit-input").value = ticket.name;
+
+				cells[1].querySelector(".display-value").textContent = ticket.saleTime;
+				cells[1].querySelector(".edit-input").value = ticket.saleTime;
+
+				const statusBadge = cells[2].querySelector(".status-badge");
+				statusBadge.textContent = ticket.status;
+				statusBadge.className = `status-badge ${ticket.status === "販售中" ? "active" : "ended"}`;
+				const select = cells[2].querySelector("select");
+				select.value = ticket.status;
+
+				cells[3].querySelector(".display-value").textContent = ticket.total;
+				cells[3].querySelector(".edit-input").value = ticket.total;
+
+				cells[4].querySelector(".display-value").textContent = ticket.remaining;
+				cells[4].querySelector(".edit-input").value = ticket.remaining;
+
+				cells[5].querySelector(".display-value").textContent = ticket.invalid;
+				cells[5].querySelector(".edit-input").value = ticket.invalid;
+
+				return row;
+			}
+
+			editRow(button) {
+				// Cancel any existing edit
+				if (this.editingRow) {
+					this.cancelEdit(this.editingRow.querySelector(".cancel-btn"));
+				}
+
+				const row = button.closest("tr");
+				this.editingRow = row;
+				row.setAttribute("data-editing", "true");
+
+				// Store original data
+				this.storeOriginalData(row);
+
+				// Toggle display/edit mode
+				this.toggleEditMode(row, true);
+			}
+
+			saveRow(button) {
+				const row = button.closest("tr");
+				const ticketId = parseInt(row.dataset.ticketId);
+
+				// Get updated data
+				const updatedTicket = this.getRowData(row);
+
+				if (ticketId) {
+					// Update existing ticket
+					const ticketIndex = this.tickets.findIndex(t => t.id === ticketId);
+					if (ticketIndex !== -1) {
+						this.tickets[ticketIndex] = { ...this.tickets[ticketIndex], ...updatedTicket };
+					}
+					console.log("Updating ticket:", this.tickets[ticketIndex]);
+				} else {
+					// Save new ticket
+					if (!updatedTicket.name.trim()) {
+						alert("請輸入票種名稱");
+						row.querySelector(".edit-input").focus();
+						return;
+					}
+
+					const newTicket = { id: this.nextId++, ...updatedTicket };
+					this.tickets.push(newTicket);
+					row.dataset.ticketId = newTicket.id;
+					console.log("Creating new ticket:", newTicket);
+				}
+
+				// Update display values and exit edit mode
+				this.updateDisplayValues(row);
+				this.toggleEditMode(row, false);
+				this.editingRow = null;
+			}
+
+			cancelEdit(button) {
+				const row = button.closest("tr");
+				const ticketId = row.dataset.ticketId;
+
+				if (!ticketId) {
+					// Remove new ticket row
+					row.remove();
+				} else {
+					// Restore original data
+					this.restoreOriginalData(row);
+					this.toggleEditMode(row, false);
+				}
+
+				this.editingRow = null;
+				this.originalData = {};
+			}
+
+			deleteRow(button) {
+				if (!confirm("確定要刪除這個票種嗎？")) return;
+
+				const row = button.closest("tr");
+				const ticketId = parseInt(row.dataset.ticketId);
+
+				if (ticketId) {
+					this.tickets = this.tickets.filter(t => t.id !== ticketId);
+					console.log("Deleting ticket:", ticketId);
+				}
+
+				row.remove();
+			}
+
+			addNewTicket() {
+				if (this.editingRow) {
+					this.cancelEdit(this.editingRow.querySelector(".cancel-btn"));
+				}
+
+				const template = document.getElementById("new-ticket-row-template");
+				const row = template.content.cloneNode(true).querySelector("tr");
+
+				const tbody = document.getElementById("tickets-tbody");
+				tbody.appendChild(row);
+
+				this.editingRow = row;
+
+				// Focus on first input
+				row.querySelector(".edit-input").focus();
+			}
+
+			toggleEditMode(row, isEditing) {
+				const displayValues = row.querySelectorAll(".display-value");
+				const editInputs = row.querySelectorAll(".edit-input");
+				const editBtn = row.querySelector(".edit-btn");
+				const saveBtn = row.querySelector(".save-btn");
+				const cancelBtn = row.querySelector(".cancel-btn");
+
+				displayValues.forEach(el => (el.style.display = isEditing ? "none" : "block"));
+				editInputs.forEach(el => (el.style.display = isEditing ? "block" : "none"));
+
+				editBtn.style.display = isEditing ? "none" : "inline-block";
+				saveBtn.style.display = isEditing ? "inline-block" : "none";
+				cancelBtn.style.display = isEditing ? "inline-block" : "none";
+
+				if (isEditing) {
+					row.setAttribute("data-editing", "true");
+				} else {
+					row.removeAttribute("data-editing");
+				}
+			}
+
+			storeOriginalData(row) {
+				const cells = row.querySelectorAll("td");
+				this.originalData = {};
+				cells.forEach((cell, index) => {
+					const displayValue = cell.querySelector(".display-value");
+					if (displayValue) {
+						this.originalData[index] = displayValue.innerHTML;
+					}
+				});
+			}
+
+			restoreOriginalData(row) {
+				const cells = row.querySelectorAll("td");
+				cells.forEach((cell, index) => {
+					const displayValue = cell.querySelector(".display-value");
+					if (displayValue && this.originalData[index]) {
+						displayValue.innerHTML = this.originalData[index];
+					}
+				});
+			}
+
+			getRowData(row) {
+				const inputs = row.querySelectorAll(".edit-input");
+				return {
+					name: inputs[0].value,
+					saleTime: inputs[1].value,
+					status: inputs[2].value,
+					total: inputs[3].value,
+					remaining: parseInt(inputs[4].value) || 0,
+					invalid: parseInt(inputs[5].value) || 0
+				};
+			}
+
+			updateDisplayValues(row) {
+				const inputs = row.querySelectorAll(".edit-input");
+				const cells = row.querySelectorAll("td");
+
+				// Name
+				cells[0].querySelector(".display-value").textContent = inputs[0].value;
+				// Sale time
+				cells[1].querySelector(".display-value").textContent = inputs[1].value;
+				// Status
+				const statusBadge = cells[2].querySelector(".status-badge");
+				statusBadge.textContent = inputs[2].value;
+				statusBadge.className = `status-badge ${inputs[2].value === "販售中" ? "active" : "ended"}`;
+				// Total
+				cells[3].querySelector(".display-value").textContent = inputs[3].value;
+				// Remaining
+				cells[4].querySelector(".display-value").textContent = inputs[4].value;
+				// Invalid
+				cells[5].querySelector(".display-value").textContent = inputs[5].value;
+			}
+		}
+
+		// Initialize when DOM is loaded
+		document.addEventListener("astro:page-load", () => {
+			if (!window.location.pathname.endsWith("/admin/tickets/")) return;
+			new TicketManager();
+		});
+	</script>
+
+	<style>
+		.ticket-overview {
+			margin-top: 2rem;
+		}
+
+		.ticket-overview h2 {
+			margin-bottom: 1.5rem;
+			font-size: 1.5rem;
+			color: var(--color-gray-200);
+		}
+
+		.table-container {
+			overflow-x: auto;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+			background-color: var(--color-gray-800);
+			border: 2px solid var(--color-gray-900);
+		}
+
+		.tickets-table {
+			width: 100%;
+			border-collapse: collapse;
+			min-width: 900px;
+		}
+
+		.tickets-table th,
+		.tickets-table td {
+			padding: 1rem;
+			text-align: left;
+			border-bottom: 1px solid var(--color-gray-400);
+		}
+
+		.tickets-table th {
+			background-color: var(--color-gray-700);
+			color: var(--color-gray-200);
+			font-weight: 600;
+			font-size: 0.95rem;
+			position: sticky;
+			top: 0;
+		}
+
+		.tickets-table tr:last-child td {
+			border-bottom: none;
+		}
+
+		.tickets-table tr:hover {
+			background-color: #f8f9fa;
+		}
+
+		.time-cell {
+			font-size: 0.9rem;
+			line-height: 1.4;
+		}
+
+		.ticket-name {
+			max-width: 10rem;
+		}
+
+		.actions-cell {
+			width: 200px;
+			min-width: 200px;
+		}
+
+		.action-buttons {
+			display: flex;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
+
+		.action-buttons .button {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.85rem;
+			margin: 0;
+			white-space: nowrap;
+		}
+
+		.delete {
+			background-color: #f8d7da;
+			border-color: #f5c6cb;
+			color: #721c24;
+		}
+
+		.delete:hover {
+			background-color: #f1b0b7;
+		}
+
+		.edit-input {
+			width: 100%;
+			padding: 0.4rem;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			font-size: 0.9rem;
+			font-family: inherit;
+			box-sizing: border-box;
+		}
+
+		.edit-input:focus {
+			outline: none;
+			border-color: var(--color-gray-900);
+			box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+		}
+
+		.status-badge {
+			padding: 0.3rem 0.6rem;
+			border-radius: 4px;
+			font-size: 0.85rem;
+			font-weight: 500;
+			white-space: nowrap;
+			display: inline-block;
+		}
+
+		.status-badge.active {
+			background-color: #d4edda;
+			color: #155724;
+			border: 1px solid #c3e6cb;
+		}
+
+		.status-badge.ended {
+			background-color: #f8d7da;
+			color: #721c24;
+			border: 1px solid #f5c6cb;
+		}
+
+		.add-ticket-section {
+			margin-top: 2rem;
+			text-align: center;
+		}
+
+		.add-ticket-btn {
+			padding: 0.8rem 1.5rem;
+			font-size: 1rem;
+			background-color: #d4edda;
+			border-color: #c3e6cb;
+			color: #155724;
+		}
+
+		.add-ticket-btn:hover {
+			background-color: #c3e6cb;
+		}
+
+		/* New ticket row specific styles */
+		.tickets-table tr[data-editing="true"] {
+			background-color: #fffbf0;
+			border-left: 4px solid #ffc107;
+		}
+
+		.tickets-table tr[data-editing="true"] .edit-input {
+			border-color: #ffc107;
+		}
+
+		.tickets-table tr[data-editing="true"] .edit-input:focus {
+			border-color: #e0a800;
+			box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+		}
+
+		/* Responsive design for mobile */
+		@media (max-width: 768px) {
+			.table-container {
+				border: none;
+				box-shadow: none;
+			}
+
+			.tickets-table {
+				min-width: unset;
+			}
+
+			.tickets-table,
+			.tickets-table thead,
+			.tickets-table tbody,
+			.tickets-table th,
+			.tickets-table td,
+			.tickets-table tr {
+				display: block;
+			}
+
+			.tickets-table thead tr {
+				position: absolute;
+				top: -9999px;
+				left: -9999px;
+			}
+
+			.tickets-table tr {
+				border: 2px solid var(--color-gray-900);
+				margin-bottom: 1rem;
+				border-radius: 8px;
+				background-color: var(--color-gray-800);
+			}
+
+			.tickets-table tr[data-editing="true"] {
+				border-color: #ffc107;
+				background-color: #fffbf0;
+			}
+
+			.tickets-table td {
+				border: none;
+				position: relative;
+				padding: 0.8rem 1rem;
+				border-bottom: 1px solid var(--color-gray-400);
+			}
+
+			.tickets-table td:last-child {
+				border-bottom: none;
+			}
+
+			.tickets-table td:before {
+				content: attr(data-label) ": ";
+				font-weight: 600;
+				color: var(--color-gray-900);
+				margin-right: 0.5rem;
+			}
+
+			.actions-cell:before {
+				content: "操作: ";
+			}
+
+			.action-buttons {
+				flex-direction: column;
+				gap: 0.3rem;
+			}
+
+			.action-buttons .button {
+				width: 100%;
+				text-align: center;
+			}
+
+			.edit-input {
+				margin-top: 0.3rem;
+				width: calc(100% - 0.6rem);
+			}
+
+			.time-cell {
+				max-width: unset;
+			}
+
+			.status-badge {
+				display: inline-block;
+				margin-top: 0.2rem;
+			}
+		}
+
+		@media (max-width: 480px) {
+			main {
+				margin-left: 1rem;
+				padding: 1rem;
+			}
+
+			.tickets-table td {
+				padding: 0.6rem 0.8rem;
+			}
+
+			.time-cell {
+				font-size: 0.85rem;
+			}
+
+			.action-buttons .button {
+				font-size: 0.8rem;
+				padding: 0.4rem 0.6rem;
+			}
+		}
+
+		/* Dark mode adjustments */
+		@media (prefers-color-scheme: dark) {
+			.tickets-table tr:hover {
+				background-color: var(--color-gray-700);
+			}
+
+			.tickets-table tr[data-editing="true"] {
+				background-color: #2a2416;
+				border-left-color: #ffc107;
+			}
+
+			.tickets-table td {
+				border-bottom-color: var(--color-gray-600);
+			}
+
+			.status-badge.active {
+				background-color: #1e3a2e;
+				color: #4ade80;
+				border-color: #16a34a;
+			}
+
+			.status-badge.ended {
+				background-color: #3a1e1e;
+				color: #f87171;
+				border-color: #dc2626;
+			}
+
+			.delete {
+				background-color: #3a1e1e;
+				border-color: #dc2626;
+				color: #f87171;
+			}
+
+			.delete:hover {
+				background-color: #4a1e1e;
+			}
+
+			.add-ticket-btn {
+				background-color: #1e3a2e;
+				border-color: #16a34a;
+				color: #4ade80;
+			}
+
+			.add-ticket-btn:hover {
+				background-color: #2e4a3e;
+			}
+
+			.edit-input {
+				background-color: var(--color-gray-800);
+				border-color: #555;
+			}
+
+			.edit-input:focus {
+				border-color: var(--color-gray-800);
+				box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+			}
+
+			.tickets-table tr[data-editing="true"] .edit-input {
+				border-color: #ffc107;
+			}
+
+			.tickets-table tr[data-editing="true"] .edit-input:focus {
+				border-color: #e0a800;
+				box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+			}
+
+			@media (max-width: 768px) {
+				.tickets-table tr {
+					border-color: var(--color-gray-800);
+				}
+
+				.tickets-table tr[data-editing="true"] {
+					border-color: #ffc107;
+					background-color: #2a2416;
+				}
+
+				.tickets-table td {
+					border-bottom-color: var(--color-gray-600);
+				}
+			}
+		}
+	</style>
+</Layout>

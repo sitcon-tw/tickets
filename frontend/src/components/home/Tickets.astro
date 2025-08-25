@@ -42,7 +42,7 @@ const t = i18n.t(lang, {
 			</ul>
 		</div>
 	</div>
-	<div class="button">確認報名</div>
+	<a class="button" href="/form/">確認報名</a>
 </Confirm>
 <div class="ticket" id="ticketAnimation"></div>
 
@@ -147,14 +147,14 @@ const t = i18n.t(lang, {
 	}
 
 	.ticket {
-		border: solid 3px var(--black);
+		border: solid 3px var(--color-gray-500);
 		padding: 1rem;
 		margin: 0 auto 2rem;
 		max-width: 350px;
 		transform: rotate(1.17deg);
 		transition: transform 0.3s ease;
 		cursor: pointer;
-		background-color: var(--white);
+		background-color: var(--color-gray-800);
 	}
 
 	.ticket:hover {

@@ -18,7 +18,7 @@ const l = i18n.l(Astro.url);
 	<Nav />
 	<main transition:animate="fade">
 		<section>
-			<p><a href={l("form")}>重新選擇票種</a></p>
+			<p><a href={l("/")}>重新選擇票種</a></p>
 			<h1>填寫報名資訊</h1>
 
 			<form>
@@ -113,7 +113,8 @@ const l = i18n.l(Astro.url);
 
 				<Input.Textarea label="備註（若有特殊需求，歡迎聯絡 ticket@sitcon.org ）" id="remarks" rows="4" required={false} />
 
-				<button type="submit">提交報名</button>
+				<!-- <button type="submit">提交報名</button> -->
+				 <a href="/success/" class="button">提交報名</a>
 			</form>
 		</section>
 	</main>

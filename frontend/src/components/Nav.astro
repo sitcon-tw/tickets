@@ -20,8 +20,8 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 	<div>
 		<a href={l("/")}><img src={SITCONLogo.src} alt="SITCON Logo" /></a>
 		<div class="right">
-			<a class="button" href={l("/login/")}>登入</a>
-			<a class="button" href={l("/admin/")}>管理員頁面</a>
+			<a href={l("/login/")}>登入</a>
+			<a href={l("/admin/")}>管理員頁面</a>
 		</div>
 		<!-- <a href={l("/about/")}><span>{t.about}</span></a> -->
 
@@ -40,14 +40,14 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 		top: 0;
 		left: 0;
 		z-index: 1000;
-		background-color: var(--white);
+		background-color: var(--color-gray-900);
 		width: 100%;
 		transition: border-color 0.3s ease-in-out;
 		border-bottom: transparent solid 1px;
 	}
 
 	nav.scrolled {
-		border-color: #333;
+		border-color: var(--color-gray-500);
 	}
 	nav > div {
 		display: flex;
@@ -63,7 +63,7 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 	nav .right {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 1.5rem;
 	}
 
 	a {

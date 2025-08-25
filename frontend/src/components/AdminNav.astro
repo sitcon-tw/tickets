@@ -9,12 +9,12 @@ const l = i18n.l(Astro.url);
 	<div class="title">票券系統</div>
 	<nav>
 		<ul>
-			<li><a href={l("/admin")}>總覽</a></li>
-			<li><a href={l("/admin/intro")}>簡介</a></li>
-			<li><a href={l("/admin/tickets")}>票種</a></li>
-			<li><a href={l("/admin/forms")}>表單</a></li>
-			<li><a href={l("/admin/invites")}>邀請碼</a></li>
-			<li><a href={l("/admin/registrations")}>報名列表</a></li>
+			<li><a href={l("/admin/")}>總覽</a></li>
+			<li><a href={l("/admin/tickets/")}>票種</a></li>
+			<li><a href={l("/admin/forms/")}>表單</a></li>
+			<li><a href={l("/admin/invites/")}>邀請碼</a></li>
+			<li><a href={l("/admin/registrations/")}>報名列表</a></li>
+			<li><a href={l("/admin/intro/")}>編輯說明</a></li>
 		</ul>
 	</nav>
 	<div class="links">
@@ -24,20 +24,23 @@ const l = i18n.l(Astro.url);
 </aside>
 
 <style is:global>
-	body {
-		display: flex;
-	}
 	main {
-		padding-top: 8rem;
-		margin-left: 3rem;
+		padding-top: 5rem;
+		max-width: unset;
+		margin-left: 17rem;
 	}
 	aside {
-		background-color: var(--blackAF);
+		background-color: var(--color-gray-950);
 		padding: 2rem;
 		width: 17rem;
+		height: 100dvh;
+		position: fixed;
 		display: flex;
 		flex-direction: column;
 		font-size: 1.2rem;
+	}
+	h1 {
+		margin-bottom: 2%;
 	}
 	.activity {
 		font-size: 1.2rem;
@@ -53,7 +56,7 @@ const l = i18n.l(Astro.url);
 		list-style: none;
 	}
 	nav ul {
-		padding-left: .8rem;
+		padding-left: 0.8rem;
 	}
 	aside a {
 		text-decoration: none;

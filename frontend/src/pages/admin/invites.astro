@@ -1,6 +1,6 @@
 ---
 import Layout from "@layouts/Layout.astro";
-import Nav from "@components/Nav.astro";
+import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
@@ -19,32 +19,10 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
-	<Nav />
+	<AdminNav />
 	<main>
-		<section>
-			<h1>{t.title}</h1>
-			<p>{t.description}</p>
-			<a class="button" href={l("/")}>回首頁</a>
-		</section>
+		<h1>邀請碼</h1>
 	</main>
 
-	<style>
-		main {
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			min-height: 100vh;
-			min-height: 100svh;
-			padding: 2rem;
-			text-align: center;
-		}
-
-		h1 {
-			margin-block: 1rem;
-		}
-
-		.button {
-			margin: 1rem auto;
-		}
-	</style>
+	<style></style>
 </Layout>

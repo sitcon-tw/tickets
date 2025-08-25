@@ -1,0 +1,67 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminNav from "@components/AdminNav.astro";
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	title: {
+		"zh-Hant": "找不到頁面",
+		"zh-Hans": "找不到页面",
+		en: "Page Not Found"
+	},
+	description: {
+		"zh-Hant": "抱歉，您訪問的頁面不存在。",
+		"zh-Hans": "抱歉，您访问的页面不存在。",
+		en: "Sorry, the page you are looking for does not exist."
+	}
+});
+const l = i18n.l(Astro.url);
+---
+
+<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<AdminNav />
+	<main>
+		<h1>編輯說明</h1>
+		<p>若要編輯首頁的說明，以及票種的說明，請直接編輯 <a href="https://github.com/sitcon-tw/2026-tickets/tree/dev/frontend/src/pages/markdown" target="_blank">GitHub Markdown 資料夾</a> 裡面的檔案。</p>
+		<ul class="github-list"></ul>
+		<script define:vars={{ lang: i18n.localesList() }}>
+			let items = ["intro", "faq", "terms"];
+			const tickets = ["學生票", "普通票", "遠道而來票", "邀請票", "開源貢獻票"];
+
+			// add tickets to item, but the link will be tickets/<tickets>.md
+			items = items.concat(tickets.map(ticket => `tickets/${ticket}`));
+
+			const ul = document.querySelector(".github-list");
+
+			items.forEach(item => {
+				const li = document.createElement("li");
+				li.innerText = `${item}：`;
+				lang.forEach(locale => {
+					const a = document.createElement("a");
+					const fileName = locale === "zh-Hant" ? `${item}.md` : `${item}.${locale}.md`;
+					a.href = `https://github.com/sitcon-tw/2026-tickets/edit/dev/frontend/src/pages/markdown/${fileName}`;
+					a.textContent = `${locale}`;
+					a.target = "_blank";
+					li.appendChild(a);
+					li.innerHTML += " / ";
+				});
+				// remove the last " / "
+				li.innerHTML = li.innerHTML.slice(0, -3);
+				ul.appendChild(li);
+			});
+		</script>
+	</main>
+
+	<style is:global>
+		p {
+			margin-bottom: 2rem;
+		}
+		li {
+			margin-bottom: 1rem;
+		}
+
+		main a {
+			color: var(--color-gray-400);
+		}
+	</style>
+</Layout>
