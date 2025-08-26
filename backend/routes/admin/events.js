@@ -3,7 +3,6 @@ import { requireAdmin } from "../../middleware/auth.js";
 import { errorResponse, successResponse } from "../../utils/response.js";
 
 export default async function adminEventsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
 	fastify.addHook("preHandler", requireAdmin);
 
 	// 創建新活動
@@ -151,7 +150,6 @@ export default async function adminEventsRoutes(fastify, options) {
 									location: { type: 'string' },
 									tickets: {
 										type: 'array',
-										items: { type: 'object' }
 									},
 									_count: {
 										type: 'object',
@@ -180,19 +178,15 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId },
-					include: {
-						tickets: {
-							where: { isActive: true },
-							orderBy: { createdAt: "asc" }
-						},
-						_count: {
-							select: {
-								registrations: true,
-								invitationCodes: true
-							}
-						}
-					}
 				});
+
+				const eventTicket = await prisma.ticket.findMany({
+					where: { eventId: eventId },
+				});
+
+				console.log(eventTicket)
+
+				event.tickets = eventTicket;
 
 				if (!event) {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "活動不存在", null, 404);

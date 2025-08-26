@@ -106,7 +106,7 @@ model Ticket {
   eventId     String
   name        String
   description String?
-  price       Int      // in cents
+  price       Int
   quantity    Int
   soldCount   Int      @default(0)
   saleStart   DateTime?

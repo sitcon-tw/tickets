@@ -63,7 +63,7 @@ fastify.all(
 	{
 		schema: {
 			description: "send auth link: POST /api/auth/sign-in/magic-link; get session: GET /api/auth/get-session",
-			tags: ["auth"]
+			tags: ["auth [TESTED]"]
 		}
 	},
 	async (request, reply) => {

@@ -3,7 +3,6 @@ import { requireAdmin } from "../../middleware/auth.js";
 import { errorResponse, successResponse } from "../../utils/response.js";
 
 export default async function adminFormFieldsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
 	fastify.addHook("preHandler", requireAdmin);
 
 	// 獲取所有表單欄位
@@ -186,7 +185,6 @@ export default async function adminFormFieldsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate field type
 				const validTypes = ["text", "textarea", "email", "radio", "checkbox", "select", "file", "description"];
 				if (!validTypes.includes(type)) {
 					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "無效的欄位類型");

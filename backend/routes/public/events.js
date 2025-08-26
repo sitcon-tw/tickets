@@ -138,10 +138,8 @@ export default async function eventsRoutes(fastify, options) {
 
 				const tickets = await prisma.ticket.findMany({
 					where: {
-						eventId,
+						eventId: eventId,
 						isActive: true,
-						OR: [{ saleStart: null }, { saleStart: { lte: new Date() } }],
-						OR: [{ saleEnd: null }, { saleEnd: { gte: new Date() } }]
 					},
 					select: {
 						id: true,
