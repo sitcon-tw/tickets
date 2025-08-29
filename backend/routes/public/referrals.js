@@ -1,7 +1,10 @@
 import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
+import { requireAuth } from "#middleware/auth.js";
 
 export default async function referralRoutes(fastify, options) {
+	fastify.addHook("preHandler", requireAuth);
+	
 	// 獲取專屬推薦連結
 	fastify.get(
 		"/registrations/:regId/referral-link",

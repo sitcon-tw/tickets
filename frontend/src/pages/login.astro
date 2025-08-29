@@ -109,11 +109,36 @@ const l = i18n.l(Astro.url);
 	</style>
 
 	<script is:inline>
-		const login = () => {
+		const login = async () => {
 			const email = document.getElementById("email").value;
 			if (!email) return;
-			// Send magic link to email
-			document.querySelector("section").classList = "sent";
+			
+			try {
+				// 這些 link 都要改掉，因為我不知道怎麼匯入 env -ns
+				const response = await fetch("http://localhost:3000/api/auth/sign-in/magic-link", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({
+						email: email,
+						name: email.split("@")[0], // 暫時先用 email 前面當名字 (eg: hi@nelsongx.com -> hi)
+						// 下面這些要再改
+						callbackURL: "http://localhost:4321",
+						newUserCallbackURL: "http://localhost:4321/new",
+						errorCallbackURL: "http://localhost:4321/login-error"
+					})
+				});
+				
+				if (response.ok) {
+					document.querySelector("section").classList = "sent";
+				} else {
+					document.querySelector("section").classList = "error";
+				}
+			} catch (error) {
+				console.error("Login error:", error);
+				document.querySelector("section").classList = "error";
+			}
 		};
 	</script>
 </Layout>
