@@ -5,7 +5,7 @@ import qrRoutes from "./checkin/qr.js";
 import searchRoutes from "./checkin/search.js";
 import statsRoutes from "./checkin/stats.js";
 
-export default async function checkinRoutes(fastify, options) {
+export default async function checkinRoutes(fastify) {
 	fastify.addHook("preHandler", requireStaff);
 
 	await fastify.register(searchRoutes);

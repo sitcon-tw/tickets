@@ -6,7 +6,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "推薦機制總覽統計",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {
@@ -32,7 +32,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "推薦排行榜",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {
@@ -55,7 +55,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "獲取推薦擴譜圖數據",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {
@@ -81,7 +81,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "獲取達標推薦者名單",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {
@@ -104,7 +104,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "從達標者中隨機抽選",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {
@@ -136,7 +136,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		{
 			schema: {
 				description: "推薦統計報表",
-				tags: ["admin-referrals"]
+				tags: ["admin/referrals"]
 			}
 		},
 		async (request, reply) => {

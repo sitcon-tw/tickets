@@ -7,7 +7,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取報名列表（支援分頁、篩選、搜尋）",
-				tags: ["admin-registrations"],
+				tags: ["admin/registrations"],
 				querystring: {
 					type: 'object',
 					properties: {
@@ -170,7 +170,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取單筆報名詳細資料",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -214,7 +214,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "管理員編輯報名資料",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -258,7 +258,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "取消單筆報名",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -293,7 +293,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "發送取消通知給報名者",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -317,7 +317,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取編輯請求記錄",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -351,7 +351,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "管理員手動發送編輯連結",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -374,7 +374,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取編輯稽核記錄",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {
@@ -397,7 +397,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "更新編輯功能設定（開關、期限等）",
-				tags: ["admin-registrations"]
+				tags: ["admin/registrations"]
 			}
 		},
 		async (request, reply) => {

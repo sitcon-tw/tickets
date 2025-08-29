@@ -7,7 +7,7 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 		{
 			schema: {
 				description: "獲取票種列表",
-				tags: ["admin-tickets"],
+				tags: ["admin/tickets"],
 				querystring: {
 					type: 'object',
 					properties: {
@@ -124,7 +124,7 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 		{
 			schema: {
 				description: "新增票種",
-				tags: ["admin-tickets"],
+				tags: ["admin/tickets"],
 				body: {
 					type: 'object',
 					properties: {
@@ -230,7 +230,7 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 		{
 			schema: {
 				description: "更新票種資訊",
-				tags: ["admin-tickets"]
+				tags: ["admin/tickets"]
 			}
 		},
 		async (request, reply) => {
@@ -274,7 +274,7 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 		{
 			schema: {
 				description: "刪除票種",
-				tags: ["admin-tickets"]
+				tags: ["admin/tickets"]
 			}
 		},
 		async (request, reply) => {
@@ -311,7 +311,7 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 		{
 			schema: {
 				description: "獲取各票種銷售概況",
-				tags: ["admin-tickets"]
+				tags: ["admin/tickets"]
 			}
 		},
 		async (request, reply) => {

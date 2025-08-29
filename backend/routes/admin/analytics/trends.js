@@ -7,7 +7,7 @@ export default async function trendsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "報名趨勢分析",
-				tags: ["analytics"]
+				tags: ["admin/analytics"]
 			}
 		},
 		async (request, reply) => {

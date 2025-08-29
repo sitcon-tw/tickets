@@ -7,7 +7,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "獲取邀請碼列表",
-				tags: ["admin-invitation-codes"],
+				tags: ["admin/invitation-codes"],
 				querystring: {
 					type: 'object',
 					properties: {
@@ -114,7 +114,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "自動生成邀請碼",
-				tags: ["admin-invitation-codes"],
+				tags: ["admin/invitation-codes"],
 				body: {
 					type: 'object',
 					properties: {
@@ -207,7 +207,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "手動新增邀請碼",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin/invitation-codes"]
 			}
 		},
 		async (request, reply) => {
@@ -235,7 +235,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "更新邀請碼設定",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin/invitation-codes"]
 			}
 		},
 		async (request, reply) => {
@@ -259,7 +259,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "刪除邀請碼",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin/invitation-codes"]
 			}
 		},
 		async (request, reply) => {
@@ -282,7 +282,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 		{
 			schema: {
 				description: "獲取邀請碼使用情況",
-				tags: ["admin-invitation-codes"]
+				tags: ["admin/invitation-codes"]
 			}
 		},
 		async (request, reply) => {

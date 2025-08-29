@@ -6,7 +6,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取郵件發送記錄",
-				tags: ["admin-email-campaigns"]
+				tags: ["admin/email-campaigns"]
 			}
 		},
 		async (request, reply) => {
@@ -40,7 +40,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "建立新的郵件發送任務",
-				tags: ["admin-email-campaigns"]
+				tags: ["admin/email-campaigns"]
 			}
 		},
 		async (request, reply) => {
@@ -68,7 +68,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "獲取郵件發送狀態",
-				tags: ["admin-email-campaigns"]
+				tags: ["admin/email-campaigns"]
 			}
 		},
 		async (request, reply) => {
@@ -96,7 +96,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "預覽郵件內容",
-				tags: ["admin-email-campaigns"]
+				tags: ["admin/email-campaigns"]
 			}
 		},
 		async (request, reply) => {
@@ -123,7 +123,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 		{
 			schema: {
 				description: "取消郵件發送任務",
-				tags: ["admin-email-campaigns"]
+				tags: ["admin/email-campaigns"]
 			}
 		},
 		async (request, reply) => {

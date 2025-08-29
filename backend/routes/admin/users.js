@@ -7,7 +7,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "獲取當前用戶權限",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -35,7 +35,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "獲取管理員列表",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -83,7 +83,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "邀請新管理員（發送邀請信）",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -111,7 +111,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "建立新管理員帳號",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -139,7 +139,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "更新管理員資訊",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -163,7 +163,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "更改管理員角色權限",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -208,7 +208,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "啟用/停用管理員帳號",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {
@@ -251,7 +251,7 @@ export default async function adminUsersRoutes(fastify, options) {	// 獲取當�
 		{
 			schema: {
 				description: "刪除管理員",
-				tags: ["admin-users"]
+				tags: ["admin/users"]
 			}
 		},
 		async (request, reply) => {

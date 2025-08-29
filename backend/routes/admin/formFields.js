@@ -7,7 +7,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {	// 獲�
 		{
 			schema: {
 				description: "獲取所有表單欄位",
-				tags: ["admin-form-fields"],
+				tags: ["admin/form-fields"],
 				querystring: {
 					type: "object",
 					properties: {
@@ -122,7 +122,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {	// 獲�
 		{
 			schema: {
 				description: "新增表單欄位",
-				tags: ["admin-form-fields"],
+				tags: ["admin/form-fields"],
 				body: {
 					type: "object",
 					required: ["name", "label", "type"],
@@ -218,7 +218,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {	// 獲�
 		{
 			schema: {
 				description: "更新表單欄位",
-				tags: ["admin-form-fields"],
+				tags: ["admin/form-fields"],
 				params: {
 					type: "object",
 					properties: {
@@ -306,7 +306,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {	// 獲�
 		{
 			schema: {
 				description: "刪除表單欄位",
-				tags: ["admin-form-fields"],
+				tags: ["admin/form-fields"],
 				params: {
 					type: "object",
 					properties: {
@@ -355,7 +355,7 @@ export default async function adminFormFieldsRoutes(fastify, options) {	// 獲�
 		{
 			schema: {
 				description: "設定欄位與票種的顯示/必填關係",
-				tags: ["admin-form-fields"],
+				tags: ["admin/form-fields"],
 				params: {
 					type: "object",
 					properties: {

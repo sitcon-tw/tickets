@@ -7,7 +7,7 @@ export default async function dashboardRoutes(fastify, options) {
 		{
 			schema: {
 				description: "管理後台儀表板數據",
-				tags: ["analytics"]
+				tags: ["admin/analytics"]
 			}
 		},
 		async (request, reply) => {

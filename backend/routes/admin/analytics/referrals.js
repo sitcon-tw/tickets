@@ -7,7 +7,7 @@ export default async function referralsRoutes(fastify, options) {
 		{
 			schema: {
 				description: "來源統計分析",
-				tags: ["analytics"]
+				tags: ["admin/analytics"]
 			}
 		},
 		async (request, reply) => {

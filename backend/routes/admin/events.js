@@ -7,7 +7,7 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 		{
 			schema: {
 				description: "創建新活動",
-				tags: ["admin-events"],
+				tags: ["admin/events"],
 				body: {
 					type: 'object',
 					properties: {
@@ -119,7 +119,7 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 		{
 			schema: {
 				description: "獲取活動詳細資訊",
-				tags: ["admin-events"],
+				tags: ["admin/events"],
 				params: {
 					type: 'object',
 					properties: {
@@ -204,7 +204,7 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 		{
 			schema: {
 				description: "更新活動資訊",
-				tags: ["admin-events"],
+				tags: ["admin/events"],
 				params: {
 					type: 'object',
 					properties: {
@@ -318,7 +318,7 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 		{
 			schema: {
 				description: "更新活動首頁內容",
-				tags: ["admin-events"]
+				tags: ["admin/events"]
 			}
 		},
 		async (request, reply) => {
@@ -360,7 +360,7 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 		{
 			schema: {
 				description: "上傳 OG 圖片",
-				tags: ["admin-events"]
+				tags: ["admin/events"]
 			}
 		},
 		async (request, reply) => {

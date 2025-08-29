@@ -3,7 +3,7 @@ import invitationCodesRoutes from "./public/invitationCodes.js";
 import referralRoutes from "./public/referrals.js";
 import registrationsRoutes from "./public/registrations.js";
 
-export default async function publicRoutes(fastify, options) {
+export default async function publicRoutes(fastify) {
 	await fastify.register(eventsRoutes);
 	await fastify.register(registrationsRoutes);
 	await fastify.register(referralRoutes);
