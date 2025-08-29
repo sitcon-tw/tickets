@@ -29,7 +29,7 @@ export const requireRole = allowedRoles => {
 	return async (request, reply) => {
 		await requireAuth(request, reply);
 
-		if (reply.sent) return; // Auth failed
+		if (reply.sent) return; 
 
 		const user = await prisma.user.findUnique({
 			where: { id: request.user.id },
@@ -56,7 +56,7 @@ export const requirePermission = permission => {
 	return async (request, reply) => {
 		await requireAuth(request, reply);
 
-		if (reply.sent) return; // Auth failed
+		if (reply.sent) return;
 
 		const userPermissions = request.user.permissions ? JSON.parse(request.user.permissions) : [];
 
@@ -68,3 +68,4 @@ export const requirePermission = permission => {
 };
 
 export const requireAdmin = requireRole(["admin"]);
+export const requireStaff = requireRole(["admin", "staff"]);

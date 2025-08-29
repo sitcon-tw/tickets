@@ -17,11 +17,9 @@ export default async function adminRoutes(fastify, options) {
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);
 	await fastify.register(formFieldsRoutes);
-	
 	await fastify.register(registrationsRoutes);
 	await fastify.register(invitationCodesRoutes);
 	await fastify.register(referralsRoutes);
-	
 	await fastify.register(emailCampaignsRoutes);
 	await fastify.register(exportsRoutes);
 }

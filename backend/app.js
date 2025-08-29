@@ -10,6 +10,11 @@ const fastify = Fastify({
 	logger: true
 });
 
+/*
+	註冊基本的 Routes、CORS
+	其他的 route 在下面
+*/
+
 await fastify.register(cors, {
 	origin: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"],
 	credentials: true,

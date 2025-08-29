@@ -8,7 +8,6 @@ export default async function analyticsRoutes(fastify, options) {
 	fastify.addHook("preHandler", requireAdmin);
 
 	await fastify.register(dashboardRoutes);
-	
 	await fastify.register(referralsRoutes);
 	await fastify.register(trendsRoutes);
 }

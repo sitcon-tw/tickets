@@ -1,4 +1,3 @@
-// Route imports organized alphabetically
 import adminRoutes from "./admin.js";
 import analyticsRoutes from "./analytics.js";
 import checkinRoutes from "./checkin.js";
