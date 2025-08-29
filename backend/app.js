@@ -1,6 +1,9 @@
-import cors from "@fastify/cors";
-import dotenv from "dotenv";
 import Fastify from "fastify";
+import dotenv from "dotenv";
+import cors from "@fastify/cors";
+import fastifySwagger from "@fastify/swagger";
+import fastifySwaggerUi from "@fastify/swagger-ui";
+
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
 
@@ -23,9 +26,33 @@ await fastify.register(cors, {
 });
 
 // Swagger UI
-await fastify.register(import("@fastify/swagger"));
+await fastify.register(fastifySwagger, {
+	swagger: {
+    info: {
+      title: 'SITCON 報名系統 API',
+      version: '1.0.0',
+    },
+    tags: [
+      { name: 'system', description: '系統測試' },
+      { name: 'auth', description: '驗證 handled by BetterAuth' },
+      { name: 'events', description: '活動資訊' },
+      { name: 'registrations', description: '報名相關操作 requires: 登入 session' },
+	  { name: "referrals", description: "推薦相關操作 requires: 登入 session" },
+	  { name: "checkin", description: "報到相關操作 requires: Staff Role" },
+	  { name: "admin/analytics", description: "管理後台分析相關操作 requires: Admin Role" },
+	  { name: "admin/users", description: "管理後台用戶相關操作 requires: Admin Role" },
+	  { name: "admin/events", description: "管理後台活動相關操作 requires: Admin Role" },
+	  { name: "admin/tickets", description: "管理後台票券相關操作 requires: Admin Role" },
+	  { name: "admin/form-fields", description: "管理後台表單欄位相關操作 requires: Admin Role" },
+	  { name: "admin/registrations", description: "管理後台報名相關操作 requires: Admin Role" },
+	  { name: "admin/invitation-codes", description: "管理後台邀請碼相關操作 requires: Admin Role" },
+	  { name: "admin/referrals", description: "管理後台標籤相關操作 requires: Admin Role" },
+	  { name: "admin/email-campaigns", description: "管理後台郵件活動相關操作 requires: Admin Role" },
+    ],
+  }
+});
 
-await fastify.register(import("@fastify/swagger-ui"), {
+await fastify.register(fastifySwaggerUi, {
 	routePrefix: "/docs",
 	uiConfig: {
 		deepLinking: false
@@ -52,7 +79,7 @@ fastify.all(
 	{
 		schema: {
 			description: "send auth link: POST /api/auth/sign-in/magic-link; get session: GET /api/auth/get-session",
-			tags: ["auth [TESTED]"]
+			tags: ["auth"]
 		}
 	},
 	async (request, reply) => {
