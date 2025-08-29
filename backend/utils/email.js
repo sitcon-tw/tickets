@@ -7,7 +7,7 @@ const client = new MailtrapClient({
 export const sendRegistrationConfirmation = async (registration, event, qrCodeUrl) => {
 	try {
 		const sender = {
-			email: process.env.MAIL_FROM_ADDRESS || "noreply@sitcon.org",
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
@@ -139,6 +139,194 @@ export const sendEditLink = async (email, editToken, event) => {
 					</div>
 				</body>
 				</html>
+			`,
+		});
+
+		return true;
+	} catch (error) {
+		console.error("Email sending error:", error);
+		return false;
+	}
+};
+
+export const sendMagicLink = async (email, magicLink) => {
+	try {
+		const sender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
+		};
+
+		const recipients = [
+			{
+				email: email,
+			}
+		];
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: `【SITCON 2026】登入連結 Login Link`,
+			html: `
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Sign In to Your Account</title>
+				<style>
+					/* Reset styles */
+					body, table, td, p, a, li, blockquote {
+						-webkit-text-size-adjust: 100%;
+						-ms-text-size-adjust: 100%;
+					}
+					
+					table, td {
+						mso-table-lspace: 0pt;
+						mso-table-rspace: 0pt;
+					}
+					
+					img {
+						-ms-interpolation-mode: bicubic;
+						border: 0;
+						height: auto;
+						line-height: 100%;
+						outline: none;
+						text-decoration: none;
+					}
+					
+					/* Client-specific styles */
+					body {
+						height: 100% !important;
+						margin: 0 !important;
+						padding: 0 !important;
+						width: 100% !important;
+						background-color: #f4f4f4;
+						font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+					}
+					
+					/* Prevent auto-linking */
+					a[x-apple-data-detectors] {
+						color: inherit !important;
+						text-decoration: none !important;
+						font-size: inherit !important;
+						font-family: inherit !important;
+						font-weight: inherit !important;
+						line-height: inherit !important;
+					}
+					
+					/* Mobile styles */
+					@media only screen and (max-width: 600px) {
+						.mobile-padding {
+							padding-left: 20px !important;
+							padding-right: 20px !important;
+						}
+						
+						.mobile-center {
+							text-align: center !important;
+						}
+						
+						.button {
+							width: 100% !important;
+							padding: 15px 0 !important;
+						}
+					}
+				</style>
+			</head>
+			<body>
+				<!-- Wrapper table for better email client compatibility -->
+				<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f4;">
+					<tr>
+						<td align="center" style="padding: 40px 0;">
+							
+							<!-- Main container -->
+							<table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+								
+								<!-- Header -->
+								<tr>
+									<td align="center" style="padding: 40px 40px 20px 40px;" class="mobile-padding">
+										<!-- Logo placeholder - replace with your logo -->
+										<div style="width: 60px; height: 60px; background-color: #4f46e5; border-radius: 12px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+											<span style="color: white; font-size: 24px; font-weight: bold;">✦</span>
+										</div>
+										<h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1f2937; line-height: 1.2;">
+											Sign in to your account
+										</h1>
+									</td>
+								</tr>
+								
+								<!-- Content -->
+								<tr>
+									<td style="padding: 0 40px;" class="mobile-padding">
+										<p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.5;">
+											Hi there! Click the button below to securely sign in to your account. This link will expire in <strong>15 minutes</strong> for your security.
+										</p>
+									</td>
+								</tr>
+								
+								<!-- Magic Link Button -->
+								<tr>
+									<td align="center" style="padding: 0 40px 32px 40px;" class="mobile-padding">
+										<table border="0" cellspacing="0" cellpadding="0">
+											<tr>
+												<td style="border-radius: 8px; background-color: #4f46e5;">
+													<a href="${magicLink}" target="_blank" style="display: inline-block; padding: 16px 32px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;" class="button">
+														Sign In Securely
+													</a>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								
+								<!-- Alternative link -->
+								<tr>
+									<td style="padding: 0 40px 32px 40px; border-top: 1px solid #e5e7eb;" class="mobile-padding">
+										<p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280; line-height: 1.5;">
+											If the button doesn't work, copy and paste this link into your browser:
+										</p>
+										<p style="margin: 8px 0 0 0; word-break: break-all;">
+											<a href="${magicLink}" style="color: #4f46e5; text-decoration: none; font-size: 14px;">
+												${magicLink}
+											</a>
+										</p>
+									</td>
+								</tr>
+								
+								<!-- Security notice -->
+								<tr>
+									<td style="padding: 0 40px 40px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;" class="mobile-padding">
+										<div style="padding: 20px; background-color: #fef3c7; border-radius: 6px; border-left: 4px solid #f59e0b;">
+											<p style="margin: 0; font-size: 14px; color: #92400e; line-height: 1.5;">
+												<strong>Security reminder:</strong> If you didn't request this sign-in link, please ignore this email. Never share this link with anyone else.
+											</p>
+										</div>
+										
+										<p style="margin: 20px 0 0 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
+											This link was sent to <strong>${email}</strong> and will expire in 15 minutes. 
+											<br>If you have any questions, contact our support team.
+										</p>
+									</td>
+								</tr>
+								
+							</table>
+							
+							<!-- Footer -->
+							<table border="0" cellpadding="0" cellspacing="0" width="600" style="margin-top: 20px;">
+								<tr>
+									<td align="center" style="padding: 20px;">
+										<p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
+											© 2025 Your Company Name. All rights reserved.
+											<br>
+										</p>
+									</td>
+								</tr>
+							</table>
+							
+						</td>
+					</tr>
+				</table>
+			</body>
+			</html>
 			`,
 		});
 

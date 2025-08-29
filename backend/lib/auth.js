@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
-import { MailtrapClient } from "mailtrap";
 import { PrismaClient } from "../generated/prisma/index.js";
+import { sendMagicLink } from "#utils/email.js";
 
 const prisma = new PrismaClient();
 
@@ -23,23 +23,7 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
-				const TOKEN = process.env.MAILTRAP_TOKEN;
-				const SENDER_EMAIL = process.env.MAILTRAP_SENDER_EMAIL;
-				const RECIPIENT_EMAIL = email;
-
-				const client = new MailtrapClient({ token: TOKEN });
-
-				const sender = { name: "Mailtrap Test", email: SENDER_EMAIL };
-
-				await client
-					.send({
-						from: sender,
-						to: [{ email: RECIPIENT_EMAIL }],
-						subject: "Hello from Mailtrap!",
-						text: "Welcome to Mailtrap Sending! Your magic link is: " + url
-					})
-					.then(console.log)
-					.catch(console.error);
+				await sendMagicLink(email, url);
 			}
 		})
 	],
