@@ -1,11 +1,6 @@
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminExportsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 匯出報名資料
+export default async function adminExportsRoutes(fastify, options) {	// 匯出報名資料
 	fastify.post(
 		"/export/registrations",
 		{

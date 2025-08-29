@@ -1,11 +1,6 @@
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminReferralsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 推薦機制總覽統計
+export default async function adminReferralsRoutes(fastify, options) {	// 推薦機制總覽統計
 	fastify.get(
 		"/referrals/overview",
 		{

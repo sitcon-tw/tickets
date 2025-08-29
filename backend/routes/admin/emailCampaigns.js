@@ -1,11 +1,6 @@
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminEmailCampaignsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 獲取郵件發送記錄
+export default async function adminEmailCampaignsRoutes(fastify, options) {	// 獲取郵件發送記錄
 	fastify.get(
 		"/email-campaigns",
 		{

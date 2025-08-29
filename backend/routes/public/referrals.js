@@ -1,6 +1,6 @@
-import prisma from "../../config/database.js";
-import { generateCheckInCode } from "../../utils/qrcode.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { generateCheckInCode } from "#utils/qrcode.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function referralRoutes(fastify, options) {
 	// 獲取專屬推薦連結

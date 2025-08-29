@@ -1,6 +1,6 @@
-import prisma from "../../../config/database.js";
-import { errorResponse, successResponse } from "../../../utils/response.js";
-import { hashToken, isTokenExpired } from "../../../utils/token.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
+import { hashToken, isTokenExpired } from "#utils/token.js";
 
 export default async function managementRoutes(fastify, options) {
 	// 取消報名

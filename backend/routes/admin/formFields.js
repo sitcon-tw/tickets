@@ -1,11 +1,7 @@
-import prisma from "../../config/database.js";
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminFormFieldsRoutes(fastify, options) {
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 獲取所有表單欄位
+export default async function adminFormFieldsRoutes(fastify, options) {	// 獲取所有表單欄位
 	fastify.get(
 		"/form-fields",
 		{

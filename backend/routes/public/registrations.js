@@ -3,7 +3,6 @@ import editingRoutes from "./registrations/editing.js";
 import managementRoutes from "./registrations/management.js";
 
 export default async function registrationsRoutes(fastify, options) {
-	// Register modular registration routes
 	await fastify.register(coreRoutes);
 	await fastify.register(editingRoutes);
 	await fastify.register(managementRoutes);

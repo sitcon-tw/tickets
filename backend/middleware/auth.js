@@ -67,7 +67,4 @@ export const requirePermission = permission => {
 	};
 };
 
-// Specific role middleware
 export const requireAdmin = requireRole(["admin"]);
-export const requireCheckIn = requireRole(["admin", "checkin"]);
-export const requireViewer = requireRole(["admin", "checkin", "viewer"]);

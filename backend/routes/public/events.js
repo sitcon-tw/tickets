@@ -1,5 +1,5 @@
-import prisma from "../../config/database.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function eventsRoutes(fastify, options) {
 	// 活動基本資訊

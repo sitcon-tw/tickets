@@ -1,11 +1,7 @@
-import prisma from "../../config/database.js";
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminEventsRoutes(fastify, options) {
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 創建新活動
+export default async function adminEventsRoutes(fastify, options) {	// 創建新活動
 	fastify.post(
 		"/events",
 		{

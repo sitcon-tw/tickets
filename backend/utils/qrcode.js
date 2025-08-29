@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+// TODO: Implement actual QR code generation
+
 // Simple QR code generation using HTML canvas approach
 // In a production environment, you might want to use a proper QR code library like 'qrcode'
 export const generateQRCodeDataURL = (data) => {

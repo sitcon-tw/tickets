@@ -1,5 +1,5 @@
-import prisma from "../../config/database.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function statsRoutes(fastify, options) {
 	// 簽到統計資訊
@@ -13,7 +13,6 @@ export default async function statsRoutes(fastify, options) {
 		},
 		async (request, reply) => {
 			try {
-				// Get check-in statistics
 				const totalRegistrations = await prisma.registration.count({
 					where: {
 						status: 'confirmed'

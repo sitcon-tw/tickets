@@ -1,8 +1,8 @@
-import prisma from "../../../config/database.js";
-import { errorResponse, successResponse } from "../../../utils/response.js";
-import { sendRegistrationConfirmation } from "../../../utils/email.js";
-import { generateCheckInCode, generateQRCodeDataURL } from "../../../utils/qrcode.js";
-import { validateFormData } from "../../../utils/validation.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
+import { sendRegistrationConfirmation } from "#utils/email.js";
+import { generateCheckInCode, generateQRCodeDataURL } from "#utils/qrcode.js";
+import { validateFormData } from "#utils/validation.js";
 
 export default async function coreRegistrationRoutes(fastify, options) {
 	// 提交報名表單

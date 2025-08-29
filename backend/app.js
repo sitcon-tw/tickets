@@ -1,36 +1,23 @@
 import cors from "@fastify/cors";
-import staticPlugin from "@fastify/static";
 import dotenv from "dotenv";
 import Fastify from "fastify";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const fastify = Fastify({
 	logger: true
 });
 
-// Enable CORS with proper configuration for Better Auth
 await fastify.register(cors, {
-	origin: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"], // Allow frontend and backend
+	origin: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"],
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
 });
 
-// Serve static files from "public"
-await fastify.register(staticPlugin, {
-	root: join(__dirname, "public"),
-	prefix: "/" // Serve files directly from root
-});
-
-// Set up Swagger for API documentation
+// Swagger UI
 await fastify.register(import("@fastify/swagger"));
 
 await fastify.register(import("@fastify/swagger-ui"), {
@@ -53,9 +40,6 @@ await fastify.register(import("@fastify/swagger-ui"), {
 	},
 	transformSpecificationClone: true
 });
-
-// Register API routes
-await fastify.register(routes);
 
 // Better Auth routes
 fastify.all(
@@ -117,6 +101,9 @@ fastify.all(
 		}
 	}
 );
+
+// 剩下的 routes
+await fastify.register(routes);
 
 const port = process.env.PORT || 3000;
 

@@ -1,12 +1,7 @@
-import prisma from "../../config/database.js";
-import { requireAdmin } from "../../middleware/auth.js";
-import { errorResponse, successResponse } from "../../utils/response.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function adminRegistrationsRoutes(fastify, options) {
-	// Add auth middleware to all admin routes
-	fastify.addHook("preHandler", requireAdmin);
-
-	// 獲取報名列表
+export default async function adminRegistrationsRoutes(fastify, options) {	// 獲取報名列表
 	fastify.get(
 		"/registrations",
 		{

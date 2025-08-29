@@ -1,4 +1,4 @@
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function fileUploadRoutes(fastify, options) {
 	// 檔案上傳處理

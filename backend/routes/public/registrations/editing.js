@@ -1,8 +1,8 @@
-import prisma from "../../../config/database.js";
-import { errorResponse, successResponse } from "../../../utils/response.js";
-import { sendEditLink } from "../../../utils/email.js";
-import { generateEditToken, hashToken, createEditTokenExpiry, isTokenExpired } from "../../../utils/token.js";
-import { validateFormData } from "../../../utils/validation.js";
+import prisma from "#config/database.js";
+import { errorResponse, successResponse } from "#utils/response.js";
+import { sendEditLink } from "#utils/email.js";
+import { generateEditToken, hashToken, createEditTokenExpiry, isTokenExpired } from "#utils/token.js";
+import { validateFormData } from "#utils/validation.js";
 
 export default async function editingRoutes(fastify, options) {
 	// 請求編輯連結

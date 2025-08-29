@@ -1,4 +1,4 @@
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function trendsRoutes(fastify, options) {
 	// 報名趨勢分析

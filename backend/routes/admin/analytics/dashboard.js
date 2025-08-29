@@ -1,4 +1,4 @@
-import { errorResponse, successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "#utils/response.js";
 
 export default async function dashboardRoutes(fastify, options) {
 	// 管理後台儀表板數據

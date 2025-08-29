@@ -25,16 +25,13 @@ export const validateFormData = (data, formFields) => {
 		const value = data[field.name];
 		const fieldErrors = [];
 
-		// Check required
 		if (field.isRequired && !validateRequired(value)) {
 			fieldErrors.push(`${field.label}為必填欄位`);
 			continue;
 		}
 
-		// Skip validation if field is not required and empty
 		if (!validateRequired(value)) continue;
 
-		// Validate based on field type
 		switch (field.type) {
 			case "email":
 				if (!validateEmail(value)) {

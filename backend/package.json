@@ -3,6 +3,9 @@
 	"type": "module",
 	"description": "",
 	"main": "app.js",
+	"imports": {
+		"#*": "./*"
+	},
 	"scripts": {
 		"start": "node app.js",
 		"dev": "nodemon app.js",
