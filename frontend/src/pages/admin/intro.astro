@@ -23,6 +23,7 @@ const l = i18n.l(Astro.url);
 	<main>
 		<h1>編輯說明</h1>
 		<p>若要編輯首頁的說明，以及票種的說明，請直接編輯 <a href="https://github.com/sitcon-tw/2026-tickets/tree/dev/frontend/src/pages/markdown" target="_blank">GitHub Markdown 資料夾</a> 裡面的檔案。</p>
+		<p>以下為目前有的文件：</p>
 		<ul class="github-list"></ul>
 		<script define:vars={{ lang: i18n.localesList() }}>
 			let items = ["intro", "faq", "terms"];
