@@ -1,75 +1,417 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin tickets routes with modular types and schemas
+ * @typedef {import('../../types/database.js').Ticket} Ticket
+ * @typedef {import('../../types/api.js').TicketCreateRequest} TicketCreateRequest
+ * @typedef {import('../../types/api.js').TicketUpdateRequest} TicketUpdateRequest
+ */
 
-export default async function adminTicketsRoutes(fastify, options) {	// 獲取票種列表
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse,
+	createPagination
+} from "#utils/response.js";
+import { ticketSchemas } from "../../schemas/ticket.js";
+
+/**
+ * Admin tickets routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminTicketsRoutes(fastify, options) {
+	// Create new ticket
+	fastify.post(
+		"/tickets",
+		{
+			schema: ticketSchemas.createTicket
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: TicketCreateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				/** @type {TicketCreateRequest} */
+				const { eventId, name, description, price, quantity, saleStartDate, saleEndDate } = request.body;
+
+				// Verify event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
+				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate sale dates
+				if (saleStartDate && saleEndDate) {
+					const saleStart = new Date(saleStartDate);
+					const saleEnd = new Date(saleEndDate);
+
+					if (isNaN(saleStart.getTime()) || isNaN(saleEnd.getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的販售日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (saleStart >= saleEnd) {
+						const { response, statusCode } = validationErrorResponse("販售開始時間必須早於結束時間");
+						return reply.code(statusCode).send(response);
+					}
+
+					// Sale end should not be after event start
+					if (saleEnd > event.startDate) {
+						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Check for duplicate ticket names in the same event
+				const existingTicket = await prisma.ticket.findFirst({
+					where: { 
+						eventId,
+						name 
+					}
+				});
+
+				if (existingTicket) {
+					const { response, statusCode } = conflictResponse("此活動已存在同名票券");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {Ticket} */
+				const ticket = await prisma.ticket.create({
+					data: {
+						eventId,
+						name,
+						description,
+						price,
+						quantity,
+						sold: 0,
+						saleStartDate: saleStartDate ? new Date(saleStartDate) : null,
+						saleEndDate: saleEndDate ? new Date(saleEndDate) : null,
+						isActive: true
+					}
+				});
+
+				return reply.code(201).send(successResponse(ticket, "票券創建成功"));
+			} catch (error) {
+				console.error("Create ticket error:", error);
+				const { response, statusCode } = serverErrorResponse("創建票券失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get ticket by ID
+	fastify.get(
+		"/tickets/:id",
+		{
+			schema: ticketSchemas.getTicket
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				/** @type {Ticket | null} */
+				const ticket = await prisma.ticket.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					}
+				});
+
+				if (!ticket) {
+					const { response, statusCode } = notFoundResponse("票券不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				return reply.send(successResponse(ticket));
+			} catch (error) {
+				console.error("Get ticket error:", error);
+				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Update ticket
+	fastify.put(
+		"/tickets/:id",
+		{
+			schema: ticketSchemas.updateTicket
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: TicketUpdateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+				/** @type {TicketUpdateRequest} */
+				const updateData = request.body;
+
+				// Check if ticket exists
+				const existingTicket = await prisma.ticket.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								startDate: true,
+								endDate: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					}
+				});
+
+				if (!existingTicket) {
+					const { response, statusCode } = notFoundResponse("票券不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent quantity reduction below sold amount
+				if (updateData.quantity !== undefined && updateData.quantity < existingTicket.sold) {
+					const { response, statusCode } = validationErrorResponse(
+						`票券數量不能低於已售出數量 (${existingTicket.sold})`
+					);
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate sale dates if provided
+				if (updateData.saleStartDate || updateData.saleEndDate) {
+					const saleStart = updateData.saleStartDate ? 
+						new Date(updateData.saleStartDate) : existingTicket.saleStartDate;
+					const saleEnd = updateData.saleEndDate ? 
+						new Date(updateData.saleEndDate) : existingTicket.saleEndDate;
+
+					if (updateData.saleStartDate && isNaN(new Date(updateData.saleStartDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的販售開始日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (updateData.saleEndDate && isNaN(new Date(updateData.saleEndDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的販售結束日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (saleStart && saleEnd && saleStart >= saleEnd) {
+						const { response, statusCode } = validationErrorResponse("販售開始時間必須早於結束時間");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (saleEnd && saleEnd > existingTicket.event.startDate) {
+						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Check for name conflicts in the same event
+				if (updateData.name && updateData.name !== existingTicket.name) {
+					const nameConflict = await prisma.ticket.findFirst({
+						where: { 
+							eventId: existingTicket.eventId,
+							name: updateData.name,
+							id: { not: id }
+						}
+					});
+
+					if (nameConflict) {
+						const { response, statusCode } = conflictResponse("此活動已存在同名票券");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Prepare update data
+				const updatePayload = {
+					...updateData,
+					...(updateData.saleStartDate && { saleStartDate: new Date(updateData.saleStartDate) }),
+					...(updateData.saleEndDate && { saleEndDate: new Date(updateData.saleEndDate) }),
+					updatedAt: new Date()
+				};
+
+				/** @type {Ticket} */
+				const ticket = await prisma.ticket.update({
+					where: { id },
+					data: updatePayload
+				});
+
+				return reply.send(successResponse(ticket, "票券更新成功"));
+			} catch (error) {
+				console.error("Update ticket error:", error);
+				const { response, statusCode } = serverErrorResponse("更新票券失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Delete ticket
+	fastify.delete(
+		"/tickets/:id",
+		{
+			schema: ticketSchemas.deleteTicket
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Check if ticket exists
+				const existingTicket = await prisma.ticket.findUnique({
+					where: { id },
+					include: {
+						_count: {
+							select: { registrations: true }
+						}
+					}
+				});
+
+				if (!existingTicket) {
+					const { response, statusCode } = notFoundResponse("票券不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent deletion if there are registrations
+				if (existingTicket._count.registrations > 0) {
+					const { response, statusCode } = conflictResponse("無法刪除已有報名的票券");
+					return reply.code(statusCode).send(response);
+				}
+
+				await prisma.ticket.delete({
+					where: { id }
+				});
+
+				return reply.send(successResponse(null, "票券刪除成功"));
+			} catch (error) {
+				console.error("Delete ticket error:", error);
+				const { response, statusCode } = serverErrorResponse("刪除票券失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// List tickets
 	fastify.get(
 		"/tickets",
 		{
+			schema: ticketSchemas.listTickets
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, isActive?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { eventId, isActive } = request.query;
+
+				// Build where clause
+				const where = {};
+				if (eventId) where.eventId = eventId;
+				if (isActive !== undefined) where.isActive = isActive;
+
+				/** @type {Ticket[]} */
+				const tickets = await prisma.ticket.findMany({
+					where,
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					},
+					orderBy: { createdAt: 'desc' }
+				});
+
+				// Add availability status to each ticket
+				const ticketsWithAvailability = tickets.map(ticket => {
+					const now = new Date();
+					const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
+						(!ticket.saleEndDate || now <= ticket.saleEndDate);
+					const available = ticket.quantity - ticket.sold;
+					const isSoldOut = available <= 0;
+
+					return {
+						...ticket,
+						available,
+						isOnSale,
+						isSoldOut
+					};
+				});
+
+				return reply.send(successResponse(ticketsWithAvailability));
+			} catch (error) {
+				console.error("List tickets error:", error);
+				const { response, statusCode } = serverErrorResponse("取得票券列表失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get ticket sales analytics
+	fastify.get(
+		"/tickets/:id/analytics",
+		{
 			schema: {
-				description: "獲取票種列表",
+				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],
-				querystring: {
+				params: {
 					type: 'object',
 					properties: {
-						eventId: {
+						id: {
 							type: 'string',
-							description: '活動 ID 篩選'
-						},
-						page: {
-							type: 'integer',
-							default: 1,
-							minimum: 1,
-							description: '頁碼'
-						},
-						limit: {
-							type: 'integer',
-							default: 20,
-							minimum: 1,
-							maximum: 100,
-							description: '每頁筆數'
+							description: '票券 ID'
 						}
-					}
+					},
+					required: ['id']
 				},
 				response: {
 					200: {
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										name: { type: 'string' },
-										description: { type: 'string' },
-										price: { type: 'number' },
-										quantity: { type: 'integer' },
-										soldCount: { type: 'integer' },
-										event: {
-											type: 'object',
-											properties: {
-												id: { type: 'string' },
-												name: { type: 'string' }
-											}
-										},
-										_count: {
-											type: 'object',
-											properties: {
-												registrations: { type: 'integer' }
-											}
-										}
-									}
-								}
-							},
 							message: { type: 'string' },
-							pagination: {
+							data: {
 								type: 'object',
 								properties: {
-									page: { type: 'integer' },
-									limit: { type: 'integer' },
-									total: { type: 'integer' },
-									totalPages: { type: 'integer' }
+									totalSold: { type: 'integer' },
+									totalRevenue: { type: 'number' },
+									availableQuantity: { type: 'integer' },
+									salesByStatus: { type: 'object' },
+									dailySales: { type: 'array' }
 								}
 							}
 						}
@@ -77,278 +419,65 @@ export default async function adminTicketsRoutes(fastify, options) {	// 獲取�
 				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId, page = 1, limit = 20 } = request.query;
-				const skip = (page - 1) * limit;
+				const { id } = request.params;
 
-				const where = eventId ? { eventId } : {};
+				// Check if ticket exists
+				const ticket = await prisma.ticket.findUnique({
+					where: { id }
+				});
 
-				const [tickets, total] = await Promise.all([
-					prisma.ticket.findMany({
-						where,
-						skip,
-						take: parseInt(limit),
-						include: {
-							event: {
-								select: { id: true, name: true }
-							},
-							_count: {
-								select: { registrations: true }
-							}
-						},
-						orderBy: { createdAt: "desc" }
+				if (!ticket) {
+					const { response, statusCode } = notFoundResponse("票券不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Get registration statistics
+				const [salesByStatus, dailySales] = await Promise.all([
+					// Sales by registration status
+					prisma.registration.groupBy({
+						by: ['status'],
+						where: { ticketId: id },
+						_count: { id: true }
 					}),
-					prisma.ticket.count({ where })
+					// Daily sales data
+					prisma.$queryRaw`
+						SELECT 
+							DATE(createdAt) as date,
+							COUNT(*) as count,
+							SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_count
+						FROM Registration 
+						WHERE ticketId = ${id}
+						GROUP BY DATE(createdAt)
+						ORDER BY date DESC
+						LIMIT 30
+					`
 				]);
 
-				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
-					total,
-					totalPages: Math.ceil(total / limit)
+				const totalSold = ticket.sold;
+				const totalRevenue = totalSold * ticket.price;
+				const availableQuantity = ticket.quantity - ticket.sold;
+
+				const analytics = {
+					totalSold,
+					totalRevenue,
+					availableQuantity,
+					salesByStatus: salesByStatus.reduce((acc, item) => {
+						acc[item.status] = item._count.id;
+						return acc;
+					}, {}),
+					dailySales
 				};
 
-				return successResponse(tickets, "取得票種列表成功", pagination);
+				return reply.send(successResponse(analytics));
 			} catch (error) {
-				console.error("Get tickets error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得票種列表失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 新增票種
-	fastify.post(
-		"/tickets",
-		{
-			schema: {
-				description: "新增票種",
-				tags: ["admin/tickets"],
-				body: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						},
-						name: {
-							type: 'string',
-							description: '票種名稱'
-						},
-						description: {
-							type: 'string',
-							description: '票種描述'
-						},
-						price: {
-							type: 'number',
-							minimum: 0,
-							description: '價格'
-						},
-						quantity: {
-							type: 'integer',
-							minimum: 1,
-							description: '數量'
-						},
-						saleStartTime: {
-							type: 'string',
-							format: 'date-time',
-							description: '開售時間'
-						},
-						saleEndTime: {
-							type: 'string',
-							format: 'date-time',
-							description: '結束售票時間'
-						},
-						requireInviteCode: {
-							type: 'boolean',
-							description: '是否需要邀請碼'
-						}
-					},
-					required: ['eventId', 'name', 'price', 'quantity']
-				},
-				response: {
-					201: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: { type: 'object' },
-							message: { type: 'string' }
-						}
-					},
-					400: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: { type: 'string' }
-						}
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { eventId, name, description, price, quantity, saleStartTime, saleEndTime, requireInviteCode } = request.body;
-
-				if (!eventId || !name || price === undefined || quantity === undefined) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "活動ID、票種名稱、價格和數量為必填");
-					return reply.code(statusCode).send(response);
-				}
-
-				const ticket = await prisma.ticket.create({
-					data: {
-						eventId,
-						name,
-						description,
-						price: parseFloat(price),
-						quantity: parseInt(quantity),
-						saleStart: saleStartTime ? new Date(saleStartTime) : null,
-						saleEnd: saleEndTime ? new Date(saleEndTime) : null,
-						requireInviteCode: Boolean(requireInviteCode),
-						soldCount: 0,
-						isActive: true
-					},
-					include: {
-						event: {
-							select: { id: true, name: true }
-						}
-					}
-				});
-
-				return successResponse(ticket, "新增票種成功");
-			} catch (error) {
-				console.error("Create ticket error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "新增票種失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 更新票種資訊
-	fastify.put(
-		"/tickets/:ticketId",
-		{
-			schema: {
-				description: "更新票種資訊",
-				tags: ["admin/tickets"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { ticketId } = request.params;
-				const { name, description, price, quantity, saleStartTime, saleEndTime, requireInviteCode } = request.body;
-
-				const updateData = {};
-				if (name !== undefined) updateData.name = name;
-				if (description !== undefined) updateData.description = description;
-				if (price !== undefined) updateData.price = parseFloat(price);
-				if (quantity !== undefined) updateData.quantity = parseInt(quantity);
-				if (saleStartTime !== undefined) updateData.saleStart = saleStartTime ? new Date(saleStartTime) : null;
-				if (saleEndTime !== undefined) updateData.saleEnd = saleEndTime ? new Date(saleEndTime) : null;
-				if (requireInviteCode !== undefined) updateData.requireInviteCode = Boolean(requireInviteCode);
-
-				updateData.updatedAt = new Date();
-
-				const ticket = await prisma.ticket.update({
-					where: { id: ticketId },
-					data: updateData,
-					include: {
-						event: {
-							select: { id: true, name: true }
-						}
-					}
-				});
-
-				return successResponse(ticket, "更新票種資訊成功");
-			} catch (error) {
-				console.error("Update ticket error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新票種資訊失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 刪除票種
-	fastify.delete(
-		"/tickets/:ticketId",
-		{
-			schema: {
-				description: "刪除票種",
-				tags: ["admin/tickets"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { ticketId } = request.params;
-
-				// Check if ticket has any registrations
-				const registrationCount = await prisma.registration.count({
-					where: { ticketId }
-				});
-
-				if (registrationCount > 0) {
-					const { response, statusCode } = errorResponse("CONFLICT", "此票種已有報名記錄，無法刪除", null, 409);
-					return reply.code(statusCode).send(response);
-				}
-
-				await prisma.ticket.update({
-					where: { id: ticketId },
-					data: { isActive: false, updatedAt: new Date() }
-				});
-
-				return successResponse({ message: "票種已刪除" });
-			} catch (error) {
-				console.error("Delete ticket error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "刪除票種失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 獲取各票種銷售概況
-	fastify.get(
-		"/tickets/sales-overview",
-		{
-			schema: {
-				description: "獲取各票種銷售概況",
-				tags: ["admin/tickets"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { eventId } = request.query;
-
-				const where = eventId ? { eventId, isActive: true } : { isActive: true };
-
-				const tickets = await prisma.ticket.findMany({
-					where,
-					select: {
-						id: true,
-						name: true,
-						price: true,
-						quantity: true,
-						soldCount: true,
-						saleStart: true,
-						saleEnd: true,
-						event: {
-							select: { id: true, name: true }
-						}
-					},
-					orderBy: { createdAt: "asc" }
-				});
-
-				const salesOverview = tickets.map(ticket => ({
-					...ticket,
-					soldPercentage: ticket.quantity > 0 ? ((ticket.soldCount / ticket.quantity) * 100).toFixed(2) : 0,
-					remainingQuantity: ticket.quantity - ticket.soldCount,
-					totalRevenue: ticket.soldCount * ticket.price,
-					isOnSale: (!ticket.saleStart || ticket.saleStart <= new Date()) && (!ticket.saleEnd || ticket.saleEnd >= new Date())
-				}));
-
-				return successResponse(salesOverview);
-			} catch (error) {
-				console.error("Get sales overview error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得銷售概況失敗", null, 500);
+				console.error("Get ticket analytics error:", error);
+				const { response, statusCode } = serverErrorResponse("取得票券分析失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

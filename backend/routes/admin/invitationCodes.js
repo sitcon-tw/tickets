@@ -1,119 +1,328 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin invitation codes routes with modular types and schemas
+ * @typedef {import('../../types/database.js').InvitationCode} InvitationCode
+ * @typedef {import('../../types/api.js').InvitationCodeCreateRequest} InvitationCodeCreateRequest
+ */
 
-export default async function adminInvitationCodesRoutes(fastify, options) {	// 獲取邀請碼列表
-	fastify.get(
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse
+} from "#utils/response.js";
+import { invitationCodeSchemas } from "../../schemas/invitationCode.js";
+
+/**
+ * Admin invitation codes routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminInvitationCodesRoutes(fastify, options) {
+	// Create new invitation code
+	fastify.post(
 		"/invitation-codes",
 		{
-			schema: {
-				description: "獲取邀請碼列表",
-				tags: ["admin/invitation-codes"],
-				querystring: {
-					type: 'object',
-					properties: {
-						page: {
-							type: 'integer',
-							default: 1,
-							minimum: 1,
-							description: '頁碼'
-						},
-						limit: {
-							type: 'integer',
-							default: 20,
-							minimum: 1,
-							maximum: 100,
-							description: '每頁筆數'
-						},
-						eventId: {
-							type: 'string',
-							description: '活動 ID 篩選'
-						}
-					}
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										code: { type: 'string' },
-										name: { type: 'string' },
-										description: { type: 'string' },
-										usageLimit: { type: 'integer' },
-										usedCount: { type: 'integer' },
-										isActive: { type: 'boolean' },
-										event: {
-											type: 'object',
-											properties: {
-												id: { type: 'string' },
-												name: { type: 'string' }
-											}
-										}
-									}
-								}
-							},
-							message: { type: 'string' },
-							pagination: {
-								type: 'object',
-								properties: {
-									page: { type: 'integer' },
-									limit: { type: 'integer' },
-									total: { type: 'integer' },
-									totalPages: { type: 'integer' }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: invitationCodeSchemas.createInvitationCode
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: InvitationCodeCreateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { page = 1, limit = 20, eventId } = request.query;
-				const skip = (page - 1) * limit;
-				const where = eventId ? { eventId } : {};
+				/** @type {InvitationCodeCreateRequest} */
+				const { eventId, code, description, usageLimit, expiresAt } = request.body;
 
-				const [codes, total] = await Promise.all([
-					prisma.invitationCode.findMany({
-						where,
-						skip,
-						take: parseInt(limit),
-						include: {
-							event: { select: { id: true, name: true } },
-							tickets: { include: { ticket: { select: { id: true, name: true } } } }
-						},
-						orderBy: { createdAt: "desc" }
-					}),
-					prisma.invitationCode.count({ where })
-				]);
+				// Verify event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
+				});
 
-				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
-					total,
-					totalPages: Math.ceil(total / limit)
-				};
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
 
-				return successResponse(codes, "取得邀請碼列表成功", pagination);
+				// Check for duplicate codes
+				const existingCode = await prisma.invitationCode.findFirst({
+					where: { 
+						eventId,
+						code 
+					}
+				});
+
+				if (existingCode) {
+					const { response, statusCode } = conflictResponse("此活動已存在相同邀請碼");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate expiration date
+				if (expiresAt && new Date(expiresAt) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("到期時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {InvitationCode} */
+				const invitationCode = await prisma.invitationCode.create({
+					data: {
+						eventId,
+						code,
+						description,
+						usageLimit,
+						usageCount: 0,
+						expiresAt: expiresAt ? new Date(expiresAt) : null,
+						isActive: true
+					}
+				});
+
+				return reply.code(201).send(successResponse(invitationCode, "邀請碼創建成功"));
 			} catch (error) {
-				console.error("Get invitation codes error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得邀請碼列表失敗", null, 500);
+				console.error("Create invitation code error:", error);
+				const { response, statusCode } = serverErrorResponse("創建邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 自動生成邀請碼
+	// Get invitation code by ID
+	fastify.get(
+		"/invitation-codes/:id",
+		{
+			schema: invitationCodeSchemas.getInvitationCode
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				/** @type {InvitationCode | null} */
+				const invitationCode = await prisma.invitationCode.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					}
+				});
+
+				if (!invitationCode) {
+					const { response, statusCode } = notFoundResponse("邀請碼不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				return reply.send(successResponse(invitationCode));
+			} catch (error) {
+				console.error("Get invitation code error:", error);
+				const { response, statusCode } = serverErrorResponse("取得邀請碼失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Update invitation code
+	fastify.put(
+		"/invitation-codes/:id",
+		{
+			schema: invitationCodeSchemas.updateInvitationCode
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: Partial<InvitationCodeCreateRequest>}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+				const updateData = request.body;
+
+				// Check if invitation code exists
+				const existingCode = await prisma.invitationCode.findUnique({
+					where: { id }
+				});
+
+				if (!existingCode) {
+					const { response, statusCode } = notFoundResponse("邀請碼不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check for code conflicts in the same event
+				if (updateData.code && updateData.code !== existingCode.code) {
+					const codeConflict = await prisma.invitationCode.findFirst({
+						where: { 
+							eventId: existingCode.eventId,
+							code: updateData.code,
+							id: { not: id }
+						}
+					});
+
+					if (codeConflict) {
+						const { response, statusCode } = conflictResponse("此活動已存在相同邀請碼");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Validate expiration date
+				if (updateData.expiresAt && new Date(updateData.expiresAt) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("到期時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Don't allow reducing usage limit below current usage
+				if (updateData.usageLimit !== undefined && updateData.usageLimit < existingCode.usageCount) {
+					const { response, statusCode } = validationErrorResponse(
+						`使用次數限制不能低於已使用次數 (${existingCode.usageCount})`
+					);
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prepare update data
+				const updatePayload = {
+					...updateData,
+					...(updateData.expiresAt && { expiresAt: new Date(updateData.expiresAt) }),
+					updatedAt: new Date()
+				};
+
+				/** @type {InvitationCode} */
+				const invitationCode = await prisma.invitationCode.update({
+					where: { id },
+					data: updatePayload
+				});
+
+				return reply.send(successResponse(invitationCode, "邀請碼更新成功"));
+			} catch (error) {
+				console.error("Update invitation code error:", error);
+				const { response, statusCode } = serverErrorResponse("更新邀請碼失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Delete invitation code
+	fastify.delete(
+		"/invitation-codes/:id",
+		{
+			schema: invitationCodeSchemas.deleteInvitationCode
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Check if invitation code exists
+				const existingCode = await prisma.invitationCode.findUnique({
+					where: { id },
+					include: {
+						_count: {
+							select: { registrations: true }
+						}
+					}
+				});
+
+				if (!existingCode) {
+					const { response, statusCode } = notFoundResponse("邀請碼不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent deletion if there are registrations using this code
+				if (existingCode._count.registrations > 0) {
+					const { response, statusCode } = conflictResponse("無法刪除已被使用的邀請碼");
+					return reply.code(statusCode).send(response);
+				}
+
+				await prisma.invitationCode.delete({
+					where: { id }
+				});
+
+				return reply.send(successResponse(null, "邀請碼刪除成功"));
+			} catch (error) {
+				console.error("Delete invitation code error:", error);
+				const { response, statusCode } = serverErrorResponse("刪除邀請碼失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// List invitation codes
+	fastify.get(
+		"/invitation-codes",
+		{
+			schema: invitationCodeSchemas.listInvitationCodes
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, isActive?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { eventId, isActive } = request.query;
+
+				// Build where clause
+				const where = {};
+				if (eventId) where.eventId = eventId;
+				if (isActive !== undefined) where.isActive = isActive;
+
+				/** @type {InvitationCode[]} */
+				const invitationCodes = await prisma.invitationCode.findMany({
+					where,
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					},
+					orderBy: { createdAt: 'desc' }
+				});
+
+				// Add status indicators
+				const now = new Date();
+				const codesWithStatus = invitationCodes.map(code => ({
+					...code,
+					isExpired: code.expiresAt && code.expiresAt < now,
+					isExhausted: code.usageLimit && code.usageCount >= code.usageLimit,
+					remainingUses: code.usageLimit ? Math.max(0, code.usageLimit - code.usageCount) : null
+				}));
+
+				return reply.send(successResponse(codesWithStatus));
+			} catch (error) {
+				console.error("List invitation codes error:", error);
+				const { response, statusCode } = serverErrorResponse("取得邀請碼列表失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Bulk create invitation codes
 	fastify.post(
-		"/invitation-codes/generate",
+		"/invitation-codes/bulk",
 		{
 			schema: {
-				description: "自動生成邀請碼",
+				description: "批量創建邀請碼",
 				tags: ["admin/invitation-codes"],
 				body: {
 					type: 'object',
@@ -122,19 +331,15 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 							type: 'string',
 							description: '活動 ID'
 						},
-						name: {
+						prefix: {
 							type: 'string',
-							description: '邀請碼名稱'
-						},
-						description: {
-							type: 'string',
-							description: '邀請碼描述'
+							description: '邀請碼前綴',
+							minLength: 1
 						},
 						count: {
 							type: 'integer',
 							minimum: 1,
-							maximum: 1000,
-							default: 1,
+							maximum: 100,
 							description: '生成數量'
 						},
 						usageLimit: {
@@ -142,162 +347,84 @@ export default async function adminInvitationCodesRoutes(fastify, options) {	// 
 							minimum: 1,
 							description: '使用次數限制'
 						},
-						validFrom: {
+						expiresAt: {
 							type: 'string',
 							format: 'date-time',
-							description: '有效開始時間'
-						},
-						validUntil: {
-							type: 'string',
-							format: 'date-time',
-							description: '有效結束時間'
-						},
-						ticketIds: {
-							type: 'array',
-							items: { type: 'string' },
-							description: '可用票種 ID 列表'
+							description: '到期時間'
 						}
 					},
-					required: ['eventId', 'name', 'ticketIds']
-				},
-				response: {
-					201: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										code: { type: 'string' },
-										name: { type: 'string' }
-									}
-								}
-							},
-							message: { type: 'string' }
-						}
-					}
+					required: ['eventId', 'prefix', 'count']
 				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: {eventId: string, prefix: string, count: number, usageLimit?: number, expiresAt?: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { ticketId, count, usageLimit, prefix, expiryDate } = request.body;
+				const { eventId, prefix, count, usageLimit, expiresAt } = request.body;
 
-				if (!ticketId || !count) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "票種ID和生成數量為必填");
-					return reply.code(statusCode).send(response);
-				}
-
-				// TODO: Implement invitation code generation logic
-				return successResponse({ message: `已生成 ${count} 個邀請碼` });
-			} catch (error) {
-				console.error("Generate invitation codes error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "生成邀請碼失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 手動新增邀請碼
-	fastify.post(
-		"/invitation-codes",
-		{
-			schema: {
-				description: "手動新增邀請碼",
-				tags: ["admin/invitation-codes"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { code, ticketIds, usageLimit, description, expiryDate } = request.body;
-
-				if (!code || !ticketIds || !Array.isArray(ticketIds)) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "邀請碼和票種ID列表為必填");
-					return reply.code(statusCode).send(response);
-				}
-
-				// TODO: Implement manual invitation code creation
-				return successResponse({ message: "邀請碼創建成功" });
-			} catch (error) {
-				console.error("Create invitation code error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "創建邀請碼失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 更新邀請碼設定
-	fastify.put(
-		"/invitation-codes/:codeId",
-		{
-			schema: {
-				description: "更新邀請碼設定",
-				tags: ["admin/invitation-codes"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { codeId } = request.params;
-				const { usageLimit, isActive, expiryDate } = request.body;
-
-				// TODO: Implement invitation code update
-				return successResponse({ message: "邀請碼設定更新成功" });
-			} catch (error) {
-				console.error("Update invitation code error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新邀請碼設定失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 刪除邀請碼
-	fastify.delete(
-		"/invitation-codes/:codeId",
-		{
-			schema: {
-				description: "刪除邀請碼",
-				tags: ["admin/invitation-codes"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { codeId } = request.params;
-
-				// TODO: Implement invitation code deletion
-				return successResponse({ message: "邀請碼已刪除" });
-			} catch (error) {
-				console.error("Delete invitation code error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "刪除邀請碼失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 獲取邀請碼使用情況
-	fastify.get(
-		"/invitation-codes/:codeId/usage",
-		{
-			schema: {
-				description: "獲取邀請碼使用情況",
-				tags: ["admin/invitation-codes"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { codeId } = request.params;
-
-				// TODO: Implement invitation code usage retrieval
-				return successResponse({
-					usageCount: 0,
-					usageLimit: null,
-					usageHistory: []
+				// Verify event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
 				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Generate unique codes
+				const codes = [];
+				const existingCodes = await prisma.invitationCode.findMany({
+					where: { eventId },
+					select: { code: true }
+				});
+				const existingCodeSet = new Set(existingCodes.map(c => c.code));
+
+				for (let i = 0; i < count; i++) {
+					let code;
+					let attempts = 0;
+					do {
+						const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+						code = `${prefix}-${randomSuffix}`;
+						attempts++;
+					} while (existingCodeSet.has(code) && attempts < 100);
+
+					if (attempts >= 100) {
+						const { response, statusCode } = serverErrorResponse("無法生成足夠的唯一邀請碼");
+						return reply.code(statusCode).send(response);
+					}
+
+					codes.push({
+						eventId,
+						code,
+						description: `批量生成的邀請碼 - ${prefix}`,
+						usageLimit,
+						usageCount: 0,
+						expiresAt: expiresAt ? new Date(expiresAt) : null,
+						isActive: true
+					});
+					existingCodeSet.add(code);
+				}
+
+				// Create all codes in a transaction
+				await prisma.$transaction(
+					codes.map(codeData =>
+						prisma.invitationCode.create({
+							data: codeData
+						})
+					)
+				);
+
+				return reply.code(201).send(successResponse({
+					count: codes.length,
+					codes: codes.map(c => c.code)
+				}, `成功創建 ${codes.length} 個邀請碼`));
 			} catch (error) {
-				console.error("Get invitation code usage error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得邀請碼使用情況失敗", null, 500);
+				console.error("Bulk create invitation codes error:", error);
+				const { response, statusCode } = serverErrorResponse("批量創建邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

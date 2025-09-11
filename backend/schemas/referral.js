@@ -165,6 +165,44 @@ export const referralUsageListResponse = {
 	required: ['success', 'message', 'data']
 };
 
+export const referralStatsResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'object',
+				properties: {
+					totalReferrals: { type: 'integer' },
+					successfulReferrals: { type: 'integer' },
+					referralList: {
+						type: 'array',
+						items: {
+							type: 'object',
+							properties: {
+								id: { type: 'string' },
+								status: { type: 'string' },
+								ticketName: { type: 'string' },
+								registeredAt: { type: 'string', format: 'date-time' },
+								email: { type: 'string' }
+							}
+						}
+					},
+					referrerInfo: {
+						type: 'object',
+						properties: {
+							id: { type: 'string' },
+							checkInCode: { type: 'string' },
+							email: { type: 'string' }
+						}
+					}
+				}
+			}
+		}
+	},
+	404: errorResponse
+};
+
 export const referralSchemas = {
 	createReferral: {
 		description: '創建新推薦碼',

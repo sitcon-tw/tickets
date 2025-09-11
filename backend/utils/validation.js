@@ -1,4 +1,11 @@
-import { errorResponse } from "./response.js";
+/**
+ * @typedef {import('../types/validation.js').ValidationRule} ValidationRule
+ * @typedef {import('../types/validation.js').ValidationSchema} ValidationSchema
+ * @typedef {import('../types/validation.js').ValidationResult} ValidationResult
+ * @typedef {import('../types/database.js').FormField} FormField
+ */
+
+import { validationErrorResponse } from "./response.js";
 
 export const rules = {
 	required: value => {
@@ -63,7 +70,7 @@ export const validateBody = schema => {
 		}
 
 		if (Object.keys(errors).length > 0) {
-			const { response, statusCode } = errorResponse("VALIDATION_ERROR", "驗證失敗", errors, 422);
+			const { response, statusCode } = validationErrorResponse("驗證失敗", errors);
 			reply.code(statusCode).send(response);
 		}
 	};
@@ -90,7 +97,7 @@ export const validateQuery = schema => {
 		}
 
 		if (Object.keys(errors).length > 0) {
-			const { response, statusCode } = errorResponse("VALIDATION_ERROR", "驗證失敗", errors, 422);
+			const { response, statusCode } = validationErrorResponse("驗證失敗", errors);
 			reply.code(statusCode).send(response);
 		}
 	};

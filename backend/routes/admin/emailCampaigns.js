@@ -1,14 +1,54 @@
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin email campaigns routes with modular types and schemas
+ * @typedef {import('../../types/api.js').EmailCampaignCreateRequest} EmailCampaignCreateRequest
+ * @typedef {import('../../types/api.js').PaginationQuery} PaginationQuery
+ */
 
-export default async function adminEmailCampaignsRoutes(fastify, options) {	// 獲取郵件發送記錄
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	serverErrorResponse 
+} from "#utils/response.js";
+import { emailCampaignSchemas } from "../../schemas/emailCampaign.js";
+
+/**
+ * Admin email campaigns routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminEmailCampaignsRoutes(fastify, options) {
+	// Get email campaigns with pagination
 	fastify.get(
 		"/email-campaigns",
 		{
 			schema: {
+				...emailCampaignSchemas.listEmailCampaigns,
 				description: "獲取郵件發送記錄",
-				tags: ["admin/email-campaigns"]
+				querystring: {
+					type: 'object',
+					properties: {
+						...emailCampaignSchemas.listEmailCampaigns.querystring.properties,
+						page: {
+							type: 'integer',
+							minimum: 1,
+							default: 1,
+							description: '頁碼'
+						},
+						limit: {
+							type: 'integer',
+							minimum: 1,
+							maximum: 100,
+							default: 20,
+							description: '每頁筆數'
+						}
+					}
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
 				const { page = 1, limit = 20 } = request.query;
@@ -25,116 +65,168 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {	// �
 					totalPages: Math.ceil(total / limit)
 				};
 
-				return successResponse(campaigns, "取得郵件發送記錄成功", pagination);
+				return reply.send(successResponse(campaigns, "取得郵件發送記錄成功", pagination));
 			} catch (error) {
 				console.error("Get email campaigns error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得郵件發送記錄失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得郵件發送記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 建立新的郵件發送任務
+	// Create email campaign
 	fastify.post(
 		"/email-campaigns",
 		{
-			schema: {
-				description: "建立新的郵件發送任務",
-				tags: ["admin/email-campaigns"]
-			}
+			schema: emailCampaignSchemas.createEmailCampaign
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: EmailCampaignCreateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { name, subject, htmlContent, textContent, recipients, scheduleTime, attachments } = request.body;
+				/** @type {EmailCampaignCreateRequest} */
+				const { name, subject, content, eventId, targetAudience, scheduledAt } = request.body;
 
-				if (!name || !subject || (!htmlContent && !textContent) || !recipients) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "名稱、主旨、內容和收件人為必填");
+				if (!content) {
+					const { response, statusCode } = validationErrorResponse("必須提供郵件內容");
 					return reply.code(statusCode).send(response);
 				}
 
 				// TODO: Implement email campaign creation
-				return successResponse({ message: "郵件發送任務已建立" });
+				return reply.status(201).send(successResponse({ 
+					id: 'temp-id', 
+					name, 
+					status: 'pending' 
+				}, "郵件發送任務已建立"));
 			} catch (error) {
 				console.error("Create email campaign error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "建立郵件發送任務失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("建立郵件發送任務失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 獲取郵件發送狀態
+	// Get email campaign status
 	fastify.get(
 		"/email-campaigns/:campaignId/status",
 		{
 			schema: {
 				description: "獲取郵件發送狀態",
-				tags: ["admin/email-campaigns"]
+				tags: ["admin/email-campaigns"],
+				params: {
+					type: 'object',
+					properties: {
+						campaignId: { 
+							type: 'string',
+							description: '活動 ID' 
+						}
+					},
+					required: ['campaignId']
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
 				const { campaignId } = request.params;
 
 				// TODO: Implement email campaign status retrieval
-				return successResponse({
+				return reply.send(successResponse({
+					id: campaignId,
 					status: "pending",
 					sentCount: 0,
 					failedCount: 0,
 					totalRecipients: 0
-				});
+				}));
 			} catch (error) {
 				console.error("Get email campaign status error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得郵件發送狀態失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得郵件發送狀態失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 預覽郵件內容
+	// Preview email content
 	fastify.post(
 		"/email-campaigns/:campaignId/preview",
 		{
 			schema: {
 				description: "預覽郵件內容",
-				tags: ["admin/email-campaigns"]
+				tags: ["admin/email-campaigns"],
+				params: {
+					type: 'object',
+					properties: {
+						campaignId: { 
+							type: 'string',
+							description: '活動 ID' 
+						}
+					},
+					required: ['campaignId']
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
 				const { campaignId } = request.params;
-				const { recipientId, templateData } = request.body;
 
 				// TODO: Implement email preview with template variables
-				return successResponse({
+				return reply.send(successResponse({
+					campaignId,
 					previewHtml: "<h1>預覽內容</h1>",
 					previewText: "預覽內容"
-				});
+				}));
 			} catch (error) {
 				console.error("Preview email campaign error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "預覽郵件內容失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("預覽郵件內容失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 取消郵件發送任務
+	// Cancel email campaign
 	fastify.delete(
 		"/email-campaigns/:campaignId",
 		{
 			schema: {
 				description: "取消郵件發送任務",
-				tags: ["admin/email-campaigns"]
+				tags: ["admin/email-campaigns"],
+				params: {
+					type: 'object',
+					properties: {
+						campaignId: { 
+							type: 'string',
+							description: '活動 ID' 
+						}
+					},
+					required: ['campaignId']
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
 				const { campaignId } = request.params;
 
 				// TODO: Implement email campaign cancellation
-				return successResponse({ message: "郵件發送任務已取消" });
+				return reply.send(successResponse({ 
+					id: campaignId, 
+					status: 'cancelled' 
+				}, "郵件發送任務已取消"));
 			} catch (error) {
 				console.error("Cancel email campaign error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取消郵件發送任務失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取消郵件發送任務失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

@@ -81,7 +81,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 export const sendEditLink = async (email, editToken, event) => {
 	try {
 		const sender = {
-			email: process.env.MAIL_FROM_ADDRESS || "noreply@sitcon.org", 
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org", 
 			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 

@@ -265,3 +265,45 @@ export const invitationCodeSchemas = {
 		}
 	}
 };
+
+export const invitationCodeVerifyResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'object',
+				properties: {
+					valid: { type: 'boolean' },
+					invitationCode: {
+						type: 'object',
+						properties: {
+							id: { type: 'string' },
+							code: { type: 'string' },
+							description: { type: 'string' },
+							usageCount: { type: 'integer' },
+							usageLimit: { type: 'integer' },
+							expiresAt: { type: 'string', format: 'date-time' }
+						}
+					},
+					availableTickets: {
+						type: 'array',
+						items: {
+							type: 'object',
+							properties: {
+								id: { type: 'string' },
+								name: { type: 'string' },
+								description: { type: 'string' },
+								price: { type: 'number' },
+								quantity: { type: 'integer' },
+								sold: { type: 'integer' },
+								available: { type: 'integer' },
+								isOnSale: { type: 'boolean' }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+};

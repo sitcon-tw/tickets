@@ -1,461 +1,406 @@
+/**
+ * @fileoverview Admin form fields routes with modular types and schemas
+ * @typedef {import('../../types/database.js').FormField} FormField
+ * @typedef {import('../../types/api.js').FormFieldCreateRequest} FormFieldCreateRequest
+ * @typedef {import('../../types/api.js').ValidationRules} ValidationRules
+ */
+
 import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse
+} from "#utils/response.js";
+import { formFieldSchemas } from "../../schemas/formField.js";
 
-export default async function adminFormFieldsRoutes(fastify, options) {	// 獲取所有表單欄位
-	fastify.get(
-		"/form-fields",
-		{
-			schema: {
-				description: "獲取所有表單欄位",
-				tags: ["admin/form-fields"],
-				querystring: {
-					type: "object",
-					properties: {
-						page: { type: "integer", minimum: 1, default: 1 },
-						limit: { type: "integer", minimum: 1, maximum: 100, default: 50 }
-					}
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "string" },
-										label: { type: "string" },
-										type: { type: "string" },
-										description: { type: "string", nullable: true },
-										required: { type: "boolean" },
-										order: { type: "integer" },
-										options: { type: "string", nullable: true },
-										validation: { type: "string", nullable: true },
-										placeholder: { type: "string", nullable: true },
-										helpText: { type: "string", nullable: true },
-										isActive: { type: "boolean" },
-										createdAt: { type: "string", format: "date-time" },
-										updatedAt: { type: "string", format: "date-time" },
-										ticketFields: {
-											type: "array",
-											items: {
-												type: "object",
-												properties: {
-													id: { type: "string" },
-													isRequired: { type: "boolean" },
-													isVisible: { type: "boolean" },
-													order: { type: "integer" },
-													ticket: {
-														type: "object",
-														properties: {
-															id: { type: "string" },
-															name: { type: "string" }
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							},
-							pagination: {
-								type: "object",
-								properties: {
-									page: { type: "integer" },
-									limit: { type: "integer" },
-									total: { type: "integer" },
-									totalPages: { type: "integer" }
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { page = 1, limit = 50 } = request.query;
-				const skip = (page - 1) * limit;
-
-				const [formFields, total] = await Promise.all([
-					prisma.formField.findMany({
-						where: { isActive: true },
-						skip,
-						take: parseInt(limit),
-						include: {
-							ticketFields: {
-								include: {
-									ticket: {
-										select: { id: true, name: true }
-									}
-								}
-							}
-						},
-						orderBy: [{ order: "asc" }, { createdAt: "asc" }]
-					}),
-					prisma.formField.count({ where: { isActive: true } })
-				]);
-
-				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
-					total,
-					totalPages: Math.ceil(total / limit)
-				};
-
-				return successResponse(formFields, "取得表單欄位成功", pagination);
-			} catch (error) {
-				console.error("Get form fields error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得表單欄位失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 新增表單欄位
+/**
+ * Admin form fields routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminFormFieldsRoutes(fastify, options) {
+	// Create new form field
 	fastify.post(
 		"/form-fields",
 		{
-			schema: {
-				description: "新增表單欄位",
-				tags: ["admin/form-fields"],
-				body: {
-					type: "object",
-					required: ["name", "label", "type"],
-					properties: {
-						name: { type: "string", minLength: 1 },
-						label: { type: "string", minLength: 1 },
-						type: { 
-							type: "string", 
-							enum: ["text", "textarea", "email", "radio", "checkbox", "select", "file", "description"] 
-						},
-						description: { type: "string" },
-						required: { type: "boolean", default: false },
-						order: { type: "integer", default: 0 },
-						options: { type: "array" },
-						validation: { type: "object" },
-						placeholder: { type: "string" },
-						helpText: { type: "string" }
-					}
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									name: { type: "string" },
-									label: { type: "string" },
-									type: { type: "string" },
-									description: { type: "string", nullable: true },
-									required: { type: "boolean" },
-									order: { type: "integer" },
-									options: { type: "string", nullable: true },
-									validation: { type: "string", nullable: true },
-									placeholder: { type: "string", nullable: true },
-									helpText: { type: "string", nullable: true },
-									isActive: { type: "boolean" },
-									createdAt: { type: "string", format: "date-time" },
-									updatedAt: { type: "string", format: "date-time" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: formFieldSchemas.createFormField
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: FormFieldCreateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { name, label, type, description, required, order, options, validation, placeholder, helpText } = request.body;
+				/** @type {FormFieldCreateRequest} */
+				const { eventId, name, label, type, isRequired, options, validation, order } = request.body;
 
-				if (!name || !label || !type) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "欄位名稱、標籤和類型為必填");
+				// Verify event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
+				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				const validTypes = ["text", "textarea", "email", "radio", "checkbox", "select", "file", "description"];
-				if (!validTypes.includes(type)) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "無效的欄位類型");
+				// Check for duplicate field names in the same event
+				const existingField = await prisma.formField.findFirst({
+					where: { 
+						eventId,
+						name 
+					}
+				});
+
+				if (existingField) {
+					const { response, statusCode } = conflictResponse("此活動已存在同名欄位");
 					return reply.code(statusCode).send(response);
 				}
 
+				// Validate field type specific requirements
+				if (['select', 'radio', 'checkbox'].includes(type) && (!options || options.length === 0)) {
+					const { response, statusCode } = validationErrorResponse("選項欄位必須提供選項");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {FormField} */
 				const formField = await prisma.formField.create({
 					data: {
+						eventId,
 						name,
 						label,
 						type,
-						description,
-						required: Boolean(required),
-						order: order || 0,
+						isRequired: isRequired || false,
 						options: options ? JSON.stringify(options) : null,
 						validation: validation ? JSON.stringify(validation) : null,
-						placeholder,
-						helpText,
+						order: order || 0,
 						isActive: true
 					}
 				});
 
-				return successResponse(formField, "新增表單欄位成功");
+				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
 			} catch (error) {
 				console.error("Create form field error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "新增表單欄位失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("創建表單欄位失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 更新表單欄位
-	fastify.put(
-		"/form-fields/:fieldId",
+	// Get form field by ID
+	fastify.get(
+		"/form-fields/:id",
 		{
-			schema: {
-				description: "更新表單欄位",
-				tags: ["admin/form-fields"],
-				params: {
-					type: "object",
-					properties: {
-						fieldId: { type: "string" }
-					},
-					required: ["fieldId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						label: { type: "string", minLength: 1 },
-						description: { type: "string" },
-						required: { type: "boolean" },
-						order: { type: "integer" },
-						options: { type: "array" },
-						validation: { type: "object" },
-						placeholder: { type: "string" },
-						helpText: { type: "string" }
-					}
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									name: { type: "string" },
-									label: { type: "string" },
-									type: { type: "string" },
-									description: { type: "string", nullable: true },
-									required: { type: "boolean" },
-									order: { type: "integer" },
-									options: { type: "string", nullable: true },
-									validation: { type: "string", nullable: true },
-									placeholder: { type: "string", nullable: true },
-									helpText: { type: "string", nullable: true },
-									isActive: { type: "boolean" },
-									createdAt: { type: "string", format: "date-time" },
-									updatedAt: { type: "string", format: "date-time" }
-								}
+			schema: formFieldSchemas.getFormField
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				/** @type {FormField | null} */
+				const formField = await prisma.formField.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true
 							}
 						}
 					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { fieldId } = request.params;
-				const { label, description, required, order, options, validation, placeholder, helpText } = request.body;
-
-				const updateData = {};
-				if (label !== undefined) updateData.label = label;
-				if (description !== undefined) updateData.description = description;
-				if (required !== undefined) updateData.required = Boolean(required);
-				if (order !== undefined) updateData.order = order;
-				if (options !== undefined) updateData.options = options ? JSON.stringify(options) : null;
-				if (validation !== undefined) updateData.validation = validation ? JSON.stringify(validation) : null;
-				if (placeholder !== undefined) updateData.placeholder = placeholder;
-				if (helpText !== undefined) updateData.helpText = helpText;
-
-				updateData.updatedAt = new Date();
-
-				const formField = await prisma.formField.update({
-					where: { id: fieldId },
-					data: updateData
 				});
 
-				return successResponse(formField, "更新表單欄位成功");
-			} catch (error) {
-				console.error("Update form field error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新表單欄位失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 刪除表單欄位
-	fastify.delete(
-		"/form-fields/:fieldId",
-		{
-			schema: {
-				description: "刪除表單欄位",
-				tags: ["admin/form-fields"],
-				params: {
-					type: "object",
-					properties: {
-						fieldId: { type: "string" }
-					},
-					required: ["fieldId"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									message: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { fieldId } = request.params;
-
-				await prisma.formField.update({
-					where: { id: fieldId },
-					data: { isActive: false, updatedAt: new Date() }
-				});
-
-				return successResponse({ message: "表單欄位已刪除" });
-			} catch (error) {
-				console.error("Delete form field error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "刪除表單欄位失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 設定欄位與票種的顯示/必填關係
-	fastify.put(
-		"/form-fields/:fieldId/ticket-binding",
-		{
-			schema: {
-				description: "設定欄位與票種的顯示/必填關係",
-				tags: ["admin/form-fields"],
-				params: {
-					type: "object",
-					properties: {
-						fieldId: { type: "string" }
-					},
-					required: ["fieldId"]
-				},
-				body: {
-					type: "object",
-					required: ["ticketBindings"],
-					properties: {
-						ticketBindings: {
-							type: "array",
-							items: {
-								type: "object",
-								required: ["ticketId"],
-								properties: {
-									ticketId: { type: "string" },
-									isVisible: { type: "boolean", default: true },
-									isRequired: { type: "boolean", default: false },
-									order: { type: "integer", default: 0 }
-								}
-							}
-						}
-					}
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										fieldId: { type: "string" },
-										ticketId: { type: "string" },
-										isVisible: { type: "boolean" },
-										isRequired: { type: "boolean" },
-										order: { type: "integer" },
-										ticket: {
-											type: "object",
-											properties: {
-												id: { type: "string" },
-												name: { type: "string" }
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { fieldId } = request.params;
-				const { ticketBindings } = request.body;
-
-				if (!Array.isArray(ticketBindings)) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "票種綁定資料格式錯誤");
+				if (!formField) {
+					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Delete existing bindings
-				await prisma.ticketFormField.deleteMany({
-					where: { fieldId }
+				// Parse JSON fields
+				const fieldWithParsedData = {
+					...formField,
+					options: formField.options ? JSON.parse(formField.options) : null,
+					validation: formField.validation ? JSON.parse(formField.validation) : null
+				};
+
+				return reply.send(successResponse(fieldWithParsedData));
+			} catch (error) {
+				console.error("Get form field error:", error);
+				const { response, statusCode } = serverErrorResponse("取得表單欄位失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Update form field
+	fastify.put(
+		"/form-fields/:id",
+		{
+			schema: formFieldSchemas.updateFormField
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: Partial<FormFieldCreateRequest>}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+				const updateData = request.body;
+
+				// Check if form field exists
+				const existingField = await prisma.formField.findUnique({
+					where: { id }
 				});
 
-				// Create new bindings
-				const bindingsData = ticketBindings.map(binding => ({
-					fieldId,
-					ticketId: binding.ticketId,
-					isVisible: Boolean(binding.isVisible),
-					isRequired: Boolean(binding.isRequired),
-					order: binding.order || 0
-				}));
+				if (!existingField) {
+					const { response, statusCode } = notFoundResponse("表單欄位不存在");
+					return reply.code(statusCode).send(response);
+				}
 
-				await prisma.ticketFormField.createMany({
-					data: bindingsData
+				// Check for name conflicts in the same event
+				if (updateData.name && updateData.name !== existingField.name) {
+					const nameConflict = await prisma.formField.findFirst({
+						where: { 
+							eventId: existingField.eventId,
+							name: updateData.name,
+							id: { not: id }
+						}
+					});
+
+					if (nameConflict) {
+						const { response, statusCode } = conflictResponse("此活動已存在同名欄位");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Validate field type specific requirements
+				const fieldType = updateData.type || existingField.type;
+				if (['select', 'radio', 'checkbox'].includes(fieldType)) {
+					const options = updateData.options || JSON.parse(existingField.options || '[]');
+					if (!options || options.length === 0) {
+						const { response, statusCode } = validationErrorResponse("選項欄位必須提供選項");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				// Prepare update data
+				const updatePayload = {
+					...updateData,
+					...(updateData.options && { options: JSON.stringify(updateData.options) }),
+					...(updateData.validation && { validation: JSON.stringify(updateData.validation) }),
+					updatedAt: new Date()
+				};
+
+				/** @type {FormField} */
+				const formField = await prisma.formField.update({
+					where: { id },
+					data: updatePayload
 				});
 
-				// Return updated bindings
-				const updatedBindings = await prisma.ticketFormField.findMany({
-					where: { fieldId },
-					include: {
-						ticket: {
-							select: { id: true, name: true }
+				// Parse JSON fields for response
+				const fieldWithParsedData = {
+					...formField,
+					options: formField.options ? JSON.parse(formField.options) : null,
+					validation: formField.validation ? JSON.parse(formField.validation) : null
+				};
+
+				return reply.send(successResponse(fieldWithParsedData, "表單欄位更新成功"));
+			} catch (error) {
+				console.error("Update form field error:", error);
+				const { response, statusCode } = serverErrorResponse("更新表單欄位失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Delete form field
+	fastify.delete(
+		"/form-fields/:id",
+		{
+			schema: formFieldSchemas.deleteFormField
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Check if form field exists
+				const existingField = await prisma.formField.findUnique({
+					where: { id }
+				});
+
+				if (!existingField) {
+					const { response, statusCode } = notFoundResponse("表單欄位不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check if field is being used in registrations
+				const registrationCount = await prisma.registration.count({
+					where: {
+						eventId: existingField.eventId,
+						formData: {
+							path: ['$.' + existingField.name],
+							not: null
 						}
 					}
 				});
 
-				return successResponse(updatedBindings, "更新欄位票種關係成功");
+				if (registrationCount > 0) {
+					const { response, statusCode } = conflictResponse("無法刪除已被使用的表單欄位");
+					return reply.code(statusCode).send(response);
+				}
+
+				await prisma.formField.delete({
+					where: { id }
+				});
+
+				return reply.send(successResponse(null, "表單欄位刪除成功"));
 			} catch (error) {
-				console.error("Update ticket binding error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新欄位票種關係失敗", null, 500);
+				console.error("Delete form field error:", error);
+				const { response, statusCode } = serverErrorResponse("刪除表單欄位失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// List form fields
+	fastify.get(
+		"/form-fields",
+		{
+			schema: formFieldSchemas.listFormFields
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, isActive?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { eventId, isActive } = request.query;
+
+				// Build where clause
+				const where = {};
+				if (eventId) where.eventId = eventId;
+				if (isActive !== undefined) where.isActive = isActive;
+
+				/** @type {FormField[]} */
+				const formFields = await prisma.formField.findMany({
+					where,
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true
+							}
+						}
+					},
+					orderBy: [
+						{ eventId: 'asc' },
+						{ order: 'asc' },
+						{ createdAt: 'asc' }
+					]
+				});
+
+				// Parse JSON fields for each form field
+				const fieldsWithParsedData = formFields.map(field => ({
+					...field,
+					options: field.options ? JSON.parse(field.options) : null,
+					validation: field.validation ? JSON.parse(field.validation) : null
+				}));
+
+				return reply.send(successResponse(fieldsWithParsedData));
+			} catch (error) {
+				console.error("List form fields error:", error);
+				const { response, statusCode } = serverErrorResponse("取得表單欄位列表失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Reorder form fields
+	fastify.put(
+		"/form-fields/reorder",
+		{
+			schema: {
+				description: "重新排序表單欄位",
+				tags: ["admin/form-fields"],
+				body: {
+					type: 'object',
+					properties: {
+						eventId: {
+							type: 'string',
+							description: '活動 ID'
+						},
+						fieldOrders: {
+							type: 'array',
+							items: {
+								type: 'object',
+								properties: {
+									fieldId: { type: 'string' },
+									order: { type: 'integer', minimum: 0 }
+								},
+								required: ['fieldId', 'order']
+							},
+							description: '欄位排序'
+						}
+					},
+					required: ['eventId', 'fieldOrders']
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: {eventId: string, fieldOrders: {fieldId: string, order: number}[]}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { eventId, fieldOrders } = request.body;
+
+				// Verify event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
+				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Verify all field IDs belong to the event
+				const fieldIds = fieldOrders.map(item => item.fieldId);
+				const existingFields = await prisma.formField.findMany({
+					where: {
+						id: { in: fieldIds },
+						eventId
+					}
+				});
+
+				if (existingFields.length !== fieldIds.length) {
+					const { response, statusCode } = validationErrorResponse("部分欄位不存在或不屬於此活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Update field orders in a transaction
+				await prisma.$transaction(
+					fieldOrders.map(item =>
+						prisma.formField.update({
+							where: { id: item.fieldId },
+							data: { order: item.order }
+						})
+					)
+				);
+
+				return reply.send(successResponse(null, "欄位排序更新成功"));
+			} catch (error) {
+				console.error("Reorder form fields error:", error);
+				const { response, statusCode } = serverErrorResponse("欄位排序更新失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

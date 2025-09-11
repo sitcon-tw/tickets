@@ -5,6 +5,9 @@
 import { dateTimeString, successResponse, errorResponse, idParam } from './common.js';
 
 export const eventProperties = {
+	test: {
+		type: 'string'
+	},
 	id: {
 		type: 'string',
 		description: '活動 ID'
@@ -118,7 +121,7 @@ export const eventResponse = {
 			type: 'object',
 			properties: eventProperties,
 			required: ['id', 'name', 'startDate', 'endDate']
-		}
+		},
 	},
 	required: ['success', 'message', 'data']
 };
@@ -210,6 +213,82 @@ export const eventSchemas = {
 		},
 		response: {
 			200: eventsListResponse
+		}
+	}
+};
+
+// Public event response schemas with computed properties
+export const eventTicketsResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: {
+						id: { type: 'string' },
+						name: { type: 'string' },
+						description: { type: 'string' },
+						price: { type: 'number' },
+						quantity: { type: 'integer' },
+						sold: { type: 'integer' },
+						available: { type: 'integer' },
+						saleStartDate: { type: 'string', format: 'date-time' },
+						saleEndDate: { type: 'string', format: 'date-time' },
+						isOnSale: { type: 'boolean' },
+						isSoldOut: { type: 'boolean' }
+					}
+				}
+			}
+		}
+	}
+};
+
+export const publicEventsListResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: {
+						id: { type: 'string' },
+						name: { type: 'string' },
+						description: { type: 'string' },
+						location: { type: 'string' },
+						startDate: { type: 'string', format: 'date-time' },
+						endDate: { type: 'string', format: 'date-time' },
+						ogImage: { type: 'string' },
+						ticketCount: { type: 'integer' },
+						registrationCount: { type: 'integer' },
+						hasAvailableTickets: { type: 'boolean' }
+					}
+				}
+			}
+		}
+	}
+};
+
+export const eventStatsResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'object',
+				properties: {
+					eventName: { type: 'string' },
+					totalRegistrations: { type: 'integer' },
+					confirmedRegistrations: { type: 'integer' },
+					totalTickets: { type: 'integer' },
+					availableTickets: { type: 'integer' },
+					registrationRate: { type: 'number' }
+				}
+			}
 		}
 	}
 };

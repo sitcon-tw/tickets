@@ -1,4 +1,12 @@
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin referrals routes with efficient response functions
+ */
+
+import { 
+	successResponse, 
+	validationErrorResponse,
+	serverErrorResponse 
+} from "#utils/response.js";
 
 export default async function adminReferralsRoutes(fastify, options) {	// 推薦機制總覽統計
 	fastify.get(
@@ -20,7 +28,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				});
 			} catch (error) {
 				console.error("Get referral overview error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得推薦統計失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得推薦統計失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -43,7 +51,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				return successResponse([]);
 			} catch (error) {
 				console.error("Get referral leaderboard error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得推薦排行榜失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得推薦排行榜失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -69,7 +77,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				});
 			} catch (error) {
 				console.error("Get referral tree error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得推薦擴譜圖失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得推薦擴譜圖失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -92,7 +100,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				return successResponse([]);
 			} catch (error) {
 				console.error("Get qualified referrers error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得達標推薦者名單失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得達標推薦者名單失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -112,7 +120,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				const { minReferrals, drawCount, seed } = request.body;
 
 				if (!minReferrals || !drawCount) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "最小推薦人數和抽選人數為必填");
+					const { response, statusCode } = validationErrorResponse("最小推薦人數和抽選人數為必填");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -124,7 +132,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				});
 			} catch (error) {
 				console.error("Draw referrers error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "抽選推薦者失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("抽選推薦者失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -149,7 +157,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				});
 			} catch (error) {
 				console.error("Get referral stats error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得推薦統計報表失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得推薦統計報表失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

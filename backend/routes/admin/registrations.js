@@ -1,66 +1,396 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin registrations routes with modular types and schemas
+ * @typedef {import('../../types/database.js').Registration} Registration
+ * @typedef {import('../../types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
+ * @typedef {import('../../types/api.js').RegistrationUpdateRequest} RegistrationUpdateRequest
+ * @typedef {import('../../types/api.js').PaginationQuery} PaginationQuery
+ */
 
-export default async function adminRegistrationsRoutes(fastify, options) {	// 獲取報名列表
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse,
+	createPagination
+} from "#utils/response.js";
+import { registrationSchemas } from "../../schemas/registration.js";
+
+/**
+ * Admin registrations routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminRegistrationsRoutes(fastify, options) {
+	// List registrations with pagination and filters
 	fastify.get(
 		"/registrations",
 		{
+			schema: registrationSchemas.listRegistrations
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string, hasCheckin?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { 
+					page = 1, 
+					limit = 20, 
+					eventId, 
+					status, 
+					userId, 
+					hasCheckin 
+				} = request.query;
+
+				// Build where clause
+				const where = {};
+				if (eventId) where.eventId = eventId;
+				if (status) where.status = status;
+				if (userId) where.userId = userId;
+				if (hasCheckin !== undefined) {
+					where.checkinAt = hasCheckin ? { not: null } : null;
+				}
+
+				// Get total count for pagination
+				const total = await prisma.registration.count({ where });
+
+				/** @type {Registration[]} */
+				const registrations = await prisma.registration.findMany({
+					where,
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								price: true
+							}
+						},
+						invitationCode: {
+							select: {
+								id: true,
+								code: true
+							}
+						},
+						referralCode: {
+							select: {
+								id: true,
+								code: true
+							}
+						}
+					},
+					orderBy: { createdAt: 'desc' },
+					skip: (page - 1) * limit,
+					take: limit
+				});
+
+				const pagination = createPagination(page, limit, total);
+
+				return reply.send(successResponse(registrations, "取得報名列表成功", pagination));
+			} catch (error) {
+				console.error("List registrations error:", error);
+				const { response, statusCode } = serverErrorResponse("取得報名列表失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get registration by ID
+	fastify.get(
+		"/registrations/:id",
+		{
+			schema: registrationSchemas.getRegistration
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				/** @type {Registration | null} */
+				const registration = await prisma.registration.findUnique({
+					where: { id },
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								role: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true,
+								location: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								description: true,
+								price: true
+							}
+						},
+						invitationCode: {
+							select: {
+								id: true,
+								code: true,
+								description: true
+							}
+						},
+						referralCode: {
+							select: {
+								id: true,
+								code: true,
+								description: true
+							}
+						}
+					}
+				});
+
+				if (!registration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				return reply.send(successResponse(registration));
+			} catch (error) {
+				console.error("Get registration error:", error);
+				const { response, statusCode } = serverErrorResponse("取得報名詳情失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Update registration
+	fastify.put(
+		"/registrations/:id",
+		{
+			schema: registrationSchemas.updateRegistration
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+				/** @type {RegistrationUpdateRequest} */
+				const updateData = request.body;
+
+				// Check if registration exists
+				const existingRegistration = await prisma.registration.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								startDate: true,
+								endDate: true
+							}
+						}
+					}
+				});
+
+				if (!existingRegistration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent status changes for past events
+				if (updateData.status && new Date() > existingRegistration.event.endDate) {
+					const { response, statusCode } = validationErrorResponse("活動已結束，無法修改報名狀態");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {Registration} */
+				const registration = await prisma.registration.update({
+					where: { id },
+					data: {
+						...updateData,
+						updatedAt: new Date()
+					},
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								price: true
+							}
+						}
+					}
+				});
+
+				return reply.send(successResponse(registration, "報名更新成功"));
+			} catch (error) {
+				console.error("Update registration error:", error);
+				const { response, statusCode } = serverErrorResponse("更新報名失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Check-in registration
+	fastify.post(
+		"/registrations/checkin",
+		{
+			schema: registrationSchemas.checkinRegistration
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: {registrationId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { registrationId } = request.body;
+
+				// Check if registration exists and is confirmed
+				const existingRegistration = await prisma.registration.findUnique({
+					where: { id: registrationId },
+					include: {
+						event: {
+							select: {
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						user: {
+							select: {
+								name: true,
+								email: true
+							}
+						}
+					}
+				});
+
+				if (!existingRegistration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (existingRegistration.status !== 'confirmed') {
+					const { response, statusCode } = validationErrorResponse("僅已確認的報名可以進行報到");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (existingRegistration.checkinAt) {
+					const { response, statusCode } = conflictResponse("此報名已完成報到");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check if event is currently active
+				const now = new Date();
+				const eventStart = new Date(existingRegistration.event.startDate);
+				const eventEnd = new Date(existingRegistration.event.endDate);
+
+				if (now < eventStart) {
+					const { response, statusCode } = validationErrorResponse("活動尚未開始，無法報到");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (now > eventEnd) {
+					const { response, statusCode } = validationErrorResponse("活動已結束，無法報到");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {Registration} */
+				const registration = await prisma.registration.update({
+					where: { id: registrationId },
+					data: {
+						checkinAt: new Date()
+					},
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true
+							}
+						}
+					}
+				});
+
+				return reply.send(successResponse(registration, "報到成功"));
+			} catch (error) {
+				console.error("Check-in registration error:", error);
+				const { response, statusCode } = serverErrorResponse("報到失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Export registrations (CSV/Excel)
+	fastify.get(
+		"/registrations/export",
+		{
 			schema: {
-				description: "獲取報名列表（支援分頁、篩選、搜尋）",
+				description: "匯出報名資料",
 				tags: ["admin/registrations"],
 				querystring: {
 					type: 'object',
 					properties: {
-						page: {
-							type: 'integer',
-							default: 1,
-							minimum: 1,
-							description: '頁碼'
-						},
-						limit: {
-							type: 'integer',
-							default: 20,
-							minimum: 1,
-							maximum: 100,
-							description: '每頁筆數'
-						},
-						search: {
+						eventId: {
 							type: 'string',
-							description: '搜尋關鍵字'
+							description: '活動 ID'
 						},
 						status: {
 							type: 'string',
 							enum: ['confirmed', 'cancelled', 'pending'],
 							description: '報名狀態'
 						},
-						ticketId: {
+						format: {
 							type: 'string',
-							description: '票種 ID 篩選'
-						},
-						eventId: {
-							type: 'string',
-							description: '活動 ID 篩選'
-						},
-						startDate: {
-							type: 'string',
-							format: 'date',
-							description: '開始日期'
-						},
-						endDate: {
-							type: 'string',
-							format: 'date',
-							description: '結束日期'
-						},
-						sort: {
-							type: 'string',
-							default: 'createdAt',
-							description: '排序欄位'
-						},
-						order: {
-							type: 'string',
-							enum: ['asc', 'desc'],
-							default: 'desc',
-							description: '排序順序'
+							enum: ['csv', 'excel'],
+							default: 'csv',
+							description: '匯出格式'
 						}
 					}
 				},
@@ -69,41 +399,13 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 						type: 'object',
 						properties: {
 							success: { type: 'boolean' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										email: { type: 'string' },
-										phone: { type: 'string' },
-										status: { type: 'string' },
-										createdAt: { type: 'string', format: 'date-time' },
-										ticket: {
-											type: 'object',
-											properties: {
-												id: { type: 'string' },
-												name: { type: 'string' },
-												event: {
-													type: 'object',
-													properties: {
-														id: { type: 'string' },
-														name: { type: 'string' }
-													}
-												}
-											}
-										}
-									}
-								}
-							},
 							message: { type: 'string' },
-							pagination: {
+							data: {
 								type: 'object',
 								properties: {
-									page: { type: 'integer' },
-									limit: { type: 'integer' },
-									total: { type: 'integer' },
-									totalPages: { type: 'integer' }
+									downloadUrl: { type: 'string' },
+									filename: { type: 'string' },
+									count: { type: 'integer' }
 								}
 							}
 						}
@@ -111,304 +413,56 @@ export default async function adminRegistrationsRoutes(fastify, options) {	// �
 				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, status?: string, format?: 'csv'|'excel'}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { page = 1, limit = 20, search, status, ticketId, eventId, startDate, endDate, sort = "createdAt", order = "desc" } = request.query;
+				const { eventId, status, format = 'csv' } = request.query;
 
-				const skip = (page - 1) * limit;
+				// Build where clause
 				const where = {};
-
-				// Apply filters
-				if (search) {
-					where.OR = [{ formData: { contains: search } }, { orderNumber: { contains: search } }, { checkInId: { contains: search } }];
-				}
-
+				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
-				if (ticketId) where.ticketId = ticketId;
-				if (eventId) where.ticket = { eventId };
 
-				if (startDate || endDate) {
-					where.createdAt = {};
-					if (startDate) where.createdAt.gte = new Date(startDate);
-					if (endDate) where.createdAt.lte = new Date(endDate);
-				}
-
-				const [registrations, total] = await Promise.all([
-					prisma.registration.findMany({
-						where,
-						skip,
-						take: parseInt(limit),
-						include: {
-							ticket: {
-								select: { id: true, name: true, event: { select: { id: true, name: true } } }
-							}
-						},
-						orderBy: { [sort]: order }
-					}),
-					prisma.registration.count({ where })
-				]);
-
-				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
-					total,
-					totalPages: Math.ceil(total / limit)
-				};
-
-				return successResponse(registrations, "取得報名列表成功", pagination);
-			} catch (error) {
-				console.error("Get registrations error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得報名列表失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 獲取單筆報名詳細資料
-	fastify.get(
-		"/registrations/:regId",
-		{
-			schema: {
-				description: "獲取單筆報名詳細資料",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { regId } = request.params;
-
-				const registration = await prisma.registration.findUnique({
-					where: { id: regId },
+				/** @type {Registration[]} */
+				const registrations = await prisma.registration.findMany({
+					where,
 					include: {
-						ticket: {
-							include: {
-								event: { select: { id: true, name: true } }
+						user: {
+							select: {
+								name: true,
+								email: true
 							}
 						},
-						referrer: {
-							select: { id: true, orderNumber: true, formData: true }
+						event: {
+							select: {
+								name: true
+							}
 						},
-						referrals: {
-							select: { id: true, orderNumber: true, formData: true, status: true }
+						ticket: {
+							select: {
+								name: true,
+								price: true
+							}
 						}
-					}
-				});
-
-				if (!registration) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "報名記錄不存在", null, 404);
-					return reply.code(statusCode).send(response);
-				}
-
-				return successResponse(registration);
-			} catch (error) {
-				console.error("Get registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得報名詳細資料失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 管理員編輯報名資料
-	fastify.put(
-		"/registrations/:regId",
-		{
-			schema: {
-				description: "管理員編輯報名資料",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { regId } = request.params;
-				const { formData, adminNote } = request.body;
-
-				if (!formData) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "表單資料為必填");
-					return reply.code(statusCode).send(response);
-				}
-
-				const registration = await prisma.registration.update({
-					where: { id: regId },
-					data: {
-						formData: JSON.stringify(formData),
-						adminNote,
-						updatedAt: new Date()
 					},
-					include: {
-						ticket: {
-							include: {
-								event: { select: { id: true, name: true } }
-							}
-						}
-					}
+					orderBy: { createdAt: 'desc' }
 				});
 
-				return successResponse(registration, "編輯報名資料成功");
+				// TODO: Implement actual file generation and upload to storage
+				const filename = `registrations_${Date.now()}.${format}`;
+				const downloadUrl = `/downloads/${filename}`;
+
+				return reply.send(successResponse({
+					downloadUrl,
+					filename,
+					count: registrations.length
+				}, "匯出準備完成"));
 			} catch (error) {
-				console.error("Update registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "編輯報名資料失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 取消單筆報名
-	fastify.delete(
-		"/registrations/:regId",
-		{
-			schema: {
-				description: "取消單筆報名",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { regId } = request.params;
-				const { reason } = request.body;
-
-				const registration = await prisma.registration.update({
-					where: { id: regId },
-					data: {
-						status: "cancelled",
-						cancelReason: reason,
-						cancelledAt: new Date(),
-						updatedAt: new Date()
-					}
-				});
-
-				// TODO: Update ticket sold count if needed
-
-				return successResponse(registration, "取消報名成功");
-			} catch (error) {
-				console.error("Cancel registration error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取消報名失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 發送取消通知給報名者
-	fastify.post(
-		"/registrations/:regId/cancel-notification",
-		{
-			schema: {
-				description: "發送取消通知給報名者",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { regId } = request.params;
-				const { reason, customMessage, includeRefundInfo } = request.body;
-
-				// TODO: Implement email notification logic
-				return successResponse({ message: "取消通知已發送" });
-			} catch (error) {
-				console.error("Send cancel notification error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "發送取消通知失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 報名編輯管理 - 獲取編輯請求記錄
-	fastify.get(
-		"/edit-requests",
-		{
-			schema: {
-				description: "獲取編輯請求記錄",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { page = 1, limit = 20 } = request.query;
-				const skip = (page - 1) * limit;
-
-				// TODO: Implement edit requests tracking
-				const editRequests = [];
-				const total = 0;
-
-				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
-					total,
-					totalPages: Math.ceil(total / limit)
-				};
-
-				return successResponse(editRequests, "取得編輯請求記錄成功", pagination);
-			} catch (error) {
-				console.error("Get edit requests error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得編輯請求記錄失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 管理員手動發送編輯連結
-	fastify.post(
-		"/edit-requests/:regId/send-link",
-		{
-			schema: {
-				description: "管理員手動發送編輯連結",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { regId } = request.params;
-
-				// TODO: Implement manual edit link sending
-				return successResponse({ message: "編輯連結已發送" });
-			} catch (error) {
-				console.error("Send edit link error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "發送編輯連結失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 獲取編輯稽核記錄
-	fastify.get(
-		"/edit-requests/audit-log",
-		{
-			schema: {
-				description: "獲取編輯稽核記錄",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { page = 1, limit = 20 } = request.query;
-
-				// TODO: Implement audit log retrieval
-				return successResponse([], "取得編輯稽核記錄成功");
-			} catch (error) {
-				console.error("Get audit log error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得編輯稽核記錄失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 更新編輯功能設定
-	fastify.put(
-		"/edit-settings",
-		{
-			schema: {
-				description: "更新編輯功能設定（開關、期限等）",
-				tags: ["admin/registrations"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const settings = request.body;
-
-				// TODO: Implement edit settings update
-				return successResponse(settings, "編輯功能設定更新成功");
-			} catch (error) {
-				console.error("Update edit settings error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新編輯功能設定失敗", null, 500);
+				console.error("Export registrations error:", error);
+				const { response, statusCode } = serverErrorResponse("匯出失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

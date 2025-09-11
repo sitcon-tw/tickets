@@ -238,3 +238,31 @@ export const registrationSchemas = {
 		}
 	}
 };
+
+export const userRegistrationsResponse = {
+	200: {
+		type: 'object',
+		properties: {
+			...successResponse.properties,
+			data: {
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: {
+						id: { type: 'string' },
+						status: { type: 'string' },
+						formData: { type: 'object' },
+						checkinAt: { type: 'string', format: 'date-time' },
+						createdAt: { type: 'string', format: 'date-time' },
+						event: { type: 'object' },
+						ticket: { type: 'object' },
+						isUpcoming: { type: 'boolean' },
+						isPast: { type: 'boolean' },
+						canEdit: { type: 'boolean' },
+						canCancel: { type: 'boolean' }
+					}
+				}
+			}
+		}
+	}
+};

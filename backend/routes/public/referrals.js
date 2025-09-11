@@ -1,6 +1,20 @@
 import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
 import { requireAuth } from "#middleware/auth.js";
+import { referralSchemas, referralStatsResponse } from "../../schemas/referral.js";
+
+// Custom param schema for regId parameter
+const regIdParam = {
+	type: 'object',
+	properties: {
+		regId: {
+			type: 'string',
+			description: '報名 ID'
+		}
+	},
+	required: ['regId']
+};
+
 
 export default async function referralRoutes(fastify, options) {
 	fastify.addHook("preHandler", requireAuth);
@@ -10,48 +24,9 @@ export default async function referralRoutes(fastify, options) {
 		"/registrations/:regId/referral-link",
 		{
 			schema: {
+				...referralSchemas.getReferral,
 				description: "獲取專屬推薦連結",
-				tags: ["referrals"],
-				params: {
-					type: 'object',
-					properties: {
-						regId: {
-							type: 'string',
-							description: '報名 ID'
-						}
-					},
-					required: ['regId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									referralLink: { type: 'string' },
-									referralCode: { type: 'string' },
-									eventId: { type: 'string' }
-								}
-							}
-						}
-					},
-					404: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: {
-								type: 'object',
-								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
+				params: regIdParam
 			}
 		},
 		async (request, reply) => {
@@ -101,66 +76,8 @@ export default async function referralRoutes(fastify, options) {
 			schema: {
 				description: "獲取個人推薦統計",
 				tags: ["referrals"],
-				params: {
-					type: 'object',
-					properties: {
-						regId: {
-							type: 'string',
-							description: '報名 ID'
-						}
-					},
-					required: ['regId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									totalReferrals: { type: 'integer' },
-									successfulReferrals: { type: 'integer' },
-									referralList: {
-										type: 'array',
-										items: {
-											type: 'object',
-											properties: {
-												id: { type: 'string' },
-												status: { type: 'string' },
-												ticketName: { type: 'string' },
-												registeredAt: { type: 'string', format: 'date-time' },
-												email: { type: 'string' }
-											}
-										}
-									},
-									referrerInfo: {
-										type: 'object',
-										properties: {
-											id: { type: 'string' },
-											checkInCode: { type: 'string' },
-											email: { type: 'string' }
-										}
-									}
-								}
-							}
-						}
-					},
-					404: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: {
-								type: 'object',
-								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
+				params: regIdParam,
+				response: referralStatsResponse
 			}
 		},
 		async (request, reply) => {
@@ -235,44 +152,11 @@ export default async function referralRoutes(fastify, options) {
 	fastify.post(
 		"/referrals/validate",
 		{
-			schema: {
-				description: "驗證推薦碼",
-				tags: ["referrals"],
-				body: {
-					type: 'object',
-					properties: {
-						referralCode: {
-							type: 'string',
-							description: '推薦碼'
-						},
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['referralCode', 'eventId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									isValid: { type: 'boolean' },
-									referrerId: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: referralSchemas.validateReferral
 		},
 		async (request, reply) => {
 			try {
-				const { referralCode, eventId } = request.body;
+				const { code: referralCode, eventId } = request.body;
 
 				const referral = await prisma.referral.findFirst({
 					where: {

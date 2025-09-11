@@ -1,82 +1,39 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Admin events routes with modular types and schemas
+ * @typedef {import('../../types/database.js').Event} Event
+ * @typedef {import('../../types/api.js').EventCreateRequest} EventCreateRequest
+ * @typedef {import('../../types/api.js').EventUpdateRequest} EventUpdateRequest
+ */
 
-export default async function adminEventsRoutes(fastify, options) {	// 創建新活動
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse
+} from "#utils/response.js";
+import { eventSchemas } from "../../schemas/event.js";
+
+/**
+ * Admin events routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function adminEventsRoutes(fastify, options) {
+	// Create new event
 	fastify.post(
 		"/events",
 		{
-			schema: {
-				description: "創建新活動",
-				tags: ["admin/events"],
-				body: {
-					type: 'object',
-					properties: {
-						name: {
-							type: 'string',
-							description: '活動名稱',
-							minLength: 1
-						},
-						description: {
-							type: 'string',
-							description: '活動描述'
-						},
-						startDate: {
-							type: 'string',
-							format: 'date-time',
-							description: '開始時間'
-						},
-						endDate: {
-							type: 'string',
-							format: 'date-time',
-							description: '結束時間'
-						},
-						location: {
-							type: 'string',
-							description: '地點'
-						}
-					},
-					required: ['name', 'startDate', 'endDate']
-				},
-				response: {
-					201: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: {
-								type: 'object',
-								properties: {
-									id: { type: 'string' },
-									name: { type: 'string' },
-									description: { type: 'string' },
-									startDate: { type: 'string', format: 'date-time' },
-									endDate: { type: 'string', format: 'date-time' },
-									location: { type: 'string' },
-									isActive: { type: 'boolean' },
-									createdAt: { type: 'string', format: 'date-time' },
-									updatedAt: { type: 'string', format: 'date-time' }
-								}
-							},
-							message: { type: 'string' }
-						}
-					},
-					400: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: {
-								type: 'object',
-								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: eventSchemas.createEvent
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: EventCreateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
+				/** @type {EventCreateRequest} */
 				const { name, description, startDate, endDate, location } = request.body;
 
 				// Validate dates
@@ -84,15 +41,26 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 				const end = new Date(endDate);
 
 				if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "無效的日期格式", null, 400);
+					const { response, statusCode } = validationErrorResponse("無效的日期格式");
 					return reply.code(statusCode).send(response);
 				}
 
 				if (start >= end) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "開始時間必須早於結束時間", null, 400);
+					const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
 					return reply.code(statusCode).send(response);
 				}
 
+				// Check for duplicate event names
+				const existingEvent = await prisma.event.findFirst({
+					where: { name }
+				});
+
+				if (existingEvent) {
+					const { response, statusCode } = conflictResponse("活動名稱已存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {Event} */
 				const event = await prisma.event.create({
 					data: {
 						name,
@@ -107,271 +75,222 @@ export default async function adminEventsRoutes(fastify, options) {	// 創建新
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
 				console.error("Create event error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "創建活動失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("創建活動失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 獲取活動詳細資訊
+	// Get event by ID
 	fastify.get(
-		"/events/:eventId",
+		"/events/:id",
 		{
-			schema: {
-				description: "獲取活動詳細資訊",
-				tags: ["admin/events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['eventId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: {
-								type: 'object',
-								properties: {
-									id: { type: 'string' },
-									name: { type: 'string' },
-									description: { type: 'string' },
-									startDate: { type: 'string', format: 'date-time' },
-									endDate: { type: 'string', format: 'date-time' },
-									location: { type: 'string' },
-									tickets: {
-										type: 'array',
-									},
-									_count: {
-										type: 'object',
-										properties: {
-											registrations: { type: 'integer' },
-											invitationCodes: { type: 'integer' }
-										}
-									}
-								}
-							}
-						}
-					},
-					404: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: { type: 'string' }
-						}
-					}
-				}
-			}
+			schema: eventSchemas.getEvent
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId } = request.params;
+				const { id } = request.params;
 
+				/** @type {Event | null} */
 				const event = await prisma.event.findUnique({
-					where: { id: eventId },
+					where: { id },
+					include: {
+						tickets: {
+							where: { isActive: true },
+							orderBy: { createdAt: 'asc' }
+						},
+						_count: {
+							select: {
+								registrations: true,
+								invitationCodes: true
+							}
+						}
+					}
 				});
-
-				const eventTicket = await prisma.ticket.findMany({
-					where: { eventId: eventId },
-				});
-
-				console.log(eventTicket)
-
-				event.tickets = eventTicket;
 
 				if (!event) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "活動不存在", null, 404);
+					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				return successResponse(event);
+				return reply.send(successResponse(event));
 			} catch (error) {
 				console.error("Get event error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得活動資訊失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 更新活動資訊
+	// Update event
 	fastify.put(
-		"/events/:eventId",
+		"/events/:id",
 		{
-			schema: {
-				description: "更新活動資訊",
-				tags: ["admin/events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['eventId']
-				},
-				body: {
-					type: 'object',
-					properties: {
-						name: {
-							type: 'string',
-							description: '活動名稱'
-						},
-						description: {
-							type: 'string',
-							description: '活動描述'
-						},
-						startDate: {
-							type: 'string',
-							format: 'date-time',
-							description: '開始時間'
-						},
-						endDate: {
-							type: 'string',
-							format: 'date-time',
-							description: '結束時間'
-						},
-						location: {
-							type: 'string',
-							description: '地點'
-						},
-						venue: {
-							type: 'string',
-							description: '場地'
-						},
-						organizer: {
-							type: 'string',
-							description: '主辦單位'
-						},
-						contactPerson: {
-							type: 'string',
-							description: '聯絡人'
-						},
-						contactEmail: {
-							type: 'string',
-							format: 'email',
-							description: '聯絡信箱'
-						},
-						contactPhone: {
-							type: 'string',
-							description: '聯絡電話'
-						},
-						website: {
-							type: 'string',
-							format: 'uri',
-							description: '官網'
-						}
+			schema: eventSchemas.updateEvent
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: EventUpdateRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+				/** @type {EventUpdateRequest} */
+				const updateData = request.body;
+
+				// Check if event exists
+				const existingEvent = await prisma.event.findUnique({
+					where: { id }
+				});
+
+				if (!existingEvent) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate dates if provided
+				if (updateData.startDate || updateData.endDate) {
+					const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
+					const endDate = updateData.endDate ? new Date(updateData.endDate) : existingEvent.endDate;
+
+					if (updateData.startDate && isNaN(new Date(updateData.startDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的開始日期格式");
+						return reply.code(statusCode).send(response);
 					}
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							data: { type: 'object' },
-							message: { type: 'string' }
-						}
+
+					if (updateData.endDate && isNaN(new Date(updateData.endDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的結束日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (startDate >= endDate) {
+						const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
+						return reply.code(statusCode).send(response);
 					}
 				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { eventId } = request.params;
-				const { name, description, startDate, endDate, location, venue, organizer, contactPerson, contactEmail, contactPhone, website } = request.body;
 
-				const event = await prisma.event.update({
-					where: { id: eventId },
-					data: {
-						name,
-						description,
-						location,
-						venue,
-						organizer,
-						contactPerson,
-						contactEmail,
-						contactPhone,
-						website,
-						startDate: startDate ? new Date(startDate) : undefined,
-						endDate: endDate ? new Date(endDate) : undefined,
-						updatedAt: new Date()
+				// Check for name conflicts
+				if (updateData.name && updateData.name !== existingEvent.name) {
+					const nameConflict = await prisma.event.findFirst({
+						where: { 
+							name: updateData.name,
+							id: { not: id }
+						}
+					});
+
+					if (nameConflict) {
+						const { response, statusCode } = conflictResponse("活動名稱已存在");
+						return reply.code(statusCode).send(response);
 					}
-				});
+				}
 
-				return successResponse(event, "更新活動資訊成功");
-			} catch (error) {
-				console.error("Update event error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新活動資訊失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 更新活動首頁內容
-	fastify.put(
-		"/events/:eventId/landing-page",
-		{
-			schema: {
-				description: "更新活動首頁內容",
-				tags: ["admin/events"]
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { eventId } = request.params;
-				const { heroTitle, heroSubtitle, description, schedule, venue, ogTitle, ogDescription, features } = request.body;
-
-				const landingPageData = {
-					heroTitle,
-					heroSubtitle,
-					description,
-					schedule,
-					venue,
-					ogTitle,
-					ogDescription,
-					features
+				// Prepare update data
+				const updatePayload = {
+					...updateData,
+					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
+					...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
+					updatedAt: new Date()
 				};
 
+				/** @type {Event} */
 				const event = await prisma.event.update({
-					where: { id: eventId },
-					data: {
-						landingPage: JSON.stringify(landingPageData),
-						updatedAt: new Date()
-					}
+					where: { id },
+					data: updatePayload
 				});
 
-				return successResponse(event, "更新活動首頁內容成功");
+				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
-				console.error("Update landing page error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "更新活動首頁內容失敗", null, 500);
+				console.error("Update event error:", error);
+				const { response, statusCode } = serverErrorResponse("更新活動失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 上傳 OG 圖片
-	fastify.post(
-		"/events/:eventId/og-image",
+	// Delete event
+	fastify.delete(
+		"/events/:id",
 		{
-			schema: {
-				description: "上傳 OG 圖片",
-				tags: ["admin/events"]
-			}
+			schema: eventSchemas.deleteEvent
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId } = request.params;
+				const { id } = request.params;
 
-				// TODO: Implement OG image upload logic
-				return successResponse({ message: "OG 圖片上傳功能尚未實現" });
+				// Check if event exists
+				const existingEvent = await prisma.event.findUnique({
+					where: { id },
+					include: {
+						_count: {
+							select: { registrations: true }
+						}
+					}
+				});
+
+				if (!existingEvent) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent deletion if there are registrations
+				if (existingEvent._count.registrations > 0) {
+					const { response, statusCode } = conflictResponse("無法刪除已有報名的活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				await prisma.event.delete({
+					where: { id }
+				});
+
+				return reply.send(successResponse(null, "活動刪除成功"));
 			} catch (error) {
-				console.error("Upload OG image error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "上傳 OG 圖片失敗", null, 500);
+				console.error("Delete event error:", error);
+				const { response, statusCode } = serverErrorResponse("刪除活動失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// List events
+	fastify.get(
+		"/events",
+		{
+			schema: eventSchemas.listEvents
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {isActive?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { isActive } = request.query;
+
+				/** @type {Event[]} */
+				const events = await prisma.event.findMany({
+					where: isActive !== undefined ? { isActive } : {},
+					include: {
+						_count: {
+							select: {
+								registrations: true,
+								tickets: true
+							}
+						}
+					},
+					orderBy: { createdAt: 'desc' }
+				});
+
+				return reply.send(successResponse(events));
+			} catch (error) {
+				console.error("List events error:", error);
+				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

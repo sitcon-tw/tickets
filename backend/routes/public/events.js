@@ -1,67 +1,49 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview Public events routes with modular types and schemas
+ * @typedef {import('../../types/database.js').Event} Event
+ * @typedef {import('../../types/database.js').Ticket} Ticket
+ * @typedef {import('../../types/database.js').Registration} Registration
+ */
 
-export default async function eventsRoutes(fastify, options) {
-	// 活動基本資訊
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	notFoundResponse, 
+	serverErrorResponse
+} from "#utils/response.js";
+import { eventSchemas, eventTicketsResponse, publicEventsListResponse, eventStatsResponse } from "../../schemas/event.js";
+import { ticketSchemas } from "../../schemas/ticket.js";
+
+
+/**
+ * Public events routes - accessible without authentication
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
+export default async function publicEventsRoutes(fastify, options) {
+	// Get public event information
 	fastify.get(
-		"/events/:eventId/info",
+		"/events/:id/info",
 		{
 			schema: {
-				description: "獲取活動基本資訊（名稱、時間、地點、描述、OG 圖等）",
-				tags: ["events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['eventId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									id: { type: 'string' },
-									name: { type: 'string' },
-									description: { type: 'string' },
-									location: { type: 'string' },
-									startDate: { type: 'string', format: 'date-time' },
-									endDate: { type: 'string', format: 'date-time' },
-									ogImage: { type: 'string' },
-									landingPage: { type: 'string' }
-								}
-							}
-						}
-					},
-					404: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: {
-								type: 'object',
-								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
+				...eventSchemas.getEvent,
+				description: "獲取活動公開資訊"
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId } = request.params;
+				const { id } = request.params;
 
+				/** @type {Event | null} */
 				const event = await prisma.event.findUnique({
-					where: { id: eventId, isActive: true },
+					where: { 
+						id,
+						isActive: true // Only show active events
+					},
 					select: {
 						id: true,
 						name: true,
@@ -70,76 +52,62 @@ export default async function eventsRoutes(fastify, options) {
 						startDate: true,
 						endDate: true,
 						ogImage: true,
-						landingPage: true
+						landingPage: true,
+						isActive: true
 					}
 				});
 
 				if (!event) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "活動不存在", null, 404);
+					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
 
-				return successResponse(event);
+				return reply.send(successResponse(event));
 			} catch (error) {
-				console.error("Get event info error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得活動資訊失敗", null, 500);
+				console.error("Get public event info error:", error);
+				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 獲取可用票種列表
+	// Get available tickets for an event
 	fastify.get(
-		"/events/:eventId/tickets",
+		"/events/:id/tickets",
 		{
 			schema: {
-				description: "獲取可用票種列表（含價格、數量、開售時間）",
+				description: "獲取活動可購買票券",
 				tags: ["events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['eventId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										name: { type: 'string' },
-										description: { type: 'string' },
-										price: { type: 'number' },
-										quantity: { type: 'integer' },
-										soldCount: { type: 'integer' },
-										saleStart: { type: 'string', format: 'date-time' },
-										saleEnd: { type: 'string', format: 'date-time' }
-									}
-								}
-							}
-						}
-					}
-				}
+				params: eventSchemas.getEvent.params,
+				response: eventTicketsResponse
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId } = request.params;
+				const { id } = request.params;
 
+				// Verify event exists and is active
+				const event = await prisma.event.findUnique({
+					where: { 
+						id,
+						isActive: true 
+					}
+				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
+					return reply.code(statusCode).send(response);
+				}
+
+				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where: {
-						eventId: eventId,
-						isActive: true,
+						eventId: id,
+						isActive: true
 					},
 					select: {
 						id: true,
@@ -147,210 +115,83 @@ export default async function eventsRoutes(fastify, options) {
 						description: true,
 						price: true,
 						quantity: true,
-						soldCount: true,
-						saleStart: true,
-						saleEnd: true
+						sold: true,
+						saleStartDate: true,
+						saleEndDate: true,
+						isActive: true
 					},
-					orderBy: { createdAt: "asc" }
+					orderBy: { createdAt: 'asc' }
 				});
 
-				return successResponse(tickets);
+				// Add availability and sale status to each ticket
+				const now = new Date();
+				const ticketsWithStatus = tickets.map(ticket => {
+					const available = ticket.quantity - ticket.sold;
+					const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
+						(!ticket.saleEndDate || now <= ticket.saleEndDate) &&
+						ticket.isActive;
+					const isSoldOut = available <= 0;
+
+					return {
+						...ticket,
+						available,
+						isOnSale,
+						isSoldOut
+					};
+				});
+
+				return reply.send(successResponse(ticketsWithStatus));
 			} catch (error) {
-				console.error("Get tickets error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得票種列表失敗", null, 500);
+				console.error("Get event tickets error:", error);
+				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 獲取特定票種的表單欄位
+	// List all active events
 	fastify.get(
-		"/events/:eventId/form-fields/:ticketId",
+		"/events",
 		{
 			schema: {
-				description: "獲取特定票種的表單欄位配置",
-				tags: ["events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						},
-						ticketId: {
-							type: 'string',
-							description: '票種 ID'
-						}
-					},
-					required: ['eventId', 'ticketId']
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'array',
-								items: {
-									type: 'object',
-									properties: {
-										id: { type: 'string' },
-										name: { type: 'string' },
-										label: { type: 'string' },
-										type: { type: 'string' },
-										options: { type: 'string' },
-										placeholder: { type: 'string' },
-										helpText: { type: 'string' },
-										validation: { type: 'string' },
-										isRequired: { type: 'boolean' },
-										order: { type: 'integer' }
-									}
-								}
-							}
-						}
-					},
-					404: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							error: {
-								type: 'object',
-								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const { eventId, ticketId } = request.params;
-
-				// Verify ticket belongs to event
-				const ticket = await prisma.ticket.findFirst({
-					where: { id: ticketId, eventId, isActive: true }
-				});
-
-				if (!ticket) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "票種不存在", null, 404);
-					return reply.code(statusCode).send(response);
-				}
-
-				const formFields = await prisma.ticketFormField.findMany({
-					where: {
-						ticketId,
-						isVisible: true,
-						field: { isActive: true }
-					},
-					include: {
-						field: {
-							select: {
-								id: true,
-								name: true,
-								label: true,
-								type: true,
-								options: true,
-								placeholder: true,
-								helpText: true,
-								validation: true
-							}
-						}
-					},
-					orderBy: { order: "asc" }
-				});
-
-				const fields = formFields.map(tf => ({
-					...tf.field,
-					isRequired: tf.isRequired,
-					order: tf.order
-				}));
-
-				return successResponse(fields);
-			} catch (error) {
-				console.error("Get form fields error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得表單欄位失敗", null, 500);
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// 透過邀請碼進入活動頁面
-	fastify.get(
-		"/events/:eventId",
-		{
-			schema: {
-				description: "透過邀請碼進入活動頁面",
-				tags: ["events"],
-				params: {
-					type: 'object',
-					properties: {
-						eventId: {
-							type: 'string',
-							description: '活動 ID'
-						}
-					},
-					required: ['eventId']
-				},
+				...eventSchemas.listEvents,
+				description: "獲取所有活動列表",
 				querystring: {
 					type: 'object',
 					properties: {
-						inviteCode: {
-							type: 'string',
-							description: '邀請碼'
+						...eventSchemas.listEvents.querystring.properties,
+						upcoming: {
+							type: 'boolean',
+							description: '僅顯示即將開始的活動'
 						}
 					}
 				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									event: {
-										type: 'object',
-										properties: {
-											id: { type: 'string' },
-											name: { type: 'string' },
-											description: { type: 'string' },
-											location: { type: 'string' },
-											startDate: { type: 'string', format: 'date-time' },
-											endDate: { type: 'string', format: 'date-time' }
-										}
-									},
-									availableTickets: {
-										type: 'array',
-										items: {
-											type: 'object',
-											properties: {
-												id: { type: 'string' },
-												name: { type: 'string' },
-												price: { type: 'number' },
-												quantity: { type: 'integer' }
-											}
-										}
-									},
-									hasValidInviteCode: { type: 'boolean' }
-								}
-							}
-						}
-					}
-				}
+				response: publicEventsListResponse
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Querystring: {upcoming?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { eventId } = request.params;
-				const { inviteCode } = request.query;
+				const { upcoming } = request.query;
 
-				const event = await prisma.event.findUnique({
-					where: { id: eventId, isActive: true },
+				// Build where clause
+				const where = {
+					isActive: true
+				};
+
+				// Filter for upcoming events only
+				if (upcoming) {
+					where.startDate = {
+						gt: new Date()
+					};
+				}
+
+				/** @type {Event[]} */
+				const events = await prisma.event.findMany({
+					where,
 					select: {
 						id: true,
 						name: true,
@@ -359,59 +200,130 @@ export default async function eventsRoutes(fastify, options) {
 						startDate: true,
 						endDate: true,
 						ogImage: true,
-						landingPage: true
+						tickets: {
+							select: {
+								id: true,
+								quantity: true,
+								sold: true,
+								isActive: true,
+								saleStartDate: true,
+								saleEndDate: true
+							},
+							where: {
+								isActive: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
+						}
+					},
+					orderBy: { startDate: 'asc' }
+				});
+
+				// Add computed properties
+				const eventsWithStatus = events.map(event => {
+					const now = new Date();
+					const activeTickets = event.tickets.filter(ticket => {
+						const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
+							(!ticket.saleEndDate || now <= ticket.saleEndDate);
+						const hasAvailable = ticket.quantity > ticket.sold;
+						return ticket.isActive && isOnSale && hasAvailable;
+					});
+
+					return {
+						id: event.id,
+						name: event.name,
+						description: event.description,
+						location: event.location,
+						startDate: event.startDate,
+						endDate: event.endDate,
+						ogImage: event.ogImage,
+						ticketCount: event.tickets.length,
+						registrationCount: event._count.registrations,
+						hasAvailableTickets: activeTickets.length > 0
+					};
+				});
+
+				return reply.send(successResponse(eventsWithStatus));
+			} catch (error) {
+				console.error("List events error:", error);
+				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get event registration statistics (public view)
+	fastify.get(
+		"/events/:id/stats",
+		{
+			schema: {
+				description: "獲取活動公開統計資訊",
+				tags: ["events"],
+				params: eventSchemas.getEvent.params,
+				response: eventStatsResponse
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Get event with registration counts
+				const event = await prisma.event.findUnique({
+					where: { 
+						id,
+						isActive: true 
+					},
+					select: {
+						name: true,
+						tickets: {
+							select: {
+								quantity: true,
+								sold: true,
+								isActive: true
+							}
+						},
+						_count: {
+							select: {
+								registrations: {
+									where: { status: 'confirmed' }
+								}
+							}
+						}
 					}
 				});
 
 				if (!event) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "活動不存在", null, 404);
+					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
 
-				let availableTickets = [];
+				// Calculate statistics
+				const activeTickets = event.tickets.filter(t => t.isActive);
+				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
+				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.sold, 0);
+				const availableTickets = totalTickets - soldTickets;
+				const registrationRate = totalTickets > 0 ? (soldTickets / totalTickets) : 0;
 
-				if (inviteCode) {
-					// Verify invitation code and get available tickets
-					const invitationCode = await prisma.invitationCode.findFirst({
-						where: {
-							code: inviteCode,
-							eventId,
-							isActive: true,
-							OR: [{ validFrom: null }, { validFrom: { lte: new Date() } }],
-							OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
-							OR: [{ usageLimit: null }, { usedCount: { lt: prisma.invitationCode.fields.usageLimit } }]
-						},
-						include: {
-							tickets: {
-								include: {
-									ticket: {
-										select: {
-											id: true,
-											name: true,
-											description: true,
-											price: true,
-											quantity: true,
-											soldCount: true
-										}
-									}
-								}
-							}
-						}
-					});
-
-					if (invitationCode) {
-						availableTickets = invitationCode.tickets.map(it => it.ticket);
-					}
-				}
-
-				return successResponse({
-					event,
+				const stats = {
+					eventName: event.name,
+					totalRegistrations: soldTickets,
+					confirmedRegistrations: event._count.registrations,
+					totalTickets,
 					availableTickets,
-					hasValidInviteCode: !!inviteCode && availableTickets.length > 0
-				});
+					registrationRate: Math.round(registrationRate * 100) / 100
+				};
+
+				return reply.send(successResponse(stats));
 			} catch (error) {
-				console.error("Get event with invite code error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "取得活動資訊失敗", null, 500);
+				console.error("Get event stats error:", error);
+				const { response, statusCode } = serverErrorResponse("取得活動統計失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

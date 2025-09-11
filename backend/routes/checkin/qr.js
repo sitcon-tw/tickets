@@ -1,162 +1,309 @@
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+/**
+ * @fileoverview QR code check-in routes with modular types and schemas
+ * @typedef {import('../../types/database.js').Registration} Registration
+ * @typedef {import('../../types/api.js').QRVerifyRequest} QRVerifyRequest
+ */
 
+import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse,
+	notFoundResponse, 
+	serverErrorResponse 
+} from "#utils/response.js";
+
+/**
+ * QR code check-in routes with modular schemas and types
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
+ */
 export default async function qrRoutes(fastify, options) {
-	// 驗證 QR Code
+	// Verify QR Code
 	fastify.post(
 		"/qr-verify",
 		{
 			schema: {
 				description: "驗證 QR Code 並返回報名者資訊",
-				tags: ["checkin"]
+				tags: ["checkin"],
+				body: {
+					type: 'object',
+					properties: {
+						qrData: {
+							type: 'string',
+							minLength: 1,
+							description: 'QR Code 資料'
+						},
+						autoCheckIn: {
+							type: 'boolean',
+							default: false,
+							description: '是否自動簽到'
+						}
+					},
+					required: ['qrData']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							message: { type: 'string' },
+							data: {
+								type: 'object',
+								properties: {
+									valid: { type: 'boolean' },
+									registration: {
+										type: 'object',
+										properties: {
+											id: { type: 'string' },
+											status: { type: 'string' },
+											checkinAt: { type: 'string', format: 'date-time' },
+											user: { type: 'object' },
+											event: { type: 'object' },
+											ticket: { type: 'object' },
+											formData: { type: 'object' }
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: QRVerifyRequest}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
+				/** @type {QRVerifyRequest} */
 				const { qrData, autoCheckIn = false } = request.body;
 
 				if (!qrData) {
-					const { response, statusCode } = errorResponse("VALIDATION_ERROR", "QR Code 資料為必填");
+					const { response, statusCode } = validationErrorResponse("QR Code 資料為必填");
 					return reply.code(statusCode).send(response);
 				}
 
-				// QR data should contain the check-in code
-				const checkInCode = qrData.trim();
+				// QR data should contain the registration ID
+				const registrationId = qrData.trim();
 
-				// Find registration by check-in code
+				// Find registration by ID
+				/** @type {Registration | null} */
 				const registration = await prisma.registration.findFirst({
 					where: {
-						referralCode: checkInCode,
+						id: registrationId,
 						status: 'confirmed'
 					},
 					include: {
-						event: true,
-						ticket: true,
-						registrationData: {
-							include: {
-								field: true
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true,
+								location: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								price: true
 							}
 						}
 					}
 				});
 
 				if (!registration) {
-					return successResponse({
+					return reply.send(successResponse({
 						valid: false,
 						message: "無效的 QR Code 或報名不存在"
-					});
+					}));
 				}
 
-				// Build form data
-				const formData = {};
-				registration.registrationData.forEach(data => {
-					try {
-						formData[data.field.name] = JSON.parse(data.value);
-					} catch {
-						formData[data.field.name] = data.value;
-					}
-				});
+				// Check if event is active for check-in
+				const now = new Date();
+				const canCheckIn = now >= registration.event.startDate && now <= registration.event.endDate;
 
-				// Auto check-in if requested
-				if (autoCheckIn && registration.checkInStatus !== 'checked_in') {
+				// Auto check-in if requested and allowed
+				let wasCheckedIn = false;
+				if (autoCheckIn && !registration.checkinAt && canCheckIn) {
 					await prisma.registration.update({
 						where: { id: registration.id },
 						data: {
-							checkInStatus: 'checked_in',
-							checkInTime: new Date()
+							checkinAt: new Date(),
+							updatedAt: new Date()
 						}
 					});
-					registration.checkInStatus = 'checked_in';
-					registration.checkInTime = new Date();
+					registration.checkinAt = new Date();
+					wasCheckedIn = true;
 				}
 
-				return successResponse({
+				// Parse form data
+				let formData = {};
+				if (registration.formData) {
+					try {
+						formData = JSON.parse(registration.formData);
+					} catch (error) {
+						console.warn("Failed to parse form data:", error);
+					}
+				}
+
+				return reply.send(successResponse({
 					valid: true,
+					autoCheckedIn: wasCheckedIn,
 					registration: {
 						id: registration.id,
-						email: registration.email,
-						phone: registration.phone,
-						checkInCode: registration.referralCode,
 						status: registration.status,
-						checkInStatus: registration.checkInStatus,
-						checkInTime: registration.checkInTime,
+						checkinAt: registration.checkinAt,
+						canCheckIn: canCheckIn && !registration.checkinAt,
+						user: registration.user,
 						event: registration.event,
 						ticket: registration.ticket,
-						formData: formData,
+						formData,
 						createdAt: registration.createdAt
 					}
-				});
+				}));
 			} catch (error) {
 				console.error("QR verify error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證 QR Code 失敗", null, 500);
+				const { response, statusCode } = serverErrorResponse("驗證 QR Code 失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
-	// 透過 Check-in ID 獲取報名者資訊
+	// Get registration by check-in ID
 	fastify.get(
-		"/qr/:checkInId",
+		"/qr/:registrationId",
 		{
 			schema: {
-				description: "透過 Check-in ID 獲取報名者資訊",
-				tags: ["checkin"]
+				description: "透過報名 ID 獲取報名者資訊",
+				tags: ["checkin"],
+				params: {
+					type: 'object',
+					properties: {
+						registrationId: {
+							type: 'string',
+							description: '報名 ID'
+						}
+					},
+					required: ['registrationId']
+				},
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							message: { type: 'string' },
+							data: {
+								type: 'object',
+								properties: {
+									registration: {
+										type: 'object',
+										properties: {
+											id: { type: 'string' },
+											status: { type: 'string' },
+											checkinAt: { type: 'string', format: 'date-time' },
+											user: { type: 'object' },
+											event: { type: 'object' },
+											ticket: { type: 'object' },
+											formData: { type: 'object' }
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {registrationId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
 		async (request, reply) => {
 			try {
-				const { checkInId } = request.params;
+				const { registrationId } = request.params;
 
-				// Find registration by check-in code
+				// Find registration by ID
+				/** @type {Registration | null} */
 				const registration = await prisma.registration.findFirst({
 					where: {
-						referralCode: checkInId,
+						id: registrationId,
 						status: { not: 'cancelled' }
 					},
 					include: {
-						event: true,
-						ticket: true,
-						registrationData: {
-							include: {
-								field: true
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true,
+								location: true,
+								startDate: true,
+								endDate: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								price: true
 							}
 						}
 					}
 				});
 
 				if (!registration) {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Build form data
-				const formData = {};
-				registration.registrationData.forEach(data => {
-					try {
-						formData[data.field.name] = JSON.parse(data.value);
-					} catch {
-						formData[data.field.name] = data.value;
-					}
-				});
+				// Check if can check in
+				const now = new Date();
+				const canCheckIn = registration.status === 'confirmed' && 
+					!registration.checkinAt &&
+					now >= registration.event.startDate && 
+					now <= registration.event.endDate;
 
-				return successResponse({
+				// Parse form data
+				let formData = {};
+				if (registration.formData) {
+					try {
+						formData = JSON.parse(registration.formData);
+					} catch (error) {
+						console.warn("Failed to parse form data:", error);
+					}
+				}
+
+				return reply.send(successResponse({
 					registration: {
 						id: registration.id,
-						email: registration.email,
-						phone: registration.phone,
-						checkInCode: registration.referralCode,
 						status: registration.status,
-						checkInStatus: registration.checkInStatus,
-						checkInTime: registration.checkInTime,
+						checkinAt: registration.checkinAt,
+						canCheckIn,
+						user: registration.user,
 						event: registration.event,
 						ticket: registration.ticket,
-						formData: formData,
+						formData,
 						createdAt: registration.createdAt
 					}
-				});
+				}));
 			} catch (error) {
-				console.error("Get registration by checkin ID error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取報名者資訊失敗", null, 500);
+				console.error("Get registration by ID error:", error);
+				const { response, statusCode } = serverErrorResponse("獲取報名者資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}
