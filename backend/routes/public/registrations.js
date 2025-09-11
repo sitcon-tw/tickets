@@ -93,12 +93,12 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Check sale period
 				const now = new Date();
-				if (ticket.saleStartDate && now < ticket.saleStartDate) {
+				if (ticket.saleStart && now < ticket.saleStart) {
 					const { response, statusCode } = validationErrorResponse("票券尚未開始販售");
 					return reply.code(statusCode).send(response);
 				}
 
-				if (ticket.saleEndDate && now > ticket.saleEndDate) {
+				if (ticket.saleEnd && now > ticket.saleEnd) {
 					const { response, statusCode } = validationErrorResponse("票券販售已結束");
 					return reply.code(statusCode).send(response);
 				}
@@ -202,7 +202,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					// Update ticket sold count
 					await tx.ticket.update({
 						where: { id: ticketId },
-						data: { sold: { increment: 1 } }
+						data: { soldCount: { increment: 1 } }
 					});
 
 					// Update invitation code usage if used
@@ -470,7 +470,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					// Decrease ticket sold count
 					await tx.ticket.update({
 						where: { id: registration.ticketId },
-						data: { sold: { decrement: 1 } }
+						data: { soldCount: { decrement: 1 } }
 					});
 				});
 

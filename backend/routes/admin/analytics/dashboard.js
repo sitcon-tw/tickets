@@ -106,7 +106,7 @@ export default async function dashboardRoutes(fastify, options) {
 						name: true,
 						price: true,
 						quantity: true,
-						sold: true,
+						soldCount: true,
 						event: {
 							select: { name: true }
 						}
@@ -130,7 +130,7 @@ export default async function dashboardRoutes(fastify, options) {
 							event: ticket.event.name,
 							price: ticket.price,
 							quantity: ticket.quantity,
-							sold: ticket.sold,
+							soldCount: ticket.sold,
 							revenue: ticket.sold * ticket.price
 						};
 						return acc;

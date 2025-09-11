@@ -51,6 +51,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 			schema: {
 				...invitationCodeSchemas.validateInvitationCode,
 				description: "驗證邀請碼並返回可用票種",
+				tags: ["invitation-codes"],
 				response: invitationCodeVerifyResponse
 			}
 		},
@@ -130,9 +131,9 @@ export default async function invitationCodesRoutes(fastify, options) {
 						description: true,
 						price: true,
 						quantity: true,
-						sold: true,
-						saleStartDate: true,
-						saleEndDate: true,
+						soldCount: true,
+						saleStart: true,
+						saleEnd: true,
 						isActive: true
 					},
 					orderBy: { createdAt: 'asc' }
@@ -141,8 +142,8 @@ export default async function invitationCodesRoutes(fastify, options) {
 				// Filter and add availability info to tickets
 				const availableTickets = tickets.map(ticket => {
 					const available = ticket.quantity - ticket.sold;
-					const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
-						(!ticket.saleEndDate || now <= ticket.saleEndDate) &&
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+						(!ticket.saleEnd || now <= ticket.saleEnd) &&
 						ticket.isActive && available > 0;
 
 					return {

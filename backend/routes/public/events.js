@@ -115,9 +115,9 @@ export default async function publicEventsRoutes(fastify, options) {
 						description: true,
 						price: true,
 						quantity: true,
-						sold: true,
-						saleStartDate: true,
-						saleEndDate: true,
+						soldCount: true,
+						saleStart: true,
+						saleEnd: true,
 						isActive: true
 					},
 					orderBy: { createdAt: 'asc' }
@@ -127,8 +127,8 @@ export default async function publicEventsRoutes(fastify, options) {
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
 					const available = ticket.quantity - ticket.sold;
-					const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
-						(!ticket.saleEndDate || now <= ticket.saleEndDate) &&
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+						(!ticket.saleEnd || now <= ticket.saleEnd) &&
 						ticket.isActive;
 					const isSoldOut = available <= 0;
 
@@ -204,10 +204,10 @@ export default async function publicEventsRoutes(fastify, options) {
 							select: {
 								id: true,
 								quantity: true,
-								sold: true,
+								soldCount: true,
 								isActive: true,
-								saleStartDate: true,
-								saleEndDate: true
+								saleStart: true,
+								saleEnd: true
 							},
 							where: {
 								isActive: true
@@ -226,8 +226,8 @@ export default async function publicEventsRoutes(fastify, options) {
 				const eventsWithStatus = events.map(event => {
 					const now = new Date();
 					const activeTickets = event.tickets.filter(ticket => {
-						const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
-							(!ticket.saleEndDate || now <= ticket.saleEndDate);
+						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+							(!ticket.saleEnd || now <= ticket.saleEnd);
 						const hasAvailable = ticket.quantity > ticket.sold;
 						return ticket.isActive && isOnSale && hasAvailable;
 					});
@@ -285,7 +285,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						tickets: {
 							select: {
 								quantity: true,
-								sold: true,
+								soldCount: true,
 								isActive: true
 							}
 						},

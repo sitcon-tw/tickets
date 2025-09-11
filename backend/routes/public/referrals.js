@@ -152,7 +152,7 @@ export default async function referralRoutes(fastify, options) {
 	fastify.post(
 		"/referrals/validate",
 		{
-			schema: referralSchemas.validateReferral
+			schema: { ...referralSchemas.validateReferral, tags: ["referrals"] }
 		},
 		async (request, reply) => {
 			try {

@@ -57,8 +57,8 @@
  * @property {number} price - Ticket price
  * @property {number} quantity - Available quantity
  * @property {number} sold - Number sold
- * @property {Date|null} saleStartDate - Sale start date
- * @property {Date|null} saleEndDate - Sale end date
+ * @property {Date|null} saleStart - Sale start date
+ * @property {Date|null} saleEnd - Sale end date
  * @property {boolean} isActive - Whether ticket is active
  * @property {Date} createdAt - Creation timestamp
  * @property {Date} updatedAt - Last update timestamp

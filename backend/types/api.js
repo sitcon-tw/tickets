@@ -81,8 +81,8 @@
  * @property {string} [description] - Ticket description
  * @property {number} price - Ticket price
  * @property {number} quantity - Available quantity
- * @property {string} [saleStartDate] - ISO date string
- * @property {string} [saleEndDate] - ISO date string
+ * @property {string} [saleStart] - ISO date string
+ * @property {string} [saleEnd] - ISO date string
  */
 
 /**

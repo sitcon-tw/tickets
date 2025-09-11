@@ -115,7 +115,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.get(
 		"/registrations/:id",
 		{
-			schema: registrationSchemas.getRegistration
+			schema: {...registrationSchemas.getRegistration, tags: ["admin/registrations"]}
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
@@ -189,7 +189,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.put(
 		"/registrations/:id",
 		{
-			schema: registrationSchemas.updateRegistration
+			schema: {...registrationSchemas.updateRegistration, tags: ["admin/registrations"]}
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>} request
@@ -269,7 +269,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.post(
 		"/registrations/checkin",
 		{
-			schema: registrationSchemas.checkinRegistration
+			schema: { ...registrationSchemas.checkinRegistration, tags: ["admin/registrations"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Body: {registrationId: string}}>} request

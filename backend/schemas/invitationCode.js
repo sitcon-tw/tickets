@@ -296,7 +296,7 @@ export const invitationCodeVerifyResponse = {
 								description: { type: 'string' },
 								price: { type: 'number' },
 								quantity: { type: 'integer' },
-								sold: { type: 'integer' },
+								soldCount: { type: 'integer' },
 								available: { type: 'integer' },
 								isOnSale: { type: 'boolean' }
 							}

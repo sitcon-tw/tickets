@@ -38,6 +38,7 @@ await fastify.register(fastifySwagger, {
 			{ name: "events", description: "活動資訊" },
 			{ name: "registrations", description: "報名相關操作 requires: 登入 session" },
 			{ name: "referrals", description: "推薦相關操作 requires: 登入 session" },
+			{ name: "invitation-codes", description: "邀請碼相關操作" },
 			{ name: "checkin", description: "報到相關操作 requires: Staff Role" },
 			{ name: "admin/analytics", description: "管理後台分析相關操作 requires: Admin Role" },
 			{ name: "admin/users", description: "管理後台用戶相關操作 requires: Admin Role" },

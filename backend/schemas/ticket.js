@@ -30,16 +30,16 @@ export const ticketProperties = {
 		minimum: 0,
 		description: '可售數量'
 	},
-	sold: {
+	soldCount: {
 		type: 'integer',
 		minimum: 0,
 		description: '已售數量'
 	},
-	saleStartDate: {
+	saleStart: {
 		...dateTimeString,
 		description: '開售時間'
 	},
-	saleEndDate: {
+	saleEnd: {
 		...dateTimeString,
 		description: '結束販售時間'
 	},
@@ -83,11 +83,11 @@ export const ticketCreateBody = {
 			minimum: 1,
 			description: '可售數量'
 		},
-		saleStartDate: {
+		saleStart: {
 			...dateTimeString,
 			description: '開售時間'
 		},
-		saleEndDate: {
+		saleEnd: {
 			...dateTimeString,
 			description: '結束販售時間'
 		}
@@ -117,11 +117,11 @@ export const ticketUpdateBody = {
 			minimum: 0,
 			description: '可售數量'
 		},
-		saleStartDate: {
+		saleStart: {
 			...dateTimeString,
 			description: '開售時間'
 		},
-		saleEndDate: {
+		saleEnd: {
 			...dateTimeString,
 			description: '結束販售時間'
 		},

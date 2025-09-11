@@ -35,7 +35,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {TicketCreateRequest} */
-				const { eventId, name, description, price, quantity, saleStartDate, saleEndDate } = request.body;
+				const { eventId, name, description, price, quantity, saleStart, saleEnd } = request.body;
 
 				// Verify event exists
 				const event = await prisma.event.findUnique({
@@ -48,9 +48,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 
 				// Validate sale dates
-				if (saleStartDate && saleEndDate) {
-					const saleStart = new Date(saleStartDate);
-					const saleEnd = new Date(saleEndDate);
+				if (saleStart && saleEnd) {
+					const saleStart = new Date(saleStart);
+					const saleEnd = new Date(saleEnd);
 
 					if (isNaN(saleStart.getTime()) || isNaN(saleEnd.getTime())) {
 						const { response, statusCode } = validationErrorResponse("無效的販售日期格式");
@@ -90,9 +90,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 						description,
 						price,
 						quantity,
-						sold: 0,
-						saleStartDate: saleStartDate ? new Date(saleStartDate) : null,
-						saleEndDate: saleEndDate ? new Date(saleEndDate) : null,
+						soldCount: 0,
+						saleStart: saleStart ? new Date(saleStart) : null,
+						saleEnd: saleEnd ? new Date(saleEnd) : null,
 						isActive: true
 					}
 				});
@@ -202,18 +202,18 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 
 				// Validate sale dates if provided
-				if (updateData.saleStartDate || updateData.saleEndDate) {
-					const saleStart = updateData.saleStartDate ? 
-						new Date(updateData.saleStartDate) : existingTicket.saleStartDate;
-					const saleEnd = updateData.saleEndDate ? 
-						new Date(updateData.saleEndDate) : existingTicket.saleEndDate;
+				if (updateData.saleStart || updateData.saleEnd) {
+					const saleStart = updateData.saleStart ? 
+						new Date(updateData.saleStart) : existingTicket.saleStart;
+					const saleEnd = updateData.saleEnd ? 
+						new Date(updateData.saleEnd) : existingTicket.saleEnd;
 
-					if (updateData.saleStartDate && isNaN(new Date(updateData.saleStartDate).getTime())) {
+					if (updateData.saleStart && isNaN(new Date(updateData.saleStart).getTime())) {
 						const { response, statusCode } = validationErrorResponse("無效的販售開始日期格式");
 						return reply.code(statusCode).send(response);
 					}
 
-					if (updateData.saleEndDate && isNaN(new Date(updateData.saleEndDate).getTime())) {
+					if (updateData.saleEnd && isNaN(new Date(updateData.saleEnd).getTime())) {
 						const { response, statusCode } = validationErrorResponse("無效的販售結束日期格式");
 						return reply.code(statusCode).send(response);
 					}
@@ -248,8 +248,8 @@ export default async function adminTicketsRoutes(fastify, options) {
 				// Prepare update data
 				const updatePayload = {
 					...updateData,
-					...(updateData.saleStartDate && { saleStartDate: new Date(updateData.saleStartDate) }),
-					...(updateData.saleEndDate && { saleEndDate: new Date(updateData.saleEndDate) }),
+					...(updateData.saleStart && { saleStart: new Date(updateData.saleStart) }),
+					...(updateData.saleEnd && { saleEnd: new Date(updateData.saleEnd) }),
 					updatedAt: new Date()
 				};
 
@@ -359,8 +359,8 @@ export default async function adminTicketsRoutes(fastify, options) {
 				// Add availability status to each ticket
 				const ticketsWithAvailability = tickets.map(ticket => {
 					const now = new Date();
-					const isOnSale = (!ticket.saleStartDate || now >= ticket.saleStartDate) &&
-						(!ticket.saleEndDate || now <= ticket.saleEndDate);
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+						(!ticket.saleEnd || now <= ticket.saleEnd);
 					const available = ticket.quantity - ticket.sold;
 					const isSoldOut = available <= 0;
 
@@ -407,7 +407,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 							data: {
 								type: 'object',
 								properties: {
-									totalSold: { type: 'integer' },
+									totalsoldCount: { type: 'integer' },
 									totalRevenue: { type: 'number' },
 									availableQuantity: { type: 'integer' },
 									salesByStatus: { type: 'object' },

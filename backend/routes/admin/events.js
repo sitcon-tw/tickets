@@ -25,7 +25,7 @@ export default async function adminEventsRoutes(fastify, options) {
 	fastify.post(
 		"/events",
 		{
-			schema: eventSchemas.createEvent
+			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Body: EventCreateRequest}>} request
@@ -85,7 +85,7 @@ export default async function adminEventsRoutes(fastify, options) {
 	fastify.get(
 		"/events/:id",
 		{
-			schema: eventSchemas.getEvent
+			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
@@ -263,7 +263,7 @@ export default async function adminEventsRoutes(fastify, options) {
 	fastify.get(
 		"/events",
 		{
-			schema: eventSchemas.listEvents
+			schema: {	...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Querystring: {isActive?: boolean}}>} request

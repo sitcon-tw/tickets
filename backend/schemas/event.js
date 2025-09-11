@@ -233,10 +233,10 @@ export const eventTicketsResponse = {
 						description: { type: 'string' },
 						price: { type: 'number' },
 						quantity: { type: 'integer' },
-						sold: { type: 'integer' },
+						soldCount: { type: 'integer' },
 						available: { type: 'integer' },
-						saleStartDate: { type: 'string', format: 'date-time' },
-						saleEndDate: { type: 'string', format: 'date-time' },
+						saleStart: { type: 'string', format: 'date-time' },
+						saleEnd: { type: 'string', format: 'date-time' },
 						isOnSale: { type: 'boolean' },
 						isSoldOut: { type: 'boolean' }
 					}
