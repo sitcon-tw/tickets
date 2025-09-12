@@ -1,7 +1,7 @@
 /**
  * @fileoverview Admin invitation codes routes with modular types and schemas
- * @typedef {import('../../types/database.js').InvitationCode} InvitationCode
- * @typedef {import('../../types/api.js').InvitationCodeCreateRequest} InvitationCodeCreateRequest
+ * @typedef {import('#types/database.js').InvitationCode} InvitationCode
+ * @typedef {import('#types/api.js').InvitationCodeCreateRequest} InvitationCodeCreateRequest
  */
 
 import prisma from "#config/database.js";
@@ -12,7 +12,7 @@ import {
 	serverErrorResponse,
 	conflictResponse
 } from "#utils/response.js";
-import { invitationCodeSchemas } from "../../schemas/invitationCode.js";
+import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 
 /**
  * Admin invitation codes routes with modular schemas and types

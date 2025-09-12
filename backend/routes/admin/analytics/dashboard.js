@@ -1,5 +1,5 @@
 /**
- * @typedef {import('../../../types/api.js').AnalyticsData} AnalyticsData
+ * @typedef {import('#../types/api.js').AnalyticsData} AnalyticsData
  */
 
 import { successResponse, serverErrorResponse } from "#utils/response.js";

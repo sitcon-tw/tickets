@@ -1,7 +1,7 @@
 /**
  * @fileoverview Public registrations routes with modular types and schemas
- * @typedef {import('../../types/database.js').Registration} Registration
- * @typedef {import('../../types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
+ * @typedef {import('#types/database.js').Registration} Registration
+ * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
  */
 
 import prisma from "#config/database.js";
@@ -13,8 +13,8 @@ import {
 	conflictResponse,
 	unauthorizedResponse
 } from "#utils/response.js";
-import { registrationSchemas, userRegistrationsResponse } from "../../schemas/registration.js";
-import { validateRegistrationFormData } from "../../utils/validation.js";
+import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
+import { validateRegistrationFormData } from "#utils/validation.js";
 import { auth } from "#lib/auth.js";
 
 

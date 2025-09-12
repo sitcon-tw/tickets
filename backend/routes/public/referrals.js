@@ -1,6 +1,6 @@
 import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
-import { referralSchemas, referralStatsResponse } from "../../schemas/referral.js";
+import { referralSchemas, referralStatsResponse } from "#schemas/referral.js";
 
 // Custom param schema for regId parameter
 const regIdParam = {

@@ -1,8 +1,8 @@
 /**
  * @fileoverview Public invitation codes routes with modular types and schemas
- * @typedef {import('../../types/database.js').InvitationCode} InvitationCode
- * @typedef {import('../../types/database.js').Ticket} Ticket
- * @typedef {import('../../types/api.js').InvitationCodeVerifyRequest} InvitationCodeVerifyRequest
+ * @typedef {import('#types/database.js').InvitationCode} InvitationCode
+ * @typedef {import('#types/database.js').Ticket} Ticket
+ * @typedef {import('#types/api.js').InvitationCodeVerifyRequest} InvitationCodeVerifyRequest
  */
 
 import prisma from "#config/database.js";
@@ -12,7 +12,7 @@ import {
 	notFoundResponse, 
 	serverErrorResponse 
 } from "#utils/response.js";
-import { invitationCodeSchemas, invitationCodeVerifyResponse } from "../../schemas/invitationCode.js";
+import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode.js";
 
 // Custom param schemas for invitation code routes
 const codeParam = {

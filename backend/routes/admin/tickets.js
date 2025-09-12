@@ -1,8 +1,8 @@
 /**
  * @fileoverview Admin tickets routes with modular types and schemas
- * @typedef {import('../../types/database.js').Ticket} Ticket
- * @typedef {import('../../types/api.js').TicketCreateRequest} TicketCreateRequest
- * @typedef {import('../../types/api.js').TicketUpdateRequest} TicketUpdateRequest
+ * @typedef {import('#types/database.js').Ticket} Ticket
+ * @typedef {import('#types/api.js').TicketCreateRequest} TicketCreateRequest
+ * @typedef {import('#types/api.js').TicketUpdateRequest} TicketUpdateRequest
  */
 
 import prisma from "#config/database.js";
@@ -14,7 +14,7 @@ import {
 	conflictResponse,
 	createPagination
 } from "#utils/response.js";
-import { ticketSchemas } from "../../schemas/ticket.js";
+import { ticketSchemas } from "#schemas/ticket.js";
 
 /**
  * Admin tickets routes with modular schemas and types

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Admin email campaigns routes with modular types and schemas
- * @typedef {import('../../types/api.js').EmailCampaignCreateRequest} EmailCampaignCreateRequest
- * @typedef {import('../../types/api.js').PaginationQuery} PaginationQuery
+ * @typedef {import('#types/api.js').EmailCampaignCreateRequest} EmailCampaignCreateRequest
+ * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
 import { 
@@ -9,7 +9,7 @@ import {
 	validationErrorResponse, 
 	serverErrorResponse 
 } from "#utils/response.js";
-import { emailCampaignSchemas } from "../../schemas/emailCampaign.js";
+import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 
 /**
  * Admin email campaigns routes with modular schemas and types

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Check-in search routes with modular types and schemas
- * @typedef {import('../../types/database.js').Registration} Registration
+ * @typedef {import('#types/database.js').Registration} Registration
  */
 
 import prisma from "#config/database.js";

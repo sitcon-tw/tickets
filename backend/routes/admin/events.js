@@ -1,8 +1,8 @@
 /**
  * @fileoverview Admin events routes with modular types and schemas
- * @typedef {import('../../types/database.js').Event} Event
- * @typedef {import('../../types/api.js').EventCreateRequest} EventCreateRequest
- * @typedef {import('../../types/api.js').EventUpdateRequest} EventUpdateRequest
+ * @typedef {import('#types/database.js').Event} Event
+ * @typedef {import('#types/api.js').EventCreateRequest} EventCreateRequest
+ * @typedef {import('#types/api.js').EventUpdateRequest} EventUpdateRequest
  */
 
 import prisma from "#config/database.js";
@@ -13,7 +13,7 @@ import {
 	serverErrorResponse,
 	conflictResponse
 } from "#utils/response.js";
-import { eventSchemas } from "../../schemas/event.js";
+import { eventSchemas } from "#schemas/event.js";
 
 /**
  * Admin events routes with modular schemas and types

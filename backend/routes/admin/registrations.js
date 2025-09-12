@@ -1,9 +1,9 @@
 /**
  * @fileoverview Admin registrations routes with modular types and schemas
- * @typedef {import('../../types/database.js').Registration} Registration
- * @typedef {import('../../types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
- * @typedef {import('../../types/api.js').RegistrationUpdateRequest} RegistrationUpdateRequest
- * @typedef {import('../../types/api.js').PaginationQuery} PaginationQuery
+ * @typedef {import('#types/database.js').Registration} Registration
+ * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
+ * @typedef {import('#types/api.js').RegistrationUpdateRequest} RegistrationUpdateRequest
+ * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
 import prisma from "#config/database.js";
@@ -15,7 +15,7 @@ import {
 	conflictResponse,
 	createPagination
 } from "#utils/response.js";
-import { registrationSchemas } from "../../schemas/registration.js";
+import { registrationSchemas } from "#schemas/registration.js";
 
 /**
  * Admin registrations routes with modular schemas and types

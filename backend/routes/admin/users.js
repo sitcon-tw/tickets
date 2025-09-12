@@ -1,7 +1,7 @@
 /**
  * @fileoverview Admin users routes with modular types and schemas
- * @typedef {import('../../types/database.js').User} User
- * @typedef {import('../../types/auth.js').AdminUserUpdateRequest} AdminUserUpdateRequest
+ * @typedef {import('#types/database.js').User} User
+ * @typedef {import('#types/auth.js').AdminUserUpdateRequest} AdminUserUpdateRequest
  */
 
 import prisma from "#config/database.js";
@@ -12,7 +12,7 @@ import {
 	serverErrorResponse,
 	conflictResponse
 } from "#utils/response.js";
-import { userSchemas } from "../../schemas/user.js";
+import { userSchemas } from "#schemas/user.js";
 
 /**
  * Admin users routes with modular schemas and types

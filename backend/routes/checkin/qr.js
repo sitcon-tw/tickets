@@ -1,7 +1,7 @@
 /**
  * @fileoverview QR code check-in routes with modular types and schemas
- * @typedef {import('../../types/database.js').Registration} Registration
- * @typedef {import('../../types/api.js').QRVerifyRequest} QRVerifyRequest
+ * @typedef {import('#types/database.js').Registration} Registration
+ * @typedef {import('#types/api.js').QRVerifyRequest} QRVerifyRequest
  */
 
 import prisma from "#config/database.js";

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Check-in action routes with modular types and schemas
- * @typedef {import('../../types/database.js').Registration} Registration
- * @typedef {import('../../types/api.js').CheckinRequest} CheckinRequest
+ * @typedef {import('#types/database.js').Registration} Registration
+ * @typedef {import('#types/api.js').CheckinRequest} CheckinRequest
  */
 
 import prisma from "#config/database.js";
