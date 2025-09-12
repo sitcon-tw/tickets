@@ -14,7 +14,8 @@ import {
 	unauthorizedResponse
 } from "#utils/response.js";
 import { registrationSchemas, userRegistrationsResponse } from "../../schemas/registration.js";
-import { validateFormData } from "../../utils/validation.js";
+import { validateRegistrationFormData } from "../../utils/validation.js";
+import { auth } from "#lib/auth.js";
 
 
 /**
@@ -35,20 +36,20 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				// Check if user is authenticated
-				if (!request.session?.userId) {
-					const { response, statusCode } = unauthorizedResponse("請先登入");
-					return reply.code(statusCode).send(response);
-				}
-
 				/** @type {RegistrationCreateRequest} */
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
-				const userId = request.session.userId;
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+				const userId = session.userId;
+
+				// Get user info from session
+				const user = session.user;
 
 				// Check if user already registered for this event
 				const existingRegistration = await prisma.registration.findFirst({
 					where: {
-						userId,
+						email: user.email,
 						eventId
 					}
 				});
@@ -153,16 +154,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					referralCodeId = referral.id;
 				}
 
-				// Validate form data
-				const formFields = await prisma.formField.findMany({
-					where: {
-						eventId,
-						isActive: true
-					},
-					orderBy: { order: 'asc' }
-				});
-
-				const formErrors = validateFormData(formData, formFields);
+				// Validate form data with hard-coded fields
+				const formErrors = validateRegistrationFormData(formData);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -170,17 +163,16 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Create registration in transaction
 				const result = await prisma.$transaction(async (tx) => {
-					// Create registration
+					// Create registration with form data as JSON
 					const registration = await tx.registration.create({
 						data: {
-							userId,
 							eventId,
 							ticketId,
-							invitationCodeId,
-							referralCodeId,
+							email: user.email,
+							phone: formData.phoneNumber || null,
 							formData: JSON.stringify(formData),
 							status: 'confirmed',
-							tags: JSON.stringify([])
+							paymentStatus: 'pending'
 						},
 						include: {
 							event: {
@@ -218,14 +210,17 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						await tx.referralUsage.create({
 							data: {
 								referralId: referralCodeId,
-								eventId,
-								userId,
-								usedAt: new Date()
+								registrationId: registration.id,
+								eventId
 							}
 						});
 					}
 
-					return registration;
+					// Add parsed form data to response
+					return {
+						...registration,
+						formData: JSON.parse(registration.formData)
+					};
 				});
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
@@ -253,13 +248,10 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				// Check if user is authenticated
-				if (!request.session?.userId) {
-					const { response, statusCode } = unauthorizedResponse("請先登入");
-					return reply.code(statusCode).send(response);
-				}
-
-				const userId = request.session.userId;
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+				const userId = session.userId;
 
 				/** @type {Registration[]} */
 				const registrations = await prisma.registration.findMany({
@@ -325,14 +317,10 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				// Check if user is authenticated
-				if (!request.session?.userId) {
-					const { response, statusCode } = unauthorizedResponse("請先登入");
-					return reply.code(statusCode).send(response);
-				}
-
-				const { id } = request.params;
-				const userId = request.session.userId;
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+				const userId = session.userId;
 
 				/** @type {Registration | null} */
 				const registration = await prisma.registration.findFirst({
@@ -415,14 +403,10 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				// Check if user is authenticated
-				if (!request.session?.userId) {
-					const { response, statusCode } = unauthorizedResponse("請先登入");
-					return reply.code(statusCode).send(response);
-				}
-
-				const { id } = request.params;
-				const userId = request.session.userId;
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+				const userId = session.userId;
 
 				// Check if registration exists and belongs to user
 				const registration = await prisma.registration.findFirst({

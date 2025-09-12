@@ -1,6 +1,5 @@
 import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
-import { requireAuth } from "#middleware/auth.js";
 import { referralSchemas, referralStatsResponse } from "../../schemas/referral.js";
 
 // Custom param schema for regId parameter
@@ -16,9 +15,7 @@ const regIdParam = {
 };
 
 
-export default async function referralRoutes(fastify, options) {
-	fastify.addHook("preHandler", requireAuth);
-	
+export default async function referralRoutes(fastify, options) {	
 	// 獲取專屬推薦連結
 	fastify.get(
 		"/registrations/:regId/referral-link",

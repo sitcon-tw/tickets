@@ -64,21 +64,6 @@
  * @property {Date} updatedAt - Last update timestamp
  */
 
-/**
- * @typedef {Object} FormField
- * @property {string} id - Form field unique identifier
- * @property {string} eventId - Event ID
- * @property {string} name - Field name/key
- * @property {string} label - Display label
- * @property {'text'|'email'|'phone'|'textarea'|'select'|'radio'|'checkbox'} type - Field type
- * @property {boolean} isRequired - Whether field is required
- * @property {string|null} options - JSON array of options for select/radio
- * @property {string|null} validation - JSON validation rules
- * @property {number} order - Display order
- * @property {boolean} isActive - Whether field is active
- * @property {Date} createdAt - Creation timestamp
- * @property {Date} updatedAt - Last update timestamp
- */
 
 /**
  * @typedef {Object} InvitationCode

@@ -9,7 +9,6 @@ export * from './event.js';
 export * from './registration.js';
 export * from './ticket.js';
 export * from './user.js';
-export * from './formField.js';
 export * from './invitationCode.js';
 export * from './referral.js';
 export * from './emailCampaign.js';

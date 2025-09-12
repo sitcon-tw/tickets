@@ -9,10 +9,6 @@ export const registrationProperties = {
 		type: 'string',
 		description: '報名 ID'
 	},
-	userId: {
-		type: 'string',
-		description: '用戶 ID'
-	},
 	eventId: {
 		type: 'string',
 		description: '活動 ID'
@@ -21,30 +17,40 @@ export const registrationProperties = {
 		type: 'string',
 		description: '票券 ID'
 	},
-	invitationCodeId: {
+	email: {
 		type: 'string',
-		description: '邀請碼 ID'
+		description: '電子郵件'
 	},
-	referralCodeId: {
+	phone: {
 		type: 'string',
-		description: '推薦碼 ID'
+		description: '電話號碼'
+	},
+	status: {
+		type: 'string',
+		enum: ['confirmed', 'cancelled', 'pending'],
+		description: '報名狀態'
+	},
+	paymentStatus: {
+		type: 'string',
+		enum: ['pending', 'paid', 'failed', 'refunded'],
+		description: '付款狀態'
+	},
+	checkInStatus: {
+		type: 'string',
+		enum: ['not_checked', 'checked_in'],
+		description: '報到狀態'
+	},
+	checkInTime: {
+		...dateTimeString,
+		description: '報到時間'
+	},
+	referredBy: {
+		type: 'string',
+		description: '推薦人報名 ID'
 	},
 	formData: {
 		type: 'object',
 		description: '表單資料'
-	},
-	status: {
-		...statusEnum,
-		description: '報名狀態'
-	},
-	checkinAt: {
-		...dateTimeString,
-		description: '報到時間'
-	},
-	tags: {
-		type: 'array',
-		items: { type: 'string' },
-		description: '標籤列表'
 	},
 	createdAt: {
 		...dateTimeString,
@@ -78,7 +84,62 @@ export const registrationCreateBody = {
 		formData: {
 			type: 'object',
 			description: '表單資料',
-			additionalProperties: true
+			properties: {
+				acceptTerms: {
+					type: 'boolean',
+					description: '接受條款'
+				},
+				nickname: {
+					type: 'string',
+					description: '暱稱',
+					minLength: 2,
+					maxLength: 20
+				},
+				phoneNumber: {
+					type: 'string',
+					description: '電話號碼'
+				},
+				sex: {
+					type: 'string',
+					enum: ['male', 'female', 'other'],
+					description: '性別'
+				},
+				foodHabits: {
+					type: 'string',
+					enum: ['normal', 'no-beef', 'no-pork', 'vegetarian'],
+					description: '飲食習慣'
+				},
+				livingArea: {
+					type: 'string',
+					enum: ['north', 'middle', 'south', 'east'],
+					description: '居住地區'
+				},
+				workingAt: {
+					type: 'string',
+					description: '工作地點',
+					maxLength: 100
+				},
+				jobTitle: {
+					type: 'string',
+					description: '職位',
+					maxLength: 50
+				},
+				grade: {
+					type: 'string',
+					description: '年級',
+					maxLength: 20
+				},
+				haveEverBeenHere: {
+					type: 'boolean',
+					description: '是否曾經來過'
+				},
+				whereYouGotThis: {
+					type: 'string',
+					enum: ['google', 'social_media', 'friend', 'family'],
+					description: '從哪裡得知此活動'
+				}
+			},
+			required: ['acceptTerms', 'nickname', 'phoneNumber', 'sex', 'foodHabits', 'livingArea', 'workingAt', 'jobTitle', 'grade', 'haveEverBeenHere', 'whereYouGotThis']
 		}
 	},
 	required: ['eventId', 'ticketId', 'formData']
@@ -134,7 +195,7 @@ export const registrationResponse = {
 		data: {
 			type: 'object',
 			properties: registrationProperties,
-			required: ['id', 'userId', 'eventId', 'ticketId', 'status']
+			required: ['id', 'eventId', 'ticketId', 'email', 'status']
 		}
 	},
 	required: ['success', 'message', 'data']

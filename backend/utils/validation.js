@@ -2,7 +2,6 @@
  * @typedef {import('../types/validation.js').ValidationRule} ValidationRule
  * @typedef {import('../types/validation.js').ValidationSchema} ValidationSchema
  * @typedef {import('../types/validation.js').ValidationResult} ValidationResult
- * @typedef {import('../types/database.js').FormField} FormField
  */
 
 import { validationErrorResponse } from "./response.js";
@@ -103,55 +102,137 @@ export const validateQuery = schema => {
 	};
 };
 
-export const validateFormData = (data, formFields) => {
+
+/**
+ * Hard-coded validation for registration form data
+ * @param {Object} formData - Form data to validate
+ * @returns {Object|null} - Validation errors or null if valid
+ */
+export const validateRegistrationFormData = (formData) => {
 	const errors = {};
 
-	for (const field of formFields) {
-		const value = data[field.name];
+	// Define hard-coded form fields
+	const requiredFields = {
+		acceptTerms: {
+			label: '接受條款',
+			type: 'boolean',
+			required: true
+		},
+		nickname: {
+			label: '暱稱',
+			type: 'string',
+			required: true,
+			minLength: 2,
+			maxLength: 20
+		},
+		phoneNumber: {
+			label: '電話號碼',
+			type: 'phone',
+			required: true
+		},
+		sex: {
+			label: '性別',
+			type: 'enum',
+			required: true,
+			options: ['male', 'female', 'other']
+		},
+		foodHabits: {
+			label: '飲食習慣',
+			type: 'enum',
+			required: true,
+			options: ['normal', 'no-beef', 'no-pork', 'vegetarian']
+		},
+		livingArea: {
+			label: '居住地區',
+			type: 'enum',
+			required: true,
+			options: ['north', 'middle', 'south', 'east']
+		},
+		workingAt: {
+			label: '工作地點',
+			type: 'string',
+			required: true,
+			maxLength: 100
+		},
+		jobTitle: {
+			label: '職位',
+			type: 'string',
+			required: true,
+			maxLength: 50
+		},
+		grade: {
+			label: '年級',
+			type: 'string',
+			required: true,
+			maxLength: 20
+		},
+		haveEverBeenHere: {
+			label: '是否曾經來過',
+			type: 'boolean',
+			required: true
+		},
+		whereYouGotThis: {
+			label: '從哪裡得知此活動',
+			type: 'enum',
+			required: true,
+			options: ['google', 'social_media', 'friend', 'family']
+		}
+	};
+
+	// Validate each field
+	for (const [fieldName, fieldConfig] of Object.entries(requiredFields)) {
+		const value = formData[fieldName];
 		const fieldErrors = [];
 
-		if (field.isRequired && !rules.required(value)) {
-			fieldErrors.push(`${field.label}為必填欄位`);
+		// Check required fields
+		if (fieldConfig.required && (value === undefined || value === null || value === '')) {
+			fieldErrors.push(`${fieldConfig.label}為必填欄位`);
+			errors[fieldName] = fieldErrors;
 			continue;
 		}
 
-		if (rules.required(value) !== true) continue;
+		// Skip validation if field is empty and not required
+		if (!fieldConfig.required && (value === undefined || value === null || value === '')) {
+			continue;
+		}
 
-		switch (field.type) {
-			case "email":
-				const emailResult = rules.email(value);
-				if (emailResult !== true) {
-					fieldErrors.push(`${field.label}格式不正確`);
+		// Type-specific validation
+		switch (fieldConfig.type) {
+			case 'boolean':
+				if (typeof value !== 'boolean') {
+					fieldErrors.push(`${fieldConfig.label}必須為 true 或 false`);
 				}
 				break;
-			case "phone":
+
+			case 'string':
+				if (typeof value !== 'string') {
+					fieldErrors.push(`${fieldConfig.label}必須為文字`);
+					break;
+				}
+				if (fieldConfig.minLength && value.length < fieldConfig.minLength) {
+					fieldErrors.push(`${fieldConfig.label}最少需要 ${fieldConfig.minLength} 個字元`);
+				}
+				if (fieldConfig.maxLength && value.length > fieldConfig.maxLength) {
+					fieldErrors.push(`${fieldConfig.label}最多 ${fieldConfig.maxLength} 個字元`);
+				}
+				break;
+
+			case 'phone':
 				const phoneResult = rules.phone(value);
 				if (phoneResult !== true) {
-					fieldErrors.push(`${field.label}格式不正確`);
+					fieldErrors.push(`${fieldConfig.label}格式不正確`);
 				}
 				break;
-			case "text":
-			case "textarea":
-				if (field.validation) {
-					const validation = JSON.parse(field.validation);
-					if (validation.minLength) {
-						const minResult = rules.minLength(validation.minLength)(value);
-						if (minResult !== true) {
-							fieldErrors.push(`${field.label}長度不符合要求`);
-						}
-					}
-					if (validation.maxLength) {
-						const maxResult = rules.maxLength(validation.maxLength)(value);
-						if (maxResult !== true) {
-							fieldErrors.push(`${field.label}長度不符合要求`);
-						}
-					}
+
+			case 'enum':
+				if (!fieldConfig.options.includes(value)) {
+					fieldErrors.push(`${fieldConfig.label}選項無效，可選值: ${fieldConfig.options.join(', ')}`);
 				}
 				break;
 		}
 
 		if (fieldErrors.length > 0) {
-			errors[field.name] = fieldErrors;
+			errors[fieldName] = fieldErrors;
 		}
 	}
 

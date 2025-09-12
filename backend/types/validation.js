@@ -38,9 +38,5 @@
  * @property {string[]} messages - Error messages
  */
 
-/**
- * @typedef {function(*, FormField): (boolean|string)} FormFieldValidator
- * A validation function for dynamic form fields
- */
 
 export {}

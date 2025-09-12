@@ -118,48 +118,12 @@ model Ticket {
   
   event         Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations Registration[]
-  formFields    TicketFormField[]
   invitationCodes InvitationCodeTicket[]
   
   @@map("ticket")
 }
 
-model FormField {
-  id          String   @id @default(cuid())
-  name        String   // field identifier
-  required   Boolean  @default(false)
-  description String?
-  label       String
-  type        String   // text, email, phone, select, checkbox, file, etc.
-  options     String?  // JSON array for select/checkbox options
-  placeholder String?
-  helpText    String?
-  validation  String?  // JSON validation rules
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  ticketFields TicketFormField[]
-  registrationData RegistrationData[]
-  
-  @@map("form_field")
-}
 
-model TicketFormField {
-  id         String  @id @default(cuid())
-  ticketId   String
-  fieldId    String
-  isRequired Boolean @default(false)
-  isVisible  Boolean @default(true)
-  order      Int     @default(0)
-  
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  field  FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-  
-  @@unique([ticketId, fieldId])
-  @@map("ticket_form_field")
-}
 
 model Registration {
   id              String   @id @default(cuid())
@@ -167,6 +131,7 @@ model Registration {
   ticketId        String
   email           String
   phone           String?
+  formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
   paymentStatus   String   @default("pending")   // pending, paid, failed, refunded
   checkInStatus   String   @default("not_checked") // not_checked, checked_in
@@ -179,7 +144,6 @@ model Registration {
   
   event            Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticket           Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  registrationData RegistrationData[]
   referrals        Registration[] @relation("RegistrationReferrals")
   referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
   referral         Referral?
@@ -190,18 +154,6 @@ model Registration {
   @@map("registration")
 }
 
-model RegistrationData {
-  id             String @id @default(cuid())
-  registrationId String
-  fieldId        String
-  value          String // JSON value for complex data types
-  
-  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  field        FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-  
-  @@unique([registrationId, fieldId])
-  @@map("registration_data")
-}
 
 model Referral {
   id              String   @id @default(cuid())

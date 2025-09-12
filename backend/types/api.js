@@ -64,7 +64,7 @@
  * @property {string} ticketId - Ticket ID
  * @property {string} [invitationCode] - Invitation code
  * @property {string} [referralCode] - Referral code
- * @property {Object} formData - Form data object
+ * @property {Object.<string, any>} formData - Form data keyed by field names
  */
 
 /**
@@ -85,25 +85,6 @@
  * @property {string} [saleEnd] - ISO date string
  */
 
-/**
- * @typedef {Object} FormFieldCreateRequest
- * @property {string} eventId - Event ID
- * @property {string} name - Field name/key
- * @property {string} label - Display label
- * @property {'text'|'email'|'phone'|'textarea'|'select'|'radio'|'checkbox'} type - Field type
- * @property {boolean} isRequired - Whether field is required
- * @property {string[]} [options] - Options for select/radio fields
- * @property {ValidationRules} [validation] - Validation rules
- * @property {number} [order] - Display order
- */
-
-/**
- * @typedef {Object} ValidationRules
- * @property {number} [minLength] - Minimum length
- * @property {number} [maxLength] - Maximum length
- * @property {string} [pattern] - Regex pattern
- * @property {string} [customMessage] - Custom validation message
- */
 
 /**
  * @typedef {Object} InvitationCodeCreateRequest
