@@ -174,7 +174,7 @@ export default async function adminUsersRoutes(fastify, options) {
 				}
 
 				// Validate role
-				const validRoles = ['admin', 'checkin', 'viewer'];
+				const validRoles = ['admin', 'viewer'];
 				if (updateData.role && !validRoles.includes(updateData.role)) {
 					const { response, statusCode } = validationErrorResponse("無效的用戶角色");
 					return reply.code(statusCode).send(response);

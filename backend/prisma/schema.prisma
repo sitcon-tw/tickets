@@ -20,7 +20,7 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
-  role          String    @default("viewer") // admin, checkin, viewer
+  role          String    @default("viewer") // admin, viewer
   permissions   String?   // JSON array of permissions
   isActive      Boolean   @default(true)
   createdAt     DateTime
@@ -124,7 +124,6 @@ model Ticket {
 }
 
 
-
 model Registration {
   id              String   @id @default(cuid())
   eventId         String
@@ -133,8 +132,6 @@ model Registration {
   formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
   paymentStatus   String   @default("pending")   // pending, paid, failed, refunded
-  checkInStatus   String   @default("not_checked") // not_checked, checked_in
-  checkInTime     DateTime?
   referredBy      String?  // registration ID of referrer
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -133,7 +133,6 @@ export default async function referralRoutes(fastify, options) {
 					referralList: referralList,
 					referrerInfo: {
 						id: referral.registration.id,
-						checkInCode: referral.code,
 						email: referral.registration.email.replace(/(.{2}).*(@.*)/, '$1***$2')
 					}
 				});

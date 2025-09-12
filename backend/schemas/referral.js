@@ -192,7 +192,6 @@ export const referralStatsResponse = {
 						type: 'object',
 						properties: {
 							id: { type: 'string' },
-							checkInCode: { type: 'string' },
 							email: { type: 'string' }
 						}
 					}

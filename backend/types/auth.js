@@ -59,13 +59,13 @@
  * @typedef {Object} AdminUserUpdateRequest
  * @property {string} [name] - User's name
  * @property {string} [email] - User's email
- * @property {'admin'|'checkin'|'viewer'} [role] - User's role
+ * @property {'admin'|'viewer'} [role] - User's role
  * @property {string[]} [permissions] - User's permissions
  * @property {boolean} [isActive] - Whether user is active
  */
 
 /**
- * @typedef {'admin'|'checkin'|'viewer'} UserRole
+ * @typedef {'admin'|'viewer'} UserRole
  */
 
 /**
@@ -78,14 +78,12 @@
  * - 'registrations.read'
  * - 'registrations.write'
  * - 'analytics.read'
- * - 'checkin.perform'
  * - 'admin.full'
  */
 
 /**
  * @typedef {Object} RolePermissions
  * @property {'admin'} admin - Full administrative access
- * @property {'checkin'} checkin - Check-in operations access
  * @property {'viewer'} viewer - Read-only access
  */
 

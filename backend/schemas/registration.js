@@ -35,15 +35,6 @@ export const registrationProperties = {
 		enum: ['pending', 'paid', 'failed', 'refunded'],
 		description: '付款狀態'
 	},
-	checkInStatus: {
-		type: 'string',
-		enum: ['not_checked', 'checked_in'],
-		description: '報到狀態'
-	},
-	checkInTime: {
-		...dateTimeString,
-		description: '報到時間'
-	},
 	referredBy: {
 		type: 'string',
 		description: '推薦人報名 ID'
@@ -181,10 +172,6 @@ export const registrationQuery = {
 			type: 'string',
 			description: '篩選用戶 ID'
 		},
-		hasCheckin: {
-			type: 'boolean',
-			description: '篩選是否已報到'
-		}
 	}
 };
 
@@ -214,17 +201,6 @@ export const registrationsListResponse = {
 		}
 	},
 	required: ['success', 'message', 'data']
-};
-
-export const checkinBody = {
-	type: 'object',
-	properties: {
-		registrationId: {
-			type: 'string',
-			description: '報名 ID'
-		}
-	},
-	required: ['registrationId']
 };
 
 export const registrationSchemas = {
@@ -283,21 +259,6 @@ export const registrationSchemas = {
 			403: errorResponse
 		}
 	},
-	
-	checkinRegistration: {
-		description: '報到作業',
-		tags: ['checkin'],
-		body: checkinBody,
-		params: undefined,
-		querystring: undefined,
-		response: {
-			200: registrationResponse,
-			400: errorResponse,
-			401: errorResponse,
-			403: errorResponse,
-			404: errorResponse
-		}
-	}
 };
 
 export const userRegistrationsResponse = {
@@ -313,7 +274,6 @@ export const userRegistrationsResponse = {
 						id: { type: 'string' },
 						status: { type: 'string' },
 						formData: { type: 'object' },
-						checkinAt: { type: 'string', format: 'date-time' },
 						createdAt: { type: 'string', format: 'date-time' },
 						event: { type: 'object' },
 						ticket: { type: 'object' },

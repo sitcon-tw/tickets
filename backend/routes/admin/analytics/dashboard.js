@@ -47,10 +47,6 @@ export default async function dashboardRoutes(fastify, options) {
 						by: ['status'],
 						_count: { id: true }
 					}),
-					// Checked-in count
-					prisma.registration.count({
-						where: { checkinAt: { not: null } }
-					}),
 					// Revenue calculation
 					prisma.registration.findMany({
 						where: { status: 'confirmed' },

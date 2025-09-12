@@ -30,7 +30,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			schema: registrationSchemas.listRegistrations
 		},
 		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string, hasCheckin?: boolean}}>} request
+		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string}}>} request
 		 * @param {import('fastify').FastifyReply} reply
 		 */
 		async (request, reply) => {
@@ -40,8 +40,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					limit = 20, 
 					eventId, 
 					status, 
-					userId, 
-					hasCheckin 
+					userId
 				} = request.query;
 
 				// Build where clause
@@ -49,9 +48,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 				if (userId) where.userId = userId;
-				if (hasCheckin !== undefined) {
-					where.checkinAt = hasCheckin ? { not: null } : null;
-				}
 
 				// Get total count for pagination
 				const total = await prisma.registration.count({ where });
@@ -260,108 +256,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			} catch (error) {
 				console.error("Update registration error:", error);
 				const { response, statusCode } = serverErrorResponse("更新報名失敗");
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	// Check-in registration
-	fastify.post(
-		"/registrations/checkin",
-		{
-			schema: { ...registrationSchemas.checkinRegistration, tags: ["admin/registrations"] }
-		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: {registrationId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
-			try {
-				const { registrationId } = request.body;
-
-				// Check if registration exists and is confirmed
-				const existingRegistration = await prisma.registration.findUnique({
-					where: { id: registrationId },
-					include: {
-						event: {
-							select: {
-								name: true,
-								startDate: true,
-								endDate: true
-							}
-						},
-						user: {
-							select: {
-								name: true,
-								email: true
-							}
-						}
-					}
-				});
-
-				if (!existingRegistration) {
-					const { response, statusCode } = notFoundResponse("報名記錄不存在");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (existingRegistration.status !== 'confirmed') {
-					const { response, statusCode } = validationErrorResponse("僅已確認的報名可以進行報到");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (existingRegistration.checkinAt) {
-					const { response, statusCode } = conflictResponse("此報名已完成報到");
-					return reply.code(statusCode).send(response);
-				}
-
-				// Check if event is currently active
-				const now = new Date();
-				const eventStart = new Date(existingRegistration.event.startDate);
-				const eventEnd = new Date(existingRegistration.event.endDate);
-
-				if (now < eventStart) {
-					const { response, statusCode } = validationErrorResponse("活動尚未開始，無法報到");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (now > eventEnd) {
-					const { response, statusCode } = validationErrorResponse("活動已結束，無法報到");
-					return reply.code(statusCode).send(response);
-				}
-
-				/** @type {Registration} */
-				const registration = await prisma.registration.update({
-					where: { id: registrationId },
-					data: {
-						checkinAt: new Date()
-					},
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								id: true,
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								id: true,
-								name: true
-							}
-						}
-					}
-				});
-
-				return reply.send(successResponse(registration, "報到成功"));
-			} catch (error) {
-				console.error("Check-in registration error:", error);
-				const { response, statusCode } = serverErrorResponse("報到失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

@@ -10,7 +10,6 @@
  * @property {string} email - User's email address
  * @property {boolean} emailVerified - Whether email is verified
  * @property {string|null} image - User's profile image URL
- * @property {'admin'|'checkin'|'viewer'} role - User's role
  * @property {string|null} permissions - JSON array of permissions
  * @property {boolean} isActive - Whether user is active
  * @property {Date} createdAt - User creation timestamp
@@ -42,7 +41,6 @@
  * @property {string|null} referralCodeId - Referral code used
  * @property {string} formData - JSON form data
  * @property {'pending'|'confirmed'|'cancelled'} status - Registration status
- * @property {Date|null} checkinAt - Check-in timestamp
  * @property {string|null} tags - JSON array of tags
  * @property {Date} createdAt - Creation timestamp
  * @property {Date} updatedAt - Last update timestamp

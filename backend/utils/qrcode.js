@@ -74,22 +74,6 @@ export const generateRegistrationId = () => {
 };
 
 /**
- * Generate a shorter check-in code for QR codes
- * @returns {string} 8-character check-in code
- */
-export const generateCheckInCode = () => {
-	const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-	const bytes = crypto.randomBytes(8);
-	let result = '';
-	
-	for (let i = 0; i < 8; i++) {
-		result += chars[bytes[i] % chars.length];
-	}
-	
-	return result;
-};
-
-/**
  * Validate QR code data format
  * @param {string} data - QR code data to validate
  * @returns {boolean} True if valid format
