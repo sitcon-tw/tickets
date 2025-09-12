@@ -86,7 +86,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Check ticket availability
-				if (ticket.sold >= ticket.quantity) {
+				if (ticket.soldCount >= ticket.quantity) {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
 				}

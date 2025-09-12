@@ -338,8 +338,8 @@ const l = i18n.l(Astro.url);
 			ticketData.forEach(ticket => {
 				const ctx = document.getElementById(ticket.id)?.getContext("2d");
 				if (ctx) {
-					const percentage = ((ticket.sold / ticket.total) * 100).toFixed(1);
-					const remaining = ticket.total - ticket.sold;
+					const percentage = ((ticket.soldCount / ticket.total) * 100).toFixed(1);
+					const remaining = ticket.total - ticket.soldCount;
 
 					new Chart(ctx, {
 						type: "doughnut",
@@ -347,7 +347,7 @@ const l = i18n.l(Astro.url);
 							labels: ["已售出", "剩餘"],
 							datasets: [
 								{
-									data: [ticket.sold, remaining],
+									data: [ticket.soldCount, remaining],
 									backgroundColor: [ticket.color, "#E5E5E5"],
 									borderWidth: 0,
 									cutout: "70%"

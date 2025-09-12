@@ -141,7 +141,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 
 				// Filter and add availability info to tickets
 				const availableTickets = tickets.map(ticket => {
-					const available = ticket.quantity - ticket.sold;
+					const available = ticket.quantity - ticket.soldCount;
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
 						(!ticket.saleEnd || now <= ticket.saleEnd) &&
 						ticket.isActive && available > 0;

@@ -49,21 +49,21 @@ export default async function adminTicketsRoutes(fastify, options) {
 
 				// Validate sale dates
 				if (saleStart && saleEnd) {
-					const saleStart = new Date(saleStart);
-					const saleEnd = new Date(saleEnd);
+					const saleStartDate = new Date(saleStart);
+					const saleEndDate = new Date(saleEnd);
 
-					if (isNaN(saleStart.getTime()) || isNaN(saleEnd.getTime())) {
+					if (isNaN(saleStartDate.getTime()) || isNaN(saleEndDate.getTime())) {
 						const { response, statusCode } = validationErrorResponse("無效的販售日期格式");
 						return reply.code(statusCode).send(response);
 					}
 
-					if (saleStart >= saleEnd) {
+					if (saleStartDate >= saleEndDate) {
 						const { response, statusCode } = validationErrorResponse("販售開始時間必須早於結束時間");
 						return reply.code(statusCode).send(response);
 					}
 
 					// Sale end should not be after event start
-					if (saleEnd > event.startDate) {
+					if (saleEndDate > event.startDate) {
 						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
 						return reply.code(statusCode).send(response);
 					}
@@ -194,9 +194,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 
 				// Prevent quantity reduction below sold amount
-				if (updateData.quantity !== undefined && updateData.quantity < existingTicket.sold) {
+				if (updateData.quantity !== undefined && updateData.quantity < existingTicket.soldCount) {
 					const { response, statusCode } = validationErrorResponse(
-						`票券數量不能低於已售出數量 (${existingTicket.sold})`
+						`票券數量不能低於已售出數量 (${existingTicket.soldCount})`
 					);
 					return reply.code(statusCode).send(response);
 				}
@@ -361,7 +361,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 					const now = new Date();
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
 						(!ticket.saleEnd || now <= ticket.saleEnd);
-					const available = ticket.quantity - ticket.sold;
+					const available = ticket.quantity - ticket.soldCount;
 					const isSoldOut = available <= 0;
 
 					return {
@@ -459,9 +459,9 @@ export default async function adminTicketsRoutes(fastify, options) {
 					`
 				]);
 
-				const totalSold = ticket.sold;
+				const totalSold = ticket.soldCount;
 				const totalRevenue = totalSold * ticket.price;
-				const availableQuantity = ticket.quantity - ticket.sold;
+				const availableQuantity = ticket.quantity - ticket.soldCount;
 
 				const analytics = {
 					totalSold,

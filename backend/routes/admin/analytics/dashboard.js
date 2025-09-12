@@ -130,8 +130,8 @@ export default async function dashboardRoutes(fastify, options) {
 							event: ticket.event.name,
 							price: ticket.price,
 							quantity: ticket.quantity,
-							soldCount: ticket.sold,
-							revenue: ticket.sold * ticket.price
+							soldCount: ticket.soldCount,
+							revenue: ticket.soldCount * ticket.price
 						};
 						return acc;
 					}, {}),

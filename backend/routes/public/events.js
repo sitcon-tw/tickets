@@ -126,7 +126,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Add availability and sale status to each ticket
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
-					const available = ticket.quantity - ticket.sold;
+					const available = ticket.quantity - ticket.soldCount;
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
 						(!ticket.saleEnd || now <= ticket.saleEnd) &&
 						ticket.isActive;
@@ -228,7 +228,7 @@ export default async function publicEventsRoutes(fastify, options) {
 					const activeTickets = event.tickets.filter(ticket => {
 						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
 							(!ticket.saleEnd || now <= ticket.saleEnd);
-						const hasAvailable = ticket.quantity > ticket.sold;
+						const hasAvailable = ticket.quantity > ticket.soldCount;
 						return ticket.isActive && isOnSale && hasAvailable;
 					});
 
@@ -307,7 +307,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Calculate statistics
 				const activeTickets = event.tickets.filter(t => t.isActive);
 				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
-				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.sold, 0);
+				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.soldCount, 0);
 				const availableTickets = totalTickets - soldTickets;
 				const registrationRate = totalTickets > 0 ? (soldTickets / totalTickets) : 0;
 

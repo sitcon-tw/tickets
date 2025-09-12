@@ -182,7 +182,6 @@ model Registration {
   registrationData RegistrationData[]
   referrals        Registration[] @relation("RegistrationReferrals")
   referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
-  files            File[]
   referral         Referral?
   referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
@@ -264,22 +263,6 @@ model InvitationCodeTicket {
   
   @@unique([invitationCodeId, ticketId])
   @@map("invitation_code_ticket")
-}
-
-model File {
-  id             String  @id @default(cuid())
-  registrationId String?
-  filename       String
-  originalName   String
-  mimeType       String
-  size           Int
-  path           String
-  url            String?
-  createdAt      DateTime @default(now())
-  
-  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: Cascade)
-  
-  @@map("file")
 }
 
 model EmailCampaign {
