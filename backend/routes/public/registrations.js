@@ -169,7 +169,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 							eventId,
 							ticketId,
 							email: user.email,
-							phone: formData.phoneNumber || null,
 							formData: JSON.stringify(formData),
 							status: 'confirmed',
 							paymentStatus: 'pending'

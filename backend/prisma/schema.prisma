@@ -130,15 +130,12 @@ model Registration {
   eventId         String
   ticketId        String
   email           String
-  phone           String?
   formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
   paymentStatus   String   @default("pending")   // pending, paid, failed, refunded
   checkInStatus   String   @default("not_checked") // not_checked, checked_in
   checkInTime     DateTime?
   referredBy      String?  // registration ID of referrer
-  editToken       String?  // for edit functionality
-  editTokenExpiry DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -150,7 +147,6 @@ model Registration {
   referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
   @@unique([email, eventId])
-  @@unique([editToken])
   @@map("registration")
 }
 

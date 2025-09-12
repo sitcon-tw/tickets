@@ -13,7 +13,7 @@ import {
 } from "#utils/response.js";
 import { eventSchemas, eventTicketsResponse, publicEventsListResponse, eventStatsResponse } from "#schemas/event.js";
 import { ticketSchemas } from "#schemas/ticket.js";
-import { formFields } from "#lib/formFieldData.js";
+import { formFields } from "#schemas/formFieldData.js";
 
 
 /**
