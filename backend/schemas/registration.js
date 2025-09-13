@@ -30,11 +30,6 @@ export const registrationProperties = {
 		enum: ['confirmed', 'cancelled', 'pending'],
 		description: '報名狀態'
 	},
-	paymentStatus: {
-		type: 'string',
-		enum: ['pending', 'paid', 'failed', 'refunded'],
-		description: '付款狀態'
-	},
 	referredBy: {
 		type: 'string',
 		description: '推薦人報名 ID'
@@ -273,10 +268,29 @@ export const userRegistrationsResponse = {
 					properties: {
 						id: { type: 'string' },
 						status: { type: 'string' },
-						formData: { type: 'object' },
+						formData: { type: 'object', additionalProperties: true },
 						createdAt: { type: 'string', format: 'date-time' },
-						event: { type: 'object' },
-						ticket: { type: 'object' },
+						event: {
+							type: 'object',
+							properties: {
+								id: { type: 'string' },
+								name: { type: 'string' },
+								description: { type: 'string' },
+								location: { type: 'string' },
+								startDate: { type: 'string', format: 'date-time' },
+								endDate: { type: 'string', format: 'date-time' },
+								ogImage: { type: ['string', 'null'] }
+							}
+						},
+						ticket: {
+							type: 'object',
+							properties: {
+								id: { type: 'string' },
+								name: { type: 'string' },
+								description: { type: 'string' },
+								price: { type: 'number' }
+							}
+						},
 						isUpcoming: { type: 'boolean' },
 						isPast: { type: 'boolean' },
 						canEdit: { type: 'boolean' },

@@ -41,7 +41,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
-				const userId = session.userId;
 
 				// Get user info from session
 				const user = session.user;
@@ -171,7 +170,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 							email: user.email,
 							formData: JSON.stringify(formData),
 							status: 'confirmed',
-							paymentStatus: 'pending'
 						},
 						include: {
 							event: {
@@ -280,6 +278,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				});
 
 				// Parse form data and add status indicators
+				console.log(registrations);
 				const registrationsWithStatus = registrations.map(reg => {
 					const now = new Date();
 					return {
@@ -320,6 +319,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					headers: request.headers
 				});
 				const userId = session.userId;
+				const { id } = request.params;
 
 				/** @type {Registration | null} */
 				const registration = await prisma.registration.findFirst({
@@ -347,18 +347,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 								price: true
 							}
 						},
-						invitationCode: {
-							select: {
-								code: true,
-								description: true
-							}
-						},
-						referralCode: {
-							select: {
-								code: true,
-								description: true
-							}
-						}
 					}
 				});
 
@@ -406,6 +394,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					headers: request.headers
 				});
 				const userId = session.userId;
+				const id = request.params.id;
 
 				// Check if registration exists and belongs to user
 				const registration = await prisma.registration.findFirst({

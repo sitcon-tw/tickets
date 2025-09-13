@@ -131,7 +131,6 @@ model Registration {
   email           String
   formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
-  paymentStatus   String   @default("pending")   // pending, paid, failed, refunded
   referredBy      String?  // registration ID of referrer
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
