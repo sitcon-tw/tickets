@@ -77,15 +77,14 @@ export default async function referralRoutes(fastify, options) {
 
 				// If no referral exists, create one
 				if (!referral) {
-					// Generate unique referral code
 					let referralCode;
 					let isUnique = false;
 					let attempts = 0;
-					const maxAttempts = 10;
+					const maxAttempts = 20;
 
 					while (!isUnique && attempts < maxAttempts) {
 						const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
-						referralCode = `REF-${randomString}`;
+						referralCode = `${randomString}`;
 						
 						const existingReferral = await prisma.referral.findUnique({
 							where: { code: referralCode }
@@ -98,6 +97,7 @@ export default async function referralRoutes(fastify, options) {
 					}
 
 					if (!isUnique) {
+						console.error("Failed to generate unique referral code after", maxAttempts, "attempts");
 						const { response, statusCode } = errorResponse("INTERNAL_ERROR", "無法生成唯一的推薦碼");
 						return reply.code(statusCode).send(response);
 					}
@@ -194,8 +194,11 @@ export default async function referralRoutes(fastify, options) {
 					status: usage.registration.status,
 					ticketName: usage.registration.ticket.name,
 					registeredAt: usage.usedAt,
-					// Don't expose email or other personal info
-					email: usage.registration.email.replace(/(.{2}).*(@.*)/, '$1***$2') // Partially hide email
+					// Don't expose email or other personal info - improved masking
+					email: usage.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
+						const maskedLength = Math.max(3, match.length - start.length - domain.length);
+						return start + '*'.repeat(maskedLength) + domain;
+					})
 				}));
 
 				return successResponse({
@@ -204,7 +207,10 @@ export default async function referralRoutes(fastify, options) {
 					referralList: referralList,
 					referrerInfo: {
 						id: referral.registration.id,
-						email: referral.registration.email.replace(/(.{2}).*(@.*)/, '$1***$2')
+						email: referral.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
+							const maskedLength = Math.max(3, match.length - start.length - domain.length);
+							return start + '*'.repeat(maskedLength) + domain;
+						})
 					}
 				});
 			} catch (error) {
