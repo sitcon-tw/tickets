@@ -26,15 +26,15 @@ const codeParam = {
 	required: ['code']
 };
 
-const eventIdQuery = {
+const ticketIdQuery = {
 	type: 'object',
 	properties: {
-		eventId: {
+		ticketId: {
 			type: 'string',
-			description: '活動 ID'
+			description: '票券 ID'
 		}
 	},
-	required: ['eventId']
+	required: ['ticketId']
 };
 
 
@@ -62,25 +62,25 @@ export default async function invitationCodesRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {InvitationCodeVerifyRequest} */
-				const { code, eventId } = request.body;
+				const { code, ticketId } = request.body;
 
-				if (!code || !eventId) {
-					const { response, statusCode } = validationErrorResponse("邀請碼和活動ID為必填");
+				if (!code || !ticketId) {
+					const { response, statusCode } = validationErrorResponse("邀請碼和票券ID為必填");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Verify event exists and is active
-				const event = await prisma.event.findUnique({
+				// Verify ticket exists and is active
+				const ticket = await prisma.ticket.findUnique({
 					where: { 
-						id: eventId,
+						id: ticketId,
 						isActive: true 
 					}
 				});
 
-				if (!event) {
+				if (!ticket) {
 					return reply.send(successResponse({
 						valid: false,
-						message: "活動不存在或已關閉"
+						message: "票券不存在或已關閉"
 					}));
 				}
 
@@ -89,7 +89,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
-						eventId,
+						ticketId,
 						isActive: true
 					}
 				});
@@ -122,7 +122,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where: {
-						eventId,
+						id: ticketId,
 						isActive: true
 					},
 					select: {
@@ -161,7 +161,8 @@ export default async function invitationCodesRoutes(fastify, options) {
 						description: invitationCode.description,
 						usageCount: invitationCode.usageCount,
 						usageLimit: invitationCode.usageLimit,
-						expiresAt: invitationCode.expiresAt
+						expiresAt: invitationCode.expiresAt,
+						ticketId: invitationCode.ticketId
 					},
 					availableTickets
 				}));
@@ -181,23 +182,23 @@ export default async function invitationCodesRoutes(fastify, options) {
 				description: "獲取邀請碼資訊",
 				tags: ["invitation-codes"],
 				params: codeParam,
-				querystring: eventIdQuery
+				querystring: ticketIdQuery
 			}
 		},
 		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {code: string}, Querystring: {eventId: string}}>} request
+		 * @param {import('fastify').FastifyRequest<{Params: {code: string}, Querystring: {ticketId: string}}>} request
 		 * @param {import('fastify').FastifyReply} reply
 		 */
 		async (request, reply) => {
 			try {
 				const { code } = request.params;
-				const { eventId } = request.query;
+				const { ticketId } = request.query;
 
 				/** @type {InvitationCode | null} */
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
-						eventId,
+						ticketId,
 						isActive: true
 					},
 					select: {

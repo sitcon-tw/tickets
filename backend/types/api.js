@@ -83,16 +83,57 @@
  * @property {number} quantity - Available quantity
  * @property {string} [saleStart] - ISO date string
  * @property {string} [saleEnd] - ISO date string
+ * @property {boolean} [requireInviteCode] - Whether invitation code is required
  */
 
+/**
+ * @typedef {Object} TicketUpdateRequest
+ * @property {string} [name] - Ticket name
+ * @property {string} [description] - Ticket description
+ * @property {number} [price] - Ticket price
+ * @property {number} [quantity] - Available quantity
+ * @property {string} [saleStart] - ISO date string
+ * @property {string} [saleEnd] - ISO date string
+ * @property {boolean} [isActive] - Whether ticket is active
+ * @property {boolean} [requireInviteCode] - Whether invitation code is required
+*/
 
 /**
  * @typedef {Object} InvitationCodeCreateRequest
  * @property {string} eventId - Event ID
  * @property {string} code - The invitation code
- * @property {string} [description] - Code description
+ * @property {string} [name] - Code name/description
  * @property {number} [usageLimit] - Maximum usage limit
- * @property {string} [expiresAt] - ISO date string
+ * @property {string} [validFrom] - ISO date string for start time
+ * @property {string} [validUntil] - ISO date string for end time
+ * @property {string} [ticketId] - Associated ticket ID
+*/
+
+/**
+ * @typedef {Object} InvitationCode
+ * @property {string} id - Unique identifier
+ * @property {string} eventId - Associated event ID
+ * @property {string} code - The invitation code
+ * @property {string} name - Code name/description
+ * @property {number} usageLimit - Maximum usage limit
+ * @property {number} usageCount - Current usage count
+ * @property {string|null} validFrom - ISO date string for start time
+ * @property {string|null} validUntil - ISO date string for end time
+ * @property {boolean} isActive - Whether code is active
+ * @property {string} ticketId - Associated ticket ID
+ * @property {string} createdAt - ISO date string for creation time
+ * @property {string} updatedAt - ISO date string for last update time
+*/
+
+/**
+ * @typedef {Object} InvitationCodeUpdateRequest
+ * @property {string} [code] - The invitation code
+ * @property {string} [name] - Code name/description
+ * @property {number} [usageLimit] - Maximum usage limit
+ * @property {string} [validFrom] - ISO date string for start time
+ * @property {string} [validUntil] - ISO date string for end time
+ * @property {boolean} [isActive] - Whether code is active
+ * @property {string} [ticketId] - Associated ticket ID
  */
 
 /**

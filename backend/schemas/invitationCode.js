@@ -9,31 +9,31 @@ export const invitationCodeProperties = {
 		type: 'string',
 		description: '邀請碼 ID'
 	},
-	eventId: {
-		type: 'string',
-		description: '活動 ID'
-	},
 	code: {
 		type: 'string',
 		description: '邀請碼'
 	},
-	description: {
+	name: {
 		type: 'string',
-		description: '描述'
+		description: '名稱/描述'
 	},
 	usageLimit: {
 		type: 'integer',
 		minimum: 1,
 		description: '使用次數限制'
 	},
-	usageCount: {
+	usedCount: {
 		type: 'integer',
 		minimum: 0,
 		description: '已使用次數'
 	},
-	expiresAt: {
+	validFrom: {
 		...dateTimeString,
-		description: '到期時間'
+		description: '開始時間'
+	},
+	validUntil: {
+		...dateTimeString,
+		description: '結束時間'
 	},
 	isActive: {
 		type: 'boolean',
@@ -46,36 +46,44 @@ export const invitationCodeProperties = {
 	updatedAt: {
 		...dateTimeString,
 		description: '更新時間'
+	},
+	ticketId: {
+		type: 'string',
+		description: '關聯票券 ID'
 	}
 };
 
 export const invitationCodeCreateBody = {
 	type: 'object',
 	properties: {
-		eventId: {
-			type: 'string',
-			description: '活動 ID'
-		},
 		code: {
 			type: 'string',
 			description: '邀請碼',
 			minLength: 1
 		},
-		description: {
+		name: {
 			type: 'string',
-			description: '描述'
+			description: '名稱/描述'
 		},
 		usageLimit: {
 			type: 'integer',
 			minimum: 1,
 			description: '使用次數限制'
 		},
-		expiresAt: {
+		validFrom: {
 			...dateTimeString,
-			description: '到期時間'
+			description: '開始時間'
+		},
+		validUntil: {
+			...dateTimeString,
+			description: '結束時間'
+		},
+		ticketId: {
+			type: 'string',
+			description: '關聯票券 ID'
 		}
 	},
-	required: ['eventId', 'code']
+	required: ['ticketId', 'code']
 };
 
 export const invitationCodeUpdateBody = {
@@ -86,22 +94,30 @@ export const invitationCodeUpdateBody = {
 			description: '邀請碼',
 			minLength: 1
 		},
-		description: {
+		name: {
 			type: 'string',
-			description: '描述'
+			description: '名稱/描述'
 		},
 		usageLimit: {
 			type: 'integer',
 			minimum: 1,
 			description: '使用次數限制'
 		},
-		expiresAt: {
+		validFrom: {
 			...dateTimeString,
-			description: '到期時間'
+			description: '開始時間'
+		},
+		validUntil: {
+			...dateTimeString,
+			description: '結束時間'
 		},
 		isActive: {
 			type: 'boolean',
 			description: '是否啟用'
+		},
+		ticketId: {
+			type: 'string',
+			description: '關聯票券 ID'
 		}
 	}
 };
@@ -114,12 +130,12 @@ export const invitationCodeValidateBody = {
 			description: '邀請碼',
 			minLength: 1
 		},
-		eventId: {
+		ticketId: {
 			type: 'string',
-			description: '活動 ID'
+			description: '票券 ID'
 		}
 	},
-	required: ['code', 'eventId']
+	required: ['code', 'ticketId']
 };
 
 export const invitationCodeResponse = {
@@ -129,7 +145,7 @@ export const invitationCodeResponse = {
 		data: {
 			type: 'object',
 			properties: invitationCodeProperties,
-			required: ['id', 'eventId', 'code']
+			required: ['id', 'ticketId', 'code']
 		}
 	},
 	required: ['success', 'message', 'data']
@@ -215,9 +231,9 @@ export const invitationCodeSchemas = {
 		querystring: {
 			type: 'object',
 			properties: {
-				eventId: {
+				ticketId: {
 					type: 'string',
-					description: '篩選活動 ID'
+					description: '篩選票券 ID'
 				},
 				isActive: {
 					type: 'boolean',

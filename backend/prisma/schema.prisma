@@ -28,6 +28,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   emailCampaigns EmailCampaign[]
+  registrations Registration[]
 
   @@unique([email])
   @@map("user")
@@ -94,7 +95,6 @@ model Event {
   
   tickets       Ticket[]
   registrations Registration[]
-  invitationCodes InvitationCode[]
   referrals     Referral[]
   referralUsage ReferralUsage[]
   
@@ -118,14 +118,15 @@ model Ticket {
   
   event         Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations Registration[]
-  invitationCodes InvitationCodeTicket[]
-  
+  invitationCodes InvitationCode[]
+
   @@map("ticket")
 }
 
 
 model Registration {
   id              String   @id @default(cuid())
+  userId          String
   eventId         String
   ticketId        String
   email           String
@@ -134,7 +135,8 @@ model Registration {
   referredBy      String?  // registration ID of referrer
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
   event            Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticket           Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   referrals        Registration[] @relation("RegistrationReferrals")
@@ -180,7 +182,7 @@ model ReferralUsage {
 
 model InvitationCode {
   id          String   @id @default(cuid())
-  eventId     String
+  ticketId    String   // associated ticket ID
   code        String   @unique
   name        String?  // description/name for this code
   usageLimit  Int?     // null = unlimited
@@ -191,22 +193,9 @@ model InvitationCode {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tickets InvitationCodeTicket[]
+  ticket  Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   
   @@map("invitation_code")
-}
-
-model InvitationCodeTicket {
-  id               String @id @default(cuid())
-  invitationCodeId String
-  ticketId         String
-  
-  invitationCode InvitationCode @relation(fields: [invitationCodeId], references: [id], onDelete: Cascade)
-  ticket         Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  
-  @@unique([invitationCodeId, ticketId])
-  @@map("invitation_code_ticket")
 }
 
 model EmailCampaign {
@@ -227,14 +216,4 @@ model EmailCampaign {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("email_campaign")
-}
-
-model SystemSetting {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String // JSON value
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("system_setting")
 }

@@ -21,17 +21,47 @@ export default async function referralRoutes(fastify, options) {
 		"/registrations/:regId/referral-link",
 		{
 			schema: {
-				...referralSchemas.getReferral,
 				description: "獲取專屬推薦連結",
-				params: regIdParam
+				tags: ["referrals"],
+				params: regIdParam,
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							success: { type: 'boolean' },
+							message: { type: 'string' },
+							data: {
+								type: 'object',
+								properties: {
+									id: { type: 'string' },
+									referralLink: { type: 'string' },
+									referralCode: { type: 'string' },
+									eventId: { type: 'string' }
+								},
+								required: ['id', 'referralLink', 'referralCode', 'eventId']
+							}
+						}
+					}
+				}
 			}
 		},
 		async (request, reply) => {
 			try {
 				const { regId } = request.params;
 
-				// Find referral by registration ID
-				const referral = await prisma.referral.findFirst({
+				// First, verify the registration exists and is confirmed
+				const registration = await prisma.registration.findUnique({
+					where: { id: regId },
+					include: { event: true }
+				});
+
+				if (!registration || registration.status !== 'confirmed') {
+					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Find existing referral by registration ID
+				let referral = await prisma.referral.findFirst({
 					where: {
 						registrationId: regId,
 						isActive: true
@@ -45,15 +75,56 @@ export default async function referralRoutes(fastify, options) {
 					}
 				});
 
-				if (!referral || referral.registration.status !== 'confirmed') {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
-					return reply.code(statusCode).send(response);
+				// If no referral exists, create one
+				if (!referral) {
+					// Generate unique referral code
+					let referralCode;
+					let isUnique = false;
+					let attempts = 0;
+					const maxAttempts = 10;
+
+					while (!isUnique && attempts < maxAttempts) {
+						const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
+						referralCode = `REF-${randomString}`;
+						
+						const existingReferral = await prisma.referral.findUnique({
+							where: { code: referralCode }
+						});
+						
+						if (!existingReferral) {
+							isUnique = true;
+						}
+						attempts++;
+					}
+
+					if (!isUnique) {
+						const { response, statusCode } = errorResponse("INTERNAL_ERROR", "無法生成唯一的推薦碼");
+						return reply.code(statusCode).send(response);
+					}
+
+					// Create the referral
+					referral = await prisma.referral.create({
+						data: {
+							code: referralCode,
+							registrationId: regId,
+							eventId: registration.eventId,
+							isActive: true
+						},
+						include: {
+							registration: {
+								include: {
+									event: true
+								}
+							}
+						}
+					});
 				}
 
 				const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
 				const referralLink = `${baseUrl}/register?ref=${referral.code}`;
 
 				return successResponse({
+					id: referral.id,
 					referralLink: referralLink,
 					referralCode: referral.code,
 					eventId: referral.eventId

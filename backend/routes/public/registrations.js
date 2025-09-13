@@ -2,6 +2,7 @@
  * @fileoverview Public registrations routes with modular types and schemas
  * @typedef {import('#types/database.js').Registration} Registration
  * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
+ * @typedef {import('#types/api.js').InvitationCode} InvitationCode 
  */
 
 import prisma from "#config/database.js";
@@ -105,11 +106,12 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Validate invitation code if provided
 				let invitationCodeId = null;
-				if (invitationCode) {
+				if (ticket.requireInviteCode && invitationCode) {
+					/** @type {InvitationCode | null} */
 					const code = await prisma.invitationCode.findFirst({
 						where: {
 							code: invitationCode,
-							eventId,
+							ticketId,
 							isActive: true
 						}
 					});
@@ -131,7 +133,15 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						return reply.code(statusCode).send(response);
 					}
 
+					if (ticket.id != code.ticketId) {
+						const { response, statusCode } = validationErrorResponse("邀請碼不適用於此票券");
+						return reply.code(statusCode).send(response);
+					}
+
 					invitationCodeId = code.id;
+				} else {
+					const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
+					return reply.code(statusCode).send(response);
 				}
 
 				// Validate referral code if provided
@@ -165,6 +175,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					// Create registration with form data as JSON
 					const registration = await tx.registration.create({
 						data: {
+							userId: user.id,
 							eventId,
 							ticketId,
 							email: user.email,
@@ -198,7 +209,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					if (invitationCodeId) {
 						await tx.invitationCode.update({
 							where: { id: invitationCodeId },
-							data: { usageCount: { increment: 1 } }
+							data: { usedCount: { increment: 1 } }
 						});
 					}
 

@@ -90,6 +90,10 @@ export const ticketCreateBody = {
 		saleEnd: {
 			...dateTimeString,
 			description: '結束販售時間'
+		},
+		requireInviteCode: {
+			type: 'boolean',
+			description: '是否需要邀請碼'
 		}
 	},
 	required: ['eventId', 'name', 'price', 'quantity']

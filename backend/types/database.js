@@ -66,12 +66,13 @@
 /**
  * @typedef {Object} InvitationCode
  * @property {string} id - Invitation code unique identifier
- * @property {string} eventId - Event ID
+ * @property {string} ticketId - Associated ticket IDs
  * @property {string} code - The invitation code
- * @property {string|null} description - Code description
+ * @property {string|null} name - Code name/description
  * @property {number|null} usageLimit - Maximum usage limit
- * @property {number} usageCount - Current usage count
- * @property {Date|null} expiresAt - Expiration date
+ * @property {number} usedCount - Current usage count
+ * @property {Date|null} validFrom - Start date
+ * @property {Date|null} validUntil - End date
  * @property {boolean} isActive - Whether code is active
  * @property {Date} createdAt - Creation timestamp
  * @property {Date} updatedAt - Last update timestamp

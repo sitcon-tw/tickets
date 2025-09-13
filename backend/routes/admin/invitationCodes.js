@@ -2,6 +2,7 @@
  * @fileoverview Admin invitation codes routes with modular types and schemas
  * @typedef {import('#types/database.js').InvitationCode} InvitationCode
  * @typedef {import('#types/api.js').InvitationCodeCreateRequest} InvitationCodeCreateRequest
+ * @typedef {import('#types/api.js').InvitationCodeUpdateRequest} InvitationCodeUpdateRequest
  */
 
 import prisma from "#config/database.js";
@@ -33,22 +34,12 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {InvitationCodeCreateRequest} */
-				const { eventId, code, description, usageLimit, expiresAt } = request.body;
-
-				// Verify event exists
-				const event = await prisma.event.findUnique({
-					where: { id: eventId }
-				});
-
-				if (!event) {
-					const { response, statusCode } = notFoundResponse("活動不存在");
-					return reply.code(statusCode).send(response);
-				}
+				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body;
 
 				// Check for duplicate codes
 				const existingCode = await prisma.invitationCode.findFirst({
 					where: { 
-						eventId,
+						ticketId,
 						code 
 					}
 				});
@@ -58,23 +49,50 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate expiration date
-				if (expiresAt && new Date(expiresAt) <= new Date()) {
-					const { response, statusCode } = validationErrorResponse("到期時間必須是未來時間");
+				// Validate date ranges
+				if (validFrom && new Date(validFrom) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("開始時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+				if (validUntil && new Date(validUntil) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("結束時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+				if (validFrom && validUntil && new Date(validFrom) >= new Date(validUntil)) {
+					const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
 					return reply.code(statusCode).send(response);
 				}
 
+				// Create invitation code in transaction
 				/** @type {InvitationCode} */
-				const invitationCode = await prisma.invitationCode.create({
-					data: {
-						eventId,
-						code,
-						description,
-						usageLimit,
-						usageCount: 0,
-						expiresAt: expiresAt ? new Date(expiresAt) : null,
-						isActive: true
+				const invitationCode = await prisma.$transaction(async (tx) => {
+					// Verify ticket exists if provided
+					if (ticketId) {
+						const ticket = await tx.ticket.findFirst({
+							where: {
+								id: ticketId
+							}
+						});
+
+						if (!ticket) {
+							throw new Error("票券不存在");
+						}
 					}
+
+					const newCode = await tx.invitationCode.create({
+						data: {
+							ticketId,
+							code,
+							name,
+							usageLimit,
+							usedCount: 0,
+							validFrom: validFrom ? new Date(validFrom) : null,
+							validUntil: validUntil ? new Date(validUntil) : null,
+							isActive: true
+						}
+					});
+
+					return newCode;
 				});
 
 				return reply.code(201).send(successResponse(invitationCode, "邀請碼創建成功"));
@@ -104,17 +122,20 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				const invitationCode = await prisma.invitationCode.findUnique({
 					where: { id },
 					include: {
-						event: {
+						ticket: {
 							select: {
 								id: true,
 								name: true,
-								startDate: true,
-								endDate: true
-							}
-						},
-						_count: {
-							select: {
-								registrations: true
+								price: true,
+								isActive: true,
+								event: {
+									select: {
+										id: true,
+										name: true,
+										startDate: true,
+										endDate: true
+									}
+								}
 							}
 						}
 					}
@@ -141,13 +162,13 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			schema: invitationCodeSchemas.updateInvitationCode
 		},
 		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: Partial<InvitationCodeCreateRequest>}>} request
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: InvitationCodeUpdateRequest}>} request
 		 * @param {import('fastify').FastifyReply} reply
 		 */
 		async (request, reply) => {
 			try {
 				const { id } = request.params;
-				const updateData = request.body;
+				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body;
 
 				// Check if invitation code exists
 				const existingCode = await prisma.invitationCode.findUnique({
@@ -160,11 +181,11 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				}
 
 				// Check for code conflicts in the same event
-				if (updateData.code && updateData.code !== existingCode.code) {
+				if (code && code !== existingCode.code) {
 					const codeConflict = await prisma.invitationCode.findFirst({
 						where: { 
-							eventId: existingCode.eventId,
-							code: updateData.code,
+							ticketId: existingCode.ticketId,
+							code,
 							id: { not: id }
 						}
 					});
@@ -175,31 +196,63 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					}
 				}
 
-				// Validate expiration date
-				if (updateData.expiresAt && new Date(updateData.expiresAt) <= new Date()) {
-					const { response, statusCode } = validationErrorResponse("到期時間必須是未來時間");
+				// Validate date ranges
+				if (validFrom && new Date(validFrom) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("開始時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+				if (validUntil && new Date(validUntil) <= new Date()) {
+					const { response, statusCode } = validationErrorResponse("結束時間必須是未來時間");
+					return reply.code(statusCode).send(response);
+				}
+				if (validFrom && validUntil && new Date(validFrom) >= new Date(validUntil)) {
+					const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Don't allow reducing usage limit below current usage
-				if (updateData.usageLimit !== undefined && updateData.usageLimit < existingCode.usageCount) {
+				if (usageLimit !== undefined && usageLimit < existingCode.usedCount) {
 					const { response, statusCode } = validationErrorResponse(
-						`使用次數限制不能低於已使用次數 (${existingCode.usageCount})`
+						`使用次數限制不能低於已使用次數 (${existingCode.usedCount})`
 					);
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prepare update data
-				const updatePayload = {
-					...updateData,
-					...(updateData.expiresAt && { expiresAt: new Date(updateData.expiresAt) }),
-					updatedAt: new Date()
-				};
-
+				// Update invitation code in transaction
 				/** @type {InvitationCode} */
-				const invitationCode = await prisma.invitationCode.update({
-					where: { id },
-					data: updatePayload
+				const invitationCode = await prisma.$transaction(async (tx) => {
+					// Prepare update data
+					const updatePayload = {};
+					if (code !== undefined) updatePayload.code = code;
+					if (name !== undefined) updatePayload.name = name;
+					if (usageLimit !== undefined) updatePayload.usageLimit = usageLimit;
+					if (isActive !== undefined) updatePayload.isActive = isActive;
+					if (validFrom !== undefined) updatePayload.validFrom = validFrom ? new Date(validFrom) : null;
+					if (validUntil !== undefined) updatePayload.validUntil = validUntil ? new Date(validUntil) : null;
+
+					// Update ticket association if provided
+					if (ticketId !== undefined) {
+						if (ticketId) {
+							// Verify ticket exists
+							const ticket = await tx.ticket.findUnique({
+								where: {
+									id: ticketId
+								}
+							});
+
+							if (!ticket) {
+								throw new Error("票券不存在");
+							}
+						}
+						updatePayload.ticketId = ticketId;
+					}
+
+					const updatedCode = await tx.invitationCode.update({
+						where: { id },
+						data: updatePayload
+					});
+
+					return updatedCode;
 				});
 
 				return reply.send(successResponse(invitationCode, "邀請碼更新成功"));
@@ -227,12 +280,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 
 				// Check if invitation code exists
 				const existingCode = await prisma.invitationCode.findUnique({
-					where: { id },
-					include: {
-						_count: {
-							select: { registrations: true }
-						}
-					}
+					where: { id }
 				});
 
 				if (!existingCode) {
@@ -240,8 +288,8 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prevent deletion if there are registrations using this code
-				if (existingCode._count.registrations > 0) {
+				// Check if code has been used (based on usedCount)
+				if (existingCode.usedCount > 0) {
 					const { response, statusCode } = conflictResponse("無法刪除已被使用的邀請碼");
 					return reply.code(statusCode).send(response);
 				}
@@ -266,33 +314,36 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
 		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, isActive?: boolean}}>} request
+		 * @param {import('fastify').FastifyRequest<{Querystring: {ticketId?: string, isActive?: boolean}}>} request
 		 * @param {import('fastify').FastifyReply} reply
 		 */
 		async (request, reply) => {
 			try {
-				const { eventId, isActive } = request.query;
+				const { ticketId, isActive } = request.query;
 
 				// Build where clause
 				const where = {};
-				if (eventId) where.eventId = eventId;
+				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
 				/** @type {InvitationCode[]} */
 				const invitationCodes = await prisma.invitationCode.findMany({
 					where,
 					include: {
-						event: {
+						ticket: {
 							select: {
 								id: true,
 								name: true,
-								startDate: true,
-								endDate: true
-							}
-						},
-						_count: {
-							select: {
-								registrations: true
+								price: true,
+								isActive: true,
+								event: {
+									select: {
+										id: true,
+										name: true,
+										startDate: true,
+										endDate: true
+									}
+								}
 							}
 						}
 					},
@@ -303,9 +354,10 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				const now = new Date();
 				const codesWithStatus = invitationCodes.map(code => ({
 					...code,
-					isExpired: code.expiresAt && code.expiresAt < now,
-					isExhausted: code.usageLimit && code.usageCount >= code.usageLimit,
-					remainingUses: code.usageLimit ? Math.max(0, code.usageLimit - code.usageCount) : null
+					isExpired: code.validUntil && code.validUntil < now,
+					isNotStarted: code.validFrom && code.validFrom > now,
+					isExhausted: code.usageLimit && code.usedCount >= code.usageLimit,
+					remainingUses: code.usageLimit ? Math.max(0, code.usageLimit - code.usedCount) : null
 				}));
 
 				return reply.send(successResponse(codesWithStatus));
@@ -327,9 +379,9 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				body: {
 					type: 'object',
 					properties: {
-						eventId: {
+						ticketId: {
 							type: 'string',
-							description: '活動 ID'
+							description: '票券 ID'
 						},
 						prefix: {
 							type: 'string',
@@ -347,38 +399,43 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 							minimum: 1,
 							description: '使用次數限制'
 						},
-						expiresAt: {
+						validFrom: {
 							type: 'string',
 							format: 'date-time',
-							description: '到期時間'
+							description: '開始時間'
+						},
+						validUntil: {
+							type: 'string',
+							format: 'date-time',
+							description: '結束時間'
 						}
 					},
-					required: ['eventId', 'prefix', 'count']
+					required: ['ticketId', 'prefix', 'count']
 				}
 			}
 		},
 		/**
-		 * @param {import('fastify').FastifyRequest<{Body: {eventId: string, prefix: string, count: number, usageLimit?: number, expiresAt?: string}}>} request
+		 * @param {import('fastify').FastifyRequest<{Body: {ticketId: string, prefix: string, count: number, usageLimit?: number, validFrom?: string, validUntil?: string}}>} request
 		 * @param {import('fastify').FastifyReply} reply
 		 */
 		async (request, reply) => {
 			try {
-				const { eventId, prefix, count, usageLimit, expiresAt } = request.body;
+				const { ticketId, prefix, count, usageLimit, validFrom, validUntil } = request.body;
 
-				// Verify event exists
-				const event = await prisma.event.findUnique({
-					where: { id: eventId }
+				// Verify ticket exists
+				const ticket = await prisma.ticket.findUnique({
+					where: { id: ticketId }
 				});
 
-				if (!event) {
-					const { response, statusCode } = notFoundResponse("活動不存在");
+				if (!ticket) {
+					const { response, statusCode } = notFoundResponse("票券不存在");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Generate unique codes
 				const codes = [];
 				const existingCodes = await prisma.invitationCode.findMany({
-					where: { eventId },
+					where: { ticketId },
 					select: { code: true }
 				});
 				const existingCodeSet = new Set(existingCodes.map(c => c.code));
@@ -398,12 +455,13 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					}
 
 					codes.push({
-						eventId,
+						ticketId,
 						code,
-						description: `批量生成的邀請碼 - ${prefix}`,
+						name: `批量生成的邀請碼 - ${prefix}`,
 						usageLimit,
-						usageCount: 0,
-						expiresAt: expiresAt ? new Date(expiresAt) : null,
+						usedCount: 0,
+						validFrom: validFrom ? new Date(validFrom) : null,
+						validUntil: validUntil ? new Date(validUntil) : null,
 						isActive: true
 					});
 					existingCodeSet.add(code);

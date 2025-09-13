@@ -21,10 +21,6 @@ export const registrationProperties = {
 		type: 'string',
 		description: '電子郵件'
 	},
-	phone: {
-		type: 'string',
-		description: '電話號碼'
-	},
 	status: {
 		type: 'string',
 		enum: ['confirmed', 'cancelled', 'pending'],
