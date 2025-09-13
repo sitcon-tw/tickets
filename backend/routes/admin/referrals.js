@@ -7,6 +7,7 @@ import {
 	validationErrorResponse,
 	serverErrorResponse 
 } from "#utils/response.js";
+import prisma from "#config/database.js";
 
 export default async function adminReferralsRoutes(fastify, options) {	// 推薦機制總覽統計
 	fastify.get(
@@ -19,12 +20,45 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		},
 		async (request, reply) => {
 			try {
-				// TODO: Implement referral overview statistics
+				const totalReferrals = await prisma.referralUsage.count();
+				const uniqueReferrers = await prisma.referral.count({
+					where: { isActive: true }
+				});
+				const totalRegistrations = await prisma.registration.count();
+				const conversionRate = totalRegistrations > 0 ? (totalReferrals / totalRegistrations) * 100 : 0;
+
+				const topReferrers = await prisma.referral.findMany({
+					where: { isActive: true },
+					include: {
+						registration: {
+							select: {
+								email: true,
+								formData: true
+							}
+						},
+						_count: {
+							select: { referredUsers: true }
+						}
+					},
+					orderBy: {
+						referredUsers: {
+							_count: 'desc'
+						}
+					},
+					take: 10
+				});
+
 				return successResponse({
-					totalReferrals: 0,
-					uniqueReferrers: 0,
-					conversionRate: 0,
-					topReferrers: []
+					totalReferrals,
+					uniqueReferrers,
+					conversionRate: Math.round(conversionRate * 100) / 100,
+					topReferrers: topReferrers.map(r => ({
+						id: r.id,
+						code: r.code,
+						email: r.registration.email,
+						name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+						referralCount: r._count.referredUsers
+					}))
 				});
 			} catch (error) {
 				console.error("Get referral overview error:", error);
@@ -47,8 +81,38 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 			try {
 				const { limit = 10 } = request.query;
 
-				// TODO: Implement referral leaderboard
-				return successResponse([]);
+				const leaderboard = await prisma.referral.findMany({
+					where: { isActive: true },
+					include: {
+						registration: {
+							select: {
+								email: true,
+								formData: true
+							}
+						},
+						_count: {
+							select: { referredUsers: true }
+						}
+					},
+					orderBy: {
+						referredUsers: {
+							_count: 'desc'
+						}
+					},
+					take: parseInt(limit)
+				});
+
+				const formattedLeaderboard = leaderboard.map((r, index) => ({
+					rank: index + 1,
+					id: r.id,
+					code: r.code,
+					email: r.registration.email,
+					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					referralCount: r._count.referredUsers,
+					createdAt: r.createdAt
+				}));
+
+				return successResponse(formattedLeaderboard);
 			} catch (error) {
 				console.error("Get referral leaderboard error:", error);
 				const { response, statusCode } = serverErrorResponse("取得推薦排行榜失敗");
@@ -70,11 +134,37 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 			try {
 				const { regId } = request.params;
 
-				// TODO: Implement referral tree data
-				return successResponse({
-					root: regId,
-					children: []
+				const registration = await prisma.registration.findUnique({
+					where: { id: regId },
+					include: {
+						referral: true,
+						referrals: {
+							include: {
+								referrals: {
+									include: {
+										referrals: true
+									}
+								}
+							}
+						}
+					}
 				});
+
+				if (!registration) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的報名記錄");
+					return reply.code(statusCode).send(response);
+				}
+
+				const buildTree = (reg) => ({
+					id: reg.id,
+					email: reg.email,
+					name: JSON.parse(reg.formData || '{}').name || 'Unknown',
+					referralCode: reg.referral?.code,
+					createdAt: reg.createdAt,
+					children: reg.referrals?.map(buildTree) || []
+				});
+
+				return successResponse(buildTree(registration));
 			} catch (error) {
 				console.error("Get referral tree error:", error);
 				const { response, statusCode } = serverErrorResponse("取得推薦擴譜圖失敗");
@@ -96,8 +186,40 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 			try {
 				const { minReferrals = 1 } = request.query;
 
-				// TODO: Implement qualified referrers list
-				return successResponse([]);
+				const qualifiedReferrers = await prisma.referral.findMany({
+					where: { 
+						isActive: true,
+						referredUsers: {
+							some: {}
+						}
+					},
+					include: {
+						registration: {
+							select: {
+								email: true,
+								formData: true
+							}
+						},
+						_count: {
+							select: { referredUsers: true }
+						}
+					}
+				});
+
+				const filtered = qualifiedReferrers.filter(r => 
+					r._count.referredUsers >= parseInt(minReferrals)
+				);
+
+				const formattedList = filtered.map(r => ({
+					id: r.id,
+					code: r.code,
+					email: r.registration.email,
+					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					referralCount: r._count.referredUsers,
+					createdAt: r.createdAt
+				}));
+
+				return successResponse(formattedList);
 			} catch (error) {
 				console.error("Get qualified referrers error:", error);
 				const { response, statusCode } = serverErrorResponse("取得達標推薦者名單失敗");
@@ -124,11 +246,63 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					return reply.code(statusCode).send(response);
 				}
 
-				// TODO: Implement random draw logic
+				const qualifiedReferrers = await prisma.referral.findMany({
+					where: { 
+						isActive: true,
+						referredUsers: {
+							some: {}
+						}
+					},
+					include: {
+						registration: {
+							select: {
+								email: true,
+								formData: true
+							}
+						},
+						_count: {
+							select: { referredUsers: true }
+						}
+					}
+				});
+
+				const eligible = qualifiedReferrers.filter(r => 
+					r._count.referredUsers >= parseInt(minReferrals)
+				);
+
+				if (eligible.length === 0) {
+					const { response, statusCode } = validationErrorResponse("沒有符合條件的推薦者");
+					return reply.code(statusCode).send(response);
+				}
+
+				const actualDrawCount = Math.min(parseInt(drawCount), eligible.length);
+				const usedSeed = seed || Date.now().toString();
+				
+				const seededRandom = (seed) => {
+					let x = Math.sin(parseInt(seed)) * 10000;
+					return x - Math.floor(x);
+				};
+
+				const shuffled = [...eligible];
+				for (let i = shuffled.length - 1; i > 0; i--) {
+					const j = Math.floor(seededRandom(usedSeed + i) * (i + 1));
+					[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+				}
+
+				const drawResults = shuffled.slice(0, actualDrawCount).map((r, index) => ({
+					rank: index + 1,
+					id: r.id,
+					code: r.code,
+					email: r.registration.email,
+					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					referralCount: r._count.referredUsers
+				}));
+
 				return successResponse({
-					drawResults: [],
-					drawCount,
-					seed: seed || "random"
+					drawResults,
+					drawCount: actualDrawCount,
+					eligibleCount: eligible.length,
+					seed: usedSeed
 				});
 			} catch (error) {
 				console.error("Draw referrers error:", error);
@@ -149,11 +323,70 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		},
 		async (request, reply) => {
 			try {
-				// TODO: Implement referral statistics report
+				const { startDate, endDate } = request.query;
+				
+				const dateFilter = {};
+				if (startDate) dateFilter.gte = new Date(startDate);
+				if (endDate) dateFilter.lte = new Date(endDate);
+
+				const referralUsages = await prisma.referralUsage.findMany({
+					where: {
+						usedAt: dateFilter
+					},
+					include: {
+						referral: {
+							include: {
+								registration: {
+									select: { formData: true }
+								}
+							}
+						}
+					}
+				});
+
+				const dailyStats = {};
+				referralUsages.forEach(usage => {
+					const date = usage.usedAt.toISOString().split('T')[0];
+					dailyStats[date] = (dailyStats[date] || 0) + 1;
+				});
+
+				const dailyStatsArray = Object.entries(dailyStats).map(([date, count]) => ({
+					date,
+					count
+				})).sort((a, b) => a.date.localeCompare(b.date));
+
+				const totalRegistrations = await prisma.registration.count({
+					where: {
+						createdAt: dateFilter
+					}
+				});
+
+				const totalReferralUsages = referralUsages.length;
+				const conversionRate = totalRegistrations > 0 ? (totalReferralUsages / totalRegistrations) * 100 : 0;
+
+				const conversionFunnel = [
+					{ stage: '總報名數', count: totalRegistrations },
+					{ stage: '使用推薦碼', count: totalReferralUsages },
+					{ stage: '轉換率', count: `${Math.round(conversionRate * 100) / 100}%` }
+				];
+
+				const referralCounts = {};
+				referralUsages.forEach(usage => {
+					const code = usage.referral.code;
+					const name = JSON.parse(usage.referral.registration.formData || '{}').name || 'Unknown';
+					const key = `${name} (${code})`;
+					referralCounts[key] = (referralCounts[key] || 0) + 1;
+				});
+
+				const topSources = Object.entries(referralCounts)
+					.map(([source, count]) => ({ source, count }))
+					.sort((a, b) => b.count - a.count)
+					.slice(0, 10);
+
 				return successResponse({
-					dailyStats: [],
-					conversionFunnel: [],
-					topSources: []
+					dailyStats: dailyStatsArray,
+					conversionFunnel,
+					topSources
 				});
 			} catch (error) {
 				console.error("Get referral stats error:", error);

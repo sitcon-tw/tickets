@@ -10,6 +10,7 @@ import {
 	serverErrorResponse 
 } from "#utils/response.js";
 import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
+import prisma from "#config/database.js";
 
 /**
  * Admin email campaigns routes with modular schemas and types
@@ -54,9 +55,17 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				const { page = 1, limit = 20 } = request.query;
 				const skip = (page - 1) * limit;
 
-				// TODO: Implement email campaigns retrieval
-				const campaigns = [];
-				const total = 0;
+				const campaigns = await prisma.emailCampaign.findMany({
+					skip,
+					take: limit,
+					include: {
+						user: {
+							select: { name: true, email: true }
+						}
+					},
+					orderBy: { createdAt: 'desc' }
+				});
+				const total = await prisma.emailCampaign.count();
 
 				const pagination = {
 					page: parseInt(page),
@@ -94,12 +103,19 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// TODO: Implement email campaign creation
-				return reply.status(201).send(successResponse({ 
-					id: 'temp-id', 
-					name, 
-					status: 'pending' 
-				}, "郵件發送任務已建立"));
+				const campaign = await prisma.emailCampaign.create({
+					data: {
+						userId: request.user?.id || 'system',
+						name,
+						subject,
+						content,
+						recipientFilter: targetAudience ? JSON.stringify(targetAudience) : null,
+						scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+						status: 'draft'
+					}
+				});
+
+				return reply.status(201).send(successResponse(campaign, "郵件發送任務已建立"));
 			} catch (error) {
 				console.error("Create email campaign error:", error);
 				const { response, statusCode } = serverErrorResponse("建立郵件發送任務失敗");
@@ -135,13 +151,30 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 			try {
 				const { campaignId } = request.params;
 
-				// TODO: Implement email campaign status retrieval
+				const campaign = await prisma.emailCampaign.findUnique({
+					where: { id: campaignId },
+					include: {
+						user: {
+							select: { name: true, email: true }
+						}
+					}
+				});
+
+				if (!campaign) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					return reply.code(statusCode).send(response);
+				}
+
 				return reply.send(successResponse({
-					id: campaignId,
-					status: "pending",
-					sentCount: 0,
-					failedCount: 0,
-					totalRecipients: 0
+					id: campaign.id,
+					name: campaign.name,
+					status: campaign.status,
+					sentCount: campaign.sentCount,
+					failedCount: campaign.totalCount - campaign.sentCount,
+					totalRecipients: campaign.totalCount,
+					scheduledAt: campaign.scheduledAt,
+					sentAt: campaign.sentAt,
+					createdAt: campaign.createdAt
 				}));
 			} catch (error) {
 				console.error("Get email campaign status error:", error);
@@ -178,11 +211,45 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 			try {
 				const { campaignId } = request.params;
 
-				// TODO: Implement email preview with template variables
+				const campaign = await prisma.emailCampaign.findUnique({
+					where: { id: campaignId }
+				});
+
+				if (!campaign) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					return reply.code(statusCode).send(response);
+				}
+
+				let previewHtml = campaign.content;
+				let previewText = campaign.content.replace(/<[^>]*>/g, '');
+
+				const sampleRegistration = await prisma.registration.findFirst({
+					include: {
+						event: true,
+						ticket: true
+					}
+				});
+
+				if (sampleRegistration) {
+					const formData = JSON.parse(sampleRegistration.formData || '{}');
+					previewHtml = previewHtml
+						.replace(/{{name}}/g, formData.name || 'Sample User')
+						.replace(/{{email}}/g, sampleRegistration.email)
+						.replace(/{{eventName}}/g, sampleRegistration.event.name)
+						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
+					
+					previewText = previewText
+						.replace(/{{name}}/g, formData.name || 'Sample User')
+						.replace(/{{email}}/g, sampleRegistration.email)
+						.replace(/{{eventName}}/g, sampleRegistration.event.name)
+						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
+				}
+
 				return reply.send(successResponse({
 					campaignId,
-					previewHtml: "<h1>預覽內容</h1>",
-					previewText: "預覽內容"
+					subject: campaign.subject,
+					previewHtml,
+					previewText
 				}));
 			} catch (error) {
 				console.error("Preview email campaign error:", error);
@@ -219,11 +286,29 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 			try {
 				const { campaignId } = request.params;
 
-				// TODO: Implement email campaign cancellation
-				return reply.send(successResponse({ 
-					id: campaignId, 
-					status: 'cancelled' 
-				}, "郵件發送任務已取消"));
+				const campaign = await prisma.emailCampaign.findUnique({
+					where: { id: campaignId }
+				});
+
+				if (!campaign) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (campaign.status === 'sent') {
+					const { response, statusCode } = validationErrorResponse("已發送的郵件任務無法取消");
+					return reply.code(statusCode).send(response);
+				}
+
+				const updatedCampaign = await prisma.emailCampaign.update({
+					where: { id: campaignId },
+					data: { 
+						status: 'cancelled',
+						updatedAt: new Date()
+					}
+				});
+
+				return reply.send(successResponse(updatedCampaign, "郵件發送任務已取消"));
 			} catch (error) {
 				console.error("Cancel email campaign error:", error);
 				const { response, statusCode } = serverErrorResponse("取消郵件發送任務失敗");

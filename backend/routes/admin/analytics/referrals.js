@@ -1,4 +1,5 @@
 import { errorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database.js";
 
 export default async function referralsRoutes(fastify, options) {
 	// 來源統計分析
@@ -14,11 +15,48 @@ export default async function referralsRoutes(fastify, options) {
 			try {
 				const { startDate, endDate } = request.query;
 
-				// TODO: Implement referral source analytics
+				const dateFilter = {};
+				if (startDate) dateFilter.gte = new Date(startDate);
+				if (endDate) dateFilter.lte = new Date(endDate);
+
+				const referralUsages = await prisma.referralUsage.findMany({
+					where: {
+						usedAt: dateFilter
+					},
+					include: {
+						referral: {
+							include: {
+								registration: {
+									select: { formData: true, email: true }
+								}
+							}
+						}
+					}
+				});
+
+				const totalRegistrations = await prisma.registration.count({
+					where: {
+						createdAt: dateFilter
+					}
+				});
+
+				const sourceCounts = {};
+				referralUsages.forEach(usage => {
+					const referrerData = JSON.parse(usage.referral.registration.formData || '{}');
+					const source = `${referrerData.name || 'Unknown'} (${usage.referral.code})`;
+					sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+				});
+
+				const sources = Object.entries(sourceCounts)
+					.map(([source, count]) => ({ source, count, percentage: (count / referralUsages.length) * 100 }))
+					.sort((a, b) => b.count - a.count);
+
+				const conversionRate = totalRegistrations > 0 ? (referralUsages.length / totalRegistrations) * 100 : 0;
+
 				return successResponse({
-					sources: [],
-					totalClicks: 0,
-					conversionRate: 0
+					sources,
+					totalClicks: referralUsages.length,
+					conversionRate: Math.round(conversionRate * 100) / 100
 				});
 			} catch (error) {
 				console.error("Get referral sources error:", error);

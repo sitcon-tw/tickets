@@ -16,6 +16,12 @@ import {
 	createPagination
 } from "#utils/response.js";
 import { registrationSchemas } from "#schemas/registration.js";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -345,8 +351,24 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					orderBy: { createdAt: 'desc' }
 				});
 
-				// TODO: Implement actual file generation and upload to storage
-				const filename = `registrations_${Date.now()}.${format}`;
+				const timestamp = Date.now();
+				const filename = `registrations_${timestamp}.${format}`;
+				
+				const downloadsDir = path.join(__dirname, '../../downloads');
+				if (!fs.existsSync(downloadsDir)) {
+					fs.mkdirSync(downloadsDir, { recursive: true });
+				}
+				
+				const filePath = path.join(downloadsDir, filename);
+				
+				if (format === 'csv') {
+					const csvContent = generateCSV(registrations);
+					fs.writeFileSync(filePath, csvContent, 'utf8');
+				} else if (format === 'excel') {
+					const excelContent = generateExcel(registrations);
+					fs.writeFileSync(filePath, excelContent);
+				}
+				
 				const downloadUrl = `/downloads/${filename}`;
 
 				return reply.send(successResponse({
@@ -361,4 +383,73 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			}
 		}
 	);
+
+	function generateCSV(registrations) {
+		const headers = [
+			'ID',
+			'Email',
+			'Event',
+			'Ticket',
+			'Price',
+			'Status',
+			'Name',
+			'Phone',
+			'Created At'
+		];
+		
+		const rows = registrations.map(reg => {
+			const formData = reg.formData ? JSON.parse(reg.formData) : {};
+			return [
+				reg.id,
+				reg.email,
+				reg.event?.name || '',
+				reg.ticket?.name || '',
+				reg.ticket?.price || 0,
+				reg.status,
+				formData.name || '',
+				formData.phone || '',
+				new Date(reg.createdAt).toISOString()
+			];
+		});
+		
+		const csvRows = [headers, ...rows];
+		return csvRows.map(row => 
+			row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+		).join('\n');
+	}
+	
+	function generateExcel(registrations) {
+		const headers = [
+			'ID',
+			'Email',
+			'Event',
+			'Ticket',
+			'Price',
+			'Status',
+			'Name',
+			'Phone',
+			'Created At'
+		];
+		
+		const rows = registrations.map(reg => {
+			const formData = reg.formData ? JSON.parse(reg.formData) : {};
+			return [
+				reg.id,
+				reg.email,
+				reg.event?.name || '',
+				reg.ticket?.name || '',
+				reg.ticket?.price || 0,
+				reg.status,
+				formData.name || '',
+				formData.phone || '',
+				new Date(reg.createdAt).toISOString()
+			];
+		});
+		
+		const csvContent = [headers, ...rows]
+			.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+			.join('\n');
+			
+		return csvContent;
+	}
 }

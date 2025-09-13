@@ -43,7 +43,6 @@ await fastify.register(fastifySwagger, {
 			{ name: "admin/users", description: "管理後台用戶相關操作 requires: Admin Role" },
 			{ name: "admin/events", description: "管理後台活動相關操作 requires: Admin Role" },
 			{ name: "admin/tickets", description: "管理後台票券相關操作 requires: Admin Role" },
-			{ name: "admin/form-fields", description: "管理後台表單欄位相關操作 requires: Admin Role" },
 			{ name: "admin/registrations", description: "管理後台報名相關操作 requires: Admin Role" },
 			{ name: "admin/invitation-codes", description: "管理後台邀請碼相關操作 requires: Admin Role" },
 			{ name: "admin/referrals", description: "管理後台標籤相關操作 requires: Admin Role" },

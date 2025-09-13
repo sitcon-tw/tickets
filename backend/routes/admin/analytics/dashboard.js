@@ -131,7 +131,7 @@ export default async function dashboardRoutes(fastify, options) {
 						};
 						return acc;
 					}, {}),
-					referralStats: {} // TODO: Implement referral stats
+					referralStats: await getReferralStats()
 				};
 
 				return successResponse(analytics, "取得儀表板數據成功");
@@ -142,4 +142,50 @@ export default async function dashboardRoutes(fastify, options) {
 			}
 		}
 	);
+
+	async function getReferralStats() {
+		try {
+			const totalReferrals = await prisma.referralUsage.count();
+			const activeReferrers = await prisma.referral.count({
+				where: { isActive: true }
+			});
+			const topReferrers = await prisma.referral.findMany({
+				where: { isActive: true },
+				include: {
+					registration: {
+						select: { email: true, formData: true }
+					},
+					_count: {
+						select: { referredUsers: true }
+					}
+				},
+				orderBy: {
+					referredUsers: {
+						_count: 'desc'
+					}
+				},
+				take: 5
+			});
+
+			return {
+				totalReferrals,
+				activeReferrers,
+				conversionRate: activeReferrers > 0 ? (totalReferrals / activeReferrers) : 0,
+				topReferrers: topReferrers.map(r => ({
+					code: r.code,
+					email: r.registration.email,
+					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					referralCount: r._count.referredUsers
+				}))
+			};
+		} catch (error) {
+			console.error('Error getting referral stats:', error);
+			return {
+				totalReferrals: 0,
+				activeReferrers: 0,
+				conversionRate: 0,
+				topReferrers: []
+			};
+		}
+	}
 }

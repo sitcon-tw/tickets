@@ -278,7 +278,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				});
 
 				// Parse form data and add status indicators
-				console.log(registrations);
 				const registrationsWithStatus = registrations.map(reg => {
 					const now = new Date();
 					return {
