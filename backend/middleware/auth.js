@@ -1,6 +1,7 @@
 import { auth } from "../lib/auth.js";
 import { forbiddenResponse, unauthorizedResponse } from "../utils/response.js";
 import { PrismaClient } from "../generated/prisma/index.js";
+import { safeJsonParse } from "../utils/json.js";
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,7 @@ export const requirePermission = permission => {
 
 		if (reply.sent) return;
 
-		const userPermissions = request.user.permissions ? JSON.parse(request.user.permissions) : [];
+		const userPermissions = safeJsonParse(request.user.permissions, [], 'user permissions');
 
 		if (!userPermissions.includes(permission) && request.user.role !== "admin") {
 			const { response, statusCode } = forbiddenResponse("權限不足 [P]");

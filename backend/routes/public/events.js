@@ -53,8 +53,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						startDate: true,
 						endDate: true,
 						ogImage: true,
-						landingPage: true,
-						isActive: true
+						landingPage: true
 					}
 				});
 
@@ -118,8 +117,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						quantity: true,
 						soldCount: true,
 						saleStart: true,
-						saleEnd: true,
-						isActive: true
+						saleEnd: true
 					},
 					orderBy: { createdAt: 'asc' }
 				});
@@ -134,10 +132,15 @@ export default async function publicEventsRoutes(fastify, options) {
 					const isSoldOut = available <= 0;
 
 					return {
-						...ticket,
+						id: ticket.id,
+						name: ticket.name,
+						description: ticket.description,
+						price: ticket.price,
 						available,
 						isOnSale,
-						isSoldOut
+						isSoldOut,
+						saleStart: ticket.saleStart,
+						saleEnd: ticket.saleEnd
 					};
 				});
 

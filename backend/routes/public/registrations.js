@@ -17,6 +17,7 @@ import {
 import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
 import { validateRegistrationFormData } from "#utils/validation.js";
 import { auth } from "#lib/auth.js";
+import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
 
 
 /**
@@ -86,7 +87,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check ticket availability
+				// Basic ticket availability check (will be re-checked in transaction)
 				if (ticket.soldCount >= ticket.quantity) {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
@@ -104,9 +105,15 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate invitation code if provided
+				// Validate invitation code logic
 				let invitationCodeId = null;
-				if (ticket.requireInviteCode && invitationCode) {
+				if (ticket.requireInviteCode) {
+					// Ticket requires invitation code
+					if (!invitationCode) {
+						const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
+						return reply.code(statusCode).send(response);
+					}
+
 					/** @type {InvitationCode | null} */
 					const code = await prisma.invitationCode.findFirst({
 						where: {
@@ -139,9 +146,20 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					}
 
 					invitationCodeId = code.id;
-				} else {
-					const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
-					return reply.code(statusCode).send(response);
+				} else if (invitationCode) {
+					// Ticket doesn't require invitation code but one was provided - validate it anyway for consistency
+					const code = await prisma.invitationCode.findFirst({
+						where: {
+							code: invitationCode,
+							ticketId,
+							isActive: true
+						}
+					});
+
+					if (code && (!code.expiresAt || now <= code.expiresAt) && 
+						(!code.usageLimit || code.usageCount < code.usageLimit)) {
+						invitationCodeId = code.id;
+					}
 				}
 
 				// Validate referral code if provided
@@ -172,6 +190,16 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Create registration in transaction
 				const result = await prisma.$transaction(async (tx) => {
+					// Re-check ticket availability within transaction to prevent race conditions
+					const currentTicket = await tx.ticket.findUnique({
+						where: { id: ticketId },
+						select: { soldCount: true, quantity: true }
+					});
+
+					if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
+						throw new Error("TICKET_SOLD_OUT");
+					}
+
 					// Create registration with form data as JSON
 					const registration = await tx.registration.create({
 						data: {
@@ -179,7 +207,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 							eventId,
 							ticketId,
 							email: user.email,
-							formData: JSON.stringify(formData),
+							formData: safeJsonStringify(formData, '{}', 'registration creation'),
 							status: 'confirmed',
 						},
 						include: {
@@ -224,16 +252,25 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						});
 					}
 
-					// Add parsed form data to response
+					// Add parsed form data to response with error handling
+					const parsedFormData = safeJsonParse(registration.formData, {}, 'registration response');
+
 					return {
 						...registration,
-						formData: JSON.parse(registration.formData)
+						formData: parsedFormData
 					};
 				});
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
 			} catch (error) {
 				console.error("Create registration error:", error);
+				
+				// Handle specific transaction errors
+				if (error.message === "TICKET_SOLD_OUT") {
+					const { response, statusCode } = conflictResponse("票券已售完");
+					return reply.code(statusCode).send(response);
+				}
+				
 				const { response, statusCode } = serverErrorResponse("報名失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -259,7 +296,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
-				const userId = session.userId;
+				const userId = session.user?.id;
 
 				/** @type {Registration[]} */
 				const registrations = await prisma.registration.findMany({
@@ -291,9 +328,11 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				// Parse form data and add status indicators
 				const registrationsWithStatus = registrations.map(reg => {
 					const now = new Date();
+					const parsedFormData = safeJsonParse(reg.formData, {}, `user registrations for ${reg.id}`);
+
 					return {
 						...reg,
-						formData: JSON.parse(reg.formData),
+						formData: parsedFormData,
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
 						canEdit: reg.status === 'confirmed' && reg.event.startDate > now,
@@ -328,7 +367,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
-				const userId = session.userId;
+				const userId = session.user?.id;
 				const { id } = request.params;
 
 				/** @type {Registration | null} */
@@ -367,9 +406,11 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Parse form data and add status indicators
 				const now = new Date();
+				const parsedFormData = safeJsonParse(registration.formData, {}, `single registration ${registration.id}`);
+
 				const registrationWithStatus = {
 					...registration,
-					formData: JSON.parse(registration.formData),
+					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
 					canEdit: registration.status === 'confirmed' && registration.event.startDate > now,
@@ -403,7 +444,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
-				const userId = session.userId;
+				const userId = session.user?.id;
 				const id = request.params.id;
 
 				// Check if registration exists and belongs to user
