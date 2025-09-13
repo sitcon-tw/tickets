@@ -19,10 +19,236 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<link rel="stylesheet" href="/src/styles/admin.css" />
 	<AdminNav />
-	<main>
-		<h1>表單</h1>
+	<main class="admin-main">
+		<h1>編輯表單</h1>
+		<p style="margin-top:-0.5rem;color:var(--accents-5);font-size:0.9rem;">Fake data only. Drag to reorder. Add / edit questions, then Save to see JSON output (no API yet).</p>
+		<div id="form-editor" class="editor">
+			<div id="questions" class="questions"></div>
+			<div class="toolbar">
+				<button id="add-question" type="button">+ 新增問題 (Add Question)</button>
+				<button id="save-form" type="button" class="primary">💾 儲存 (Save)</button>
+			</div>
+			<pre id="output" class="output" aria-live="polite"></pre>
+		</div>
 	</main>
 
-	<style></style>
+	<style is:global>
+		/* Form editor specific (shared base styles in admin.css) */
+		.editor {max-width:960px;margin:1rem auto 4rem;}
+		.questions {display:flex;flex-direction:column;gap:12px;margin:1rem 0;}
+		.question {background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;position:relative;will-change: transform, opacity;}
+		.question.dragging {opacity:0.4;}
+		.handle {cursor:grab;user-select:none;font-size:1.1rem;line-height:1;display:flex;align-items:center;justify-content:center;color:#999;}
+		.handle:active {cursor:grabbing;}
+		.q-body {display:flex;flex-direction:column;gap:6px;}
+		.q-row {display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+		.q-row label {font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;color:#bbb;}
+		.q-row input[type=text], .q-row select, .q-row textarea {background:#111;border:1px solid #333;color:#eee;border-radius:6px;padding:6px 8px;font-size:0.8rem;min-width:160px;}
+		.q-row textarea {min-height:60px;resize:vertical;}
+		.type-select {width:140px;}
+		.options {margin-top:4px;padding:6px 8px;border:1px dashed #444;border-radius:6px;background:#161616;display:flex;flex-direction:column;gap:6px;}
+		.option-item {display:flex;gap:6px;align-items:center;}
+		.option-item input {flex:1;}
+		.option-item button {background:#222;border:1px solid #444;color:#bbb;font-size:0.65rem;padding:4px 6px;border-radius:4px;}
+		.option-item button:hover {background:#333;color:#fff;}
+		.add-option {background:#222;border:1px solid #444;color:#bbb;font-size:0.65rem;padding:4px 8px;border-radius:4px;align-self:flex-start;}
+		.add-option:hover {background:#333;color:#fff;}
+		.delete-question {background:#2a0000;border:1px solid #550000;color:#ff8d8d;font-size:0.65rem;padding:4px 8px;border-radius:4px;}
+		.delete-question:hover {background:#440000;color:#fff;}
+		.required-toggle {display:inline-flex;align-items:center;gap:4px;font-size:0.65rem;background:#222;border:1px solid #444;border-radius:4px;padding:4px 8px;cursor:pointer;}
+		.required-toggle[data-on="true"] {color:#fff;border-color:#666;background:#303030;}
+		.toolbar {display:flex;gap:12px;}
+		.output {background:#0f0f0f;border:1px solid #222;padding:12px;border-radius:8px;max-height:320px;overflow:auto;margin-top:1rem;font-size:0.7rem;}
+		.empty {opacity:0.6;font-style:italic;padding:1rem;text-align:center;border:1px dashed #444;border-radius:8px;}
+	</style>
+
+	<script>
+		// Fake seed data
+		let questions = [
+			{ id: crypto.randomUUID(), label: 'Full Name', type: 'text', required: true, help: 'Enter your real name.' },
+			{ id: crypto.randomUUID(), label: 'Email', type: 'email', required: true },
+			{ id: crypto.randomUUID(), label: 'Phone Number', type: 'phone', required: false },
+			{ id: crypto.randomUUID(), label: 'T-Shirt Size', type: 'select', required: true, options: ['XS','S','M','L','XL'] },
+			{ id: crypto.randomUUID(), label: 'Dietary Preference', type: 'radio', required: false, options: ['None','Vegetarian','Vegan','Halal'] },
+			{ id: crypto.randomUUID(), label: 'Skills', type: 'checkbox', required: false, options: ['Frontend','Backend','Design','DevOps'] },
+			{ id: crypto.randomUUID(), label: 'About You', type: 'textarea', required: false, help: 'Short introduction.' }
+		];
+
+		const questionsEl = document.getElementById('questions');
+		const outputEl = document.getElementById('output');
+		const addBtn = document.getElementById('add-question');
+		const saveBtn = document.getElementById('save-form');
+
+		function render() {
+			questionsEl.innerHTML = '';
+			if(!questions.length){
+				const empty = document.createElement('div');
+				empty.className = 'empty';
+				empty.textContent = '尚無問題 (No questions)';
+				questionsEl.appendChild(empty);
+				return;
+			}
+			questions.forEach((q, index) => {
+				questionsEl.appendChild(renderQuestion(q, index));
+			});
+		}
+
+		function renderQuestion(q, index){
+			const el = document.createElement('div');
+			el.className = 'question';
+			el.draggable = true;
+			el.dataset.id = q.id;
+			el.innerHTML = `
+				<div class="handle" title="Drag to reorder" aria-label="Drag">☰</div>
+				<div class="q-body">
+					<div class="q-row">
+						<label>Label</label>
+						<input type="text" value="${q.label ?? ''}" placeholder="Question label" data-field="label" />
+						<label>Type</label>
+						<select class="type-select" data-field="type">${['text','email','phone','textarea','select','radio','checkbox'].map(t=>`<option value="${t}" ${q.type===t?'selected':''}>${t}</option>`).join('')}</select>
+						<button type="button" class="required-toggle" data-field="required" data-on="${q.required ? 'true':'false'}">${q.required?'必填 Required':'選填 Optional'}</button>
+						<button type="button" class="delete-question" title="Delete">✕</button>
+					</div>
+					<div class="q-row">
+						<label>Help</label>
+						<input type="text" value="${q.help ?? ''}" placeholder="Help text (optional)" data-field="help" />
+					</div>
+					<div class="options-wrapper"></div>
+				</div>
+			`;
+
+			const optWrapper = el.querySelector('.options-wrapper');
+			function renderOptions(){
+				const needs = ['select','radio','checkbox'].includes(q.type);
+				optWrapper.innerHTML='';
+				if(!needs) return;
+				if(!q.options) q.options = [];
+				const box = document.createElement('div');
+				box.className = 'options';
+				q.options.forEach((opt,i)=>{
+					const row = document.createElement('div');
+					row.className='option-item';
+					row.innerHTML = `<span style="cursor:grab" title="Drag option" data-role="opthandle">⋮⋮</span><input type="text" value="${opt}" data-idx="${i}" /><button type="button" data-role="delopt">刪除</button>`;
+					box.appendChild(row);
+				});
+				const addOpt = document.createElement('button');
+				addOpt.type='button';
+				addOpt.className='add-option';
+				addOpt.textContent = '+ 新增選項 (Add option)';
+				addOpt.addEventListener('click',()=>{ q.options.push(''); renderOptions();});
+				box.appendChild(addOpt);
+				optWrapper.appendChild(box);
+
+				// Option events
+				box.addEventListener('input', e => {
+					const target = e.target as HTMLElement;
+					if(target && target.matches('input[data-idx]')){
+						const input = target as HTMLInputElement;
+						const i = +(input.dataset.idx || '0');
+						q.options[i] = input.value;
+					}
+				});
+				box.addEventListener('click', e => {
+					const target = e.target as HTMLElement;
+					if(target && target.matches('button[data-role=delopt]')){
+						const row = target.closest('.option-item');
+						const idx = [...row.parentNode.children].indexOf(row);
+						q.options.splice(idx,1);
+						renderOptions();
+					}
+				});
+			}
+			renderOptions();
+
+			// Field changes
+			el.addEventListener('input', e => {
+				const target = e.target as HTMLElement;
+				if(!target) return;
+				const field = (target as any).dataset?.field;
+				if(!field) return;
+				q[field] = (target as HTMLInputElement).value;
+				if(field==='type'){ // reset options if type changed
+					if(!['select','radio','checkbox'].includes(q.type)) delete q.options;
+					renderOptions();
+				}
+			});
+			el.addEventListener('click', e => {
+				const target = e.target as HTMLElement;
+				if(!target) return;
+				if(target.classList.contains('required-toggle')){
+					q.required = !q.required;
+					target.dataset.on = q.required ? 'true':'false';
+					target.textContent = q.required ? '必填 Required' : '選填 Optional';
+				}
+				if(target.classList.contains('delete-question')){
+					questions = questions.filter(x=>x.id!==q.id);
+					render();
+				}
+			});
+
+			// Drag hooks (delegated at container for performance)
+			el.addEventListener('dragstart', e => {
+				el.classList.add('dragging');
+				e.dataTransfer.effectAllowed='move';
+				e.dataTransfer.setData('text/plain', q.id);
+			});
+			el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+			return el;
+		}
+
+		function getDragAfterElement(container, y){
+			const els = [...container.querySelectorAll('.question:not(.dragging)')];
+			return els.reduce((closest, child)=>{
+				const box = child.getBoundingClientRect();
+				const offset = y - box.top - box.height/2;
+				if(offset < 0 && offset > closest.offset){
+					return {offset, element: child};
+				} else {
+					return closest;
+				}
+			},{offset: Number.NEGATIVE_INFINITY}).element;
+		}
+
+		// Single container-level dragover/drop to avoid N listeners & thrash
+		let dragOverScheduled = false;
+		questionsEl.addEventListener('dragover', e => {
+			if(!document.querySelector('.question.dragging')) return; // no active drag
+			e.preventDefault();
+			if(dragOverScheduled) return;
+			dragOverScheduled = true;
+			requestAnimationFrame(()=>{
+				dragOverScheduled = false;
+				const after = getDragAfterElement(questionsEl, e.clientY);
+				const dragging = document.querySelector('.question.dragging');
+				if(!dragging) return;
+				if(after == null) {
+					questionsEl.appendChild(dragging);
+				} else if(after !== dragging) {
+					questionsEl.insertBefore(dragging, after);
+				}
+			});
+		});
+		questionsEl.addEventListener('drop', () => {
+			// Update underlying array based on current DOM order (no full re-render needed)
+			const ids = [...questionsEl.querySelectorAll('.question')].map(n => (n as HTMLElement).dataset.id);
+			questions.sort((a,b)=> ids.indexOf(a.id)-ids.indexOf(b.id));
+			// Optionally, could update preview/output if open; do nothing else for perf.
+		});
+
+		addBtn.addEventListener('click', () => {
+			questions.push({ id: crypto.randomUUID(), label: 'New Question', type: 'text', required: false });
+			render();
+		});
+
+		saveBtn.addEventListener('click', () => {
+			const data = JSON.stringify(questions, null, 2);
+			outputEl.textContent = data;
+			console.log('[FormEditor] Saved questions', questions);
+		});
+
+		render();
+	</script>
 </Layout>

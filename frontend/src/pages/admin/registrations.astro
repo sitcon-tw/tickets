@@ -19,10 +19,244 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<link rel="stylesheet" href="/src/styles/admin.css" />
 	<AdminNav />
-	<main>
-		<h1>報名列表</h1>
+	<main class="admin-main">
+		<h1>報名列表 (Registrations)</h1>
+		<section class="controls">
+			<div class="row filters">
+				<input id="search" type="text" placeholder="🔍 搜尋 (Search)..." />
+				<select id="statusFilter">
+					<option value="">全部狀態 (All statuses)</option>
+					<option value="confirmed">Confirmed</option>
+					<option value="pending">Pending</option>
+					<option value="cancelled">Cancelled</option>
+				</select>
+				<select id="limitSelect" title="Rows per page">
+					<option>20</option>
+					<option>50</option>
+					<option>100</option>
+				</select>
+				<button id="refresh" type="button">↻ 重新整理 (Refresh)</button>
+				<button id="syncSheets" type="button" class="secondary">📝 同步到 Google Sheets (Sync)</button>
+			</div>
+			<div class="row cols">
+				<label>欄位 (Columns):</label>
+				<div id="columnToggles" class="toggles"></div>
+			</div>
+		</section>
+		<section class="table-wrapper">
+			<div id="loading" class="loading">Loading...</div>
+				<table id="regTable" class="reg-table admin-table" hidden>
+				<thead><tr id="theadRow"></tr></thead>
+				<tbody id="tbody"></tbody>
+			</table>
+			<div id="empty" class="empty" hidden>沒有資料 (No data)</div>
+		</section>
+		<section class="meta">
+			<div id="metaInfo" class="meta-info"></div>
+		</section>
 	</main>
 
-	<style></style>
+	<style>
+		.controls {margin:1rem 0;display:flex;flex-direction:column;gap:.75rem;}
+		.controls .row {display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+		.controls input, .controls select {background:#111;border:1px solid #333;color:#eee;border-radius:6px;padding:6px 10px;font-size:.85rem;}
+		.controls button {background:#1f1f1f;border:1px solid #444;color:#eee;border-radius:6px;padding:6px 12px;font-size:.8rem;cursor:pointer;}
+		.controls button:hover {background:#2a2a2a;}
+		.controls button.secondary {background:#24324a;border-color:#355079;}
+		.controls button.secondary:hover {background:#355079;}
+		.toggles {display:flex;flex-wrap:wrap;gap:.4rem;}
+		.toggles .toggle {background:#222;border:1px solid #444;padding:4px 8px;font-size:.65rem;display:inline-flex;gap:4px;align-items:center;border-radius:999px;cursor:pointer;}
+		.toggles .toggle[data-on="false"] {opacity:.45;}
+		.table-wrapper {position:relative;}
+		.loading {padding:2rem;text-align:center;opacity:.7;}
+		.empty {padding:2rem;text-align:center;opacity:.5;font-style:italic;}
+		.reg-table {width:100%;border-collapse:separate;border-spacing:0;font-size:.75rem;}
+		.reg-table thead th {position:sticky;top:0;background:#161616;padding:8px 10px;text-align:left;font-weight:600;border-bottom:1px solid #333;z-index:2;}
+		.reg-table tbody td {padding:6px 10px;border-bottom:1px solid #222;vertical-align:top;}
+		.reg-table tbody tr:hover {background:#191919;}
+		.label-pill {display:inline-block;background:#222;border:1px solid #333;padding:2px 6px;border-radius:6px;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;}
+		.status-confirmed {color:#4ade80;}
+		.status-pending {color:#fbbf24;}
+		.status-cancelled {color:#f87171;}
+		.meta-info {margin:1rem 0;font-size:.7rem;opacity:.75;}
+		.truncate {max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+		.flex-col {display:flex;flex-direction:column;gap:2px;}
+		@media (max-width:900px){
+			.reg-table {font-size:.65rem;}
+			.truncate {max-width:120px;}
+		}
+	</style>
+
+	<script>
+		// Column definitions (id -> label + value accessor)
+		const columnDefs = [
+			{ id: 'id', label: 'ID', accessor: r => r.id },
+			{ id: 'email', label: 'Email', accessor: r => r.email || r.formData?.Email || '' },
+			{ id: 'phone', label: 'Phone', accessor: r => r.phone || r.formData?.Phone || '' },
+			{ id: 'status', label: 'Status', accessor: r => r.status },
+			{ id: 'ticket', label: 'Ticket', accessor: r => r.ticket?.name || '' },
+			{ id: 'event', label: 'Event', accessor: r => r.ticket?.event?.name || '' },
+			{ id: 'createdAt', label: 'Created', accessor: r => (r.createdAt ? new Date(r.createdAt).toLocaleString() : '') },
+			{ id: 'tags', label: 'Tags', accessor: r => Array.isArray(r.tags) ? r.tags.join(', ') : '' },
+		];
+
+		let activeColumns = new Set(['id','email','status','ticket','event','createdAt']);
+		let registrations = [];
+		let filtered = [];
+
+		const searchEl = document.getElementById('search') as HTMLInputElement;
+		const statusEl = document.getElementById('statusFilter') as HTMLSelectElement;
+		const limitEl = document.getElementById('limitSelect') as HTMLSelectElement;
+		const refreshBtn = document.getElementById('refresh') as HTMLButtonElement;
+		const syncBtn = document.getElementById('syncSheets') as HTMLButtonElement;
+		const columnTogglesEl = document.getElementById('columnToggles');
+		const table = document.getElementById('regTable');
+		const theadRow = document.getElementById('theadRow');
+		const tbody = document.getElementById('tbody');
+		const loadingEl = document.getElementById('loading');
+		const emptyEl = document.getElementById('empty');
+		const metaInfo = document.getElementById('metaInfo');
+
+		function buildColumnToggles(){
+			columnTogglesEl.innerHTML='';
+			columnDefs.forEach(col => {
+				const btn = document.createElement('button');
+				btn.type='button';
+				btn.className='toggle';
+				btn.dataset.on = activeColumns.has(col.id)?'true':'false';
+				btn.textContent = col.label;
+				btn.addEventListener('click', () => {
+					if(activeColumns.has(col.id)) activeColumns.delete(col.id); else activeColumns.add(col.id);
+					btn.dataset.on = activeColumns.has(col.id)?'true':'false';
+					renderTable();
+				});
+				columnTogglesEl.appendChild(btn);
+			});
+		}
+
+		function fetchData(){
+			loadingEl.hidden = false;
+			emptyEl.hidden = true;
+			table.hidden = true;
+			metaInfo.textContent='';
+			const limit = parseInt(limitEl.value,10) || 20;
+			const status = statusEl.value;
+			const qs = new URLSearchParams({ limit: String(limit) });
+			if(status) qs.set('status', status);
+			if(searchEl.value.trim()) qs.set('search', searchEl.value.trim());
+			return fetch(`/admin/registrations?${qs.toString()}`)
+				.then(r=> r.ok ? r.json() : Promise.reject(new Error('Network')))
+				.then(data => {
+					registrations = Array.isArray(data.data) ? data.data : data;
+				})
+				.catch(()=>{
+					// fallback mock data
+					registrations = mockData();
+				})
+				.finally(()=>{
+					loadingEl.hidden = true;
+					applyFilters();
+				});
+		}
+
+		function mockData(){
+			const now = Date.now();
+			const statuses = ['confirmed','pending','cancelled'];
+			return Array.from({length: 27}).map((_,i)=> ({
+				id: 'R'+(1000+i),
+				email: `user${i}@example.com`,
+				phone: '09' + Math.floor(100000000 + Math.random()*899999999),
+				status: statuses[i%3],
+				createdAt: new Date(now - i*86400000).toISOString(),
+				ticket: { id: 'T'+(i%5), name: ['General','Student','VIP','Staff','Media'][i%5], event: { id: 'E1', name: 'Annual Conf 2026' } },
+				tags: i%4===0? ['early'] : (i%7===0? ['vip'] : [])
+			}));
+		}
+
+		function applyFilters(){
+			const q = searchEl.value.trim().toLowerCase();
+			const status = statusEl.value;
+			filtered = registrations.filter(r => {
+				if(status && r.status !== status) return false;
+				if(q){
+					const hay = JSON.stringify(r).toLowerCase();
+					if(!hay.includes(q)) return false;
+				}
+				return true;
+			});
+			renderTable();
+		}
+
+		function renderTable(){
+			// headers
+			theadRow.innerHTML='';
+			[...activeColumns].forEach(cid => {
+				const col = columnDefs.find(c=>c.id===cid);
+				if(!col) return;
+				const th = document.createElement('th');
+				th.textContent = col.label;
+				theadRow.appendChild(th);
+			});
+
+			// body
+			tbody.innerHTML='';
+			if(!filtered.length){
+				table.hidden = true;
+				emptyEl.hidden = false;
+				metaInfo.textContent = '0 rows';
+				return;
+			}
+			filtered.forEach(r => {
+				const tr = document.createElement('tr');
+				[...activeColumns].forEach(cid => {
+					const col = columnDefs.find(c=>c.id===cid);
+					const td = document.createElement('td');
+					let val = col.accessor(r);
+					if(cid==='status'){
+						const span = document.createElement('span');
+						span.className = 'label-pill status-'+r.status;
+						span.textContent = val;
+						val = span;
+					}
+					if(typeof val === 'string'){
+						const div = document.createElement('div');
+						div.className='truncate';
+						div.textContent= val;
+						val = div;
+					}
+					td.appendChild(val); // val is Node
+					tr.appendChild(td);
+				});
+				tbody.appendChild(tr);
+			});
+			table.hidden = false;
+			emptyEl.hidden = true;
+			metaInfo.textContent = `${filtered.length} rows | Showing columns: ${[...activeColumns].join(', ')}`;
+		}
+
+		// Events
+		searchEl.addEventListener('input', debounce(()=> applyFilters(), 250));
+		statusEl.addEventListener('change', applyFilters);
+		limitEl.addEventListener('change', fetchData);
+		refreshBtn.addEventListener('click', fetchData);
+		syncBtn.addEventListener('click', () => {
+			syncBtn.disabled = true;
+			syncBtn.textContent = '同步中... (Syncing...)';
+			setTimeout(()=>{
+				console.log('[Registrations] Sync to Google Sheets stub triggered', { rows: filtered.length });
+				syncBtn.disabled = false;
+				syncBtn.textContent = '📝 同步到 Google Sheets (Sync)';
+				alert('Stub: 已模擬同步 '+ filtered.length +' 筆資料 (Simulated sync)');
+			}, 1200);
+		});
+
+		function debounce(fn, wait){
+			let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
+		}
+
+		buildColumnToggles();
+		fetchData();
+	</script>
 </Layout>

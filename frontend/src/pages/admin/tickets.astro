@@ -29,11 +29,10 @@ const l = i18n.l(Astro.url);
 					<thead>
 						<tr>
 							<th>票種</th>
-							<th>販售時間</th>
+							<th>開始時間</th>
+							<th>結束時間</th>
 							<th>狀態</th>
-							<th>數量</th>
-							<th>剩餘</th>
-							<th>無效票</th>
+							<th>總數量</th>
 							<th>操作</th>
 						</tr>
 					</thead>
@@ -55,86 +54,65 @@ const l = i18n.l(Astro.url);
 	<template id="ticket-row-template">
 		<tr>
 			<td data-label="票種" class="ticket-name">
-				<span class="display-value"></span>
-				<input type="text" class="edit-input" style="display: none;" />
+				<span class="display-value ticket-label"></span>
 			</td>
-			<td data-label="販售時間" class="time-cell">
-				<span class="display-value"></span>
-				<input type="text" class="edit-input" style="display: none;" />
+			<td data-label="開始時間" class="time-cell">
+				<span class="display-value sale-start"></span>
 			</td>
-			<td data-label="狀態">
-				<span class="display-value">
-					<span class="status-badge"></span>
-				</span>
-				<select class="edit-input none" style="display: none;">
-					<option value="販售中">販售中</option>
-					<option value="結束販售">結束販售</option>
-				</select>
+			<td data-label="結束時間" class="time-cell">
+				<span class="display-value sale-end"></span>
 			</td>
-			<td data-label="數量">
-				<span class="display-value"></span>
-				<input type="text" class="edit-input" style="display: none;" />
+			<td data-label="狀態" class="status-cell">
+				<span class="display-value"><span class="status-badge"></span></span>
 			</td>
-			<td data-label="剩餘">
-				<span class="display-value"></span>
-				<input type="number" class="edit-input" style="display: none;" />
-			</td>
-			<td data-label="無效票">
-				<span class="display-value"></span>
-				<input type="number" class="edit-input" style="display: none;" />
+			<td data-label="總數量" class="quantity">
+				<span class="display-value quantity-value"></span>
 			</td>
 			<td data-label="操作" class="actions-cell">
 				<div class="action-buttons">
-					<button class="edit-btn button">編輯</button>
-					<button class="save-btn button" style="display: none;">儲存</button>
-					<button class="cancel-btn button" style="display: none;">取消</button>
-					<button class="delete-btn button delete">刪除</button>
+					<button class="edit-btn button" data-action="edit">編輯</button>
+					<button class="delete-btn button delete" data-action="delete">刪除</button>
 				</div>
 			</td>
 		</tr>
 	</template>
 
-	<template id="new-ticket-row-template">
-		<tr data-editing="true">
-			<td data-label="票種" class="ticket-name">
-				<span class="display-value" style="display: none;">新票種</span>
-				<input type="text" class="edit-input" value="新票種" placeholder="輸入票種名稱" />
-			</td>
-			<td data-label="販售時間" class="time-cell">
-				<span class="display-value" style="display: none;">2025/01/01 00:00 ~ 2025/12/31 23:59</span>
-				<input type="text" class="edit-input" value="2025/01/01 00:00 ~ 2025/12/31 23:59" placeholder="販售時間" />
-			</td>
-			<td data-label="狀態">
-				<span class="display-value" style="display: none;">
-					<span class="status-badge active">販售中</span>
-				</span>
-				<select class="edit-input">
-					<option value="販售中" selected>販售中</option>
-					<option value="結束販售">結束販售</option>
-				</select>
-			</td>
-			<td data-label="數量">
-				<span class="display-value" style="display: none;">0</span>
-				<input type="text" class="edit-input" value="0" placeholder="票券數量" />
-			</td>
-			<td data-label="剩餘">
-				<span class="display-value" style="display: none;">0</span>
-				<input type="number" class="edit-input" value="0" placeholder="剩餘數量" />
-			</td>
-			<td data-label="無效票">
-				<span class="display-value" style="display: none;">0</span>
-				<input type="number" class="edit-input" value="0" placeholder="無效票數" />
-			</td>
-			<td data-label="操作" class="actions-cell">
-				<div class="action-buttons">
-					<button class="edit-btn button" style="display: none;">編輯</button>
-					<button class="save-btn button">儲存</button>
-					<button class="cancel-btn button">取消</button>
-					<button class="delete-btn button delete">刪除</button>
+	<!-- Template kept for structural reference (not used for editing anymore) -->
+	<template id="new-ticket-row-template"></template>
+
+	<!-- Modal for Add/Edit Ticket -->
+	<div id="ticket-modal-overlay" class="modal-overlay" style="display:none;">
+		<div class="modal" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
+			<h2 id="ticket-modal-title">編輯票種</h2>
+			<form id="ticket-form">
+				<div class="form-grid">
+					<label>
+						<span>票種名稱</span>
+						<input id="ticket-name-input" name="name" type="text" required placeholder="輸入票種名稱" />
+					</label>
+					<label>
+						<span>開始時間</span>
+						<input id="ticket-start-input" name="saleStart" type="datetime-local" />
+					</label>
+					<label>
+						<span>結束時間</span>
+						<input id="ticket-end-input" name="saleEnd" type="datetime-local" />
+					</label>
+					<label>
+						<span>總數量 (留空=不限定)</span>
+						<input id="ticket-quantity-input" name="quantity" type="number" min="0" />
+					</label>
+					<div class="status-readonly">
+						<span>狀態：</span><span id="ticket-status-display" class="status-badge"></span>
+					</div>
 				</div>
-			</td>
-		</tr>
-	</template>
+				<div class="modal-actions">
+					<button type="submit" class="button primary" id="ticket-save-btn">儲存</button>
+					<button type="button" class="button" id="ticket-cancel-btn">取消</button>
+				</div>
+			</form>
+		</div>
+	</div>
 
 	<script is:inline>
 		// Demo ticket data - fetch from frontend
@@ -142,112 +120,79 @@ const l = i18n.l(Astro.url);
 			{
 				id: 1,
 				name: "學生票（第二波）",
-				saleTime: "2025/02/09 20:00 ~ 2025/11/01 00:00",
-				status: "販售中",
-				total: 426,
-				soldCount: 426,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2025-02-09T20:00",
+				saleEnd: "2025-11-01T00:00",
+				quantity: 426
 			},
 			{
 				id: 2,
 				name: "普通票（第二波）",
-				saleTime: "2025/02/09 20:00 ~ 2025/02/22 23:59",
-				status: "結束販售",
-				total: 47,
-				soldCount: 47,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2025-02-09T20:00",
+				saleEnd: "2025-02-22T23:59",
+				quantity: 47
 			},
 			{
 				id: 3,
 				name: "小石放煙火",
-				saleTime: "2025/01/01 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: 10,
-				soldCount: 10,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2025-01-01T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: 10
 			},
 			{
 				id: 4,
 				name: "學生票（第一波）",
-				saleTime: "2025/01/12 20:00 ~ 2025/01/25 23:59",
-				status: "結束販售",
-				total: 530,
-				soldCount: 530,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2025-01-12T20:00",
+				saleEnd: "2025-01-25T23:59",
+				quantity: 530
 			},
 			{
 				id: 5,
 				name: "一般票（第一波）",
-				saleTime: "2025/01/12 20:00 ~ 2025/01/25 23:59",
-				status: "結束販售",
-				total: 70,
-				soldCount: 70,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2025-01-12T20:00",
+				saleEnd: "2025-01-25T23:59",
+				quantity: 70
 			},
 			{
 				id: 6,
 				name: "講者邀請票",
-				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: 90,
-				soldCount: 90,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2024-12-21T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: 90
 			},
 			{
 				id: 7,
 				name: "邀請票",
-				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: "不限定數量",
-				soldCount: "不限定數量",
-				remaining: 0,
-				invalid: 0
+				saleStart: "2024-12-21T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: "不限定數量"
 			},
 			{
 				id: 8,
 				name: "邀請票（遠道而來票）",
-				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: 100,
-				soldCount: 100,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2024-12-21T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: 100
 			},
 			{
 				id: 9,
 				name: "邀請票（SITCON x OSCVPass 開源貢獻票）",
-				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: 100,
-				soldCount: 100,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2024-12-21T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: 100
 			},
 			{
 				id: 10,
 				name: "邀請票（CfP 抽獎活動）",
-				saleTime: "2024/12/21 00:00 ~ 2025/02/01 23:59",
-				status: "結束販售",
-				total: 20,
-				soldCount: 20,
-				remaining: 0,
-				invalid: 0
+				saleStart: "2024-12-21T00:00",
+				saleEnd: "2025-02-01T23:59",
+				quantity: 20
 			},
 			{
 				id: 11,
 				name: "測試票",
-				saleTime: "~ 2026/03/07 00:00",
-				status: "販售中",
-				total: "不限定數量",
-				soldCount: 0,
-				remaining: "不限定數量",
-				invalid: 0
+				saleStart: "2025-01-01T00:00",
+				saleEnd: "2026-03-07T00:00",
+				quantity: "不限定數量"
 			}
 		];
 
@@ -268,24 +213,24 @@ const l = i18n.l(Astro.url);
 
 			bindEvents() {
 				// Add ticket button
-				document.getElementById("add-ticket-btn").addEventListener("click", () => {
-					this.addNewTicket();
-				});
-
-				// Delegate events for dynamic content
+				document.getElementById("add-ticket-btn").addEventListener("click", () => this.addNewTicket());
+				// Table actions
 				document.getElementById("tickets-tbody").addEventListener("click", e => {
-					const button = e.target.closest("button");
-					if (!button) return;
-
-					if (button.classList.contains("edit-btn")) {
-						this.editRow(button);
-					} else if (button.classList.contains("save-btn")) {
-						this.saveRow(button);
-					} else if (button.classList.contains("cancel-btn")) {
-						this.cancelEdit(button);
-					} else if (button.classList.contains("delete-btn")) {
-						this.deleteRow(button);
-					}
+					const btn = e.target.closest("button[data-action]");
+					if (!btn) return;
+					const action = btn.dataset.action;
+					if (action === "edit") this.editRow(btn);
+					if (action === "delete") this.deleteRow(btn);
+				});
+				// Modal form
+				document.getElementById("ticket-form").addEventListener("submit", e => {
+					e.preventDefault();
+					this.saveFromModal();
+				});
+				document.getElementById("ticket-cancel-btn").addEventListener("click", () => this.closeModal());
+				// Overlay click close (outside modal)
+				document.getElementById("ticket-modal-overlay").addEventListener("click", e => {
+					if (e.target.id === "ticket-modal-overlay") this.closeModal();
 				});
 			}
 
@@ -302,102 +247,51 @@ const l = i18n.l(Astro.url);
 			createTicketRow(ticket) {
 				const template = document.getElementById("ticket-row-template");
 				const row = template.content.cloneNode(true).querySelector("tr");
-
 				row.dataset.ticketId = ticket.id;
-
-				// Fill in the data
 				const cells = row.querySelectorAll("td");
-				cells[0].querySelector(".display-value").textContent = ticket.name;
-				cells[0].querySelector(".edit-input").value = ticket.name;
-
-				cells[1].querySelector(".display-value").textContent = ticket.saleTime;
-				cells[1].querySelector(".edit-input").value = ticket.saleTime;
-
-				const statusBadge = cells[2].querySelector(".status-badge");
-				statusBadge.textContent = ticket.status;
-				statusBadge.className = `status-badge ${ticket.status === "販售中" ? "active" : "ended"}`;
-				const select = cells[2].querySelector("select");
-				select.value = ticket.status;
-
-				cells[3].querySelector(".display-value").textContent = ticket.total;
-				cells[3].querySelector(".edit-input").value = ticket.total;
-
-				cells[4].querySelector(".display-value").textContent = ticket.remaining;
-				cells[4].querySelector(".edit-input").value = ticket.remaining;
-
-				cells[5].querySelector(".display-value").textContent = ticket.invalid;
-				cells[5].querySelector(".edit-input").value = ticket.invalid;
-
+				cells[0].querySelector(".ticket-label").textContent = ticket.name;
+				cells[1].querySelector(".sale-start").textContent = ticket.saleStart ? this.formatDateTime(ticket.saleStart) : "";
+				cells[2].querySelector(".sale-end").textContent = ticket.saleEnd ? this.formatDateTime(ticket.saleEnd) : "";
+				const statusBadge = cells[3].querySelector(".status-badge");
+				const status = this.computeStatus(ticket);
+				statusBadge.textContent = status.label;
+				statusBadge.className = `status-badge ${status.class}`;
+				cells[4].querySelector(".quantity-value").textContent = ticket.quantity;
 				return row;
 			}
 
 			editRow(button) {
-				// Cancel any existing edit
-				if (this.editingRow) {
-					this.cancelEdit(this.editingRow.querySelector(".cancel-btn"));
-				}
-
-				const row = button.closest("tr");
-				this.editingRow = row;
-				row.setAttribute("data-editing", "true");
-
-				// Store original data
-				this.storeOriginalData(row);
-
-				// Toggle display/edit mode
-				this.toggleEditMode(row, true);
-			}
-
-			saveRow(button) {
 				const row = button.closest("tr");
 				const ticketId = parseInt(row.dataset.ticketId);
-
-				// Get updated data
-				const updatedTicket = this.getRowData(row);
-
-				if (ticketId) {
-					// Update existing ticket
-					const ticketIndex = this.tickets.findIndex(t => t.id === ticketId);
-					if (ticketIndex !== -1) {
-						this.tickets[ticketIndex] = { ...this.tickets[ticketIndex], ...updatedTicket };
-					}
-					console.log("Updating ticket:", this.tickets[ticketIndex]);
-				} else {
-					// Save new ticket
-					if (!updatedTicket.name.trim()) {
-						alert("請輸入票種名稱");
-						row.querySelector(".edit-input").focus();
-						return;
-					}
-
-					const newTicket = { id: this.nextId++, ...updatedTicket };
-					this.tickets.push(newTicket);
-					row.dataset.ticketId = newTicket.id;
-					console.log("Creating new ticket:", newTicket);
-				}
-
-				// Update display values and exit edit mode
-				this.updateDisplayValues(row);
-				this.toggleEditMode(row, false);
-				this.editingRow = null;
+				const ticket = this.tickets.find(t => t.id === ticketId);
+				this.openModal(ticket);
 			}
 
-			cancelEdit(button) {
-				const row = button.closest("tr");
-				const ticketId = row.dataset.ticketId;
-
-				if (!ticketId) {
-					// Remove new ticket row
-					row.remove();
-				} else {
-					// Restore original data
-					this.restoreOriginalData(row);
-					this.toggleEditMode(row, false);
+			saveFromModal() {
+				const name = document.getElementById("ticket-name-input").value.trim();
+				const saleStart = document.getElementById("ticket-start-input").value || null;
+				const saleEnd = document.getElementById("ticket-end-input").value || null;
+				const quantityRaw = document.getElementById("ticket-quantity-input").value;
+				if (!name) {
+					alert("請輸入票種名稱");
+					return;
 				}
-
-				this.editingRow = null;
-				this.originalData = {};
+				const quantity = quantityRaw === "" ? "不限定數量" : parseInt(quantityRaw);
+				if (saleStart && saleEnd && new Date(saleStart) > new Date(saleEnd)) {
+					alert("開始時間不可晚於結束時間");
+					return;
+				}
+				if (this.currentEditingId) {
+					const idx = this.tickets.findIndex(t => t.id === this.currentEditingId);
+					if (idx !== -1) this.tickets[idx] = { ...this.tickets[idx], name, saleStart, saleEnd, quantity };
+				} else {
+					this.tickets.push({ id: this.nextId++, name, saleStart, saleEnd, quantity });
+				}
+				this.renderTickets();
+				this.closeModal();
 			}
+
+			// Removed inline cancelEdit logic; modal handles cancel via closeModal
 
 			deleteRow(button) {
 				if (!confirm("確定要刪除這個票種嗎？")) return;
@@ -414,94 +308,80 @@ const l = i18n.l(Astro.url);
 			}
 
 			addNewTicket() {
-				if (this.editingRow) {
-					this.cancelEdit(this.editingRow.querySelector(".cancel-btn"));
-				}
-
-				const template = document.getElementById("new-ticket-row-template");
-				const row = template.content.cloneNode(true).querySelector("tr");
-
-				const tbody = document.getElementById("tickets-tbody");
-				tbody.appendChild(row);
-
-				this.editingRow = row;
-
-				// Focus on first input
-				row.querySelector(".edit-input").focus();
+				this.openModal(null);
 			}
 
-			toggleEditMode(row, isEditing) {
-				const displayValues = row.querySelectorAll(".display-value");
-				const editInputs = row.querySelectorAll(".edit-input");
-				const editBtn = row.querySelector(".edit-btn");
-				const saveBtn = row.querySelector(".save-btn");
-				const cancelBtn = row.querySelector(".cancel-btn");
+			// (Old inline edit helpers removed)
 
-				displayValues.forEach(el => (el.style.display = isEditing ? "none" : "block"));
-				editInputs.forEach(el => (el.style.display = isEditing ? "block" : "none"));
+			openModal(ticket) {
+				this.currentEditingId = ticket ? ticket.id : null;
+				const overlay = document.getElementById("ticket-modal-overlay");
+				const title = document.getElementById("ticket-modal-title");
+				const nameInput = document.getElementById("ticket-name-input");
+				const startInput = document.getElementById("ticket-start-input");
+				const endInput = document.getElementById("ticket-end-input");
+				const quantityInput = document.getElementById("ticket-quantity-input");
+				const statusDisplay = document.getElementById("ticket-status-display");
 
-				editBtn.style.display = isEditing ? "none" : "inline-block";
-				saveBtn.style.display = isEditing ? "inline-block" : "none";
-				cancelBtn.style.display = isEditing ? "inline-block" : "none";
-
-				if (isEditing) {
-					row.setAttribute("data-editing", "true");
+				if (ticket) {
+					title.textContent = "編輯票種";
+					nameInput.value = ticket.name;
+					startInput.value = ticket.saleStart || "";
+					endInput.value = ticket.saleEnd || "";
+					quantityInput.value = ticket.quantity === "不限定數量" ? "" : ticket.quantity;
+					const status = this.computeStatus(ticket);
+					statusDisplay.textContent = status.label;
+					statusDisplay.className = `status-badge ${status.class}`;
 				} else {
-					row.removeAttribute("data-editing");
+					title.textContent = "新增票種";
+					nameInput.value = "";
+					startInput.value = "";
+					endInput.value = "";
+					quantityInput.value = "";
+					statusDisplay.textContent = "--";
+					statusDisplay.className = "status-badge";
 				}
+
+				overlay.style.display = "flex";
+				nameInput.focus();
 			}
 
-			storeOriginalData(row) {
-				const cells = row.querySelectorAll("td");
-				this.originalData = {};
-				cells.forEach((cell, index) => {
-					const displayValue = cell.querySelector(".display-value");
-					if (displayValue) {
-						this.originalData[index] = displayValue.innerHTML;
-					}
-				});
+			closeModal() {
+				document.getElementById("ticket-modal-overlay").style.display = "none";
+				this.currentEditingId = null;
 			}
 
-			restoreOriginalData(row) {
-				const cells = row.querySelectorAll("td");
-				cells.forEach((cell, index) => {
-					const displayValue = cell.querySelector(".display-value");
-					if (displayValue && this.originalData[index]) {
-						displayValue.innerHTML = this.originalData[index];
-					}
-				});
+			renderTickets() {
+				const tbody = document.getElementById("tickets-tbody");
+				tbody.innerHTML = "";
+				this.tickets.forEach(t => tbody.appendChild(this.createTicketRow(t)));
 			}
 
-			getRowData(row) {
-				const inputs = row.querySelectorAll(".edit-input");
-				return {
-					name: inputs[0].value,
-					saleTime: inputs[1].value,
-					status: inputs[2].value,
-					total: inputs[3].value,
-					remaining: parseInt(inputs[4].value) || 0,
-					invalid: parseInt(inputs[5].value) || 0
-				};
+			computeStatus(ticket) {
+				const now = new Date();
+				if (ticket.saleStart && new Date(ticket.saleStart) > now) {
+					return { label: "尚未開始", class: "pending" };
+				}
+				if (ticket.saleEnd && new Date(ticket.saleEnd) < now) {
+					return { label: "結束販售", class: "ended" };
+				}
+				return { label: "販售中", class: "active" };
 			}
 
-			updateDisplayValues(row) {
-				const inputs = row.querySelectorAll(".edit-input");
-				const cells = row.querySelectorAll("td");
-
-				// Name
-				cells[0].querySelector(".display-value").textContent = inputs[0].value;
-				// Sale time
-				cells[1].querySelector(".display-value").textContent = inputs[1].value;
-				// Status
-				const statusBadge = cells[2].querySelector(".status-badge");
-				statusBadge.textContent = inputs[2].value;
-				statusBadge.className = `status-badge ${inputs[2].value === "販售中" ? "active" : "ended"}`;
-				// Total
-				cells[3].querySelector(".display-value").textContent = inputs[3].value;
-				// Remaining
-				cells[4].querySelector(".display-value").textContent = inputs[4].value;
-				// Invalid
-				cells[5].querySelector(".display-value").textContent = inputs[5].value;
+			formatDateTime(dt) {
+				if (!dt) return "";
+				try {
+					const d = new Date(dt);
+					if (Number.isNaN(d.getTime())) return dt;
+					const yyyy = d.getFullYear();
+					const mm = String(d.getMonth() + 1).padStart(2, "0");
+					const dd = String(d.getDate()).padStart(2, "0");
+					const hh = String(d.getHours()).padStart(2, "0");
+					const mi = String(d.getMinutes()).padStart(2, "0");
+					return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
+				} catch (e) {
+					return dt;
+				}
 			}
 		}
 
@@ -515,6 +395,91 @@ const l = i18n.l(Astro.url);
 	<style>
 		.ticket-overview {
 			margin-top: 2rem;
+		}
+
+		/* Modal styles */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+			padding: 1rem;
+		}
+		.modal {
+			background: var(--color-gray-800);
+			color: var(--color-gray-100);
+			border: 2px solid var(--color-gray-700);
+			border-radius: 12px;
+			padding: 1.5rem 1.75rem 1.75rem;
+			max-width: 640px;
+			width: 100%;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+		}
+		.modal h2 {
+			margin-top: 0;
+			font-size: 1.25rem;
+		}
+		.form-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem 1.25rem;
+			margin-top: 1rem;
+		}
+		.form-grid label {
+			display: flex;
+			flex-direction: column;
+			gap: 0.4rem;
+			font-size: 0.85rem;
+		}
+		.form-grid input {
+			padding: 0.5rem 0.6rem;
+			border: 1px solid var(--color-gray-600);
+			background: var(--color-gray-900);
+			color: inherit;
+			border-radius: 6px;
+			font-family: inherit;
+		}
+		.form-grid input:focus {
+			outline: none;
+			border-color: #ffc107;
+			box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.25);
+		}
+		.status-readonly {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-size: 0.9rem;
+		}
+		.modal-actions {
+			display: flex;
+			gap: 0.75rem;
+			margin-top: 1.5rem;
+			justify-content: flex-end;
+		}
+		.button.primary {
+			background: #ffc107;
+			border-color: #e0a800;
+			color: #2a2416;
+		}
+		.button.primary:hover {
+			background: #ffb507;
+		}
+		.status-badge.pending {
+			background: #fff3cd;
+			color: #856404;
+			border: 1px solid #ffe8a1;
+		}
+		/* Reuse existing .status-badge.active/.ended styles */
+		@media (max-width: 640px) {
+			.form-grid {
+				grid-template-columns: 1fr;
+			}
 		}
 
 		.ticket-overview h2 {

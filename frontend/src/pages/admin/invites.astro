@@ -19,10 +19,521 @@ const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+	<link rel="stylesheet" href="/src/styles/admin.css" />
 	<AdminNav />
-	<main>
-		<h1>邀請碼</h1>
+	<main class="admin-main">
+		<h1>邀請碼 (Invitation Codes)</h1>
+		<section class="toolbar admin-toolbar">
+			<button id="addType" type="button">➕ 新增邀請碼組 (Add)</button>
+			<button id="exportTypes" type="button" class="secondary">⬇️ 匯出類別 CSV (Export Types)</button>
+			<input id="searchTypes" type="text" placeholder="🔍 搜尋名稱 / 代碼" />
+		</section>
+		<section class="types-wrapper">
+			<div id="loading" class="loading">Loading...</div>
+			<table id="typesTable" hidden class="types-table admin-table">
+				<thead>
+					<tr>
+						<th>名稱 Name</th>
+						<th>總數 Total</th>
+						<th>已用 Used</th>
+						<th>剩餘 Remaining</th>
+						<th>建立時間 Created</th>
+						<th>動作 Actions</th>
+					</tr>
+				</thead>
+				<tbody id="typesBody"></tbody>
+			</table>
+			<div id="empty" hidden class="empty">無資料 (No data)</div>
+		</section>
+
+		<!-- Create/Edit Modal -->
+		<div id="modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+			<div class="modal-content" role="document">
+				<header class="modal-header">
+					<h2 id="modalTitle">新增邀請碼組</h2>
+					<button type="button" class="close" id="closeModal" aria-label="Close">✕</button>
+				</header>
+				<form id="typeForm" class="form">
+					<label
+						>名稱 Name
+						<input name="name" type="text" required placeholder="e.g. VIP Media" />
+					</label>
+					<label id="amountGroup"
+						>生成數量 Amount
+						<input name="amount" type="number" min="1" max="1000" value="10" required />
+					</label>
+					<div class="actions-row">
+						<button type="submit" class="primary" id="saveType">儲存 (Save)</button>
+						<button type="button" id="cancelModal">取消 (Cancel)</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Codes Modal -->
+		<div id="codesModal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+			<div class="modal-content large" role="document">
+				<header class="modal-header">
+					<h2 id="codesTitle">邀請碼列表</h2>
+					<button type="button" class="close" id="closeCodes" aria-label="Close">✕</button>
+				</header>
+				<div class="codes-toolbar">
+					<input id="searchCodes" type="text" placeholder="🔍 搜尋代碼 / 使用者" />
+					<button id="exportCodes" type="button" class="secondary">⬇️ 匯出 codes CSV</button>
+				</div>
+				<div class="codes-table-wrapper">
+					<table class="codes-table admin-table">
+						<thead>
+							<tr><th>代碼 Code</th><th>使用次數 Usage</th><th>限制 Limit</th><th>使用者 Used By</th><th>狀態 Status</th></tr>
+						</thead>
+						<tbody id="codesBody"></tbody>
+					</table>
+					<div id="codesEmpty" class="empty" hidden>無代碼 (No codes)</div>
+				</div>
+			</div>
+		</div>
 	</main>
 
-	<style></style>
+	<style>
+		.actions button {
+			background: #222;
+			border: 1px solid #444;
+			color: #ddd;
+			padding: 4px 8px;
+			border-radius: 4px;
+			font-size: 0.65rem;
+			cursor: pointer;
+		}
+		.actions button:hover {
+			background: #333;
+		}
+		.modal {
+			position: fixed;
+			inset: 0;
+			display: flex;
+			align-items: flex-start;
+			justify-content: center;
+			padding: 4vh 1rem;
+			background: #000a;
+			backdrop-filter: blur(4px);
+			overflow: auto;
+			z-index: 10;
+		}
+		.modal[hidden] {
+			display: none;
+		}
+		.modal-content {
+			background: #1a1a1a;
+			border: 1px solid #333;
+			border-radius: 10px;
+			padding: 1rem 1.2rem;
+			margin-bottom: 4rem;
+			max-width: 420px;
+			width: 100%;
+			box-shadow: 0 4px 24px -6px #000;
+			animation: pop 0.15s ease;
+		}
+		.modal-content.large {
+			max-width: 900px;
+		}
+		@keyframes pop {
+			from {
+				transform: translateY(8px);
+				opacity: 0;
+			}
+			to {
+				transform: translateY(0);
+				opacity: 1;
+			}
+		}
+		.modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 0.75rem;
+		}
+		.modal-header h2 {
+			font-size: 1rem;
+			margin: 0;
+		}
+		.close {
+			background: #2a2a2a;
+			border: 1px solid #444;
+			color: #ccc;
+			width: 32px;
+			height: 32px;
+			border-radius: 8px;
+			cursor: pointer;
+		}
+		.close:hover {
+			background: #333;
+			color: #fff;
+		}
+		.form {
+			display: flex;
+			flex-direction: column;
+			gap: 0.85rem;
+		}
+		.form label {
+			display: flex;
+			flex-direction: column;
+			gap: 0.3rem;
+			font-size: 0.65rem;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: #bbb;
+		}
+		.form input {
+			background: #111;
+			border: 1px solid #333;
+			color: #eee;
+			border-radius: 6px;
+			padding: 8px 10px;
+			font-size: 0.8rem;
+		}
+		.form .actions-row {
+			display: flex;
+			gap: 0.5rem;
+		}
+		.form button {
+			background: #222;
+			border: 1px solid #444;
+			color: #eee;
+			border-radius: 6px;
+			padding: 8px 14px;
+			font-size: 0.75rem;
+			cursor: pointer;
+		}
+		.form button.primary {
+			background: #155e29;
+			border-color: #1d7b34;
+		}
+		.form button.primary:hover {
+			background: #1d7b34;
+		}
+		.codes-toolbar {
+			display: flex;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+			margin-bottom: 0.75rem;
+		}
+		.codes-toolbar input {
+			background: #111;
+			border: 1px solid #333;
+			color: #eee;
+			border-radius: 6px;
+			padding: 6px 10px;
+			font-size: 0.75rem;
+		}
+		.codes-toolbar button {
+			background: #222;
+			border: 1px solid #444;
+			color: #eee;
+			border-radius: 6px;
+			padding: 6px 12px;
+			font-size: 0.65rem;
+			cursor: pointer;
+		}
+		.codes-table-wrapper {
+			max-height: 60vh;
+			overflow: auto;
+			border: 1px solid #222;
+			border-radius: 8px;
+		}
+		.status-pill {
+			display: inline-block;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 0.55rem;
+			background: #222;
+			border: 1px solid #333;
+		}
+		.status-pill.active {
+			color: #4ade80;
+		}
+		.status-pill.usedup {
+			color: #f87171;
+		}
+		@media (max-width: 900px) {
+			.modal-content.large {
+				max-width: 100%;
+			}
+		}
+	</style>
+
+	<script>
+		// In-memory mock structures
+		/** InviteType: { id, name, createdAt, codes: InviteCode[] } */
+		/** InviteCode: { id, code, usedCount, usageLimit, usedBy?: string, active: boolean } */
+		let inviteTypes = [];
+		let filteredTypes = [];
+		let currentEditing = null; // type id
+		let viewingCodesOf = null; // type id
+		const searchTypesEl = document.getElementById("searchTypes") as HTMLInputElement;
+		const typesBody = document.getElementById("typesBody") as HTMLTableSectionElement;
+		const typesTable = document.getElementById("typesTable") as HTMLTableElement;
+		const loadingEl = document.getElementById("loading") as HTMLElement;
+		const emptyEl = document.getElementById("empty") as HTMLElement;
+		const addBtn = document.getElementById("addType") as HTMLButtonElement;
+		const exportTypesBtn = document.getElementById("exportTypes") as HTMLButtonElement;
+		const modal = document.getElementById("modal") as HTMLElement;
+		const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement;
+		const closeModalBtn = document.getElementById("closeModal") as HTMLButtonElement;
+		const cancelModalBtn = document.getElementById("cancelModal") as HTMLButtonElement;
+		const typeForm = document.getElementById("typeForm") as HTMLFormElement;
+		const amountGroup = document.getElementById("amountGroup") as HTMLElement;
+		const codesModal = document.getElementById("codesModal") as HTMLElement;
+		const closeCodesBtn = document.getElementById("closeCodes") as HTMLButtonElement;
+		const codesBody = document.getElementById("codesBody") as HTMLTableSectionElement;
+		const codesTitle = document.getElementById("codesTitle") as HTMLHeadingElement;
+		const searchCodesEl = document.getElementById("searchCodes") as HTMLInputElement;
+		const exportCodesBtn = document.getElementById("exportCodes") as HTMLButtonElement;
+		const codesEmpty = document.getElementById("codesEmpty") as HTMLElement;
+
+		function seedMock() {
+			if (inviteTypes.length) return;
+			for (let i = 0; i < 5; i++) {
+				const codes = Array.from({ length: 8 + i * 3 }, (_, j) => ({
+					id: crypto.randomUUID(),
+					code: `CODE${i}${j}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+					usedCount: j % 4 === 0 ? 1 : 0,
+					usageLimit: 1,
+					usedBy: j % 4 === 0 ? `user${j}@mail.com` : null,
+					active: j % 5 !== 0
+				}));
+				inviteTypes.push({
+					id: crypto.randomUUID(),
+					name: ["VIP", "Media", "Staff", "Partner", "EarlyBird"][i],
+					createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+					codes
+				});
+			}
+		}
+
+		function fetchData() {
+			loadingEl.hidden = false;
+			// Attempt to fetch real data (placeholder endpoint assumption)
+			return fetch("/admin/invitation-codes?limit=500")
+				.then(r => (r.ok ? r.json() : Promise.reject()))
+				.then(data => {
+					if (Array.isArray(data.data)) {
+						inviteTypes = data.data.map(row => ({
+							id: row.id,
+							name: row.name || row.code || "(Unnamed)",
+							createdAt: row.createdAt || new Date().toISOString(),
+							codes: [
+								{
+									id: row.id,
+									code: row.code,
+									usedCount: row.usedCount || 0,
+									usageLimit: row.usageLimit || 1,
+									usedBy: null,
+									active: row.isActive !== false
+								}
+							]
+						}));
+					}
+				})
+				.catch(() => {
+					seedMock();
+				})
+				.finally(() => {
+					loadingEl.hidden = true;
+					applyTypeFilter();
+				});
+		}
+
+		function applyTypeFilter() {
+			const q = searchTypesEl.value.trim().toLowerCase();
+			filteredTypes = inviteTypes.filter(t => {
+				if (!q) return true;
+				if (t.name.toLowerCase().includes(q)) return true;
+				return t.codes.some(c => c.code.toLowerCase().includes(q));
+			});
+			renderTypes();
+		}
+
+		function renderTypes() {
+			typesBody.innerHTML = "";
+			if (!filteredTypes.length) {
+				typesTable.hidden = true;
+				emptyEl.hidden = false;
+				return;
+			}
+			filteredTypes.forEach(t => {
+				const used = t.codes.filter(c => c.usedCount > 0).length;
+				const total = t.codes.length;
+				const tr = document.createElement("tr");
+				tr.innerHTML = `
+					<td>${t.name}</td>
+					<td>${total}</td>
+					<td>${used}</td>
+					<td>${total - used}</td>
+					<td>${new Date(t.createdAt).toLocaleString()}</td>
+					<td class="actions">
+						<button data-act="view" data-id="${t.id}">檢視 (View)</button>
+						<button data-act="edit" data-id="${t.id}">編輯 (Edit)</button>
+					</td>
+				`;
+				typesBody.appendChild(tr);
+			});
+			typesTable.hidden = false;
+			emptyEl.hidden = true;
+		}
+
+		function openCreate() {
+			currentEditing = null;
+			typeForm.reset();
+			amountGroup.hidden = false;
+			modalTitle.textContent = "新增邀請碼組 (Create)";
+			showModal(modal);
+		}
+		function openEdit(id) {
+			const t = inviteTypes.find(x => x.id === id);
+			if (!t) return;
+			currentEditing = id;
+			modalTitle.textContent = "編輯邀請碼組 (Edit)";
+			amountGroup.hidden = true; // can't change amount retroactively in mock
+			const nameInput = typeForm.elements.namedItem("name") as HTMLInputElement | null;
+			if (nameInput) nameInput.value = t.name;
+			showModal(modal);
+		}
+		function openCodes(id) {
+			const t = inviteTypes.find(x => x.id === id);
+			if (!t) return;
+			viewingCodesOf = id;
+			codesTitle.textContent = `邀請碼列表 - ${t.name}`;
+			renderCodes();
+			showModal(codesModal);
+		}
+		function renderCodes() {
+			const t = inviteTypes.find(x => x.id === viewingCodesOf);
+			if (!t) return;
+			const q = (searchCodesEl as HTMLInputElement).value.trim().toLowerCase();
+			codesBody.innerHTML = "";
+			let list = t.codes;
+			if (q) list = list.filter(c => c.code.toLowerCase().includes(q) || (c.usedBy || "").toLowerCase().includes(q));
+			if (!list.length) {
+				codesEmpty.hidden = false;
+				return;
+			} else codesEmpty.hidden = true;
+			list.forEach(c => {
+				const tr = document.createElement("tr");
+				const status = !c.active ? "inactive" : c.usedCount >= c.usageLimit ? "usedup" : "active";
+				tr.innerHTML = `
+					<td>${c.code}</td>
+					<td>${c.usedCount}</td>
+					<td>${c.usageLimit ?? ""}</td>
+					<td>${c.usedBy ?? ""}</td>
+					<td><span class="status-pill ${status}">${status}</span></td>`;
+				codesBody.appendChild(tr);
+			});
+		}
+
+		function showModal(m) {
+			m.hidden = false;
+			m.setAttribute("aria-hidden", "false");
+		}
+		function hideModal(m) {
+			m.hidden = true;
+			m.setAttribute("aria-hidden", "true");
+		}
+
+		addBtn.addEventListener("click", openCreate);
+		closeModalBtn.addEventListener("click", () => hideModal(modal));
+		cancelModalBtn.addEventListener("click", () => hideModal(modal));
+		closeCodesBtn.addEventListener("click", () => hideModal(codesModal));
+
+		typeForm.addEventListener("submit", e => {
+			e.preventDefault();
+			const form = e.target as HTMLFormElement;
+			const nameInput = form.elements.namedItem("name") as HTMLInputElement | null;
+			const amountInput = form.elements.namedItem("amount") as HTMLInputElement | null;
+			const name = (nameInput?.value || "").trim();
+			if (!name) return alert("Name required");
+			if (currentEditing) {
+				const t = inviteTypes.find(x => x.id === currentEditing);
+				if (t) {
+					t.name = name;
+				}
+			} else {
+				const amount = Math.max(1, Math.min(1000, parseInt(amountInput?.value || "", 10) || 1));
+				const codes = Array.from({ length: amount }).map(() => ({
+					id: crypto.randomUUID(),
+					code: generateCode(),
+					usedCount: 0,
+					usageLimit: 1,
+					usedBy: null,
+					active: true
+				}));
+				inviteTypes.unshift({ id: crypto.randomUUID(), name, createdAt: new Date().toISOString(), codes });
+			}
+			hideModal(modal);
+			applyTypeFilter();
+		});
+
+		function generateCode() {
+			return Math.random().toString(36).slice(2, 10).toUpperCase();
+		}
+
+		typesBody.addEventListener("click", e => {
+			const btn = (e.target as HTMLElement).closest("button") as HTMLButtonElement | null;
+			if (!btn) return;
+			const id = btn.dataset.id as string;
+			if (btn.dataset.act === "view") openCodes(id);
+			if (btn.dataset.act === "edit") openEdit(id);
+		});
+
+		searchTypesEl.addEventListener(
+			"input",
+			debounce(() => applyTypeFilter(), 200)
+		);
+		searchCodesEl.addEventListener(
+			"input",
+			debounce(() => renderCodes(), 200)
+		);
+
+		function debounce(fn, wait) {
+			let t;
+			return (...a) => {
+				clearTimeout(t);
+				t = setTimeout(() => fn(...a), wait);
+			};
+		}
+
+		exportTypesBtn.addEventListener("click", () => {
+			const rows = [["id", "name", "totalCodes", "usedCodes", "remaining", "createdAt"]];
+			filteredTypes.forEach(t => {
+				const total = t.codes.length;
+				const used = t.codes.filter(c => c.usedCount > 0).length;
+				rows.push([t.id, t.name, total, used, total - used, t.createdAt]);
+			});
+			downloadCSV(rows, "invite-types.csv");
+		});
+
+		exportCodesBtn.addEventListener("click", () => {
+			const t = inviteTypes.find(x => x.id === viewingCodesOf);
+			if (!t) return;
+			const q = searchCodesEl.value.trim().toLowerCase();
+			let list = t.codes;
+			if (q) list = list.filter(c => c.code.toLowerCase().includes(q) || (c.usedBy || "").toLowerCase().includes(q));
+			const rows = [["typeId", "typeName", "code", "usedCount", "usageLimit", "usedBy", "active"]];
+			list.forEach(c => rows.push([t.id, t.name, c.code, c.usedCount, c.usageLimit, c.usedBy || "", c.active]));
+			downloadCSV(rows, `${t.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_codes.csv`);
+		});
+
+		function downloadCSV(rows, filename) {
+			const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n");
+			const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = filename;
+			a.click();
+			URL.revokeObjectURL(url);
+		}
+
+		// Init
+		fetchData();
+	</script>
 </Layout>
