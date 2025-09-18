@@ -174,4 +174,29 @@
  * @property {Object} referralStats - Referral statistics
  */
 
+/**
+ * @typedef {Object} TicketFormFieldCreateRequest
+ * @property {string} ticketId - Associated ticket ID
+ * @property {number} order - Field order in the form
+ * @property {'text'|'textarea'|'select'|'checkbox'|'radio'} type - Field type
+ * @property {string} [validater] - Validation regex pattern
+ * @property {string} name - Field name
+ * @property {string} description - Field description/label
+ * @property {string} [placeholder] - Field placeholder text
+ * @property {boolean} [required] - Whether field is required
+ * @property {string} [values] - JSON array for select/radio options
+ */
+
+/**
+ * @typedef {Object} TicketFormFieldUpdateRequest
+ * @property {number} [order] - Field order in the form
+ * @property {'text'|'textarea'|'select'|'checkbox'|'radio'} [type] - Field type
+ * @property {string} [validater] - Validation regex pattern
+ * @property {string} [name] - Field name
+ * @property {string} [description] - Field description/label
+ * @property {string} [placeholder] - Field placeholder text
+ * @property {boolean} [required] - Whether field is required
+ * @property {string} [values] - JSON array for select/radio options
+ */
+
 export {}

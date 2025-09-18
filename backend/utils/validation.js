@@ -104,135 +104,79 @@ export const validateQuery = schema => {
 
 
 /**
- * Hard-coded validation for registration form data
+ * Dynamic validation for registration form data based on ticket form fields
  * @param {Object} formData - Form data to validate
+ * @param {Array} formFields - Array of form field definitions from database
  * @returns {Object|null} - Validation errors or null if valid
  */
-export const validateRegistrationFormData = (formData) => {
+export const validateRegistrationFormData = (formData, formFields) => {
 	const errors = {};
 
-	// Define hard-coded form fields
-	const requiredFields = {
-		acceptTerms: {
-			label: '接受條款',
-			type: 'boolean',
-			required: true
-		},
-		nickname: {
-			label: '暱稱',
-			type: 'string',
-			required: true,
-			minLength: 2,
-			maxLength: 20
-		},
-		phoneNumber: {
-			label: '電話號碼',
-			type: 'phone',
-			required: true
-		},
-		sex: {
-			label: '性別',
-			type: 'enum',
-			required: true,
-			options: ['male', 'female', 'other']
-		},
-		foodHabits: {
-			label: '飲食習慣',
-			type: 'enum',
-			required: true,
-			options: ['normal', 'no-beef', 'no-pork', 'vegetarian']
-		},
-		livingArea: {
-			label: '居住地區',
-			type: 'enum',
-			required: true,
-			options: ['north', 'middle', 'south', 'east']
-		},
-		workingAt: {
-			label: '工作地點',
-			type: 'string',
-			required: true,
-			maxLength: 100
-		},
-		jobTitle: {
-			label: '職位',
-			type: 'string',
-			required: true,
-			maxLength: 50
-		},
-		grade: {
-			label: '年級',
-			type: 'string',
-			required: true,
-			maxLength: 20
-		},
-		haveEverBeenHere: {
-			label: '是否曾經來過',
-			type: 'boolean',
-			required: true
-		},
-		whereYouGotThis: {
-			label: '從哪裡得知此活動',
-			type: 'enum',
-			required: true,
-			options: ['google', 'social_media', 'friend', 'family']
-		}
-	};
-
 	// Validate each field
-	for (const [fieldName, fieldConfig] of Object.entries(requiredFields)) {
-		const value = formData[fieldName];
+	for (const field of formFields) {
+		const value = formData[field.name];
 		const fieldErrors = [];
 
 		// Check required fields
-		if (fieldConfig.required && (value === undefined || value === null || value === '')) {
-			fieldErrors.push(`${fieldConfig.label}為必填欄位`);
-			errors[fieldName] = fieldErrors;
+		if (field.required && (value === undefined || value === null || value === '')) {
+			fieldErrors.push(`${field.description}為必填欄位`);
+			errors[field.name] = fieldErrors;
 			continue;
 		}
 
 		// Skip validation if field is empty and not required
-		if (!fieldConfig.required && (value === undefined || value === null || value === '')) {
+		if (!field.required && (value === undefined || value === null || value === '')) {
 			continue;
 		}
 
 		// Type-specific validation
-		switch (fieldConfig.type) {
-			case 'boolean':
+		switch (field.type) {
+			case 'checkbox':
 				if (typeof value !== 'boolean') {
-					fieldErrors.push(`${fieldConfig.label}必須為 true 或 false`);
+					fieldErrors.push(`${field.description}必須為 true 或 false`);
 				}
 				break;
 
-			case 'string':
+			case 'text':
+			case 'textarea':
 				if (typeof value !== 'string') {
-					fieldErrors.push(`${fieldConfig.label}必須為文字`);
+					fieldErrors.push(`${field.description}必須為文字`);
 					break;
 				}
-				if (fieldConfig.minLength && value.length < fieldConfig.minLength) {
-					fieldErrors.push(`${fieldConfig.label}最少需要 ${fieldConfig.minLength} 個字元`);
-				}
-				if (fieldConfig.maxLength && value.length > fieldConfig.maxLength) {
-					fieldErrors.push(`${fieldConfig.label}最多 ${fieldConfig.maxLength} 個字元`);
-				}
-				break;
-
-			case 'phone':
-				const phoneResult = rules.phone(value);
-				if (phoneResult !== true) {
-					fieldErrors.push(`${fieldConfig.label}格式不正確`);
+				// Apply regex validation if provided
+				if (field.validater) {
+					try {
+						const regex = new RegExp(field.validater);
+						if (!regex.test(value)) {
+							fieldErrors.push(`${field.description}格式不正確`);
+						}
+					} catch (e) {
+						console.warn(`Invalid regex for field ${field.name}: ${field.validater}`);
+					}
 				}
 				break;
 
-			case 'enum':
-				if (!fieldConfig.options.includes(value)) {
-					fieldErrors.push(`${fieldConfig.label}選項無效，可選值: ${fieldConfig.options.join(', ')}`);
+			case 'select':
+			case 'radio':
+				if (field.values) {
+					try {
+						const options = JSON.parse(field.values);
+						const validValues = options.map(opt =>
+							typeof opt === 'object' && opt.value !== undefined ? opt.value : opt
+						);
+						if (!validValues.includes(value)) {
+							fieldErrors.push(`${field.description}選項無效，可選值: ${validValues.join(', ')}`);
+						}
+					} catch (e) {
+						console.warn(`Invalid JSON options for field ${field.name}: ${field.values}`);
+						fieldErrors.push(`${field.description}選項配置錯誤`);
+					}
 				}
 				break;
 		}
 
 		if (fieldErrors.length > 0) {
-			errors[fieldName] = fieldErrors;
+			errors[field.name] = fieldErrors;
 		}
 	}
 

@@ -60,19 +60,24 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Verify event and ticket
+				// Verify event and ticket, and get form fields
 				const [event, ticket] = await Promise.all([
 					prisma.event.findUnique({
-						where: { 
+						where: {
 							id: eventId,
-							isActive: true 
+							isActive: true
 						}
 					}),
 					prisma.ticket.findUnique({
-						where: { 
+						where: {
 							id: ticketId,
 							eventId,
-							isActive: true 
+							isActive: true
+						},
+						include: {
+							fromFields: {
+								orderBy: { order: 'asc' }
+							}
 						}
 					})
 				]);
@@ -181,8 +186,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					referralCodeId = referral.id;
 				}
 
-				// Validate form data with hard-coded fields
-				const formErrors = validateRegistrationFormData(formData);
+				// Validate form data with dynamic fields from database
+				const formErrors = validateRegistrationFormData(formData, ticket.fromFields);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
