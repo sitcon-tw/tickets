@@ -240,7 +240,126 @@ const l = i18n.l(Astro.url);
 	</div>
 
 	<script define:vars={{ tt }}>
-		// Demo ticket data - fetch from frontend
+		import { tickets as ticketsAPI, events as eventsAPI, initializeAdminPage } from "../../lib/admin.js";
+
+		// Global state
+		let currentEventId = null;
+		let tickets = [];
+		let isLoading = false;
+
+		// Initialize page
+		async function initializePage() {
+			try {
+				// Check admin authentication
+				const isAuthorized = await initializeAdminPage();
+				if (!isAuthorized) return;
+
+				// Load events first to get the current event
+				await loadEvents();
+				
+				// Load tickets for the current event
+				if (currentEventId) {
+					await loadTickets();
+				}
+				
+				// Setup event listeners
+				setupEventListeners();
+				
+			} catch (error) {
+				console.error('Failed to initialize tickets page:', error);
+				showError('Failed to load page. Please try refreshing.');
+				// Fall back to demo data
+				tickets = DEMO_TICKETS;
+				renderTicketsTable();
+			}
+		}
+
+		// Load events to get the current active event
+		async function loadEvents() {
+			try {
+				const response = await eventsAPI.list();
+				if (response.success && response.data && response.data.length > 0) {
+					// Use the first active event
+					currentEventId = response.data[0].id;
+				} else {
+					throw new Error('No active events found');
+				}
+			} catch (error) {
+				console.error('Failed to load events:', error);
+				throw error;
+			}
+		}
+
+		// Load tickets from backend
+		async function loadTickets() {
+			if (isLoading || !currentEventId) return;
+			
+			isLoading = true;
+			showLoading(true);
+			
+			try {
+				const response = await ticketsAPI.list(currentEventId);
+				
+				if (response.success) {
+					tickets = response.data || [];
+					renderTicketsTable();
+				} else {
+					throw new Error(response.message || 'Failed to load tickets');
+				}
+			} catch (error) {
+				console.error('Failed to load tickets:', error);
+				showError('Failed to load tickets: ' + error.message);
+				// Fall back to demo data
+				tickets = DEMO_TICKETS;
+				renderTicketsTable();
+			} finally {
+				isLoading = false;
+				showLoading(false);
+			}
+		}
+
+		// Setup event listeners
+		function setupEventListeners() {
+			// Add ticket button
+			const addTicketBtn = document.getElementById('addTicketBtn');
+			if (addTicketBtn) {
+				addTicketBtn.addEventListener('click', () => openTicketModal());
+			}
+
+			// Save ticket form
+			const saveTicketBtn = document.getElementById('saveTicketBtn');
+			if (saveTicketBtn) {
+				saveTicketBtn.addEventListener('click', saveTicket);
+			}
+
+			// Cancel button
+			const cancelBtn = document.getElementById('cancelBtn');
+			if (cancelBtn) {
+				cancelBtn.addEventListener('click', closeTicketModal);
+			}
+		}
+
+		// UI utility functions
+		function showLoading(show) {
+			const loadingIndicator = document.getElementById('loadingIndicator');
+			if (loadingIndicator) {
+				loadingIndicator.style.display = show ? 'block' : 'none';
+			}
+		}
+
+		function showError(message) {
+			const errorDiv = document.createElement('div');
+			errorDiv.style.cssText = 'color: red; padding: 1rem; text-align: center;';
+			errorDiv.textContent = message;
+			
+			const container = document.querySelector('.table-container');
+			if (container) {
+				container.innerHTML = '';
+				container.appendChild(errorDiv);
+			}
+		}
+
+		// Demo ticket data - fallback
 		const DEMO_TICKETS = [
 			{
 				id: 1,
@@ -392,7 +511,7 @@ const l = i18n.l(Astro.url);
 				this.openModal(ticket);
 			}
 
-			saveFromModal() {
+			async saveFromModal() {
 				const name = document.getElementById("ticket-name-input").value.trim();
 				const saleStart = document.getElementById("ticket-start-input").value || null;
 				const saleEnd = document.getElementById("ticket-end-input").value || null;
@@ -402,35 +521,67 @@ const l = i18n.l(Astro.url);
 					alert(tt.enterTicketName);
 					return;
 				}
-				const quantity = quantityRaw === "" ? t.unlimitedQuantity : parseInt(quantityRaw);
+				
+				const quantity = quantityRaw === "" ? 0 : parseInt(quantityRaw);
 				if (saleStart && saleEnd && new Date(saleStart) > new Date(saleEnd)) {
 					alert(tt.startAfterEnd);
 					return;
 				}
-				if (this.currentEditingId) {
-					const idx = this.tickets.findIndex(t => t.id === this.currentEditingId);
-					if (idx !== -1) this.tickets[idx] = { ...this.tickets[idx], name, saleStart, saleEnd, quantity };
-				} else {
-					this.tickets.push({ id: this.nextId++, name, saleStart, saleEnd, quantity });
+
+				const ticketData = {
+					name,
+					saleStart,
+					saleEnd,
+					quantity,
+					isActive: true
+				};
+
+				try {
+					let response;
+					if (this.currentEditingId) {
+						// Update existing ticket
+						response = await ticketsAPI.update(currentEventId, this.currentEditingId, ticketData);
+					} else {
+						// Create new ticket
+						response = await ticketsAPI.create(currentEventId, ticketData);
+					}
+
+					if (response.success) {
+						// Reload tickets to get updated data
+						await loadTickets();
+						this.closeModal();
+					} else {
+						throw new Error(response.message || 'Failed to save ticket');
+					}
+				} catch (error) {
+					console.error('Failed to save ticket:', error);
+					alert('保存失敗: ' + error.message);
 				}
-				this.renderTickets();
-				this.closeModal();
 			}
 
 			// Removed inline cancelEdit logic; modal handles cancel via closeModal
 
-			deleteRow(button) {
-				if (!confirm(tt.editTicket)) return;
+			async deleteRow(button) {
+				if (!confirm(tt.confirmDeleteTicket)) return;
 
 				const row = button.closest("tr");
-				const ticketId = parseInt(row.dataset.ticketId);
+				const ticketId = row.dataset.ticketId;
 
 				if (ticketId) {
-					this.tickets = this.tickets.filter(t => t.id !== ticketId);
-					console.log("Deleting ticket:", ticketId);
+					try {
+						const response = await ticketsAPI.delete(currentEventId, ticketId);
+						
+						if (response.success) {
+							// Reload tickets to get updated data
+							await loadTickets();
+						} else {
+							throw new Error(response.message || 'Failed to delete ticket');
+						}
+					} catch (error) {
+						console.error('Failed to delete ticket:', error);
+						alert('刪除失敗: ' + error.message);
+					}
 				}
-
-				row.remove();
 			}
 
 			addNewTicket() {
@@ -511,8 +662,66 @@ const l = i18n.l(Astro.url);
 				}
 			}
 		}
-		
-		new TicketManager();
+
+		// Updated renderTicketsTable function to work with backend data
+		function renderTicketsTable() {
+			const tbody = document.getElementById("tickets-tbody");
+			if (!tbody) return;
+			
+			tbody.innerHTML = "";
+
+			tickets.forEach(ticket => {
+				const row = createTicketRow(ticket);
+				tbody.appendChild(row);
+			});
+		}
+
+		// Create table row for ticket
+		function createTicketRow(ticket) {
+			const template = document.getElementById("ticket-row-template");
+			if (!template) {
+				// Fallback if template doesn't exist
+				const tr = document.createElement("tr");
+				tr.dataset.ticketId = ticket.id;
+				tr.innerHTML = `
+					<td>${ticket.name}</td>
+					<td>${ticket.saleStart ? formatDateTime(ticket.saleStart) : ''}</td>
+					<td>${ticket.saleEnd ? formatDateTime(ticket.saleEnd) : ''}</td>
+					<td>${ticket.quantity || '∞'}</td>
+					<td>
+						<button onclick="editTicket('${ticket.id}')">Edit</button>
+						<button onclick="deleteTicket('${ticket.id}')">Delete</button>
+					</td>
+				`;
+				return tr;
+			}
+			
+			const row = template.content.cloneNode(true).querySelector("tr");
+			row.dataset.ticketId = ticket.id;
+			// Update row content based on your template structure
+			return row;
+		}
+
+		// Format date time for display
+		function formatDateTime(dateTime) {
+			if (!dateTime) return '';
+			try {
+				return new Date(dateTime).toLocaleString();
+			} catch (e) {
+				return dateTime;
+			}
+		}
+
+		// Initialize the ticket manager with backend integration
+		document.addEventListener('DOMContentLoaded', () => {
+			// Try to initialize with backend first
+			initializePage().then(() => {
+				// If backend fails, fallback to original TicketManager
+			}).catch(() => {
+				console.log('Backend initialization failed, using fallback TicketManager');
+				new TicketManager();
+			});
+		});
 	</script>
 
 	<style>
@@ -627,7 +836,7 @@ const l = i18n.l(Astro.url);
 
 		.tickets-table th,
 		.tickets-table td {
-			padding: 1rem;
+			padding: 0.5rem 1rem;
 			text-align: left;
 			border-bottom: 1px solid var(--color-gray-400);
 		}

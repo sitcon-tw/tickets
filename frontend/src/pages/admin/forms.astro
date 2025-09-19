@@ -224,6 +224,8 @@ const l = i18n.l(Astro.url);
 
 	<script>
 		// @ts-nocheck
+		import { formFields as formFieldsAPI, events as eventsAPI, tickets as ticketsAPI, initializeAdminPage } from "../../lib/admin.js";
+
 		/**
 		 * @typedef {Object} ShowIf
 		 * @property {string} sourceId - ID of source question whose selection controls visibility
@@ -239,17 +241,186 @@ const l = i18n.l(Astro.url);
 		 * @property {string[]=} options
 		 * @property {ShowIf=} showIf
 		 */
-		// Fake seed data
+
+		// Global state
+		let currentEventId = null;
+		let currentTicketId = null;
+		let questions = [];
+		let isLoading = false;
+
+		// Initialize page
+		async function initializePage() {
+			try {
+				// Check admin authentication
+				const isAuthorized = await initializeAdminPage();
+				if (!isAuthorized) return;
+
+				// Load events and tickets to get form fields
+				await loadEventAndTicket();
+				
+				if (currentTicketId) {
+					await loadFormFields();
+				} else {
+					// Fall back to demo data if no ticket found
+					loadDemoData();
+				}
+				
+				// Setup event listeners
+				setupEventListeners();
+				
+				// Initial render
+				render();
+				
+			} catch (error) {
+				console.error('Failed to initialize forms page:', error);
+				showError('Failed to load page. Please try refreshing.');
+				// Fall back to demo data
+				loadDemoData();
+				render();
+			}
+		}
+
+		// Load event and ticket data
+		async function loadEventAndTicket() {
+			try {
+				// Get first active event
+				const eventsResponse = await eventsAPI.list();
+				if (eventsResponse.success && eventsResponse.data && eventsResponse.data.length > 0) {
+					currentEventId = eventsResponse.data[0].id;
+					
+					// Get first ticket of the event
+					const ticketsResponse = await ticketsAPI.list(currentEventId);
+					if (ticketsResponse.success && ticketsResponse.data && ticketsResponse.data.length > 0) {
+						currentTicketId = ticketsResponse.data[0].id;
+					}
+				}
+			} catch (error) {
+				console.error('Failed to load event and ticket:', error);
+				throw error;
+			}
+		}
+
+		// Load form fields from backend
+		async function loadFormFields() {
+			if (isLoading || !currentTicketId) return;
+			
+			isLoading = true;
+			showLoading(true);
+			
+			try {
+				const response = await formFieldsAPI.list(currentTicketId);
+				
+				if (response.success) {
+					// Convert backend form fields to frontend question format
+					questions = (response.data || []).map(field => ({
+						id: field.id,
+						label: field.description || field.name,
+						type: field.type,
+						required: field.required || false,
+						help: field.helpText || '',
+						options: field.values ? JSON.parse(field.values) : undefined
+					}));
+				} else {
+					throw new Error(response.message || 'Failed to load form fields');
+				}
+			} catch (error) {
+				console.error('Failed to load form fields:', error);
+				showError('Failed to load form fields: ' + error.message);
+				// Fall back to demo data
+				loadDemoData();
+			} finally {
+				isLoading = false;
+				showLoading(false);
+			}
+		}
+
+		// Load demo data (fallback)
+		function loadDemoData() {
+			questions = [
+				{ id: crypto.randomUUID(), label: "全名", type: "text", required: true, help: "請輸入您的真實姓名。" },
+				{ id: crypto.randomUUID(), label: "電子郵件", type: "email", required: true, help: "請輸入您的電子郵件地址。" },
+				{ id: crypto.randomUUID(), label: "電話號碼", type: "phone", required: false, help: "請輸入您的電話號碼。" },
+				{ id: crypto.randomUUID(), label: "T恤尺寸", type: "select", required: true, options: ["XS", "S", "M", "L", "XL"], help: "請選擇您的T恤尺寸。" },
+				{ id: crypto.randomUUID(), label: "飲食偏好", type: "radio", required: false, options: ["無", "素", "清蒸", "蛋奶素"], help: "請選擇您的飲食偏好。" },
+				{ id: crypto.randomUUID(), label: "技能", type: "checkbox", required: false, options: ["Frontend", "Backend", "Design", "DevOps"], help: "請選擇您的技能。" },
+				{ id: crypto.randomUUID(), label: "關於你", type: "textarea", required: false, help: "請簡要介紹自己。" }
+			];
+		}
+
+		// Setup event listeners
+		function setupEventListeners() {
+			const addBtn = document.getElementById("add-question");
+			const saveBtn = document.getElementById("save-form");
+			
+			if (addBtn) {
+				addBtn.addEventListener("click", addQuestion);
+			}
+			
+			if (saveBtn) {
+				saveBtn.addEventListener("click", saveForm);
+			}
+		}
+
+		// Save form to backend
+		async function saveForm() {
+			if (!currentTicketId) {
+				alert('無法保存：未找到票種');
+				return;
+			}
+
+			try {
+				saveBtn.disabled = true;
+				saveBtn.textContent = '保存中...';
+
+				// Convert questions to backend format
+				const formFieldsData = questions.map((q, index) => ({
+					id: q.id.startsWith('temp-') ? undefined : q.id, // Don't send temp IDs
+					name: q.label.toLowerCase().replace(/\s+/g, '_'),
+					description: q.label,
+					type: q.type,
+					required: q.required,
+					helpText: q.help,
+					values: q.options ? JSON.stringify(q.options) : null,
+					order: index
+				}));
+
+				// This is a simplified save - in reality, you'd need to handle
+				// create vs update operations for each field
+				for (const fieldData of formFieldsData) {
+					// Add ticketId to the field data
+					fieldData.ticketId = currentTicketId;
+					
+					if (fieldData.id) {
+						// Update existing field
+						await formFieldsAPI.update(fieldData.id, fieldData);
+					} else {
+						// Create new field
+						await formFieldsAPI.create(fieldData);
+					}
+				}
+
+				alert('表單已保存！');
+			} catch (error) {
+				console.error('Failed to save form:', error);
+				alert('保存失敗: ' + error.message);
+			} finally {
+				saveBtn.disabled = false;
+				saveBtn.textContent = '💾 保存表單';
+			}
+		}
+
+		// UI utility functions
+		function showLoading(show) {
+			// Add loading indicator if needed
+		}
+
+		function showError(message) {
+			console.error(message);
+			// Could add error display UI here
+		}
+
+		// Fake seed data (fallback)
 		/** @type {Question[]} */
-		let questions = [
-			{ id: crypto.randomUUID(), label: "全名", type: "text", required: true, help: "請輸入您的真實姓名。" },
-			{ id: crypto.randomUUID(), label: "電子郵件", type: "email", required: true, help: "請輸入您的電子郵件地址。" },
-			{ id: crypto.randomUUID(), label: "電話號碼", type: "phone", required: false, help: "請輸入您的電話號碼。" },
-			{ id: crypto.randomUUID(), label: "T恤尺寸", type: "select", required: true, options: ["XS", "S", "M", "L", "XL"], help: "請選擇您的T恤尺寸。" },
-			{ id: crypto.randomUUID(), label: "飲食偏好", type: "radio", required: false, options: ["無", "素", "清蒸", "蛋奶素"], help: "請選擇您的飲食偏好。" },
-			{ id: crypto.randomUUID(), label: "技能", type: "checkbox", required: false, options: ["Frontend", "Backend", "Design", "DevOps"], help: "請選擇您的技能。" },
-			{ id: crypto.randomUUID(), label: "關於你", type: "textarea", required: false, help: "請簡要介紹自己。" }
-		];
 
 		// Utility: remove any showIf referencing a removed / invalid question
 		function purgeInvalidShowIf() {
@@ -601,17 +772,18 @@ const l = i18n.l(Astro.url);
 			// Optionally, could update preview/output if open; do nothing else for perf.
 		});
 
-		addBtn.addEventListener("click", () => {
-			questions.push({ id: crypto.randomUUID(), label: "新問題", type: "text", required: false });
+		// Add question function
+		function addQuestion() {
+			questions.push({ 
+				id: 'temp-' + crypto.randomUUID(), 
+				label: "新問題", 
+				type: "text", 
+				required: false 
+			});
 			render();
-		});
+		}
 
-		saveBtn.addEventListener("click", () => {
-			const data = JSON.stringify(questions, null, 2);
-			outputEl.textContent = data;
-			console.log("[FormEditor] Saved questions", questions);
-		});
-
-		render();
+		// Initialize page when DOM is ready
+		document.addEventListener('DOMContentLoaded', initializePage);
 	</script>
 </Layout>

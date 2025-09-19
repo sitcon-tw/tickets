@@ -3,7 +3,7 @@ const { label, id, required = true, rows = 4 } = Astro.props;
 ---
 
 <label for={id}>{label}</label>
-<textarea id={id} aria-label={label} required={required} rows={rows}></textarea>
+<textarea id={id} name={id} aria-label={label} required={required} rows={rows}></textarea>
 
 <style>
 	label {

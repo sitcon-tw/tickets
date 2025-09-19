@@ -20,104 +20,405 @@ const l = i18n.l(Astro.url);
 		<section>
 			<p><a href={l("/")}>重新選擇票種</a></p>
 			<h1>填寫報名資訊</h1>
+			<div id="ticket-info" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--color-gray-800); border-radius: 8px;">
+				<p><strong>活動：</strong><span id="event-name"></span></p>
+				<p><strong>票種：</strong><span id="ticket-name"></span></p>
+			</div>
+			<div id="loading" style="text-align: center; padding: 2rem;">載入表單中...</div>
 
-			<form>
-				<!-- 基本資訊 -->
-				<Input.Text label="姓名" id="name" />
-				<Input.Email label="Email" id="email" />
-				<Input.Text label="暱稱" id="nickname" />
-				<Input.Text label="手機" id="phone" />
-
-				<Input.Radio label="飲食習慣" name="diet" options={["葷", "素"]} />
-
-				<Input.Select label="性別" id="gender" options={["男", "女", "其他", "不公開"]} />
-
-				<Input.Select label="身分別" id="identity" options={["國小生", "國中生", "高中/職生", "五專生", "大學生", "研究生", "社會人士", "老師/教授", "其他"]} />
-
-				<Input.Select label="居住地區" id="region" options={["北部", "東部", "中部", "南部", "離島", "海外"]} />
-
-				<Input.Text label="學校/單位名稱" id="school" />
-				<Input.Text label="系所/職稱" id="department" />
-
-				<Input.Description> 如您是普通高中請填寫普通科，技術型高中、綜合型高中、大學/科大以上則依照科系填寫 </Input.Description>
-
-				<Input.Text label="級別/非學生請填社會人士" id="grade" />
-
-				<Input.Radio label="是否曾參加過 SITCON 年會" name="previous_attendance" options={["是", "否"]} />
-
-				<Input.MultiSelect label="從哪裡獲得關於 SITCON 2025 年會的資訊" name="info_source" options={["朋友推薦", "廣告推薦", "Instagram", "Threads", "其他", "Facebook"]} />
-
-				<Input.Radio label="您認為自己的整體軟體開發程度如何？" name="dev_level" options={["我沒有接觸過程式", "入門：能依照書本的範例一步一步完成功能", "初學：能理解範例並依據問題改寫出功能", "中等：能想到問題的解決方法", "熟練：能評估多個解決方法間的優劣", "進階：擁有豐富的經驗可以給予他人適當建議"]} />
-
-				<Input.MultiSelect label="您對下列哪些項目已經有一些了解或經驗呢？" name="experienced_areas" options={["前端工程", "後端工程", "測試工程", "行動裝置開發", "遊戲開發", "DevOps/SRE", "韌體/電子電路", "區塊鏈", "人工智慧", "資料科學", "網路通訊", "專案管理", "資訊安全", "社群經營", "視覺", "動畫設計", "程式競賽", "無", "其他"]} />
-
-				<Input.MultiSelect label="下列哪些項目是您還沒有接觸過，但想了解或學習的呢？" name="interested_areas" options={["前端工程", "後端工程", "測試工程", "行動裝置開發", "遊戲開發", "DevOps/SRE", "韌體/電子電路", "區塊鏈", "人工智慧", "資料科學", "網路通訊", "專案管理", "資訊安全", "社群經營", "視覺、動畫設計", "程式競賽", "其他"]} />
-
-				<Input.Textarea label="請問您期待能在 SITCON 2025 聽到什麼主題的議程？" id="expected_topics" rows="5" required="false" />
-
-				<Input.Description>
-					<strong>指南針計劃：</strong><br />
-					指南針計畫為會眾提供彼此交流的機會，旨在幫助你找到志同道合的夥伴，一同探討共同感興趣的主題。 為了讓想鑽研、分享或剛開始接觸某個領域的夥伴有一起討論的機會，我們將根據你所填寫的興趣與專長，為你匹配合適的夥伴，組成小組共同參與年會。 在年會期間，你可以和小組成員一起參加年會中的其他活動，或在午餐時進行輕鬆愉快的聚會，分享彼此的經驗與想法、探索你們感興趣的主題。此外，你們也可以圍繞年會議程進行討論與交流、分享彼此的收穫與見解。 如果對這項計畫有興趣，請填寫以下問題。
-					<br /><br />
-					<strong>※※ 若參與指南針計畫者，請於 2025/2/22 23:59 前將報名資料編輯、填寫完畢，資料不全者將視同不參加此活動，請務必注意 ※※</strong>
-					<br /><br /> 由於我們的系統是可以事後編輯的，歡迎先送出表單再回來修改內容喔！
-				</Input.Description>
-
-				<Input.Radio label="是否參與指南針計畫？" name="compass_participation" options={["參加", "不參加"]} />
-
-				<Input.Description>
-					<strong>注意事項：</strong>
-					<ol>
-						<li>主辦方將盡可能為你配對合適的夥伴，但不能保證配對成功</li>
-						<li>將依照你所填寫的專長及感興趣的領域配對合適的夥伴，但不一定能兩者都滿足</li>
-						<li>期望你能與其他參與者積極交流互動、分享經驗、促進共同成長</li>
-					</ol>
-				</Input.Description>
-
-				<Input.Radio label="請問您以會眾身分參加過實體社群活動（如：SITCON , HITCON , COSCUP 等）的次數？" name="community_attendance_audience" options={["未參加過", "1~2 次", "3~4 次", "5 次（含）以上"]} />
-
-				<Input.Radio label="請問您以工人/講者/贊助商/社群單位身分參加過社群（如：SITCON , HITCON , COSCUP 等）的次數？" name="community_attendance_organizer" options={["未參加過", "1~2 次", "3~4 次", "5 次（含）以上"]} />
-
-				<Input.MultiSelect label="請問您參加社群的目的為何？" name="community_purpose" options={["學習新知識", "學術或技術上交流", "交朋友", "單純跟著朋友一起來", "其他"]} />
-
-				<Input.Textarea label="給對方的自我介紹、想說的話或想學到的內容（約 15～50 字）。" id="self_introduction" rows="3" />
-
-				<Input.Radio label="假設當天在 SITCON 年會會場，有不認識的陌生人想跟您交流/交談時，您通常...…" name="communication_style" options={["不主動且對方先跟我交談時，我不知如何與對方溝通", "不主動但對方先跟我交談時，我會積極與對方討論", "常常主動跟陌生人交談", "總是可以主動跟陌生人交談"]} />
-
-				<Input.Radio label="同意將此報名電子郵件、自我介紹之文字及其他聯絡方式提供給對方，作為互相交流的開頭及基本聯絡方式" name="contact_sharing_consent" options={["同意", "不同意"]} />
-
-				<Input.Description>
-					<strong>※※若填不同意，則自動取消指南針計畫報名※※</strong>
-				</Input.Description>
-
-				<Input.Textarea label="其他可提供給對方的聯絡方式（至少一種）" id="contact_methods" rows="3" />
-
-				<Input.Description> 例如 Telegram、Instagram、Facebook、Discord、Line 等 </Input.Description>
-
-				<Input.MultiSelect label="平常會使用哪些社群媒體？" name="social_media" options={["Facebook", "Instagram", "Threads", "Telegram", "Discord"]} />
-
-				<!-- 紀念品 -->
-				<Input.Radio label="是否願意購買年會紀念衣物？" name="merchandise_interest" options={["是", "否"]} />
-
-				<Input.Text label="最期望購買的紀念品類型" id="preferred_merchandise" />
-
-				<Input.Description>您可以在這裡許願您希望我們推出的紀念品類型，我們會蒐集大家的想法，做為明年年會紀念品的參考資料。 </Input.Description>
-
-				<Input.Description>
-					<strong>【再度提醒】我們的系統是可以事後編輯的，為了減輕你的負擔，歡迎先送出表單再回來修改內容喔！</strong>
-				</Input.Description>
-
-				<Input.Description>
-					<strong>※ 感謝您的填寫！期待我們 03/08 一同在 SITCON 2025 相見！</strong>
-				</Input.Description>
-
-				<Input.Textarea label="備註（若有特殊需求，歡迎聯絡 ticket@sitcon.org ）" id="remarks" rows="4" required={false} />
-
-				<!-- <button type="submit">提交報名</button> -->
-				 <a href="/success/" class="button">提交報名</a>
+			<form id="registration-form" style="display: none;">
+				<!-- Form fields will be loaded dynamically -->
 			</form>
 		</section>
+		</section>
 	</main>
+
+	<script is:inline>
+		let selectedTicketId = null;
+		let invitationCode = null;
+		let referralCode = null;
+		let eventId = null;
+		let formFields = [];
+
+		// Parse URL parameters
+		function parseUrlParams() {
+			const urlParams = new URLSearchParams(window.location.search);
+			selectedTicketId = urlParams.get('ticket');
+			invitationCode = urlParams.get('invite');
+			referralCode = urlParams.get('ref');
+
+			// Also check sessionStorage as fallback
+			if (!selectedTicketId) selectedTicketId = sessionStorage.getItem('selectedTicketId');
+			if (!invitationCode) invitationCode = sessionStorage.getItem('invitationCode');
+			if (!referralCode) referralCode = sessionStorage.getItem('referralCode');
+			
+			// Display event and ticket information
+			const eventName = sessionStorage.getItem('selectedEventName') || urlParams.get('eventName');
+			const ticketName = sessionStorage.getItem('selectedTicketName') || urlParams.get('ticketType');
+			
+			if (eventName && ticketName) {
+				document.getElementById('event-name').textContent = eventName;
+				document.getElementById('ticket-name').textContent = ticketName;
+				document.getElementById('ticket-info').style.display = 'block';
+			}
+		}
+
+		// Load form fields for the selected ticket
+		async function loadFormFields() {
+			if (!selectedTicketId) {
+				alert('未指定票種，請重新選擇');
+				window.location.href = '/';
+				return;
+			}
+
+			try {
+				// First get events to find the event ID
+				const eventsResponse = await fetch('http://localhost:3000/api/events');
+				const eventsData = await eventsResponse.json();
+				
+				if (!eventsData.success || !eventsData.data.length) {
+					throw new Error('No active events found');
+				}
+				
+				eventId = eventsData.data[0].id;
+				
+				// Get ticket information including form fields
+				const ticketsResponse = await fetch(`http://localhost:3000/api/events/${eventId}/tickets`);
+				const ticketsData = await ticketsResponse.json();
+				
+				if (!ticketsData.success) {
+					throw new Error('Failed to load tickets');
+				}
+
+				// Find the specific ticket
+				const ticket = ticketsData.data.find(t => t.id === selectedTicketId);
+				if (!ticket) {
+					throw new Error('Selected ticket not found');
+				}
+
+				formFields = ticket.formFields || [];
+				
+				// Generate form HTML
+				generateFormHTML();
+				
+			} catch (error) {
+				console.error('Failed to load form fields:', error);
+				document.getElementById('loading').innerHTML = `
+					<p style="color: red;">載入表單失敗: ${error.message}</p>
+					<a href="/">返回首頁</a>
+				`;
+			}
+		}
+
+		// Generate form HTML based on form fields
+		function generateFormHTML() {
+			const form = document.getElementById('registration-form');
+			let formHTML = '';
+
+			// Always include basic fields
+			formHTML += `
+				<div class="form-group">
+					<label for="name">姓名 *</label>
+					<input type="text" id="name" name="name" required>
+				</div>
+				<div class="form-group">
+					<label for="email">Email *</label>
+					<input type="email" id="email" name="email" required>
+				</div>
+			`;
+
+			// Add dynamic form fields
+			formFields.forEach((field, index) => {
+				formHTML += generateFieldHTML(field, index);
+			});
+
+			// Add invitation and referral code fields if present
+			if (invitationCode) {
+				formHTML += `
+					<div class="form-group">
+						<label>邀請碼</label>
+						<input type="text" name="invitationCode" value="${invitationCode}" readonly>
+					</div>
+				`;
+			}
+
+			if (referralCode) {
+				formHTML += `
+					<div class="form-group">
+						<label>推薦碼</label>
+						<input type="text" name="referralCode" value="${referralCode}" readonly>
+					</div>
+				`;
+			}
+
+			// Add submit button
+			formHTML += `
+				<button type="submit" class="button">提交報名</button>
+			`;
+
+			form.innerHTML = formHTML;
+			
+			// Hide loading and show form
+			document.getElementById('loading').style.display = 'none';
+			form.style.display = 'flex';
+		}
+
+		// Generate HTML for individual form field
+		function generateFieldHTML(field, index) {
+			const required = field.required ? 'required' : '';
+			const requiredMark = field.required ? ' *' : '';
+			
+			switch (field.type) {
+				case 'text':
+					return `
+						<div class="form-group">
+							<label for="${field.name}">${field.description}${requiredMark}</label>
+							<input type="text" id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ''}" ${required}>
+						</div>
+					`;
+				
+				case 'email':
+					return `
+						<div class="form-group">
+							<label for="${field.name}">${field.description}${requiredMark}</label>
+							<input type="email" id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ''}" ${required}>
+						</div>
+					`;
+				
+				case 'textarea':
+					return `
+						<div class="form-group">
+							<label for="${field.name}">${field.description}${requiredMark}</label>
+							<textarea id="${field.name}" name="${field.name}" rows="3" placeholder="${field.placeholder || ''}" ${required}></textarea>
+						</div>
+					`;
+				
+				case 'select':
+					let selectOptions = '';
+					if (field.options && Array.isArray(field.options)) {
+						selectOptions = field.options.map(option => {
+							const value = typeof option === 'object' ? option.value : option;
+							const label = typeof option === 'object' ? option.label : option;
+							return `<option value="${value}">${label}</option>`;
+						}).join('');
+					}
+					return `
+						<div class="form-group">
+							<label for="${field.name}">${field.description}${requiredMark}</label>
+							<select id="${field.name}" name="${field.name}" ${required}>
+								<option value="">請選擇...</option>
+								${selectOptions}
+							</select>
+						</div>
+					`;
+				
+				case 'radio':
+					let radioOptions = '';
+					if (field.options && Array.isArray(field.options)) {
+						radioOptions = field.options.map((option, i) => {
+							const value = typeof option === 'object' ? option.value : option;
+							const label = typeof option === 'object' ? option.label : option;
+							return `
+								<label class="radio-option">
+									<input type="radio" name="${field.name}" value="${value}" ${required && i === 0 ? 'required' : ''}>
+									${label}
+								</label>
+							`;
+						}).join('');
+					}
+					return `
+						<div class="form-group">
+							<fieldset>
+								<legend>${field.description}${requiredMark}</legend>
+								${radioOptions}
+							</fieldset>
+						</div>
+					`;
+				
+				case 'checkbox':
+					// Handle single checkbox (like acceptTerms) vs multiple checkbox options
+					if (field.options && Array.isArray(field.options)) {
+						// Multiple checkbox options
+						let checkboxOptions = field.options.map(option => {
+							const value = typeof option === 'object' ? option.value : option;
+							const label = typeof option === 'object' ? option.label : option;
+							return `
+								<label class="checkbox-option">
+									<input type="checkbox" name="${field.name}" value="${value}">
+									${label}
+								</label>
+							`;
+						}).join('');
+						return `
+							<div class="form-group">
+								<fieldset>
+									<legend>${field.description}${requiredMark}</legend>
+									${checkboxOptions}
+								</fieldset>
+							</div>
+						`;
+					} else {
+						// Single checkbox (like terms acceptance)
+						return `
+							<div class="form-group">
+								<label class="checkbox-single">
+									<input type="checkbox" name="${field.name}" value="true" ${required}>
+									${field.description}${requiredMark}
+								</label>
+								${field.helpText ? `<p class="help-text">${field.helpText}</p>` : ''}
+							</div>
+						`;
+					}
+				
+				default:
+					return `
+						<div class="form-group">
+							<label for="${field.name}">${field.description}${requiredMark}</label>
+							<input type="text" id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ''}" ${required}>
+						</div>
+					`;
+			}
+		}
+		// Check if user is authenticated
+		async function checkAuth() {
+			try {
+				const response = await fetch('http://localhost:3000/api/auth/get-session', {
+					credentials: 'include'
+				});
+				
+				if (!response.ok) {
+					// Redirect to login if not authenticated
+					window.location.href = '/login/';
+					return false;
+				}
+				
+				const session = await response.json();
+				if (!session || !session.user) {
+					window.location.href = '/login/';
+					return false;
+				}
+				
+				// Pre-fill email if available
+				const emailInput = document.getElementById('email');
+				if (emailInput && session.user.email) {
+					emailInput.value = session.user.email;
+				}
+				
+				return true;
+			} catch (error) {
+				console.error('Auth check failed:', error);
+				window.location.href = '/login/';
+				return false;
+			}
+		}
+		
+		async function handleSubmit(event) {
+			event.preventDefault();
+			
+			if (!selectedTicketId || !eventId) {
+				alert('表單資料不完整，請重新選擇票種');
+				window.location.href = '/';
+				return;
+			}
+			
+			// Get form data
+			const form = event.target;
+			const formData = new FormData(form);
+			const data = {};
+			
+			// Handle regular form data
+			for (const [key, value] of formData.entries()) {
+				if (data[key]) {
+					// If key already exists, make it an array
+					if (!Array.isArray(data[key])) {
+						data[key] = [data[key]];
+					}
+					data[key].push(value);
+				} else {
+					data[key] = value;
+				}
+			}
+			
+			// Handle checkboxes specifically
+			const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+			checkboxes.forEach(checkbox => {
+				const name = checkbox.name;
+				if (checkbox.checked) {
+					// For single checkboxes (like acceptTerms), convert "true" to boolean
+					if (checkbox.value === "true") {
+						data[name] = true;
+					} else {
+						// For multi-value checkboxes, collect as array
+						if (!data[name]) {
+							data[name] = [];
+						}
+						if (!Array.isArray(data[name])) {
+							data[name] = [data[name]];
+						}
+						data[name].push(checkbox.value);
+					}
+				} else {
+					// For unchecked single checkboxes (like acceptTerms), set to false
+					if (checkbox.value === "true" && !data[name]) {
+						data[name] = false;
+					}
+				}
+			});
+			
+			await submitRegistration(data);
+		}
+		
+		// Submit registration to backend
+		async function submitRegistration(formDataObj) {
+			try {
+				const registrationData = {
+					eventId,
+					ticketId: selectedTicketId,
+					formData: formDataObj,
+					invitationCode,
+					referralCode
+				};
+				
+				const response = await fetch('http://localhost:3000/api/registrations', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					credentials: 'include',
+					body: JSON.stringify(registrationData)
+				});
+				
+				const result = await response.json();
+				
+				if (response.ok && result.success) {
+					// Clear stored data
+					sessionStorage.removeItem('selectedTicketId');
+					sessionStorage.removeItem('referralCode');
+					sessionStorage.removeItem('invitationCode');
+					// Redirect to success page
+					window.location.href = '/success';
+				} else {
+					throw new Error(result.message || 'Registration failed');
+				}
+			} catch (error) {
+				console.error('Registration error:', error);
+				alert('報名失敗: ' + error.message);
+			}
+		}
+		
+		// Initialize page
+		document.addEventListener('DOMContentLoaded', async () => {
+			parseUrlParams();
+			
+			const isAuthenticated = await checkAuth();
+			if (!isAuthenticated) return;
+			
+			await loadFormFields();
+			
+			// Add form submit handler after form is generated
+			document.getElementById('registration-form').addEventListener('submit', handleSubmit);
+		});
+	</script>
 
 	<style is:inline>
 		section {
@@ -136,6 +437,63 @@ const l = i18n.l(Astro.url);
 			flex-direction: column;
 			gap: 1.5rem;
 		}
+		.form-group {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+		.form-group label {
+			font-weight: bold;
+			display: block;
+		}
+		.form-group input,
+		.form-group select,
+		.form-group textarea {
+			padding: 0.75rem;
+			border: 2px solid #333;
+			border-radius: 0.25rem;
+			font-size: 1rem;
+			background-color: #222;
+			color: #fff;
+		}
+		.form-group fieldset {
+			border: 1px solid #333;
+			border-radius: 0.25rem;
+			padding: 1rem;
+			background-color: #111;
+		}
+		.form-group legend {
+			font-weight: bold;
+			padding: 0 0.5rem;
+		}
+		.radio-option,
+		.checkbox-option {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin: 0.5rem 0;
+			font-weight: normal !important;
+		}
+		.checkbox-single {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin: 0.5rem 0;
+			font-weight: normal !important;
+			cursor: pointer;
+		}
+		.radio-option input,
+		.checkbox-option input,
+		.checkbox-single input {
+			width: auto;
+			margin: 0;
+		}
+		.help-text {
+			font-size: 0.9rem;
+			color: #666;
+			margin-top: 0.25rem;
+			font-style: italic;
+		}
 		button[type="submit"] {
 			padding: 1rem 2rem;
 			background-color: #007acc;
@@ -150,11 +508,6 @@ const l = i18n.l(Astro.url);
 		}
 		button[type="submit"]:hover {
 			background-color: #005999;
-		}
-		:global(label::after) {
-			content: "*";
-			color: red;
-			margin-left: 0.25rem;
 		}
 	</style>
 </Layout>

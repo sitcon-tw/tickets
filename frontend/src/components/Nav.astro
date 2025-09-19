@@ -20,8 +20,14 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 	<div>
 		<a href={l("/")}><img src={SITCONLogo.src} alt="SITCON Logo" /></a>
 		<div class="right">
-			<a href={l("/login/")}>登入</a>
-			<a href={l("/admin/")}>管理員頁面</a>
+			<div id="auth-menu">
+				<a href={l("/login/")} id="login-link">登入</a>
+				<div id="user-menu" style="display: none;">
+					<span id="user-name">載入中...</span>
+					<a href={l("/admin/")} id="admin-link" style="display: none;">管理員頁面</a>
+					<a href="#" id="logout-link">登出</a>
+				</div>
+			</div>
 		</div>
 		<!-- <a href={l("/about/")}><span>{t.about}</span></a> -->
 
@@ -66,6 +72,17 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 		gap: 1.5rem;
 	}
 
+	#user-menu {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	#user-name {
+		font-weight: bold;
+		color: var(--color-primary, #007acc);
+	}
+
 	a {
 		text-decoration: none;
 	}
@@ -81,4 +98,55 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 			nav.classList.remove("scrolled");
 		}
 	});
+
+	// Check authentication status
+	async function checkAuthStatus() {
+		try {
+			const response = await fetch('http://localhost:3000/api/auth/get-session', {
+				credentials: 'include'
+			});
+			
+			const loginLink = document.getElementById('login-link');
+			const userMenu = document.getElementById('user-menu');
+			const userName = document.getElementById('user-name');
+			const adminLink = document.getElementById('admin-link');
+			const logoutLink = document.getElementById('logout-link');
+			
+			if (response.ok) {
+				const session = await response.json();
+				
+				if (session && session.user) {
+					// User is authenticated
+					loginLink.style.display = 'none';
+					userMenu.style.display = 'flex';
+					userName.textContent = session.user.name || session.user.email || '使用者';
+					
+					// Show admin link if user has admin role
+					if (session.user.role && (session.user.role.includes('admin') || session.user.role.includes('super-admin'))) {
+						adminLink.style.display = 'block';
+					}
+					
+					// Handle logout
+					logoutLink.addEventListener('click', async (e) => {
+						e.preventDefault();
+						try {
+							await fetch('http://localhost:3000/api/auth/sign-out', {
+								method: 'POST',
+								credentials: 'include'
+							});
+							window.location.reload();
+						} catch (error) {
+							console.error('Logout failed:', error);
+						}
+					});
+				}
+			}
+		} catch (error) {
+			console.error('Auth status check failed:', error);
+			// Show login link on error
+		}
+	}
+	
+	// Initialize auth check on page load
+	document.addEventListener('DOMContentLoaded', checkAuthStatus);
 </script>

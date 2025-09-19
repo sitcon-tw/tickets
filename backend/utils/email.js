@@ -245,8 +245,8 @@ export const sendMagicLink = async (email, magicLink) => {
 								<tr>
 									<td align="center" style="padding: 40px 40px 20px 40px;" class="mobile-padding">
 										<!-- Logo placeholder - replace with your logo -->
-										<div style="width: 60px; height: 60px; background-color: #4f46e5; border-radius: 12px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-											<span style="color: white; font-size: 24px; font-weight: bold;">✦</span>
+										<div style="width: 60px; height: 60px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+											<img src="https://sitcon.org/branding/assets/logos/logo.svg" alt="Logo" style="height: 60px;">
 										</div>
 										<h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1f2937; line-height: 1.2;">
 											Sign in to your account
@@ -268,7 +268,7 @@ export const sendMagicLink = async (email, magicLink) => {
 									<td align="center" style="padding: 0 40px 32px 40px;" class="mobile-padding">
 										<table border="0" cellspacing="0" cellpadding="0">
 											<tr>
-												<td style="border-radius: 8px; background-color: #4f46e5;">
+												<td style="border-radius: 8px; background-color: #77B55A;">
 													<a href="${magicLink}" target="_blank" style="display: inline-block; padding: 16px 32px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;" class="button">
 														Sign In Securely
 													</a>
@@ -285,7 +285,7 @@ export const sendMagicLink = async (email, magicLink) => {
 											If the button doesn't work, copy and paste this link into your browser:
 										</p>
 										<p style="margin: 8px 0 0 0; word-break: break-all;">
-											<a href="${magicLink}" style="color: #4f46e5; text-decoration: none; font-size: 14px;">
+											<a href="${magicLink}" style="color: #77B55A; text-decoration: none; font-size: 14px;">
 												${magicLink}
 											</a>
 										</p>
@@ -294,7 +294,7 @@ export const sendMagicLink = async (email, magicLink) => {
 								
 								<!-- Security notice -->
 								<tr>
-									<td style="padding: 0 40px 40px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;" class="mobile-padding">
+									<td style="padding: 40px 40px 40px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;" class="mobile-padding">
 										<div style="padding: 20px; background-color: #fef3c7; border-radius: 6px; border-left: 4px solid #f59e0b;">
 											<p style="margin: 0; font-size: 14px; color: #92400e; line-height: 1.5;">
 												<strong>Security reminder:</strong> If you didn't request this sign-in link, please ignore this email. Never share this link with anyone else.
@@ -303,7 +303,7 @@ export const sendMagicLink = async (email, magicLink) => {
 										
 										<p style="margin: 20px 0 0 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
 											This link was sent to <strong>${email}</strong> and will expire in 15 minutes. 
-											<br>If you have any questions, contact our support team.
+											<br>If you have any questions, contact <a href="mailto:contact@sitcon.org">contact@sitcon.org</a>.
 										</p>
 									</td>
 								</tr>
@@ -315,7 +315,7 @@ export const sendMagicLink = async (email, magicLink) => {
 								<tr>
 									<td align="center" style="padding: 20px;">
 										<p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
-											© 2025 Your Company Name. All rights reserved.
+											© SITCON 2026
 											<br>
 										</p>
 									</td>

@@ -42,7 +42,7 @@ const t = i18n.t(lang, {
 			</ul>
 		</div>
 	</div>
-	<a class="button" href="/form/">確認報名</a>
+	<a class="button" href="#" id="confirm-registration">確認報名</a>
 </Confirm>
 <div class="ticket" id="ticketAnimation"></div>
 
@@ -77,60 +77,163 @@ const t = i18n.t(lang, {
 
 	const ticketsContainer = document.querySelector(".tickets-container");
 
-	// Create HTML for all tickets
-	let ticketsHTML = "";
+	// Function to load tickets from backend
+	async function loadTickets() {
+		try {
+			// Get the default event (first active event)
+			const eventsResponse = await fetch('http://localhost:3000/api/events');
+			const eventsData = await eventsResponse.json();
+			
+			if (eventsData.success && eventsData.data && eventsData.data.length > 0) {
+				const event = eventsData.data[0];
+				const eventId = event.id;
+				const eventName = event.name || 'SITCON 2025';
+				
+				// Get tickets for the event
+				const ticketsResponse = await fetch(`http://localhost:3000/api/events/${eventId}/tickets`);
+				const ticketsData = await ticketsResponse.json();
+				
+				if (ticketsData.success && ticketsData.data) {
+					return {
+						eventName,
+						tickets: ticketsData.data.map(ticket => ({
+							id: ticket.id,
+							name: ticket.name,
+							time: `${ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString() : 'TBD'} - ${ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString() : 'TBD'}`,
+							remaining: `${ticket.available} / ${ticket.available + (ticket.quantity - ticket.available)}`,
+							price: ticket.price,
+							isOnSale: ticket.isOnSale,
+							isSoldOut: ticket.isSoldOut,
+							formFields: ticket.formFields || []
+						}))
+					};
+				}
+			}
+		} catch (error) {
+			console.error('Failed to load tickets:', error);
+		}
+		
+		// Fallback to static data
+		return {
+			eventName: 'SITCON 2025',
+			tickets: Object.entries(ticketsData).map(([name, data]) => ({
+				name,
+				...data,
+				id: name,
+			}))
+		};
+	}
 
-	for (const [title, data] of Object.entries(ticketsData)) {
-		ticketsHTML += `<div class="ticket">
-			<h3>${title}</h3>
-			<p>${t.time}${data.time}</p>
-			<p class="remain">${t.remaining} ${data.remaining}</p>
-		</div>`;
-	}
-	if (ticketsContainer) {
-		ticketsContainer.innerHTML = ticketsHTML;
-	}
-	// track press of all tickets
-	const ticketElements = document.querySelectorAll(".ticket");
-	const confirmElement = document.querySelector(".confirm");
-	const ticketAnimation = document.getElementById("ticketAnimation");
-	const ticketConfirm = document.querySelector(".ticketConfirm");
-	let hidden = null;
-	ticketElements.forEach(ticket => {
-		ticket.addEventListener("click", () => {
-			ticketAnimation.innerHTML = ticket.innerHTML;
-			ticketConfirm.innerHTML = ticket.innerHTML;
-			hidden = ticket;
-			// get the position of ticket and put the Animation on the same place with same rotation.
-			let { top, left } = ticket.getBoundingClientRect();
-			ticketAnimation.style.top = `${top}px`;
-			ticketAnimation.style.left = `${left}px`;
-			ticketAnimation.style.transform = `${getComputedStyle(ticket).transform}`;
-			hidden.style.visibility = "hidden";
-			ticketAnimation.style.display = "block";
-			ticketConfirm.style.visibility = "hidden";
-			requestAnimationFrame(() => {
+	// Initialize tickets
+	loadTickets().then(result => {
+		// Create HTML for all tickets
+		let ticketsHTML = "";
+		const { eventName, tickets } = result;
+
+		for (const ticket of tickets) {
+			ticketsHTML += `<div class="ticket" data-ticket-id="${ticket.id}" data-ticket-name="${ticket.name}" data-event-name="${eventName}">
+				<h3>${ticket.name}</h3>
+				<p>${t.time}${ticket.time}</p>
+				<p class="remain">${t.remaining} ${ticket.remaining}</p>
+			</div>`;
+		}
+		
+		if (ticketsContainer) {
+			ticketsContainer.innerHTML = ticketsHTML;
+		}
+		
+		// track press of all tickets
+		const ticketElements = document.querySelectorAll(".ticket");
+		const confirmElement = document.querySelector(".confirm");
+		const ticketAnimation = document.getElementById("ticketAnimation");
+		const ticketConfirm = document.querySelector(".ticketConfirm");
+		let hidden = null;
+		ticketElements.forEach(ticket => {
+			ticket.addEventListener("click", () => {
+				// Store ticket information for form submission
+				const ticketId = ticket.dataset.ticketId;
+				const ticketName = ticket.dataset.ticketName;
+				const eventName = ticket.dataset.eventName;
+				
+				sessionStorage.setItem('selectedTicketId', ticketId);
+				sessionStorage.setItem('selectedTicketName', ticketName);
+				sessionStorage.setItem('selectedEventName', eventName);
+				
+				ticketAnimation.innerHTML = ticket.innerHTML;
+				ticketConfirm.innerHTML = ticket.innerHTML;
+				hidden = ticket;
+				// get the position of ticket and put the Animation on the same place with same rotation.
+				let { top, left } = ticket.getBoundingClientRect();
+				ticketAnimation.style.top = `${top}px`;
+				ticketAnimation.style.left = `${left}px`;
+				ticketAnimation.style.transform = `${getComputedStyle(ticket).transform}`;
+				hidden.style.visibility = "hidden";
+				ticketAnimation.style.display = "block";
+				ticketConfirm.style.visibility = "hidden";
 				requestAnimationFrame(() => {
-					confirmElement.classList.add("confirming");
-					const confirmRect = ticketConfirm.getBoundingClientRect();
-					ticketAnimation.style.top = `${confirmRect.top}px`;
-					ticketAnimation.style.left = `${confirmRect.left}px`;
-					ticketAnimation.style.transform = `${getComputedStyle(ticketConfirm).transform}`;
-					// 300ms delay
-					setTimeout(() => {
-						ticketAnimation.style.display = "none";
-						ticketConfirm.style.visibility = "visible";
-					}, 300);
+					requestAnimationFrame(() => {
+						confirmElement.classList.add("confirming");
+						const confirmRect = ticketConfirm.getBoundingClientRect();
+						ticketAnimation.style.top = `${confirmRect.top}px`;
+						ticketAnimation.style.left = `${confirmRect.left}px`;
+						ticketAnimation.style.transform = `${getComputedStyle(ticketConfirm).transform}`;
+						// 300ms delay
+						setTimeout(() => {
+							ticketAnimation.style.display = "none";
+							ticketConfirm.style.visibility = "visible";
+						}, 300);
+					});
 				});
 			});
 		});
-	});
 
-	// remove confirm class on close
-	document.getElementById("close").addEventListener("click", () => {
-		document.querySelector(".confirm").classList.remove("confirming");
-		hidden.style.visibility = "visible";
-		ticketAnimation.style.display = "none";
+		// remove confirm class on close
+		document.getElementById("close").addEventListener("click", () => {
+			document.querySelector(".confirm").classList.remove("confirming");
+			hidden.style.visibility = "visible";
+			ticketAnimation.style.display = "none";
+		});
+
+		// Handle confirmation button click
+		document.getElementById("confirm-registration").addEventListener("click", (e) => {
+			e.preventDefault();
+			
+			const selectedTicketId = sessionStorage.getItem('selectedTicketId');
+			const selectedTicketName = sessionStorage.getItem('selectedTicketName');
+			const selectedEventName = sessionStorage.getItem('selectedEventName');
+			
+			if (!selectedTicketId) {
+				alert('請先選擇票種');
+				return;
+			}
+
+			// Build URL with parameters
+			const params = new URLSearchParams();
+			params.set('ticket', selectedTicketId);
+			
+			// Add event name and ticket type to URL parameters
+			if (selectedEventName) {
+				params.set('eventName', selectedEventName);
+			}
+			if (selectedTicketName) {
+				params.set('ticketType', selectedTicketName);
+			}
+
+			// Add invitation code if present
+			const invitationCode = sessionStorage.getItem('invitationCode');
+			if (invitationCode) {
+				params.set('invite', invitationCode);
+			}
+
+			// Add referral code if present
+			const referralCode = sessionStorage.getItem('referralCode');
+			if (referralCode) {
+				params.set('ref', referralCode);
+			}
+
+			// Redirect to form with parameters
+			window.location.href = `/form/?${params.toString()}`;
+		});
 	});
 </script>
 

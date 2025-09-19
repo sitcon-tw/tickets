@@ -342,6 +342,8 @@ const l = i18n.l(Astro.url);
 	</style>
 
 	<script>
+		import { invitationCodes as invitationCodesAPI, initializeAdminPage } from "../../lib/admin.js";
+
 		// In-memory mock structures
 		/** InviteType: { id, name, createdAt, codes: InviteCode[] } */
 		/** InviteCode: { id, code, usedCount, usageLimit, usedBy?: string, active: boolean } */
@@ -349,6 +351,8 @@ const l = i18n.l(Astro.url);
 		let filteredTypes = [];
 		let currentEditing = null; // type id
 		let viewingCodesOf = null; // type id
+		let isLoading = false;
+
 		const searchTypesEl = document.getElementById("searchTypes") as HTMLInputElement;
 		const typesBody = document.getElementById("typesBody") as HTMLTableSectionElement;
 		const typesTable = document.getElementById("typesTable") as HTMLTableElement;
@@ -370,6 +374,134 @@ const l = i18n.l(Astro.url);
 		const exportCodesBtn = document.getElementById("exportCodes") as HTMLButtonElement;
 		const codesEmpty = document.getElementById("codesEmpty") as HTMLElement;
 
+		// Initialize page
+		async function initializePage() {
+			try {
+				// Check admin authentication
+				const isAuthorized = await initializeAdminPage();
+				if (!isAuthorized) return;
+
+				// Load invitation codes from backend
+				await loadInvitationCodes();
+				
+				// Setup event listeners
+				setupEventListeners();
+				
+				// Initial render
+				renderTable();
+				
+			} catch (error) {
+				console.error('Failed to initialize invites page:', error);
+				showError('Failed to load page. Please try refreshing.');
+				// Fall back to mock data
+				seedMock();
+				renderTable();
+			}
+		}
+
+		// Load invitation codes from backend
+		async function loadInvitationCodes() {
+			if (isLoading) return;
+			
+			isLoading = true;
+			showLoading(true);
+			
+			try {
+				const response = await invitationCodesAPI.list({ limit: 500 });
+				
+				if (response.success) {
+					// Transform backend data to frontend format
+					// Group by invitation code type/name
+					const codesByType = {};
+					(response.data || []).forEach(code => {
+						const typeName = code.type || 'Default';
+						if (!codesByType[typeName]) {
+							codesByType[typeName] = {
+								id: typeName,
+								name: typeName,
+								createdAt: code.createdAt,
+								codes: []
+							};
+						}
+						codesByType[typeName].codes.push({
+							id: code.id,
+							code: code.code,
+							usedCount: code.usedCount || 0,
+							usageLimit: code.usageLimit || 1,
+							usedBy: code.usedBy,
+							active: code.isActive !== false
+						});
+					});
+					
+					inviteTypes = Object.values(codesByType);
+				} else {
+					throw new Error(response.message || 'Failed to load invitation codes');
+				}
+			} catch (error) {
+				console.error('Failed to load invitation codes:', error);
+				showError('Failed to load invitation codes: ' + error.message);
+				// Fall back to mock data
+				seedMock();
+			} finally {
+				isLoading = false;
+				showLoading(false);
+			}
+		}
+
+		// Setup event listeners
+		function setupEventListeners() {
+			// Search functionality
+			searchTypesEl?.addEventListener('input', applyFilter);
+			
+			// Add new invitation code group
+			addBtn?.addEventListener('click', openAddModal);
+			
+			// Modal controls
+			closeModalBtn?.addEventListener('click', closeModal);
+			cancelModalBtn?.addEventListener('click', closeModal);
+			typeForm?.addEventListener('submit', handleFormSubmit);
+			
+			// Codes modal controls
+			closeCodesBtn?.addEventListener('click', closeCodesModal);
+			searchCodesEl?.addEventListener('input', filterCodes);
+		}
+
+		// Create new invitation codes
+		async function createInvitationCodes(formData) {
+			try {
+				const data = {
+					type: formData.name,
+					count: parseInt(formData.amount),
+					usageLimit: parseInt(formData.limit) || 1,
+					expiresAt: formData.expires || null
+				};
+
+				const response = await invitationCodesAPI.bulkCreate(data);
+				
+				if (response.success) {
+					// Reload data
+					await loadInvitationCodes();
+					renderTable();
+					closeModal();
+				} else {
+					throw new Error(response.message || 'Failed to create invitation codes');
+				}
+			} catch (error) {
+				console.error('Failed to create invitation codes:', error);
+				alert('創建失敗: ' + error.message);
+			}
+		}
+
+		// UI utility functions
+		function showLoading(show) {
+			loadingEl.hidden = !show;
+		}
+
+		function showError(message) {
+			console.error(message);
+			// Could add error display UI here
+		}
+
 		function seedMock() {
 			if (inviteTypes.length) return;
 			for (let i = 0; i < 5; i++) {
@@ -390,50 +522,17 @@ const l = i18n.l(Astro.url);
 			}
 		}
 
-		function fetchData() {
-			loadingEl.hidden = false;
-			// Attempt to fetch real data (placeholder endpoint assumption)
-			return fetch("/admin/invitation-codes?limit=500")
-				.then(r => (r.ok ? r.json() : Promise.reject()))
-				.then(data => {
-					if (Array.isArray(data.data)) {
-						inviteTypes = data.data.map(row => ({
-							id: row.id,
-							name: row.name || row.code || "(Unnamed)",
-							createdAt: row.createdAt || new Date().toISOString(),
-							codes: [
-								{
-									id: row.id,
-									code: row.code,
-									usedCount: row.usedCount || 0,
-									usageLimit: row.usageLimit || 1,
-									usedBy: null,
-									active: row.isActive !== false
-								}
-							]
-						}));
-					}
-				})
-				.catch(() => {
-					seedMock();
-				})
-				.finally(() => {
-					loadingEl.hidden = true;
-					applyTypeFilter();
-				});
-		}
-
-		function applyTypeFilter() {
+		function applyFilter() {
 			const q = searchTypesEl.value.trim().toLowerCase();
 			filteredTypes = inviteTypes.filter(t => {
 				if (!q) return true;
 				if (t.name.toLowerCase().includes(q)) return true;
 				return t.codes.some(c => c.code.toLowerCase().includes(q));
 			});
-			renderTypes();
+			renderTable();
 		}
 
-		function renderTypes() {
+		function renderTable() {
 			typesBody.innerHTML = "";
 			if (!filteredTypes.length) {
 				typesTable.hidden = true;
@@ -459,6 +558,23 @@ const l = i18n.l(Astro.url);
 			});
 			typesTable.hidden = false;
 			emptyEl.hidden = true;
+		}
+
+		// Modal utility functions
+		function openAddModal() {
+			openCreate();
+		}
+
+		function closeModal() {
+			hideModal(modal);
+		}
+
+		function closeCodesModal() {
+			hideModal(codesModal);
+		}
+
+		function showModal(m) {
+			m.hidden = false;
 		}
 
 		function openCreate() {
@@ -510,9 +626,8 @@ const l = i18n.l(Astro.url);
 			});
 		}
 
-		function showModal(m) {
-			m.hidden = false;
-			m.setAttribute("aria-hidden", "false");
+		function filterCodes() {
+			renderCodes();
 		}
 		function hideModal(m) {
 			m.hidden = true;
@@ -524,33 +639,31 @@ const l = i18n.l(Astro.url);
 		cancelModalBtn.addEventListener("click", () => hideModal(modal));
 		closeCodesBtn.addEventListener("click", () => hideModal(codesModal));
 
-		typeForm.addEventListener("submit", e => {
+		// Handle form submission
+		function handleFormSubmit(e) {
 			e.preventDefault();
-			const form = e.target as HTMLFormElement;
-			const nameInput = form.elements.namedItem("name") as HTMLInputElement | null;
-			const amountInput = form.elements.namedItem("amount") as HTMLInputElement | null;
-			const name = (nameInput?.value || "").trim();
-			if (!name) return alert("Name required");
-			if (currentEditing) {
-				const t = inviteTypes.find(x => x.id === currentEditing);
-				if (t) {
-					t.name = name;
-				}
-			} else {
-				const amount = Math.max(1, Math.min(1000, parseInt(amountInput?.value || "", 10) || 1));
-				const codes = Array.from({ length: amount }).map(() => ({
-					id: crypto.randomUUID(),
-					code: generateCode(),
-					usedCount: 0,
-					usageLimit: 1,
-					usedBy: null,
-					active: true
-				}));
-				inviteTypes.unshift({ id: crypto.randomUUID(), name, createdAt: new Date().toISOString(), codes });
+			const form = e.target;
+			const formData = new FormData(form);
+			const data = {
+				name: (formData.get('name') as string)?.trim(),
+				amount: formData.get('amount') as string,
+				limit: formData.get('limit') as string,
+				expires: formData.get('expires') as string
+			};
+
+			if (!data.name) {
+				alert('名稱是必填的');
+				return;
 			}
-			hideModal(modal);
-			applyTypeFilter();
-		});
+
+			if (currentEditing) {
+				// Edit existing type - not implemented in backend yet
+				alert('編輯功能尚未實作');
+			} else {
+				// Create new invitation codes
+				createInvitationCodes(data);
+			}
+		}
 
 		function generateCode() {
 			return Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -566,7 +679,7 @@ const l = i18n.l(Astro.url);
 
 		searchTypesEl.addEventListener(
 			"input",
-			debounce(() => applyTypeFilter(), 200)
+			debounce(() => applyFilter(), 200)
 		);
 		searchCodesEl.addEventListener(
 			"input",
@@ -613,7 +726,7 @@ const l = i18n.l(Astro.url);
 			URL.revokeObjectURL(url);
 		}
 
-		// Init
-		fetchData();
+		// Initialize the page
+		initializePage();
 	</script>
 </Layout>

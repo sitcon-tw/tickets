@@ -3,7 +3,7 @@ const { label, id, options, required = true } = Astro.props;
 ---
 
 <label for={id}>{label}</label>
-<select id={id} aria-label={label} required={required}>
+<select id={id} name={id} aria-label={label} required={required}>
 	<option value="">請選擇...</option>
 	{options.map(option => <option value={option}>{option}</option>)}
 </select>

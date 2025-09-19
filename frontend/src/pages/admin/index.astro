@@ -260,15 +260,94 @@ const l = i18n.l(Astro.url);
 
 	<script>
 		import { Chart, registerables } from "chart.js";
+		import { analytics, initializeAdminPage } from "../../lib/admin.js";
 		Chart.register(...registerables);
 
-		// Fake data for demonstration
+		// Dashboard data
+		let dashboardData = null;
+
+		// Initialize page with auth check and load data
+		async function initializeDashboard() {
+			try {
+				// Check admin authentication
+				const isAuthorized = await initializeAdminPage();
+				if (!isAuthorized) return;
+
+				// Load dashboard data
+				const response = await analytics.getDashboard();
+				if (response.success) {
+					dashboardData = response.data;
+					updateDashboardStats();
+					initCharts();
+				} else {
+					console.error('Failed to load dashboard data:', response.message);
+					// Fall back to fake data
+					initCharts();
+				}
+			} catch (error) {
+				console.error('Dashboard initialization failed:', error);
+				// Fall back to fake data
+				initCharts();
+			}
+		}
+
+		// Update dashboard statistics with real data
+		function updateDashboardStats() {
+			if (!dashboardData) return;
+
+			// Update main stats
+			document.querySelector('.stats-grid .stat-card:nth-child(1) .stat-number').textContent = 
+				dashboardData.totalTickets || '0';
+			document.querySelector('.stats-grid .stat-card:nth-child(2) .stat-number').textContent = 
+				dashboardData.soldTickets || '0';
+			document.querySelector('.stats-grid .stat-card:nth-child(3) .stat-number').textContent = 
+				dashboardData.remainingTickets || '0';
+			
+			const salesRate = dashboardData.totalTickets > 0 
+				? ((dashboardData.soldTickets / dashboardData.totalTickets) * 100).toFixed(1)
+				: '0';
+			document.querySelector('.stats-grid .stat-card:nth-child(4) .stat-number').textContent = 
+				salesRate + '%';
+
+			// Update registration stats
+			const totalReg = dashboardData.totalRegistrations || 0;
+			const confirmedReg = dashboardData.confirmedRegistrations || 0;
+			const pendingReg = dashboardData.pendingRegistrations || 0;
+			
+			if (totalReg > 0) {
+				// Update progress cards with real data from ticket sales
+				updateProgressCards();
+			}
+		}
+
+		// Update individual ticket progress cards
+		function updateProgressCards() {
+			if (!dashboardData.ticketSales) return;
+
+			// This would need to be adapted based on actual ticket sales data structure
+			Object.entries(dashboardData.ticketSales).forEach(([ticketType, sales], index) => {
+				const progressCard = document.querySelector(`.progress-card:nth-child(${index + 1})`);
+				if (progressCard) {
+					const remainingElement = progressCard.querySelector('.remaining-number');
+					const totalElement = progressCard.querySelector('.detail-item:nth-child(1) span:last-child');
+					const soldElement = progressCard.querySelector('.detail-item:nth-child(2) span:last-child');
+					
+					const salesData = sales as any;
+					if (remainingElement) remainingElement.textContent = salesData.remaining || '0';
+					if (totalElement) totalElement.textContent = salesData.total || '0';
+					if (soldElement) soldElement.textContent = salesData.sold || '0';
+				}
+			});
+		}
+
+		// Fake data for demonstration (fallback)
 		const ticketTypes = ["學生票", "普通票", "遠道而來票", "邀請票", "開源貢獻票"];
 		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
 
 		const initCharts = () => {
 			// Line Chart - Ticket Sales Trends Over Time
-			const trendsCtx = document.getElementById("ticketTrendsChart")?.getContext("2d");
+			const trendsCanvas = document.getElementById("ticketTrendsChart") as HTMLCanvasElement;
+			const trendsCtx = trendsCanvas?.getContext("2d");
 			if (trendsCtx) {
 				const trendsChart = new Chart(trendsCtx, {
 					type: "line",
@@ -361,7 +440,8 @@ const l = i18n.l(Astro.url);
 			}
 
 			// Doughnut Chart - Ticket Distribution
-			const distributionCtx = document.getElementById("ticketDistributionChart")?.getContext("2d");
+			const distributionCanvas = document.getElementById("ticketDistributionChart") as HTMLCanvasElement;
+			const distributionCtx = distributionCanvas?.getContext("2d");
 			if (distributionCtx) {
 				const distributionChart = new Chart(distributionCtx, {
 					type: "doughnut",
@@ -420,7 +500,8 @@ const l = i18n.l(Astro.url);
 			];
 
 			ticketData.forEach(ticket => {
-				const ctx = document.getElementById(ticket.id)?.getContext("2d");
+				const canvas = document.getElementById(ticket.id) as HTMLCanvasElement;
+				const ctx = canvas?.getContext("2d");
 				if (ctx) {
 					const percentage = ((ticket.soldCount / ticket.total) * 100).toFixed(1);
 					const remaining = ticket.total - ticket.soldCount;
@@ -433,8 +514,7 @@ const l = i18n.l(Astro.url);
 								{
 									data: [ticket.soldCount, remaining],
 									backgroundColor: [ticket.color, "#E5E5E5"],
-									borderWidth: 0,
-									cutout: "70%"
+									borderWidth: 0
 								}
 							]
 						},
@@ -442,6 +522,8 @@ const l = i18n.l(Astro.url);
 							responsive: true,
 							maintainAspectRatio: false,
 							circumference: 180,
+							// @ts-ignore - Chart.js options
+							cutout: "70%",
 							rotation: 270,
 							plugins: {
 								legend: {
@@ -461,8 +543,10 @@ const l = i18n.l(Astro.url);
 								}
 							}
 						},
+						// @ts-ignore - Chart.js plugin typing issue
 						plugins: [
 							{
+								id: 'centerText',
 								afterDraw: function (chart) {
 									const ctx = chart.ctx;
 									const width = chart.width;
@@ -488,7 +572,8 @@ const l = i18n.l(Astro.url);
 			});
 		};
 
-		initCharts();
+		// Initialize dashboard when page loads
+		document.addEventListener('DOMContentLoaded', initializeDashboard);
 	</script>
 
 	<style>

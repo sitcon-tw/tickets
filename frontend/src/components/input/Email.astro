@@ -3,7 +3,7 @@ const { label, id, required = true } = Astro.props;
 ---
 
 <label for={id}>{label}</label>
-<input type="email" id={id} aria-label={label} required={required} />
+<input type="email" id={id} name={id} aria-label={label} required={required} />
 
 <style>
 	label {

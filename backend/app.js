@@ -6,6 +6,7 @@ import Fastify from "fastify";
 
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
+import { initializeDatabase, cleanup } from "./utils/database-init.js";
 
 dotenv.config();
 
@@ -164,10 +165,43 @@ await fastify.register(routes);
 
 const port = process.env.PORT || 3000;
 
+// Initialize database with default data
+try {
+	await initializeDatabase();
+} catch (error) {
+	fastify.log.error('Failed to initialize database:', error);
+	process.exit(1);
+}
+
 fastify.listen({ port }, (err, address) => {
 	if (err) {
 		fastify.log.error(err);
 		process.exit(1);
 	}
 	fastify.log.info(`Server running at ${address}`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+	console.log('Received SIGINT, shutting down gracefully...');
+	try {
+		await cleanup();
+		await fastify.close();
+		process.exit(0);
+	} catch (error) {
+		console.error('Error during shutdown:', error);
+		process.exit(1);
+	}
+});
+
+process.on('SIGTERM', async () => {
+	console.log('Received SIGTERM, shutting down gracefully...');
+	try {
+		await cleanup();
+		await fastify.close();
+		process.exit(0);
+	} catch (error) {
+		console.error('Error during shutdown:', error);
+		process.exit(1);
+	}
 });

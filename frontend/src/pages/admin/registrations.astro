@@ -252,14 +252,16 @@ const l = i18n.l(Astro.url);
 	</style>
 
 	<script>
+		import { registrations as registrationsAPI, initializeAdminPage } from "../../lib/admin.js";
+
 		// Column definitions (id -> label + value accessor)
 		const columnDefs = [
 			{ id: "id", label: "ID", accessor: r => r.id },
-			{ id: "email", label: "Email", accessor: r => r.email || r.formData?.Email || "" },
-			{ id: "phone", label: "Phone", accessor: r => r.phone || r.formData?.Phone || "" },
+			{ id: "email", label: "Email", accessor: r => r.email || r.formData?.email || "" },
+			{ id: "phone", label: "Phone", accessor: r => r.formData?.phoneNumber || "" },
 			{ id: "status", label: "Status", accessor: r => r.status },
 			{ id: "ticket", label: "Ticket", accessor: r => r.ticket?.name || "" },
-			{ id: "event", label: "Event", accessor: r => r.ticket?.event?.name || "" },
+			{ id: "event", label: "Event", accessor: r => r.event?.name || "" },
 			{ id: "createdAt", label: "Created", accessor: r => (r.createdAt ? new Date(r.createdAt).toLocaleString() : "") },
 			{ id: "tags", label: "Tags", accessor: r => (Array.isArray(r.tags) ? r.tags.join(", ") : "") }
 		];
@@ -267,6 +269,7 @@ const l = i18n.l(Astro.url);
 		let activeColumns = new Set(["id", "email", "status", "ticket", "event", "createdAt"]);
 		let registrations = [];
 		let filtered = [];
+		let isLoading = false;
 
 		const searchEl = document.getElementById("search") as HTMLInputElement;
 		const statusEl = document.getElementById("statusFilter") as HTMLSelectElement;
@@ -280,6 +283,105 @@ const l = i18n.l(Astro.url);
 		const loadingEl = document.getElementById("loading");
 		const emptyEl = document.getElementById("empty");
 		const metaInfo = document.getElementById("metaInfo");
+
+		// Initialize page
+		async function initializePage() {
+			try {
+				// Check admin authentication
+				const isAuthorized = await initializeAdminPage();
+				if (!isAuthorized) return;
+
+				// Load registrations data
+				await loadRegistrations();
+
+				// Setup event listeners
+				setupEventListeners();
+
+				// Build column toggles
+				buildColumnToggles();
+			} catch (error) {
+				console.error("Failed to initialize registrations page:", error);
+				showError("Failed to load page. Please try refreshing.");
+			}
+		}
+
+		// Load registrations from backend
+		async function loadRegistrations() {
+			if (isLoading) return;
+
+			isLoading = true;
+			showLoading(true);
+
+			try {
+				const params: any = {};
+				const limit = parseInt(limitEl.value) || 20;
+				if (limit) params.limit = limit;
+				if (statusEl.value) params.status = statusEl.value;
+				if (searchEl.value.trim()) params.search = searchEl.value.trim();
+
+				const response = await registrationsAPI.list(params);
+
+				if (response.success) {
+					registrations = response.data || [];
+					applyFilters();
+				} else {
+					throw new Error(response.message || "Failed to load registrations");
+				}
+			} catch (error) {
+				console.error("Failed to load registrations:", error);
+				showError("Failed to load registrations: " + error.message);
+				// Fall back to fake data for demonstration
+				generateFakeData();
+			} finally {
+				isLoading = false;
+				showLoading(false);
+			}
+		}
+
+		// Setup event listeners
+		function setupEventListeners() {
+			searchEl.addEventListener(
+				"input",
+				debounce(() => {
+					applyFilters();
+				}, 300)
+			);
+
+			statusEl.addEventListener("change", applyFilters);
+			limitEl.addEventListener("change", loadRegistrations);
+			refreshBtn.addEventListener("click", loadRegistrations);
+
+			syncBtn.addEventListener("click", async () => {
+				try {
+					syncBtn.disabled = true;
+					syncBtn.textContent = "Syncing...";
+
+					// Call export API (assuming it handles Google Sheets sync)
+					await registrationsAPI.export({ format: "sheets" });
+
+					alert("Successfully synced to Google Sheets!");
+				} catch (error) {
+					console.error("Sync failed:", error);
+					alert("Sync failed: " + error.message);
+				} finally {
+					syncBtn.disabled = false;
+					syncBtn.textContent = "📝 Sync to Google Sheets";
+				}
+			});
+		}
+
+		function showLoading(show) {
+			loadingEl.hidden = !show;
+			table.hidden = show;
+			emptyEl.hidden = true;
+		}
+
+		function showError(message) {
+			loadingEl.innerHTML = `<div style="color: red;">${message}</div>`;
+			loadingEl.hidden = false;
+			table.hidden = true;
+			emptyEl.hidden = true;
+		}
 
 		function buildColumnToggles() {
 			columnTogglesEl.innerHTML = "";
@@ -299,29 +401,25 @@ const l = i18n.l(Astro.url);
 			});
 		}
 
-		function fetchData() {
-			loadingEl.hidden = false;
-			emptyEl.hidden = true;
-			table.hidden = true;
-			metaInfo.textContent = "";
-			const limit = parseInt(limitEl.value, 10) || 20;
-			const status = statusEl.value;
-			const qs = new URLSearchParams({ limit: String(limit) });
-			if (status) qs.set("status", status);
-			if (searchEl.value.trim()) qs.set("search", searchEl.value.trim());
-			return fetch(`/admin/registrations?${qs.toString()}`)
-				.then(r => (r.ok ? r.json() : Promise.reject(new Error("Network"))))
-				.then(data => {
-					registrations = Array.isArray(data.data) ? data.data : data;
-				})
-				.catch(() => {
-					// fallback mock data
-					registrations = mockData();
-				})
-				.finally(() => {
-					loadingEl.hidden = true;
-					applyFilters();
-				});
+		// Generate fake data (fallback)
+		function generateFakeData() {
+			const statuses = ["confirmed", "pending", "cancelled"];
+			const now = Date.now();
+			registrations = Array.from({ length: 50 }, (_, i) => ({
+				id: "REG" + String(i + 1).padStart(3, "0"),
+				email: `user${i + 1}@example.com`,
+				formData: {
+					email: `user${i + 1}@example.com`,
+					phoneNumber: "09" + Math.floor(100000000 + Math.random() * 899999999)
+				},
+				status: statuses[i % 3],
+				createdAt: new Date(now - i * 86400000).toISOString(),
+				ticket: { id: "T" + (i % 5), name: ["General", "Student", "VIP", "Staff", "Media"][i % 5] },
+				event: { id: "E1", name: "SITCON 2026" },
+				tags: i % 4 === 0 ? ["early"] : i % 7 === 0 ? ["vip"] : []
+			}));
+			loadingEl.hidden = true;
+			applyFilters();
 		}
 
 		function mockData() {
@@ -399,24 +497,8 @@ const l = i18n.l(Astro.url);
 			metaInfo.textContent = `${filtered.length} rows | Showing columns: ${[...activeColumns].join(", ")}`;
 		}
 
-		// Events
-		searchEl.addEventListener(
-			"input",
-			debounce(() => applyFilters(), 250)
-		);
-		statusEl.addEventListener("change", applyFilters);
-		limitEl.addEventListener("change", fetchData);
-		refreshBtn.addEventListener("click", fetchData);
-		syncBtn.addEventListener("click", () => {
-			syncBtn.disabled = true;
-			syncBtn.textContent = "同步中... (Syncing...)";
-			setTimeout(() => {
-				console.log("[Registrations] Sync to Google Sheets stub triggered", { rows: filtered.length });
-				syncBtn.disabled = false;
-				syncBtn.textContent = "📝 同步到 Google Sheets (Sync)";
-				alert("Stub: 已模擬同步 " + filtered.length + " 筆資料 (Simulated sync)");
-			}, 1200);
-		});
+		// Note: Event listeners are already set up in setupEventListeners() function
+		// Note: All event listeners are handled in setupEventListeners() function
 
 		function debounce(fn, wait) {
 			let t;
@@ -426,7 +508,7 @@ const l = i18n.l(Astro.url);
 			};
 		}
 
-		buildColumnToggles();
-		fetchData();
+		// Initialize page when DOM is ready
+		document.addEventListener("DOMContentLoaded", initializePage);
 	</script>
 </Layout>

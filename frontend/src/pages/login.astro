@@ -114,19 +114,18 @@ const l = i18n.l(Astro.url);
 			if (!email) return;
 			
 			try {
-				// 這些 link 都要改掉，因為我不知道怎麼匯入 env -ns
-				const response = await fetch("http://localhost:3000/api/auth/sign-in/magic-link", {
+				const BACKEND_URI = 'http://localhost:3000';
+				const response = await fetch(`${BACKEND_URI}/api/auth/sign-in/magic-link`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json"
 					},
 					body: JSON.stringify({
 						email: email,
-						name: email.split("@")[0], // 暫時先用 email 前面當名字 (eg: hi@nelsongx.com -> hi)
-						// 下面這些要再改
-						callbackURL: "http://localhost:4321",
-						newUserCallbackURL: "http://localhost:4321/new",
-						errorCallbackURL: "http://localhost:4321/login-error"
+						name: email.split("@")[0],
+						callbackURL: window.location.origin,
+						newUserCallbackURL: window.location.origin,
+						errorCallbackURL: `${window.location.origin}/login/`
 					})
 				});
 				
