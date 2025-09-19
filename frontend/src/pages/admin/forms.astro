@@ -2,39 +2,55 @@
 import Layout from "@layouts/Layout.astro";
 import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
+import "src/styles/admin.css";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
-		"zh-Hant": "找不到頁面",
-		"zh-Hans": "找不到页面",
-		en: "Page Not Found"
+		"zh-Hant": "編輯表單",
+		"zh-Hans": "编辑表单",
+		en: "Edit Form"
 	},
 	description: {
-		"zh-Hant": "抱歉，您訪問的頁面不存在。",
-		"zh-Hans": "抱歉，您访问的页面不存在。",
-		en: "Sorry, the page you are looking for does not exist."
+		"zh-Hant": "在此編輯報名表單的問題與結構。",
+		"zh-Hans": "在此编辑报名表单的问题与结构。",
+		en: "Edit the questions and structure of the registration form here."
+	},
+	addQuestion: {
+		"zh-Hant": "新增問題",
+		"zh-Hans": "新增问题",
+		en: "Add Question"
+	},
+	save: {
+		"zh-Hant": "儲存表單",
+		"zh-Hans": "保存表单",
+		en: "Save Form"
 	}
+});
+const tt = i18n.t(lang, {
+	title: {
+		"zh-Hant": "編輯表單",
+		"zh-Hans": "编辑表单",
+		en: "Edit Form"
+	},
 });
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
-	<link rel="stylesheet" href="/src/styles/admin.css" />
+<Layout i18n={t.t} path="" title={t.title} lang={lang}>
 	<AdminNav />
 	<main >
-		<h1>編輯表單</h1>
+		<h1>{t.title}</h1>
 		<div id="form-editor" class="editor">
 			<div id="questions" class="questions"></div>
 			<div class="toolbar">
-				<button id="add-question" type="button">+ 新增問題 (Add Question)</button>
-				<button id="save-form" type="button" class="primary">💾 儲存 (Save)</button>
+				<button id="add-question" type="button">+ {t.addQuestion}</button>
+				<button id="save-form" type="button" class="primary">💾 {t.save}</button>
 			</div>
 			<pre id="output" class="output" aria-live="polite"></pre>
 		</div>
 	</main>
 
 	<style is:global>
-		/* Form editor specific (shared base styles in admin.css) */
 		.editor {
 			max-width: 960px;
 			margin: 1rem auto 4rem;

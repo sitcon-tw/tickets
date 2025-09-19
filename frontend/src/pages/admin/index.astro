@@ -2,6 +2,7 @@
 import Layout from "@layouts/Layout.astro";
 import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
+import "src/styles/admin.css";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
@@ -13,6 +14,96 @@ const t = i18n.t(lang, {
 		"zh-Hant": "票券銷售數據分析儀表板",
 		"zh-Hans": "票券销售数据分析仪表板",
 		en: "Ticket sales analytics dashboard"
+	},
+	overview: {
+		"zh-Hant": "總覽",
+		"zh-Hans": "总览",
+		en: "Overview"
+	},
+	totalTickets: {
+		"zh-Hant": "總票券數",
+		"zh-Hans": "总票券数",
+		en: "Total Tickets"
+	},
+	sold: {
+		"zh-Hant": "已售出",
+		"zh-Hans": "已售出",
+		en: "Sold"
+	},
+	remaining: {
+		"zh-Hant": "剩餘票券",
+		"zh-Hans": "剩余票券",
+		en: "Remaining Tickets"
+	},
+	salesRate: {
+		"zh-Hant": "銷售率",
+		"zh-Hans": "销售率",
+		en: "Sales Rate"
+	},
+	tickets: {
+		"zh-Hant": "張票券",
+		"zh-Hans": "张票券",
+		en: "tickets"
+	},
+	completion: {
+		"zh-Hant": "完成度",
+		"zh-Hans": "完成度",
+		en: "Completion"
+	},
+	salesTrend: {
+		"zh-Hant": "票券銷售趨勢",
+		"zh-Hans": "票券销售趋势",
+		en: "Ticket Sales Trend"
+	},
+	ticketDistribution: {
+		"zh-Hant": "票券類型分布",
+		"zh-Hans": "票券类型分布",
+		en: "Ticket Type Distribution"
+	},
+	progressTitle: {
+		"zh-Hant": "票券銷售進度",
+		"zh-Hans": "票券销售进度",
+		en: "Ticket Sales Progress"
+	},
+	student: {
+		"zh-Hant": "學生票",
+		"zh-Hans": "学生票",
+		en: "Student Ticket"
+	},
+	regular: {
+		"zh-Hant": "普通票",
+		"zh-Hans": "普通票",
+		en: "Regular Ticket"
+	},
+	distant: {
+		"zh-Hant": "遠道而來票",
+		"zh-Hans": "远道而来票",
+		en: "Distant Ticket"
+	},
+	invite: {
+		"zh-Hant": "邀請票",
+		"zh-Hans": "邀请票",
+		en: "Invite Ticket"
+	},
+	opensource: {
+		"zh-Hant": "開源貢獻票",
+		"zh-Hans": "开源贡献票",
+		en: "Open Source Ticket"
+	},
+	remainingLabel: {
+		"zh-Hant": "張剩餘",
+		"zh-Hans": "张剩余",
+		en: "remaining"
+	},
+	total: {
+		"zh-Hant": "總數",
+		"zh-Hans": "总数",
+		en: "Total"
+	},
+	soldLabel: {
+		"zh-Hant": "已售",
+		"zh-Hans": "已售",
+		en: "Sold"
 	}
 });
 const l = i18n.l(Astro.url);
@@ -21,149 +112,144 @@ const l = i18n.l(Astro.url);
 <Layout i18n={t.t} path="" title={t.title} theme="var(--color-gray-800)" lang={lang}>
 	<AdminNav />
 	<main class="dashboard">
-		<h1 style="color: var(--color-gray-100)">總覽</h1>
-
-		<!-- Summary Cards -->
+		<h1>{t.overview}</h1>
 		<div class="stats-grid">
 			<div class="stat-card">
-				<h3>總票券數</h3>
+				<h3>{t.totalTickets}</h3>
 				<div class="stat-number">500</div>
-				<div class="stat-label">張票券</div>
+				<div class="stat-label">{t.tickets}</div>
 			</div>
 			<div class="stat-card">
-				<h3>已售出</h3>
+				<h3>{t.sold}</h3>
 				<div class="stat-number">347</div>
-				<div class="stat-label">張票券</div>
+				<div class="stat-label">{t.tickets}</div>
 			</div>
 			<div class="stat-card">
-				<h3>剩餘票券</h3>
+				<h3>{t.remaining}</h3>
 				<div class="stat-number">153</div>
-				<div class="stat-label">張票券</div>
+				<div class="stat-label">{t.tickets}</div>
 			</div>
 			<div class="stat-card">
-				<h3>銷售率</h3>
+				<h3>{t.salesRate}</h3>
 				<div class="stat-number">69.4%</div>
-				<div class="stat-label">完成度</div>
+				<div class="stat-label">{t.completion}</div>
 			</div>
 		</div>
 
-		<!-- Charts Section -->
 		<div class="charts-section">
 			<div class="chart-container trend">
-				<h2>票券銷售趨勢</h2>
+				<h2>{t.salesTrend}</h2>
 				<canvas id="ticketTrendsChart" width="100%" height="50px"></canvas>
 			</div>
 
 			<div class="chart-container">
-				<h2>票券類型分布</h2>
+				<h2>{t.ticketDistribution}</h2>
 				<canvas id="ticketDistributionChart" width="100%" height="100%"></canvas>
 			</div>
 		</div>
 
-		<!-- Ticket Progress Charts -->
 		<div class="progress-section">
-			<h2>票券銷售進度</h2>
+			<h2>{t.progressTitle}</h2>
 			<div class="progress-grid">
 				<div class="progress-card">
-					<h3>學生票</h3>
+					<h3>{t.student}</h3>
 					<div class="progress-chart-wrapper">
 						<canvas id="studentTicketProgress" width="200" height="100"></canvas>
 					</div>
 					<div class="remaining-display">
 						<div class="remaining-number">26</div>
-						<div class="remaining-label">張剩餘</div>
+						<div class="remaining-label">{t.remainingLabel}</div>
 					</div>
 					<div class="progress-details">
 						<div class="detail-item">
-							<span>總數</span>
+							<span>{t.total}</span>
 							<span>150</span>
 						</div>
 						<div class="detail-item">
-							<span>已售</span>
+							<span>{t.soldLabel}</span>
 							<span>124</span>
 						</div>
 					</div>
 				</div>
 
 				<div class="progress-card">
-					<h3>普通票</h3>
+					<h3>{t.regular}</h3>
 					<div class="progress-chart-wrapper">
 						<canvas id="regularTicketProgress" width="200" height="100"></canvas>
 					</div>
 					<div class="remaining-display">
 						<div class="remaining-number">57</div>
-						<div class="remaining-label">張剩餘</div>
+						<div class="remaining-label">{t.remainingLabel}</div>
 					</div>
 					<div class="progress-details">
 						<div class="detail-item">
-							<span>總數</span>
+							<span>{t.total}</span>
 							<span>200</span>
 						</div>
 						<div class="detail-item">
-							<span>已售</span>
+							<span>{t.soldLabel}</span>
 							<span>143</span>
 						</div>
 					</div>
 				</div>
-
 				<div class="progress-card">
-					<h3>遠道而來票</h3>
+					<h3>{t.distant}</h3>
 					<div class="progress-chart-wrapper">
 						<canvas id="distantTicketProgress" width="200" height="100"></canvas>
 					</div>
 					<div class="remaining-display">
 						<div class="remaining-number">35</div>
-						<div class="remaining-label">張剩餘</div>
+						<div class="remaining-label">{t.remainingLabel}</div>
 					</div>
 					<div class="progress-details">
 						<div class="detail-item">
-							<span>總數</span>
+							<span>{t.total}</span>
 							<span>80</span>
 						</div>
 						<div class="detail-item">
-							<span>已售</span>
+							<span>{t.soldLabel}</span>
 							<span>45</span>
 						</div>
 					</div>
 				</div>
 
 				<div class="progress-card">
-					<h3>邀請票</h3>
+					<h3>{t.invite}</h3>
 					<div class="progress-chart-wrapper">
 						<canvas id="inviteTicketProgress" width="200" height="100"></canvas>
 					</div>
 					<div class="remaining-display">
 						<div class="remaining-number">25</div>
-						<div class="remaining-label">張剩餘</div>
+						<div class="remaining-label">{t.remainingLabel}</div>
 					</div>
 					<div class="progress-details">
 						<div class="detail-item">
-							<span>總數</span>
+							<span>{t.total}</span>
 							<span>50</span>
 						</div>
 						<div class="detail-item">
-							<span>已售</span>
+							<span>{t.soldLabel}</span>
 							<span>25</span>
 						</div>
 					</div>
 				</div>
 
 				<div class="progress-card">
-					<h3>開源貢獻票</h3>
+					<h3>{t.opensource}</h3>
 					<div class="progress-chart-wrapper">
 						<canvas id="opensourceTicketProgress" width="200" height="100"></canvas>
 					</div>
 					<div class="remaining-display">
 						<div class="remaining-number">10</div>
-						<div class="remaining-label">張剩餘</div>
+						<div class="remaining-label">{t.remainingLabel}</div>
 					</div>
 					<div class="progress-details">
 						<div class="detail-item">
-							<span>總數</span>
+							<span>{t.total}</span>
 							<span>20</span>
 						</div>
 						<div class="detail-item">
-							<span>已售</span>
+							<span>{t.soldLabel}</span>
 							<span>10</span>
 						</div>
 					</div>
@@ -180,9 +266,7 @@ const l = i18n.l(Astro.url);
 		const ticketTypes = ["學生票", "普通票", "遠道而來票", "邀請票", "開源貢獻票"];
 		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
 
-		document.addEventListener("astro:page-load", () => {
-			if (!window.location.pathname.endsWith("/admin/")) return;
-
+		const initCharts = () => {
 			// Line Chart - Ticket Sales Trends Over Time
 			const trendsCtx = document.getElementById("ticketTrendsChart")?.getContext("2d");
 			if (trendsCtx) {
@@ -402,7 +486,9 @@ const l = i18n.l(Astro.url);
 					});
 				}
 			});
-		});
+		};
+
+		initCharts();
 	</script>
 
 	<style>
@@ -453,6 +539,7 @@ const l = i18n.l(Astro.url);
 			border-radius: 8px;
 			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 			flex: 1;
+			max-width: 100%;
 		}
 		.trend {
 			flex: 2;
@@ -489,6 +576,7 @@ const l = i18n.l(Astro.url);
 			border-radius: 12px;
 			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 			text-align: center;
+			max-width: 100%;
 		}
 
 		.progress-card h3 {

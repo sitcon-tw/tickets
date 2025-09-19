@@ -2,69 +2,149 @@
 import Layout from "@layouts/Layout.astro";
 import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
+import "src/styles/admin.css";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
-		"zh-Hant": "找不到頁面",
-		"zh-Hans": "找不到页面",
-		en: "Page Not Found"
+		"zh-Hant": "邀請碼",
+		"zh-Hans": "邀请码",
+		en: "Invitation Codes"
 	},
-	description: {
-		"zh-Hant": "抱歉，您訪問的頁面不存在。",
-		"zh-Hans": "抱歉，您访问的页面不存在。",
-		en: "Sorry, the page you are looking for does not exist."
+	add: {
+		"zh-Hant": "新增邀請碼組",
+		"zh-Hans": "新增邀请码组",
+		en: "Add Invitation Code Group"
+	},
+	exportCSV: {
+		"zh-Hant": "匯出 CSV",
+		"zh-Hans": "导出 CSV",
+		en: "Export CSV"
+	},
+	search: {
+		"zh-Hant": "搜尋名稱 / 代碼",
+		"zh-Hans": "搜索名称 / 代码",
+		en: "Search Name / Code"
+	},
+	loading: {
+		"zh-Hant": "載入中...",
+		"zh-Hans": "加载中...",
+		en: "Loading..."
+	},
+	nodata: {
+		"zh-Hant": "無資料",
+		"zh-Hans": "无数据",
+		en: "No data"
+	},
+	name: {
+		"zh-Hant": "名稱",
+		"zh-Hans": "名称",
+		en: "Name"
+	},
+	total: {
+		"zh-Hant": "總數",
+		"zh-Hans": "总数",
+		en: "Total"
+	},
+	used: {
+		"zh-Hant": "已用",
+		"zh-Hans": "已用",
+		en: "Used"
+	},
+	remaining: {
+		"zh-Hant": "剩餘",
+		"zh-Hans": "剩余",
+		en: "Remaining"
+	},
+	created: {
+		"zh-Hant": "建立時間",
+		"zh-Hans": "创建时间",
+		en: "Created"
+	},
+	actions: {
+		"zh-Hant": "動作",
+		"zh-Hans": "动作",
+		en: "Actions"
+	},
+	codes: {
+		"zh-Hant": "邀請碼列表",
+		"zh-Hans": "邀请码列表",
+		en: "Invitation Codes"
+	},
+	code: {
+		"zh-Hant": "代碼",
+		"zh-Hans": "代码",
+		en: "Code"
+	},
+	usage: {
+		"zh-Hant": "使用次數",
+		"zh-Hans": "使用次数",
+		en: "Usage"
+	},
+	limit: {
+		"zh-Hant": "使用上限",
+		"zh-Hans": "使用上限",
+		en: "Limit"
+	},
+	usedBy: {
+		"zh-Hant": "使用者",
+		"zh-Hans": "使用者",
+		en: "Used By"
+	},
+	status: {
+		"zh-Hant": "狀態",
+		"zh-Hans": "状态",
+		en: "Status"
 	}
 });
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
-	<link rel="stylesheet" href="/src/styles/admin.css" />
+<Layout i18n={t.t} path="" title={t.title} lang={lang}>
 	<AdminNav />
-	<main >
-		<h1>邀請碼 (Invitation Codes)</h1>
+	<main>
+		<h1>{t.title}</h1>
 		<section class="toolbar admin-toolbar">
-			<button id="addType" type="button">➕ 新增邀請碼組 (Add)</button>
-			<button id="exportTypes" type="button" class="secondary">⬇️ 匯出類別 CSV (Export Types)</button>
-			<input id="searchTypes" type="text" placeholder="🔍 搜尋名稱 / 代碼" />
+			<button id="addType" type="button">➕ {t.add}</button>
+			<button id="exportTypes" type="button" class="secondary">⬇️ {t.exportCSV}</button>
+			<input id="searchTypes" type="text" placeholder={"🔍" + t.search} />
 		</section>
 		<section class="types-wrapper">
-			<div id="loading" class="loading">Loading...</div>
+			<div id="loading" class="loading">{t.loading}</div>
 			<table id="typesTable" hidden class="types-table admin-table">
 				<thead>
 					<tr>
-						<th>名稱 Name</th>
-						<th>總數 Total</th>
-						<th>已用 Used</th>
-						<th>剩餘 Remaining</th>
-						<th>建立時間 Created</th>
-						<th>動作 Actions</th>
+						<th>{t.name}</th>
+						<th>{t.total}</th>
+						<th>{t.used}</th>
+						<th>{t.remaining}</th>
+						<th>{t.created}</th>
+						<th>{t.actions}</th>
 					</tr>
 				</thead>
 				<tbody id="typesBody"></tbody>
 			</table>
-			<div id="empty" hidden class="empty">無資料 (No data)</div>
+			<div id="empty" hidden class="empty">{t.nodata}</div>
 		</section>
 
 		<!-- Create/Edit Modal -->
 		<div id="modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
 			<div class="modal-content" role="document">
 				<header class="modal-header">
-					<h2 id="modalTitle">新增邀請碼組</h2>
+					<h2 id="modalTitle">{t.add}</h2>
 					<button type="button" class="close" id="closeModal" aria-label="Close">✕</button>
 				</header>
 				<form id="typeForm" class="form">
 					<label
-						>名稱 Name
+						>{t.name}
 						<input name="name" type="text" required placeholder="e.g. VIP Media" />
 					</label>
 					<label id="amountGroup"
-						>生成數量 Amount
+						>{t.amount}
 						<input name="amount" type="number" min="1" max="1000" value="10" required />
 					</label>
 					<div class="actions-row">
-						<button type="submit" class="primary" id="saveType">儲存 (Save)</button>
-						<button type="button" id="cancelModal">取消 (Cancel)</button>
+						<button type="submit" class="primary" id="saveType">{t.save}</button>
+						<button type="button" id="cancelModal">{t.cancel}</button>
 					</div>
 				</form>
 			</div>
@@ -74,21 +154,21 @@ const l = i18n.l(Astro.url);
 		<div id="codesModal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
 			<div class="modal-content large" role="document">
 				<header class="modal-header">
-					<h2 id="codesTitle">邀請碼列表</h2>
+					<h2 id="codesTitle">{t.codes}</h2>
 					<button type="button" class="close" id="closeCodes" aria-label="Close">✕</button>
 				</header>
 				<div class="codes-toolbar">
-					<input id="searchCodes" type="text" placeholder="🔍 搜尋代碼 / 使用者" />
-					<button id="exportCodes" type="button" class="secondary">⬇️ 匯出 codes CSV</button>
+					<input id="searchCodes" type="text" placeholder={"🔍 " + t.search} />
+					<button id="exportCodes" type="button" class="secondary">⬇️ {t.exportCSV}</button>
 				</div>
 				<div class="codes-table-wrapper">
 					<table class="codes-table admin-table">
 						<thead>
-							<tr><th>代碼 Code</th><th>使用次數 Usage</th><th>限制 Limit</th><th>使用者 Used By</th><th>狀態 Status</th></tr>
+							<tr><th>{t.code}</th><th>{t.usage}</th><th>{t.limit}</th><th>{t.usedBy}</th><th>{t.status}</th></tr>
 						</thead>
 						<tbody id="codesBody"></tbody>
 					</table>
-					<div id="codesEmpty" class="empty" hidden>無代碼 (No codes)</div>
+					<div id="codesEmpty" class="empty" hidden>{t.nodata}</div>
 				</div>
 			</div>
 		</div>

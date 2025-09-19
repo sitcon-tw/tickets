@@ -1,8 +1,6 @@
 ---
 import { defaultLocale } from "src/i18n/config";
 import { localesList, l } from "src/i18n";
-import { ClientRouter } from "astro:transitions";
-import Nav from "@components/Nav.astro";
 const { i18n = [], path = "", favicon = true, ga = true, title, description, image, theme = "#000", lang = defaultLocale } = Astro.props;
 const site = import.meta.env.SITE;
 const links = i18n
@@ -14,12 +12,11 @@ const links = i18n
 const xDefault = `<link rel="alternate" hreflang="x-default" href="${site}/${path}" />`;
 const canonical = `${site}/${path}`;
 const fullImage = image?.startsWith("http") ? image : image ? `${site}${image}` : null;
-let url = l(Astro.url);
 const supportedLangs = localesList();
 ---
 
 <!doctype html>
-<html lang={lang} transition:name="root" transition:animate="none">
+<html lang={lang}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -98,7 +95,6 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 				});
 			});
 		</script>
-		<ClientRouter />
 	</body>
 </html>
 

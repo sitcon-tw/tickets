@@ -2,6 +2,7 @@
 import Layout from "@layouts/Layout.astro";
 import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
+import "src/styles/admin.css";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
@@ -9,31 +10,148 @@ const t = i18n.t(lang, {
 		"zh-Hans": "管理后台",
 		en: "Admin Dashboard"
 	},
-	description: {
-		"zh-Hant": "票券管理系統後台總覽",
-		"zh-Hans": "票券管理系统后台总览",
-		en: "Ticket management system admin dashboard"
+	ticketPageTitle: {
+		"zh-Hant": "票種管理",
+		"zh-Hans": "票种管理",
+		en: "Ticket Types"
+	},
+	ticketTypes: {
+		"zh-Hant": "票種",
+		"zh-Hans": "票种",
+		en: "Ticket Types"
+	},
+	startTime: {
+		"zh-Hant": "開始時間",
+		"zh-Hans": "开始时间",
+		en: "Start Time"
+	},
+	endTime: {
+		"zh-Hant": "結束時間",
+		"zh-Hans": "结束时间",
+		en: "End Time"
+	},
+	status: {
+		"zh-Hant": "狀態",
+		"zh-Hans": "状态",
+		en: "Status"
+	},
+	quantity: {
+		"zh-Hant": "數量",
+		"zh-Hans": "数量",
+		en: "Quantity"
+	},
+	actions: {
+		"zh-Hant": "操作",
+		"zh-Hans": "操作",
+		en: "Actions"
+	},
+	addTicket: {
+		"zh-Hant": "新增票種",
+		"zh-Hans": "新增票种",
+		en: "Add Ticket"
+	},
+	editTicket: {
+		"zh-Hant": "編輯票種",
+		"zh-Hans": "编辑票种",
+		en: "Edit Ticket"
+	},
+	deleteTicket: {
+		"zh-Hant": "刪除票種",
+		"zh-Hans": "删除票种",
+		en: "Delete Ticket"
+	},
+	save: {
+		"zh-Hant": "儲存",
+		"zh-Hans": "保存",
+		en: "Save"
+	},
+	cancel: {
+		"zh-Hant": "取消",
+		"zh-Hans": "取消",
+		en: "Cancel"
+	},
+	statusLabel: {
+		"zh-Hant": "狀態",
+		"zh-Hans": "状态",
+		en: "Status"
+	},
+	totalQuantityLabel: {
+		"zh-Hant": "總數量（0 表示不限定數量）",
+		"zh-Hans": "总数量（0 表示不限定数量）",
+		en: "Total Quantity (0 means unlimited)"
+	},
+	enterTicketName: {
+		"zh-Hant": "請輸入票種名稱",
+		"zh-Hans": "请输入票种名称",
+		en: "Please enter the ticket name"
+	},
+	startAfterEnd: {
+		"zh-Hant": "開始時間不能晚於結束時間",
+		"zh-Hans": "开始时间不能晚于结束时间",
+		en: "Start time cannot be later than end time"
+	},
+	confirmDeleteTicket: {
+		"zh-Hant": "確定要刪除這個票種嗎？此操作無法復原。",
+		"zh-Hans": "确定要删除这个票种吗？此操作无法复原。",
+		en: "Are you sure you want to delete this ticket? This action cannot be undone."
+	},
+	newTicket: {
+		"zh-Hant": "新增票種",
+		"zh-Hans": "新增票种",
+		en: "New Ticket"
+	},
+	unlimitedQuantity: {
+		"zh-Hant": "∞",
+		"zh-Hans": "∞",
+		en: "Unlimited"
+	},
+	notStarted: {
+		"zh-Hant": "尚未開始販售",
+		"zh-Hans": "尚未开始贩售",
+		en: "Not Started"
+	},
+	ended: {
+		"zh-Hant": "已結束販售",
+		"zh-Hans": "已结束贩售",
+		en: "Ended"
+	},
+	selling: {
+		"zh-Hant": "販售中",
+		"zh-Hans": "贩售中",
+		en: "Selling"
+	},
+	ticketName: {
+		"zh-Hant": "票種名稱",
+		"zh-Hans": "票种名称",
+		en: "Ticket Name"
+	},
+	ticketNamePlaceholder: {
+		"zh-Hant": "例如：學生票（第一波）",
+		"zh-Hans": "例如：学生票（第一波）",
+		en: "e.g., Student Ticket (Wave 1)"
 	}
 });
+
+const tt = t;
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+<Layout i18n={t.t} path="" title={t.ticketPageTitle} lang={lang}>
 	<AdminNav />
 	<main>
-		<h1>票種</h1>
+		<h1>{t.ticketPageTitle}</h1>
 
 		<section class="ticket-overview">
 			<div class="table-container">
 				<table class="tickets-table">
 					<thead>
 						<tr>
-							<th>票種</th>
-							<th>開始時間</th>
-							<th>結束時間</th>
-							<th>狀態</th>
-							<th>總數量</th>
-							<th>操作</th>
+							<th>{t.ticketTypes}</th>
+							<th>{t.startTime}</th>
+							<th>{t.endTime}</th>
+							<th>{t.status}</th>
+							<th>{t.quantity}</th>
+							<th>{t.actions}</th>
 						</tr>
 					</thead>
 					<tbody id="tickets-tbody">
@@ -45,7 +163,7 @@ const l = i18n.l(Astro.url);
 
 		<section class="add-ticket-section">
 			<button class="button add-ticket-btn" id="add-ticket-btn">
-				<span>+ 新增票種</span>
+				<span>+ {t.addTicket}</span>
 			</button>
 		</section>
 	</main>
@@ -53,25 +171,25 @@ const l = i18n.l(Astro.url);
 	<!-- HTML Templates -->
 	<template id="ticket-row-template">
 		<tr>
-			<td data-label="票種" class="ticket-name">
+			<td data-label={t.ticketTypes} class="ticket-name">
 				<span class="display-value ticket-label"></span>
 			</td>
-			<td data-label="開始時間" class="time-cell">
+			<td data-label={t.startTime} class="time-cell">
 				<span class="display-value sale-start"></span>
 			</td>
-			<td data-label="結束時間" class="time-cell">
+			<td data-label={t.endTime} class="time-cell">
 				<span class="display-value sale-end"></span>
 			</td>
-			<td data-label="狀態" class="status-cell">
+			<td data-label={t.status} class="status-cell">
 				<span class="display-value"><span class="status-badge"></span></span>
 			</td>
-			<td data-label="總數量" class="quantity">
+			<td data-label={t.quantity} class="quantity">
 				<span class="display-value quantity-value"></span>
 			</td>
-			<td data-label="操作" class="actions-cell">
+			<td data-label={t.actions} class="actions-cell">
 				<div class="action-buttons">
-					<button class="edit-btn button" data-action="edit">編輯</button>
-					<button class="delete-btn button delete" data-action="delete">刪除</button>
+					<button class="edit-btn button" data-action="edit">{tt.editTicket}</button>
+					<button class="delete-btn button delete" data-action="delete">{t.deleteTicket}</button>
 				</div>
 			</td>
 		</tr>
@@ -83,38 +201,45 @@ const l = i18n.l(Astro.url);
 	<!-- Modal for Add/Edit Ticket -->
 	<div id="ticket-modal-overlay" class="modal-overlay" style="display:none;">
 		<div class="modal" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
-			<h2 id="ticket-modal-title">編輯票種</h2>
+			<h2 id="ticket-modal-title">{tt.editTicket}</h2>
 			<form id="ticket-form">
 				<div class="form-grid">
 					<label>
-						<span>票種名稱</span>
-						<input id="ticket-name-input" name="name" type="text" required placeholder="輸入票種名稱" />
+						<span>{t.ticketName}</span>
+						<input id="ticket-name-input" name="name" type="text" required placeholder={t.ticketNamePlaceholder} />
 					</label>
 					<label>
-						<span>開始時間</span>
+						<span>{t.startTime}</span>
 						<input id="ticket-start-input" name="saleStart" type="datetime-local" />
 					</label>
 					<label>
-						<span>結束時間</span>
+						<span>{t.endTime}</span>
 						<input id="ticket-end-input" name="saleEnd" type="datetime-local" />
 					</label>
 					<label>
-						<span>總數量 (留空=不限定)</span>
+						<span>{t.totalQuantityLabel}</span>
 						<input id="ticket-quantity-input" name="quantity" type="number" min="0" />
 					</label>
 					<div class="status-readonly">
-						<span>狀態：</span><span id="ticket-status-display" class="status-badge"></span>
+						<>
+							<span>{t.statusLabel}</span>
+							<span id="ticket-status-display" class="status-badge"></span>
+						</>
 					</div>
 				</div>
 				<div class="modal-actions">
-					<button type="submit" class="button primary" id="ticket-save-btn">儲存</button>
-					<button type="button" class="button" id="ticket-cancel-btn">取消</button>
+					<button type="submit" class="button primary" id="ticket-save-btn">
+						{t.save}
+					</button>
+					<button type="button" class="button" id="ticket-cancel-btn">
+						{t.cancel}
+					</button>
 				</div>
 			</form>
 		</div>
 	</div>
 
-	<script is:inline>
+	<script define:vars={{ tt }}>
 		// Demo ticket data - fetch from frontend
 		const DEMO_TICKETS = [
 			{
@@ -164,7 +289,7 @@ const l = i18n.l(Astro.url);
 				name: "邀請票",
 				saleStart: "2024-12-21T00:00",
 				saleEnd: "2025-02-01T23:59",
-				quantity: "不限定數量"
+				quantity: "∞"
 			},
 			{
 				id: 8,
@@ -192,7 +317,7 @@ const l = i18n.l(Astro.url);
 				name: "測試票",
 				saleStart: "2025-01-01T00:00",
 				saleEnd: "2026-03-07T00:00",
-				quantity: "不限定數量"
+				quantity: "∞"
 			}
 		];
 
@@ -272,13 +397,14 @@ const l = i18n.l(Astro.url);
 				const saleStart = document.getElementById("ticket-start-input").value || null;
 				const saleEnd = document.getElementById("ticket-end-input").value || null;
 				const quantityRaw = document.getElementById("ticket-quantity-input").value;
+
 				if (!name) {
-					alert("請輸入票種名稱");
+					alert(tt.enterTicketName);
 					return;
 				}
-				const quantity = quantityRaw === "" ? "不限定數量" : parseInt(quantityRaw);
+				const quantity = quantityRaw === "" ? t.unlimitedQuantity : parseInt(quantityRaw);
 				if (saleStart && saleEnd && new Date(saleStart) > new Date(saleEnd)) {
-					alert("開始時間不可晚於結束時間");
+					alert(tt.startAfterEnd);
 					return;
 				}
 				if (this.currentEditingId) {
@@ -294,7 +420,7 @@ const l = i18n.l(Astro.url);
 			// Removed inline cancelEdit logic; modal handles cancel via closeModal
 
 			deleteRow(button) {
-				if (!confirm("確定要刪除這個票種嗎？")) return;
+				if (!confirm(tt.editTicket)) return;
 
 				const row = button.closest("tr");
 				const ticketId = parseInt(row.dataset.ticketId);
@@ -324,16 +450,16 @@ const l = i18n.l(Astro.url);
 				const statusDisplay = document.getElementById("ticket-status-display");
 
 				if (ticket) {
-					title.textContent = "編輯票種";
+					title.textContent = tt.editTicket;
 					nameInput.value = ticket.name;
 					startInput.value = ticket.saleStart || "";
 					endInput.value = ticket.saleEnd || "";
-					quantityInput.value = ticket.quantity === "不限定數量" ? "" : ticket.quantity;
+					quantityInput.value = ticket.quantity === "∞" ? "" : ticket.quantity;
 					const status = this.computeStatus(ticket);
 					statusDisplay.textContent = status.label;
 					statusDisplay.className = `status-badge ${status.class}`;
 				} else {
-					title.textContent = "新增票種";
+					title.textContent = tt.newTicket;
 					nameInput.value = "";
 					startInput.value = "";
 					endInput.value = "";
@@ -360,12 +486,13 @@ const l = i18n.l(Astro.url);
 			computeStatus(ticket) {
 				const now = new Date();
 				if (ticket.saleStart && new Date(ticket.saleStart) > now) {
-					return { label: "尚未開始", class: "pending" };
+					return { label: tt.notStarted, class: "pending" };
 				}
 				if (ticket.saleEnd && new Date(ticket.saleEnd) < now) {
-					return { label: "結束販售", class: "ended" };
+					return { label: tt.ended, class: "ended" };
 				}
-				return { label: "販售中", class: "active" };
+
+				return { label: tt.selling, class: "active" };
 			}
 
 			formatDateTime(dt) {
@@ -384,12 +511,8 @@ const l = i18n.l(Astro.url);
 				}
 			}
 		}
-
-		// Initialize when DOM is loaded
-		document.addEventListener("astro:page-load", () => {
-			if (!window.location.pathname.endsWith("/admin/tickets/")) return;
-			new TicketManager();
-		});
+		
+		new TicketManager();
 	</script>
 
 	<style>

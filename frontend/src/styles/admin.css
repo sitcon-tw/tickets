@@ -1,12 +1,3 @@
-/*
- * Shared Admin UI Styles
- * ----------------------
- * Scope: All /admin/* pages.
- * Usage: In each admin page add: <link rel="stylesheet" href="/src/styles/admin.css" />
- * Philosophy: Provide consistent primitives (layout, toolbar, tables, buttons, badges, utilities) to reduce duplication.
- * Extend: Add page‑specific styles in local <style> blocks after importing this file. Avoid editing these base classes unless applying a global change.
- */
-
 :root {
 	--admin-bg: #111;
 	--admin-panel: #161616;
@@ -25,6 +16,14 @@
 
 /* Layout wrappers */
 .admin-section { margin: 1.25rem 0; }
+
+p {
+	margin-bottom: 2rem;
+}
+
+main a {
+	color: var(--color-gray-400);
+}
 
 /* Toolbar */
 .admin-toolbar { display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0;align-items:center; }

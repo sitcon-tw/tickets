@@ -2,28 +2,45 @@
 import Layout from "@layouts/Layout.astro";
 import AdminNav from "@components/AdminNav.astro";
 import * as i18n from "src/i18n";
+import "src/styles/admin.css";
 const lang = i18n.local(Astro.url.pathname);
 const t = i18n.t(lang, {
 	title: {
-		"zh-Hant": "找不到頁面",
-		"zh-Hans": "找不到页面",
-		en: "Page Not Found"
+		"zh-Hant": "編輯說明",
+		"zh-Hans": "编辑说明",
+		en: "Edit Instructions"
 	},
 	description: {
-		"zh-Hant": "抱歉，您訪問的頁面不存在。",
-		"zh-Hans": "抱歉，您访问的页面不存在。",
-		en: "Sorry, the page you are looking for does not exist."
+		"zh-Hant": "編輯說明頁面",
+		"zh-Hans": "编辑说明页面",
+		en: "Edit Instructions Page"
+	},
+	paragraph1: {
+		"zh-Hant": "若要編輯首頁的說明，以及票種的說明，請直接編輯",
+		"zh-Hans": "若要编辑首页的说明，以及票种的说明，请直接编辑",
+		en: "To edit the instructions on the homepage and ticket types, please directly edit "
+	},
+	paragraph2: {
+		"zh-Hant": "GitHub Markdown 資料夾裡面的檔案。",
+		"zh-Hans": "GitHub Markdown 资料夹里面的档案。",
+		en: "the files in the GitHub Markdown folder."
+	},
+	current:
+	{
+		"zh-Hant": "以下為目前有的文件：",
+		"zh-Hans": "以下为目前有的文件：",
+		en: "The following are the current documents:"
 	}
 });
 const l = i18n.l(Astro.url);
 ---
 
-<Layout i18n={t.t} path="" title={t.title} theme="#333" lang={lang}>
+<Layout i18n={t.t} path="" title={t.title} lang={lang}>
 	<AdminNav />
 	<main>
-		<h1>編輯說明</h1>
-		<p>若要編輯首頁的說明，以及票種的說明，請直接編輯 <a href="https://github.com/sitcon-tw/2026-tickets/tree/dev/frontend/src/pages/markdown" target="_blank">GitHub Markdown 資料夾</a> 裡面的檔案。</p>
-		<p>以下為目前有的文件：</p>
+		<h1>{t.title}</h1>
+		<p>{t.paragraph1} <a href="https://github.com/sitcon-tw/2026-tickets/tree/dev/frontend/src/pages/markdown" target="_blank">{t.paragraph2}</a></p>
+		<p>{t.current}</p>
 		<ul class="github-list"></ul>
 		<script define:vars={{ lang: i18n.localesList() }}>
 			let items = ["intro", "faq", "terms"];
@@ -52,17 +69,4 @@ const l = i18n.l(Astro.url);
 			});
 		</script>
 	</main>
-
-	<style is:global>
-		p {
-			margin-bottom: 2rem;
-		}
-		li {
-			margin-bottom: 1rem;
-		}
-
-		main a {
-			color: var(--color-gray-400);
-		}
-	</style>
 </Layout>
