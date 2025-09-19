@@ -66,62 +66,6 @@ export const registrationCreateBody = {
 		formData: {
 			type: 'object',
 			description: '表單資料',
-			properties: {
-				acceptTerms: {
-					type: 'boolean',
-					description: '接受條款'
-				},
-				nickname: {
-					type: 'string',
-					description: '暱稱',
-					minLength: 2,
-					maxLength: 20
-				},
-				phoneNumber: {
-					type: 'string',
-					description: '電話號碼'
-				},
-				sex: {
-					type: 'string',
-					enum: ['male', 'female', 'other'],
-					description: '性別'
-				},
-				foodHabits: {
-					type: 'string',
-					enum: ['normal', 'no-beef', 'no-pork', 'vegetarian'],
-					description: '飲食習慣'
-				},
-				livingArea: {
-					type: 'string',
-					enum: ['north', 'middle', 'south', 'east'],
-					description: '居住地區'
-				},
-				workingAt: {
-					type: 'string',
-					description: '工作地點',
-					maxLength: 100
-				},
-				jobTitle: {
-					type: 'string',
-					description: '職位',
-					maxLength: 50
-				},
-				grade: {
-					type: 'string',
-					description: '年級',
-					maxLength: 20
-				},
-				haveEverBeenHere: {
-					type: 'boolean',
-					description: '是否曾經來過'
-				},
-				whereYouGotThis: {
-					type: 'string',
-					enum: ['google', 'social_media', 'friend', 'family'],
-					description: '從哪裡得知此活動'
-				}
-			},
-			required: ['acceptTerms', 'nickname', 'phoneNumber', 'sex', 'foodHabits', 'livingArea', 'workingAt', 'jobTitle', 'grade', 'haveEverBeenHere', 'whereYouGotThis']
 		}
 	},
 	required: ['eventId', 'ticketId', 'formData']
