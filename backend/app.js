@@ -20,7 +20,17 @@ const fastify = Fastify({
 */
 
 await fastify.register(cors, {
-	origin: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"],
+	origin: [
+		process.env.FRONTEND_URI || "http://localhost:5173",
+		"http://localhost:4321",
+		// Vite preview commonly runs on 4173
+		"http://localhost:4173",
+		// 127.0.0.1 variants to cover alternate host resolution
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:4321",
+		"http://127.0.0.1:4173",
+		process.env.BACKEND_URI || "http://localhost:3000"
+	],
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "Cookie"]

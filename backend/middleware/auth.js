@@ -32,19 +32,24 @@ export const requireRole = allowedRoles => {
 
 		if (reply.sent) return; 
 
+		// Gather roles from session and database, support comma-separated values
+		const sessionRole = request.user?.role;
+		const sessionRoles = Array.isArray(sessionRole)
+			? sessionRole
+			: (typeof sessionRole === 'string' ? sessionRole.split(',').map(r => r.trim()).filter(Boolean) : []);
+
 		const user = await prisma.user.findUnique({
 			where: { id: request.user.id },
 			select: { role: true }
 		});
 
-		const userRole = user?.role || 'user';
-		console.log("User role from DB:", userRole);
+		const dbRole = user?.role || '';
+		const dbRoles = dbRole.split(',').map(role => role.trim()).filter(Boolean);
 
-		const userRoles = userRole.split(',').map(role => role.trim());
-		
-		const hasPermission = allowedRoles.some(allowedRole => 
-			userRoles.includes(allowedRole)
-		);
+		const allRoles = Array.from(new Set([...(sessionRoles || []), ...(dbRoles || [])]));
+		console.log("User roles (session+DB):", allRoles.join(','));
+
+		const hasPermission = allowedRoles.some(allowedRole => allRoles.includes(allowedRole));
 
 		if (!hasPermission) {
 			const { response, statusCode } = forbiddenResponse("權限不足 [R]");
@@ -68,5 +73,5 @@ export const requirePermission = permission => {
 	};
 };
 
-export const requireAdmin = requireRole(["admin"]);
+export const requireAdmin = requireRole(["admin", "super-admin"]);
 export const requireStaff = requireRole(["admin", "staff"]);

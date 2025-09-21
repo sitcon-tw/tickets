@@ -1,0 +1,7 @@
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+.topbar { background: #0b0b0c; color: #fff; }
+.topbar .brand { color: #fff; text-decoration: none; font-weight: 600; }
+.nav { display: flex; gap: 12px; }
+main.container { flex: 1; padding: 24px 16px; }
+.footer { background: #f3f4f6; padding: 16px; }
