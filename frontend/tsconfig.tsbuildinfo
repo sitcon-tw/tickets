@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/env.d.ts","./src/main.tsx","./src/components/layout.tsx","./src/i18n/index.ts","./src/lib/api.ts","./src/pages/form.tsx","./src/pages/home.tsx","./src/pages/login.tsx","./src/pages/notfound.tsx","./src/pages/signup.tsx","./src/pages/success.tsx","./src/pages/terms.tsx"],"version":"5.9.2"}

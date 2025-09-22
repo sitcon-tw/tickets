@@ -22,30 +22,6 @@ main a {
 	color: var(--color-gray-400);
 }
 
-/* Admin shell */
-.admin-shell main {
-	padding-top: 5rem;
-	max-width: unset;
-	margin-left: 17rem;
-}
-.admin-shell aside {
-	background-color: var(--color-gray-950);
-	padding: 2rem;
-	width: 17rem;
-	height: 100dvh;
-	position: fixed;
-	display: flex;
-	flex-direction: column;
-	font-size: 1.2rem;
-}
-.admin-shell .activity { font-size: 1.2rem; }
-.admin-shell .title { font-size: 2rem; }
-.admin-shell nav { margin-top: 2rem; flex: 1; }
-.admin-shell nav li { list-style: none; margin-bottom: 1rem; }
-.admin-shell nav ul { padding-left: 0.8rem; }
-.admin-shell aside a { text-decoration: none; }
-.admin-shell aside a:hover { text-decoration: underline; }
-
 /* Toolbar */
 .admin-toolbar {
 	display: flex;
