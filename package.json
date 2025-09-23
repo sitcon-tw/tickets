@@ -4,9 +4,10 @@
 	"author": "Elvis Mao",
 	"license": "Apache-2.0",
 	"scripts": {
-		"dev:frontend": "pnpm --filter frontend dev",
+		"dev:frontend": "pnpm --filter frontend dev --host 0.0.0.0",
+		"dev:frontend-new": "pnpm --filter frontend-new dev --port 4322",
 		"dev:backend": "pnpm --filter backend dev",
-		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
+		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\" \"pnpm dev:frontend-new\"",
 		"format": "prettier --write .",
 		"check-format": "prettier --check .",
 		"build:frontend": "pnpm --filter frontend build"
