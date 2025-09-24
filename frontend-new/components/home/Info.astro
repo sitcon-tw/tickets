@@ -1,0 +1,36 @@
+---
+import * as i18n from "src/i18n";
+const lang = i18n.local(Astro.url.pathname);
+const t = i18n.t(lang, {
+	description: {
+		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+		en: "Elvis Mao's Website starter template using Astro and Fastify."
+	}
+});
+import { Content as Intro } from "src/pages/markdown/intro.md";
+import { Content as Faq } from "src/pages/markdown/faq.md";
+
+import.meta.glob("src/pages/markdown/tickets/*.md", { eager: true });
+const ticket = Object.fromEntries(
+	Object.entries(await import.meta.glob("src/pages/markdown/tickets/*.md", { eager: true })).map(([path, module]) => {
+		const key = path.split("/").pop()?.replace(".md", "");
+		return [key, module];
+	})
+);
+---
+
+<section class="info content">
+	<Intro />
+	<h2>票種資訊</h2>
+	{
+		Object.entries(ticket).map(([key, value]) => (
+			<section>
+				<h3>{key}</h3>
+				<value.Content />
+			</section>
+		))
+	}
+	<h2>FAQ</h2>
+	<Faq />
+</section>

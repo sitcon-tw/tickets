@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+sitemap: https://tickets.sitcon.org/sitemap.xml
