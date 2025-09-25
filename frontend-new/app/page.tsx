@@ -1,4 +1,3 @@
----
 import Layout from "@layouts/Layout.astro";
 import Header from "@components/home/Header.astro";
 import Welcome from "@components/home/Welcome.astro";
@@ -20,7 +19,7 @@ const t = i18n.t(lang, {
 		en: "Elvis Mao's Website starter template using Astro and Fastify."
 	}
 });
----
+
 
 <Layout i18n={t.t} path="" title={t.title} description={t.description} lang={lang}>
 	<Nav />
