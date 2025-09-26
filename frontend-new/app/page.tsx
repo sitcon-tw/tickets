@@ -1,51 +1,57 @@
-import Layout from "@layouts/Layout.astro";
-import Header from "@components/home/Header.astro";
-import Welcome from "@components/home/Welcome.astro";
-import Tickets from "@components/home/Tickets.astro";
-import Info from "@components/home/Info.astro";
-import Footer from "@components/Footer.astro";
-import Nav from "@components/Nav.astro";
-import * as i18n from "src/i18n";
-const lang = i18n.local(Astro.url.pathname);
-const t = i18n.t(lang, {
-	title: {
-		"zh-Hant": "Fastro - 毛哥EM的網站起始模板",
-		"zh-Hans": "Fastro - 毛哥EM的网站起始模板",
-		en: "Fastro - EM's Website Starter"
-	},
-	description: {
-		"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
-		"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
-		en: "Elvis Mao's Website starter template using Astro and Fastify."
-	}
-});
+"use client";
 
+import React, { useEffect } from 'react';
+import Header from "@/components/home/Header";
+import Welcome from "@/components/home/Welcome";
+import Tickets from "@/components/home/Tickets";
+import Info from "@/components/home/Info";
+import Footer from "@/components/Footer";
+import Nav from "@/components/Nav";
+import * as i18n from "@/i18n";
+import { usePathname } from 'next/navigation';
 
-<Layout i18n={t.t} path="" title={t.title} description={t.description} lang={lang}>
-	<Nav />
-	<main>
-		<Header />
-		<Welcome />
-		<Tickets />
-		<Info />
-		<Footer />
-	</main>
-	
-	<script is:inline>
-		// Handle referral code from URL
-		document.addEventListener('DOMContentLoaded', () => {
-			const urlParams = new URLSearchParams(window.location.search);
-			const referralCode = urlParams.get('ref');
-			
-			if (referralCode) {
-				// Store referral code for later use during registration
-				sessionStorage.setItem('referralCode', referralCode);
-				
-				// Clean up URL by removing the ref parameter
-				const newUrl = new URL(window.location);
-				newUrl.searchParams.delete('ref');
-				window.history.replaceState({}, '', newUrl.pathname + newUrl.search + newUrl.hash);
-			}
-		});
-	</script>
-</Layout>
+const Page: React.FC = () => {
+	const lang = i18n.local(usePathname());
+	const t = i18n.t(lang, {
+		title: {
+			"zh-Hant": "Fastro - 毛哥EM的網站起始模板",
+			"zh-Hans": "Fastro - 毛哥EM的网站起始模板",
+			en: "Fastro - EM's Website Starter"
+		},
+		description: {
+			"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+			"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+			en: "Elvis Mao's Website starter template using Astro and Fastify."
+		}
+	});
+
+	useEffect(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const referralCode = urlParams.get('ref');
+
+		if (referralCode) {
+			// Store referral code for later use during registration
+			sessionStorage.setItem('referralCode', referralCode);
+
+			// Clean up URL by removing the ref parameter
+			const newUrl = new URL(window.location);
+			newUrl.searchParams.delete('ref');
+			window.history.replaceState({}, '', newUrl.pathname + newUrl.search + newUrl.hash);
+		}
+	}, []);
+
+	return (
+		<>
+			<Nav />
+			<main>
+				<Header />
+				<Welcome />
+				<Tickets />
+				<Info />
+				<Footer />
+			</main>
+		</>
+	);
+};
+
+export default Page;
