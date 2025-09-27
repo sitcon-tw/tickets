@@ -251,6 +251,10 @@ export default function Tickets() {
           transform: rotate(-1.17deg);
         }
 
+        .about + .button {
+          margin-top: 2rem;
+        }
+
         .ticket {
           border: solid 3px var(--color-gray-500);
           padding: 1rem;
@@ -274,6 +278,23 @@ export default function Tickets() {
           text-align: right;
         }
 
+        #ticketAnimation {
+          display: none;
+          position: fixed;
+          transition: none;
+          z-index: 500;
+          width: 100%;
+        }
+
+        .confirming + #ticketAnimation {
+          transition: 0.3s ease-in-out;
+        }
+
+        .ticketConfirm {
+          visibility: hidden;
+          pointer-events: none;
+        }
+
         .confirm-content {
           display: flex;
           flex-direction: column;
@@ -285,11 +306,6 @@ export default function Tickets() {
             flex-direction: row;
             align-items: flex-start;
           }
-        }
-
-        .ticketConfirm {
-          visibility: visible;
-          pointer-events: none;
         }
 
         .content {
