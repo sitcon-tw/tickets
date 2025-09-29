@@ -37,7 +37,7 @@ const Page: React.FC = () => {
 			// Clean up URL by removing the ref parameter
 			router.replace(window.location.pathname + window.location.search.replace(/([?&])ref=[^&]*&?/, '$1').replace(/&$/, '') + window.location.hash);
 		}
-	}, []);
+	}, [router]);
 
 	return (
 		<>

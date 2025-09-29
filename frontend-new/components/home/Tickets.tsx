@@ -4,33 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Confirm from "@/components/Confirm";
 import * as i18n from "@/i18n";
-
-type Ticket = {
-  id: string;
-  name: string;
-  time: string;
-  remaining: string;
-  price?: number;
-  isOnSale?: boolean;
-  isSoldOut?: boolean;
-  formFields?: unknown[];
-};
-
-type TicketsResponse = {
-  success: boolean;
-  data?: Array<{
-    id: string;
-    name: string;
-    saleStart?: string | null;
-    saleEnd?: string | null;
-    available: number;
-    quantity: number;
-    price?: number;
-    isOnSale?: boolean;
-    isSoldOut?: boolean;
-    formFields?: unknown[];
-  }>;
-};
+import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { Ticket } from "@/lib/types/api";
 
 const fallbackTickets: Record<string, { en: string; time: string; remaining: string }> = {
   學生票: { en: "Student", time: "8/15 - 8/20", remaining: "50 / 200" },
@@ -91,31 +66,32 @@ export default function Tickets() {
 
     const loadTickets = async () => {
       try {
-        const eventsResponse = await fetch("http://localhost:3000/api/events");
-        const eventsData = await eventsResponse.json();
+        const eventsData = await eventsAPI.getAll();
 
         if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
           const event = eventsData.data[0];
           setEventName(event.name || "SITCON 2025");
 
-          const ticketsResponse = await fetch(`http://localhost:3000/api/events/${event.id}/tickets`);
-          const ticketsData: TicketsResponse = await ticketsResponse.json();
+          const ticketsData = await eventsAPI.getTickets(event.id);
 
           if (ticketsData.success && Array.isArray(ticketsData.data) && !cancelled) {
-            setTickets(
-              ticketsData.data.map(ticket => ({
+            const ticketsWithFormFields = await Promise.all(
+              ticketsData.data.map(async ticket => ({
                 id: ticket.id,
                 name: ticket.name,
                 time: `${ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString() : "TBD"} - ${
                   ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString() : "TBD"
                 }`,
-                remaining: `${ticket.available} / ${ticket.available + (ticket.quantity - ticket.available)}`,
+                remaining: `${ticket.available ?? 0} / ${(ticket.available ?? 0) + (ticket.quantity - (ticket.available ?? 0))}`,
                 price: ticket.price,
                 isOnSale: ticket.isOnSale,
                 isSoldOut: ticket.isSoldOut,
-                formFields: ticket.formFields
+                formFields: await ticketsAPI.getFormFields(ticket.id).then(res => (res.success ? res.data : [])),
+                quantity: ticket.quantity,
+                soldCount: ticket.quantity - (ticket.available ?? 0)
               }))
             );
+            setTickets(ticketsWithFormFields);
             return;
           }
         }
@@ -133,7 +109,13 @@ export default function Tickets() {
             id,
             name: id,
             time: info.time,
-            remaining: info.remaining
+            remaining: info.remaining,
+            price: 0,
+            isOnSale: false,
+            isSoldOut: false,
+            formFields: [],
+            quantity: 0,
+            soldCount: 0
           }))
         );
       }
@@ -209,10 +191,12 @@ export default function Tickets() {
             <h3>{ticket.name}</h3>
             <p>
               {t.time}
-              {ticket.time}
+              {ticket.saleStart}
+              -
+              {ticket.saleEnd}
             </p>
             <p className="remain">
-              {t.remaining} {ticket.remaining}
+              {t.remaining} {ticket.quantity - ticket.soldCount} / {ticket.quantity}
             </p>
           </div>
         ))}
@@ -225,10 +209,12 @@ export default function Tickets() {
               <h3>{selectedTicket.name}</h3>
               <p>
                 {t.time}
-                {selectedTicket.time}
+                {selectedTicket.saleStart}
+                -
+                {selectedTicket.saleEnd}
               </p>
               <p className="remain">
-                {t.remaining} {selectedTicket.remaining}
+                {t.remaining} {selectedTicket.quantity - selectedTicket.soldCount} / {selectedTicket.quantity}
               </p>
             </div>
             <div className="content">
