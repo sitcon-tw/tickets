@@ -8,9 +8,10 @@ import Info from "@/components/home/Info";
 import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
 import * as i18n from "@/i18n";
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const Page: React.FC = () => {
+	const router = useRouter();
 	const lang = i18n.local(usePathname());
 	const t = i18n.t(lang, {
 		title: {
@@ -34,9 +35,7 @@ const Page: React.FC = () => {
 			sessionStorage.setItem('referralCode', referralCode);
 
 			// Clean up URL by removing the ref parameter
-			const newUrl = new URL(window.location);
-			newUrl.searchParams.delete('ref');
-			window.history.replaceState({}, '', newUrl.pathname + newUrl.search + newUrl.hash);
+			router.replace(window.location.pathname + window.location.search.replace(/([?&])ref=[^&]*&?/, '$1').replace(/&$/, '') + window.location.hash);
 		}
 	}, []);
 
