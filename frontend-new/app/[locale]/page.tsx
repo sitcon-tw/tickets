@@ -10,7 +10,7 @@ import Nav from "@/components/Nav";
 import * as i18n from "@/i18n";
 import { usePathname, useRouter } from 'next/navigation';
 
-const Page: React.FC = () => {
+export default function Main() {
 	const router = useRouter();
 	const lang = i18n.local(usePathname());
 	const t = i18n.t(lang, {
@@ -31,10 +31,7 @@ const Page: React.FC = () => {
 		const referralCode = urlParams.get('ref');
 
 		if (referralCode) {
-			// Store referral code for later use during registration
 			sessionStorage.setItem('referralCode', referralCode);
-
-			// Clean up URL by removing the ref parameter
 			router.replace(window.location.pathname + window.location.search.replace(/([?&])ref=[^&]*&?/, '$1').replace(/&$/, '') + window.location.hash);
 		}
 	}, [router]);
@@ -52,5 +49,3 @@ const Page: React.FC = () => {
 		</>
 	);
 };
-
-export default Page;
