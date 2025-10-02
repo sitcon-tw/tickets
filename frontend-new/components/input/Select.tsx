@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
-import { usePathname } from "next/navigation";
-import * as i18n from "@/lib/i18n";
+import { useLocale } from "next-intl";
+import { getTranslations } from "@/i18n/helpers";
 
 type SelectProps = {
   label: string;
@@ -25,10 +25,9 @@ const styles: Record<"label" | "select", CSSProperties> = {
 };
 
 export default function Select({ label, id, options, required = true }: SelectProps) {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname ?? "/");
+  const locale = useLocale();
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     pleaseSelect: {
       "zh-Hant": "請選擇...",
       "zh-Hans": "请选择...",

@@ -2,12 +2,12 @@
 
 import React from 'react';
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { getTranslations } from "@/i18n/helpers";
 
 export default function SignUp() {
-	const lang = i18n.local(usePathname());
-	const t = i18n.t(lang, {
+	const locale = useLocale();
+	const t = getTranslations(locale, {
 		term: {
 			"zh-Hant": "使用者服務條款",
 			"zh-Hans": "用户服务条款",

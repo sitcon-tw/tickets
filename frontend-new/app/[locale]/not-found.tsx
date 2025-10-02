@@ -2,12 +2,12 @@
 
 import React from 'react';
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { getTranslations } from "@/i18n/helpers";
 
 const NotFound: React.FC = () => {
-	const lang = i18n.local(usePathname());
-	const t = i18n.t(lang, {
+	const locale = useLocale();
+	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "找不到頁面",
 			"zh-Hans": "找不到页面",
@@ -24,7 +24,6 @@ const NotFound: React.FC = () => {
 			en: "Back to Home"
 		}
 	});
-	const l = i18n.l(usePathname());
 
 	return (
 		<>
@@ -33,7 +32,7 @@ const NotFound: React.FC = () => {
 				<section>
 					<h1>{t.title}</h1>
 					<p>{t.description}</p>
-					<a className="button" href={l("/")}>{t.backHome}</a>
+					<a className="button" href="/">{t.backHome}</a>
 				</section>
 			</main>
 			<style>{`

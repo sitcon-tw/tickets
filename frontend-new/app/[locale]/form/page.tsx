@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { authAPI, eventsAPI, registrationsAPI } from '@/lib/api/endpoints';
 
 type FormFieldOption = {
@@ -27,9 +28,7 @@ type FormData = {
 
 export default function FormPage() {
 	const router = useRouter();
-	const pathname = usePathname();
-	const lang = i18n.local(pathname);
-	const linkBuilder = i18n.l(pathname);
+	const locale = useLocale();
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -43,7 +42,7 @@ export default function FormPage() {
 	const [ticketName, setTicketName] = useState<string>('');
 	const [userEmail, setUserEmail] = useState<string>('');
 
-	const t = i18n.t(lang, {
+	const t = getTranslations(locale, {
 		noTicketAlert: {
 			"zh-Hant": "未指定票種，請重新選擇",
 			"zh-Hans": "未指定票种，请重新选择",
@@ -145,7 +144,7 @@ export default function FormPage() {
 		try {
 			const session = await authAPI.getSession();
 			if (!session || !session.user) {
-				router.push(linkBuilder('/login/'));
+				router.push('/login/');
 				return false;
 			}
 
@@ -157,16 +156,16 @@ export default function FormPage() {
 			return true;
 		} catch (error) {
 			console.error('Auth check failed:', error);
-			router.push(linkBuilder('/login/'));
+			router.push('/login/');
 			return false;
 		}
-	}, [router, linkBuilder]);
+	}, [router]);
 
 	// Load form fields
 	const loadFormFields = useCallback(async () => {
 		if (!selectedTicketId) {
 			alert(t.noTicketAlert);
-			router.push(linkBuilder('/'));
+			router.push('/');
 			return;
 		}
 
@@ -201,7 +200,7 @@ export default function FormPage() {
 			setError(error instanceof Error ? error.message : 'Unknown error');
 			setLoading(false);
 		}
-	}, [selectedTicketId, router, linkBuilder, t.noTicketAlert]);
+	}, [selectedTicketId, router, t.noTicketAlert]);
 
 	// Initialize page
 	useEffect(() => {
@@ -247,7 +246,7 @@ export default function FormPage() {
 
 		if (!selectedTicketId || !eventId) {
 			alert(t.incompleteFormAlert);
-			router.push(linkBuilder('/'));
+			router.push('/');
 			return;
 		}
 
@@ -270,7 +269,7 @@ export default function FormPage() {
 				sessionStorage.removeItem('selectedEventName');
 				sessionStorage.removeItem('selectedTicketName');
 				// Redirect to success page
-				router.push(linkBuilder('/success'));
+				router.push('/success');
 			} else {
 				throw new Error('Registration failed');
 			}
@@ -518,7 +517,7 @@ export default function FormPage() {
 					marginRight: 'auto',
 					padding: '0 1rem'
 				}}>
-					<p><a href={linkBuilder('/')}>{t.reselectTicket}</a></p>
+					<p><a href="/">{t.reselectTicket}</a></p>
 					<h1 style={{
 						marginBlock: '1rem',
 						fontSize: '2.5rem'
@@ -543,7 +542,7 @@ export default function FormPage() {
 					{error && (
 						<div style={{ textAlign: 'center', padding: '2rem' }}>
 							<p style={{ color: 'red' }}>{t.loadFormFailed}{error}</p>
-							<a href={linkBuilder('/')}>{t.backToHome}</a>
+							<a href="/">{t.backToHome}</a>
 						</div>
 					)}
 

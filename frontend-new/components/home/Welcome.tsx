@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
-import * as i18n from "@/lib/i18n";
+import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
+import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 
 const CopyIcon = () => (
@@ -27,81 +27,75 @@ const CopyIcon = () => (
 type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
 
 export default function Welcome() {
-  const pathname = usePathname();
-  const currentPath = pathname ?? "/";
-  const lang = i18n.local(currentPath);
+  const locale = useLocale();
 
-  const t = useMemo(
-    () =>
-      i18n.t(lang, {
-        description: {
-          "zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
-          "zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
-          en: "Elvis Mao's Website starter template using Astro and Fastify."
-        },
-        loggedInWelcome: {
-          "zh-Hant": "歡迎回來！",
-          "zh-Hans": "欢迎回来！",
-          en: "Welcome back!"
-        },
-        registeredWelcome: {
-          "zh-Hant": "你已完成報名！",
-          "zh-Hans": "你已完成报名！",
-          en: "Registration Complete!"
-        },
-        inviteCode: {
-          "zh-Hant": "歡迎使用以下優惠碼邀請朋友一起參加：",
-          "zh-Hans": "欢迎使用以下优惠码邀请朋友一起参加：",
-          en: "Use this code to invite friends:"
-        },
-        referralWelcome: {
-          "zh-Hant": "邀請你一起參加 SITCON！",
-          "zh-Hans": "邀请你一起参加 SITCON！",
-          en: "invites you to join SITCON!"
-        },
-        inviteTicket: {
-          "zh-Hant": "你收到了一張講者邀請票！",
-          "zh-Hans": "你收到了一张讲者邀请票！",
-          en: "You received a speaker invitation!"
-        },
-        registerNow: {
-          "zh-Hant": "立即報名",
-          "zh-Hans": "立即报名",
-          en: "Register Now"
-        },
-        selectTicket: {
-          "zh-Hant": "請選擇你要的票種",
-          "zh-Hans": "请选择你要的票种",
-          en: "Please select your ticket type"
-        },
-        loading: {
-          "zh-Hant": "載入中...",
-          "zh-Hans": "载入中...",
-          en: "Loading..."
-        },
-        loadFailed: {
-          "zh-Hant": "載入失敗",
-          "zh-Hans": "载入失败",
-          en: "Load failed"
-        },
-        copiedToClipboard: {
-          "zh-Hant": "推薦碼已複製到剪貼簿！",
-          "zh-Hans": "推荐码已复制到剪贴板！",
-          en: "Referral code copied to clipboard!"
-        },
-        promotionalText: {
-          "zh-Hant": "累積三人一起報名即可獲得一張柴柴簽名照。",
-          "zh-Hans": "累积三人一起报名即可获得一张柴柴签名照。",
-          en: "Register with three friends to get a Shiba Inu autograph photo."
-        },
-        friend: {
-          "zh-Hant": "朋友",
-          "zh-Hans": "朋友",
-          en: "Friend"
-        }
-      }),
-    [lang]
-  );
+  const t = getTranslations(locale, {
+    description: {
+      "zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+      "zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+      en: "Elvis Mao's Website starter template using Astro and Fastify."
+    },
+    loggedInWelcome: {
+      "zh-Hant": "歡迎回來！",
+      "zh-Hans": "欢迎回来！",
+      en: "Welcome back!"
+    },
+    registeredWelcome: {
+      "zh-Hant": "你已完成報名！",
+      "zh-Hans": "你已完成报名！",
+      en: "Registration Complete!"
+    },
+    inviteCode: {
+      "zh-Hant": "歡迎使用以下優惠碼邀請朋友一起參加：",
+      "zh-Hans": "欢迎使用以下优惠码邀请朋友一起参加：",
+      en: "Use this code to invite friends:"
+    },
+    referralWelcome: {
+      "zh-Hant": "邀請你一起參加 SITCON！",
+      "zh-Hans": "邀请你一起参加 SITCON！",
+      en: "invites you to join SITCON!"
+    },
+    inviteTicket: {
+      "zh-Hant": "你收到了一張講者邀請票！",
+      "zh-Hans": "你收到了一张讲者邀请票！",
+      en: "You received a speaker invitation!"
+    },
+    registerNow: {
+      "zh-Hant": "立即報名",
+      "zh-Hans": "立即报名",
+      en: "Register Now"
+    },
+    selectTicket: {
+      "zh-Hant": "請選擇你要的票種",
+      "zh-Hans": "请选择你要的票种",
+      en: "Please select your ticket type"
+    },
+    loading: {
+      "zh-Hant": "載入中...",
+      "zh-Hans": "载入中...",
+      en: "Loading..."
+    },
+    loadFailed: {
+      "zh-Hant": "載入失敗",
+      "zh-Hans": "载入失败",
+      en: "Load failed"
+    },
+    copiedToClipboard: {
+      "zh-Hant": "推薦碼已複製到剪貼簿！",
+      "zh-Hans": "推荐码已复制到剪贴板！",
+      en: "Referral code copied to clipboard!"
+    },
+    promotionalText: {
+      "zh-Hant": "累積三人一起報名即可獲得一張柴柴簽名照。",
+      "zh-Hans": "累积三人一起报名即可获得一张柴柴签名照。",
+      en: "Register with three friends to get a Shiba Inu autograph photo."
+    },
+    friend: {
+      "zh-Hant": "朋友",
+      "zh-Hans": "朋友",
+      en: "Friend"
+    }
+  });
 
   const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
   const [referralCode, setReferralCode] = useState(t.loading);

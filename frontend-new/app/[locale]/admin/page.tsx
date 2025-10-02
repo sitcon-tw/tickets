@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { analytics, initializeAdminPage } from "@/lib/admin";
 import { Chart, registerables, ChartConfiguration } from 'chart.js';
 
@@ -23,8 +23,7 @@ type DashboardData = {
 };
 
 export default function AdminDashboard() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +39,7 @@ export default function AdminDashboard() {
 
   const chartsInstancesRef = useRef<Chart[]>([]);
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "管理後台總覽", "zh-Hans": "管理后台总览", en: "Admin Dashboard" },
     overview: { "zh-Hant": "總覽", "zh-Hans": "总览", en: "Overview" },
     totalTickets: { "zh-Hant": "總票券數", "zh-Hans": "总票券数", en: "Total Tickets" },

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 
 export default function Success() {
-	const lang = i18n.local(usePathname());
+	const locale = useLocale();
 
-	const t = i18n.t(lang, {
+	const t = getTranslations(locale, {
 		success: {
 			"zh-Hant": "報名成功！",
 			"zh-Hans": "报名成功！",

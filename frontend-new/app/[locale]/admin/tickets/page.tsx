@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { tickets as ticketsAPI, events as eventsAPI, initializeAdminPage } from "@/lib/admin";
 
 type Ticket = {
@@ -16,8 +16,7 @@ type Ticket = {
 };
 
 export default function TicketsPage() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -25,7 +24,7 @@ export default function TicketsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
     ticketTypes: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Types" },
     startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start Time" },

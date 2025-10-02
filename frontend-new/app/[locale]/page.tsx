@@ -7,13 +7,14 @@ import Tickets from "@/components/home/Tickets";
 import Info from "@/components/home/Info";
 import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { getTranslations } from '@/i18n/helpers';
+import { useRouter } from '@/i18n/navigation';
 
 export default function Main() {
 	const router = useRouter();
-	const lang = i18n.local(usePathname());
-	const t = i18n.t(lang, {
+	const locale = useLocale();
+	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "Fastro - 毛哥EM的網站起始模板",
 			"zh-Hans": "Fastro - 毛哥EM的网站起始模板",

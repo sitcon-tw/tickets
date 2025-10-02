@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { registrations as registrationsAPI, initializeAdminPage } from "@/lib/admin";
 
 type Registration = {
@@ -18,8 +18,7 @@ type Registration = {
 };
 
 export default function RegistrationsPage() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [filtered, setFiltered] = useState<Registration[]>([]);
@@ -28,7 +27,7 @@ export default function RegistrationsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [activeColumns, setActiveColumns] = useState(new Set(['id', 'email', 'status', 'ticket', 'event', 'createdAt']));
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
     search: { "zh-Hant": "搜尋", "zh-Hans": "搜索", en: "Search" },
     allStatus: { "zh-Hant": "全部狀態", "zh-Hans": "全部状态", en: "All statuses" },

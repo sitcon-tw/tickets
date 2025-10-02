@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from '@/lib/api/endpoints';
 
 export default function Login() {
-	const lang = i18n.local(usePathname());
+	const locale = useLocale();
 	const [viewState, setViewState] = useState<'login' | 'sent' | 'error'>('login');
 
-	const t = i18n.t(lang, {
+	const t = getTranslations(locale, {
 		login: {
 			"zh-Hant": "登入／註冊",
 			"zh-Hans": "登录／注册",

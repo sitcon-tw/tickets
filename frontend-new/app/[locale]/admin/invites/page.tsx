@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { invitationCodes as invitationCodesAPI, initializeAdminPage } from "@/lib/admin";
 
 type InviteCode = {
@@ -23,8 +23,7 @@ type InviteType = {
 };
 
 export default function InvitesPage() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
   const [inviteTypes, setInviteTypes] = useState<InviteType[]>([]);
   const [filteredTypes, setFilteredTypes] = useState<InviteType[]>([]);
@@ -34,7 +33,7 @@ export default function InvitesPage() {
   const [showCodesModal, setShowCodesModal] = useState(false);
   const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
     add: { "zh-Hant": "新增邀請碼組", "zh-Hans": "新增邀请码组", en: "Add Invitation Code Group" },
     exportCSV: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },

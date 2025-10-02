@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { formFields as formFieldsAPI, events as eventsAPI, tickets as ticketsAPI, initializeAdminPage } from "@/lib/admin";
 
 type ShowIf = {
@@ -22,15 +22,14 @@ type Question = {
 };
 
 export default function FormsPage() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
     addQuestion: { "zh-Hant": "新增問題", "zh-Hans": "新增问题", en: "Add Question" },
     save: { "zh-Hant": "儲存表單", "zh-Hans": "保存表单", en: "Save Form" }

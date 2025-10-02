@@ -1,48 +1,42 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 
 export default function Tickets() {
-  const pathname = usePathname();
-  const currentPath = pathname ?? "/";
-  const lang = i18n.local(currentPath);
+  const locale = useLocale();
 
-  const t = useMemo(
-    () =>
-      i18n.t(lang, {
-        description: {
-          "zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
-          "zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
-          en: "Elvis Mao's Website starter template using Astro and Fastify."
-        },
-        time: {
-          "zh-Hant": "報名時間：",
-          "zh-Hans": "报名时间：",
-          en: "Registration Time: "
-        },
-        remaining: {
-          "zh-Hant": "剩餘",
-          "zh-Hans": "剩余",
-          en: "Remaining"
-        },
-        confirm: {
-          "zh-Hant": "確認報名",
-          "zh-Hans": "确认报名",
-          en: "Confirm Registration"
-        },
-        selectTicketHint: {
-          "zh-Hant": "請選擇想要的票種",
-          "zh-Hans": "请选择想要的票种",
-          en: "Please select a ticket type"
-        }
-      }),
-    [lang]
-  );
+  const t = getTranslations(locale, {
+    description: {
+      "zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
+      "zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+      en: "Elvis Mao's Website starter template using Astro and Fastify."
+    },
+    time: {
+      "zh-Hant": "報名時間：",
+      "zh-Hans": "报名时间：",
+      en: "Registration Time: "
+    },
+    remaining: {
+      "zh-Hant": "剩餘",
+      "zh-Hans": "剩余",
+      en: "Remaining"
+    },
+    confirm: {
+      "zh-Hant": "確認報名",
+      "zh-Hans": "确认报名",
+      en: "Confirm Registration"
+    },
+    selectTicketHint: {
+      "zh-Hant": "請選擇想要的票種",
+      "zh-Hans": "请选择想要的票种",
+      en: "Please select a ticket type"
+    }
+  });
 
   const [eventName, setEventName] = useState("SITCON 2025");
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -63,8 +57,8 @@ export default function Tickets() {
           if (ticketsData.success && Array.isArray(ticketsData.data)) {
             const prosceedTicketData = ticketsData.data.map(ticket => ({
               ...ticket,
-              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleString(lang) : "N/A",
-              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleString(lang) : "N/A"
+              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleString(locale) : "N/A",
+              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleString(locale) : "N/A"
             }));
             setTickets(prosceedTicketData);
             return;

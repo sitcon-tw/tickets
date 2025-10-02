@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/lib/i18n";
+import { getTranslations } from "@/i18n/helpers";
+import { routing } from "@/i18n/routing";
 import { initializeAdminPage } from "@/lib/admin";
 
 export default function IntroPage() {
-  const pathname = usePathname();
-  const lang = i18n.local(pathname);
+  const locale = useLocale();
 
-  const t = i18n.t(lang, {
+  const t = getTranslations(locale, {
     title: { "zh-Hant": "編輯說明", "zh-Hans": "编辑说明", en: "Edit Instructions" },
     paragraph1: {
       "zh-Hant": "若要編輯首頁的說明，以及票種的說明，請直接編輯",
@@ -39,7 +39,7 @@ export default function IntroPage() {
     const items = ["intro", "faq", "terms"];
     const tickets = ["學生票", "普通票", "遠道而來票", "邀請票", "開源貢獻票"];
     const allItems = items.concat(tickets.map(ticket => `tickets/${ticket}`));
-    const languages = i18n.localesList();
+    const languages = routing.locales;
     const ul = document.querySelector(".github-list");
 
     if (ul) {

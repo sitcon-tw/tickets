@@ -1,13 +1,12 @@
 "use client"
 
-import { usePathname } from 'next/navigation';
-import * as i18n from '@/lib/i18n';
+import { useLocale } from 'next-intl';
+import { getTranslations } from '@/i18n/helpers';
 
 export default function Header() {
-  const pathname = usePathname();
-	const lang = i18n.local(pathname);
-  
-  const t = i18n.t(lang, {
+  const locale = useLocale();
+
+  const t = getTranslations(locale, {
     description: {
       "zh-Hant": "報名系統",
       "zh-Hans": "报名系统",
