@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Nav from "@/components/Nav";
 import * as i18n from "@/i18n";
+import { authAPI, eventsAPI, registrationsAPI } from '@/lib/api/endpoints';
 
 type FormFieldOption = {
 	value: string;
@@ -64,16 +65,7 @@ export default function FormPage() {
 	// Check authentication
 	const checkAuth = useCallback(async () => {
 		try {
-			const response = await fetch('http://localhost:3000/api/auth/get-session', {
-				credentials: 'include'
-			});
-
-			if (!response.ok) {
-				router.push(linkBuilder('/login/'));
-				return false;
-			}
-
-			const session = await response.json();
+			const session = await authAPI.getSession();
 			if (!session || !session.user) {
 				router.push(linkBuilder('/login/'));
 				return false;
@@ -102,8 +94,7 @@ export default function FormPage() {
 
 		try {
 			// First get events to find the event ID
-			const eventsResponse = await fetch('http://localhost:3000/api/events');
-			const eventsData = await eventsResponse.json();
+			const eventsData = await eventsAPI.getAll();
 
 			if (!eventsData.success || !eventsData.data.length) {
 				throw new Error('No active events found');
@@ -113,8 +104,7 @@ export default function FormPage() {
 			setEventId(fetchedEventId);
 
 			// Get ticket information including form fields
-			const ticketsResponse = await fetch(`http://localhost:3000/api/events/${fetchedEventId}/tickets`);
-			const ticketsData = await ticketsResponse.json();
+			const ticketsData = await eventsAPI.getTickets(fetchedEventId);
 
 			if (!ticketsData.success) {
 				throw new Error('Failed to load tickets');
@@ -188,22 +178,13 @@ export default function FormPage() {
 				eventId,
 				ticketId: selectedTicketId,
 				formData,
-				invitationCode,
-				referralCode
+				invitationCode: invitationCode || undefined,
+				referralCode: referralCode || undefined
 			};
 
-			const response = await fetch('http://localhost:3000/api/registrations', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				credentials: 'include',
-				body: JSON.stringify(registrationData)
-			});
+			const result = await registrationsAPI.create(registrationData);
 
-			const result = await response.json();
-
-			if (response.ok && result.success) {
+			if (result.success) {
 				// Clear stored data
 				sessionStorage.removeItem('selectedTicketId');
 				sessionStorage.removeItem('referralCode');
@@ -213,7 +194,7 @@ export default function FormPage() {
 				// Redirect to success page
 				router.push(linkBuilder('/success'));
 			} else {
-				throw new Error(result.message || 'Registration failed');
+				throw new Error('Registration failed');
 			}
 		} catch (error) {
 			console.error('Registration error:', error);

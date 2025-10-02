@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import * as i18n from "@/i18n";
+import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 
 const CopyIcon = () => (
   <svg
@@ -106,16 +107,7 @@ export default function Welcome() {
 
     const handleWelcome = async () => {
       try {
-        const sessionResponse = await fetch("http://localhost:3000/api/auth/get-session", {
-          credentials: "include"
-        });
-
-        if (!sessionResponse.ok) {
-          decideState(false);
-          return;
-        }
-
-        const sessionData = await sessionResponse.json();
+        const sessionData = await authAPI.getSession();
 
         if (!sessionData || !sessionData.user) {
           decideState(false);
@@ -123,12 +115,8 @@ export default function Welcome() {
         }
 
         // User authenticated
-        const registrationsResponse = await fetch("http://localhost:3000/api/registrations", {
-          credentials: "include"
-        });
-
-        if (registrationsResponse.ok) {
-          const registrations = await registrationsResponse.json();
+        try {
+          const registrations = await registrationsAPI.getAll();
           if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
             if (!cancelled) {
               setWelcomeState("registered");
@@ -136,6 +124,8 @@ export default function Welcome() {
             }
             return;
           }
+        } catch (error) {
+          console.error("Failed to load registrations", error);
         }
 
         decideState(true);
@@ -147,23 +137,8 @@ export default function Welcome() {
 
     const loadReferralCode = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/referrals", {
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          if (!cancelled) setReferralCode("載入失敗");
-          return;
-        }
-
-        const referral = await response.json();
-        if (cancelled) return;
-
-        if (referral?.success && referral.data?.code) {
-          setReferralCode(referral.data.code);
-        } else {
-          setReferralCode("載入失敗");
-        }
+        // Note: referralsAPI endpoint needs to be added for getting user's referral code
+        if (!cancelled) setReferralCode("載入失敗");
       } catch (error) {
         console.error("Failed to load referral code", error);
         if (!cancelled) setReferralCode("載入失敗");

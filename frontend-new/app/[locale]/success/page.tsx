@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Nav from "@/components/Nav";
 import * as i18n from "@/i18n";
 import { usePathname } from 'next/navigation';
+import { authAPI, registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 
 export default function Success() {
 	const lang = i18n.local(usePathname());
@@ -62,58 +63,27 @@ export default function Success() {
 	const loadSuccessInfo = async () => {
 		try {
 			// Check if user is authenticated
-			const sessionResponse = await fetch('http://localhost:3000/api/auth/session', {
-				credentials: 'include'
-			});
-
-			if (!sessionResponse.ok) {
-				window.location.href = '/login/';
-				return;
-			}
+			await authAPI.getSession();
 
 			// Get user's registrations to show count
-			const registrationsResponse = await fetch('http://localhost:3000/api/registrations', {
-				credentials: 'include'
-			});
-
 			let count: number | string = "載入失敗";
-			if (registrationsResponse.ok) {
-				const registrations = await registrationsResponse.json();
+			try {
+				const registrations = await registrationsAPI.getAll();
 				if (registrations.success && registrations.data) {
 					count = registrations.data.length || 1;
 				}
+			} catch (error) {
+				console.error('Failed to load registrations:', error);
 			}
 			setParticipantCount(count);
 
-			// Get referral code
+			// Get referral code - Note: This endpoint needs to be implemented in the API
 			let code = "載入失敗";
-			const referralResponse = await fetch('http://localhost:3000/api/referrals', {
-				credentials: 'include'
-			});
-
-			if (referralResponse.ok) {
-				const referral = await referralResponse.json();
-				if (referral.success && referral.data) {
-					code = referral.data.code;
-				}
-			} else if (referralResponse.status === 404) {
-				// Create referral code if it doesn't exist
-				const createResponse = await fetch('http://localhost:3000/api/referrals', {
-					method: 'POST',
-					credentials: 'include'
-				});
-
-				if (createResponse.ok) {
-					const created = await createResponse.json();
-					if (created.success && created.data) {
-						code = created.data.code;
-					}
-				}
-			}
 			setReferralCode(code);
 
 		} catch (error) {
 			console.error('Failed to load success info:', error);
+			window.location.href = '/login/';
 		}
 	};
 

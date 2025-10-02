@@ -31,6 +31,7 @@ export const healthAPI = {
 export const authAPI = {
   getMagicLink: (email: string) => apiClient.post('/api/auth/sign-in/magic-link', { email }),
   getSession: () => apiClient.get('/api/auth/get-session'),
+  signOut: () => apiClient.post('/api/auth/sign-out'),
 };
 
 // Events - Public

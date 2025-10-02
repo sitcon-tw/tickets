@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import * as i18n from "@/i18n";
+import { authAPI } from "@/lib/api/endpoints";
 
 type NavProps = {
   children?: ReactNode;
@@ -45,16 +46,7 @@ export default function Nav({ children }: NavProps) {
 
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/auth/get-session", {
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          if (!cancelled) setSession({ status: "anonymous" });
-          return;
-        }
-
-        const data = await response.json();
+        const data = await authAPI.getSession();
         if (!cancelled) {
           if (data && data.user) {
             setSession({ status: "authenticated", user: data.user });
@@ -77,10 +69,7 @@ export default function Nav({ children }: NavProps) {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:3000/api/auth/sign-out", {
-        method: "POST",
-        credentials: "include"
-      });
+      await authAPI.signOut();
     } catch (error) {
       console.error("Logout failed", error);
     } finally {

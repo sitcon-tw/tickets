@@ -85,12 +85,13 @@ class APIClient {
     options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
+      credentials: 'include',
       ...options,
     };
 
@@ -143,29 +144,23 @@ class APIClient {
     throw lastError || new Error('Max retries exceeded');
   }
 
-  // GET request
   async get<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
-    let url = endpoint;
+    const url = new URL(endpoint, this.baseURL);
     if (params) {
-      const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
+          url.searchParams.append(key, String(value));
         }
       });
-      const queryString = searchParams.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
     }
-    return this.request<T>(url, { method: 'GET' });
+    return this.request<T>(url.pathname + url.search, { method: 'GET' });
   }
 
   // POST request
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : '{}',
     });
   }
 
@@ -173,7 +168,7 @@ class APIClient {
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : '{}',
     });
   }
 

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Nav from "@/components/Nav";
 import * as i18n from "@/i18n";
 import { usePathname } from 'next/navigation';
+import { authAPI } from '@/lib/api/endpoints';
 
 export default function Login() {
 	const lang = i18n.local(usePathname());
@@ -48,26 +49,8 @@ export default function Login() {
 		if (!email) return;
 
 		try {
-			const BACKEND_URI = 'http://localhost:3000';
-			const response = await fetch(`${BACKEND_URI}/api/auth/sign-in/magic-link`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					email: email,
-					name: email.split("@")[0],
-					callbackURL: window.location.origin,
-					newUserCallbackURL: window.location.origin,
-					errorCallbackURL: `${window.location.origin}/login/`
-				})
-			});
-
-			if (response.ok) {
-				setViewState('sent');
-			} else {
-				setViewState('error');
-			}
+			await authAPI.getMagicLink(email);
+			setViewState('sent');
 		} catch (error) {
 			console.error("Login error:", error);
 			setViewState('error');
