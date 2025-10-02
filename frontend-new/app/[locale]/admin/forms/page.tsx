@@ -181,28 +181,98 @@ export default function FormsPage() {
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
-        <div id="form-editor" className="editor">
-          <div id="questions" className="questions">
+        <div id="form-editor" style={{
+          maxWidth: '960px',
+          margin: '1rem auto 4rem'
+        }}>
+          <div id="questions" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            margin: '1rem 0'
+          }}>
             {questions.length === 0 && (
-              <div className="empty">尚無問題</div>
+              <div style={{
+                opacity: 0.6,
+                fontStyle: 'italic',
+                padding: '1rem',
+                textAlign: 'center',
+                border: '1px dashed #444',
+                borderRadius: '8px'
+              }}>尚無問題</div>
             )}
             {questions.map((q, index) => (
-              <div key={q.id} className="question" data-id={q.id}>
-                <div className="handle" title="Drag to reorder">☰</div>
-                <div className="q-body">
-                  <div className="q-row">
-                    <label>問題</label>
+              <div key={q.id} data-id={q.id} style={{
+                background: '#1e1e1e',
+                border: '1px solid #333',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                display: 'grid',
+                gridTemplateColumns: '32px 1fr auto',
+                gap: '12px',
+                alignItems: 'start',
+                position: 'relative'
+              }}>
+                <div style={{
+                  cursor: 'grab',
+                  userSelect: 'none',
+                  fontSize: '1.1rem',
+                  lineHeight: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#999'
+                }} title="Drag to reorder">☰</div>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    alignItems: 'center'
+                  }}>
+                    <label style={{
+                      fontSize: '0.65rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#bbb'
+                    }}>問題</label>
                     <input
                       type="text"
                       value={q.label}
                       placeholder="問題標籤"
                       onChange={(e) => updateQuestion(q.id, { label: e.target.value })}
+                      style={{
+                        background: '#111',
+                        border: '1px solid #333',
+                        color: '#eee',
+                        borderRadius: '6px',
+                        padding: '6px 8px',
+                        fontSize: '0.8rem',
+                        minWidth: '160px'
+                      }}
                     />
-                    <label>種類</label>
+                    <label style={{
+                      fontSize: '0.65rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#bbb'
+                    }}>種類</label>
                     <select
-                      className="type-select"
                       value={q.type}
                       onChange={(e) => updateQuestion(q.id, { type: e.target.value })}
+                      style={{
+                        width: '140px',
+                        background: '#111',
+                        border: '1px solid #333',
+                        color: '#eee',
+                        borderRadius: '6px',
+                        padding: '6px 8px',
+                        fontSize: '0.8rem'
+                      }}
                     >
                       {["text", "email", "phone", "textarea", "select", "radio", "checkbox"].map(t => (
                         <option key={t} value={t}>{t}</option>
@@ -210,34 +280,83 @@ export default function FormsPage() {
                     </select>
                     <button
                       type="button"
-                      className="required-toggle"
-                      data-on={q.required ? "true" : "false"}
                       onClick={() => updateQuestion(q.id, { required: !q.required })}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '0.65rem',
+                        background: q.required ? '#303030' : '#222',
+                        border: `1px solid ${q.required ? '#666' : '#444'}`,
+                        color: q.required ? '#fff' : 'inherit',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        cursor: 'pointer'
+                      }}
                     >
                       {q.required ? "必填" : "選填"}
                     </button>
                     <button
                       type="button"
-                      className="delete-question"
                       onClick={() => deleteQuestion(q.id)}
+                      style={{
+                        background: '#2a0000',
+                        border: '1px solid #550000',
+                        color: '#ff8d8d',
+                        fontSize: '0.65rem',
+                        padding: '4px 8px',
+                        borderRadius: '4px'
+                      }}
                     >
                       ✕
                     </button>
                   </div>
-                  <div className="q-row">
-                    <label>說明</label>
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    alignItems: 'center'
+                  }}>
+                    <label style={{
+                      fontSize: '0.65rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#bbb'
+                    }}>說明</label>
                     <input
                       type="text"
                       value={q.help || ''}
                       placeholder="說明文字 (選填)"
                       onChange={(e) => updateQuestion(q.id, { help: e.target.value })}
+                      style={{
+                        background: '#111',
+                        border: '1px solid #333',
+                        color: '#eee',
+                        borderRadius: '6px',
+                        padding: '6px 8px',
+                        fontSize: '0.8rem',
+                        minWidth: '160px'
+                      }}
                     />
                   </div>
                   {["select", "radio", "checkbox"].includes(q.type) && (
-                    <div className="options-wrapper">
-                      <div className="options">
+                    <div>
+                      <div style={{
+                        marginTop: '4px',
+                        padding: '6px 8px',
+                        border: '1px dashed #444',
+                        borderRadius: '6px',
+                        background: '#161616',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
                         {(q.options || []).map((opt, i) => (
-                          <div key={i} className="option-item">
+                          <div key={i} style={{
+                            display: 'flex',
+                            gap: '6px',
+                            alignItems: 'center'
+                          }}>
                             <span style={{ cursor: 'grab' }} title="Drag option">⋮⋮</span>
                             <input
                               type="text"
@@ -247,6 +366,7 @@ export default function FormsPage() {
                                 newOptions[i] = e.target.value;
                                 updateQuestion(q.id, { options: newOptions });
                               }}
+                              style={{ flex: 1 }}
                             />
                             <button
                               type="button"
@@ -255,6 +375,14 @@ export default function FormsPage() {
                                 newOptions.splice(i, 1);
                                 updateQuestion(q.id, { options: newOptions });
                               }}
+                              style={{
+                                background: '#222',
+                                border: '1px solid #444',
+                                color: '#bbb',
+                                fontSize: '0.65rem',
+                                padding: '4px 6px',
+                                borderRadius: '4px'
+                              }}
                             >
                               刪除
                             </button>
@@ -262,10 +390,18 @@ export default function FormsPage() {
                         ))}
                         <button
                           type="button"
-                          className="add-option"
                           onClick={() => {
                             const newOptions = [...(q.options || []), ""];
                             updateQuestion(q.id, { options: newOptions });
+                          }}
+                          style={{
+                            background: '#222',
+                            border: '1px solid #444',
+                            color: '#bbb',
+                            fontSize: '0.65rem',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            alignSelf: 'flex-start'
                           }}
                         >
                           + 新增選項
@@ -277,165 +413,35 @@ export default function FormsPage() {
               </div>
             ))}
           </div>
-          <div className="toolbar">
-            <button id="add-question" type="button" onClick={addQuestion}>
+          <div style={{
+            display: 'flex',
+            gap: '12px'
+          }}>
+            <button id="add-question" type="button" onClick={addQuestion} style={{
+              background: '#1f1f1f',
+              border: '1px solid #444',
+              color: '#eee',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '0.75rem',
+              cursor: 'pointer'
+            }}>
               + {t.addQuestion}
             </button>
-            <button id="save-form" type="button" className="primary" onClick={saveForm}>
+            <button id="save-form" type="button" onClick={saveForm} style={{
+              background: '#155e29',
+              border: '1px solid #1d7b34',
+              color: '#eee',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '0.75rem',
+              cursor: 'pointer'
+            }}>
               💾 {t.save}
             </button>
           </div>
         </div>
       </main>
-
-      <style jsx global>{`
-        .editor {
-          max-width: 960px;
-          margin: 1rem auto 4rem;
-        }
-        .questions {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin: 1rem 0;
-        }
-        .question {
-          background: #1e1e1e;
-          border: 1px solid #333;
-          border-radius: 8px;
-          padding: 12px 14px;
-          display: grid;
-          grid-template-columns: 32px 1fr auto;
-          gap: 12px;
-          align-items: start;
-          position: relative;
-        }
-        .handle {
-          cursor: grab;
-          user-select: none;
-          font-size: 1.1rem;
-          line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #999;
-        }
-        .q-body {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .q-row {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          align-items: center;
-        }
-        .q-row label {
-          font-size: 0.65rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #bbb;
-        }
-        .q-row input[type="text"],
-        .q-row select,
-        .q-row textarea {
-          background: #111;
-          border: 1px solid #333;
-          color: #eee;
-          border-radius: 6px;
-          padding: 6px 8px;
-          font-size: 0.8rem;
-          min-width: 160px;
-        }
-        .type-select {
-          width: 140px;
-        }
-        .options {
-          margin-top: 4px;
-          padding: 6px 8px;
-          border: 1px dashed #444;
-          border-radius: 6px;
-          background: #161616;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .option-item {
-          display: flex;
-          gap: 6px;
-          align-items: center;
-        }
-        .option-item input {
-          flex: 1;
-        }
-        .option-item button {
-          background: #222;
-          border: 1px solid #444;
-          color: #bbb;
-          font-size: 0.65rem;
-          padding: 4px 6px;
-          border-radius: 4px;
-        }
-        .add-option {
-          background: #222;
-          border: 1px solid #444;
-          color: #bbb;
-          font-size: 0.65rem;
-          padding: 4px 8px;
-          border-radius: 4px;
-          align-self: flex-start;
-        }
-        .delete-question {
-          background: #2a0000;
-          border: 1px solid #550000;
-          color: #ff8d8d;
-          font-size: 0.65rem;
-          padding: 4px 8px;
-          border-radius: 4px;
-        }
-        .required-toggle {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 0.65rem;
-          background: #222;
-          border: 1px solid #444;
-          border-radius: 4px;
-          padding: 4px 8px;
-          cursor: pointer;
-        }
-        .required-toggle[data-on="true"] {
-          color: #fff;
-          border-color: #666;
-          background: #303030;
-        }
-        .toolbar {
-          display: flex;
-          gap: 12px;
-        }
-        .toolbar button {
-          background: #1f1f1f;
-          border: 1px solid #444;
-          color: #eee;
-          border-radius: 6px;
-          padding: 8px 14px;
-          font-size: 0.75rem;
-          cursor: pointer;
-        }
-        .toolbar button.primary {
-          background: #155e29;
-          border-color: #1d7b34;
-        }
-        .empty {
-          opacity: 0.6;
-          font-style: italic;
-          padding: 1rem;
-          text-align: center;
-          border: 1px dashed #444;
-          border-radius: 8px;
-        }
-      `}</style>
     </>
   );
 }

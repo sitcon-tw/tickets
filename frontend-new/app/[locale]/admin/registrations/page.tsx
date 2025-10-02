@@ -107,36 +107,117 @@ export default function RegistrationsPage() {
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
-        <section className="controls">
-          <div className="row filters">
+        <section
+          style={{
+            margin: "1rem 0",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.75rem"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+              alignItems: "center"
+            }}
+          >
             <input
               type="text"
               placeholder={"🔍 " + t.search}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                background: "#111",
+                border: "1px solid #333",
+                color: "#eee",
+                borderRadius: "6px",
+                padding: "6px 10px",
+                fontSize: "0.85rem"
+              }}
             />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                background: "#111",
+                border: "1px solid #333",
+                color: "#eee",
+                borderRadius: "6px",
+                padding: "6px 10px",
+                fontSize: "0.85rem"
+              }}
+            >
               <option value="">{t.allStatus}</option>
               <option value="confirmed">{t.confirmed}</option>
               <option value="pending">{t.pending}</option>
               <option value="cancelled">{t.cancelled}</option>
             </select>
-            <button onClick={loadRegistrations}>↻ {t.refresh}</button>
-            <button onClick={syncToSheets} className="secondary">📝 {t.syncSheets}</button>
+            <button
+              onClick={loadRegistrations}
+              style={{
+                background: "#1f1f1f",
+                border: "1px solid #444",
+                color: "#eee",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "0.8rem",
+                cursor: "pointer"
+              }}
+            >
+              ↻ {t.refresh}
+            </button>
+            <button
+              onClick={syncToSheets}
+              style={{
+                background: "#24324a",
+                border: "1px solid #355079",
+                color: "#eee",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "0.8rem",
+                cursor: "pointer"
+              }}
+            >
+              📝 {t.syncSheets}
+            </button>
           </div>
-          <div className="row cols">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+              alignItems: "center"
+            }}
+          >
             <label>{t.columns}</label>
-            <div className="toggles">
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.4rem"
+              }}
+            >
               {columnDefs.map(col => (
                 <button
                   key={col.id}
-                  className="toggle"
                   data-on={activeColumns.has(col.id) ? "true" : "false"}
                   onClick={() => {
                     const newCols = new Set(activeColumns);
                     if (newCols.has(col.id)) newCols.delete(col.id);
                     else newCols.add(col.id);
                     setActiveColumns(newCols);
+                  }}
+                  style={{
+                    background: "#222",
+                    border: "1px solid #444",
+                    padding: "4px 8px",
+                    fontSize: "0.65rem",
+                    borderRadius: "999px",
+                    cursor: "pointer",
+                    opacity: activeColumns.has(col.id) ? 1 : 0.45,
+                    color: "#eee"
                   }}
                 >
                   {col.label}
@@ -146,32 +227,107 @@ export default function RegistrationsPage() {
           </div>
         </section>
 
-        <section className="table-wrapper">
-          {isLoading && <div className="loading">{t.loading}</div>}
-          {!isLoading && filtered.length === 0 && <div className="empty">{t.empty}</div>}
+        <section>
+          {isLoading && (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+              {t.loading}
+            </div>
+          )}
+          {!isLoading && filtered.length === 0 && (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+              {t.empty}
+            </div>
+          )}
           {!isLoading && filtered.length > 0 && (
-            <table className="reg-table">
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: "0",
+                fontSize: "0.75rem"
+              }}
+            >
               <thead>
                 <tr>
                   {[...activeColumns].map(cid => {
                     const col = columnDefs.find(c => c.id === cid);
-                    return col ? <th key={cid}>{col.label}</th> : null;
+                    return col ? (
+                      <th
+                        key={cid}
+                        style={{
+                          position: "sticky",
+                          top: "0",
+                          background: "#161616",
+                          padding: "8px 10px",
+                          textAlign: "left",
+                          fontWeight: "600",
+                          borderBottom: "1px solid #333"
+                        }}
+                      >
+                        {col.label}
+                      </th>
+                    ) : null;
                   })}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(r => (
-                  <tr key={r.id}>
+                  <tr
+                    key={r.id}
+                    style={{ background: "transparent" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#191919";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
                     {[...activeColumns].map(cid => {
                       const col = columnDefs.find(c => c.id === cid);
                       if (!col) return null;
                       const val = col.accessor(r);
+                      const statusColor =
+                        r.status === "confirmed"
+                          ? "#4ade80"
+                          : r.status === "pending"
+                          ? "#fbbf24"
+                          : r.status === "cancelled"
+                          ? "#f87171"
+                          : "#eee";
                       return (
-                        <td key={cid}>
+                        <td
+                          key={cid}
+                          style={{
+                            padding: "6px 10px",
+                            borderBottom: "1px solid #222"
+                          }}
+                        >
                           {cid === 'status' ? (
-                            <span className={`label-pill status-${r.status}`}>{val}</span>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                background: "#222",
+                                border: "1px solid #333",
+                                padding: "2px 6px",
+                                borderRadius: "6px",
+                                fontSize: "0.6rem",
+                                textTransform: "uppercase",
+                                color: statusColor
+                              }}
+                            >
+                              {val}
+                            </span>
                           ) : (
-                            <div className="truncate">{val}</div>
+                            <div
+                              style={{
+                                maxWidth: "220px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              {val}
+                            </div>
                           )}
                         </td>
                       );
@@ -183,120 +339,18 @@ export default function RegistrationsPage() {
           )}
         </section>
 
-        <section className="meta">
-          <div className="meta-info">{filtered.length} rows</div>
+        <section>
+          <div
+            style={{
+              margin: "1rem 0",
+              fontSize: "0.7rem",
+              opacity: "0.75"
+            }}
+          >
+            {filtered.length} rows
+          </div>
         </section>
       </main>
-
-      <style jsx>{`
-        .controls {
-          margin: 1rem 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-        .row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-          align-items: center;
-        }
-        .controls input,
-        .controls select {
-          background: #111;
-          border: 1px solid #333;
-          color: #eee;
-          border-radius: 6px;
-          padding: 6px 10px;
-          font-size: 0.85rem;
-        }
-        .controls button {
-          background: #1f1f1f;
-          border: 1px solid #444;
-          color: #eee;
-          border-radius: 6px;
-          padding: 6px 12px;
-          font-size: 0.8rem;
-          cursor: pointer;
-        }
-        .controls button.secondary {
-          background: #24324a;
-          border-color: #355079;
-        }
-        .toggles {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.4rem;
-        }
-        .toggle {
-          background: #222;
-          border: 1px solid #444;
-          padding: 4px 8px;
-          font-size: 0.65rem;
-          border-radius: 999px;
-          cursor: pointer;
-        }
-        .toggle[data-on="false"] {
-          opacity: 0.45;
-        }
-        .loading,
-        .empty {
-          padding: 2rem;
-          text-align: center;
-          opacity: 0.7;
-        }
-        .reg-table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-          font-size: 0.75rem;
-        }
-        .reg-table thead th {
-          position: sticky;
-          top: 0;
-          background: #161616;
-          padding: 8px 10px;
-          text-align: left;
-          font-weight: 600;
-          border-bottom: 1px solid #333;
-        }
-        .reg-table tbody td {
-          padding: 6px 10px;
-          border-bottom: 1px solid #222;
-        }
-        .reg-table tbody tr:hover {
-          background: #191919;
-        }
-        .label-pill {
-          display: inline-block;
-          background: #222;
-          border: 1px solid #333;
-          padding: 2px 6px;
-          border-radius: 6px;
-          font-size: 0.6rem;
-          text-transform: uppercase;
-        }
-        .status-confirmed {
-          color: #4ade80;
-        }
-        .status-pending {
-          color: #fbbf24;
-        }
-        .status-cancelled {
-          color: #f87171;
-        }
-        .truncate {
-          max-width: 220px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .meta-info {
-          margin: 1rem 0;
-          font-size: 0.7rem;
-          opacity: 0.75;
-        }
-      `}</style>
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 type ConfirmProps = {
   isOpen: boolean;
@@ -9,63 +9,68 @@ type ConfirmProps = {
 };
 
 export default function Confirm({ isOpen, onClose, children }: ConfirmProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Check if dark mode is preferred
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsDarkMode(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   return (
     <div
-      className="confirm"
       role="dialog"
       aria-modal="true"
       style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: isDarkMode ? '#00000029' : '#ffffff29',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        paddingTop: '10rem',
         opacity: isOpen ? 1 : 0,
-        pointerEvents: isOpen ? "all" : "none"
+        pointerEvents: isOpen ? 'all' : 'none',
+        transition: 'opacity 0.3s ease-in-out',
+        zIndex: 400
       }}
     >
-      <div className="confirm-container">
-        <button id="close" type="button" aria-label="close" onClick={onClose}>
+      <div
+        style={{
+          maxWidth: '800px',
+          margin: 'auto',
+          padding: '2rem',
+          position: 'relative'
+        }}
+      >
+        <button
+          type="button"
+          aria-label="close"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            right: '2rem',
+            top: '-1rem',
+            cursor: 'pointer',
+            fontSize: '2rem',
+            background: 'transparent',
+            border: 'none',
+            color: 'inherit',
+            lineHeight: 1
+          }}
+        >
           ×
         </button>
         {children}
       </div>
-      <style jsx>{`
-        .confirm {
-          position: fixed;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          background-color: #ffffff29;
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          padding-top: 10rem;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.3s ease-in-out;
-          z-index: 400;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .confirm {
-            background-color: #00000029;
-          }
-        }
-
-        .confirm-container {
-          max-width: 800px;
-          margin: auto;
-          padding: 2rem;
-          position: relative;
-        }
-
-        #close {
-          position: absolute;
-          right: 2rem;
-          top: -1rem;
-          cursor: pointer;
-          font-size: 2rem;
-          background: transparent;
-          border: none;
-          color: inherit;
-          line-height: 1;
-        }
-      `}</style>
     </div>
   );
 }

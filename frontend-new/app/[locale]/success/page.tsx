@@ -137,58 +137,40 @@ export default function Success() {
 		<>
 			<Nav />
 			<main>
-				<section>
-					<h1>{t.success}</h1>
+				<section style={{
+					paddingTop: '5rem',
+					display: 'flex',
+					flexDirection: 'column',
+					maxHeight: 'calc(100vh - 4rem)',
+					gap: '1rem',
+					textAlign: 'center'
+				}}>
+					<h1 style={{
+						marginBlock: '1rem',
+						fontSize: '3rem',
+						textAlign: 'center'
+					}}>{t.success}</h1>
 					<p>{t.emailCheck}</p>
-					<p>{t.participantCount} <span id="participant-count">{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
-					<div className="content" id="referral-code">{referralCode}</div>
-					<div id="copy" onClick={handleCopy}>{copyText}</div>
+					<p>{t.participantCount} <span id="participant-count" style={{ fontSize: '2em' }}>{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
+					<div id="referral-code" style={{
+						border: '1px solid var(--color-gray-900)',
+						padding: '0.8rem 1.5rem',
+						height: '0',
+						overflowY: 'auto',
+						flex: '1',
+						width: '100%',
+						maxWidth: '10rem',
+						margin: 'auto'
+					}}>{referralCode}</div>
+					<div id="copy" onClick={handleCopy} style={{
+						textDecoration: 'underline',
+						cursor: 'pointer',
+						marginBottom: '1.5rem'
+					}}>{copyText}</div>
 					<p>{t.reward}</p>
-					<a href="/form/" className="button">{t.edit}</a>
+					<a href="/form/" className="button" style={{ margin: 'auto' }}>{t.edit}</a>
 				</section>
 			</main>
-
-			<style jsx>{`
-				h1 {
-					margin-block: 1rem;
-					font-size: 3rem;
-					text-align: center;
-				}
-
-				section {
-					padding-top: 5rem;
-					display: flex;
-					flex-direction: column;
-					max-height: calc(100vh - 4rem);
-					gap: 1rem;
-					text-align: center;
-				}
-
-				.button {
-					margin: auto;
-				}
-				label {
-					cursor: pointer;
-				}
-				span {
-					font-size: 2em;
-				}
-				.content {
-					border: 1px solid var(--color-gray-900);
-					padding: 0.8rem 1.5rem;
-					height: 0;
-					overflow-y: auto;
-					flex: 1;
-					width: 100%;
-					max-width: 10rem;
-					margin: auto;
-				}
-				#copy {
-					text-decoration: underline;
-					cursor: pointer;
-					margin-bottom: 1.5rem;
-				}
-			`}</style>
 		</>
 	);
 }

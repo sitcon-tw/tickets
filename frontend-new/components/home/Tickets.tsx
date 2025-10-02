@@ -123,13 +123,12 @@ export default function Tickets() {
 
   return (
     <section>
-      <div className="tickets-container">
+      <div>
         {isLoading && tickets.length === 0 ? <p>Loading...</p> : null}
         {!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-        {tickets.map(ticket => (
+        {tickets.map((ticket, index) => (
           <div
             key={ticket.id}
-            className="ticket"
             role="button"
             tabIndex={0}
             onClick={() => handleTicketSelect(ticket)}
@@ -139,6 +138,22 @@ export default function Tickets() {
                 handleTicketSelect(ticket);
               }
             }}
+            style={{
+              border: "solid 3px var(--color-gray-500)",
+              padding: "1rem",
+              margin: "0 auto 2rem",
+              maxWidth: "350px",
+              transform: index % 2 === 0 ? "rotate(1.17deg)" : "rotate(-1.17deg)",
+              transition: "transform 0.3s ease",
+              cursor: "pointer",
+              backgroundColor: "var(--color-gray-800)"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = index % 2 === 0 ? "rotate(1.17deg) scale(1.05)" : "rotate(-1.17deg) scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = index % 2 === 0 ? "rotate(1.17deg)" : "rotate(-1.17deg)";
+            }}
           >
             <h3>{ticket.name}</h3>
             <p>
@@ -147,7 +162,7 @@ export default function Tickets() {
               -
               {ticket.saleEnd}
             </p>
-            <p className="remain">
+            <p style={{ textAlign: "right" }}>
               {t.remaining} {ticket.available} / {ticket.quantity}
             </p>
           </div>
@@ -156,8 +171,28 @@ export default function Tickets() {
 
       <Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm}>
         {selectedTicket ? (
-          <div className="confirm-content">
-            <div className="ticket ticketConfirm">
+          <div
+            style={{
+              display: "flex",
+              flexDirection: window.innerWidth >= 768 ? "row" : "column",
+              gap: "1.5rem",
+              alignItems: window.innerWidth >= 768 ? "flex-start" : "stretch"
+            }}
+          >
+            <div
+              style={{
+                border: "solid 3px var(--color-gray-500)",
+                padding: "1rem",
+                margin: "0 auto 2rem",
+                maxWidth: "350px",
+                transform: "rotate(1.17deg)",
+                transition: "transform 0.3s ease",
+                cursor: "pointer",
+                backgroundColor: "var(--color-gray-800)",
+                visibility: "hidden",
+                pointerEvents: "none"
+              }}
+            >
               <h3>{selectedTicket.name}</h3>
               <p>
                 {t.time}
@@ -165,96 +200,31 @@ export default function Tickets() {
                 -
                 {selectedTicket.saleEnd}
               </p>
-              <p className="remain">
+              <p style={{ textAlign: "right" }}>
                 {t.remaining} {selectedTicket.quantity - selectedTicket.soldCount} / {selectedTicket.quantity}
               </p>
             </div>
-            <div className="content">
+            <div style={{ maxWidth: "400px" }}>
               <h2>{selectedTicket.name}</h2>
               <p>{t.selectTicketHint}</p>
               {selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
             </div>
           </div>
         ) : null}
-        <a className="button" href="#" onClick={event => {
-          event.preventDefault();
-          handleConfirmRegistration();
-        }}>
+        <a
+          style={{
+            margin: "1.5rem auto 0",
+            display: "inline-block"
+          }}
+          href="#"
+          onClick={event => {
+            event.preventDefault();
+            handleConfirmRegistration();
+          }}
+        >
           {t.confirm}
         </a>
       </Confirm>
-
-      <style jsx>{`
-        .tickets-container > .ticket:nth-child(2n) {
-          transform: rotate(-1.17deg);
-        }
-
-        .about + .button {
-          margin-top: 2rem;
-        }
-
-        .ticket {
-          border: solid 3px var(--color-gray-500);
-          padding: 1rem;
-          margin: 0 auto 2rem;
-          max-width: 350px;
-          transform: rotate(1.17deg);
-          transition: transform 0.3s ease;
-          cursor: pointer;
-          background-color: var(--color-gray-800);
-        }
-
-        .ticket:hover {
-          transform: rotate(1.17deg) scale(1.05);
-        }
-
-        .tickets-container > .ticket:nth-child(2n):hover {
-          transform: rotate(-1.17deg) scale(1.05);
-        }
-
-        .remain {
-          text-align: right;
-        }
-
-        #ticketAnimation {
-          display: none;
-          position: fixed;
-          transition: none;
-          z-index: 500;
-          width: 100%;
-        }
-
-        .confirming + #ticketAnimation {
-          transition: 0.3s ease-in-out;
-        }
-
-        .ticketConfirm {
-          visibility: hidden;
-          pointer-events: none;
-        }
-
-        .confirm-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        @media (min-width: 768px) {
-          .confirm-content {
-            flex-direction: row;
-            align-items: flex-start;
-          }
-        }
-
-        .content {
-          max-width: 400px;
-        }
-
-        .button {
-          margin: 1.5rem auto 0;
-          display: inline-block;
-        }
-      `}</style>
     </section>
   );
 }

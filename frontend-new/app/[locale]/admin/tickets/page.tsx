@@ -153,23 +153,92 @@ export default function TicketsPage() {
     }
   };
 
+  const getStatusBadgeStyle = (statusClass: string) => {
+    const baseStyle: React.CSSProperties = {
+      padding: '0.3rem 0.6rem',
+      borderRadius: '4px',
+      fontSize: '0.85rem',
+      display: 'inline-block'
+    };
+
+    if (statusClass === 'active') {
+      return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
+    } else if (statusClass === 'ended') {
+      return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
+    } else if (statusClass === 'pending') {
+      return { ...baseStyle, backgroundColor: '#fff3cd', color: '#856404' };
+    }
+    return baseStyle;
+  };
+
   return (
     <>
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
 
-        <section className="ticket-overview">
-          <div className="table-container">
-            <table className="tickets-table">
+        <section>
+          <div style={{
+            overflowX: 'auto',
+            borderRadius: '8px',
+            backgroundColor: 'var(--color-gray-800)',
+            border: '2px solid var(--color-gray-900)'
+          }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              minWidth: '900px'
+            }}>
               <thead>
                 <tr>
-                  <th>{t.ticketTypes}</th>
-                  <th>{t.startTime}</th>
-                  <th>{t.endTime}</th>
-                  <th>{t.status}</th>
-                  <th>{t.quantity}</th>
-                  <th>{t.actions}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.ticketTypes}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.startTime}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.endTime}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.status}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.quantity}</th>
+                  <th style={{
+                    padding: '0.5rem 1rem',
+                    textAlign: 'left',
+                    borderBottom: '1px solid var(--color-gray-400)',
+                    backgroundColor: 'var(--color-gray-700)',
+                    color: 'var(--color-gray-200)',
+                    fontWeight: 600
+                  }}>{t.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,17 +246,41 @@ export default function TicketsPage() {
                   const status = computeStatus(ticket);
                   return (
                     <tr key={ticket.id}>
-                      <td>{ticket.name}</td>
-                      <td>{formatDateTime(ticket.saleStart)}</td>
-                      <td>{formatDateTime(ticket.saleEnd)}</td>
-                      <td>
-                        <span className={`status-badge ${status.class}`}>{status.label}</span>
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>{ticket.name}</td>
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>{formatDateTime(ticket.saleStart)}</td>
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>{formatDateTime(ticket.saleEnd)}</td>
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>
+                        <span style={getStatusBadgeStyle(status.class)}>{status.label}</span>
                       </td>
-                      <td>{ticket.quantity}</td>
-                      <td className="actions-cell">
-                        <div className="action-buttons">
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>{ticket.quantity}</td>
+                      <td style={{
+                        padding: '0.5rem 1rem',
+                        textAlign: 'left',
+                        borderBottom: '1px solid var(--color-gray-400)'
+                      }}>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button className="button" onClick={() => openModal(ticket)}>{t.editTicket}</button>
-                          <button className="button delete" onClick={() => deleteTicket(ticket.id)}>刪除</button>
+                          <button className="button" style={{ backgroundColor: '#f8d7da', color: '#721c24' }} onClick={() => deleteTicket(ticket.id)}>刪除</button>
                         </div>
                       </td>
                     </tr>
@@ -198,37 +291,85 @@ export default function TicketsPage() {
           </div>
         </section>
 
-        <section className="add-ticket-section">
-          <button className="button add-ticket-btn" onClick={() => openModal()}>
+        <section style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <button className="button" onClick={() => openModal()}>
             + {t.addTicket}
           </button>
         </section>
 
         {showModal && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div style={{
+            position: 'fixed',
+            inset: '0',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }} onClick={closeModal}>
+            <div style={{
+              background: 'var(--color-gray-800)',
+              padding: '1.5rem',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%'
+            }} onClick={(e) => e.stopPropagation()}>
               <h2>{editingTicket ? t.editTicket : t.addTicket}</h2>
               <form onSubmit={saveTicket}>
-                <div className="form-grid">
-                  <label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '1rem',
+                  marginTop: '1rem'
+                }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <span>{t.ticketName}</span>
-                    <input name="name" type="text" required defaultValue={editingTicket?.name || ''} />
+                    <input name="name" type="text" required defaultValue={editingTicket?.name || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
                   </label>
-                  <label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <span>{t.startTime}</span>
-                    <input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart || ''} />
+                    <input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
                   </label>
-                  <label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <span>{t.endTime}</span>
-                    <input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd || ''} />
+                    <input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
                   </label>
-                  <label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <span>{t.quantity}</span>
-                    <input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
+                    <input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
                   </label>
                 </div>
-                <div className="modal-actions">
-                  <button type="submit" className="button primary">{t.save}</button>
+                <div style={{
+                  display: 'flex',
+                  gap: '0.75rem',
+                  marginTop: '1.5rem',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button type="submit" className="button" style={{ background: '#ffc107', color: '#2a2416' }}>{t.save}</button>
                   <button type="button" className="button" onClick={closeModal}>{t.cancel}</button>
                 </div>
               </form>
@@ -236,105 +377,6 @@ export default function TicketsPage() {
           </div>
         )}
       </main>
-
-      <style jsx>{`
-        .table-container {
-          overflow-x: auto;
-          border-radius: 8px;
-          background-color: var(--color-gray-800);
-          border: 2px solid var(--color-gray-900);
-        }
-        .tickets-table {
-          width: 100%;
-          border-collapse: collapse;
-          min-width: 900px;
-        }
-        .tickets-table th,
-        .tickets-table td {
-          padding: 0.5rem 1rem;
-          text-align: left;
-          border-bottom: 1px solid var(--color-gray-400);
-        }
-        .tickets-table th {
-          background-color: var(--color-gray-700);
-          color: var(--color-gray-200);
-          font-weight: 600;
-        }
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .status-badge {
-          padding: 0.3rem 0.6rem;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          display: inline-block;
-        }
-        .status-badge.active {
-          background-color: #d4edda;
-          color: #155724;
-        }
-        .status-badge.ended {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-        .status-badge.pending {
-          background-color: #fff3cd;
-          color: #856404;
-        }
-        .add-ticket-section {
-          margin-top: 2rem;
-          text-align: center;
-        }
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-        .modal {
-          background: var(--color-gray-800);
-          padding: 1.5rem;
-          border-radius: 12px;
-          max-width: 640px;
-          width: 100%;
-        }
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-        .form-grid label {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-        .form-grid input {
-          padding: 0.5rem;
-          border: 1px solid var(--color-gray-600);
-          background: var(--color-gray-900);
-          color: inherit;
-          border-radius: 6px;
-        }
-        .modal-actions {
-          display: flex;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-          justify-content: flex-end;
-        }
-        .button.primary {
-          background: #ffc107;
-          color: #2a2416;
-        }
-        .button.delete {
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-      `}</style>
     </>
   );
 }

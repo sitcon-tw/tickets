@@ -34,43 +34,26 @@ export default function SignUp() {
 		<>
 			<Nav />
 			<main>
-				<section>
-					<h1>報名</h1>
-					<div className="content">這裡還沒做</div>
+				<section style={{
+					paddingTop: '5rem',
+					display: 'flex',
+					flexDirection: 'column',
+					maxHeight: 'calc(100vh - 4rem)',
+					gap: '1rem'
+				}}>
+					<h1 style={{
+						marginBlock: '1rem',
+						textAlign: 'center'
+					}}>報名</h1>
+					<div style={{
+						border: '1px solid var(--color-gray-900)',
+						padding: '1.5rem',
+						height: '0',
+						overflowY: 'auto',
+						flex: '1'
+					}}>這裡還沒做</div>
 				</section>
 			</main>
-
-			<style jsx>{`
-				body {
-					position: relative;
-				}
-				h1 {
-					margin-block: 1rem;
-					text-align: center;
-				}
-
-				section {
-					padding-top: 5rem;
-					display: flex;
-					flex-direction: column;
-					max-height: calc(100vh - 4rem);
-					gap: 1rem;
-				}
-
-				.button {
-					margin: auto;
-				}
-				label {
-					cursor: pointer;
-				}
-				.content {
-					border: 1px solid var(--color-gray-900);
-					padding: 1.5rem;
-					height: 0;
-					overflow-y: auto;
-					flex: 1;
-				}
-			`}</style>
 		</>
 	);
 }

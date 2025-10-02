@@ -226,11 +226,56 @@ export default function FormPage() {
 		const required = field.required;
 		const requiredMark = field.required ? ' *' : '';
 
+		const formGroupStyle: React.CSSProperties = {
+			display: 'flex',
+			flexDirection: 'column',
+			gap: '0.5rem'
+		};
+
+		const labelStyle: React.CSSProperties = {
+			fontWeight: 'bold',
+			display: 'block'
+		};
+
+		const inputStyle: React.CSSProperties = {
+			padding: '0.75rem',
+			border: '2px solid #333',
+			borderRadius: '0.25rem',
+			fontSize: '1rem',
+			backgroundColor: '#222',
+			color: '#fff'
+		};
+
+		const fieldsetStyle: React.CSSProperties = {
+			border: '1px solid #333',
+			borderRadius: '0.25rem',
+			padding: '1rem',
+			backgroundColor: '#111'
+		};
+
+		const legendStyle: React.CSSProperties = {
+			fontWeight: 'bold',
+			padding: '0 0.5rem'
+		};
+
+		const optionStyle: React.CSSProperties = {
+			display: 'flex',
+			alignItems: 'center',
+			gap: '0.5rem',
+			margin: '0.5rem 0',
+			fontWeight: 'normal'
+		};
+
+		const optionInputStyle: React.CSSProperties = {
+			width: 'auto',
+			margin: 0
+		};
+
 		switch (field.type) {
 			case 'text':
 				return (
-					<div className="form-group" key={index}>
-						<label htmlFor={field.name}>{field.description}{requiredMark}</label>
+					<div style={formGroupStyle} key={index}>
+						<label htmlFor={field.name} style={labelStyle}>{field.description}{requiredMark}</label>
 						<input
 							type="text"
 							id={field.name}
@@ -239,14 +284,15 @@ export default function FormPage() {
 							required={required}
 							value={(formData[field.name] as string) || ''}
 							onChange={handleInputChange}
+							style={inputStyle}
 						/>
 					</div>
 				);
 
 			case 'email':
 				return (
-					<div className="form-group" key={index}>
-						<label htmlFor={field.name}>{field.description}{requiredMark}</label>
+					<div style={formGroupStyle} key={index}>
+						<label htmlFor={field.name} style={labelStyle}>{field.description}{requiredMark}</label>
 						<input
 							type="email"
 							id={field.name}
@@ -255,14 +301,15 @@ export default function FormPage() {
 							required={required}
 							value={(formData[field.name] as string) || ''}
 							onChange={handleInputChange}
+							style={inputStyle}
 						/>
 					</div>
 				);
 
 			case 'textarea':
 				return (
-					<div className="form-group" key={index}>
-						<label htmlFor={field.name}>{field.description}{requiredMark}</label>
+					<div style={formGroupStyle} key={index}>
+						<label htmlFor={field.name} style={labelStyle}>{field.description}{requiredMark}</label>
 						<textarea
 							id={field.name}
 							name={field.name}
@@ -271,20 +318,22 @@ export default function FormPage() {
 							required={required}
 							value={(formData[field.name] as string) || ''}
 							onChange={handleInputChange}
+							style={inputStyle}
 						/>
 					</div>
 				);
 
 			case 'select':
 				return (
-					<div className="form-group" key={index}>
-						<label htmlFor={field.name}>{field.description}{requiredMark}</label>
+					<div style={formGroupStyle} key={index}>
+						<label htmlFor={field.name} style={labelStyle}>{field.description}{requiredMark}</label>
 						<select
 							id={field.name}
 							name={field.name}
 							required={required}
 							value={(formData[field.name] as string) || ''}
 							onChange={handleInputChange}
+							style={inputStyle}
 						>
 							<option value="">請選擇...</option>
 							{field.options && field.options.map((option, i) => {
@@ -298,14 +347,14 @@ export default function FormPage() {
 
 			case 'radio':
 				return (
-					<div className="form-group" key={index}>
-						<fieldset>
-							<legend>{field.description}{requiredMark}</legend>
+					<div style={formGroupStyle} key={index}>
+						<fieldset style={fieldsetStyle}>
+							<legend style={legendStyle}>{field.description}{requiredMark}</legend>
 							{field.options && field.options.map((option, i) => {
 								const value = typeof option === 'object' ? option.value : option;
 								const label = typeof option === 'object' ? option.label : option;
 								return (
-									<label key={i} className="radio-option">
+									<label key={i} style={optionStyle}>
 										<input
 											type="radio"
 											name={field.name}
@@ -313,6 +362,7 @@ export default function FormPage() {
 											required={required && i === 0}
 											checked={formData[field.name] === value}
 											onChange={handleInputChange}
+											style={optionInputStyle}
 										/>
 										{label}
 									</label>
@@ -327,21 +377,22 @@ export default function FormPage() {
 				if (field.options && Array.isArray(field.options)) {
 					// Multiple checkbox options
 					return (
-						<div className="form-group" key={index}>
-							<fieldset>
-								<legend>{field.description}{requiredMark}</legend>
+						<div style={formGroupStyle} key={index}>
+							<fieldset style={fieldsetStyle}>
+								<legend style={legendStyle}>{field.description}{requiredMark}</legend>
 								{field.options.map((option, i) => {
 									const value = typeof option === 'object' ? option.value : option;
 									const label = typeof option === 'object' ? option.label : option;
 									const currentValues = Array.isArray(formData[field.name]) ? formData[field.name] as string[] : [];
 									return (
-										<label key={i} className="checkbox-option">
+										<label key={i} style={optionStyle}>
 											<input
 												type="checkbox"
 												name={field.name}
 												value={value}
 												checked={currentValues.includes(value)}
 												onChange={handleCheckboxChange}
+												style={optionInputStyle}
 											/>
 											{label}
 										</label>
@@ -353,8 +404,8 @@ export default function FormPage() {
 				} else {
 					// Single checkbox (like terms acceptance)
 					return (
-						<div className="form-group" key={index}>
-							<label className="checkbox-single">
+						<div style={formGroupStyle} key={index}>
+							<label style={{ ...optionStyle, cursor: 'pointer' }}>
 								<input
 									type="checkbox"
 									name={field.name}
@@ -362,18 +413,24 @@ export default function FormPage() {
 									required={required}
 									checked={!!formData[field.name]}
 									onChange={handleCheckboxChange}
+									style={optionInputStyle}
 								/>
 								{field.description}{requiredMark}
 							</label>
-							{field.helpText && <p className="help-text">{field.helpText}</p>}
+							{field.helpText && <p style={{
+								fontSize: '0.9rem',
+								color: '#666',
+								marginTop: '0.25rem',
+								fontStyle: 'italic'
+							}}>{field.helpText}</p>}
 						</div>
 					);
 				}
 
 			default:
 				return (
-					<div className="form-group" key={index}>
-						<label htmlFor={field.name}>{field.description}{requiredMark}</label>
+					<div style={formGroupStyle} key={index}>
+						<label htmlFor={field.name} style={labelStyle}>{field.description}{requiredMark}</label>
 						<input
 							type="text"
 							id={field.name}
@@ -382,43 +439,71 @@ export default function FormPage() {
 							required={required}
 							value={(formData[field.name] as string) || ''}
 							onChange={handleInputChange}
+							style={inputStyle}
 						/>
 					</div>
 				);
 		}
 	};
 
+	const [submitHover, setSubmitHover] = useState(false);
+
 	return (
 		<>
 			<Nav />
 			<main>
-				<section>
+				<section style={{
+					marginTop: '8rem',
+					maxWidth: '800px',
+					marginLeft: 'auto',
+					marginRight: 'auto',
+					padding: '0 1rem'
+				}}>
 					<p><a href={linkBuilder('/')}>重新選擇票種</a></p>
-					<h1>填寫報名資訊</h1>
+					<h1 style={{
+						marginBlock: '1rem',
+						fontSize: '2.5rem'
+					}}>填寫報名資訊</h1>
 
 					{eventName && ticketName && (
-						<div className="ticket-info">
+						<div style={{
+							marginBottom: '1rem',
+							padding: '1rem',
+							background: 'var(--color-gray-800)',
+							borderRadius: '8px'
+						}}>
 							<p><strong>活動：</strong><span>{eventName}</span></p>
 							<p><strong>票種：</strong><span>{ticketName}</span></p>
 						</div>
 					)}
 
 					{loading && (
-						<div className="loading">載入表單中...</div>
+						<div style={{ textAlign: 'center', padding: '2rem' }}>載入表單中...</div>
 					)}
 
 					{error && (
-						<div className="error">
+						<div style={{ textAlign: 'center', padding: '2rem' }}>
 							<p style={{ color: 'red' }}>載入表單失敗: {error}</p>
 							<a href={linkBuilder('/')}>返回首頁</a>
 						</div>
 					)}
 
 					{!loading && !error && (
-						<form onSubmit={handleSubmit}>
+						<form onSubmit={handleSubmit} style={{
+							display: 'flex',
+							flexDirection: 'column',
+							gap: '1.5rem'
+						}}>
 							{/* Basic fields */}
-							<div className="form-group">
-								<label htmlFor="name">姓名 *</label>
+							<div style={{
+								display: 'flex',
+								flexDirection: 'column',
+								gap: '0.5rem'
+							}}>
+								<label htmlFor="name" style={{
+									fontWeight: 'bold',
+									display: 'block'
+								}}>姓名 *</label>
 								<input
 									type="text"
 									id="name"
@@ -426,10 +511,25 @@ export default function FormPage() {
 									required
 									value={(formData.name as string) || ''}
 									onChange={handleInputChange}
+									style={{
+										padding: '0.75rem',
+										border: '2px solid #333',
+										borderRadius: '0.25rem',
+										fontSize: '1rem',
+										backgroundColor: '#222',
+										color: '#fff'
+									}}
 								/>
 							</div>
-							<div className="form-group">
-								<label htmlFor="email">Email *</label>
+							<div style={{
+								display: 'flex',
+								flexDirection: 'column',
+								gap: '0.5rem'
+							}}>
+								<label htmlFor="email" style={{
+									fontWeight: 'bold',
+									display: 'block'
+								}}>Email *</label>
 								<input
 									type="email"
 									id="email"
@@ -437,6 +537,14 @@ export default function FormPage() {
 									required
 									value={(formData.email as string) || userEmail}
 									onChange={handleInputChange}
+									style={{
+										padding: '0.75rem',
+										border: '2px solid #333',
+										borderRadius: '0.25rem',
+										fontSize: '1rem',
+										backgroundColor: '#222',
+										color: '#fff'
+									}}
 								/>
 							</div>
 
@@ -445,126 +553,69 @@ export default function FormPage() {
 
 							{/* Invitation and referral code fields */}
 							{invitationCode && (
-								<div className="form-group">
-									<label>邀請碼</label>
-									<input type="text" name="invitationCode" value={invitationCode} readOnly />
+								<div style={{
+									display: 'flex',
+									flexDirection: 'column',
+									gap: '0.5rem'
+								}}>
+									<label style={{
+										fontWeight: 'bold',
+										display: 'block'
+									}}>邀請碼</label>
+									<input type="text" name="invitationCode" value={invitationCode} readOnly style={{
+										padding: '0.75rem',
+										border: '2px solid #333',
+										borderRadius: '0.25rem',
+										fontSize: '1rem',
+										backgroundColor: '#222',
+										color: '#fff'
+									}} />
 								</div>
 							)}
 
 							{referralCode && (
-								<div className="form-group">
-									<label>推薦碼</label>
-									<input type="text" name="referralCode" value={referralCode} readOnly />
+								<div style={{
+									display: 'flex',
+									flexDirection: 'column',
+									gap: '0.5rem'
+								}}>
+									<label style={{
+										fontWeight: 'bold',
+										display: 'block'
+									}}>推薦碼</label>
+									<input type="text" name="referralCode" value={referralCode} readOnly style={{
+										padding: '0.75rem',
+										border: '2px solid #333',
+										borderRadius: '0.25rem',
+										fontSize: '1rem',
+										backgroundColor: '#222',
+										color: '#fff'
+									}} />
 								</div>
 							)}
 
-							<button type="submit" className="button">提交報名</button>
+							<button
+								type="submit"
+								className="button"
+								onMouseEnter={() => setSubmitHover(true)}
+								onMouseLeave={() => setSubmitHover(false)}
+								style={{
+									padding: '1rem 2rem',
+									backgroundColor: submitHover ? '#005999' : '#007acc',
+									color: 'white',
+									border: 'none',
+									borderRadius: '0.25rem',
+									fontSize: '1.1rem',
+									fontWeight: 'bold',
+									cursor: 'pointer',
+									marginTop: '2rem',
+									alignSelf: 'center'
+								}}
+							>提交報名</button>
 						</form>
 					)}
 				</section>
 			</main>
-
-			<style jsx>{`
-				section {
-					margin-top: 8rem;
-					max-width: 800px;
-					margin-left: auto;
-					margin-right: auto;
-					padding: 0 1rem;
-				}
-				h1 {
-					margin-block: 1rem;
-					font-size: 2.5rem;
-				}
-				.ticket-info {
-					margin-bottom: 1rem;
-					padding: 1rem;
-					background: var(--color-gray-800);
-					border-radius: 8px;
-				}
-				.loading,
-				.error {
-					text-align: center;
-					padding: 2rem;
-				}
-				form {
-					display: flex;
-					flex-direction: column;
-					gap: 1.5rem;
-				}
-				.form-group {
-					display: flex;
-					flex-direction: column;
-					gap: 0.5rem;
-				}
-				.form-group label {
-					font-weight: bold;
-					display: block;
-				}
-				.form-group input,
-				.form-group select,
-				.form-group textarea {
-					padding: 0.75rem;
-					border: 2px solid #333;
-					border-radius: 0.25rem;
-					font-size: 1rem;
-					background-color: #222;
-					color: #fff;
-				}
-				.form-group fieldset {
-					border: 1px solid #333;
-					border-radius: 0.25rem;
-					padding: 1rem;
-					background-color: #111;
-				}
-				.form-group legend {
-					font-weight: bold;
-					padding: 0 0.5rem;
-				}
-				.radio-option,
-				.checkbox-option {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-					margin: 0.5rem 0;
-					font-weight: normal !important;
-				}
-				.checkbox-single {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-					margin: 0.5rem 0;
-					font-weight: normal !important;
-					cursor: pointer;
-				}
-				.radio-option input,
-				.checkbox-option input,
-				.checkbox-single input {
-					width: auto;
-					margin: 0;
-				}
-				.help-text {
-					font-size: 0.9rem;
-					color: #666;
-					margin-top: 0.25rem;
-					font-style: italic;
-				}
-				button[type="submit"] {
-					padding: 1rem 2rem;
-					background-color: #007acc;
-					color: white;
-					border: none;
-					border-radius: 0.25rem;
-					font-size: 1.1rem;
-					font-weight: bold;
-					cursor: pointer;
-					margin-top: 2rem;
-					align-self: center;
-				}
-				button[type="submit"]:hover {
-					background-color: #005999;
-				}
-			`}</style>
 		</>
 	);
 }

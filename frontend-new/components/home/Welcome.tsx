@@ -208,106 +208,163 @@ export default function Welcome() {
     window.location.href = `/form/?${params.toString()}`;
   };
 
+  const [codeHovered, setCodeHovered] = useState(false);
+
+  useEffect(() => {
+    // Inject keyframes animation into document
+    const styleId = 'welcome-blink-keyframes';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @keyframes blink {
+          to {
+            opacity: 0.1;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <section>
       {welcomeState === "registered" ? (
-        <section className="welcome-section">
-          <h2>{t.registeredWelcome}</h2>
+        <section
+          style={{
+            backgroundColor: 'var(--color-gray-800)',
+            padding: '2rem',
+            margin: '1rem',
+            textAlign: 'center'
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.5rem',
+              marginBottom: '0.5rem'
+            }}
+          >
+            {t.registeredWelcome}
+          </h2>
           <p>{t.inviteCode}</p>
-          <button type="button" className="code" onClick={handleCopy}>
-            <span id="referral-code">{referralCode}</span>
-            <CopyIcon />
+          <button
+            type="button"
+            onClick={handleCopy}
+            onMouseEnter={() => setCodeHovered(true)}
+            onMouseLeave={() => setCodeHovered(false)}
+            style={{
+              backgroundColor: codeHovered ? 'var(--color-gray-600)' : 'var(--color-gray-700)',
+              padding: '0.5rem',
+              maxWidth: '10rem',
+              margin: '1rem auto 0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+              border: 'none',
+              color: 'inherit'
+            }}
+          >
+            <span
+              style={{
+                textAlign: 'center',
+                flex: 1,
+                fontWeight: 'bold'
+              }}
+            >
+              {referralCode}
+            </span>
+            <span style={{ opacity: 0.7 }}>
+              <CopyIcon />
+            </span>
           </button>
         </section>
       ) : null}
 
       {welcomeState === "referral" ? (
-        <section className="welcome-section">
-          <h2>
-            <span id="referrer-name">{referralParam || "朋友"}</span> {t.referralWelcome}
+        <section
+          style={{
+            backgroundColor: 'var(--color-gray-800)',
+            padding: '2rem',
+            margin: '1rem',
+            textAlign: 'center'
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.5rem',
+              marginBottom: '0.5rem'
+            }}
+          >
+            <span>{referralParam || "朋友"}</span> {t.referralWelcome}
           </h2>
           <p>累積三人一起報名即可獲得一張柴柴簽名照。</p>
         </section>
       ) : null}
 
       {welcomeState === "invitation" ? (
-        <section className="welcome-section">
-          <h2>{t.inviteTicket}</h2>
-          <button type="button" className="button" onClick={handleInvitationRegister}>
+        <section
+          style={{
+            backgroundColor: 'var(--color-gray-800)',
+            padding: '2rem',
+            margin: '1rem',
+            textAlign: 'center'
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.5rem',
+              marginBottom: '0.5rem'
+            }}
+          >
+            {t.inviteTicket}
+          </h2>
+          <button
+            type="button"
+            onClick={handleInvitationRegister}
+            style={{
+              margin: '1rem auto 0',
+              display: 'inline-block'
+            }}
+          >
             {t.registerNow}
           </button>
         </section>
       ) : null}
 
       {welcomeState === "default" ? (
-        <section className="welcome-section">
-          <h2>{t.loggedInWelcome}</h2>
+        <section
+          style={{
+            backgroundColor: 'var(--color-gray-800)',
+            padding: '2rem',
+            margin: '1rem',
+            textAlign: 'center'
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.5rem',
+              marginBottom: '0.5rem'
+            }}
+          >
+            {t.loggedInWelcome}
+          </h2>
         </section>
       ) : null}
 
-      <h2 id="select">{t.selectTicket}</h2>
-
-      <style jsx>{`
-        .welcome-section {
-          background-color: var(--color-gray-800);
-          padding: 2rem;
-          margin: 1rem;
-          text-align: center;
-        }
-
-        .code {
-          background-color: var(--color-gray-700);
-          padding: 0.5rem;
-          max-width: 10rem;
-          margin: 1rem auto 0;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          cursor: pointer;
-          transition: background-color 0.2s;
-          border: none;
-          color: inherit;
-        }
-
-        .code:hover {
-          background-color: var(--color-gray-600);
-        }
-
-        #referral-code {
-          text-align: center;
-          flex: 1;
-          font-weight: bold;
-        }
-
-        .lucide-copy {
-          opacity: 0.7;
-        }
-
-        .welcome-section h2 {
-          font-size: 1.5rem;
-          margin-bottom: 0.5rem;
-        }
-
-        #select {
-          font-size: 1rem;
-          margin-block: 2rem;
-          text-align: center;
-          font-weight: normal;
-          animation: blink 1s infinite linear alternate;
-          opacity: 0.8;
-        }
-
-        @keyframes blink {
-          to {
-            opacity: 0.1;
-          }
-        }
-
-        .button {
-          margin: 1rem auto 0;
-          display: inline-block;
-        }
-      `}</style>
+      <h2
+        style={{
+          fontSize: '1rem',
+          marginBlock: '2rem',
+          textAlign: 'center',
+          fontWeight: 'normal',
+          animation: 'blink 1s infinite linear alternate',
+          opacity: 0.8
+        }}
+      >
+        {t.selectTicket}
+      </h2>
     </section>
   );
 }

@@ -303,49 +303,149 @@ export default function AdminDashboard() {
   const remainingTickets = dashboardData?.remainingTickets || 153;
   const salesRate = totalTickets > 0 ? ((soldTickets / totalTickets) * 100).toFixed(1) : '0';
 
+  const statCardStyle: React.CSSProperties = {
+    background: 'var(--color-gray-800)',
+    padding: '1.5rem',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center'
+  };
+
+  const chartContainerStyle: React.CSSProperties = {
+    background: 'var(--color-gray-800)',
+    padding: '1.5rem',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    flex: '1',
+    maxWidth: '100%'
+  };
+
   return (
     <>
       <AdminNav />
-      <main className="dashboard">
+      <main>
         <h1>{t.overview}</h1>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>{t.totalTickets}</h3>
-            <div className="stat-number">{totalTickets}</div>
-            <div className="stat-label">{t.tickets}</div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '3rem'
+        }}>
+          <div style={statCardStyle}>
+            <h3 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-300)',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>{t.totalTickets}</h3>
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: 'var(--color-gray-100)',
+              marginBottom: '0.5rem'
+            }}>{totalTickets}</div>
+            <div style={{
+              color: 'var(--color-gray-100)',
+              fontSize: '0.8rem'
+            }}>{t.tickets}</div>
           </div>
-          <div className="stat-card">
-            <h3>{t.sold}</h3>
-            <div className="stat-number">{soldTickets}</div>
-            <div className="stat-label">{t.tickets}</div>
+          <div style={statCardStyle}>
+            <h3 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-300)',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>{t.sold}</h3>
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: 'var(--color-gray-100)',
+              marginBottom: '0.5rem'
+            }}>{soldTickets}</div>
+            <div style={{
+              color: 'var(--color-gray-100)',
+              fontSize: '0.8rem'
+            }}>{t.tickets}</div>
           </div>
-          <div className="stat-card">
-            <h3>{t.remaining}</h3>
-            <div className="stat-number">{remainingTickets}</div>
-            <div className="stat-label">{t.tickets}</div>
+          <div style={statCardStyle}>
+            <h3 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-300)',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>{t.remaining}</h3>
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: 'var(--color-gray-100)',
+              marginBottom: '0.5rem'
+            }}>{remainingTickets}</div>
+            <div style={{
+              color: 'var(--color-gray-100)',
+              fontSize: '0.8rem'
+            }}>{t.tickets}</div>
           </div>
-          <div className="stat-card">
-            <h3>{t.salesRate}</h3>
-            <div className="stat-number">{salesRate}%</div>
-            <div className="stat-label">{t.completion}</div>
+          <div style={statCardStyle}>
+            <h3 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-300)',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>{t.salesRate}</h3>
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: 'var(--color-gray-100)',
+              marginBottom: '0.5rem'
+            }}>{salesRate}%</div>
+            <div style={{
+              color: 'var(--color-gray-100)',
+              fontSize: '0.8rem'
+            }}>{t.completion}</div>
           </div>
         </div>
 
-        <div className="charts-section">
-          <div className="chart-container trend">
-            <h2>{t.salesTrend}</h2>
+        <div style={{
+          display: 'flex',
+          gap: '2rem',
+          marginBottom: '3rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ ...chartContainerStyle, flex: '2' }}>
+            <h2 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-100)',
+              fontSize: '1.2rem'
+            }}>{t.salesTrend}</h2>
             <canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
           </div>
 
-          <div className="chart-container">
-            <h2>{t.ticketDistribution}</h2>
+          <div style={chartContainerStyle}>
+            <h2 style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-gray-100)',
+              fontSize: '1.2rem'
+            }}>{t.ticketDistribution}</h2>
             <canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
           </div>
         </div>
 
-        <div className="progress-section">
-          <h2>{t.progressTitle}</h2>
-          <div className="progress-grid">
+        <div style={{
+          background: 'var(--color-gray-800)',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h2 style={{
+            margin: '0 0 1.5rem 0',
+            color: 'var(--color-gray-100)',
+            fontSize: '1.2rem'
+          }}>{t.progressTitle}</h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1.5rem'
+          }}>
             {[
               { title: t.student, ref: studentChartRef, remaining: 26, total: 150, sold: 124 },
               { title: t.regular, ref: regularChartRef, remaining: 57, total: 200, sold: 143 },
@@ -353,23 +453,83 @@ export default function AdminDashboard() {
               { title: t.invite, ref: inviteChartRef, remaining: 25, total: 50, sold: 25 },
               { title: t.opensource, ref: opensourceChartRef, remaining: 10, total: 20, sold: 10 }
             ].map((ticket, idx) => (
-              <div key={idx} className="progress-card">
-                <h3>{ticket.title}</h3>
-                <div className="progress-chart-wrapper">
+              <div key={idx} style={{
+                background: 'var(--color-gray-700)',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                textAlign: 'center',
+                maxWidth: '100%'
+              }}>
+                <h3 style={{
+                  margin: '0 0 1.5rem 0',
+                  color: 'var(--color-gray-200)',
+                  fontSize: '1.1rem',
+                  fontWeight: 600
+                }}>{ticket.title}</h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginBottom: '1rem'
+                }}>
                   <canvas ref={ticket.ref} width="200" height="100"></canvas>
                 </div>
-                <div className="remaining-display">
-                  <div className="remaining-number">{ticket.remaining}</div>
-                  <div className="remaining-label">{t.remainingLabel}</div>
+                <div style={{
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  background: 'var(--color-gray-600)',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{
+                    fontSize: '2.5rem',
+                    fontWeight: 'bold',
+                    color: 'var(--color-gray-100)',
+                    lineHeight: '1'
+                  }}>{ticket.remaining}</div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--color-gray-300)',
+                    marginTop: '0.25rem'
+                  }}>{t.remainingLabel}</div>
                 </div>
-                <div className="progress-details">
-                  <div className="detail-item">
-                    <span>{t.total}</span>
-                    <span>{ticket.total}</span>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-around',
+                  gap: '1rem'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span style={{
+                      color: 'var(--color-gray-300)',
+                      fontSize: '0.85rem',
+                      fontWeight: 500
+                    }}>{t.total}</span>
+                    <span style={{
+                      fontWeight: 600,
+                      color: 'var(--color-gray-200)',
+                      fontSize: '1.1rem'
+                    }}>{ticket.total}</span>
                   </div>
-                  <div className="detail-item">
-                    <span>{t.soldLabel}</span>
-                    <span>{ticket.sold}</span>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span style={{
+                      color: 'var(--color-gray-300)',
+                      fontSize: '0.85rem',
+                      fontWeight: 500
+                    }}>{t.soldLabel}</span>
+                    <span style={{
+                      fontWeight: 600,
+                      color: 'var(--color-gray-200)',
+                      fontSize: '1.1rem'
+                    }}>{ticket.sold}</span>
                   </div>
                 </div>
               </div>
@@ -377,178 +537,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </main>
-
-      <style jsx>{`
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 3rem;
-        }
-
-        .stat-card {
-          background: var(--color-gray-800);
-          padding: 1.5rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          text-align: center;
-        }
-
-        .stat-card h3 {
-          margin: 0 0 1rem 0;
-          color: var(--color-gray-300);
-          font-size: 0.9rem;
-          font-weight: 500;
-        }
-
-        .stat-number {
-          font-size: 2.5rem;
-          font-weight: bold;
-          color: var(--color-gray-100);
-          margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-          color: var(--color-gray-100);
-          font-size: 0.8rem;
-        }
-
-        .charts-section {
-          display: flex;
-          gap: 2rem;
-          margin-bottom: 3rem;
-          flex-wrap: wrap;
-        }
-
-        .chart-container {
-          background: var(--color-gray-800);
-          padding: 1.5rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          flex: 1;
-          max-width: 100%;
-        }
-
-        .trend {
-          flex: 2;
-        }
-
-        .chart-container h2 {
-          margin: 0 0 1rem 0;
-          color: var(--color-gray-100);
-          font-size: 1.2rem;
-        }
-
-        .progress-section {
-          background: var(--color-gray-800);
-          padding: 1.5rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .progress-section h2 {
-          margin: 0 0 1.5rem 0;
-          color: var(--color-gray-100);
-          font-size: 1.2rem;
-        }
-
-        .progress-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .progress-card {
-          background: var(--color-gray-700);
-          padding: 1.5rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          text-align: center;
-          max-width: 100%;
-        }
-
-        .progress-card h3 {
-          margin: 0 0 1.5rem 0;
-          color: var(--color-gray-200);
-          font-size: 1.1rem;
-          font-weight: 600;
-        }
-
-        .progress-chart-wrapper {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 1rem;
-        }
-
-        .remaining-display {
-          margin-bottom: 1.5rem;
-          padding: 1rem;
-          background: var(--color-gray-600);
-          border-radius: 8px;
-        }
-
-        .remaining-number {
-          font-size: 2.5rem;
-          font-weight: bold;
-          color: var(--color-gray-100);
-          line-height: 1;
-        }
-
-        .remaining-label {
-          font-size: 0.9rem;
-          color: var(--color-gray-300);
-          margin-top: 0.25rem;
-        }
-
-        .progress-details {
-          display: flex;
-          justify-content: space-around;
-          gap: 1rem;
-        }
-
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .detail-item span:first-child {
-          color: var(--color-gray-300);
-          font-size: 0.85rem;
-          font-weight: 500;
-        }
-
-        .detail-item span:last-child {
-          font-weight: 600;
-          color: var(--color-gray-200);
-          font-size: 1.1rem;
-        }
-
-        @media (max-width: 768px) {
-          .charts-section {
-            grid-template-columns: 1fr;
-          }
-
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .progress-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .progress-details {
-            flex-direction: column;
-            gap: 0.5rem;
-          }
-
-          .detail-item {
-            flex-direction: row;
-            justify-content: space-between;
-          }
-        }
-      `}</style>
     </>
   );
 }

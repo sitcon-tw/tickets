@@ -45,42 +45,42 @@ export default function Info() {
   );
 
   return (
-    <section className="info content">
-      <div className="markdown-block">
-        <h2>{t.ticketInfo}</h2>
-        {Object.entries(fallbackTicketDetails).map(([key, description]) => (
-          <section key={key}>
+    <section
+      className="content"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2rem'
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-gray-800)',
+          padding: '2rem',
+          borderRadius: '1rem'
+        }}
+      >
+        <h2 style={{ marginBottom: '1.5rem' }}>{t.ticketInfo}</h2>
+        {Object.entries(fallbackTicketDetails).map(([key, description], index) => (
+          <section
+            key={key}
+            style={index > 0 ? { marginTop: '1.5rem' } : undefined}
+          >
             <h3>{key}</h3>
             <p>{description}</p>
           </section>
         ))}
       </div>
-      <div className="markdown-block">
-        <h2>{t.faq}</h2>
+      <div
+        style={{
+          backgroundColor: 'var(--color-gray-800)',
+          padding: '2rem',
+          borderRadius: '1rem'
+        }}
+      >
+        <h2 style={{ marginBottom: '1.5rem' }}>{t.faq}</h2>
         <p>{t.contentComingSoon}</p>
       </div>
-
-      <style jsx>{`
-        .info {
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-        }
-
-        .markdown-block {
-          background-color: var(--color-gray-800);
-          padding: 2rem;
-          border-radius: 1rem;
-        }
-
-        .markdown-block h2 {
-          margin-bottom: 1.5rem;
-        }
-
-        .markdown-block section + section {
-          margin-top: 1.5rem;
-        }
-      `}</style>
     </section>
   );
 }

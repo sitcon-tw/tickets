@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as i18n from "@/i18n";
 
 const activityLinks = [
@@ -63,6 +63,32 @@ export default function AdminNav() {
   const lang = i18n.local(currentPath);
 
   const linkBuilder = useMemo(() => i18n.l(currentPath), [currentPath]);
+
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Inject global styles for main element
+    const styleId = 'admin-nav-global-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        main {
+          padding-top: 5rem;
+          max-width: unset;
+          margin-left: 17rem;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
 
   const t = useMemo(
     () =>
@@ -127,50 +153,87 @@ export default function AdminNav() {
   );
 
   return (
-    <>
-      <aside style={styles.aside}>
-        <div style={styles.activity}>{t.activityName}</div>
-        <div style={styles.title}>{t.systemTitle}</div>
-        <nav style={styles.nav}>
-          <ul style={styles.navList}>
-            {activityLinks.map(({ href, i18nKey }) => (
-              <li key={href} style={styles.navItem}>
-                <a href={linkBuilder(href)}>{t[i18nKey]}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div style={styles.links}>
-          <div style={styles.user}>{t.userPlaceholder}</div>
-          <div style={styles.logout}>
-            <a href={linkBuilder("/admin/logout")}>{t.logout}</a>
-            <span>・</span>
-            <a href="/">{t.backHome}</a>
-          </div>
-          <div style={styles.logout}>
-            <a href={linkBuilder("", "zh-Hant")}>繁</a>
-            <span>・</span>
-            <a href={linkBuilder("", "zh-Hans")}>簡</a>
-            <span>・</span>
-            <a href={linkBuilder("", "en")}>EN</a>
-          </div>
+    <aside style={styles.aside}>
+      <div style={styles.activity}>{t.activityName}</div>
+      <div style={styles.title}>{t.systemTitle}</div>
+      <nav style={styles.nav}>
+        <ul style={styles.navList}>
+          {activityLinks.map(({ href, i18nKey }) => (
+            <li key={href} style={styles.navItem}>
+              <a
+                href={linkBuilder(href)}
+                onMouseEnter={() => setHoveredLink(href)}
+                onMouseLeave={() => setHoveredLink(null)}
+                style={{
+                  textDecoration: hoveredLink === href ? 'underline' : 'none'
+                }}
+              >
+                {t[i18nKey]}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div style={styles.links}>
+        <div style={styles.user}>{t.userPlaceholder}</div>
+        <div style={styles.logout}>
+          <a
+            href={linkBuilder("/admin/logout")}
+            onMouseEnter={() => setHoveredLink('logout')}
+            onMouseLeave={() => setHoveredLink(null)}
+            style={{
+              textDecoration: hoveredLink === 'logout' ? 'underline' : 'none'
+            }}
+          >
+            {t.logout}
+          </a>
+          <span>・</span>
+          <a
+            href="/"
+            onMouseEnter={() => setHoveredLink('home')}
+            onMouseLeave={() => setHoveredLink(null)}
+            style={{
+              textDecoration: hoveredLink === 'home' ? 'underline' : 'none'
+            }}
+          >
+            {t.backHome}
+          </a>
         </div>
-      </aside>
-      <style jsx global>{`
-        main {
-          padding-top: 5rem;
-          max-width: unset;
-          margin-left: 17rem;
-        }
-
-        aside a {
-          text-decoration: none;
-        }
-
-        aside a:hover {
-          text-decoration: underline;
-        }
-      `}</style>
-    </>
+        <div style={styles.logout}>
+          <a
+            href={linkBuilder("", "zh-Hant")}
+            onMouseEnter={() => setHoveredLink('zh-Hant')}
+            onMouseLeave={() => setHoveredLink(null)}
+            style={{
+              textDecoration: hoveredLink === 'zh-Hant' ? 'underline' : 'none'
+            }}
+          >
+            繁
+          </a>
+          <span>・</span>
+          <a
+            href={linkBuilder("", "zh-Hans")}
+            onMouseEnter={() => setHoveredLink('zh-Hans')}
+            onMouseLeave={() => setHoveredLink(null)}
+            style={{
+              textDecoration: hoveredLink === 'zh-Hans' ? 'underline' : 'none'
+            }}
+          >
+            簡
+          </a>
+          <span>・</span>
+          <a
+            href={linkBuilder("", "en")}
+            onMouseEnter={() => setHoveredLink('en')}
+            onMouseLeave={() => setHoveredLink(null)}
+            style={{
+              textDecoration: hoveredLink === 'en' ? 'underline' : 'none'
+            }}
+          >
+            EN
+          </a>
+        </div>
+      </div>
+    </aside>
   );
 }

@@ -39,51 +39,34 @@ export default function Terms() {
 		<>
 			<Nav />
 			<main>
-				<section>
-					<h1>{t.newAccount}</h1>
-					<div className="content">
+				<section style={{
+					paddingTop: '5rem',
+					display: 'flex',
+					flexDirection: 'column',
+					maxHeight: 'calc(100vh - 4rem)',
+					gap: '1rem'
+				}}>
+					<h1 style={{
+						marginBlock: '1rem',
+						textAlign: 'center'
+					}}>{t.newAccount}</h1>
+					<div style={{
+						border: '1px solid var(--color-gray-900)',
+						padding: '1.5rem',
+						height: '0',
+						overflowY: 'auto',
+						flex: '1'
+					}}>
 						{/* TODO: Import and render TermsContent markdown */}
 						<p>Terms content will go here</p>
 					</div>
-					<div className="input">
+					<div>
 						<input type="checkbox" name="" id="checkbox" />
-						<label htmlFor="checkbox">{t.agree}</label>
+						<label htmlFor="checkbox" style={{ cursor: 'pointer' }}>{t.agree}</label>
 					</div>
-					<button id="submit-btn" className="button" type="submit" onClick={login}>{t.signUp}</button>
+					<button id="submit-btn" className="button" type="submit" onClick={login} style={{ margin: 'auto' }}>{t.signUp}</button>
 				</section>
 			</main>
-
-			<style jsx>{`
-				body {
-					position: relative;
-				}
-				h1 {
-					margin-block: 1rem;
-					text-align: center;
-				}
-
-				section {
-					padding-top: 5rem;
-					display: flex;
-					flex-direction: column;
-					max-height: calc(100vh - 4rem);
-					gap: 1rem;
-				}
-
-				.button {
-					margin: auto;
-				}
-				label {
-					cursor: pointer;
-				}
-				.content {
-					border: 1px solid var(--color-gray-900);
-					padding: 1.5rem;
-					height: 0;
-					overflow-y: auto;
-					flex: 1;
-				}
-			`}</style>
 		</>
 	);
 }

@@ -65,7 +65,7 @@ export default function IntroPage() {
   return (
     <>
       <AdminNav />
-      <main>
+      <main style={{ paddingTop: "5rem" }}>
         <h1>{t.title}</h1>
         <p>
           {t.paragraph1}{" "}
@@ -74,18 +74,17 @@ export default function IntroPage() {
           </a>
         </p>
         <p>{t.current}</p>
-        <ul className="github-list"></ul>
+        <ul
+          className="github-list"
+          style={{
+            listStyle: "none",
+            padding: "0",
+            margin: "1rem 0"
+          }}
+        ></ul>
       </main>
 
       <style jsx>{`
-        main {
-          padding-top: 5rem;
-        }
-        .github-list {
-          list-style: none;
-          padding: 0;
-          margin: 1rem 0;
-        }
         .github-list li {
           margin: 0.5rem 0;
           font-size: 0.9rem;

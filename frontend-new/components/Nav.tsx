@@ -101,103 +101,127 @@ export default function Nav({ children }: NavProps) {
       ? session.user.name || session.user.email || "使用者"
       : "";
 
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+
   return (
-    <nav className={isScrolled ? "scrolled" : ""}>
-      <div className="nav-inner">
-        <a className="logo" href={linkBuilder("/")} aria-label="SITCON Home">
+    <nav
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+        backgroundColor: 'var(--color-gray-900)',
+        width: '100%',
+        transition: 'border-color 0.3s ease-in-out',
+        borderBottom: `${isScrolled ? 'var(--color-gray-500)' : 'transparent'} solid 1px`
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: isScrolled ? '1rem' : '1.5rem',
+          transition: 'padding 0.3s ease-in-out'
+        }}
+      >
+        <a
+          href={linkBuilder("/")}
+          aria-label="SITCON Home"
+          onMouseEnter={() => setHoveredLink('logo')}
+          onMouseLeave={() => setHoveredLink(null)}
+          style={{
+            fontWeight: 700,
+            letterSpacing: '0.2em',
+            textDecoration: hoveredLink === 'logo' ? 'underline' : 'none',
+            border: 'none',
+            background: 'none',
+            color: 'inherit',
+            font: 'inherit',
+            cursor: 'pointer'
+          }}
+        >
           SITCON
         </a>
-        <div className="right">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.5rem'
+          }}
+        >
           {session.status === "authenticated" ? (
-            <div className="user-menu">
-              <span className="user-name">{userDisplayName}</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem'
+              }}
+            >
+              <span
+                style={{
+                  fontWeight: 'bold',
+                  color: 'var(--color-primary, #007acc)'
+                }}
+              >
+                {userDisplayName}
+              </span>
               {hasAdminAccess && (
-                <a href={linkBuilder("/admin/")} className="admin-link">
+                <a
+                  href={linkBuilder("/admin/")}
+                  onMouseEnter={() => setHoveredLink('admin')}
+                  onMouseLeave={() => setHoveredLink(null)}
+                  style={{
+                    textDecoration: hoveredLink === 'admin' ? 'underline' : 'none',
+                    border: 'none',
+                    background: 'none',
+                    color: 'inherit',
+                    font: 'inherit',
+                    cursor: 'pointer'
+                  }}
+                >
                   管理員頁面
                 </a>
               )}
-              <button type="button" onClick={handleLogout} className="logout-link">
+              <button
+                type="button"
+                onClick={handleLogout}
+                onMouseEnter={() => setHoveredLink('logout')}
+                onMouseLeave={() => setHoveredLink(null)}
+                style={{
+                  textDecoration: hoveredLink === 'logout' ? 'underline' : 'none',
+                  border: 'none',
+                  background: 'none',
+                  color: 'inherit',
+                  font: 'inherit',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
                 登出
               </button>
             </div>
           ) : (
-            <a href={linkBuilder("/login/")} className="login-link">
+            <a
+              href={linkBuilder("/login/")}
+              onMouseEnter={() => setHoveredLink('login')}
+              onMouseLeave={() => setHoveredLink(null)}
+              style={{
+                textDecoration: hoveredLink === 'login' ? 'underline' : 'none',
+                border: 'none',
+                background: 'none',
+                color: 'inherit',
+                font: 'inherit',
+                cursor: 'pointer'
+              }}
+            >
               登入
             </a>
           )}
         </div>
       </div>
       {children}
-      <style jsx>{`
-        nav {
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 1000;
-          background-color: var(--color-gray-900);
-          width: 100%;
-          transition: border-color 0.3s ease-in-out;
-          border-bottom: transparent solid 1px;
-        }
-
-        nav.scrolled {
-          border-color: var(--color-gray-500);
-        }
-
-        .nav-inner {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: 1.5rem;
-          transition: padding 0.3s ease-in-out;
-        }
-
-        nav.scrolled .nav-inner {
-          padding: 1rem;
-        }
-
-        .logo {
-          font-weight: 700;
-          letter-spacing: 0.2em;
-        }
-
-        .right {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-        }
-
-        .user-menu {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .user-name {
-          font-weight: bold;
-          color: var(--color-primary, #007acc);
-        }
-
-        nav a,
-        nav button {
-          text-decoration: none;
-          border: none;
-          background: none;
-          color: inherit;
-          font: inherit;
-          cursor: pointer;
-        }
-
-        nav a:hover,
-        nav button:hover {
-          text-decoration: underline;
-        }
-
-        .logout-link {
-          padding: 0;
-        }
-      `}</style>
     </nav>
   );
 }

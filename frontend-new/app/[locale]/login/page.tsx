@@ -74,76 +74,61 @@ export default function Login() {
 		}
 	};
 
+	const containerStyle: React.CSSProperties = {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: 'translate(-50%, -50%)',
+		maxWidth: '100%',
+		padding: '1rem',
+		opacity: 0,
+		pointerEvents: 'none'
+	};
+
+	const activeContainerStyle: React.CSSProperties = {
+		...containerStyle,
+		opacity: 1,
+		pointerEvents: 'all'
+	};
+
 	return (
 		<>
 			<Nav />
 			<main>
-				<section className={viewState}>
-					<div className="login-container" id="magic-link-form">
-						<h1>{t.login}</h1>
-						<label htmlFor="email">Email</label>
-						<input type="email" name="email" id="email" />
-						<button id="submit-btn" className="button" type="submit" onClick={login}>{t.continue}</button>
+				<section>
+					<div id="magic-link-form" style={viewState === 'login' ? activeContainerStyle : containerStyle}>
+						<h1 style={{
+							marginBlock: '1rem',
+							textAlign: 'center'
+						}}>{t.login}</h1>
+						<label htmlFor="email" style={{
+							display: 'block',
+							marginBottom: '0.5rem',
+							fontWeight: 'bold'
+						}}>Email</label>
+						<input type="email" name="email" id="email" style={{
+							border: '2px solid var(--color-gray-900)',
+							width: '20rem',
+							padding: '0.5rem',
+							maxWidth: '100%'
+						}} />
+						<button id="submit-btn" className="button" type="submit" onClick={login} style={{
+							margin: '1rem auto'
+						}}>{t.continue}</button>
 					</div>
-					<div className="sent-container content">
+					<div style={viewState === 'sent' ? activeContainerStyle : containerStyle}>
 						<h2>{t.sent}</h2>
 						<p>{t.message}</p>
-						<button className="button" onClick={() => setViewState('login')}>{t.retry}</button>
+						<button className="button" onClick={() => setViewState('login')} style={{
+							margin: '1rem auto'
+						}}>{t.retry}</button>
 					</div>
-					<div className="error-container">
+					<div style={viewState === 'error' ? activeContainerStyle : containerStyle}>
 						<h2>{t.error}</h2>
 						<p>{t.error}</p>
 					</div>
 				</section>
 			</main>
-
-			<style jsx>{`
-				body {
-					position: relative;
-				}
-				h1 {
-					margin-block: 1rem;
-					text-align: center;
-				}
-				label {
-					display: block;
-					margin-bottom: 0.5rem;
-					font-weight: bold;
-				}
-				input {
-					border: 2px solid var(--color-gray-900);
-					width: 20rem;
-					padding: 0.5rem;
-					max-width: 100%;
-				}
-				section > div {
-					position: absolute;
-					top: 50%;
-					left: 50%;
-					transform: translate(-50%, -50%);
-					max-width: 100%;
-					padding: 1rem;
-				}
-
-				.login-container {
-					/* margin: 2rem auto;
-					width: fit-content; */
-				}
-
-				section .button {
-					margin: 1rem auto;
-				}
-				section > div {
-					opacity: 0;
-					pointer-events: none;
-				}
-				.login > .login-container,
-				.sent > .sent-container,
-				.error > .error-container {
-					opacity: 1;
-					pointer-events: all;
-				}
-			`}</style>
 		</>
 	);
 }
