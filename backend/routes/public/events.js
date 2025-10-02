@@ -175,6 +175,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						description: ticket.description,
 						price: ticket.price,
 						available,
+						quantity: ticket.quantity,
 						isOnSale,
 						isSoldOut,
 						saleStart: ticket.saleStart,

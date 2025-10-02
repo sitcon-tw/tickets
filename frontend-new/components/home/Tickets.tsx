@@ -4,20 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Confirm from "@/components/Confirm";
 import * as i18n from "@/i18n";
-import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
-
-const fallbackTickets: Record<string, { en: string; time: string; remaining: string }> = {
-  學生票: { en: "Student", time: "8/15 - 8/20", remaining: "50 / 200" },
-  一般票: { en: "General", time: "8/15 - 8/20", remaining: "100 / 300" },
-  遠道而來票: { en: "Long Distance", time: "8/15 - 8/20", remaining: "30 / 100" },
-  邀請票: { en: "Invite", time: "8/15 - 8/20", remaining: "10 / 50" },
-  開源貢獻票: {
-    en: "Open Source Contribution",
-    time: "8/15 - 8/20",
-    remaining: "5 / 20"
-  }
-};
 
 export default function Tickets() {
   const pathname = usePathname();
@@ -62,9 +50,7 @@ export default function Tickets() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadTickets = async () => {
+    async function loadTickets() {
       try {
         const eventsData = await eventsAPI.getAll();
 
@@ -74,61 +60,27 @@ export default function Tickets() {
 
           const ticketsData = await eventsAPI.getTickets(event.id);
 
-          if (ticketsData.success && Array.isArray(ticketsData.data) && !cancelled) {
-            const ticketsWithFormFields = await Promise.all(
-              ticketsData.data.map(async ticket => ({
-                id: ticket.id,
-                name: ticket.name,
-                time: `${ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString() : "TBD"} - ${
-                  ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString() : "TBD"
-                }`,
-                remaining: `${ticket.available ?? 0} / ${(ticket.available ?? 0) + (ticket.quantity - (ticket.available ?? 0))}`,
-                price: ticket.price,
-                isOnSale: ticket.isOnSale,
-                isSoldOut: ticket.isSoldOut,
-                formFields: await ticketsAPI.getFormFields(ticket.id).then(res => (res.success ? res.data : [])),
-                quantity: ticket.quantity,
-                soldCount: ticket.quantity - (ticket.available ?? 0)
-              }))
-            );
-            setTickets(ticketsWithFormFields);
+          if (ticketsData.success && Array.isArray(ticketsData.data)) {
+            const prosceedTicketData = ticketsData.data.map(ticket => ({
+              ...ticket,
+              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleString(lang) : "N/A",
+              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleString(lang) : "N/A"
+            }));
+            setTickets(prosceedTicketData);
             return;
           }
         }
       } catch (error) {
         console.error("Failed to load tickets", error);
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-
-      if (!cancelled) {
-        setTickets(
-          Object.entries(fallbackTickets).map(([id, info]) => ({
-            id,
-            name: id,
-            time: info.time,
-            remaining: info.remaining,
-            price: 0,
-            isOnSale: false,
-            isSoldOut: false,
-            formFields: [],
-            quantity: 0,
-            soldCount: 0
-          }))
-        );
+        setIsLoading(false);
       }
     };
 
     loadTickets();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const handleTicketSelect = (ticket: Ticket) => {
+  function handleTicketSelect(ticket: Ticket) {
     setSelectedTicket(ticket);
 
     if (typeof window === "undefined") return;
@@ -141,7 +93,7 @@ export default function Tickets() {
     }
   };
 
-  const handleConfirmRegistration = () => {
+  function handleConfirmRegistration() {
     if (!selectedTicket || typeof window === "undefined") return;
 
     const params = new URLSearchParams();
@@ -164,10 +116,10 @@ export default function Tickets() {
       console.warn("Unable to read codes from sessionStorage", error);
     }
 
-    window.location.href = `/form/?${params.toString()}`;
+    window.location.href = `form/?${params.toString()}`;
   };
 
-  const closeConfirm = () => setSelectedTicket(null);
+  function closeConfirm() {setSelectedTicket(null);}
 
   return (
     <section>
@@ -196,7 +148,7 @@ export default function Tickets() {
               {ticket.saleEnd}
             </p>
             <p className="remain">
-              {t.remaining} {ticket.quantity - ticket.soldCount} / {ticket.quantity}
+              {t.remaining} {ticket.available} / {ticket.quantity}
             </p>
           </div>
         ))}
