@@ -73,13 +73,38 @@ export default function Welcome() {
           "zh-Hant": "請選擇你要的票種",
           "zh-Hans": "请选择你要的票种",
           en: "Please select your ticket type"
+        },
+        loading: {
+          "zh-Hant": "載入中...",
+          "zh-Hans": "载入中...",
+          en: "Loading..."
+        },
+        loadFailed: {
+          "zh-Hant": "載入失敗",
+          "zh-Hans": "载入失败",
+          en: "Load failed"
+        },
+        copiedToClipboard: {
+          "zh-Hant": "推薦碼已複製到剪貼簿！",
+          "zh-Hans": "推荐码已复制到剪贴板！",
+          en: "Referral code copied to clipboard!"
+        },
+        promotionalText: {
+          "zh-Hant": "累積三人一起報名即可獲得一張柴柴簽名照。",
+          "zh-Hans": "累积三人一起报名即可获得一张柴柴签名照。",
+          en: "Register with three friends to get a Shiba Inu autograph photo."
+        },
+        friend: {
+          "zh-Hant": "朋友",
+          "zh-Hans": "朋友",
+          en: "Friend"
         }
       }),
     [lang]
   );
 
   const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
-  const [referralCode, setReferralCode] = useState("載入中...");
+  const [referralCode, setReferralCode] = useState(t.loading);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [referralParam, setReferralParam] = useState<string | null>(null);
 
@@ -138,10 +163,10 @@ export default function Welcome() {
     const loadReferralCode = async () => {
       try {
         // Note: referralsAPI endpoint needs to be added for getting user's referral code
-        if (!cancelled) setReferralCode("載入失敗");
+        if (!cancelled) setReferralCode(t.loadFailed);
       } catch (error) {
         console.error("Failed to load referral code", error);
-        if (!cancelled) setReferralCode("載入失敗");
+        if (!cancelled) setReferralCode(t.loadFailed);
       }
     };
 
@@ -167,10 +192,10 @@ export default function Welcome() {
 
   const handleCopy = async () => {
     if (typeof window === "undefined") return;
-    if (!referralCode || referralCode === "載入中..." || referralCode === "載入失敗") return;
+    if (!referralCode || referralCode === t.loading || referralCode === t.loadFailed) return;
     try {
       await navigator.clipboard.writeText(referralCode);
-      alert("推薦碼已複製到剪貼簿！");
+      alert(t.copiedToClipboard);
     } catch (error) {
       console.error("Failed to copy referral code", error);
     }
@@ -272,9 +297,9 @@ export default function Welcome() {
               marginBottom: '0.5rem'
             }}
           >
-            <span>{referralParam || "朋友"}</span> {t.referralWelcome}
+            <span>{referralParam || t.friend}</span> {t.referralWelcome}
           </h2>
-          <p>累積三人一起報名即可獲得一張柴柴簽名照。</p>
+          <p>{t.promotionalText}</p>
         </section>
       ) : null}
 

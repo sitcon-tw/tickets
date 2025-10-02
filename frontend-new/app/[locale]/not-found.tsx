@@ -17,6 +17,11 @@ const NotFound: React.FC = () => {
 			"zh-Hant": "抱歉，您訪問的頁面不存在。",
 			"zh-Hans": "抱歉，您访问的页面不存在。",
 			en: "Sorry, the page you are looking for does not exist."
+		},
+		backHome: {
+			"zh-Hant": "回首頁",
+			"zh-Hans": "回首页",
+			en: "Back to Home"
 		}
 	});
 	const l = i18n.l(usePathname());
@@ -28,7 +33,7 @@ const NotFound: React.FC = () => {
 				<section>
 					<h1>{t.title}</h1>
 					<p>{t.description}</p>
-					<a className="button" href={l("/")}>回首頁</a>
+					<a className="button" href={l("/")}>{t.backHome}</a>
 				</section>
 			</main>
 			<style>{`

@@ -1,4 +1,6 @@
 import { CSSProperties } from "react";
+import { usePathname } from "next/navigation";
+import * as i18n from "@/i18n";
 
 type SelectProps = {
   label: string;
@@ -23,13 +25,24 @@ const styles: Record<"label" | "select", CSSProperties> = {
 };
 
 export default function Select({ label, id, options, required = true }: SelectProps) {
+  const pathname = usePathname();
+  const lang = i18n.local(pathname ?? "/");
+
+  const t = i18n.t(lang, {
+    pleaseSelect: {
+      "zh-Hant": "請選擇...",
+      "zh-Hans": "请选择...",
+      en: "Please select..."
+    }
+  });
+
   return (
     <div>
       <label htmlFor={id} style={styles.label}>
         {label}
       </label>
       <select id={id} name={id} aria-label={label} required={required} style={styles.select}>
-        <option value="">請選擇...</option>
+        <option value="">{t.pleaseSelect}</option>
         {options.map(option => (
           <option key={option} value={option}>
             {option}

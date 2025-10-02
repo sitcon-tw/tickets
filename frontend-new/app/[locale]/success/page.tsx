@@ -8,9 +8,6 @@ import { authAPI, registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 
 export default function Success() {
 	const lang = i18n.local(usePathname());
-	const [participantCount, setParticipantCount] = useState<number | string>('載入中...');
-	const [referralCode, setReferralCode] = useState<string>('載入中...');
-	const [copyText, setCopyText] = useState<string>('');
 
 	const t = i18n.t(lang, {
 		success: {
@@ -52,8 +49,32 @@ export default function Success() {
 			"zh-Hant": "編輯報名資訊",
 			"zh-Hans": "编辑报名信息",
 			en: "Edit registration info"
+		},
+		loading: {
+			"zh-Hant": "載入中...",
+			"zh-Hans": "载入中...",
+			en: "Loading..."
+		},
+		loadFailed: {
+			"zh-Hant": "載入失敗",
+			"zh-Hans": "载入失败",
+			en: "Load failed"
+		},
+		copied: {
+			"zh-Hant": "已複製!",
+			"zh-Hans": "已复制!",
+			en: "Copied!"
+		},
+		copyFailed: {
+			"zh-Hant": "複製失敗，請手動複製: ",
+			"zh-Hans": "复制失败，请手动复制: ",
+			en: "Copy failed, please copy manually: "
 		}
 	});
+
+	const [participantCount, setParticipantCount] = useState<number | string>(t.loading);
+	const [referralCode, setReferralCode] = useState<string>(t.loading);
+	const [copyText, setCopyText] = useState<string>('');
 
 	useEffect(() => {
 		setCopyText(t.copyInvite);
@@ -66,7 +87,7 @@ export default function Success() {
 			await authAPI.getSession();
 
 			// Get user's registrations to show count
-			let count: number | string = "載入失敗";
+			let count: number | string = t.loadFailed;
 			try {
 				const registrations = await registrationsAPI.getAll();
 				if (registrations.success && registrations.data) {
@@ -78,7 +99,7 @@ export default function Success() {
 			setParticipantCount(count);
 
 			// Get referral code - Note: This endpoint needs to be implemented in the API
-			let code = "載入失敗";
+			let code = t.loadFailed;
 			setReferralCode(code);
 
 		} catch (error) {
@@ -93,13 +114,13 @@ export default function Success() {
 
 		navigator.clipboard.writeText(inviteUrl).then(() => {
 			const originalText = copyText;
-			setCopyText('已複製!');
+			setCopyText(t.copied);
 			setTimeout(() => {
 				setCopyText(originalText);
 			}, 2000);
 		}).catch(err => {
 			console.error('Failed to copy: ', err);
-			alert('複製失敗，請手動複製: ' + inviteUrl);
+			alert(t.copyFailed + inviteUrl);
 		});
 	};
 

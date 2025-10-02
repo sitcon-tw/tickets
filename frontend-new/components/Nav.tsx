@@ -24,9 +24,21 @@ export default function Nav({ children }: NavProps) {
   const pathname = usePathname();
   const currentPath = pathname ?? "/";
   const linkBuilder = useMemo(() => i18n.l(currentPath), [currentPath]);
+  const lang = i18n.local(currentPath);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [session, setSession] = useState<SessionState>({ status: "loading" });
+
+  const t = useMemo(
+    () =>
+      i18n.t(lang, {
+        user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
+        adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
+        logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
+        login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
+      }),
+    [lang]
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,7 +99,7 @@ export default function Nav({ children }: NavProps) {
 
   const userDisplayName =
     session.status === "authenticated"
-      ? session.user.name || session.user.email || "使用者"
+      ? session.user.name || session.user.email || t.user
       : "";
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
@@ -170,7 +182,7 @@ export default function Nav({ children }: NavProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  管理員頁面
+                  {t.adminPage}
                 </a>
               )}
               <button
@@ -188,7 +200,7 @@ export default function Nav({ children }: NavProps) {
                   padding: 0
                 }}
               >
-                登出
+                {t.logout}
               </button>
             </div>
           ) : (
@@ -205,7 +217,7 @@ export default function Nav({ children }: NavProps) {
                 cursor: 'pointer'
               }}
             >
-              登入
+              {t.login}
             </a>
           )}
         </div>
