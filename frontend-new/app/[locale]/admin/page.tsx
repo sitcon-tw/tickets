@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { analytics, initializeAdminPage } from "@/lib/admin";
 import { Chart, registerables, ChartConfiguration } from 'chart.js';
 

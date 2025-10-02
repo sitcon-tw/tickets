@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { formFields as formFieldsAPI, events as eventsAPI, tickets as ticketsAPI, initializeAdminPage } from "@/lib/admin";
 
 type ShowIf = {

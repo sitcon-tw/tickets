@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Nav from "@/components/Nav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { authAPI, eventsAPI, registrationsAPI } from '@/lib/api/endpoints';
 
 type FormFieldOption = {

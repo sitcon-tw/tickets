@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Nav from "@/components/Nav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { usePathname } from 'next/navigation';
 
 const NotFound: React.FC = () => {

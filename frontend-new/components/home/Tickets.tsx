@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Confirm from "@/components/Confirm";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 

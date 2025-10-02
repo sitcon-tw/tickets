@@ -7,7 +7,7 @@ import Tickets from "@/components/home/Tickets";
 import Info from "@/components/home/Info";
 import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function Main() {

@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { authAPI } from "@/lib/api/endpoints";
 
 type NavProps = {

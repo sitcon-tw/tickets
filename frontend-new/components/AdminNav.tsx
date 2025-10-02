@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },

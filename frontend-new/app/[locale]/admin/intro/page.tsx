@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminNav from "@/components/AdminNav";
-import * as i18n from "@/i18n";
+import * as i18n from "@/lib/i18n";
 import { initializeAdminPage } from "@/lib/admin";
 
 export default function IntroPage() {

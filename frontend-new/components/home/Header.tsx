@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from 'next/navigation';
-import * as i18n from '@/i18n';
+import * as i18n from '@/lib/i18n';
 
 export default function Header() {
   const pathname = usePathname();
