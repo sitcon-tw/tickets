@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import * as i18n from "@/lib/i18n";
 import { authAPI } from "@/lib/api/endpoints";
 
@@ -143,7 +144,7 @@ export default function Nav({ children }: NavProps) {
             cursor: 'pointer'
           }}
         >
-          SITCON
+          <Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" />
         </a>
         <div
           style={{

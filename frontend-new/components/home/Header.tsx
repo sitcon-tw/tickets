@@ -15,12 +15,12 @@ export default function Header() {
     signFront: {
       "zh-Hant": "已有 ",
       "zh-Hans": "已有 ",
-      en: ""
+      en: " "
     },
     signBack: {
       "zh-Hant": " 人報名",
       "zh-Hans": " 人报名",
-      en: " people registered"
+      en: " already registered"
     }
   });
 

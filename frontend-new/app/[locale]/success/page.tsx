@@ -99,7 +99,7 @@ export default function Success() {
 			setParticipantCount(count);
 
 			// Get referral code - Note: This endpoint needs to be implemented in the API
-			let code = t.loadFailed;
+			const code = t.loadFailed;
 			setReferralCode(code);
 
 		} catch (error) {
