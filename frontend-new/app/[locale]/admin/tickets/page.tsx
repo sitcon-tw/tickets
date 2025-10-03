@@ -89,7 +89,7 @@ export default function TicketsPage() {
     setShowModal(true);
   };
 
-  const closeModal = () => {
+  function closeModal() {
     setShowModal(false);
     setEditingTicket(null);
   };

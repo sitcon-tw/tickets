@@ -134,3 +134,52 @@ li {
 nav img {
   filter: invert(1);
 }
+
+.tickets-container > .ticket:nth-child(2n) {
+  transform: rotate(-1.17deg);
+}
+
+.about + .button {
+  margin-top: 2rem;
+}
+
+.ticket {
+  border: solid 3px var(--color-gray-500);
+  padding: 1rem;
+  margin: 0 auto 2rem;
+  max-width: 350px;
+  transform: rotate(1.17deg);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  background-color: var(--color-gray-800);
+}
+
+.ticket:hover {
+  transform: rotate(1.17deg) scale(1.05);
+}
+
+.tickets-container > .ticket:nth-child(2n):hover {
+  transform: rotate(-1.17deg) scale(1.05);
+}
+
+.remain {
+  text-align: right;
+}
+
+#ticketAnimation {
+  display: none;
+  position: fixed;
+  transition: none;
+  z-index: 500;
+  width: 100%;
+  max-width: 350px;
+}
+
+.confirming + #ticketAnimation {
+  transition: 0.3s ease-in-out;
+}
+
+.ticketConfirm {
+  visibility: hidden;
+  pointer-events: none;
+}

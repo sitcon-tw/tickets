@@ -88,67 +88,63 @@ export default function AdminNav() {
     };
   }, []);
 
-  const t = useMemo(
-    () =>
-      getTranslations(locale, {
-        activityName: {
-          "zh-Hant": "SITCON 2026",
-          "zh-Hans": "SITCON 2026",
-          en: "SITCON 2026"
-        },
-        systemTitle: {
-          "zh-Hant": "報名系統後台",
-          "zh-Hans": "报名系统后台",
-          en: "Admin Panel"
-        },
-        overview: {
-          "zh-Hant": "總覽",
-          "zh-Hans": "总览",
-          en: "Overview"
-        },
-        ticketTypes: {
-          "zh-Hant": "票種管理",
-          "zh-Hans": "票种管理",
-          en: "Ticket Types"
-        },
-        forms: {
-          "zh-Hant": "表單管理",
-          "zh-Hans": "表单管理",
-          en: "Forms"
-        },
-        invitationCodes: {
-          "zh-Hant": "邀請碼管理",
-          "zh-Hans": "邀请码管理",
-          en: "Invitation Codes"
-        },
-        registrations: {
-          "zh-Hant": "報名資料",
-          "zh-Hans": "报名资料",
-          en: "Registrations"
-        },
-        editIntro: {
-          "zh-Hant": "編輯說明",
-          "zh-Hans": "编辑说明",
-          en: "Edit Intro"
-        },
-        userPlaceholder: {
-          "zh-Hant": "管理者",
-          "zh-Hans": "管理员",
-          en: "Admin"
-        },
-        logout: {
-          "zh-Hant": "登出",
-          "zh-Hans": "登出",
-          en: "Logout"
-        },
-        backHome: {
-          "zh-Hant": "回到首頁",
-          "zh-Hans": "回到首页",
-          en: "Back to Home"
-        }
-      }),
-    [locale]
-  );
+  const t = getTranslations(locale, {
+    activityName: {
+      "zh-Hant": "SITCON 2026",
+      "zh-Hans": "SITCON 2026",
+      en: "SITCON 2026"
+    },
+    systemTitle: {
+      "zh-Hant": "報名系統後台",
+      "zh-Hans": "报名系统后台",
+      en: "Admin Panel"
+    },
+    overview: {
+      "zh-Hant": "總覽",
+      "zh-Hans": "总览",
+      en: "Overview"
+    },
+    ticketTypes: {
+      "zh-Hant": "票種管理",
+      "zh-Hans": "票种管理",
+      en: "Ticket Types"
+    },
+    forms: {
+      "zh-Hant": "表單管理",
+      "zh-Hans": "表单管理",
+      en: "Forms"
+    },
+    invitationCodes: {
+      "zh-Hant": "邀請碼管理",
+      "zh-Hans": "邀请码管理",
+      en: "Invitation Codes"
+    },
+    registrations: {
+      "zh-Hant": "報名資料",
+      "zh-Hans": "报名资料",
+      en: "Registrations"
+    },
+    editIntro: {
+      "zh-Hant": "編輯說明",
+      "zh-Hans": "编辑说明",
+      en: "Edit Intro"
+    },
+    userPlaceholder: {
+      "zh-Hant": "管理者",
+      "zh-Hans": "管理员",
+      en: "Admin"
+    },
+    logout: {
+      "zh-Hant": "登出",
+      "zh-Hans": "登出",
+      en: "Logout"
+    },
+    backHome: {
+      "zh-Hant": "回到首頁",
+      "zh-Hans": "回到首页",
+      en: "Back to Home"
+    }
+  });
 
   return (
     <aside style={styles.aside}>

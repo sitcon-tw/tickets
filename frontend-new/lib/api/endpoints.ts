@@ -19,7 +19,7 @@ import type {
   TicketFormFieldReorder,
   EmailCampaign,
   ApiResponse,
-  PaginatedResponse,
+  SessionResponse,
 } from '@/lib/types/api';
 
 // Health Check
@@ -30,7 +30,7 @@ export const healthAPI = {
 // Auth (handled by BetterAuth)
 export const authAPI = {
   getMagicLink: (email: string) => apiClient.post('/api/auth/sign-in/magic-link', { email }),
-  getSession: () => apiClient.get('/api/auth/get-session'),
+  getSession: () => apiClient.get<SessionResponse>('/api/auth/get-session'),
   signOut: () => apiClient.post('/api/auth/sign-out'),
 };
 

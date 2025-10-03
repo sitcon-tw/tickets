@@ -28,21 +28,17 @@ export default function Nav({ children }: NavProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [session, setSession] = useState<SessionState>({ status: "loading" });
 
-  const t = useMemo(
-    () =>
-      getTranslations(locale, {
-        user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
-        adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
-        logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
-        login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
-      }),
-    [locale]
-  );
+  const t = getTranslations(locale, {
+    user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
+    adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
+    logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
+    login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
+  });
 
   useEffect(() => {
-    const handleScroll = () => {
+    function handleScroll() {
       setIsScrolled(window.scrollY > 5);
-    };
+    }
 
     handleScroll();
     window.addEventListener("scroll", handleScroll);
@@ -93,7 +89,7 @@ export default function Nav({ children }: NavProps) {
   const hasAdminAccess = useMemo(() => {
     if (session.status !== "authenticated" || !session.user.role) return false;
     const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
-    return roles.some(role => role === "admin" || role === "super-admin");
+    return roles.some(role => role === "admin");
   }, [session]);
 
   const userDisplayName =

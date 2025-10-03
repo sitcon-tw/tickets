@@ -6,9 +6,10 @@ type ConfirmProps = {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  isConfirming?: boolean;
 };
 
-export default function Confirm({ isOpen, onClose, children }: ConfirmProps) {
+export default function Confirm({ isOpen, onClose, children, isConfirming = false }: ConfirmProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function Confirm({ isOpen, onClose, children }: ConfirmProps) {
 
   return (
     <div
+      className={isConfirming ? "confirm confirming" : "confirm"}
       role="dialog"
       aria-modal="true"
       style={{

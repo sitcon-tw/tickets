@@ -26,6 +26,11 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface SessionResponse {
+  session: object | null;
+  user: User | null;
+}
+
 // System
 export interface HealthStatus {
   status: 'ok' | 'error';

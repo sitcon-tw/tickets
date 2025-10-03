@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
 import { getTranslations } from "@/i18n/helpers";
@@ -42,6 +42,11 @@ export default function Tickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const ticketAnimationRef = useRef<HTMLDivElement>(null);
+  const ticketConfirmRef = useRef<HTMLDivElement>(null);
+  const hiddenTicketRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     async function loadTickets() {
@@ -74,10 +79,11 @@ export default function Tickets() {
     loadTickets();
   }, [locale]);
 
-  function handleTicketSelect(ticket: Ticket) {
+  function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
+    if (typeof window === "undefined") return;
+
     setSelectedTicket(ticket);
 
-    if (typeof window === "undefined") return;
     try {
       sessionStorage.setItem("selectedTicketId", ticket.id);
       sessionStorage.setItem("selectedTicketName", ticket.name);
@@ -85,6 +91,49 @@ export default function Tickets() {
     } catch (error) {
       console.warn("Unable to access sessionStorage", error);
     }
+
+    // Animation logic
+    const ticketAnimation = ticketAnimationRef.current;
+    const ticketConfirm = ticketConfirmRef.current;
+
+    if (!ticketAnimation || !ticketConfirm) return;
+
+    hiddenTicketRef.current = element;
+
+    // Get position and transform of clicked ticket
+    const { top, left } = element.getBoundingClientRect();
+    const transform = window.getComputedStyle(element).transform;
+
+    // Set animation ticket to same position
+    ticketAnimation.style.top = `${top}px`;
+    ticketAnimation.style.left = `${left}px`;
+    ticketAnimation.style.transform = transform;
+    ticketAnimation.style.display = "block";
+
+    // Hide original ticket and confirm ticket
+    element.style.visibility = "hidden";
+    ticketConfirm.style.visibility = "hidden";
+
+    // Start animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsConfirming(true);
+
+        // Get final position
+        const confirmRect = ticketConfirm.getBoundingClientRect();
+        const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
+
+        ticketAnimation.style.top = `${confirmRect.top}px`;
+        ticketAnimation.style.left = `${confirmRect.left}px`;
+        ticketAnimation.style.transform = confirmTransform;
+
+        // After animation completes
+        setTimeout(() => {
+          ticketAnimation.style.display = "none";
+          ticketConfirm.style.visibility = "visible";
+        }, 300);
+      });
+    });
   };
 
   function handleConfirmRegistration() {
@@ -113,92 +162,65 @@ export default function Tickets() {
     window.location.href = `form/?${params.toString()}`;
   };
 
-  function closeConfirm() {setSelectedTicket(null);}
+  function closeConfirm() {
+    setIsConfirming(false);
+    setSelectedTicket(null);
+
+    // Restore visibility of hidden ticket
+    if (hiddenTicketRef.current) {
+      hiddenTicketRef.current.style.visibility = "visible";
+      hiddenTicketRef.current = null;
+    }
+
+    // Hide animation ticket
+    if (ticketAnimationRef.current) {
+      ticketAnimationRef.current.style.display = "none";
+    }
+  }
 
   return (
-    <section>
-      <div>
+    <>
+      <div className="tickets-container">
         {isLoading && tickets.length === 0 ? <p>Loading...</p> : null}
         {!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-        {tickets.map((ticket, index) => (
+        {tickets.map((ticket) => (
           <div
             key={ticket.id}
+            className="ticket"
             role="button"
             tabIndex={0}
-            onClick={() => handleTicketSelect(ticket)}
+            onClick={(e) => handleTicketSelect(ticket, e.currentTarget)}
             onKeyDown={event => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                handleTicketSelect(ticket);
+                handleTicketSelect(ticket, event.currentTarget);
               }
-            }}
-            style={{
-              border: "solid 3px var(--color-gray-500)",
-              padding: "1rem",
-              margin: "0 auto 2rem",
-              maxWidth: "350px",
-              transform: index % 2 === 0 ? "rotate(1.17deg)" : "rotate(-1.17deg)",
-              transition: "transform 0.3s ease",
-              cursor: "pointer",
-              backgroundColor: "var(--color-gray-800)"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = index % 2 === 0 ? "rotate(1.17deg) scale(1.05)" : "rotate(-1.17deg) scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = index % 2 === 0 ? "rotate(1.17deg)" : "rotate(-1.17deg)";
             }}
           >
             <h3>{ticket.name}</h3>
             <p>
-              {t.time}
-              {ticket.saleStart}
-              -
-              {ticket.saleEnd}
+              {t.time}{ticket.saleStart} - {ticket.saleEnd}
             </p>
-            <p style={{ textAlign: "right" }}>
+            <p className="remain">
               {t.remaining} {ticket.available} / {ticket.quantity}
             </p>
           </div>
         ))}
       </div>
 
-      <Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm}>
+      <Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
         {selectedTicket ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: window.innerWidth >= 768 ? "row" : "column",
-              gap: "1.5rem",
-              alignItems: window.innerWidth >= 768 ? "flex-start" : "stretch"
-            }}
-          >
-            <div
-              style={{
-                border: "solid 3px var(--color-gray-500)",
-                padding: "1rem",
-                margin: "0 auto 2rem",
-                maxWidth: "350px",
-                transform: "rotate(1.17deg)",
-                transition: "transform 0.3s ease",
-                cursor: "pointer",
-                backgroundColor: "var(--color-gray-800)",
-                visibility: "hidden",
-                pointerEvents: "none"
-              }}
-            >
+          <div className="about">
+            <div className="ticket ticketConfirm" ref={ticketConfirmRef}>
               <h3>{selectedTicket.name}</h3>
               <p>
-                {t.time}
-                {selectedTicket.saleStart}
-                -
-                {selectedTicket.saleEnd}
+                {t.time}{selectedTicket.saleStart} - {selectedTicket.saleEnd}
               </p>
-              <p style={{ textAlign: "right" }}>
+              <p className="remain">
                 {t.remaining} {selectedTicket.quantity - selectedTicket.soldCount} / {selectedTicket.quantity}
               </p>
             </div>
-            <div style={{ maxWidth: "400px" }}>
+            <div className="content">
               <h2>{selectedTicket.name}</h2>
               <p>{t.selectTicketHint}</p>
               {selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
@@ -206,10 +228,7 @@ export default function Tickets() {
           </div>
         ) : null}
         <a
-          style={{
-            margin: "1.5rem auto 0",
-            display: "inline-block"
-          }}
+          className="button"
           href="#"
           onClick={event => {
             event.preventDefault();
@@ -219,6 +238,21 @@ export default function Tickets() {
           {t.confirm}
         </a>
       </Confirm>
-    </section>
+
+      {/* Animation ticket */}
+      <div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+        {selectedTicket ? (
+          <>
+            <h3>{selectedTicket.name}</h3>
+            <p>
+              {t.time}{selectedTicket.saleStart} - {selectedTicket.saleEnd}
+            </p>
+            <p className="remain">
+              {t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+            </p>
+          </>
+        ) : null}
+      </div>
+    </>
   );
 }

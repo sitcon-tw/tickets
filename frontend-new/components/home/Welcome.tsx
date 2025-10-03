@@ -185,6 +185,22 @@ export default function Welcome() {
     window.location.href = `/form/?${params.toString()}`;
   };
 
+  useEffect(() => {
+    // Inject keyframes animation into document
+    const styleId = 'welcome-blink-keyframes';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @keyframes blink {
+          to {
+            opacity: 0.1;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   return (
     <section>
