@@ -31,7 +31,8 @@ export default function Header() {
 		}}>
       <h1 style={{
 				fontSize: '2.5rem',
-				marginBottom: '1rem'
+				marginBottom: '1rem',
+				fontWeight: 'bold',
 			}}>
         SITCON 2026 <span style={{
 					display: 'block',

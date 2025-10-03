@@ -57,8 +57,8 @@ export default function Tickets() {
           if (ticketsData.success && Array.isArray(ticketsData.data)) {
             const prosceedTicketData = ticketsData.data.map(ticket => ({
               ...ticket,
-              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleString(locale) : "N/A",
-              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleString(locale) : "N/A"
+              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A",
+              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"
             }));
             setTickets(prosceedTicketData);
             return;
