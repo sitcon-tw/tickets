@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
-import { getTranslations } from "@/i18n/helpers";
+import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
+import { useRouter } from "next/navigation";
 
 export default function Tickets() {
   const locale = useLocale();
+  const router = useRouter();
+  const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
   const t = getTranslations(locale, {
     description: {
@@ -31,11 +34,6 @@ export default function Tickets() {
       "zh-Hans": "确认报名",
       en: "Confirm Registration"
     },
-    selectTicketHint: {
-      "zh-Hant": "請選擇想要的票種",
-      "zh-Hans": "请选择想要的票种",
-      en: "Please select a ticket type"
-    }
   });
 
   const [eventName, setEventName] = useState("SITCON 2025");
@@ -80,8 +78,6 @@ export default function Tickets() {
   }, [locale]);
 
   function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
-    if (typeof window === "undefined") return;
-
     setSelectedTicket(ticket);
 
     try {
@@ -92,46 +88,41 @@ export default function Tickets() {
       console.warn("Unable to access sessionStorage", error);
     }
 
-    // Animation logic
-    const ticketAnimation = ticketAnimationRef.current;
-    const ticketConfirm = ticketConfirmRef.current;
-
-    if (!ticketAnimation || !ticketConfirm) return;
-
     hiddenTicketRef.current = element;
 
-    // Get position and transform of clicked ticket
-    const { top, left } = element.getBoundingClientRect();
-    const transform = window.getComputedStyle(element).transform;
-
-    // Set animation ticket to same position
-    ticketAnimation.style.top = `${top}px`;
-    ticketAnimation.style.left = `${left}px`;
-    ticketAnimation.style.transform = transform;
-    ticketAnimation.style.display = "block";
-
-    // Hide original ticket and confirm ticket
-    element.style.visibility = "hidden";
-    ticketConfirm.style.visibility = "hidden";
-
-    // Start animation
     requestAnimationFrame(() => {
+      const ticketAnimation = ticketAnimationRef.current;
+      const ticketConfirm = ticketConfirmRef.current;
+
+      if (!ticketAnimation || !ticketConfirm) return;
+
+      const { top, left } = element.getBoundingClientRect();
+      const transform = window.getComputedStyle(element).transform;
+
+      ticketAnimation.style.top = `${top}px`;
+      ticketAnimation.style.left = `${left}px`;
+      ticketAnimation.style.transform = transform;
+      ticketAnimation.style.display = "block";
+
+      element.style.visibility = "hidden";
+      ticketConfirm.style.visibility = "hidden";
+
+      setIsConfirming(true);
+
       requestAnimationFrame(() => {
-        setIsConfirming(true);
+        requestAnimationFrame(() => {
+          const confirmRect = ticketConfirm.getBoundingClientRect();
+          const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
 
-        // Get final position
-        const confirmRect = ticketConfirm.getBoundingClientRect();
-        const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
+          ticketAnimation.style.top = `${confirmRect.top}px`;
+          ticketAnimation.style.left = `${confirmRect.left}px`;
+          ticketAnimation.style.transform = confirmTransform;
 
-        ticketAnimation.style.top = `${confirmRect.top}px`;
-        ticketAnimation.style.left = `${confirmRect.left}px`;
-        ticketAnimation.style.transform = confirmTransform;
-
-        // After animation completes
-        setTimeout(() => {
-          ticketAnimation.style.display = "none";
-          ticketConfirm.style.visibility = "visible";
-        }, 300);
+          setTimeout(() => {
+            ticketAnimation.style.display = "none";
+            ticketConfirm.style.visibility = "visible";
+          }, 300);
+        });
       });
     });
   };
@@ -159,20 +150,18 @@ export default function Tickets() {
       console.warn("Unable to read codes from sessionStorage", error);
     }
 
-    window.location.href = `form/?${params.toString()}`;
+    router.push(linkBuilder(`form?${params.toString()}`, locale));
   };
 
   function closeConfirm() {
     setIsConfirming(false);
     setSelectedTicket(null);
 
-    // Restore visibility of hidden ticket
     if (hiddenTicketRef.current) {
       hiddenTicketRef.current.style.visibility = "visible";
       hiddenTicketRef.current = null;
     }
 
-    // Hide animation ticket
     if (ticketAnimationRef.current) {
       ticketAnimationRef.current.style.display = "none";
     }
@@ -217,23 +206,19 @@ export default function Tickets() {
                 {t.time}{selectedTicket.saleStart} - {selectedTicket.saleEnd}
               </p>
               <p className="remain">
-                {t.remaining} {selectedTicket.quantity - selectedTicket.soldCount} / {selectedTicket.quantity}
+                {t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
               </p>
             </div>
             <div className="content">
-              <h2>{selectedTicket.name}</h2>
-              <p>{t.selectTicketHint}</p>
+              <h2 className="text-2xl font-bold">{selectedTicket.name}</h2>
+              <p>{selectedTicket.description}</p>
               {selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
             </div>
           </div>
         ) : null}
         <a
           className="button"
-          href="#"
-          onClick={event => {
-            event.preventDefault();
-            handleConfirmRegistration();
-          }}
+          onClick={() => handleConfirmRegistration()}
         >
           {t.confirm}
         </a>
