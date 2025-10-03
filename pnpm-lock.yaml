@@ -87,6 +87,9 @@ importers:
       '@next/third-parties':
         specifier: ^15.5.4
         version: 15.5.4(next@15.5.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      chart.js:
+        specifier: ^4.5.0
+        version: 4.5.0
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.1.0)

@@ -64,9 +64,6 @@ export default function AdminDashboard() {
   // Initialize dashboard
   const initializeDashboard = useCallback(async () => {
     try {
-      const isAuthorized = await initializeAdminPage();
-      if (!isAuthorized) return;
-
       const response = await analytics.getDashboard();
       if (response.success) {
         setDashboardData(response.data);

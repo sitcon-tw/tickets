@@ -6,29 +6,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-// Initialize admin page with authentication check
-export async function initializeAdminPage(): Promise<boolean> {
-  try {
-    const response = await apiClient.get<any>('/api/auth/get-session', { credentials: 'include' });
-
-    if (!response || !response.user || !response.user.isAdmin) {
-      // Redirect to login if not admin
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login/';
-      }
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Admin auth check failed:', error);
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login/';
-    }
-    return false;
-  }
-}
-
 // Analytics API
 export const analytics = {
   getDashboard: () => apiClient.get<ApiResponse>('/api/admin/dashboard'),
