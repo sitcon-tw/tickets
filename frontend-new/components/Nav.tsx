@@ -1,9 +1,9 @@
 "use client";
 
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
-import * as i18n from "@/lib/i18n";
+import { useLocale } from "next-intl";
+import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 
 type NavProps = {
@@ -22,23 +22,21 @@ type SessionState =
   | { status: "authenticated"; user: SessionUser };
 
 export default function Nav({ children }: NavProps) {
-  const pathname = usePathname();
-  const currentPath = pathname ?? "/";
-  const linkBuilder = useMemo(() => i18n.l(currentPath), [currentPath]);
-  const lang = i18n.local(currentPath);
+  const locale = useLocale();
+  const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [session, setSession] = useState<SessionState>({ status: "loading" });
 
   const t = useMemo(
     () =>
-      i18n.t(lang, {
+      getTranslations(locale, {
         user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
         adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
         logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
         login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
       }),
-    [lang]
+    [locale]
   );
 
   useEffect(() => {

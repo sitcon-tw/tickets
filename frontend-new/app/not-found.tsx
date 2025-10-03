@@ -1,13 +1,22 @@
 "use client";
 
-import React from 'react';
-import Nav from "@/components/Nav";
-import * as i18n from "@/lib/i18n";
-import { usePathname } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { routing } from '@/i18n/routing';
+import { getTranslations } from "@/i18n/helpers";
 
 export default function NotFound() {
-    const lang = i18n.local(window.location.pathname);
-    const t = i18n.t(lang, {
+    const [locale, setLocale] = useState(routing.defaultLocale);
+
+    useEffect(() => {
+        // Detect locale from URL on client side
+        const path = window.location.pathname;
+        const detectedLocale = routing.locales.find(loc => path.startsWith(`/${loc}`));
+        if (detectedLocale) {
+            setLocale(detectedLocale);
+        }
+    }, []);
+
+    const t = getTranslations(locale, {
         title: {
             "zh-Hant": "找不到頁面",
             "zh-Hans": "找不到页面",
@@ -24,16 +33,14 @@ export default function NotFound() {
             en: "Back to Home"
         }
     });
-    const l = i18n.l(usePathname());
 
     return (
         <>
-            <Nav />
             <main>
                 <section>
                     <h1>{t.title}</h1>
                     <p>{t.description}</p>
-                    <a className="button" href={l("/")}>{t.backHome}</a>
+                    <a className="button" href={`/${locale}/`}>{t.backHome}</a>
                 </section>
             </main>
 

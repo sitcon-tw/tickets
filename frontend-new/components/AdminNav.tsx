@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import * as i18n from "@/lib/i18n";
+import { useLocale } from "next-intl";
+import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
@@ -58,11 +58,8 @@ const styles = {
 };
 
 export default function AdminNav() {
-  const pathname = usePathname();
-  const currentPath = pathname ?? "/";
-  const lang = i18n.local(currentPath);
-
-  const linkBuilder = useMemo(() => i18n.l(currentPath), [currentPath]);
+  const locale = useLocale();
+  const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
@@ -92,7 +89,7 @@ export default function AdminNav() {
 
   const t = useMemo(
     () =>
-      i18n.t(lang, {
+      getTranslations(locale, {
         activityName: {
           "zh-Hant": "SITCON 2026",
           "zh-Hans": "SITCON 2026",
@@ -149,7 +146,7 @@ export default function AdminNav() {
           en: "Back to Home"
         }
       }),
-    [lang]
+    [locale]
   );
 
   return (

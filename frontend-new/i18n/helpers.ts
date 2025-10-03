@@ -29,3 +29,24 @@ export function getTranslations(
 
   return result;
 }
+
+/**
+ * Helper function to build localized links
+ * Similar to the old i18n.l function
+ *
+ * @param currentLocale - Current locale
+ * @returns Function that builds localized paths
+ *
+ * @example
+ * const linkBuilder = buildLocalizedLink("en");
+ * linkBuilder("/admin/"); // "/en/admin/"
+ * linkBuilder("/admin/", "zh-Hant"); // "/zh-Hant/admin/"
+ */
+export function buildLocalizedLink(currentLocale: string) {
+  return (path: string = "/", locale: string = ""): string => {
+    const targetLocale = locale || currentLocale;
+    // Ensure path starts with /
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `/${targetLocale}${cleanPath}`;
+  };
+}
