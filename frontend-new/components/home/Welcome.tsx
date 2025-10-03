@@ -4,25 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
-
-const CopyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="lucide-copy"
-    aria-hidden="true"
-  >
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
+import { Copy } from "lucide-react";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
 
@@ -101,6 +83,7 @@ export default function Welcome() {
   const [referralCode, setReferralCode] = useState(t.loading);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [referralParam, setReferralParam] = useState<string | null>(null);
+  const [codeHovered, setCodeHovered] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -124,11 +107,11 @@ export default function Welcome() {
   useEffect(() => {
     let cancelled = false;
 
-    const handleWelcome = async () => {
+    async function handleWelcome() {
       try {
         const sessionData = await authAPI.getSession();
 
-        if (!sessionData || !sessionData.user) {
+        if (!sessionData) {
           decideState(false);
           return;
         }
@@ -154,9 +137,9 @@ export default function Welcome() {
       }
     };
 
-    const loadReferralCode = async () => {
+    async function loadReferralCode() {
       try {
-        // Note: referralsAPI endpoint needs to be added for getting user's referral code
+        // TODO Note: referralsAPI endpoint needs to be added for getting user's referral code
         if (!cancelled) setReferralCode(t.loadFailed);
       } catch (error) {
         console.error("Failed to load referral code", error);
@@ -164,7 +147,7 @@ export default function Welcome() {
       }
     };
 
-    const decideState = (isAuthenticated: boolean) => {
+    function decideState(isAuthenticated: boolean) {
       if (cancelled) return;
       if (invitationCode) {
         setWelcomeState("invitation");
@@ -182,9 +165,9 @@ export default function Welcome() {
     return () => {
       cancelled = true;
     };
-  }, [invitationCode, referralParam]);
+  }, [invitationCode, referralParam, t.loadFailed]);
 
-  const handleCopy = async () => {
+  async function handleCopy() {
     if (typeof window === "undefined") return;
     if (!referralCode || referralCode === t.loading || referralCode === t.loadFailed) return;
     try {
@@ -195,31 +178,13 @@ export default function Welcome() {
     }
   };
 
-  const handleInvitationRegister = () => {
+  async function handleInvitationRegister() {
     if (typeof window === "undefined" || !invitationCode) return;
     const params = new URLSearchParams();
     params.set("invite", invitationCode);
     window.location.href = `/form/?${params.toString()}`;
   };
 
-  const [codeHovered, setCodeHovered] = useState(false);
-
-  useEffect(() => {
-    // Inject keyframes animation into document
-    const styleId = 'welcome-blink-keyframes';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        @keyframes blink {
-          to {
-            opacity: 0.1;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
 
   return (
     <section>
@@ -270,7 +235,7 @@ export default function Welcome() {
               {referralCode}
             </span>
             <span style={{ opacity: 0.7 }}>
-              <CopyIcon />
+              <Copy />
             </span>
           </button>
         </section>

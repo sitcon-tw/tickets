@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
+import Link from "next/link";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
@@ -185,7 +186,7 @@ export default function AdminNav() {
             {t.logout}
           </a>
           <span>・</span>
-          <a
+          <Link
             href="/"
             onMouseEnter={() => setHoveredLink('home')}
             onMouseLeave={() => setHoveredLink(null)}
@@ -194,10 +195,10 @@ export default function AdminNav() {
             }}
           >
             {t.backHome}
-          </a>
+          </Link>
         </div>
         <div style={styles.logout}>
-          <a
+          <Link
             href={linkBuilder("", "zh-Hant")}
             onMouseEnter={() => setHoveredLink('zh-Hant')}
             onMouseLeave={() => setHoveredLink(null)}
@@ -206,7 +207,7 @@ export default function AdminNav() {
             }}
           >
             繁
-          </a>
+          </Link>
           <span>・</span>
           <a
             href={linkBuilder("", "zh-Hans")}

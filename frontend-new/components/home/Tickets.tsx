@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
 import { getTranslations } from "@/i18n/helpers";
@@ -72,7 +72,7 @@ export default function Tickets() {
     };
 
     loadTickets();
-  }, []);
+  }, [locale]);
 
   function handleTicketSelect(ticket: Ticket) {
     setSelectedTicket(ticket);

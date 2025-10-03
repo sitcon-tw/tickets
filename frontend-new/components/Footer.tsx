@@ -7,7 +7,7 @@ export default function Footer() {
         color: "#7e7e7e"
       }}
     >
-      Made by <a href="https://sitcon.org" target="_blank" rel="noreferrer">SITCON</a> with ❤️
+      Made by <a href="https://sitcon.org" target="_blank" rel="noreferrer" className="underline">SITCON</a> with ❤️
     </footer>
   );
 }
