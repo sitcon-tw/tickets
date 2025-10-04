@@ -5,9 +5,6 @@
 import { dateTimeString, successResponse, errorResponse, idParam } from './common.js';
 
 export const eventProperties = {
-	test: {
-		type: 'string'
-	},
 	id: {
 		type: 'string',
 		description: '活動 ID'

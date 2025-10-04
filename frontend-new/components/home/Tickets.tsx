@@ -75,6 +75,17 @@ export default function Tickets() {
     };
 
     loadTickets();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeConfirm();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [locale]);
 
   function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
