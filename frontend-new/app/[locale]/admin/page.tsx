@@ -6,7 +6,7 @@ import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI } from "@/lib/api/endpoints";
 import type { DashboardData } from "@/lib/types/api";
-import { Chart, registerables, ChartConfiguration } from 'chart.js';
+import { Chart, registerables, TooltipItem } from 'chart.js';
 
 // Register Chart.js components
 if (typeof window !== 'undefined') {
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
                 borderColor: "#6b7280",
                 borderWidth: 1,
                 callbacks: {
-                  label: function (context: any) {
+                  label: function (context: TooltipItem<'pie'>) {
                     const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                     const percentage = ((context.parsed / total) * 100).toFixed(1);
                     return context.label + ": " + context.parsed + " 張 (" + percentage + "%)";
@@ -223,6 +223,7 @@ export default function AdminDashboard() {
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              // @ts-expect-error - Chart.js doughnut-specific options
               circumference: 180,
               rotation: 270,
               cutout: "70%",
@@ -235,7 +236,7 @@ export default function AdminDashboard() {
                   borderColor: "#6b7280",
                   borderWidth: 1,
                   callbacks: {
-                    label: function (context: any) {
+                    label: function (context: TooltipItem<'doughnut'>) {
                       return context.label + ": " + context.parsed + " 張";
                     }
                   }
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
             },
             plugins: [{
               id: 'centerText',
-              afterDraw: function (chart: any) {
+              afterDraw: function (chart: Chart) {
                 const ctx = chart.ctx;
                 const width = chart.width;
                 const height = chart.height;

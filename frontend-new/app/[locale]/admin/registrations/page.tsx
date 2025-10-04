@@ -33,19 +33,19 @@ export default function RegistrationsPage() {
 
   const columnDefs = [
     { id: "id", label: "ID", accessor: (r: Registration) => r.id },
-    { id: "email", label: "Email", accessor: (r: Registration) => r.email || r.formData?.email || "" },
-    { id: "phone", label: "Phone", accessor: (r: Registration) => r.formData?.phoneNumber || "" },
+    { id: "email", label: "Email", accessor: (r: Registration) => (r.formData?.email as string) || "" },
+    { id: "phone", label: "Phone", accessor: (r: Registration) => (r.formData?.phoneNumber as string) || "" },
     { id: "status", label: "Status", accessor: (r: Registration) => r.status },
     { id: "ticket", label: "Ticket", accessor: (r: Registration) => r.ticket?.name || "" },
     { id: "event", label: "Event", accessor: (r: Registration) => r.event?.name || "" },
     { id: "createdAt", label: "Created", accessor: (r: Registration) => r.createdAt ? new Date(r.createdAt).toLocaleString() : "" },
-    { id: "tags", label: "Tags", accessor: (r: Registration) => Array.isArray(r.tags) ? r.tags.join(", ") : "" }
+    { id: "tags", label: "Tags", accessor: (r: Registration) => "" }
   ];
 
   const loadRegistrations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params: any = { limit: 100 };
+      const params: { limit: number; status?: 'pending' | 'confirmed' | 'cancelled' } = { limit: 100 };
       if (statusFilter) params.status = statusFilter as 'pending' | 'confirmed' | 'cancelled';
 
       const response = await adminRegistrationsAPI.getAll(params);
@@ -80,8 +80,8 @@ export default function RegistrationsPage() {
     try {
       await adminRegistrationsAPI.export({ format: 'excel' });
       alert('Successfully exported data!');
-    } catch (error: any) {
-      alert('Export failed: ' + error.message);
+    } catch (error) {
+      alert('Export failed: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

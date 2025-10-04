@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
+import Link from 'next/link';
 import Nav from "@/components/Nav";
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
@@ -221,7 +222,7 @@ export default function FormPage() {
 					marginRight: 'auto',
 					padding: '0 1rem'
 				}}>
-					<p><a href="/">{t.reselectTicket}</a></p>
+					<p><Link href="/">{t.reselectTicket}</Link></p>
 					<h1 style={{
 						marginBlock: '1rem',
 						fontSize: '2.5rem'
@@ -245,7 +246,7 @@ export default function FormPage() {
 					{error && (
 						<div style={{ textAlign: 'center', padding: '2rem' }}>
 							<p style={{ color: 'red' }}>{t.loadFormFailed}{error}</p>
-							<a href="/">{t.backToHome}</a>
+							<Link href="/">{t.backToHome}</Link>
 						</div>
 					)}
 

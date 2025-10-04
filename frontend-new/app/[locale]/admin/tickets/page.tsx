@@ -78,7 +78,7 @@ export default function TicketsPage() {
       if (response.success) {
         setTickets(response.data || []);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load tickets:', error);
     } finally {
       setIsLoading(false);
@@ -113,7 +113,16 @@ export default function TicketsPage() {
     const saleStartStr = formData.get('saleStart') as string;
     const saleEndStr = formData.get('saleEnd') as string;
 
-    const data: any = {
+    const data: {
+      eventId: string;
+      name: string;
+      description: string;
+      price: number;
+      quantity: number;
+      requireInviteCode: boolean;
+      saleStart?: string;
+      saleEnd?: string;
+    } = {
       eventId: currentEventId,
       name: formData.get('name') as string,
       description: formData.get('description') as string || '',
@@ -138,8 +147,8 @@ export default function TicketsPage() {
       }
       await loadTickets();
       closeModal();
-    } catch (error: any) {
-      alert('保存失敗: ' + error.message);
+    } catch (error) {
+      alert('保存失敗: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -149,8 +158,8 @@ export default function TicketsPage() {
     try {
       await adminTicketsAPI.delete(ticketId);
       await loadTickets();
-    } catch (error: any) {
-      alert('刪除失敗: ' + error.message);
+    } catch (error) {
+      alert('刪除失敗: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

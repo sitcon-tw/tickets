@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Nav from "@/components/Nav";
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
@@ -159,7 +160,7 @@ export default function Success() {
 						marginBottom: '1.5rem'
 					}}>{copyText}</div>
 					<p>{t.reward}</p>
-					<a href="/form/" className="button" style={{ margin: 'auto' }}>{t.edit}</a>
+					<Link href="/form/" className="button" style={{ margin: 'auto' }}>{t.edit}</Link>
 				</section>
 			</main>
 		</>

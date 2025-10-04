@@ -103,6 +103,7 @@ export interface Ticket {
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  requireInviteCode?: boolean;
 }
 
 export interface TicketFormField {

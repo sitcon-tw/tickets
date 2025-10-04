@@ -138,8 +138,8 @@ export default function InvitesPage() {
       await adminInvitationCodesAPI.bulkCreate(data);
       await loadInvitationCodes();
       setShowModal(false);
-    } catch (error: any) {
-      alert('創建失敗: ' + error.message);
+    } catch (error) {
+      alert('創建失敗: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

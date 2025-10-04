@@ -158,9 +158,9 @@ export default function FormsPage() {
       }
 
       alert('表單已保存！');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to save form:', error);
-      alert('保存失敗: ' + error.message);
+      alert('保存失敗: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

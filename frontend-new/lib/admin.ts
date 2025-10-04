@@ -1,6 +1,18 @@
 import { apiClient } from './api/client';
+import type {
+  Event,
+  Ticket,
+  TicketFormField,
+  Registration,
+  InvitationCode,
+  EmailCampaign,
+  DashboardData,
+  RegistrationTrend,
+  TicketAnalytics,
+  TicketFormFieldReorder
+} from './types/api';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -21,9 +33,9 @@ export const events = {
     apiClient.get<ApiResponse>('/api/admin/events', params),
   get: (id: string) =>
     apiClient.get<ApiResponse>(`/api/admin/events/${id}`),
-  create: (data: any) =>
+  create: (data: Partial<Event>) =>
     apiClient.post<ApiResponse>('/api/admin/events', data),
-  update: (id: string, data: any) =>
+  update: (id: string, data: Partial<Event>) =>
     apiClient.put<ApiResponse>(`/api/admin/events/${id}`, data),
   delete: (id: string) =>
     apiClient.delete<ApiResponse>(`/api/admin/events/${id}`),
@@ -35,9 +47,9 @@ export const tickets = {
     apiClient.get<ApiResponse>(`/api/admin/events/${eventId}/tickets`),
   get: (eventId: string, ticketId: string) =>
     apiClient.get<ApiResponse>(`/api/admin/events/${eventId}/tickets/${ticketId}`),
-  create: (eventId: string, data: any) =>
+  create: (eventId: string, data: Partial<Ticket>) =>
     apiClient.post<ApiResponse>(`/api/admin/events/${eventId}/tickets`, data),
-  update: (eventId: string, ticketId: string, data: any) =>
+  update: (eventId: string, ticketId: string, data: Partial<Ticket>) =>
     apiClient.put<ApiResponse>(`/api/admin/events/${eventId}/tickets/${ticketId}`, data),
   delete: (eventId: string, ticketId: string) =>
     apiClient.delete<ApiResponse>(`/api/admin/events/${eventId}/tickets/${ticketId}`),
@@ -49,13 +61,13 @@ export const formFields = {
     apiClient.get<ApiResponse>(`/api/admin/tickets/${ticketId}/form-fields`),
   get: (ticketId: string, fieldId: string) =>
     apiClient.get<ApiResponse>(`/api/admin/tickets/${ticketId}/form-fields/${fieldId}`),
-  create: (data: any) =>
+  create: (data: Partial<TicketFormField>) =>
     apiClient.post<ApiResponse>('/api/admin/form-fields', data),
-  update: (fieldId: string, data: any) =>
+  update: (fieldId: string, data: Partial<TicketFormField>) =>
     apiClient.put<ApiResponse>(`/api/admin/form-fields/${fieldId}`, data),
   delete: (fieldId: string) =>
     apiClient.delete<ApiResponse>(`/api/admin/form-fields/${fieldId}`),
-  reorder: (ticketId: string, data: any) =>
+  reorder: (ticketId: string, data: TicketFormFieldReorder) =>
     apiClient.put<ApiResponse>(`/api/admin/tickets/${ticketId}/form-fields/reorder`, data),
 };
 
@@ -65,7 +77,7 @@ export const registrations = {
     apiClient.get<ApiResponse>('/api/admin/registrations', params),
   get: (id: string) =>
     apiClient.get<ApiResponse>(`/api/admin/registrations/${id}`),
-  update: (id: string, data: any) =>
+  update: (id: string, data: Partial<Registration>) =>
     apiClient.put<ApiResponse>(`/api/admin/registrations/${id}`, data),
   delete: (id: string) =>
     apiClient.delete<ApiResponse>(`/api/admin/registrations/${id}`),
@@ -79,11 +91,11 @@ export const invitationCodes = {
     apiClient.get<ApiResponse>('/api/admin/invitation-codes', params),
   get: (id: string) =>
     apiClient.get<ApiResponse>(`/api/admin/invitation-codes/${id}`),
-  create: (data: any) =>
+  create: (data: Partial<InvitationCode>) =>
     apiClient.post<ApiResponse>('/api/admin/invitation-codes', data),
   bulkCreate: (data: { type: string; count: number; usageLimit?: number; expiresAt?: string }) =>
     apiClient.post<ApiResponse>('/api/admin/invitation-codes/bulk', data),
-  update: (id: string, data: any) =>
+  update: (id: string, data: Partial<InvitationCode>) =>
     apiClient.put<ApiResponse>(`/api/admin/invitation-codes/${id}`, data),
   delete: (id: string) =>
     apiClient.delete<ApiResponse>(`/api/admin/invitation-codes/${id}`),
@@ -97,7 +109,7 @@ export const emailCampaigns = {
     apiClient.get<ApiResponse>('/api/admin/email-campaigns'),
   get: (id: string) =>
     apiClient.get<ApiResponse>(`/api/admin/email-campaigns/${id}`),
-  create: (data: any) =>
+  create: (data: Partial<EmailCampaign>) =>
     apiClient.post<ApiResponse>('/api/admin/email-campaigns', data),
   send: (id: string) =>
     apiClient.post<ApiResponse>(`/api/admin/email-campaigns/${id}/send`),
