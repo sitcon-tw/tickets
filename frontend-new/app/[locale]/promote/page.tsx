@@ -79,9 +79,9 @@ export default function PromoteToAdmin() {
 			setTimeout(() => {
 				router.push(`/${locale}/admin`);
 			}, 2000);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("Promote error:", error);
-			setErrorMessage(error?.response?.data?.error?.message || t.invalidPassword);
+			setErrorMessage("錯誤!!!!!");
 			setViewState('error');
 		} finally {
 			setIsLoading(false);

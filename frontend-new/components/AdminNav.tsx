@@ -7,6 +7,7 @@ import Link from "next/link";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
+  { href: "/admin/events/", i18nKey: "events" },
   { href: "/admin/tickets/", i18nKey: "ticketTypes" },
   { href: "/admin/invites/", i18nKey: "invitationCodes" },
   { href: "/admin/registrations/", i18nKey: "registrations" },
@@ -102,6 +103,11 @@ export default function AdminNav() {
       "zh-Hant": "總覽",
       "zh-Hans": "总览",
       en: "Overview"
+    },
+    events: {
+      "zh-Hant": "活動管理",
+      "zh-Hans": "活动管理",
+      en: "Event Management"
     },
     ticketTypes: {
       "zh-Hant": "票種管理",

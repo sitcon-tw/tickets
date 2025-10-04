@@ -6,6 +6,7 @@ import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
+import PageSpinner from "@/components/PageSpinner";
 
 type InviteCode = {
   id: string;
@@ -164,143 +165,172 @@ export default function InvitesPage() {
         >
           <button
             onClick={() => setShowModal(true)}
-            style={{
-              background: "#222",
-              border: "1px solid #444",
-              color: "#eee",
-              borderRadius: "6px",
-              padding: "6px 12px",
-              fontSize: "0.75rem"
-            }}
+            className="button"
           >
             ➕ {t.add}
           </button>
           <input
             type="text"
-            placeholder={"🔍" + t.search}
+            placeholder={"🔍 " + t.search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              background: "#222",
-              border: "1px solid #444",
+              background: "#111",
+              border: "1px solid #333",
               color: "#eee",
               borderRadius: "6px",
-              padding: "6px 12px",
+              padding: "6px 10px",
               fontSize: "0.75rem"
             }}
           />
         </section>
 
         <section>
-          {isLoading && <div>載入中...</div>}
-          {!isLoading && (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "0.8rem"
-              }}
-            >
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.name}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.total}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.used}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.remaining}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.created}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.actions}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTypes.map(type => {
-                  const used = type.codes.filter(c => c.usedCount > 0).length;
-                  const total = type.codes.length;
-                  return (
-                    <tr key={type.id}>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {type.name}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {total}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {used}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {total - used}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {new Date(type.createdAt).toLocaleString()}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        <button onClick={() => openCodesModal(type.id)}>檢視</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <div style={{
+            overflowX: 'auto',
+            borderRadius: '8px',
+            backgroundColor: 'var(--color-gray-800)',
+            border: '2px solid var(--color-gray-900)'
+          }}>
+            {isLoading && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+                padding: '3rem',
+                opacity: 0.7
+              }}>
+                <PageSpinner size={48} />
+                <p style={{ fontSize: '0.9rem' }}>Now Loading...</p>
+              </div>
+            )}
+            {!isLoading && (
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: '900px'
+              }}>
+                <thead>
+                  <tr>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.name}
+                    </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.total}
+                    </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.used}
+                    </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.remaining}
+                    </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.created}
+                    </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.actions}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTypes.map(type => {
+                    const used = type.codes.filter(c => c.usedCount > 0).length;
+                    const total = type.codes.length;
+                    return (
+                      <tr key={type.id}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          {type.name}
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          {total}
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          {used}
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          {total - used}
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          {new Date(type.createdAt).toLocaleString()}
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <button className="button" onClick={() => openCodesModal(type.id)}>檢視</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </section>
 
         {showModal && (
@@ -524,57 +554,51 @@ export default function InvitesPage() {
                   ✕
                 </button>
               </header>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "0.8rem"
-                }}
-              >
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: '600px'
+              }}>
                 <thead>
                   <tr>
-                    <th
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "left",
-                        borderBottom: "1px solid #333",
-                        background: "#161616",
-                        fontWeight: "600"
-                      }}
-                    >
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
                       {t.code}
                     </th>
-                    <th
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "left",
-                        borderBottom: "1px solid #333",
-                        background: "#161616",
-                        fontWeight: "600"
-                      }}
-                    >
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
                       {t.usage}
                     </th>
-                    <th
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "left",
-                        borderBottom: "1px solid #333",
-                        background: "#161616",
-                        fontWeight: "600"
-                      }}
-                    >
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
                       {t.limit}
                     </th>
-                    <th
-                      style={{
-                        padding: "8px 10px",
-                        textAlign: "left",
-                        borderBottom: "1px solid #333",
-                        background: "#161616",
-                        fontWeight: "600"
-                      }}
-                    >
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
                       {t.status}
                     </th>
                   </tr>
@@ -582,30 +606,49 @@ export default function InvitesPage() {
                 <tbody>
                   {currentType.codes.map(code => {
                     const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
-                    const statusColor = status === "active" ? "#4ade80" : status === "usedup" ? "#f87171" : "#eee";
+                    const statusClass = status === "active" ? "active" : "ended";
+                    const getStatusBadgeStyle = (statusClass: string) => {
+                      const baseStyle: React.CSSProperties = {
+                        padding: '0.3rem 0.6rem',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                        display: 'inline-block'
+                      };
+                      if (statusClass === 'active') {
+                        return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
+                      } else {
+                        return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
+                      }
+                    };
                     return (
                       <tr key={code.id}>
-                        <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
                           {code.code}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
                           {code.usedCount}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
                           {code.usageLimit}
                         </td>
-                        <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              fontSize: "0.65rem",
-                              background: "#222",
-                              border: "1px solid #333",
-                              color: statusColor
-                            }}
-                          >
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <span style={getStatusBadgeStyle(statusClass)}>
                             {status}
                           </span>
                         </td>

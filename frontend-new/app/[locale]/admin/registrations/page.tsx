@@ -6,6 +6,7 @@ import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
+import PageSpinner from "@/components/PageSpinner";
 
 export default function RegistrationsPage() {
   const locale = useLocale();
@@ -115,7 +116,7 @@ export default function RegistrationsPage() {
                 color: "#eee",
                 borderRadius: "6px",
                 padding: "6px 10px",
-                fontSize: "0.85rem"
+                fontSize: "0.75rem"
               }}
             />
             <select
@@ -127,7 +128,7 @@ export default function RegistrationsPage() {
                 color: "#eee",
                 borderRadius: "6px",
                 padding: "6px 10px",
-                fontSize: "0.85rem"
+                fontSize: "0.75rem"
               }}
             >
               <option value="">{t.allStatus}</option>
@@ -137,29 +138,14 @@ export default function RegistrationsPage() {
             </select>
             <button
               onClick={loadRegistrations}
-              style={{
-                background: "#1f1f1f",
-                border: "1px solid #444",
-                color: "#eee",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "0.8rem",
-                cursor: "pointer"
-              }}
+              className="button"
             >
               ↻ {t.refresh}
             </button>
             <button
               onClick={syncToSheets}
-              style={{
-                background: "#24324a",
-                border: "1px solid #355079",
-                color: "#eee",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "0.8rem",
-                cursor: "pointer"
-              }}
+              className="button"
+              style={{ backgroundColor: '#2563eb', color: '#fff' }}
             >
               📝 {t.syncSheets}
             </button>
@@ -191,13 +177,13 @@ export default function RegistrationsPage() {
                     setActiveColumns(newCols);
                   }}
                   style={{
-                    background: "#222",
+                    background: activeColumns.has(col.id) ? "#2a2a2a" : "#1a1a1a",
                     border: "1px solid #444",
                     padding: "4px 8px",
                     fontSize: "0.65rem",
                     borderRadius: "999px",
                     cursor: "pointer",
-                    opacity: activeColumns.has(col.id) ? 1 : 0.45,
+                    opacity: activeColumns.has(col.id) ? 1 : 0.5,
                     color: "#eee"
                   }}
                 >
@@ -209,115 +195,124 @@ export default function RegistrationsPage() {
         </section>
 
         <section>
-          {isLoading && (
-            <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
-              {t.loading}
-            </div>
-          )}
-          {!isLoading && filtered.length === 0 && (
-            <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
-              {t.empty}
-            </div>
-          )}
-          {!isLoading && filtered.length > 0 && (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "separate",
-                borderSpacing: "0",
-                fontSize: "0.75rem"
-              }}
-            >
-              <thead>
-                <tr>
-                  {[...activeColumns].map(cid => {
-                    const col = columnDefs.find(c => c.id === cid);
-                    return col ? (
-                      <th
-                        key={cid}
-                        style={{
-                          position: "sticky",
-                          top: "0",
-                          background: "#161616",
-                          padding: "8px 10px",
-                          textAlign: "left",
-                          fontWeight: "600",
-                          borderBottom: "1px solid #333"
-                        }}
-                      >
-                        {col.label}
-                      </th>
-                    ) : null;
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(r => (
-                  <tr
-                    key={r.id}
-                    style={{ background: "transparent" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#191919";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
+          <div style={{
+            overflowX: 'auto',
+            borderRadius: '8px',
+            backgroundColor: 'var(--color-gray-800)',
+            border: '2px solid var(--color-gray-900)'
+          }}>
+            {isLoading && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+                padding: '3rem',
+                opacity: 0.7
+              }}>
+                <PageSpinner size={48} />
+                <p style={{ fontSize: '0.9rem' }}>{t.loading}</p>
+              </div>
+            )}
+            {!isLoading && filtered.length === 0 && (
+              <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+                {t.empty}
+              </div>
+            )}
+            {!isLoading && filtered.length > 0 && (
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: '900px'
+              }}>
+                <thead>
+                  <tr>
                     {[...activeColumns].map(cid => {
                       const col = columnDefs.find(c => c.id === cid);
-                      if (!col) return null;
-                      const val = col.accessor(r);
-                      const statusColor =
-                        r.status === "confirmed"
-                          ? "#4ade80"
-                          : r.status === "pending"
-                          ? "#fbbf24"
-                          : r.status === "cancelled"
-                          ? "#f87171"
-                          : "#eee";
-                      return (
-                        <td
+                      return col ? (
+                        <th
                           key={cid}
                           style={{
-                            padding: "6px 10px",
-                            borderBottom: "1px solid #222"
+                            padding: '0.5rem 1rem',
+                            textAlign: 'left',
+                            borderBottom: '1px solid var(--color-gray-400)',
+                            backgroundColor: 'var(--color-gray-700)',
+                            color: 'var(--color-gray-200)',
+                            fontWeight: 600
                           }}
                         >
-                          {cid === 'status' ? (
-                            <span
-                              style={{
-                                display: "inline-block",
-                                background: "#222",
-                                border: "1px solid #333",
-                                padding: "2px 6px",
-                                borderRadius: "6px",
-                                fontSize: "0.6rem",
-                                textTransform: "uppercase",
-                                color: statusColor
-                              }}
-                            >
-                              {val}
-                            </span>
-                          ) : (
-                            <div
-                              style={{
-                                maxWidth: "220px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap"
-                              }}
-                            >
-                              {val}
-                            </div>
-                          )}
-                        </td>
-                      );
+                          {col.label}
+                        </th>
+                      ) : null;
                     })}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {filtered.map(r => (
+                    <tr key={r.id}>
+                      {[...activeColumns].map(cid => {
+                        const col = columnDefs.find(c => c.id === cid);
+                        if (!col) return null;
+                        const val = col.accessor(r);
+                        const statusClass =
+                          r.status === "confirmed"
+                            ? "active"
+                            : r.status === "pending"
+                            ? "pending"
+                            : r.status === "cancelled"
+                            ? "ended"
+                            : "";
+                        const getStatusBadgeStyle = (statusClass: string) => {
+                          const baseStyle: React.CSSProperties = {
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '4px',
+                            fontSize: '0.85rem',
+                            display: 'inline-block'
+                          };
+                          if (statusClass === 'active') {
+                            return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
+                          } else if (statusClass === 'ended') {
+                            return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
+                          } else if (statusClass === 'pending') {
+                            return { ...baseStyle, backgroundColor: '#fff3cd', color: '#856404' };
+                          }
+                          return baseStyle;
+                        };
+                        return (
+                          <td
+                            key={cid}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              textAlign: 'left',
+                              borderBottom: '1px solid var(--color-gray-400)'
+                            }}
+                          >
+                            {cid === 'status' ? (
+                              <span style={getStatusBadgeStyle(statusClass)}>
+                                {val}
+                              </span>
+                            ) : (
+                              <div
+                                style={{
+                                  maxWidth: "220px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap"
+                                }}
+                              >
+                                {val}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </section>
 
         <section>

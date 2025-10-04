@@ -173,382 +173,243 @@ export default function EventsPage() {
         </section>
 
         <section>
-          {isLoading && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '1rem',
-              padding: '3rem',
-              opacity: 0.7
-            }}>
-              <PageSpinner size={48} />
-              <p style={{ fontSize: '0.9rem' }}>{t.loading}</p>
-            </div>
-          )}
-          {!isLoading && events.length === 0 && (
-            <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
-              {t.empty}
-            </div>
-          )}
-          {!isLoading && events.length > 0 && (
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "0.75rem"
-              }}
-            >
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.eventName}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.location}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.startDate}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.endDate}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.status}
-                  </th>
-                  <th
-                    style={{
-                      padding: "8px 10px",
-                      textAlign: "left",
-                      borderBottom: "1px solid #333",
-                      background: "#161616",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t.actions}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map(event => {
-                  const status = computeStatus(event);
-                  return (
-                    <tr key={event.id}>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {event.name}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {event.location}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {formatDateTime(event.startDate)}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        {formatDateTime(event.endDate)}
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            background: "#222",
-                            border: "1px solid #333",
-                            padding: "2px 6px",
-                            borderRadius: "6px",
-                            fontSize: "0.6rem",
-                            textTransform: "uppercase",
-                            color: status.color
-                          }}
-                        >
-                          {status.label}
-                        </span>
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "left", borderBottom: "1px solid #333" }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            onClick={() => openModal(event)}
-                            style={{
-                              background: "#222",
-                              border: "1px solid #444",
-                              color: "#eee",
-                              borderRadius: "4px",
-                              padding: "4px 8px",
-                              fontSize: "0.7rem",
-                              cursor: "pointer"
-                            }}
-                          >
-                            {t.edit}
-                          </button>
-                          <button
-                            onClick={() => deleteEvent(event.id)}
-                            style={{
-                              background: "#2a1616",
-                              border: "1px solid #441111",
-                              color: "#f87171",
-                              borderRadius: "4px",
-                              padding: "4px 8px",
-                              fontSize: "0.7rem",
-                              cursor: "pointer"
-                            }}
-                          >
-                            {t.delete}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <div style={{
+            overflowX: 'auto',
+            borderRadius: '8px',
+            backgroundColor: 'var(--color-gray-800)',
+            border: '2px solid var(--color-gray-900)'
+          }}>
+            {isLoading && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+                padding: '3rem',
+                opacity: 0.7
+              }}>
+                <PageSpinner size={48} />
+                <p style={{ fontSize: '0.9rem' }}>{t.loading}</p>
+              </div>
+            )}
+            {!isLoading && events.length === 0 && (
+              <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+                {t.empty}
+              </div>
+            )}
+            {!isLoading && events.length > 0 && (
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: '900px'
+              }}>
+                <thead>
+                  <tr>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.eventName}</th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.location}</th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.startDate}</th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.endDate}</th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.status}</th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>{t.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map(event => {
+                    const status = computeStatus(event);
+                    return (
+                      <tr key={event.id}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>{event.name}</td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>{event.location}</td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>{formatDateTime(event.startDate)}</td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>{formatDateTime(event.endDate)}</td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <span style={getStatusBadgeStyle(status.class)}>{status.label}</span>
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button className="button" onClick={() => openModal(event)}>{t.edit}</button>
+                            <button className="button" style={{ backgroundColor: '#f8d7da', color: '#721c24' }} onClick={() => deleteEvent(event.id)}>{t.delete}</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+
+        <section style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <button className="button" onClick={() => openModal()}>
+            + {t.addEvent}
+          </button>
         </section>
 
         {showModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0, 0, 0, 0.6)",
-              zIndex: "10"
-            }}
-            onClick={closeModal}
-          >
-            <div
-              style={{
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "10px",
-                padding: "1rem 1.2rem",
-                maxWidth: "640px",
-                width: "100%"
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <header
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.75rem"
-                }}
-              >
-                <h2 style={{ fontSize: "1rem", margin: "0" }}>
-                  {editingEvent ? t.editEvent : t.addEvent}
-                </h2>
-                <button
-                  onClick={closeModal}
-                  style={{
-                    background: "#2a2a2a",
-                    border: "1px solid #444",
-                    color: "#ccc",
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    cursor: "pointer"
-                  }}
-                >
-                  ✕
-                </button>
-              </header>
-              <form
-                onSubmit={saveEvent}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.85rem"
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.eventName}
-                  <input
-                    name="name"
-                    type="text"
-                    required
-                    defaultValue={editingEvent?.name || ''}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
-                  />
-                </label>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.description}
-                  <textarea
-                    name="description"
-                    defaultValue={editingEvent?.description || ''}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem",
-                      minHeight: "80px"
-                    }}
-                  />
-                </label>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.location}
-                  <input
-                    name="location"
-                    type="text"
-                    defaultValue={editingEvent?.location || ''}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
-                  />
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.startDate}
-                    <input
-                      name="startDate"
-                      type="datetime-local"
-                      defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ''}
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
-                    />
+          <div style={{
+            position: 'fixed',
+            inset: '0',
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }} onClick={closeModal}>
+            <div style={{
+              background: 'var(--color-gray-800)',
+              padding: '1.5rem',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%'
+            }} onClick={(e) => e.stopPropagation()}>
+              <h2>{editingEvent ? t.editEvent : t.addEvent}</h2>
+              <form onSubmit={saveEvent}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  marginTop: '1rem'
+                }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span>{t.eventName}</span>
+                    <input name="name" type="text" required defaultValue={editingEvent?.name || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
                   </label>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.endDate}
-                    <input
-                      name="endDate"
-                      type="datetime-local"
-                      defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ''}
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
-                    />
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span>{t.description}</span>
+                    <textarea name="description" defaultValue={editingEvent?.description || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px',
+                      minHeight: '80px'
+                    }} />
                   </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <span>{t.location}</span>
+                    <input name="location" type="text" defaultValue={editingEvent?.location || ''} style={{
+                      padding: '0.5rem',
+                      border: '1px solid var(--color-gray-600)',
+                      background: 'var(--color-gray-900)',
+                      color: 'inherit',
+                      borderRadius: '6px'
+                    }} />
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <span>{t.startDate}</span>
+                      <input
+                        name="startDate"
+                        type="datetime-local"
+                        defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ''}
+                        style={{
+                          padding: '0.5rem',
+                          border: '1px solid var(--color-gray-600)',
+                          background: 'var(--color-gray-900)',
+                          color: 'inherit',
+                          borderRadius: '6px'
+                        }}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <span>{t.endDate}</span>
+                      <input
+                        name="endDate"
+                        type="datetime-local"
+                        defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ''}
+                        style={{
+                          padding: '0.5rem',
+                          border: '1px solid var(--color-gray-600)',
+                          background: 'var(--color-gray-900)',
+                          color: 'inherit',
+                          borderRadius: '6px'
+                        }}
+                      />
+                    </label>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    type="submit"
-                    style={{
-                      background: "#155e29",
-                      border: "1px solid #1d7b34",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
-                    {t.save}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    style={{
-                      background: "#222",
-                      border: "1px solid #444",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
-                    {t.cancel}
-                  </button>
+                <div style={{
+                  display: 'flex',
+                  gap: '0.75rem',
+                  marginTop: '1.5rem',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button type="submit" className="button" style={{ background: '#ffc107', color: '#2a2416' }}>{t.save}</button>
+                  <button type="button" className="button" onClick={closeModal}>{t.cancel}</button>
                 </div>
               </form>
             </div>
