@@ -19,7 +19,7 @@ class APIClient {
   private baseURL: string;
   private retryConfig: RetryConfig;
 
-  constructor(baseURL: string = process.env.BACKEND_URI || 'http://localhost:3000') {
+  constructor(baseURL: string = process.env.BACKEND_URI || 'https://sitcon-tickets-backend.zeabur.app') {
     this.baseURL = baseURL;
     this.retryConfig = {
       maxRetries: 3,
