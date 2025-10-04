@@ -1,20 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import Nav from "@/components/Nav";
 import { getTranslations } from "@/i18n/helpers";
-import { registrationsAPI } from '@/lib/api/endpoints';
+import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
 import { FormField } from '@/components/form/FormField';
 import { formStyles } from '@/components/form/formStyles';
-import { useFormInit } from '@/hooks/useFormInit';
-import { useFormData } from '@/hooks/useFormData';
+import { TicketFormField } from '@/lib/types/api';
+
+type FormDataType = {
+  [key: string]: string | boolean | string[];
+};
 
 export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
 	const [submitHover, setSubmitHover] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
+	const [formData, setFormData] = useState<FormDataType>({});
+	const [ticketId, setTicketId] = useState<string | null>(null);
+	const [eventId, setEventId] = useState<string | null>(null);
+	const [invitationCode, setInvitationCode] = useState<string | null>(null);
+	const [referralCode, setReferralCode] = useState<string | null>(null);
+	const [userEmail, setUserEmail] = useState<string>('');
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -46,16 +58,6 @@ export default function FormPage() {
 			"zh-Hant": "填寫報名資訊",
 			"zh-Hans": "填写报名资讯",
 			en: "Fill Registration Form"
-		},
-		event: {
-			"zh-Hant": "活動：",
-			"zh-Hans": "活动：",
-			en: "Event:"
-		},
-		ticketType: {
-			"zh-Hant": "票種：",
-			"zh-Hans": "票种：",
-			en: "Ticket Type:"
 		},
 		loadingForm: {
 			"zh-Hant": "載入表單中...",
@@ -94,35 +96,82 @@ export default function FormPage() {
 		}
 	});
 
-	// Initialize form
-	const {
-		loading,
-		error,
-		formFields,
-		eventId,
-		userEmail,
-		selectedTicketId,
-		invitationCode,
-		referralCode,
-		eventName,
-		ticketName
-	} = useFormInit(t.noTicketAlert);
+	// Form data handlers
+	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+		const { name, value } = e.target;
+		setFormData(prev => ({ ...prev, [name]: value }));
+	}, []);
 
-	// Form data management
-	const { formData, handleTextChange, handleCheckboxChange, updateFormData } = useFormData();
+	const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value, checked } = e.target;
 
-	// Update email when userEmail is loaded
-	useEffect(() => {
-		if (userEmail) {
-			updateFormData({ email: userEmail });
+		if (value === 'true') {
+			// Single checkbox
+			setFormData(prev => ({ ...prev, [name]: checked }));
+		} else {
+			// Multiple checkbox options
+			setFormData(prev => {
+				const currentValues = Array.isArray(prev[name]) ? prev[name] as string[] : [];
+				if (checked) {
+					return { ...prev, [name]: [...currentValues, value] };
+				} else {
+					return { ...prev, [name]: currentValues.filter(v => v !== value) };
+				}
+			});
 		}
-	}, [userEmail, updateFormData]);
+	}, []);
+
+	// Initialize form
+	useEffect(() => {
+		async function initForm() {
+			try {
+				// Check auth
+				const session = await authAPI.getSession();
+				if (!session || !session.user) {
+					router.push('/login/');
+					return;
+				}
+
+				const email = session.user.email || '';
+				setUserEmail(email);
+
+				// Load form data from localStorage
+				const storedData = localStorage.getItem('formData');
+				if (!storedData) {
+					alert(t.noTicketAlert);
+					router.push('/');
+					return;
+				}
+
+				const parsedData = JSON.parse(storedData);
+				setTicketId(parsedData.ticketId);
+				setEventId(parsedData.eventId);
+				setInvitationCode(parsedData.invitationCode || null);
+				setReferralCode(parsedData.referralCode || null);
+
+				// Load form fields from ticket API
+				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
+				if (!formFieldsData.success) {
+					throw new Error('Failed to load form fields');
+				}
+
+				setFormFields(formFieldsData.data || []);
+				setLoading(false);
+			} catch (error) {
+				console.error('Failed to initialize form:', error);
+				setError(error instanceof Error ? error.message : 'Unknown error');
+				setLoading(false);
+			}
+		}
+
+		initForm();
+	}, [router, t.noTicketAlert]);
 
 	// Handle form submission
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		if (!selectedTicketId || !eventId) {
+		if (!ticketId || !eventId) {
 			alert(t.incompleteFormAlert);
 			router.push('/');
 			return;
@@ -131,8 +180,10 @@ export default function FormPage() {
 		try {
 			const registrationData = {
 				eventId,
-				ticketId: selectedTicketId,
-				formData,
+				ticketId,
+				formData: {
+					...formData,
+				},
 				invitationCode: invitationCode || undefined,
 				referralCode: referralCode || undefined
 			};
@@ -141,11 +192,7 @@ export default function FormPage() {
 
 			if (result.success) {
 				// Clear stored data
-				sessionStorage.removeItem('selectedTicketId');
-				sessionStorage.removeItem('referralCode');
-				sessionStorage.removeItem('invitationCode');
-				sessionStorage.removeItem('selectedEventName');
-				sessionStorage.removeItem('selectedTicketName');
+				localStorage.removeItem('formData');
 				// Redirect to success page
 				router.push('/success');
 			} else {
@@ -174,18 +221,6 @@ export default function FormPage() {
 						fontSize: '2.5rem'
 					}}>{t.fillForm}</h1>
 
-					{eventName && ticketName && (
-						<div style={{
-							marginBottom: '1rem',
-							padding: '1rem',
-							background: 'var(--color-gray-800)',
-							borderRadius: '8px'
-						}}>
-							<p><strong>{t.event}</strong><span>{eventName}</span></p>
-							<p><strong>{t.ticketType}</strong><span>{ticketName}</span></p>
-						</div>
-					)}
-
 					{loading && (
 						<div style={{ textAlign: 'center', padding: '2rem' }}>{t.loadingForm}</div>
 					)}
@@ -203,33 +238,7 @@ export default function FormPage() {
 							flexDirection: 'column',
 							gap: '1.5rem'
 						}}>
-							{/* Basic fields */}
-							<div style={formStyles.formGroup}>
-								<label htmlFor="name" style={formStyles.label}>{t.name} *</label>
-								<input
-									type="text"
-									id="name"
-									name="name"
-									required
-									value={(formData.name as string) || ''}
-									onChange={handleTextChange}
-									style={formStyles.input}
-								/>
-							</div>
-							<div style={formStyles.formGroup}>
-								<label htmlFor="email" style={formStyles.label}>Email *</label>
-								<input
-									type="email"
-									id="email"
-									name="email"
-									required
-									value={(formData.email as string) || userEmail}
-									onChange={handleTextChange}
-									style={formStyles.input}
-								/>
-							</div>
-
-							{/* Dynamic form fields */}
+							{/* Dynamic form fields from API */}
 							{formFields.map((field, index) => (
 								<FormField
 									key={index}

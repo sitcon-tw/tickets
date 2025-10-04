@@ -144,7 +144,6 @@ export interface Registration {
   id: string;
   eventId: string;
   ticketId: string;
-  email: string;
   status: 'confirmed' | 'cancelled' | 'pending';
   referredBy?: string;
   formData: Record<string, unknown>;

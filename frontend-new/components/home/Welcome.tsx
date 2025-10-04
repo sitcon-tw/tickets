@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
-import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
-import { Copy } from "lucide-react";
+import { authAPI, registrationsAPI, referralsAPI } from "@/lib/api/endpoints";
+import { Copy, Check } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
@@ -64,11 +64,6 @@ export default function Welcome() {
       "zh-Hans": "载入失败",
       en: "Load failed"
     },
-    copiedToClipboard: {
-      "zh-Hant": "推薦碼已複製到剪貼簿！",
-      "zh-Hans": "推荐码已复制到剪贴板！",
-      en: "Referral code copied to clipboard!"
-    },
     promotionalText: {
       "zh-Hant": "累積三人一起報名即可獲得一張柴柴簽名照。",
       "zh-Hans": "累积三人一起报名即可获得一张柴柴签名照。",
@@ -86,6 +81,7 @@ export default function Welcome() {
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [referralParam, setReferralParam] = useState<string | null>(null);
   const [codeHovered, setCodeHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -95,11 +91,11 @@ export default function Welcome() {
     const invitation = urlParams.get("invite");
 
     if (referral) {
-      sessionStorage.setItem("referralCode", referral);
+      localStorage.setItem("referralCode", referral);
     }
 
     if (invitation) {
-      sessionStorage.setItem("invitationCode", invitation);
+      localStorage.setItem("invitationCode", invitation);
     }
 
     setReferralParam(referral);
@@ -118,13 +114,12 @@ export default function Welcome() {
           return;
         }
 
-        // User authenticated
         try {
           const registrations = await registrationsAPI.getAll();
           if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
             if (!cancelled) {
               setWelcomeState("registered");
-              await loadReferralCode();
+              await loadReferralCode(registrations.data[0].id);
             }
             return;
           }
@@ -139,10 +134,10 @@ export default function Welcome() {
       }
     };
 
-    async function loadReferralCode() {
+    async function loadReferralCode(regId: string) {
       try {
-        // TODO Note: referralsAPI endpoint needs to be added for getting user's referral code
-        if (!cancelled) setReferralCode(t.loadFailed);
+        const refCode = await referralsAPI.getReferralLink(regId);
+        if (!cancelled) setReferralCode(refCode.data.referralCode);
       } catch (error) {
         console.error("Failed to load referral code", error);
         if (!cancelled) setReferralCode(t.loadFailed);
@@ -174,7 +169,8 @@ export default function Welcome() {
     if (!referralCode || referralCode === t.loading || referralCode === t.loadFailed) return;
     try {
       await navigator.clipboard.writeText(referralCode);
-      alert(t.copiedToClipboard);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy referral code", error);
     }
@@ -182,9 +178,8 @@ export default function Welcome() {
 
   async function handleInvitationRegister() {
     if (typeof window === "undefined" || !invitationCode) return;
-    const params = new URLSearchParams();
-    params.set("invite", invitationCode);
-    router.push(`/form/?${params.toString()}`);
+    // Invitation code is already saved in localStorage, just redirect
+    router.push('/');
   };
 
   useEffect(() => {
@@ -247,13 +242,14 @@ export default function Welcome() {
               style={{
                 textAlign: 'center',
                 flex: 1,
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                marginRight: '0.5rem'
               }}
             >
               {referralCode}
             </span>
-            <span style={{ opacity: 0.7 }}>
-              <Copy />
+            <span>
+              {copied ? <Check className="text-green-400" /> : <Copy />}
             </span>
           </button>
         </section>

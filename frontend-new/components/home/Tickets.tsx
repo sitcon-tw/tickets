@@ -35,6 +35,7 @@ export default function Tickets() {
     },
   });
 
+  const [eventId, setEventId] = useState<string>("");
   const [eventName, setEventName] = useState("SITCON 2025");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +53,7 @@ export default function Tickets() {
 
         if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
           const event = eventsData.data[0];
+          setEventId(event.id);
           setEventName(event.name || "SITCON 2025");
 
           const ticketsData = await eventsAPI.getTickets(event.id);
@@ -91,11 +93,15 @@ export default function Tickets() {
     setSelectedTicket(ticket);
 
     try {
-      sessionStorage.setItem("selectedTicketId", ticket.id);
-      sessionStorage.setItem("selectedTicketName", ticket.name);
-      sessionStorage.setItem("selectedEventName", eventName);
+      const formData = {
+        ticketId: ticket.id,
+        eventId: eventId,
+        invitationCode: localStorage.getItem("invitationCode") || undefined,
+        referralCode: localStorage.getItem("referralCode") || undefined,
+      };
+      localStorage.setItem("formData", JSON.stringify(formData));
     } catch (error) {
-      console.warn("Unable to access sessionStorage", error);
+      console.warn("Unable to access localStorage", error);
     }
 
     hiddenTicketRef.current = element;
@@ -139,28 +145,7 @@ export default function Tickets() {
 
   function handleConfirmRegistration() {
     if (!selectedTicket || typeof window === "undefined") return;
-
-    const params = new URLSearchParams();
-    params.set("ticket", selectedTicket.id);
-    params.set("ticketType", selectedTicket.name);
-    params.set("eventName", eventName);
-
-    try {
-      const invitationCode = sessionStorage.getItem("invitationCode");
-      const referralCode = sessionStorage.getItem("referralCode");
-
-      if (invitationCode) {
-        params.set("invite", invitationCode);
-      }
-
-      if (referralCode) {
-        params.set("ref", referralCode);
-      }
-    } catch (error) {
-      console.warn("Unable to read codes from sessionStorage", error);
-    }
-
-    router.push(`form?${params.toString()}`);
+    router.push('/form');
   };
 
   function closeConfirm() {
