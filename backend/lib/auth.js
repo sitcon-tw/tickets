@@ -29,5 +29,23 @@ export const auth = betterAuth({
 	],
 	emailAndPassword: {
 		enabled: false
+	},
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user) => {
+					// Automatically assign admin role to specific email
+					if (user.email === "hi@nelsongx.com") {
+						return {
+							data: {
+								...user,
+								role: "admin"
+							}
+						};
+					}
+					return { data: user };
+				}
+			}
+		}
 	}
 });
