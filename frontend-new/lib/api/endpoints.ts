@@ -36,8 +36,8 @@ export const authAPI = {
 
 // Events - Public
 export const eventsAPI = {
-  getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => 
-    apiClient.get<ApiResponse<Event[]>>('/api/events', { params }),
+  getAll: (params?: { isActive?: boolean; upcoming?: boolean }) =>
+    apiClient.get<ApiResponse<Event[]>>('/api/events', params),
   
   getInfo: (id: string) => 
     apiClient.get<ApiResponse<EventInfo>>(`/api/events/${id}/info`),
@@ -92,10 +92,8 @@ export const invitationCodesAPI = {
   verify: (data: { code: string; ticketId: string }) => 
     apiClient.post<ApiResponse<InvitationCodeVerification>>('/api/invitation-codes/verify', data),
   
-  getInfo: (code: string, ticketId: string) => 
-    apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/invitation-codes/${code}/info`, { 
-      params: { ticketId } 
-    }),
+  getInfo: (code: string, ticketId: string) =>
+    apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/invitation-codes/${code}/info`, { ticketId }),
 };
 
 // Admin - Analytics
@@ -106,14 +104,14 @@ export const adminAnalyticsAPI = {
   getReferralSources: () => 
     apiClient.get('/api/admin/referral-sources'),
   
-  getRegistrationTrends: (params?: { period?: 'daily' | 'weekly' | 'monthly'; eventId?: string }) => 
-    apiClient.get<ApiResponse<RegistrationTrend[]>>('/api/admin/registration-trends', { params }),
+  getRegistrationTrends: (params?: { period?: 'daily' | 'weekly' | 'monthly'; eventId?: string }) =>
+    apiClient.get<ApiResponse<RegistrationTrend[]>>('/api/admin/registration-trends', params),
 };
 
 // Admin - Users
 export const adminUsersAPI = {
-  getAll: (params?: { role?: 'admin' | 'viewer'; isActive?: boolean }) => 
-    apiClient.get<ApiResponse<User[]>>('/api/admin/users', { params }),
+  getAll: (params?: { role?: 'admin' | 'viewer'; isActive?: boolean }) =>
+    apiClient.get<ApiResponse<User[]>>('/api/admin/users', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<User>>(`/api/admin/users/${id}`),
@@ -124,8 +122,8 @@ export const adminUsersAPI = {
 
 // Admin - Events
 export const adminEventsAPI = {
-  getAll: (params?: { isActive?: boolean }) => 
-    apiClient.get<ApiResponse<Event[]>>('/api/admin/events', { params }),
+  getAll: (params?: { isActive?: boolean }) =>
+    apiClient.get<ApiResponse<Event[]>>('/api/admin/events', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<Event>>(`/api/admin/events/${id}`),
@@ -147,8 +145,8 @@ export const adminEventsAPI = {
 
 // Admin - Tickets
 export const adminTicketsAPI = {
-  getAll: (params?: { eventId?: string; isActive?: boolean }) => 
-    apiClient.get<ApiResponse<Ticket[]>>('/api/admin/tickets', { params }),
+  getAll: (params?: { eventId?: string; isActive?: boolean }) =>
+    apiClient.get<ApiResponse<Ticket[]>>('/api/admin/tickets', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`),
@@ -176,8 +174,8 @@ export const adminTicketsAPI = {
 
 // Admin - Ticket Form Fields
 export const adminTicketFormFieldsAPI = {
-  getAll: (params?: { ticketId?: string }) => 
-    apiClient.get<ApiResponse<TicketFormField[]>>('/api/admin/ticket-form-fields', { params }),
+  getAll: (params?: { ticketId?: string }) =>
+    apiClient.get<ApiResponse<TicketFormField[]>>('/api/admin/ticket-form-fields', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<TicketFormField>>(`/api/admin/ticket-form-fields/${id}`),
@@ -212,7 +210,7 @@ export const adminRegistrationsAPI = {
     eventId?: string;
     status?: 'pending' | 'confirmed' | 'cancelled';
     userId?: string;
-  }) => apiClient.get<ApiResponse<Registration[]>>('/api/admin/registrations', { params }),
+  }) => apiClient.get<ApiResponse<Registration[]>>('/api/admin/registrations', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<Registration>>(`/api/admin/registrations/${id}`),
@@ -227,13 +225,13 @@ export const adminRegistrationsAPI = {
     eventId?: string;
     status?: 'confirmed' | 'cancelled' | 'pending';
     format?: 'csv' | 'excel';
-  }) => apiClient.get('/api/admin/registrations/export', { params }),
+  }) => apiClient.get('/api/admin/registrations/export', params),
 };
 
 // Admin - Invitation Codes
 export const adminInvitationCodesAPI = {
-  getAll: (params?: { ticketId?: string; isActive?: boolean }) => 
-    apiClient.get<ApiResponse<InvitationCodeInfo[]>>('/api/admin/invitation-codes', { params }),
+  getAll: (params?: { ticketId?: string; isActive?: boolean }) =>
+    apiClient.get<ApiResponse<InvitationCodeInfo[]>>('/api/admin/invitation-codes', params),
   
   getById: (id: string) => 
     apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`),
@@ -291,7 +289,7 @@ export const adminEmailCampaignsAPI = {
     eventId?: string;
     page?: number;
     limit?: number;
-  }) => apiClient.get<ApiResponse<EmailCampaign[]>>('/api/admin/email-campaigns', { params }),
+  }) => apiClient.get<ApiResponse<EmailCampaign[]>>('/api/admin/email-campaigns', params),
   
   create: (data: {
     name: string;

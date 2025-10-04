@@ -5,7 +5,6 @@ import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
-import { initializeAdminPage } from "@/lib/admin";
 
 export default function IntroPage() {
   const locale = useLocale();
@@ -30,10 +29,6 @@ export default function IntroPage() {
   });
 
   useEffect(() => {
-    const init = async () => {
-      await initializeAdminPage();
-    };
-    init();
 
     // Generate GitHub links
     const items = ["intro", "faq", "terms"];

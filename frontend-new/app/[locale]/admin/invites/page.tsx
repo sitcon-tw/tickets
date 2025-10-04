@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { invitationCodes as invitationCodesAPI, initializeAdminPage } from "@/lib/admin";
+import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 
 type InviteCode = {
   id: string;
@@ -32,6 +33,7 @@ export default function InvitesPage() {
   const [showModal, setShowModal] = useState(false);
   const [showCodesModal, setShowCodesModal] = useState(false);
   const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -57,11 +59,11 @@ export default function InvitesPage() {
   const loadInvitationCodes = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await invitationCodesAPI.list({ limit: 500 });
+      const response = await adminInvitationCodesAPI.getAll();
       if (response.success) {
         const codesByType: Record<string, InviteType> = {};
-        (response.data || []).forEach((code: any) => {
-          const typeName = code.type || 'Default';
+        (response.data || []).forEach((code: InvitationCodeInfo) => {
+          const typeName = code.name || 'Default';
           if (!codesByType[typeName]) {
             codesByType[typeName] = {
               id: typeName,
@@ -75,7 +77,7 @@ export default function InvitesPage() {
             code: code.code,
             usedCount: code.usedCount || 0,
             usageLimit: code.usageLimit || 1,
-            usedBy: code.usedBy,
+            usedBy: '',
             active: code.isActive !== false
           });
         });
@@ -89,14 +91,21 @@ export default function InvitesPage() {
     }
   }, []);
 
+  const loadTickets = useCallback(async () => {
+    try {
+      const response = await adminTicketsAPI.getAll();
+      if (response.success) {
+        setTickets(response.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load tickets:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    const init = async () => {
-      const isAuthorized = await initializeAdminPage();
-      if (!isAuthorized) return;
-      await loadInvitationCodes();
-    };
-    init();
-  }, [loadInvitationCodes]);
+    loadInvitationCodes();
+    loadTickets();
+  }, [loadInvitationCodes, loadTickets]);
 
   useEffect(() => {
     const q = searchTerm.toLowerCase();
@@ -111,15 +120,22 @@ export default function InvitesPage() {
   const createInvitationCodes = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const ticketId = formData.get('ticketId') as string;
+
+    if (!ticketId) {
+      alert('請選擇票種');
+      return;
+    }
+
     const data = {
-      type: formData.get('name') as string,
+      ticketId,
+      prefix: formData.get('name') as string,
       count: parseInt(formData.get('amount') as string),
       usageLimit: 1,
-      expiresAt: null
     };
 
     try {
-      await invitationCodesAPI.bulkCreate(data);
+      await adminInvitationCodesAPI.bulkCreate(data);
       await loadInvitationCodes();
       setShowModal(false);
     } catch (error: any) {
@@ -343,6 +359,35 @@ export default function InvitesPage() {
                   gap: "0.85rem"
                 }}
               >
+                <label
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.3rem",
+                    fontSize: "0.75rem"
+                  }}
+                >
+                  票種
+                  <select
+                    name="ticketId"
+                    required
+                    style={{
+                      background: "#111",
+                      border: "1px solid #333",
+                      color: "#eee",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      fontSize: "0.8rem"
+                    }}
+                  >
+                    <option value="">請選擇票種</option>
+                    {tickets.map(ticket => (
+                      <option key={ticket.id} value={ticket.id}>
+                        {ticket.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label
                   style={{
                     display: "flex",

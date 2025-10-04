@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { formFields as formFieldsAPI, events as eventsAPI, tickets as ticketsAPI, initializeAdminPage } from "@/lib/admin";
+import { adminTicketFormFieldsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import type { TicketFormField, Ticket } from "@/lib/types/api";
 
 type ShowIf = {
   sourceId: string;
@@ -23,54 +25,75 @@ type Question = {
 
 export default function FormsPage() {
   const locale = useLocale();
+  const searchParams = useSearchParams();
 
-  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
-  const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
+  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
+    ticketLabel: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket" },
+    backToTickets: { "zh-Hant": "返回票種列表", "zh-Hans": "返回票种列表", en: "Back to Tickets" },
+    noTicket: { "zh-Hant": "未指定票種", "zh-Hans": "未指定票种", en: "No ticket specified" },
     addQuestion: { "zh-Hant": "新增問題", "zh-Hans": "新增问题", en: "Add Question" },
     save: { "zh-Hant": "儲存表單", "zh-Hans": "保存表单", en: "Save Form" }
   });
 
-  // Load event and ticket data
-  const loadEventAndTicket = useCallback(async () => {
-    try {
-      const eventsResponse = await eventsAPI.list();
-      if (eventsResponse.success && eventsResponse.data && eventsResponse.data.length > 0) {
-        setCurrentEventId(eventsResponse.data[0].id);
+  // Load ticket data from URL param
+  const loadTicket = useCallback(async () => {
+    const ticketId = searchParams.get('ticket');
 
-        const ticketsResponse = await ticketsAPI.list(eventsResponse.data[0].id);
-        if (ticketsResponse.success && ticketsResponse.data && ticketsResponse.data.length > 0) {
-          setCurrentTicketId(ticketsResponse.data[0].id);
-        }
+    if (!ticketId) {
+      console.error('No ticket ID provided');
+      return;
+    }
+
+    try {
+      const response = await adminTicketsAPI.getById(ticketId);
+      if (response.success && response.data) {
+        setCurrentTicket(response.data);
       }
     } catch (error) {
-      console.error('Failed to load event and ticket:', error);
-      throw error;
+      console.error('Failed to load ticket:', error);
     }
-  }, []);
+  }, [searchParams]);
 
   // Load form fields from backend
   const loadFormFields = useCallback(async () => {
-    if (isLoading || !currentTicketId) return;
+    if (!currentTicket?.id) return;
 
     setIsLoading(true);
 
     try {
-      const response = await formFieldsAPI.list(currentTicketId);
+      const response = await adminTicketFormFieldsAPI.getAll({ ticketId: currentTicket.id });
 
       if (response.success) {
-        setQuestions((response.data || []).map((field: any) => ({
-          id: field.id,
-          label: field.description || field.name,
-          type: field.type,
-          required: field.required || false,
-          help: field.helpText || '',
-          options: field.values ? JSON.parse(field.values) : undefined
-        })));
+        setQuestions((response.data || []).map((field: TicketFormField) => {
+          let options: string[] | undefined = undefined;
+
+          // Try to parse values as JSON array
+          if (field.values) {
+            try {
+              const parsed = JSON.parse(field.values);
+              if (Array.isArray(parsed)) {
+                options = parsed;
+              }
+            } catch (e) {
+              // If parsing fails, treat it as a single value or ignore
+              console.warn('Failed to parse field values as JSON:', field.values);
+            }
+          }
+
+          return {
+            id: field.id,
+            label: field.description || field.name,
+            type: field.type,
+            required: field.required || false,
+            help: field.helpText || '',
+            options
+          };
+        }));
       } else {
         throw new Error(response.message || 'Failed to load form fields');
       }
@@ -80,7 +103,7 @@ export default function FormsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentTicketId, isLoading]);
+  }, [currentTicket?.id]);
 
   // Load demo data (fallback)
   const loadDemoData = () => {
@@ -97,7 +120,7 @@ export default function FormsPage() {
 
   // Save form to backend
   const saveForm = async () => {
-    if (!currentTicketId) {
+    if (!currentTicket?.id) {
       alert('無法保存：未找到票種');
       return;
     }
@@ -107,20 +130,30 @@ export default function FormsPage() {
         id: q.id.startsWith('temp-') ? undefined : q.id,
         name: q.label.toLowerCase().replace(/\s+/g, '_'),
         description: q.label,
-        type: q.type,
+        type: q.type as 'text' | 'textarea' | 'select' | 'checkbox' | 'radio',
         required: q.required,
         helpText: q.help,
-        values: q.options ? JSON.stringify(q.options) : null,
+        values: q.options ? JSON.stringify(q.options) : undefined,
         order: index
       }));
 
       for (const fieldData of formFieldsData) {
-        const data = { ...fieldData, ticketId: currentTicketId };
+        const data = {
+          ticketId: currentTicket.id,
+          order: fieldData.order,
+          type: fieldData.type,
+          name: fieldData.name,
+          description: fieldData.description,
+          placeholder: '',
+          required: fieldData.required,
+          validater: '',
+          values: fieldData.values,
+        };
 
         if (fieldData.id) {
-          await formFieldsAPI.update(fieldData.id, data);
+          await adminTicketFormFieldsAPI.update(fieldData.id, data);
         } else {
-          await formFieldsAPI.create(data);
+          await adminTicketFormFieldsAPI.create(data);
         }
       }
 
@@ -133,23 +166,14 @@ export default function FormsPage() {
 
   // Initialize page
   useEffect(() => {
-    const init = async () => {
-      const isAuthorized = await initializeAdminPage();
-      if (!isAuthorized) return;
-
-      await loadEventAndTicket();
-    };
-
-    init();
-  }, [loadEventAndTicket]);
+    loadTicket();
+  }, [loadTicket]);
 
   useEffect(() => {
-    if (currentTicketId) {
+    if (currentTicket?.id) {
       loadFormFields();
-    } else {
-      loadDemoData();
     }
-  }, [currentTicketId, loadFormFields]);
+  }, [currentTicket?.id, loadFormFields]);
 
   const addQuestion = () => {
     setQuestions([...questions, {
@@ -175,11 +199,57 @@ export default function FormsPage() {
     setQuestions(newQuestions);
   };
 
+  if (!searchParams.get('ticket')) {
+    return (
+      <>
+        <AdminNav />
+        <main>
+          <h1>{t.title}</h1>
+          <p style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
+            {t.noTicket}
+          </p>
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <button
+              className="button"
+              onClick={() => window.location.href = `/${locale}/admin/tickets`}
+            >
+              {t.backToTickets}
+            </button>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <AdminNav />
       <main>
-        <h1>{t.title}</h1>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <button
+            className="button"
+            onClick={() => window.location.href = `/${locale}/admin/tickets`}
+            style={{ marginBottom: '1rem' }}
+          >
+            ← {t.backToTickets}
+          </button>
+          <h1>{t.title}</h1>
+          {currentTicket && (
+            <div style={{
+              padding: '1rem',
+              background: 'var(--color-gray-800)',
+              borderRadius: '8px',
+              marginTop: '1rem'
+            }}>
+              <strong>{t.ticketLabel}:</strong> {currentTicket.name}
+              {currentTicket.description && (
+                <div style={{ marginTop: '0.5rem', opacity: 0.8, fontSize: '0.9rem' }}>
+                  {currentTicket.description}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div id="form-editor" style={{
           maxWidth: '960px',
           margin: '1rem auto 4rem'

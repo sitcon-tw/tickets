@@ -8,7 +8,6 @@ import Link from "next/link";
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
   { href: "/admin/tickets/", i18nKey: "ticketTypes" },
-  { href: "/admin/forms/", i18nKey: "forms" },
   { href: "/admin/invites/", i18nKey: "invitationCodes" },
   { href: "/admin/registrations/", i18nKey: "registrations" },
   { href: "/admin/intro/", i18nKey: "editIntro" }

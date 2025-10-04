@@ -4,23 +4,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { analytics, initializeAdminPage } from "@/lib/admin";
+import { adminAnalyticsAPI } from "@/lib/api/endpoints";
+import type { DashboardData } from "@/lib/types/api";
 import { Chart, registerables, ChartConfiguration } from 'chart.js';
 
 // Register Chart.js components
 if (typeof window !== 'undefined') {
   Chart.register(...registerables);
 }
-
-type DashboardData = {
-  totalTickets?: number;
-  soldTickets?: number;
-  remainingTickets?: number;
-  totalRegistrations?: number;
-  confirmedRegistrations?: number;
-  pendingRegistrations?: number;
-  ticketSales?: Record<string, any>;
-};
 
 export default function AdminDashboard() {
   const locale = useLocale();
@@ -64,8 +55,8 @@ export default function AdminDashboard() {
   // Initialize dashboard
   const initializeDashboard = useCallback(async () => {
     try {
-      const response = await analytics.getDashboard();
-      if (response.success) {
+      const response = await adminAnalyticsAPI.getDashboard();
+      if (response.success && response.data) {
         setDashboardData(response.data);
       } else {
         console.error('Failed to load dashboard data:', response.message);
@@ -294,9 +285,9 @@ export default function AdminDashboard() {
     };
   }, [loading, initCharts]);
 
-  const totalTickets = dashboardData?.totalTickets || 500;
-  const soldTickets = dashboardData?.soldTickets || 347;
-  const remainingTickets = dashboardData?.remainingTickets || 153;
+  const totalTickets = dashboardData?.totalRegistrations || 0;
+  const soldTickets = dashboardData?.confirmedRegistrations || 0;
+  const remainingTickets = dashboardData?.pendingRegistrations || 0;
   const salesRate = totalTickets > 0 ? ((soldTickets / totalTickets) * 100).toFixed(1) : '0';
 
   const statCardStyle: React.CSSProperties = {

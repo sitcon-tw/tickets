@@ -4,18 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { registrations as registrationsAPI, initializeAdminPage } from "@/lib/admin";
-
-type Registration = {
-  id: string;
-  email?: string;
-  formData?: any;
-  status: string;
-  createdAt?: string;
-  ticket?: { name: string };
-  event?: { name: string };
-  tags?: string[];
-};
+import { adminRegistrationsAPI } from "@/lib/api/endpoints";
+import type { Registration } from "@/lib/types/api";
 
 export default function RegistrationsPage() {
   const locale = useLocale();
@@ -56,10 +46,9 @@ export default function RegistrationsPage() {
     setIsLoading(true);
     try {
       const params: any = { limit: 100 };
-      if (statusFilter) params.status = statusFilter;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (statusFilter) params.status = statusFilter as 'pending' | 'confirmed' | 'cancelled';
 
-      const response = await registrationsAPI.list(params);
+      const response = await adminRegistrationsAPI.getAll(params);
       if (response.success) {
         setRegistrations(response.data || []);
       }
@@ -68,15 +57,10 @@ export default function RegistrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter]);
 
   useEffect(() => {
-    const init = async () => {
-      const isAuthorized = await initializeAdminPage();
-      if (!isAuthorized) return;
-      await loadRegistrations();
-    };
-    init();
+    loadRegistrations();
   }, [loadRegistrations]);
 
   useEffect(() => {
@@ -94,10 +78,10 @@ export default function RegistrationsPage() {
 
   const syncToSheets = async () => {
     try {
-      await registrationsAPI.export({ format: 'sheets' });
-      alert('Successfully synced to Google Sheets!');
+      await adminRegistrationsAPI.export({ format: 'excel' });
+      alert('Successfully exported data!');
     } catch (error: any) {
-      alert('Sync failed: ' + error.message);
+      alert('Export failed: ' + error.message);
     }
   };
 
