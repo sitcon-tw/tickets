@@ -38,7 +38,6 @@ export default function Tickets() {
   });
 
   const [eventId, setEventId] = useState<string>("");
-  const [eventName, setEventName] = useState("SITCON 2025");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -57,7 +56,6 @@ export default function Tickets() {
         if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
           const event = eventsData.data[0];
           setEventId(event.id);
-          setEventName(event.name || "SITCON 2025");
 
           const ticketsData = await eventsAPI.getTickets(event.id);
 
@@ -186,7 +184,7 @@ export default function Tickets() {
           </div>
         ) : null}
         {!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-        {tickets.map((ticket, index) => (
+        {tickets.map((ticket) => (
           <div
             key={ticket.id}
             className="ticket"

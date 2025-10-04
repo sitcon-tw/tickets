@@ -6,9 +6,6 @@ import type {
   Registration,
   InvitationCode,
   EmailCampaign,
-  DashboardData,
-  RegistrationTrend,
-  TicketAnalytics,
   TicketFormFieldReorder
 } from './types/api';
 
