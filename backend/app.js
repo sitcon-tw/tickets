@@ -173,7 +173,7 @@ const port = process.env.PORT || 3000;
 // 	process.exit(1);
 // }
 
-fastify.listen({ port }, (err, address) => {
+fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 	if (err) {
 		fastify.log.error(err);
 		process.exit(1);
