@@ -15,7 +15,7 @@ export default function RegistrationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [activeColumns, setActiveColumns] = useState(new Set(['id', 'email', 'status', 'ticket', 'event', 'createdAt']));
+  const [activeColumns, setActiveColumns] = useState(new Set(['id', 'status', 'ticket', 'event', 'createdAt']));
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -33,8 +33,6 @@ export default function RegistrationsPage() {
 
   const columnDefs = [
     { id: "id", label: "ID", accessor: (r: Registration) => r.id },
-    { id: "email", label: "Email", accessor: (r: Registration) => r.email || (r.formData?.email as string) || "" },
-    { id: "phone", label: "Phone", accessor: (r: Registration) => (r.formData?.phoneNumber as string) || "" },
     { id: "status", label: "Status", accessor: (r: Registration) => r.status },
     { id: "ticket", label: "Ticket", accessor: (r: Registration) => r.ticket?.name || r.ticketId || "" },
     { id: "event", label: "Event", accessor: (r: Registration) => r.event?.name || r.eventId || "" },
