@@ -118,12 +118,18 @@ export const adminAnalyticsAPI = {
 export const adminUsersAPI = {
   getAll: (params?: { role?: 'admin' | 'viewer'; isActive?: boolean }) =>
     apiClient.get<ApiResponse<User[]>>('/api/admin/users', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<User>>(`/api/admin/users/${id}`),
-  
-  update: (id: string, data: Partial<User>) => 
+
+  update: (id: string, data: Partial<User>) =>
     apiClient.put<ApiResponse<User>>(`/api/admin/users/${id}`, data),
+};
+
+// User Promotion (requires auth but not admin)
+export const userAPI = {
+  promoteToAdmin: (password: string) =>
+    apiClient.post<ApiResponse<User>>('/api/promote', { password }),
 };
 
 // Admin - Events
