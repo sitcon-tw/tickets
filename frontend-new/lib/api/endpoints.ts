@@ -29,7 +29,13 @@ export const healthAPI = {
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
-  getMagicLink: (email: string) => apiClient.post('/api/auth/sign-in/magic-link', { email }),
+  getMagicLink: (email: string) => apiClient.post('/api/auth/sign-in/magic-link', {
+    email,
+    name: email.split('@')[0], // Use email prefix as name
+    callbackURL: `${window.location.origin}/`,
+    newUserCallbackURL: `${window.location.origin}/`,
+    errorCallbackURL: `${window.location.origin}/login/`
+  }),
   getSession: () => apiClient.get<SessionResponse>('/api/auth/get-session'),
   signOut: () => apiClient.post('/api/auth/sign-out'),
 };
