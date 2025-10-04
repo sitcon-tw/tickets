@@ -84,13 +84,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 								price: true
 							}
 						},
-						invitationCode: {
-							select: {
-								id: true,
-								code: true
-							}
-						},
-						referralCode: {
+						referral: {
 							select: {
 								id: true,
 								code: true
@@ -156,18 +150,10 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 								price: true
 							}
 						},
-						invitationCode: {
+						referral: {
 							select: {
 								id: true,
-								code: true,
-								description: true
-							}
-						},
-						referralCode: {
-							select: {
-								id: true,
-								code: true,
-								description: true
+								code: true
 							}
 						}
 					}

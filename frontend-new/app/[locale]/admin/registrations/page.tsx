@@ -33,11 +33,11 @@ export default function RegistrationsPage() {
 
   const columnDefs = [
     { id: "id", label: "ID", accessor: (r: Registration) => r.id },
-    { id: "email", label: "Email", accessor: (r: Registration) => (r.formData?.email as string) || "" },
+    { id: "email", label: "Email", accessor: (r: Registration) => r.email || (r.formData?.email as string) || "" },
     { id: "phone", label: "Phone", accessor: (r: Registration) => (r.formData?.phoneNumber as string) || "" },
     { id: "status", label: "Status", accessor: (r: Registration) => r.status },
-    { id: "ticket", label: "Ticket", accessor: (r: Registration) => r.ticket?.name || "" },
-    { id: "event", label: "Event", accessor: (r: Registration) => r.event?.name || "" },
+    { id: "ticket", label: "Ticket", accessor: (r: Registration) => r.ticket?.name || r.ticketId || "" },
+    { id: "event", label: "Event", accessor: (r: Registration) => r.event?.name || r.eventId || "" },
     { id: "createdAt", label: "Created", accessor: (r: Registration) => r.createdAt ? new Date(r.createdAt).toLocaleString() : "" },
     { id: "tags", label: "Tags", accessor: (r: Registration) => "" }
   ];
