@@ -165,13 +165,13 @@ await fastify.register(routes);
 
 const port = process.env.PORT || 3000;
 
-// Initialize database with default data
-try {
-	await initializeDatabase();
-} catch (error) {
-	fastify.log.error('Failed to initialize database:', error);
-	process.exit(1);
-}
+// // Initialize database with default data
+// try {
+// 	await initializeDatabase();
+// } catch (error) {
+// 	fastify.log.error('Failed to initialize database:', error);
+// 	process.exit(1);
+// }
 
 fastify.listen({ port }, (err, address) => {
 	if (err) {
