@@ -109,7 +109,6 @@ fastify.all(
 		}
 	},
 	async (request, reply) => {
-		console.log(`Auth request: ${request.method} ${request.url}`);
 		try {
 			const protocol = request.headers["x-forwarded-proto"] || "http";
 			const host = request.headers.host;
@@ -117,9 +116,6 @@ fastify.all(
 
 			let body = undefined;
 			if (request.method !== "GET" && request.method !== "HEAD") {
-				console.log("Content-Type:", request.headers["content-type"]);
-				console.log("Request body:", request.body);
-
 				if (request.headers["content-type"]?.includes("application/json")) {
 					body = JSON.stringify(request.body);
 				} else {
@@ -129,7 +125,6 @@ fastify.all(
 					}
 					body = Buffer.concat(chunks).toString();
 				}
-				console.log("Processed body:", body);
 			}
 
 			const webRequest = new Request(url, {
@@ -142,19 +137,17 @@ fastify.all(
 
 			reply.code(response.status);
 
+			// Set headers, modifying SameSite=Lax to SameSite=None for cross-domain cookies
 			for (const [key, value] of response.headers) {
-				// Modify set-cookie headers to use SameSite=None for cross-domain
 				if (key.toLowerCase() === 'set-cookie') {
-					const modifiedCookie = value.replace(/SameSite=Lax/gi, 'SameSite=None');
-					reply.header(key, modifiedCookie);
+					reply.header(key, value.replace(/SameSite=Lax/gi, 'SameSite=None'));
 				} else {
 					reply.header(key, value);
 				}
 			}
 
 			if (response.body) {
-				const text = await response.text();
-				return text;
+				return await response.text();
 			}
 
 			return "";

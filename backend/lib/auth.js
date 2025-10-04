@@ -19,11 +19,6 @@ export const auth = betterAuth({
 			maxAge: 60 * 60 * 24 * 30 // 30 days
 		}
 	},
-	advanced: {
-		crossSubDomainCookies: {
-			enabled: true
-		}
-	},
 	plugins: [
 		magicLink({
 			expiresIn: 600,
