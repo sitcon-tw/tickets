@@ -7,7 +7,7 @@
 		"#*": "./*"
 	},
 	"scripts": {
-		"start": "node app.js",
+		"start": "prisma db push --accept-data-loss && node app.js",
 		"dev": "nodemon app.js",
 		"postinstall": "prisma generate"
 	},
