@@ -109,7 +109,7 @@ export interface TicketFormField {
   id: string;
   ticketId: string;
   order: number;
-  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+  type: 'text' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio';
   validater?: string;
   name: string;
   description?: string;
@@ -117,6 +117,7 @@ export interface TicketFormField {
   required: boolean;
   values?: string; // JSON array string
   options?: unknown[]; // Parsed options for frontend use
+  helpText?: string;
 }
 
 export interface TicketFormFieldReorder {
