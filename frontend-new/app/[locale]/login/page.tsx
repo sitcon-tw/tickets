@@ -111,7 +111,6 @@ export default function Login() {
 								opacity: isLoading ? 0.7 : 1,
 								cursor: isLoading ? 'not-allowed' : 'pointer',
 								transition: 'opacity 0.2s',
-								display: 'inline-flex',
 								alignItems: 'center',
 								gap: '0.5rem'
 							}}
