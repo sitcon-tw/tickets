@@ -5,11 +5,13 @@ import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { Copy } from "lucide-react";
+import { useRouter } from "@/i18n/navigation";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
 
 export default function Welcome() {
   const locale = useLocale();
+  const router = useRouter();
 
   const t = getTranslations(locale, {
     description: {
@@ -182,7 +184,7 @@ export default function Welcome() {
     if (typeof window === "undefined" || !invitationCode) return;
     const params = new URLSearchParams();
     params.set("invite", invitationCode);
-    window.location.href = `/form/?${params.toString()}`;
+    router.push(`/form/?${params.toString()}`);
   };
 
   useEffect(() => {

@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
-import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
+import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 
 export default function Tickets() {
   const locale = useLocale();
   const router = useRouter();
-  const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
   const t = getTranslations(locale, {
     description: {
@@ -161,7 +160,7 @@ export default function Tickets() {
       console.warn("Unable to read codes from sessionStorage", error);
     }
 
-    router.push(linkBuilder(`form?${params.toString()}`, locale));
+    router.push(`form?${params.toString()}`);
   };
 
   function closeConfirm() {
