@@ -28,7 +28,6 @@ export default function FormPage() {
 	const [eventId, setEventId] = useState<string | null>(null);
 	const [invitationCode, setInvitationCode] = useState<string | null>(null);
 	const [referralCode, setReferralCode] = useState<string | null>(null);
-	const [userEmail, setUserEmail] = useState<string>('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -134,9 +133,6 @@ export default function FormPage() {
 					router.push('/login/');
 					return;
 				}
-
-				const email = session.user.email || '';
-				setUserEmail(email);
 
 				// Load form data from localStorage
 				const storedData = localStorage.getItem('formData');
