@@ -73,24 +73,13 @@ export default function EventsPage() {
     const startDateStr = formData.get('startDate') as string;
     const endDateStr = formData.get('endDate') as string;
 
-    const data: {
-      name: string;
-      description: string;
-      location: string;
-      startDate?: string;
-      endDate?: string;
-    } = {
+    const data = {
       name: formData.get('name') as string,
       description: formData.get('description') as string || '',
       location: formData.get('location') as string || '',
+      startDate: startDateStr ? new Date(startDateStr).toISOString() : new Date().toISOString(),
+      endDate: endDateStr ? new Date(endDateStr).toISOString() : new Date().toISOString(),
     };
-
-    if (startDateStr) {
-      data.startDate = new Date(startDateStr).toISOString();
-    }
-    if (endDateStr) {
-      data.endDate = new Date(endDateStr).toISOString();
-    }
 
     try {
       if (editingEvent) {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
-import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
-import Link from "next/link";
+import { getTranslations } from "@/i18n/helpers";
+import { useRouter } from "@/i18n/navigation";
+import { useRouter as defaultUseRouter } from "next/navigation";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
@@ -60,7 +61,8 @@ const styles = {
 
 export default function AdminNav() {
   const locale = useLocale();
-  const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
+  const router = useRouter();
+  const defaultRouter = defaultUseRouter();
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
@@ -160,12 +162,13 @@ export default function AdminNav() {
           {activityLinks.map(({ href, i18nKey }) => (
             <li key={href} style={styles.navItem}>
               <a
-                href={linkBuilder(href)}
+                onClick={() => router.push(href)}
                 onMouseEnter={() => setHoveredLink(href)}
                 onMouseLeave={() => setHoveredLink(null)}
                 style={{
                   textDecoration: hoveredLink === href ? 'underline' : 'none'
                 }}
+                className="cursor-pointer"
               >
                 {t[i18nKey]}
               </a>
@@ -177,7 +180,7 @@ export default function AdminNav() {
         <div style={styles.user}>{t.userPlaceholder}</div>
         <div style={styles.logout}>
           <a
-            href={linkBuilder("/admin/logout")}
+            onClick={() => router.push("/logout")}
             onMouseEnter={() => setHoveredLink('logout')}
             onMouseLeave={() => setHoveredLink(null)}
             style={{
@@ -187,47 +190,51 @@ export default function AdminNav() {
             {t.logout}
           </a>
           <span>・</span>
-          <Link
-            href="/"
+          <a
+            onClick={() => router.push("/")}
             onMouseEnter={() => setHoveredLink('home')}
             onMouseLeave={() => setHoveredLink(null)}
             style={{
               textDecoration: hoveredLink === 'home' ? 'underline' : 'none'
             }}
+            className="cursor-pointer"
           >
             {t.backHome}
-          </Link>
+          </a>
         </div>
         <div style={styles.logout}>
-          <Link
-            href={linkBuilder("", "zh-Hant")}
+          <a
+            onClick={() => defaultRouter.push("/zh-Hant")}
             onMouseEnter={() => setHoveredLink('zh-Hant')}
             onMouseLeave={() => setHoveredLink(null)}
             style={{
               textDecoration: hoveredLink === 'zh-Hant' ? 'underline' : 'none'
             }}
+            className="cursor-pointer"
           >
             繁
-          </Link>
+          </a>
           <span>・</span>
           <a
-            href={linkBuilder("", "zh-Hans")}
+            onClick={() => defaultRouter.push("/zh-Hans")}
             onMouseEnter={() => setHoveredLink('zh-Hans')}
             onMouseLeave={() => setHoveredLink(null)}
             style={{
               textDecoration: hoveredLink === 'zh-Hans' ? 'underline' : 'none'
             }}
+            className="cursor-pointer"
           >
             簡
           </a>
           <span>・</span>
           <a
-            href={linkBuilder("", "en")}
+            onClick={() => defaultRouter.push("/en")}
             onMouseEnter={() => setHoveredLink('en')}
             onMouseLeave={() => setHoveredLink(null)}
             style={{
               textDecoration: hoveredLink === 'en' ? 'underline' : 'none'
             }}
+            className="cursor-pointer"
           >
             EN
           </a>
