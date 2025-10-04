@@ -143,7 +143,13 @@ fastify.all(
 			reply.code(response.status);
 
 			for (const [key, value] of response.headers) {
-				reply.header(key, value);
+				// Modify set-cookie headers to use SameSite=None for cross-domain
+				if (key.toLowerCase() === 'set-cookie') {
+					const modifiedCookie = value.replace(/SameSite=Lax/gi, 'SameSite=None');
+					reply.header(key, modifiedCookie);
+				} else {
+					reply.header(key, value);
+				}
 			}
 
 			if (response.body) {
