@@ -2,41 +2,38 @@ import { CSSProperties } from 'react';
 
 export const formStyles: Record<string, CSSProperties> = {
   formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem'
+    marginBottom: '1rem'
   },
   label: {
-    fontWeight: 'bold',
-    display: 'block'
+    display: 'block',
+    marginBottom: '0.5rem'
   },
   input: {
-    padding: '0.75rem',
-    border: '2px solid #333',
+    width: '100%',
+    padding: '0.4rem 0.8rem',
+    border: '1px solid var(--color-gray-700)',
     borderRadius: '0.25rem',
-    fontSize: '1rem',
-    backgroundColor: '#222',
-    color: '#fff'
+    backgroundColor: 'transparent',
+    color: 'inherit',
+    fontFamily: 'inherit'
   },
   fieldset: {
-    border: '1px solid #333',
-    borderRadius: '0.25rem',
-    padding: '1rem',
-    backgroundColor: '#111'
+    border: 'none',
+    padding: 0,
+    margin: 0
   },
   legend: {
-    fontWeight: 'bold',
-    padding: '0 0.5rem'
+    display: 'block',
+    marginBottom: '0.5rem',
+    fontWeight: 'bold'
   },
   optionLabel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
-    margin: '0.5rem 0',
+    marginBottom: '0.5rem',
     fontWeight: 'normal'
   },
   optionInput: {
-    width: 'auto',
-    margin: 0
+    marginRight: '0.5rem'
   }
 };
