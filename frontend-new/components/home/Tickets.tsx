@@ -7,6 +7,8 @@ import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { useRouter } from "@/i18n/navigation";
+import Spinner from "@/components/Spinner";
+import PageSpinner from "@/components/PageSpinner";
 
 export default function Tickets() {
   const locale = useLocale();
@@ -41,6 +43,7 @@ export default function Tickets() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ticketAnimationRef = useRef<HTMLDivElement>(null);
   const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -143,8 +146,10 @@ export default function Tickets() {
     });
   };
 
-  function handleConfirmRegistration() {
-    if (!selectedTicket || typeof window === "undefined") return;
+  async function handleConfirmRegistration() {
+    if (!selectedTicket || typeof window === "undefined" || isSubmitting) return;
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for UX
     router.push('/form');
   };
 
@@ -165,9 +170,23 @@ export default function Tickets() {
   return (
     <>
       <div className="tickets-container">
-        {isLoading && tickets.length === 0 ? <p>Loading...</p> : null}
+        {isLoading && tickets.length === 0 ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+            padding: '3rem',
+            opacity: 0.7,
+            height: '500px'
+          }}>
+            <PageSpinner size={48} />
+            <p style={{ fontSize: '0.9rem' }}>Now Loading...</p>
+          </div>
+        ) : null}
         {!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-        {tickets.map((ticket) => (
+        {tickets.map((ticket, index) => (
           <div
             key={ticket.id}
             className="ticket"
@@ -214,7 +233,17 @@ export default function Tickets() {
         <a
           className="button"
           onClick={() => handleConfirmRegistration()}
+          style={{
+            opacity: isSubmitting ? 0.7 : 1,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            pointerEvents: isSubmitting ? 'none' : 'auto',
+            transition: 'opacity 0.2s',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
         >
+          {isSubmitting && <Spinner size="sm" color="currentColor" />}
           {t.confirm}
         </a>
       </Confirm>

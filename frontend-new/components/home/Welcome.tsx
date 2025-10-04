@@ -6,6 +6,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI, referralsAPI } from "@/lib/api/endpoints";
 import { Copy, Check } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import Spinner from "@/components/Spinner";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
 
@@ -65,9 +66,9 @@ export default function Welcome() {
       en: "Load failed"
     },
     promotionalText: {
-      "zh-Hant": "累積三人一起報名即可獲得一張柴柴簽名照。",
-      "zh-Hans": "累积三人一起报名即可获得一张柴柴签名照。",
-      en: "Register with three friends to get a Shiba Inu autograph photo."
+      "zh-Hant": "最後一個註冊的是gay",
+      "zh-Hans": "最後一個註冊的是gay",
+      en: "The last one who registered is gay!"
     },
     friend: {
       "zh-Hant": "朋友",
@@ -82,17 +83,14 @@ export default function Welcome() {
   const [referralParam, setReferralParam] = useState<string | null>(null);
   const [codeHovered, setCodeHovered] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const referral = urlParams.get("ref");
+    const referral = sessionStorage.getItem("referralCode");
     const invitation = urlParams.get("invite");
-
-    if (referral) {
-      localStorage.setItem("referralCode", referral);
-    }
 
     if (invitation) {
       localStorage.setItem("invitationCode", invitation);
@@ -177,8 +175,10 @@ export default function Welcome() {
   };
 
   async function handleInvitationRegister() {
-    if (typeof window === "undefined" || !invitationCode) return;
+    if (typeof window === "undefined" || !invitationCode || isRegistering) return;
+    setIsRegistering(true);
     // Invitation code is already saved in localStorage, just redirect
+    await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for UX
     router.push('/');
   };
 
@@ -194,6 +194,16 @@ export default function Welcome() {
             opacity: 0.1;
           }
         }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
       `;
       document.head.appendChild(style);
     }
@@ -207,7 +217,8 @@ export default function Welcome() {
             backgroundColor: 'var(--color-gray-800)',
             padding: '2rem',
             margin: '1rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            animation: 'fadeInUp 0.5s ease-out'
           }}
         >
           <h2
@@ -224,6 +235,7 @@ export default function Welcome() {
             onClick={handleCopy}
             onMouseEnter={() => setCodeHovered(true)}
             onMouseLeave={() => setCodeHovered(false)}
+            disabled={referralCode === t.loading || referralCode === t.loadFailed}
             style={{
               backgroundColor: codeHovered ? 'var(--color-gray-600)' : 'var(--color-gray-700)',
               padding: '0.5rem',
@@ -232,10 +244,11 @@ export default function Welcome() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
+              cursor: (referralCode === t.loading || referralCode === t.loadFailed) ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s, opacity 0.2s',
               border: 'none',
-              color: 'inherit'
+              color: 'inherit',
+              opacity: (referralCode === t.loading || referralCode === t.loadFailed) ? 0.7 : 1
             }}
           >
             <span
@@ -243,10 +256,19 @@ export default function Welcome() {
                 textAlign: 'center',
                 flex: 1,
                 fontWeight: 'bold',
-                marginRight: '0.5rem'
+                marginRight: '0.5rem',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
             >
-              {referralCode}
+              {referralCode === t.loading ? (
+                <>
+                  <Spinner size="sm" />
+                  {referralCode}
+                </>
+              ) : referralCode}
             </span>
             <span>
               {copied ? <Check className="text-green-400" /> : <Copy />}
@@ -261,7 +283,8 @@ export default function Welcome() {
             backgroundColor: 'var(--color-gray-800)',
             padding: '2rem',
             margin: '1rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            animation: 'fadeInUp 0.5s ease-out'
           }}
         >
           <h2
@@ -282,7 +305,8 @@ export default function Welcome() {
             backgroundColor: 'var(--color-gray-800)',
             padding: '2rem',
             margin: '1rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            animation: 'fadeInUp 0.5s ease-out'
           }}
         >
           <h2
@@ -296,11 +320,18 @@ export default function Welcome() {
           <button
             type="button"
             onClick={handleInvitationRegister}
+            disabled={isRegistering}
             style={{
               margin: '1rem auto 0',
-              display: 'inline-block'
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              opacity: isRegistering ? 0.7 : 1,
+              cursor: isRegistering ? 'not-allowed' : 'pointer',
+              transition: 'opacity 0.2s'
             }}
           >
+            {isRegistering && <Spinner size="sm" />}
             {t.registerNow}
           </button>
         </section>
@@ -312,7 +343,8 @@ export default function Welcome() {
             backgroundColor: 'var(--color-gray-800)',
             padding: '2rem',
             margin: '1rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            animation: 'fadeInUp 0.5s ease-out'
           }}
         >
           <h2

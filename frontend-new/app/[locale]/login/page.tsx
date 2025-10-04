@@ -5,10 +5,12 @@ import Nav from "@/components/Nav";
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from '@/lib/api/endpoints';
+import Spinner from "@/components/Spinner";
 
 export default function Login() {
 	const locale = useLocale();
 	const [viewState, setViewState] = useState<'login' | 'sent' | 'error'>('login');
+	const [isLoading, setIsLoading] = useState(false);
 
 	const t = getTranslations(locale, {
 		login: {
@@ -46,14 +48,17 @@ export default function Login() {
 	const login = async () => {
 		const emailInput = document.getElementById("email") as HTMLInputElement;
 		const email = emailInput?.value;
-		if (!email) return;
+		if (!email || isLoading) return;
 
+		setIsLoading(true);
 		try {
 			await authAPI.getMagicLink(email);
 			setViewState('sent');
 		} catch (error) {
 			console.error("Login error:", error);
 			setViewState('error');
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -95,16 +100,41 @@ export default function Login() {
 							padding: '0.5rem',
 							maxWidth: '100%'
 						}} />
-						<button id="submit-btn" className="button" type="submit" onClick={login} style={{
-							margin: '1rem auto'
-						}}>{t.continue}</button>
+						<button
+							id="submit-btn"
+							className="button"
+							type="submit"
+							onClick={login}
+							disabled={isLoading}
+							style={{
+								margin: '1rem auto',
+								opacity: isLoading ? 0.7 : 1,
+								cursor: isLoading ? 'not-allowed' : 'pointer',
+								transition: 'opacity 0.2s',
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: '0.5rem'
+							}}
+						>
+							{isLoading && <Spinner size="sm" />}
+							{t.continue}
+						</button>
 					</div>
 					<div style={viewState === 'sent' ? activeContainerStyle : containerStyle}>
 						<h2>{t.sent}</h2>
 						<p>{t.message}</p>
-						<button className="button" onClick={() => setViewState('login')} style={{
-							margin: '1rem auto'
-						}}>{t.retry}</button>
+						<button
+							className="button"
+							onClick={() => {
+								setViewState('login');
+								setIsLoading(false);
+							}}
+							style={{
+								margin: '1rem auto'
+							}}
+						>
+							{t.retry}
+						</button>
 					</div>
 					<div style={viewState === 'error' ? activeContainerStyle : containerStyle}>
 						<h2>{t.error}</h2>

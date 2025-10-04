@@ -9,6 +9,8 @@ import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
 import { FormField } from '@/components/form/FormField';
 import { formStyles } from '@/components/form/formStyles';
 import { TicketFormField } from '@/lib/types/api';
+import Spinner from "@/components/Spinner";
+import PageSpinner from "@/components/PageSpinner";
 
 type FormDataType = {
   [key: string]: string | boolean | string[];
@@ -17,7 +19,6 @@ type FormDataType = {
 export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
-	const [submitHover, setSubmitHover] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
@@ -27,6 +28,7 @@ export default function FormPage() {
 	const [invitationCode, setInvitationCode] = useState<string | null>(null);
 	const [referralCode, setReferralCode] = useState<string | null>(null);
 	const [userEmail, setUserEmail] = useState<string>('');
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -171,12 +173,15 @@ export default function FormPage() {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		if (!ticketId || !eventId) {
-			alert(t.incompleteFormAlert);
-			router.push('/');
+		if (!ticketId || !eventId || isSubmitting) {
+			if (!ticketId || !eventId) {
+				alert(t.incompleteFormAlert);
+				router.push('/');
+			}
 			return;
 		}
 
+		setIsSubmitting(true);
 		try {
 			const registrationData = {
 				eventId,
@@ -201,6 +206,7 @@ export default function FormPage() {
 		} catch (error) {
 			console.error('Registration error:', error);
 			alert(t.registrationFailedAlert + (error instanceof Error ? error.message : 'Unknown error'));
+			setIsSubmitting(false);
 		}
 	};
 
@@ -222,7 +228,18 @@ export default function FormPage() {
 					}}>{t.fillForm}</h1>
 
 					{loading && (
-						<div style={{ textAlign: 'center', padding: '2rem' }}>{t.loadingForm}</div>
+						<div style={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							gap: '1rem',
+							padding: '3rem',
+							opacity: 0.7
+						}}>
+							<PageSpinner size={48} />
+							<p>{t.loadingForm}</p>
+						</div>
 					)}
 
 					{error && (
@@ -280,21 +297,22 @@ export default function FormPage() {
 							<button
 								type="submit"
 								className="button"
-								onMouseEnter={() => setSubmitHover(true)}
-								onMouseLeave={() => setSubmitHover(false)}
+								disabled={isSubmitting}
 								style={{
-									padding: '1rem 2rem',
-									backgroundColor: submitHover ? '#005999' : '#007acc',
-									color: 'white',
-									border: 'none',
-									borderRadius: '0.25rem',
-									fontSize: '1.1rem',
-									fontWeight: 'bold',
-									cursor: 'pointer',
+									cursor: isSubmitting ? 'not-allowed' : 'pointer',
 									marginTop: '2rem',
-									alignSelf: 'center'
+									alignSelf: 'center',
+									opacity: isSubmitting ? 0.7 : 1,
+									transition: 'opacity 0.2s',
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: '0.5rem',
+									pointerEvents: isSubmitting ? 'none' : 'auto'
 								}}
-							>{t.submitRegistration}</button>
+							>
+								{isSubmitting && <Spinner size="sm" />}
+								{t.submitRegistration}
+							</button>
 						</form>
 					)}
 				</section>

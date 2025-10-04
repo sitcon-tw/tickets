@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLocale } from "next-intl";
 import { getTranslations, buildLocalizedLink } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
+import Spinner from "@/components/Spinner";
 
 type NavProps = {
   children?: ReactNode;
@@ -27,6 +28,7 @@ export default function Nav({ children }: NavProps) {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [session, setSession] = useState<SessionState>({ status: "loading" });
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const t = getTranslations(locale, {
     user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
@@ -75,6 +77,8 @@ export default function Nav({ children }: NavProps) {
   }, []);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
       await authAPI.signOut();
     } catch (error) {
@@ -185,16 +189,23 @@ export default function Nav({ children }: NavProps) {
                 onClick={handleLogout}
                 onMouseEnter={() => setHoveredLink('logout')}
                 onMouseLeave={() => setHoveredLink(null)}
+                disabled={isLoggingOut}
                 style={{
                   textDecoration: hoveredLink === 'logout' ? 'underline' : 'none',
                   border: 'none',
                   background: 'none',
                   color: 'inherit',
                   font: 'inherit',
-                  cursor: 'pointer',
-                  padding: 0
+                  cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+                  padding: 0,
+                  opacity: isLoggingOut ? 0.7 : 1,
+                  transition: 'opacity 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}
               >
+                {isLoggingOut && <Spinner size="sm" />}
                 {t.logout}
               </button>
             </div>
