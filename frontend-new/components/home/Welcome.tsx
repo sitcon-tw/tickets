@@ -8,7 +8,7 @@ import { Copy, Check } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
 
-type WelcomeState = "hidden" | "registered" | "referral" | "invitation" | "default";
+type WelcomeState = "hidden" | "registered" | "referral" | "default";
 
 export default function Welcome() {
   const locale = useLocale();
@@ -40,16 +40,6 @@ export default function Welcome() {
       "zh-Hans": "邀请你一起参加 SITCON！",
       en: "invites you to join SITCON!"
     },
-    inviteTicket: {
-      "zh-Hant": "你收到了一張講者邀請票！",
-      "zh-Hans": "你收到了一张讲者邀请票！",
-      en: "You received a speaker invitation!"
-    },
-    registerNow: {
-      "zh-Hant": "立即報名",
-      "zh-Hans": "立即报名",
-      en: "Register Now"
-    },
     selectTicket: {
       "zh-Hant": "請選擇你要的票種",
       "zh-Hans": "请选择你要的票种",
@@ -79,25 +69,17 @@ export default function Welcome() {
 
   const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
   const [referralCode, setReferralCode] = useState(t.loading);
-  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [referralParam, setReferralParam] = useState<string | null>(null);
   const [codeHovered, setCodeHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const referral = sessionStorage.getItem("referralCode");
-    const invitation = urlParams.get("invite");
-
-    if (invitation) {
-      localStorage.setItem("invitationCode", invitation);
-    }
 
     setReferralParam(referral);
-    setInvitationCode(invitation);
   }, []);
 
   useEffect(() => {
@@ -144,10 +126,6 @@ export default function Welcome() {
 
     function decideState(isAuthenticated: boolean) {
       if (cancelled) return;
-      if (invitationCode) {
-        setWelcomeState("invitation");
-        return;
-      }
       if (referralParam) {
         setWelcomeState("referral");
         return;
@@ -160,7 +138,7 @@ export default function Welcome() {
     return () => {
       cancelled = true;
     };
-  }, [invitationCode, referralParam, t.loadFailed]);
+  }, [referralParam, t.loadFailed]);
 
   async function handleCopy() {
     if (typeof window === "undefined") return;
@@ -172,14 +150,6 @@ export default function Welcome() {
     } catch (error) {
       console.error("Failed to copy referral code", error);
     }
-  };
-
-  async function handleInvitationRegister() {
-    if (typeof window === "undefined" || !invitationCode || isRegistering) return;
-    setIsRegistering(true);
-    // Invitation code is already saved in localStorage, just redirect
-    await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for UX
-    router.push('/');
   };
 
   useEffect(() => {
@@ -296,44 +266,6 @@ export default function Welcome() {
             <span>{referralParam || t.friend}</span> {t.referralWelcome}
           </h2>
           <p>{t.promotionalText}</p>
-        </section>
-      ) : null}
-
-      {welcomeState === "invitation" ? (
-        <section
-          style={{
-            backgroundColor: 'var(--color-gray-800)',
-            padding: '2rem',
-            margin: '1rem',
-            textAlign: 'center',
-            animation: 'fadeInUp 0.5s ease-out'
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '1.5rem',
-              marginBottom: '0.5rem'
-            }}
-          >
-            {t.inviteTicket}
-          </h2>
-          <button
-            type="button"
-            onClick={handleInvitationRegister}
-            disabled={isRegistering}
-            style={{
-              margin: '1rem auto 0',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              opacity: isRegistering ? 0.7 : 1,
-              cursor: isRegistering ? 'not-allowed' : 'pointer',
-              transition: 'opacity 0.2s'
-            }}
-          >
-            {isRegistering && <Spinner size="sm" />}
-            {t.registerNow}
-          </button>
         </section>
       ) : null}
 

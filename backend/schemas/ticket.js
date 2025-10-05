@@ -47,6 +47,10 @@ export const ticketProperties = {
 		type: 'boolean',
 		description: '是否啟用'
 	},
+	requireInviteCode: {
+		type: 'boolean',
+		description: '是否需要邀請碼'
+	},
 	createdAt: {
 		...dateTimeString,
 		description: '建立時間'
@@ -132,6 +136,10 @@ export const ticketUpdateBody = {
 		isActive: {
 			type: 'boolean',
 			description: '是否啟用'
+		},
+		requireInviteCode: {
+			type: 'boolean',
+			description: '是否需要邀請碼'
 		}
 	}
 };

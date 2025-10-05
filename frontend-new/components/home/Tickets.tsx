@@ -97,7 +97,6 @@ export default function Tickets() {
       const formData = {
         ticketId: ticket.id,
         eventId: eventId,
-        invitationCode: localStorage.getItem("invitationCode") || undefined,
         referralCode: localStorage.getItem("referralCode") || undefined,
       };
       localStorage.setItem("formData", JSON.stringify(formData));

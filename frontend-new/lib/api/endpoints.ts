@@ -59,6 +59,9 @@ export const eventsAPI = {
 
 // Tickets - Public
 export const ticketsAPI = {
+  getTicket: (id: string) =>
+    apiClient.get<ApiResponse<Ticket>>(`/api/tickets/${id}`),
+
   getFormFields: (id: string) =>
     apiClient.get<ApiResponse<TicketFormField[]>>(`/api/tickets/${id}/form-fields`),
 };

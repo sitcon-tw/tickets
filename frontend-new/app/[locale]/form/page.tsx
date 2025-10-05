@@ -26,8 +26,9 @@ export default function FormPage() {
 	const [formData, setFormData] = useState<FormDataType>({});
 	const [ticketId, setTicketId] = useState<string | null>(null);
 	const [eventId, setEventId] = useState<string | null>(null);
-	const [invitationCode, setInvitationCode] = useState<string | null>(null);
+	const [invitationCode, setInvitationCode] = useState<string>('');
 	const [referralCode, setReferralCode] = useState<string | null>(null);
+	const [requiresInviteCode, setRequiresInviteCode] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -145,8 +146,16 @@ export default function FormPage() {
 				const parsedData = JSON.parse(storedData);
 				setTicketId(parsedData.ticketId);
 				setEventId(parsedData.eventId);
-				setInvitationCode(parsedData.invitationCode || null);
 				setReferralCode(parsedData.referralCode || null);
+
+				// Load ticket info to check if it requires invite code
+				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
+				if (!ticketResponse.success) {
+					throw new Error('Failed to load ticket information');
+				}
+
+				const ticket = ticketResponse.data;
+				setRequiresInviteCode(ticket.requireInviteCode || false);
 
 				// Load form fields from ticket API
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
@@ -186,7 +195,7 @@ export default function FormPage() {
 				formData: {
 					...formData,
 				},
-				invitationCode: invitationCode || undefined,
+				invitationCode: invitationCode.trim() || undefined,
 				referralCode: referralCode || undefined
 			};
 
@@ -252,6 +261,25 @@ export default function FormPage() {
 							flexDirection: 'column',
 							gap: '1.5rem'
 						}}>
+							{/* Invitation code field - shown if ticket requires it */}
+							{requiresInviteCode && (
+								<div style={formStyles.formGroup}>
+									<label style={formStyles.label}>
+										{t.invitationCode}
+										<span style={{ color: 'red' }}> *</span>
+									</label>
+									<input
+										type="text"
+										name="invitationCode"
+										value={invitationCode}
+										onChange={(e) => setInvitationCode(e.target.value)}
+										required={requiresInviteCode}
+										placeholder={t.invitationCode}
+										style={formStyles.input}
+									/>
+								</div>
+							)}
+
 							{/* Dynamic form fields from API */}
 							{formFields.map((field, index) => (
 								<FormField
@@ -264,20 +292,7 @@ export default function FormPage() {
 								/>
 							))}
 
-							{/* Invitation and referral code fields */}
-							{invitationCode && (
-								<div style={formStyles.formGroup}>
-									<label style={formStyles.label}>{t.invitationCode}</label>
-									<input
-										type="text"
-										name="invitationCode"
-										value={invitationCode}
-										readOnly
-										style={formStyles.input}
-									/>
-								</div>
-							)}
-
+							{/* Referral code field - shown if present */}
 							{referralCode && (
 								<div style={formStyles.formGroup}>
 									<label style={formStyles.label}>{t.referralCode}</label>
