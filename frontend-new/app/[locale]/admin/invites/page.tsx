@@ -36,6 +36,7 @@ export default function InvitesPage() {
   const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
+  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -62,7 +63,16 @@ export default function InvitesPage() {
     optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
     ticketType: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Type" },
     pleaseSelectTicket: { "zh-Hant": "請選擇票種", "zh-Hans": "请选择票种", en: "Please Select Ticket" },
-    createSuccess: { "zh-Hant": "成功建立 {count} 個邀請碼！", "zh-Hans": "成功建立 {count} 个邀请码！", en: "Successfully created {count} invitation codes!" }
+    createSuccess: { "zh-Hant": "成功建立 {count} 個邀請碼！", "zh-Hans": "成功建立 {count} 个邀请码！", en: "Successfully created {count} invitation codes!" },
+    delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
+    confirmDelete: { "zh-Hant": "確定要刪除此邀請碼嗎？", "zh-Hans": "确定要删除此邀请码吗？", en: "Are you sure you want to delete this invitation code?" },
+    deleteSuccess: { "zh-Hant": "成功刪除邀請碼！", "zh-Hans": "成功删除邀请码！", en: "Successfully deleted invitation code!" },
+    bulkDelete: { "zh-Hant": "批次刪除", "zh-Hans": "批次删除", en: "Bulk Delete" },
+    confirmBulkDelete: { "zh-Hant": "確定要刪除 {count} 個邀請碼嗎？", "zh-Hans": "确定要删除 {count} 个邀请码吗？", en: "Are you sure you want to delete {count} invitation codes?" },
+    bulkDeleteSuccess: { "zh-Hant": "成功刪除 {count} 個邀請碼！", "zh-Hans": "成功删除 {count} 个邀请码！", en: "Successfully deleted {count} invitation codes!" },
+    selectAll: { "zh-Hant": "全選", "zh-Hans": "全选", en: "Select All" },
+    deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
+    selected: { "zh-Hant": "已選 {count} 個", "zh-Hans": "已选 {count} 个", en: "{count} selected" }
   });
 
   // Load event ID from localStorage on mount
@@ -208,8 +218,86 @@ export default function InvitesPage() {
     }
   };
 
+  const deleteInvitationCode = async (codeId: string) => {
+    if (!confirm(t.confirmDelete)) return;
+
+    try {
+      await adminInvitationCodesAPI.delete(codeId);
+      await loadTickets();
+      await loadInvitationCodes();
+      alert(t.deleteSuccess);
+    } catch (error) {
+      alert('刪除失敗: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const bulkDeleteInvitationCodes = async () => {
+    if (selectedCodes.size === 0) {
+      alert('請選擇要刪除的邀請碼');
+      return;
+    }
+
+    if (!confirm(t.confirmBulkDelete.replace('{count}', selectedCodes.size.toString()))) return;
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Delete codes one by one
+      for (const codeId of selectedCodes) {
+        try {
+          await adminInvitationCodesAPI.delete(codeId);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to delete code ${codeId}:`, error);
+          errorCount++;
+        }
+      }
+
+      // Reload data
+      await loadTickets();
+      await loadInvitationCodes();
+
+      // Clear selection
+      setSelectedCodes(new Set());
+
+      // Show result
+      if (errorCount > 0) {
+        alert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`);
+      } else {
+        alert(t.bulkDeleteSuccess.replace('{count}', successCount.toString()));
+      }
+    } catch (error) {
+      alert('批次刪除失敗: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const toggleCodeSelection = (codeId: string) => {
+    const newSelection = new Set(selectedCodes);
+    if (newSelection.has(codeId)) {
+      newSelection.delete(codeId);
+    } else {
+      newSelection.add(codeId);
+    }
+    setSelectedCodes(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (!currentType) return;
+
+    const allCodeIds = currentType.codes.map(c => c.id);
+    if (selectedCodes.size === allCodeIds.length) {
+      // Deselect all
+      setSelectedCodes(new Set());
+    } else {
+      // Select all
+      setSelectedCodes(new Set(allCodeIds));
+    }
+  };
+
   const openCodesModal = (typeId: string) => {
     setViewingCodesOf(typeId);
+    setSelectedCodes(new Set()); // Clear selection when opening modal
     setShowCodesModal(true);
   };
 
@@ -676,6 +764,11 @@ export default function InvitesPage() {
               >
                 <h2 style={{ fontSize: "1rem", margin: "0" }}>
                   {t.codes} - {currentType.name}
+                  {selectedCodes.size > 0 && (
+                    <span style={{ fontSize: "0.85rem", opacity: 0.7, marginLeft: "0.5rem" }}>
+                      ({t.selected.replace('{count}', selectedCodes.size.toString())})
+                    </span>
+                  )}
                 </h2>
                 <button
                   onClick={() => setShowCodesModal(false)}
@@ -692,6 +785,32 @@ export default function InvitesPage() {
                   ✕
                 </button>
               </header>
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                <button
+                  className="button"
+                  onClick={toggleSelectAll}
+                  style={{
+                    fontSize: "0.75rem",
+                    padding: "0.4rem 0.8rem"
+                  }}
+                >
+                  {selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
+                </button>
+                {selectedCodes.size > 0 && (
+                  <button
+                    className="button"
+                    onClick={bulkDeleteInvitationCodes}
+                    style={{
+                      backgroundColor: "#dc3545",
+                      color: "#fff",
+                      fontSize: "0.75rem",
+                      padding: "0.4rem 0.8rem"
+                    }}
+                  >
+                    {t.bulkDelete} ({selectedCodes.size})
+                  </button>
+                )}
+              </div>
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
@@ -699,6 +818,22 @@ export default function InvitesPage() {
               }}>
                 <thead>
                   <tr>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'center',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600,
+                      width: '50px'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </th>
                     <th style={{
                       padding: '0.5rem 1rem',
                       textAlign: 'left',
@@ -739,6 +874,16 @@ export default function InvitesPage() {
                     }}>
                       {t.status}
                     </th>
+                    <th style={{
+                      padding: '0.5rem 1rem',
+                      textAlign: 'left',
+                      borderBottom: '1px solid var(--color-gray-400)',
+                      backgroundColor: 'var(--color-gray-700)',
+                      color: 'var(--color-gray-200)',
+                      fontWeight: 600
+                    }}>
+                      {t.actions}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -760,6 +905,18 @@ export default function InvitesPage() {
                     };
                     return (
                       <tr key={code.id}>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'center',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCodes.has(code.id)}
+                            onChange={() => toggleCodeSelection(code.id)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </td>
                         <td style={{
                           padding: '0.5rem 1rem',
                           textAlign: 'left',
@@ -789,6 +946,24 @@ export default function InvitesPage() {
                           <span style={getStatusBadgeStyle(statusClass)}>
                             {status}
                           </span>
+                        </td>
+                        <td style={{
+                          padding: '0.5rem 1rem',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--color-gray-400)'
+                        }}>
+                          <button
+                            className="button"
+                            onClick={() => deleteInvitationCode(code.id)}
+                            style={{
+                              backgroundColor: '#dc3545',
+                              color: '#fff',
+                              padding: '0.3rem 0.6rem',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            {t.delete}
+                          </button>
                         </td>
                       </tr>
                     );
