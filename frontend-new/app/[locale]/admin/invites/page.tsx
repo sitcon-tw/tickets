@@ -55,7 +55,14 @@ export default function InvitesPage() {
     status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
     save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
     cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-    amount: { "zh-Hant": "數量", "zh-Hans": "数量", en: "Amount" }
+    amount: { "zh-Hant": "數量", "zh-Hans": "数量", en: "Amount" },
+    usageLimit: { "zh-Hant": "使用次數限制", "zh-Hans": "使用次数限制", en: "Usage Limit" },
+    validFrom: { "zh-Hant": "有效起始時間", "zh-Hans": "有效起始时间", en: "Valid From" },
+    validUntil: { "zh-Hant": "有效結束時間", "zh-Hans": "有效结束时间", en: "Valid Until" },
+    optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
+    ticketType: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Type" },
+    pleaseSelectTicket: { "zh-Hant": "請選擇票種", "zh-Hans": "请选择票种", en: "Please Select Ticket" },
+    createSuccess: { "zh-Hant": "成功建立 {count} 個邀請碼！", "zh-Hans": "成功建立 {count} 个邀请码！", en: "Successfully created {count} invitation codes!" }
   });
 
   // Load event ID from localStorage on mount
@@ -161,21 +168,41 @@ export default function InvitesPage() {
     const ticketId = formData.get('ticketId') as string;
 
     if (!ticketId) {
-      alert('請選擇票種');
+      alert(t.pleaseSelectTicket);
       return;
     }
 
-    const data = {
+    const count = parseInt(formData.get('amount') as string);
+    const validFromStr = formData.get('validFrom') as string;
+    const validUntilStr = formData.get('validUntil') as string;
+
+    const data: {
+      ticketId: string;
+      prefix: string;
+      count: number;
+      usageLimit: number;
+      validFrom?: string;
+      validUntil?: string;
+    } = {
       ticketId,
       prefix: formData.get('name') as string,
-      count: parseInt(formData.get('amount') as string),
-      usageLimit: 1,
+      count,
+      usageLimit: parseInt(formData.get('usageLimit') as string) || 1,
     };
+
+    if (validFromStr) {
+      data.validFrom = new Date(validFromStr).toISOString();
+    }
+    if (validUntilStr) {
+      data.validUntil = new Date(validUntilStr).toISOString();
+    }
 
     try {
       await adminInvitationCodesAPI.bulkCreate(data);
+      await loadTickets();
       await loadInvitationCodes();
       setShowModal(false);
+      alert(t.createSuccess.replace('{count}', count.toString()));
     } catch (error) {
       alert('創建失敗: ' + (error instanceof Error ? error.message : String(error)));
     }
@@ -389,7 +416,7 @@ export default function InvitesPage() {
                 border: "1px solid #333",
                 borderRadius: "10px",
                 padding: "1rem 1.2rem",
-                maxWidth: "420px",
+                maxWidth: "560px",
                 width: "100%"
               }}
               onClick={(e) => e.stopPropagation()}
@@ -434,7 +461,7 @@ export default function InvitesPage() {
                     fontSize: "0.75rem"
                   }}
                 >
-                  票種
+                  {t.ticketType}
                   <select
                     name="ticketId"
                     required
@@ -447,7 +474,7 @@ export default function InvitesPage() {
                       fontSize: "0.8rem"
                     }}
                   >
-                    <option value="">請選擇票種</option>
+                    <option value="">{t.pleaseSelectTicket}</option>
                     {tickets.map(ticket => (
                       <option key={ticket.id} value={ticket.id}>
                         {ticket.name}
@@ -479,32 +506,106 @@ export default function InvitesPage() {
                     }}
                   />
                 </label>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.amount}
-                  <input
-                    name="amount"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    defaultValue="10"
-                    required
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                  <label
                     style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem"
                     }}
-                  />
-                </label>
+                  >
+                    {t.amount}
+                    <input
+                      name="amount"
+                      type="number"
+                      min="1"
+                      max="1000"
+                      defaultValue="10"
+                      required
+                      style={{
+                        background: "#111",
+                        border: "1px solid #333",
+                        color: "#eee",
+                        borderRadius: "6px",
+                        padding: "8px 10px",
+                        fontSize: "0.8rem"
+                      }}
+                    />
+                  </label>
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem"
+                    }}
+                  >
+                    {t.usageLimit}
+                    <input
+                      name="usageLimit"
+                      type="number"
+                      min="1"
+                      max="100"
+                      defaultValue="1"
+                      required
+                      style={{
+                        background: "#111",
+                        border: "1px solid #333",
+                        color: "#eee",
+                        borderRadius: "6px",
+                        padding: "8px 10px",
+                        fontSize: "0.8rem"
+                      }}
+                    />
+                  </label>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem"
+                    }}
+                  >
+                    {t.validFrom} ({t.optional})
+                    <input
+                      name="validFrom"
+                      type="datetime-local"
+                      style={{
+                        background: "#111",
+                        border: "1px solid #333",
+                        color: "#eee",
+                        borderRadius: "6px",
+                        padding: "8px 10px",
+                        fontSize: "0.8rem"
+                      }}
+                    />
+                  </label>
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.3rem",
+                      fontSize: "0.75rem"
+                    }}
+                  >
+                    {t.validUntil} ({t.optional})
+                    <input
+                      name="validUntil"
+                      type="datetime-local"
+                      style={{
+                        background: "#111",
+                        border: "1px solid #333",
+                        color: "#eee",
+                        borderRadius: "6px",
+                        padding: "8px 10px",
+                        fontSize: "0.8rem"
+                      }}
+                    />
+                  </label>
+                </div>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
                     type="submit"
