@@ -130,18 +130,8 @@ export default function EventsPage() {
     <>
       <AdminNav />
       <main>
-        <h1>{t.title}</h1>
-
-        <section style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            maxWidth: '400px'
-          }}>
-            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.title}</span>
-          </label>
-        </section>
+        <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
 
         <section>
           <div className="admin-table-container">

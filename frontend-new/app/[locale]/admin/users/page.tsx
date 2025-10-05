@@ -103,7 +103,8 @@ export default function UsersPage() {
     <>
       <AdminNav />
       <main>
-        <h1>{t.title}</h1>
+        <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
         <section className="admin-controls">
           <input
             type="text"

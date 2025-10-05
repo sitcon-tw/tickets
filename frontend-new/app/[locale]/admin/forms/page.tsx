@@ -290,7 +290,8 @@ export default function FormsPage() {
       <>
         <AdminNav />
         <main>
-          <h1>{t.title}</h1>
+          <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
           <div className="admin-empty" style={{ padding: '4rem 2rem' }}>
             {t.noTicket}
           </div>
@@ -319,7 +320,8 @@ export default function FormsPage() {
           >
             ← {t.backToTickets}
           </button>
-          <h1>{t.title}</h1>
+          <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
           {currentTicket && (
             <div className="admin-stat-card" style={{ marginTop: '1rem' }}>
               <div className="admin-stat-label">{t.ticketLabel}</div>

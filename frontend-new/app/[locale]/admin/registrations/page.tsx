@@ -248,7 +248,8 @@ export default function RegistrationsPage() {
     <>
       <AdminNav />
       <main>
-        <h1>{t.title}</h1>
+        <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
 
         {/* Statistics Section */}
         <section style={{ margin: "1.5rem 0" }}>

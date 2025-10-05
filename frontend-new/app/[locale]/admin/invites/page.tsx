@@ -307,7 +307,8 @@ export default function InvitesPage() {
     <>
       <AdminNav />
       <main>
-        <h1>{t.title}</h1>
+        <h1 className="text-3xl font-bold">{t.title}</h1>
+        <div className="h-8" />
         <section className="admin-controls">
           <button onClick={() => setShowModal(true)} className="admin-button primary">
             ➕ {t.add}
