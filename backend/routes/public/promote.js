@@ -77,7 +77,7 @@ export default async function adminPromoteRoutes(fastify, options) {
 				const userId = request.user.id;
 
 				// Get the admin promotion password from environment variable
-				const ADMIN_PROMOTION_PASSWORD = process.env.ADMIN_PROMOTION_PASSWORD || "admin123";
+				const ADMIN_PROMOTION_PASSWORD = process.env.ADMIN_PROMOTION_PASSWORD;
 
 				// Validate password
 				if (password !== ADMIN_PROMOTION_PASSWORD) {
