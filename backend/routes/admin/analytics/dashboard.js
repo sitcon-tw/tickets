@@ -41,7 +41,7 @@ export default async function dashboardRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				// Get registration statistics
-				const [totalStats, checkedInCount, revenueData, recentRegistrations] = await Promise.all([
+				const [totalStats, revenueData] = await Promise.all([
 					// Total registrations by status
 					prisma.registration.groupBy({
 						by: ['status'],
@@ -55,24 +55,11 @@ export default async function dashboardRoutes(fastify, options) {
 								select: { price: true }
 							}
 						}
-					}),
-					// Recent registrations
-					prisma.registration.findMany({
-						include: {
-							user: {
-								select: { name: true, email: true }
-							},
-							event: {
-								select: { name: true }
-							},
-							ticket: {
-								select: { name: true, price: true }
-							}
-						},
-						orderBy: { createdAt: 'desc' },
-						take: 10
 					})
 				]);
+
+				// Get checked in count (field doesn't exist yet, so return 0)
+				const checkedInCount = 0;
 
 				// Calculate totals
 				const registrationCounts = totalStats.reduce((acc, stat) => {
@@ -84,16 +71,37 @@ export default async function dashboardRoutes(fastify, options) {
 				const totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
 
 				// Get daily registrations for the last 30 days
-				const dailyRegistrations = await prisma.$queryRaw`
-					SELECT 
-						DATE(createdAt) as date,
-						COUNT(*) as count,
-						SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed
-					FROM Registration 
-					WHERE createdAt >= DATE('now', '-30 days')
-					GROUP BY DATE(createdAt)
-					ORDER BY date DESC
-				`;
+				const thirtyDaysAgo = new Date();
+				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+				const registrationsLast30Days = await prisma.registration.findMany({
+					where: {
+						createdAt: {
+							gte: thirtyDaysAgo
+						}
+					},
+					select: {
+						createdAt: true,
+						status: true
+					}
+				});
+
+				// Group by date
+				const dailyRegistrations = registrationsLast30Days.reduce((acc, reg) => {
+					const date = reg.createdAt.toISOString().split('T')[0];
+					if (!acc[date]) {
+						acc[date] = { date, count: 0, confirmed: 0 };
+					}
+					acc[date].count++;
+					if (reg.status === 'confirmed') {
+						acc[date].confirmed++;
+					}
+					return acc;
+				}, {});
+
+				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort((a, b) =>
+					new Date(b.date) - new Date(a.date)
+				);
 
 				// Get ticket sales summary
 				const ticketSales = await prisma.ticket.findMany({
@@ -116,7 +124,7 @@ export default async function dashboardRoutes(fastify, options) {
 					pendingRegistrations: registrationCounts.pending,
 					cancelledRegistrations: registrationCounts.cancelled,
 					checkedInCount,
-					registrationsByDate: dailyRegistrations.reduce((acc, day) => {
+					registrationsByDate: dailyRegistrationsArray.reduce((acc, day) => {
 						acc[day.date] = { total: day.count, confirmed: day.confirmed };
 						return acc;
 					}, {}),
