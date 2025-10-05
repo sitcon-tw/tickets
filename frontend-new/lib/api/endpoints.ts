@@ -4,6 +4,7 @@ import type {
   Event,
   EventInfo,
   EventStats,
+  EventListItem,
   Ticket,
   TicketFormField,
   Registration,
@@ -18,11 +19,12 @@ import type {
   TicketAnalytics,
   TicketFormFieldReorder,
   EmailCampaign,
+  ExportData,
   ApiResponse,
   SessionResponse,
 } from '@/lib/types/api';
 
-// Health Check
+// System
 export const healthAPI = {
   check: (): Promise<HealthStatus> => apiClient.get('/system/health'),
 };
@@ -31,7 +33,7 @@ export const healthAPI = {
 export const authAPI = {
   getMagicLink: (email: string) => apiClient.post('/api/auth/sign-in/magic-link', {
     email,
-    name: email.split('@')[0], // Use email prefix as name
+    name: email.split('@')[0],
     callbackURL: `${window.location.origin}/`,
     newUserCallbackURL: `${window.location.origin}/`,
     errorCallbackURL: `${window.location.origin}/login/`
@@ -43,21 +45,21 @@ export const authAPI = {
 // Events - Public
 export const eventsAPI = {
   getAll: (params?: { isActive?: boolean; upcoming?: boolean }) =>
-    apiClient.get<ApiResponse<Event[]>>('/api/events', params),
-  
-  getInfo: (id: string) => 
+    apiClient.get<ApiResponse<EventListItem[]>>('/api/events', params),
+
+  getInfo: (id: string) =>
     apiClient.get<ApiResponse<EventInfo>>(`/api/events/${id}/info`),
-  
-  getTickets: (id: string) => 
+
+  getTickets: (id: string) =>
     apiClient.get<ApiResponse<Ticket[]>>(`/api/events/${id}/tickets`),
-  
-  getStats: (id: string) => 
+
+  getStats: (id: string) =>
     apiClient.get<ApiResponse<EventStats>>(`/api/events/${id}/stats`),
 };
 
 // Tickets - Public
 export const ticketsAPI = {
-  getFormFields: (id: string) => 
+  getFormFields: (id: string) =>
     apiClient.get<ApiResponse<TicketFormField[]>>(`/api/tickets/${id}/form-fields`),
 };
 
@@ -70,46 +72,52 @@ export const registrationsAPI = {
     referralCode?: string;
     formData: Record<string, unknown>;
   }) => apiClient.post<ApiResponse<Registration>>('/api/registrations', data),
-  
-  getAll: () => 
+
+  getAll: () =>
     apiClient.get<ApiResponse<Registration[]>>('/api/registrations'),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<Registration>>(`/api/registrations/${id}`),
-  
-  cancel: (id: string) => 
+
+  cancel: (id: string) =>
     apiClient.put<ApiResponse<Registration>>(`/api/registrations/${id}/cancel`),
 };
 
 // Referrals - Requires Auth
 export const referralsAPI = {
-  getReferralLink: (regId: string) => 
+  getReferralLink: (regId: string) =>
     apiClient.get<ApiResponse<ReferralLink>>(`/api/registrations/${regId}/referral-link`),
-  
-  getStats: (regId: string) => 
+
+  getStats: (regId: string) =>
     apiClient.get<ApiResponse<RegistrationStats>>(`/api/registrations/referral-stats/${regId}`),
-  
-  validate: (data: { code: string; eventId: string }) => 
+
+  validate: (data: { code: string; eventId: string }) =>
     apiClient.post<ApiResponse<ReferralValidation>>('/api/referrals/validate', data),
 };
 
 // Invitation Codes - Public
 export const invitationCodesAPI = {
-  verify: (data: { code: string; ticketId: string }) => 
+  verify: (data: { code: string; ticketId: string }) =>
     apiClient.post<ApiResponse<InvitationCodeVerification>>('/api/invitation-codes/verify', data),
-  
+
   getInfo: (code: string, ticketId: string) =>
     apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/invitation-codes/${code}/info`, { ticketId }),
 };
 
+// User Promotion (requires auth but not admin)
+export const userAPI = {
+  promoteToAdmin: (password: string) =>
+    apiClient.post<ApiResponse<User>>('/api/promote', { password }),
+};
+
 // Admin - Analytics
 export const adminAnalyticsAPI = {
-  getDashboard: () => 
+  getDashboard: () =>
     apiClient.get<ApiResponse<DashboardData>>('/api/admin/dashboard'),
-  
-  getReferralSources: () => 
+
+  getReferralSources: () =>
     apiClient.get('/api/admin/referral-sources'),
-  
+
   getRegistrationTrends: (params?: { period?: 'daily' | 'weekly' | 'monthly'; eventId?: string }) =>
     apiClient.get<ApiResponse<RegistrationTrend[]>>('/api/admin/registration-trends', params),
 };
@@ -126,20 +134,14 @@ export const adminUsersAPI = {
     apiClient.put<ApiResponse<User>>(`/api/admin/users/${id}`, data),
 };
 
-// User Promotion (requires auth but not admin)
-export const userAPI = {
-  promoteToAdmin: (password: string) =>
-    apiClient.post<ApiResponse<User>>('/api/promote', { password }),
-};
-
 // Admin - Events
 export const adminEventsAPI = {
   getAll: (params?: { isActive?: boolean }) =>
     apiClient.get<ApiResponse<Event[]>>('/api/admin/events', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<Event>>(`/api/admin/events/${id}`),
-  
+
   create: (data: {
     name: string;
     description?: string;
@@ -147,11 +149,11 @@ export const adminEventsAPI = {
     endDate: string;
     location?: string;
   }) => apiClient.post<ApiResponse<Event>>('/api/admin/events', data),
-  
-  update: (id: string, data: Partial<Event>) => 
+
+  update: (id: string, data: Partial<Event>) =>
     apiClient.put<ApiResponse<Event>>(`/api/admin/events/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/admin/events/${id}`),
 };
 
@@ -159,10 +161,10 @@ export const adminEventsAPI = {
 export const adminTicketsAPI = {
   getAll: (params?: { eventId?: string; isActive?: boolean }) =>
     apiClient.get<ApiResponse<Ticket[]>>('/api/admin/tickets', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`),
-  
+
   create: (data: {
     eventId: string;
     name: string;
@@ -173,14 +175,14 @@ export const adminTicketsAPI = {
     saleEnd?: string;
     requireInviteCode?: boolean;
   }) => apiClient.post<ApiResponse<Ticket>>('/api/admin/tickets', data),
-  
-  update: (id: string, data: Partial<Ticket>) => 
+
+  update: (id: string, data: Partial<Ticket>) =>
     apiClient.put<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/admin/tickets/${id}`),
-  
-  getAnalytics: (id: string) => 
+
+  getAnalytics: (id: string) =>
     apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
 };
 
@@ -188,10 +190,10 @@ export const adminTicketsAPI = {
 export const adminTicketFormFieldsAPI = {
   getAll: (params?: { ticketId?: string }) =>
     apiClient.get<ApiResponse<TicketFormField[]>>('/api/admin/ticket-form-fields', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<TicketFormField>>(`/api/admin/ticket-form-fields/${id}`),
-  
+
   create: (data: {
     ticketId: string;
     order: number;
@@ -203,14 +205,14 @@ export const adminTicketFormFieldsAPI = {
     validater?: string;
     values?: string;
   }) => apiClient.post<ApiResponse<TicketFormField>>('/api/admin/ticket-form-fields', data),
-  
-  update: (id: string, data: Partial<TicketFormField>) => 
+
+  update: (id: string, data: Partial<TicketFormField>) =>
     apiClient.put<ApiResponse<TicketFormField>>(`/api/admin/ticket-form-fields/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/admin/ticket-form-fields/${id}`),
-  
-  reorder: (ticketId: string, data: TicketFormFieldReorder) => 
+
+  reorder: (ticketId: string, data: TicketFormFieldReorder) =>
     apiClient.put<ApiResponse<null>>(`/api/admin/tickets/${ticketId}/form-fields/reorder`, data),
 };
 
@@ -223,31 +225,31 @@ export const adminRegistrationsAPI = {
     status?: 'pending' | 'confirmed' | 'cancelled';
     userId?: string;
   }) => apiClient.get<ApiResponse<Registration[]>>('/api/admin/registrations', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<Registration>>(`/api/admin/registrations/${id}`),
-  
+
   update: (id: string, data: {
     formData?: Record<string, unknown>;
     status?: 'pending' | 'confirmed' | 'cancelled';
     tags?: string[];
   }) => apiClient.put<ApiResponse<Registration>>(`/api/admin/registrations/${id}`, data),
-  
+
   export: (params?: {
     eventId?: string;
     status?: 'confirmed' | 'cancelled' | 'pending';
     format?: 'csv' | 'excel';
-  }) => apiClient.get('/api/admin/registrations/export', params),
+  }) => apiClient.get<ApiResponse<ExportData>>('/api/admin/registrations/export', params),
 };
 
 // Admin - Invitation Codes
 export const adminInvitationCodesAPI = {
   getAll: (params?: { ticketId?: string; isActive?: boolean }) =>
     apiClient.get<ApiResponse<InvitationCodeInfo[]>>('/api/admin/invitation-codes', params),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`),
-  
+
   create: (data: {
     ticketId: string;
     code: string;
@@ -256,13 +258,13 @@ export const adminInvitationCodesAPI = {
     validFrom?: string;
     validUntil?: string;
   }) => apiClient.post<ApiResponse<InvitationCodeInfo>>('/api/admin/invitation-codes', data),
-  
-  update: (id: string, data: Partial<InvitationCodeInfo>) => 
+
+  update: (id: string, data: Partial<InvitationCodeInfo>) =>
     apiClient.put<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`, data),
-  
-  delete: (id: string) => 
+
+  delete: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/admin/invitation-codes/${id}`),
-  
+
   bulkCreate: (data: {
     ticketId: string;
     prefix: string;
@@ -275,22 +277,22 @@ export const adminInvitationCodesAPI = {
 
 // Admin - Referrals
 export const adminReferralsAPI = {
-  getOverview: () => 
+  getOverview: () =>
     apiClient.get('/api/admin/referrals/overview'),
-  
-  getLeaderboard: () => 
+
+  getLeaderboard: () =>
     apiClient.get('/api/admin/referrals/leaderboard'),
-  
-  getTree: (regId: string) => 
+
+  getTree: (regId: string) =>
     apiClient.get(`/api/admin/referrals/tree/${regId}`),
-  
-  getQualified: () => 
+
+  getQualified: () =>
     apiClient.get('/api/admin/referrals/qualified'),
-  
-  draw: () => 
+
+  draw: () =>
     apiClient.post('/api/admin/referrals/draw'),
-  
-  getStats: () => 
+
+  getStats: () =>
     apiClient.get('/api/admin/referrals/stats'),
 };
 
@@ -302,7 +304,7 @@ export const adminEmailCampaignsAPI = {
     page?: number;
     limit?: number;
   }) => apiClient.get<ApiResponse<EmailCampaign[]>>('/api/admin/email-campaigns', params),
-  
+
   create: (data: {
     name: string;
     subject: string;
@@ -316,13 +318,13 @@ export const adminEmailCampaignsAPI = {
     };
     scheduledAt?: string;
   }) => apiClient.post<ApiResponse<EmailCampaign>>('/api/admin/email-campaigns', data),
-  
-  getStatus: (campaignId: string) => 
+
+  getStatus: (campaignId: string) =>
     apiClient.get(`/api/admin/email-campaigns/${campaignId}/status`),
-  
-  preview: (campaignId: string) => 
+
+  preview: (campaignId: string) =>
     apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`),
-  
-  cancel: (campaignId: string) => 
+
+  cancel: (campaignId: string) =>
     apiClient.delete(`/api/admin/email-campaigns/${campaignId}`),
 };
