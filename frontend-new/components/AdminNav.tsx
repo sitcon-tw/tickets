@@ -206,37 +206,35 @@ export default function AdminNav() {
     <aside style={styles.aside}>
       <div style={styles.activity}>{t.activityName}</div>
       <div style={styles.title}>{t.systemTitle}</div>
+      <div style={{ marginBottom: '1.5rem', marginTop: '1rem' }}>
+        <label style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem'
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '0.85rem', opacity: 0.8 }}>{t.selectEvent}</span>
+          <select
+            value={currentEventId || ''}
+            onChange={(e) => handleEventChange(e.target.value)}
+            style={{
+              padding: '0.6rem',
+              border: '2px solid var(--color-gray-600)',
+              background: 'var(--color-gray-800)',
+              color: 'inherit',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              cursor: 'pointer'
+            }}
+          >
+            {events.map(event => (
+              <option key={event.id} value={event.id}>
+                {event.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <nav style={styles.nav}>
-        {events.length > 0 && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem'
-            }}>
-              <span style={{ fontWeight: 600, fontSize: '0.85rem', opacity: 0.8 }}>{t.selectEvent}</span>
-              <select
-                value={currentEventId || ''}
-                onChange={(e) => handleEventChange(e.target.value)}
-                style={{
-                  padding: '0.6rem',
-                  border: '1px solid var(--color-gray-700)',
-                  background: 'var(--color-gray-900)',
-                  color: 'inherit',
-                  borderRadius: '6px',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {events.map(event => (
-                  <option key={event.id} value={event.id}>
-                    {event.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
         <ul style={styles.navList}>
           {activityLinks.map(({ href, i18nKey }) => (
             <li key={href} style={styles.navItem}>
