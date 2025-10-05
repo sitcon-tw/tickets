@@ -30,6 +30,9 @@ export default function FormsPage() {
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
+  const [copyFromTicketId, setCopyFromTicketId] = useState<string>('');
+  const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -37,7 +40,10 @@ export default function FormsPage() {
     backToTickets: { "zh-Hant": "返回票種列表", "zh-Hans": "返回票种列表", en: "Back to Tickets" },
     noTicket: { "zh-Hant": "未指定票種", "zh-Hans": "未指定票种", en: "No ticket specified" },
     addQuestion: { "zh-Hant": "新增問題", "zh-Hans": "新增问题", en: "Add Question" },
-    save: { "zh-Hant": "儲存表單", "zh-Hans": "保存表单", en: "Save Form" }
+    save: { "zh-Hant": "儲存表單", "zh-Hans": "保存表单", en: "Save Form" },
+    copyFrom: { "zh-Hant": "複製其他票種表單", "zh-Hans": "复制其他票种表单", en: "Copy from other ticket" },
+    selectTicket: { "zh-Hant": "選擇票種...", "zh-Hans": "选择票种...", en: "Select ticket..." },
+    copySuccess: { "zh-Hant": "已成功複製表單！", "zh-Hans": "已成功复制表单！", en: "Form copied successfully!" }
   });
 
   // Load ticket data from URL param
@@ -59,6 +65,21 @@ export default function FormsPage() {
     }
   }, [searchParams]);
 
+  // Load all tickets for the copy dropdown
+  const loadAllTickets = useCallback(async () => {
+    if (!currentTicket?.eventId) return;
+
+    try {
+      const response = await adminTicketsAPI.getAll({ eventId: currentTicket.eventId });
+      if (response.success) {
+        // Filter out the current ticket from the list
+        setAllTickets((response.data || []).filter(t => t.id !== currentTicket.id));
+      }
+    } catch (error) {
+      console.error('Failed to load tickets:', error);
+    }
+  }, [currentTicket?.eventId, currentTicket?.id]);
+
   // Load form fields from backend
   const loadFormFields = useCallback(async () => {
     if (!currentTicket?.id) return;
@@ -69,7 +90,7 @@ export default function FormsPage() {
       const response = await adminTicketFormFieldsAPI.getAll({ ticketId: currentTicket.id });
 
       if (response.success) {
-        setQuestions((response.data || []).map((field: TicketFormField) => {
+        const loadedFields = (response.data || []).map((field: TicketFormField) => {
           let options: string[] | undefined = undefined;
 
           // Try to parse values as JSON array
@@ -93,7 +114,11 @@ export default function FormsPage() {
             help: field.helpText || '',
             options
           };
-        }));
+        });
+
+        setQuestions(loadedFields);
+        // Track original field IDs to detect deletions
+        setOriginalFieldIds(loadedFields.map((f: Question) => f.id).filter((id: string) => !id.startsWith('temp-')));
       } else {
         throw new Error(response.message || 'Failed to load form fields');
       }
@@ -118,6 +143,48 @@ export default function FormsPage() {
     ]);
   };
 
+  // Copy form from another ticket
+  const copyFormFromTicket = async (sourceTicketId: string) => {
+    if (!sourceTicketId) return;
+
+    try {
+      const response = await adminTicketFormFieldsAPI.getAll({ ticketId: sourceTicketId });
+
+      if (response.success && response.data) {
+        const copiedQuestions = response.data.map((field: TicketFormField) => {
+          let options: string[] | undefined = undefined;
+
+          if (field.values) {
+            try {
+              const parsed = JSON.parse(field.values);
+              if (Array.isArray(parsed)) {
+                options = parsed;
+              }
+            } catch (e) {
+              console.warn('Failed to parse field values as JSON:', field.values);
+            }
+          }
+
+          return {
+            id: 'temp-' + crypto.randomUUID(),
+            label: field.description || field.name,
+            type: field.type,
+            required: field.required || false,
+            help: field.helpText || '',
+            options
+          };
+        });
+
+        setQuestions(copiedQuestions);
+        setCopyFromTicketId('');
+        alert(t.copySuccess);
+      }
+    } catch (error) {
+      console.error('Failed to copy form:', error);
+      alert('複製失敗: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
   // Save form to backend
   const saveForm = async () => {
     if (!currentTicket?.id) {
@@ -137,6 +204,21 @@ export default function FormsPage() {
         order: index
       }));
 
+      // Find fields that were deleted (in originalFieldIds but not in current questions)
+      const currentFieldIds = questions
+        .map(q => q.id)
+        .filter(id => !id.startsWith('temp-'));
+
+      const deletedFieldIds = originalFieldIds.filter(
+        originalId => !currentFieldIds.includes(originalId)
+      );
+
+      // Delete removed fields
+      for (const fieldId of deletedFieldIds) {
+        await adminTicketFormFieldsAPI.delete(fieldId);
+      }
+
+      // Create or update existing fields
       for (const fieldData of formFieldsData) {
         const data = {
           ticketId: currentTicket.id,
@@ -157,6 +239,9 @@ export default function FormsPage() {
         }
       }
 
+      // Reload the form to get fresh data and update originalFieldIds
+      await loadFormFields();
+
       alert('表單已保存！');
     } catch (error) {
       console.error('Failed to save form:', error);
@@ -172,8 +257,9 @@ export default function FormsPage() {
   useEffect(() => {
     if (currentTicket?.id) {
       loadFormFields();
+      loadAllTickets();
     }
-  }, [currentTicket?.id, loadFormFields]);
+  }, [currentTicket?.id, loadFormFields, loadAllTickets]);
 
   const addQuestion = () => {
     setQuestions([...questions, {
@@ -250,6 +336,30 @@ export default function FormsPage() {
           maxWidth: '960px',
           margin: '1rem auto 4rem'
         }}>
+          {allTickets.length > 0 && (
+            <div className="admin-form-group" style={{ marginBottom: '1.5rem' }}>
+              <label className="admin-form-label">{t.copyFrom}</label>
+              <select
+                value={copyFromTicketId}
+                onChange={(e) => {
+                  const ticketId = e.target.value;
+                  if (ticketId && confirm('確定要複製該票種的表單嗎？這會取代目前的表單內容。')) {
+                    copyFormFromTicket(ticketId);
+                  } else {
+                    setCopyFromTicketId('');
+                  }
+                }}
+                className="admin-select"
+              >
+                <option value="">{t.selectTicket}</option>
+                {allTickets.map(ticket => (
+                  <option key={ticket.id} value={ticket.id}>
+                    {ticket.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div id="questions" style={{
             display: 'flex',
             flexDirection: 'column',
