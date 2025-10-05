@@ -116,24 +116,6 @@ export default function EventsPage() {
     return { label: t.active, class: "active" };
   };
 
-  const getStatusBadgeStyle = (statusClass: string) => {
-    const baseStyle: React.CSSProperties = {
-      padding: '0.3rem 0.6rem',
-      borderRadius: '4px',
-      fontSize: '0.85rem',
-      display: 'inline-block'
-    };
-
-    if (statusClass === 'active') {
-      return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
-    } else if (statusClass === 'ended') {
-      return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
-    } else if (statusClass === 'pending') {
-      return { ...baseStyle, backgroundColor: '#fff3cd', color: '#856404' };
-    }
-    return baseStyle;
-  };
-
   const formatDateTime = (dt?: string) => {
     if (!dt) return '';
     try {
@@ -162,87 +144,28 @@ export default function EventsPage() {
         </section>
 
         <section>
-          <div style={{
-            overflowX: 'auto',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-gray-800)',
-            border: '2px solid var(--color-gray-900)'
-          }}>
+          <div className="admin-table-container">
             {isLoading && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '1rem',
-                padding: '3rem',
-                opacity: 0.7
-              }}>
+              <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p style={{ fontSize: '0.9rem' }}>{t.loading}</p>
+                <p>{t.loading}</p>
               </div>
             )}
             {!isLoading && events.length === 0 && (
-              <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+              <div className="admin-empty">
                 {t.empty}
               </div>
             )}
             {!isLoading && events.length > 0 && (
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                minWidth: '900px'
-              }}>
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.eventName}</th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.location}</th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.startDate}</th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.endDate}</th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.status}</th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>{t.actions}</th>
+                    <th>{t.eventName}</th>
+                    <th>{t.location}</th>
+                    <th>{t.startDate}</th>
+                    <th>{t.endDate}</th>
+                    <th>{t.status}</th>
+                    <th>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -250,41 +173,17 @@ export default function EventsPage() {
                     const status = computeStatus(event);
                     return (
                       <tr key={event.id}>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>{event.name}</td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>{event.location}</td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>{formatDateTime(event.startDate)}</td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>{formatDateTime(event.endDate)}</td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <span style={getStatusBadgeStyle(status.class)}>{status.label}</span>
+                        <td>{event.name}</td>
+                        <td>{event.location}</td>
+                        <td>{formatDateTime(event.startDate)}</td>
+                        <td>{formatDateTime(event.endDate)}</td>
+                        <td>
+                          <span className={`status-badge ${status.class}`}>{status.label}</span>
                         </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
+                        <td>
                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button className="button" onClick={() => openModal(event)}>{t.edit}</button>
-                            <button className="button" style={{ backgroundColor: '#f8d7da', color: '#721c24' }} onClick={() => deleteEvent(event.id)}>{t.delete}</button>
+                            <button className="admin-button small secondary" onClick={() => openModal(event)}>{t.edit}</button>
+                            <button className="admin-button small danger" onClick={() => deleteEvent(event.id)}>{t.delete}</button>
                           </div>
                         </td>
                       </tr>
@@ -297,108 +196,56 @@ export default function EventsPage() {
         </section>
 
         <section style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <button className="button" onClick={() => openModal()}>
+          <button className="admin-button primary" onClick={() => openModal()}>
             + {t.addEvent}
           </button>
         </section>
 
         {showModal && (
-          <div style={{
-            position: 'fixed',
-            inset: '0',
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }} onClick={closeModal}>
-            <div style={{
-              background: 'var(--color-gray-800)',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              maxWidth: '640px',
-              width: '100%'
-            }} onClick={(e) => e.stopPropagation()}>
-              <h2>{editingEvent ? t.editEvent : t.addEvent}</h2>
+          <div className="admin-modal-overlay" onClick={closeModal}>
+            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
+                <button className="admin-modal-close" onClick={closeModal}>✕</button>
+              </div>
               <form onSubmit={saveEvent}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  marginTop: '1rem'
-                }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span>{t.eventName}</span>
-                    <input name="name" type="text" required defaultValue={editingEvent?.name || ''} style={{
-                      padding: '0.5rem',
-                      border: '1px solid var(--color-gray-600)',
-                      background: 'var(--color-gray-900)',
-                      color: 'inherit',
-                      borderRadius: '6px'
-                    }} />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span>{t.description}</span>
-                    <textarea name="description" defaultValue={editingEvent?.description || ''} style={{
-                      padding: '0.5rem',
-                      border: '1px solid var(--color-gray-600)',
-                      background: 'var(--color-gray-900)',
-                      color: 'inherit',
-                      borderRadius: '6px',
-                      minHeight: '80px'
-                    }} />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span>{t.location}</span>
-                    <input name="location" type="text" defaultValue={editingEvent?.location || ''} style={{
-                      padding: '0.5rem',
-                      border: '1px solid var(--color-gray-600)',
-                      background: 'var(--color-gray-900)',
-                      color: 'inherit',
-                      borderRadius: '6px'
-                    }} />
-                  </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.eventName}</label>
+                    <input name="name" type="text" required defaultValue={editingEvent?.name || ''} className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.description}</label>
+                    <textarea name="description" defaultValue={editingEvent?.description || ''} className="admin-textarea" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.location}</label>
+                    <input name="location" type="text" defaultValue={editingEvent?.location || ''} className="admin-input" />
+                  </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.startDate}</span>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.startDate}</label>
                       <input
                         name="startDate"
                         type="datetime-local"
                         defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ''}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid var(--color-gray-600)',
-                          background: 'var(--color-gray-900)',
-                          color: 'inherit',
-                          borderRadius: '6px'
-                        }}
+                        className="admin-input"
                       />
-                    </label>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.endDate}</span>
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.endDate}</label>
                       <input
                         name="endDate"
                         type="datetime-local"
                         defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ''}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid var(--color-gray-600)',
-                          background: 'var(--color-gray-900)',
-                          color: 'inherit',
-                          borderRadius: '6px'
-                        }}
+                        className="admin-input"
                       />
-                    </label>
+                    </div>
                   </div>
                 </div>
-                <div style={{
-                  display: 'flex',
-                  gap: '0.75rem',
-                  marginTop: '1.5rem',
-                  justifyContent: 'flex-end'
-                }}>
-                  <button type="submit" className="button" style={{ background: '#ffc107', color: '#2a2416' }}>{t.save}</button>
-                  <button type="button" className="button" onClick={closeModal}>{t.cancel}</button>
+                <div className="admin-modal-actions">
+                  <button type="submit" className="admin-button warning">{t.save}</button>
+                  <button type="button" className="admin-button secondary" onClick={closeModal}>{t.cancel}</button>
                 </div>
               </form>
             </div>

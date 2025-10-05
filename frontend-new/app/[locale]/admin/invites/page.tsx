@@ -308,17 +308,8 @@ export default function InvitesPage() {
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
-        <section
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            margin: "1rem 0"
-          }}
-        >
-          <button
-            onClick={() => setShowModal(true)}
-            className="button"
-          >
+        <section className="admin-controls">
+          <button onClick={() => setShowModal(true)} className="admin-button primary">
             ➕ {t.add}
           </button>
           <input
@@ -326,106 +317,28 @@ export default function InvitesPage() {
             placeholder={"🔍 " + t.search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              background: "#111",
-              border: "1px solid #333",
-              color: "#eee",
-              borderRadius: "6px",
-              padding: "6px 10px",
-              fontSize: "0.75rem"
-            }}
+            className="admin-input"
           />
         </section>
 
         <section>
-          <div style={{
-            overflowX: 'auto',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-gray-800)',
-            border: '2px solid var(--color-gray-900)'
-          }}>
+          <div className="admin-table-container">
             {isLoading && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '1rem',
-                padding: '3rem',
-                opacity: 0.7
-              }}>
+              <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p style={{ fontSize: '0.9rem' }}>Now Loading...</p>
+                <p>Now Loading...</p>
               </div>
             )}
             {!isLoading && (
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                minWidth: '900px'
-              }}>
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.name}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.total}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.used}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.remaining}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.created}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.actions}
-                    </th>
+                    <th>{t.name}</th>
+                    <th>{t.total}</th>
+                    <th>{t.used}</th>
+                    <th>{t.remaining}</th>
+                    <th>{t.created}</th>
+                    <th>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -434,47 +347,13 @@ export default function InvitesPage() {
                     const total = type.codes.length;
                     return (
                       <tr key={type.id}>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {type.name}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {total}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {used}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {total - used}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {new Date(type.createdAt).toLocaleString()}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <button className="button" onClick={() => openCodesModal(type.id)}>檢視</button>
+                        <td>{type.name}</td>
+                        <td>{total}</td>
+                        <td>{used}</td>
+                        <td>{total - used}</td>
+                        <td>{new Date(type.createdAt).toLocaleString()}</td>
+                        <td>
+                          <button className="admin-button small secondary" onClick={() => openCodesModal(type.id)}>檢視</button>
                         </td>
                       </tr>
                     );
@@ -486,242 +365,79 @@ export default function InvitesPage() {
         </section>
 
         {showModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0, 0, 0, 0.6)",
-              zIndex: "10"
-            }}
-            onClick={() => setShowModal(false)}
-          >
-            <div
-              style={{
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "10px",
-                padding: "1rem 1.2rem",
-                maxWidth: "560px",
-                width: "100%"
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <header
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.75rem"
-                }}
-              >
-                <h2 style={{ fontSize: "1rem", margin: "0" }}>{t.add}</h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  style={{
-                    background: "#2a2a2a",
-                    border: "1px solid #444",
-                    color: "#ccc",
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    cursor: "pointer"
-                  }}
-                >
+          <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">{t.add}</h2>
+                <button className="admin-modal-close" onClick={() => setShowModal(false)}>
                   ✕
                 </button>
-              </header>
-              <form
-                onSubmit={createInvitationCodes}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.85rem"
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.ticketType}
-                  <select
-                    name="ticketId"
-                    required
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
-                  >
-                    <option value="">{t.pleaseSelectTicket}</option>
-                    {tickets.map(ticket => (
-                      <option key={ticket.id} value={ticket.id}>
-                        {ticket.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.name}
-                  <input
-                    name="name"
-                    type="text"
-                    required
-                    placeholder="e.g. VIP Media"
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
-                  />
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.amount}
+              </div>
+              <form onSubmit={createInvitationCodes}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.ticketType}</label>
+                    <select name="ticketId" required className="admin-select">
+                      <option value="">{t.pleaseSelectTicket}</option>
+                      {tickets.map(ticket => (
+                        <option key={ticket.id} value={ticket.id}>
+                          {ticket.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.name}</label>
                     <input
-                      name="amount"
-                      type="number"
-                      min="1"
-                      max="1000"
-                      defaultValue="10"
+                      name="name"
+                      type="text"
                       required
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
+                      placeholder="e.g. VIP Media"
+                      className="admin-input"
                     />
-                  </label>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.usageLimit}
-                    <input
-                      name="usageLimit"
-                      type="number"
-                      min="1"
-                      max="100"
-                      defaultValue="1"
-                      required
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
-                    />
-                  </label>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.amount}</label>
+                      <input
+                        name="amount"
+                        type="number"
+                        min="1"
+                        max="1000"
+                        defaultValue="10"
+                        required
+                        className="admin-input"
+                      />
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.usageLimit}</label>
+                      <input
+                        name="usageLimit"
+                        type="number"
+                        min="1"
+                        max="100"
+                        defaultValue="1"
+                        required
+                        className="admin-input"
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.validFrom} ({t.optional})</label>
+                      <input name="validFrom" type="datetime-local" className="admin-input" />
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.validUntil} ({t.optional})</label>
+                      <input name="validUntil" type="datetime-local" className="admin-input" />
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.validFrom} ({t.optional})
-                    <input
-                      name="validFrom"
-                      type="datetime-local"
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
-                    />
-                  </label>
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.3rem",
-                      fontSize: "0.75rem"
-                    }}
-                  >
-                    {t.validUntil} ({t.optional})
-                    <input
-                      name="validUntil"
-                      type="datetime-local"
-                      style={{
-                        background: "#111",
-                        border: "1px solid #333",
-                        color: "#eee",
-                        borderRadius: "6px",
-                        padding: "8px 10px",
-                        fontSize: "0.8rem"
-                      }}
-                    />
-                  </label>
-                </div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    type="submit"
-                    style={{
-                      background: "#155e29",
-                      border: "1px solid #1d7b34",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
+                <div className="admin-modal-actions">
+                  <button type="submit" className="admin-button success">
                     {t.save}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    style={{
-                      background: "#222",
-                      border: "1px solid #444",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
+                  <button type="button" className="admin-button secondary" onClick={() => setShowModal(false)}>
                     {t.cancel}
                   </button>
                 </div>
@@ -731,38 +447,10 @@ export default function InvitesPage() {
         )}
 
         {showCodesModal && currentType && (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0, 0, 0, 0.6)",
-              zIndex: "10"
-            }}
-            onClick={() => setShowCodesModal(false)}
-          >
-            <div
-              style={{
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "10px",
-                padding: "1rem 1.2rem",
-                maxWidth: "900px",
-                width: "100%"
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <header
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.75rem"
-                }}
-              >
-                <h2 style={{ fontSize: "1rem", margin: "0" }}>
+          <div className="admin-modal-overlay" onClick={() => setShowCodesModal(false)}>
+            <div className="admin-modal" style={{ maxWidth: '900px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">
                   {t.codes} - {currentType.name}
                   {selectedCodes.size > 0 && (
                     <span style={{ fontSize: "0.85rem", opacity: 0.7, marginLeft: "0.5rem" }}>
@@ -770,206 +458,75 @@ export default function InvitesPage() {
                     </span>
                   )}
                 </h2>
-                <button
-                  onClick={() => setShowCodesModal(false)}
-                  style={{
-                    background: "#2a2a2a",
-                    border: "1px solid #444",
-                    color: "#ccc",
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    cursor: "pointer"
-                  }}
-                >
+                <button className="admin-modal-close" onClick={() => setShowCodesModal(false)}>
                   ✕
                 </button>
-              </header>
-              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                <button
-                  className="button"
-                  onClick={toggleSelectAll}
-                  style={{
-                    fontSize: "0.75rem",
-                    padding: "0.4rem 0.8rem"
-                  }}
-                >
+              </div>
+              <div className="admin-controls">
+                <button className="admin-button small secondary" onClick={toggleSelectAll}>
                   {selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
                 </button>
                 {selectedCodes.size > 0 && (
-                  <button
-                    className="button"
-                    onClick={bulkDeleteInvitationCodes}
-                    style={{
-                      backgroundColor: "#dc3545",
-                      color: "#fff",
-                      fontSize: "0.75rem",
-                      padding: "0.4rem 0.8rem"
-                    }}
-                  >
+                  <button className="admin-button small danger" onClick={bulkDeleteInvitationCodes}>
                     {t.bulkDelete} ({selectedCodes.size})
                   </button>
                 )}
               </div>
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                minWidth: '600px'
-              }}>
-                <thead>
-                  <tr>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'center',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600,
-                      width: '50px'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
-                        onChange={toggleSelectAll}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.code}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.usage}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.limit}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.status}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.actions}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentType.codes.map(code => {
-                    const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
-                    const statusClass = status === "active" ? "active" : "ended";
-                    const getStatusBadgeStyle = (statusClass: string) => {
-                      const baseStyle: React.CSSProperties = {
-                        padding: '0.3rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                        display: 'inline-block'
-                      };
-                      if (statusClass === 'active') {
-                        return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
-                      } else {
-                        return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
-                      }
-                    };
-                    return (
-                      <tr key={code.id}>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'center',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedCodes.has(code.id)}
-                            onChange={() => toggleCodeSelection(code.id)}
-                            style={{ cursor: 'pointer' }}
-                          />
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {code.code}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {code.usedCount}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {code.usageLimit}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <span style={getStatusBadgeStyle(statusClass)}>
-                            {status}
-                          </span>
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <button
-                            className="button"
-                            onClick={() => deleteInvitationCode(code.id)}
-                            style={{
-                              backgroundColor: '#dc3545',
-                              color: '#fff',
-                              padding: '0.3rem 0.6rem',
-                              fontSize: '0.75rem'
-                            }}
-                          >
-                            {t.delete}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '50px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
+                          onChange={toggleSelectAll}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </th>
+                      <th>{t.code}</th>
+                      <th>{t.usage}</th>
+                      <th>{t.limit}</th>
+                      <th>{t.status}</th>
+                      <th>{t.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentType.codes.map(code => {
+                      const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
+                      const statusClass = status === "active" ? "active" : "ended";
+                      return (
+                        <tr key={code.id}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCodes.has(code.id)}
+                              onChange={() => toggleCodeSelection(code.id)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </td>
+                          <td>{code.code}</td>
+                          <td>{code.usedCount}</td>
+                          <td>{code.usageLimit}</td>
+                          <td>
+                            <span className={`status-badge ${statusClass}`}>
+                              {status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="admin-button small danger"
+                              onClick={() => deleteInvitationCode(code.id)}
+                            >
+                              {t.delete}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

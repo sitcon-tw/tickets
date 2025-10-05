@@ -104,154 +104,44 @@ export default function UsersPage() {
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
-        <section
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            margin: "1rem 0"
-          }}
-        >
+        <section className="admin-controls">
           <input
             type="text"
             placeholder={"🔍 " + t.search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              background: "#111",
-              border: "1px solid #333",
-              color: "#eee",
-              borderRadius: "6px",
-              padding: "6px 10px",
-              fontSize: "0.75rem"
-            }}
+            className="admin-input"
           />
         </section>
 
         <section>
-          <div style={{
-            overflowX: 'auto',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-gray-800)',
-            border: '2px solid var(--color-gray-900)'
-          }}>
+          <div className="admin-table-container">
             {isLoading && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '1rem',
-                padding: '3rem',
-                opacity: 0.7
-              }}>
+              <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p style={{ fontSize: '0.9rem' }}>Now Loading...</p>
+                <p>Now Loading...</p>
               </div>
             )}
             {!isLoading && (
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                minWidth: '900px'
-              }}>
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.name}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.email}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.role}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.status}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.createdAt}
-                    </th>
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600
-                    }}>
-                      {t.actions}
-                    </th>
+                    <th>{t.name}</th>
+                    <th>{t.email}</th>
+                    <th>{t.role}</th>
+                    <th>{t.status}</th>
+                    <th>{t.createdAt}</th>
+                    <th>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map(user => {
-                    const statusStyle: React.CSSProperties = {
-                      padding: '0.3rem 0.6rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      display: 'inline-block',
-                      backgroundColor: user.isActive ? '#d4edda' : '#f8d7da',
-                      color: user.isActive ? '#155724' : '#721c24'
-                    };
-
-                    const roleStyle: React.CSSProperties = {
-                      padding: '0.3rem 0.6rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      display: 'inline-block',
-                      backgroundColor: user.role === 'admin' ? '#d1ecf1' : '#e2e3e5',
-                      color: user.role === 'admin' ? '#0c5460' : '#383d41'
-                    };
+                    const roleClass = user.role === 'admin' ? 'primary' : 'secondary';
 
                     return (
                       <tr key={user.id}>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {user.name}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
+                        <td>{user.name}</td>
+                        <td>
                           {user.email}
                           {user.emailVerified && (
                             <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', opacity: 0.7 }}>
@@ -259,43 +149,21 @@ export default function UsersPage() {
                             </span>
                           )}
                         </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <span style={roleStyle}>
+                        <td>
+                          <span className={`status-badge ${roleClass}`}>
                             {user.role === 'admin' ? t.admin : t.viewer}
                           </span>
                         </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          <span style={statusStyle}>
+                        <td>
+                          <span className={`status-badge ${user.isActive ? 'active' : 'ended'}`}>
                             {user.isActive ? t.active : t.inactive}
                           </span>
                         </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
-                          {new Date(user.createdAt).toLocaleString()}
-                        </td>
-                        <td style={{
-                          padding: '0.5rem 1rem',
-                          textAlign: 'left',
-                          borderBottom: '1px solid var(--color-gray-400)'
-                        }}>
+                        <td>{new Date(user.createdAt).toLocaleString()}</td>
+                        <td>
                           <button
-                            className="button"
+                            className="admin-button small secondary"
                             onClick={() => openEditModal(user)}
-                            style={{
-                              padding: '0.3rem 0.6rem',
-                              fontSize: '0.75rem'
-                            }}
                           >
                             {t.edit}
                           </button>
@@ -310,147 +178,46 @@ export default function UsersPage() {
         </section>
 
         {showEditModal && editingUser && (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0, 0, 0, 0.6)",
-              zIndex: "10"
-            }}
-            onClick={closeEditModal}
-          >
-            <div
-              style={{
-                background: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "10px",
-                padding: "1rem 1.2rem",
-                maxWidth: "560px",
-                width: "100%"
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <header
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.75rem"
-                }}
-              >
-                <h2 style={{ fontSize: "1rem", margin: "0" }}>{t.editUser}</h2>
-                <button
-                  onClick={closeEditModal}
-                  style={{
-                    background: "#2a2a2a",
-                    border: "1px solid #444",
-                    color: "#ccc",
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    cursor: "pointer"
-                  }}
-                >
+          <div className="admin-modal-overlay" onClick={closeEditModal}>
+            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">{t.editUser}</h2>
+                <button className="admin-modal-close" onClick={closeEditModal}>
                   ✕
                 </button>
-              </header>
-              <form
-                onSubmit={handleUpdateUser}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.85rem"
-                }}
-              >
-                <div>
-                  <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.85rem", opacity: 0.7 }}>
+              </div>
+              <form onSubmit={handleUpdateUser}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.9rem", opacity: 0.7 }}>
                     {t.name}: <strong>{editingUser.name}</strong>
                   </p>
-                  <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.85rem", opacity: 0.7 }}>
+                  <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.9rem", opacity: 0.7 }}>
                     {t.email}: <strong>{editingUser.email}</strong>
                   </p>
                 </div>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.role}
-                  <select
-                    name="role"
-                    defaultValue={editingUser.role}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
-                  >
+                <div className="admin-form-group">
+                  <label className="admin-form-label">{t.role}</label>
+                  <select name="role" defaultValue={editingUser.role} className="admin-select">
                     <option value="admin">{t.admin}</option>
                     <option value="viewer">{t.viewer}</option>
                   </select>
-                </label>
-                <label
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.3rem",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  {t.status}
+                </div>
+                <div className="admin-form-group" style={{ marginTop: '1rem' }}>
+                  <label className="admin-form-label">{t.status}</label>
                   <select
                     name="isActive"
                     defaultValue={editingUser.isActive ? 'true' : 'false'}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #333",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 10px",
-                      fontSize: "0.8rem"
-                    }}
+                    className="admin-select"
                   >
                     <option value="true">{t.active}</option>
                     <option value="false">{t.inactive}</option>
                   </select>
-                </label>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button
-                    type="submit"
-                    style={{
-                      background: "#155e29",
-                      border: "1px solid #1d7b34",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
+                </div>
+                <div className="admin-modal-actions">
+                  <button type="submit" className="admin-button success">
                     {t.save}
                   </button>
-                  <button
-                    type="button"
-                    onClick={closeEditModal}
-                    style={{
-                      background: "#222",
-                      border: "1px solid #444",
-                      color: "#eee",
-                      borderRadius: "6px",
-                      padding: "8px 14px",
-                      fontSize: "0.75rem",
-                      cursor: "pointer"
-                    }}
-                  >
+                  <button type="button" className="admin-button secondary" onClick={closeEditModal}>
                     {t.cancel}
                   </button>
                 </div>

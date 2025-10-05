@@ -170,24 +170,6 @@ export default function TicketsPage() {
     }
   };
 
-  const getStatusBadgeStyle = (statusClass: string) => {
-    const baseStyle: React.CSSProperties = {
-      padding: '0.3rem 0.6rem',
-      borderRadius: '4px',
-      fontSize: '0.85rem',
-      display: 'inline-block'
-    };
-
-    if (statusClass === 'active') {
-      return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
-    } else if (statusClass === 'ended') {
-      return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
-    } else if (statusClass === 'pending') {
-      return { ...baseStyle, backgroundColor: '#fff3cd', color: '#856404' };
-    }
-    return baseStyle;
-  };
-
   return (
     <>
       <AdminNav />
@@ -195,67 +177,16 @@ export default function TicketsPage() {
         <h1>{t.title}</h1>
 
         <section>
-          <div style={{
-            overflowX: 'auto',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-gray-800)',
-            border: '2px solid var(--color-gray-900)'
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              minWidth: '900px'
-            }}>
+          <div className="admin-table-container">
+            <table className="admin-table">
               <thead>
                 <tr>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.ticketTypes}</th>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.startTime}</th>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.endTime}</th>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.status}</th>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.quantity}</th>
-                  <th style={{
-                    padding: '0.5rem 1rem',
-                    textAlign: 'left',
-                    borderBottom: '1px solid var(--color-gray-400)',
-                    backgroundColor: 'var(--color-gray-700)',
-                    color: 'var(--color-gray-200)',
-                    fontWeight: 600
-                  }}>{t.actions}</th>
+                  <th>{t.ticketTypes}</th>
+                  <th>{t.startTime}</th>
+                  <th>{t.endTime}</th>
+                  <th>{t.status}</th>
+                  <th>{t.quantity}</th>
+                  <th>{t.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -263,48 +194,23 @@ export default function TicketsPage() {
                   const status = computeStatus(ticket);
                   return (
                     <tr key={ticket.id}>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>{ticket.name}</td>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>{formatDateTime(ticket.saleStart)}</td>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>{formatDateTime(ticket.saleEnd)}</td>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>
-                        <span style={getStatusBadgeStyle(status.class)}>{status.label}</span>
+                      <td>{ticket.name}</td>
+                      <td>{formatDateTime(ticket.saleStart)}</td>
+                      <td>{formatDateTime(ticket.saleEnd)}</td>
+                      <td>
+                        <span className={`status-badge ${status.class}`}>{status.label}</span>
                       </td>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>{ticket.quantity}</td>
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'left',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>
+                      <td>{ticket.quantity}</td>
+                      <td>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button className="button" onClick={() => openModal(ticket)}>{t.editTicket}</button>
+                          <button className="admin-button small secondary" onClick={() => openModal(ticket)}>{t.editTicket}</button>
                           <button
-                            className="button"
-                            style={{ backgroundColor: '#2563eb', color: '#fff' }}
+                            className="admin-button small primary"
                             onClick={() => window.location.href = `/${locale}/admin/forms?ticket=${ticket.id}`}
                           >
                             {t.editForms}
                           </button>
-                          <button className="button" style={{ backgroundColor: '#f8d7da', color: '#721c24' }} onClick={() => deleteTicket(ticket.id)}>{t.delete}</button>
+                          <button className="admin-button small danger" onClick={() => deleteTicket(ticket.id)}>{t.delete}</button>
                         </div>
                       </td>
                     </tr>
@@ -316,132 +222,71 @@ export default function TicketsPage() {
         </section>
 
         <section style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <button className="button" onClick={() => openModal()}>
+          <button className="admin-button primary" onClick={() => openModal()}>
             + {t.addTicket}
           </button>
         </section>
 
         {showModal && (
-          <div style={{
-            position: 'fixed',
-            inset: '0',
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }} onClick={closeModal}>
-            <div style={{
-              background: 'var(--color-gray-800)',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              maxWidth: '640px',
-              width: '100%'
-            }} onClick={(e) => e.stopPropagation()}>
-              <h2>{editingTicket ? t.editTicket : t.addTicket}</h2>
+          <div className="admin-modal-overlay" onClick={closeModal}>
+            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">{editingTicket ? t.editTicket : t.addTicket}</h2>
+                <button className="admin-modal-close" onClick={closeModal}>✕</button>
+              </div>
               <form onSubmit={saveTicket}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  marginTop: '1rem'
-                }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span>{t.ticketName}</span>
-                    <input name="name" type="text" required defaultValue={editingTicket?.name || ''} style={{
-                      padding: '0.5rem',
-                      border: '1px solid var(--color-gray-600)',
-                      background: 'var(--color-gray-900)',
-                      color: 'inherit',
-                      borderRadius: '6px'
-                    }} />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <span>{t.description}</span>
-                    <textarea name="description" defaultValue={editingTicket?.description || ''} style={{
-                      padding: '0.5rem',
-                      border: '1px solid var(--color-gray-600)',
-                      background: 'var(--color-gray-900)',
-                      color: 'inherit',
-                      borderRadius: '6px',
-                      minHeight: '80px'
-                    }} />
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.price}</span>
-                      <input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} style={{
-                        padding: '0.5rem',
-                        border: '1px solid var(--color-gray-600)',
-                        background: 'var(--color-gray-900)',
-                        color: 'inherit',
-                        borderRadius: '6px'
-                      }} />
-                    </label>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.quantity}</span>
-                      <input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} style={{
-                        padding: '0.5rem',
-                        border: '1px solid var(--color-gray-600)',
-                        background: 'var(--color-gray-900)',
-                        color: 'inherit',
-                        borderRadius: '6px'
-                      }} />
-                    </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.ticketName}</label>
+                    <input name="name" type="text" required defaultValue={editingTicket?.name || ''} className="admin-input" />
+                  </div>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label">{t.description}</label>
+                    <textarea name="description" defaultValue={editingTicket?.description || ''} className="admin-textarea" />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.startTime}</span>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.price}</label>
+                      <input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="admin-input" />
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.quantity}</label>
+                      <input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="admin-input" />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.startTime}</label>
                       <input
                         name="saleStart"
                         type="datetime-local"
                         defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ''}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid var(--color-gray-600)',
-                          background: 'var(--color-gray-900)',
-                          color: 'inherit',
-                          borderRadius: '6px'
-                        }}
+                        className="admin-input"
                       />
-                    </label>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span>{t.endTime}</span>
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-form-label">{t.endTime}</label>
                       <input
                         name="saleEnd"
                         type="datetime-local"
                         defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ''}
-                        style={{
-                          padding: '0.5rem',
-                          border: '1px solid var(--color-gray-600)',
-                          background: 'var(--color-gray-900)',
-                          color: 'inherit',
-                          borderRadius: '6px'
-                        }}
+                        className="admin-input"
                       />
-                    </label>
+                    </div>
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <input
                       name="requireInviteCode"
                       type="checkbox"
                       defaultChecked={editingTicket?.requireInviteCode || false}
-                      style={{
-                        width: '18px',
-                        height: '18px'
-                      }}
+                      style={{ width: '18px', height: '18px' }}
                     />
-                    <span>{t.requireInviteCode}</span>
+                    <span className="admin-form-label" style={{ marginBottom: 0 }}>{t.requireInviteCode}</span>
                   </label>
                 </div>
-                <div style={{
-                  display: 'flex',
-                  gap: '0.75rem',
-                  marginTop: '1.5rem',
-                  justifyContent: 'flex-end'
-                }}>
-                  <button type="submit" className="button" style={{ background: '#ffc107', color: '#2a2416' }}>{t.save}</button>
-                  <button type="button" className="button" onClick={closeModal}>{t.cancel}</button>
+                <div className="admin-modal-actions">
+                  <button type="submit" className="admin-button warning">{t.save}</button>
+                  <button type="button" className="admin-button secondary" onClick={closeModal}>{t.cancel}</button>
                 </div>
               </form>
             </div>

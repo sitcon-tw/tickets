@@ -205,12 +205,12 @@ export default function FormsPage() {
         <AdminNav />
         <main>
           <h1>{t.title}</h1>
-          <p style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
+          <div className="admin-empty" style={{ padding: '4rem 2rem' }}>
             {t.noTicket}
-          </p>
+          </div>
           <div style={{ textAlign: 'center', marginTop: '1rem' }}>
             <button
-              className="button"
+              className="admin-button primary"
               onClick={() => window.location.href = `/${locale}/admin/tickets`}
             >
               {t.backToTickets}
@@ -227,7 +227,7 @@ export default function FormsPage() {
       <main>
         <div style={{ marginBottom: '1.5rem' }}>
           <button
-            className="button"
+            className="admin-button secondary"
             onClick={() => window.location.href = `/${locale}/admin/tickets`}
             style={{ marginBottom: '1rem' }}
           >
@@ -235,15 +235,11 @@ export default function FormsPage() {
           </button>
           <h1>{t.title}</h1>
           {currentTicket && (
-            <div style={{
-              padding: '1rem',
-              background: 'var(--color-gray-800)',
-              borderRadius: '8px',
-              marginTop: '1rem'
-            }}>
-              <strong>{t.ticketLabel}:</strong> {currentTicket.name}
+            <div className="admin-stat-card" style={{ marginTop: '1rem' }}>
+              <div className="admin-stat-label">{t.ticketLabel}</div>
+              <div className="admin-stat-value" style={{ fontSize: '1.5rem' }}>{currentTicket.name}</div>
               {currentTicket.description && (
-                <div style={{ marginTop: '0.5rem', opacity: 0.8, fontSize: '0.9rem' }}>
+                <div style={{ marginTop: '0.5rem', opacity: 0.7, fontSize: '0.9rem' }}>
                   {currentTicket.description}
                 </div>
               )}
@@ -261,26 +257,26 @@ export default function FormsPage() {
             margin: '1rem 0'
           }}>
             {questions.length === 0 && (
-              <div style={{
-                opacity: 0.6,
+              <div className="admin-empty" style={{
                 fontStyle: 'italic',
-                padding: '1rem',
-                textAlign: 'center',
-                border: '1px dashed #444',
+                padding: '2rem',
+                border: '1px dashed var(--color-gray-600)',
                 borderRadius: '8px'
               }}>尚無問題</div>
             )}
             {questions.map((q, index) => (
               <div key={q.id} data-id={q.id} style={{
-                background: '#1e1e1e',
-                border: '1px solid #333',
-                borderRadius: '8px',
-                padding: '12px 14px',
+                background: 'var(--color-gray-800)',
+                border: '1px solid var(--color-gray-700)',
+                borderRadius: '12px',
+                padding: '1rem 1.25rem',
                 display: 'grid',
                 gridTemplateColumns: '32px 1fr auto',
                 gap: '12px',
                 alignItems: 'start',
-                position: 'relative'
+                position: 'relative',
+                transition: 'all 0.15s ease',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
               }}>
                 <div style={{
                   cursor: 'grab',
@@ -304,43 +300,39 @@ export default function FormsPage() {
                     alignItems: 'center'
                   }}>
                     <label style={{
-                      fontSize: '0.65rem',
+                      fontSize: '0.7rem',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
-                      color: '#bbb'
+                      color: 'var(--color-gray-400)',
+                      fontWeight: 500
                     }}>問題</label>
                     <input
                       type="text"
                       value={q.label}
                       placeholder="問題標籤"
                       onChange={(e) => updateQuestion(q.id, { label: e.target.value })}
+                      className="admin-input"
                       style={{
-                        background: '#111',
-                        border: '1px solid #333',
-                        color: '#eee',
-                        borderRadius: '6px',
-                        padding: '6px 8px',
-                        fontSize: '0.8rem',
-                        minWidth: '160px'
+                        fontSize: '0.85rem',
+                        minWidth: '160px',
+                        padding: '0.5rem 0.7rem'
                       }}
                     />
                     <label style={{
-                      fontSize: '0.65rem',
+                      fontSize: '0.7rem',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
-                      color: '#bbb'
+                      color: 'var(--color-gray-400)',
+                      fontWeight: 500
                     }}>種類</label>
                     <select
                       value={q.type}
                       onChange={(e) => updateQuestion(q.id, { type: e.target.value })}
+                      className="admin-select"
                       style={{
                         width: '140px',
-                        background: '#111',
-                        border: '1px solid #333',
-                        color: '#eee',
-                        borderRadius: '6px',
-                        padding: '6px 8px',
-                        fontSize: '0.8rem'
+                        fontSize: '0.85rem',
+                        padding: '0.5rem 0.7rem'
                       }}
                     >
                       {["text", "email", "phone", "textarea", "select", "radio", "checkbox"].map(t => (
@@ -350,17 +342,12 @@ export default function FormsPage() {
                     <button
                       type="button"
                       onClick={() => updateQuestion(q.id, { required: !q.required })}
+                      className="admin-button small"
                       style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '0.65rem',
-                        background: q.required ? '#303030' : '#222',
-                        border: `1px solid ${q.required ? '#666' : '#444'}`,
-                        color: q.required ? '#fff' : 'inherit',
-                        borderRadius: '4px',
-                        padding: '4px 8px',
-                        cursor: 'pointer'
+                        background: q.required ? 'var(--color-gray-600)' : 'var(--color-gray-800)',
+                        border: `1px solid ${q.required ? 'var(--color-gray-500)' : 'var(--color-gray-700)'}`,
+                        fontSize: '0.7rem',
+                        padding: '0.35rem 0.7rem'
                       }}
                     >
                       {q.required ? "必填" : "選填"}
@@ -368,13 +355,10 @@ export default function FormsPage() {
                     <button
                       type="button"
                       onClick={() => deleteQuestion(q.id)}
+                      className="admin-button small danger"
                       style={{
-                        background: '#2a0000',
-                        border: '1px solid #550000',
-                        color: '#ff8d8d',
-                        fontSize: '0.65rem',
-                        padding: '4px 8px',
-                        borderRadius: '4px'
+                        fontSize: '0.7rem',
+                        padding: '0.35rem 0.7rem'
                       }}
                     >
                       ✕
@@ -387,46 +371,44 @@ export default function FormsPage() {
                     alignItems: 'center'
                   }}>
                     <label style={{
-                      fontSize: '0.65rem',
+                      fontSize: '0.7rem',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
-                      color: '#bbb'
+                      color: 'var(--color-gray-400)',
+                      fontWeight: 500
                     }}>說明</label>
                     <input
                       type="text"
                       value={q.help || ''}
                       placeholder="說明文字 (選填)"
                       onChange={(e) => updateQuestion(q.id, { help: e.target.value })}
+                      className="admin-input"
                       style={{
-                        background: '#111',
-                        border: '1px solid #333',
-                        color: '#eee',
-                        borderRadius: '6px',
-                        padding: '6px 8px',
-                        fontSize: '0.8rem',
-                        minWidth: '160px'
+                        fontSize: '0.85rem',
+                        minWidth: '160px',
+                        padding: '0.5rem 0.7rem'
                       }}
                     />
                   </div>
                   {["select", "radio", "checkbox"].includes(q.type) && (
                     <div>
                       <div style={{
-                        marginTop: '4px',
-                        padding: '6px 8px',
-                        border: '1px dashed #444',
-                        borderRadius: '6px',
-                        background: '#161616',
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        border: '1px dashed var(--color-gray-600)',
+                        borderRadius: '8px',
+                        background: 'var(--color-gray-900)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '6px'
+                        gap: '0.5rem'
                       }}>
                         {(q.options || []).map((opt, i) => (
                           <div key={i} style={{
                             display: 'flex',
-                            gap: '6px',
+                            gap: '0.5rem',
                             alignItems: 'center'
                           }}>
-                            <span style={{ cursor: 'grab' }} title="Drag option">⋮⋮</span>
+                            <span style={{ cursor: 'grab', color: 'var(--color-gray-500)' }} title="Drag option">⋮⋮</span>
                             <input
                               type="text"
                               value={opt}
@@ -435,7 +417,8 @@ export default function FormsPage() {
                                 newOptions[i] = e.target.value;
                                 updateQuestion(q.id, { options: newOptions });
                               }}
-                              style={{ flex: 1 }}
+                              className="admin-input"
+                              style={{ flex: 1, fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
                             />
                             <button
                               type="button"
@@ -444,14 +427,8 @@ export default function FormsPage() {
                                 newOptions.splice(i, 1);
                                 updateQuestion(q.id, { options: newOptions });
                               }}
-                              style={{
-                                background: '#222',
-                                border: '1px solid #444',
-                                color: '#bbb',
-                                fontSize: '0.65rem',
-                                padding: '4px 6px',
-                                borderRadius: '4px'
-                              }}
+                              className="admin-button small secondary"
+                              style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
                             >
                               刪除
                             </button>
@@ -463,13 +440,10 @@ export default function FormsPage() {
                             const newOptions = [...(q.options || []), ""];
                             updateQuestion(q.id, { options: newOptions });
                           }}
+                          className="admin-button small secondary"
                           style={{
-                            background: '#222',
-                            border: '1px solid #444',
-                            color: '#bbb',
-                            fontSize: '0.65rem',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            padding: '0.4rem 0.7rem',
                             alignSelf: 'flex-start'
                           }}
                         >
@@ -484,28 +458,13 @@ export default function FormsPage() {
           </div>
           <div style={{
             display: 'flex',
-            gap: '12px'
+            gap: '0.75rem',
+            marginTop: '1rem'
           }}>
-            <button id="add-question" type="button" onClick={addQuestion} style={{
-              background: '#1f1f1f',
-              border: '1px solid #444',
-              color: '#eee',
-              borderRadius: '6px',
-              padding: '8px 14px',
-              fontSize: '0.75rem',
-              cursor: 'pointer'
-            }}>
+            <button id="add-question" type="button" onClick={addQuestion} className="admin-button secondary">
               + {t.addQuestion}
             </button>
-            <button id="save-form" type="button" onClick={saveForm} style={{
-              background: '#155e29',
-              border: '1px solid #1d7b34',
-              color: '#eee',
-              borderRadius: '6px',
-              padding: '8px 14px',
-              fontSize: '0.75rem',
-              cursor: 'pointer'
-            }}>
+            <button id="save-form" type="button" onClick={saveForm} className="admin-button success">
               💾 {t.save}
             </button>
           </div>

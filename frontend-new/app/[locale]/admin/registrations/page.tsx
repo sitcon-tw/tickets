@@ -127,7 +127,7 @@ export default function RegistrationsPage() {
   // Filter and sort
   const sortedAndFiltered = useMemo(() => {
     const q = searchTerm.toLowerCase();
-    let filtered = registrations.filter(r => {
+    const filtered = registrations.filter(r => {
       if (statusFilter && r.status !== statusFilter) return false;
       if (q) {
         const emailMatch = r.email.toLowerCase().includes(q);
@@ -251,216 +251,110 @@ export default function RegistrationsPage() {
         <h1>{t.title}</h1>
 
         {/* Statistics Section */}
-        <section style={{ margin: "1rem 0" }}>
+        <section style={{ margin: "1.5rem 0" }}>
           <h3 style={{ marginBottom: "0.75rem", fontSize: "0.9rem", opacity: 0.8 }}>{t.stats}</h3>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "0.75rem"
-          }}>
-            <div style={{
-              background: "#1a1a1a",
-              border: "1px solid #333",
-              borderRadius: "8px",
-              padding: "0.75rem 1rem"
-            }}>
-              <div style={{ fontSize: "0.7rem", opacity: 0.7, marginBottom: "0.25rem" }}>{t.total}</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 600 }}>{stats.total}</div>
+          <div className="admin-stats-grid">
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">{t.total}</div>
+              <div className="admin-stat-value">{stats.total}</div>
             </div>
-            <div style={{
-              background: "#1a1a1a",
-              border: "1px solid #2d5",
-              borderRadius: "8px",
-              padding: "0.75rem 1rem"
-            }}>
-              <div style={{ fontSize: "0.7rem", opacity: 0.7, marginBottom: "0.25rem" }}>{t.confirmed}</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 600, color: "#2d5" }}>{stats.confirmed}</div>
+            <div className="admin-stat-card" style={{ borderColor: '#22c55e' }}>
+              <div className="admin-stat-label">{t.confirmed}</div>
+              <div className="admin-stat-value" style={{ color: '#22c55e' }}>{stats.confirmed}</div>
             </div>
-            <div style={{
-              background: "#1a1a1a",
-              border: "1px solid #fa3",
-              borderRadius: "8px",
-              padding: "0.75rem 1rem"
-            }}>
-              <div style={{ fontSize: "0.7rem", opacity: 0.7, marginBottom: "0.25rem" }}>{t.pending}</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 600, color: "#fa3" }}>{stats.pending}</div>
+            <div className="admin-stat-card" style={{ borderColor: '#f59e0b' }}>
+              <div className="admin-stat-label">{t.pending}</div>
+              <div className="admin-stat-value" style={{ color: '#f59e0b' }}>{stats.pending}</div>
             </div>
-            <div style={{
-              background: "#1a1a1a",
-              border: "1px solid #f55",
-              borderRadius: "8px",
-              padding: "0.75rem 1rem"
-            }}>
-              <div style={{ fontSize: "0.7rem", opacity: 0.7, marginBottom: "0.25rem" }}>{t.cancelled}</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 600, color: "#f55" }}>{stats.cancelled}</div>
+            <div className="admin-stat-card" style={{ borderColor: '#ef4444' }}>
+              <div className="admin-stat-label">{t.cancelled}</div>
+              <div className="admin-stat-value" style={{ color: '#ef4444' }}>{stats.cancelled}</div>
             </div>
           </div>
         </section>
 
-        <section
-          style={{
-            margin: "1rem 0",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.75rem"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.5rem",
-              alignItems: "center"
-            }}
+        <section className="admin-controls" style={{ margin: "1rem 0" }}>
+          <input
+            type="text"
+            placeholder={"🔍 " + t.search}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="admin-input"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="admin-select"
           >
-            <input
-              type="text"
-              placeholder={"🔍 " + t.search}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                background: "#111",
-                border: "1px solid #333",
-                color: "#eee",
-                borderRadius: "6px",
-                padding: "6px 10px",
-                fontSize: "0.75rem"
-              }}
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                background: "#111",
-                border: "1px solid #333",
-                color: "#eee",
-                borderRadius: "6px",
-                padding: "6px 10px",
-                fontSize: "0.75rem"
-              }}
-            >
-              <option value="">{t.allStatus}</option>
-              <option value="confirmed">{t.confirmed}</option>
-              <option value="pending">{t.pending}</option>
-              <option value="cancelled">{t.cancelled}</option>
-            </select>
-            <button
-              onClick={loadRegistrations}
-              className="button"
-            >
-              ↻ {t.refresh}
-            </button>
-            <button
-              onClick={syncToSheets}
-              className="button"
-              style={{ backgroundColor: '#2563eb', color: '#fff' }}
-            >
-              📥 {t.syncSheets}
-            </button>
-            {selectedRegistrations.size > 0 && (
-              <>
-                <button
-                  onClick={exportSelected}
-                  className="button"
-                  style={{ backgroundColor: '#059669', color: '#fff' }}
-                >
-                  📤 {t.exportSelected} ({selectedRegistrations.size})
-                </button>
-                <button
-                  onClick={() => setSelectedRegistrations(new Set())}
-                  className="button"
-                  style={{ backgroundColor: '#dc2626', color: '#fff' }}
-                >
-                  ✕ {t.deselectAll}
-                </button>
-              </>
-            )}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.5rem",
-              alignItems: "center"
-            }}
-          >
-            <label>{t.columns}</label>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "0.4rem"
-              }}
-            >
-              {columnDefs.map(col => (
-                <button
-                  key={col.id}
-                  data-on={activeColumns.has(col.id) ? "true" : "false"}
-                  onClick={() => {
-                    const newCols = new Set(activeColumns);
-                    if (newCols.has(col.id)) newCols.delete(col.id);
-                    else newCols.add(col.id);
-                    setActiveColumns(newCols);
-                  }}
-                  style={{
-                    background: activeColumns.has(col.id) ? "#2a2a2a" : "#1a1a1a",
-                    border: "1px solid #444",
-                    padding: "4px 8px",
-                    fontSize: "0.65rem",
-                    borderRadius: "999px",
-                    cursor: "pointer",
-                    opacity: activeColumns.has(col.id) ? 1 : 0.5,
-                    color: "#eee"
-                  }}
-                >
-                  {col.label}
-                </button>
-              ))}
-            </div>
+            <option value="">{t.allStatus}</option>
+            <option value="confirmed">{t.confirmed}</option>
+            <option value="pending">{t.pending}</option>
+            <option value="cancelled">{t.cancelled}</option>
+          </select>
+          <button onClick={loadRegistrations} className="admin-button secondary">
+            ↻ {t.refresh}
+          </button>
+          <button onClick={syncToSheets} className="admin-button primary">
+            📥 {t.syncSheets}
+          </button>
+          {selectedRegistrations.size > 0 && (
+            <>
+              <button onClick={exportSelected} className="admin-button success">
+                📤 {t.exportSelected} ({selectedRegistrations.size})
+              </button>
+              <button onClick={() => setSelectedRegistrations(new Set())} className="admin-button danger">
+                ✕ {t.deselectAll}
+              </button>
+            </>
+          )}
+        </section>
+
+        <section className="admin-controls" style={{ marginBottom: "1rem" }}>
+          <label style={{ fontSize: '0.9rem', fontWeight: 500 }}>{t.columns}</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            {columnDefs.map(col => (
+              <button
+                key={col.id}
+                data-on={activeColumns.has(col.id) ? "true" : "false"}
+                onClick={() => {
+                  const newCols = new Set(activeColumns);
+                  if (newCols.has(col.id)) newCols.delete(col.id);
+                  else newCols.add(col.id);
+                  setActiveColumns(newCols);
+                }}
+                className="admin-button small"
+                style={{
+                  background: activeColumns.has(col.id) ? "var(--color-gray-600)" : "var(--color-gray-800)",
+                  borderRadius: "999px",
+                  opacity: activeColumns.has(col.id) ? 1 : 0.5,
+                  fontSize: "0.7rem",
+                  padding: "0.3rem 0.7rem"
+                }}
+              >
+                {col.label}
+              </button>
+            ))}
           </div>
         </section>
 
         <section>
-          <div style={{
-            overflowX: 'auto',
-            borderRadius: '8px',
-            backgroundColor: 'var(--color-gray-800)',
-            border: '2px solid var(--color-gray-900)'
-          }}>
+          <div className="admin-table-container">
             {isLoading && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '1rem',
-                padding: '3rem',
-                opacity: 0.7
-              }}>
+              <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p style={{ fontSize: '0.9rem' }}>{t.loading}</p>
+                <p>{t.loading}</p>
               </div>
             )}
             {!isLoading && filtered.length === 0 && (
-              <div style={{ padding: "2rem", textAlign: "center", opacity: "0.7" }}>
+              <div className="admin-empty">
                 {t.empty}
               </div>
             )}
             {!isLoading && filtered.length > 0 && (
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                minWidth: '900px'
-              }}>
+              <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{
-                      padding: '0.5rem 0.5rem',
-                      textAlign: 'center',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      width: '40px'
-                    }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
                       <input
                         type="checkbox"
                         checked={selectedRegistrations.size === paginatedData.length && paginatedData.length > 0}
@@ -475,12 +369,6 @@ export default function RegistrationsPage() {
                           key={cid}
                           onClick={() => col.sortable && handleSort(cid as SortField)}
                           style={{
-                            padding: '0.5rem 1rem',
-                            textAlign: 'left',
-                            borderBottom: '1px solid var(--color-gray-400)',
-                            backgroundColor: 'var(--color-gray-700)',
-                            color: 'var(--color-gray-200)',
-                            fontWeight: 600,
                             cursor: col.sortable ? 'pointer' : 'default',
                             userSelect: 'none'
                           }}
@@ -494,15 +382,7 @@ export default function RegistrationsPage() {
                         </th>
                       ) : null;
                     })}
-                    <th style={{
-                      padding: '0.5rem 1rem',
-                      textAlign: 'center',
-                      borderBottom: '1px solid var(--color-gray-400)',
-                      backgroundColor: 'var(--color-gray-700)',
-                      color: 'var(--color-gray-200)',
-                      fontWeight: 600,
-                      width: '100px'
-                    }}>
+                    <th style={{ width: '100px', textAlign: 'center' }}>
                       Actions
                     </th>
                   </tr>
@@ -510,13 +390,9 @@ export default function RegistrationsPage() {
                 <tbody>
                   {paginatedData.map(r => (
                     <tr key={r.id} style={{
-                      backgroundColor: selectedRegistrations.has(r.id) ? '#1a2a3a' : 'transparent'
+                      backgroundColor: selectedRegistrations.has(r.id) ? 'var(--color-gray-750)' : 'transparent'
                     }}>
-                      <td style={{
-                        padding: '0.5rem 0.5rem',
-                        textAlign: 'center',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>
+                      <td style={{ textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={selectedRegistrations.has(r.id)}
@@ -536,64 +412,24 @@ export default function RegistrationsPage() {
                             : r.status === "cancelled"
                             ? "ended"
                             : "";
-                        const getStatusBadgeStyle = (statusClass: string) => {
-                          const baseStyle: React.CSSProperties = {
-                            padding: '0.3rem 0.6rem',
-                            borderRadius: '4px',
-                            fontSize: '0.85rem',
-                            display: 'inline-block'
-                          };
-                          if (statusClass === 'active') {
-                            return { ...baseStyle, backgroundColor: '#d4edda', color: '#155724' };
-                          } else if (statusClass === 'ended') {
-                            return { ...baseStyle, backgroundColor: '#f8d7da', color: '#721c24' };
-                          } else if (statusClass === 'pending') {
-                            return { ...baseStyle, backgroundColor: '#fff3cd', color: '#856404' };
-                          }
-                          return baseStyle;
-                        };
                         return (
-                          <td
-                            key={cid}
-                            style={{
-                              padding: '0.5rem 1rem',
-                              textAlign: 'left',
-                              borderBottom: '1px solid var(--color-gray-400)'
-                            }}
-                          >
+                          <td key={cid}>
                             {cid === 'status' ? (
-                              <span style={getStatusBadgeStyle(statusClass)}>
+                              <span className={`status-badge ${statusClass}`}>
                                 {val}
                               </span>
                             ) : (
-                              <div
-                                style={{
-                                  maxWidth: "220px",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap"
-                                }}
-                              >
+                              <div className="admin-truncate">
                                 {val}
                               </div>
                             )}
                           </td>
                         );
                       })}
-                      <td style={{
-                        padding: '0.5rem 1rem',
-                        textAlign: 'center',
-                        borderBottom: '1px solid var(--color-gray-400)'
-                      }}>
+                      <td style={{ textAlign: 'center' }}>
                         <button
                           onClick={() => openDetailModal(r)}
-                          className="button"
-                          style={{
-                            fontSize: '0.7rem',
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: '#3b82f6',
-                            color: '#fff'
-                          }}
+                          className="admin-button small primary"
                         >
                           👁 {t.viewDetails}
                         </button>
@@ -616,38 +452,30 @@ export default function RegistrationsPage() {
             flexWrap: "wrap",
             gap: "0.75rem"
           }}>
-            <div style={{ fontSize: "0.75rem", opacity: "0.75" }}>
+            <div style={{ fontSize: "0.85rem", opacity: "0.75" }}>
               {sortedAndFiltered.length} {t.total} {selectedRegistrations.size > 0 && `• ${selectedRegistrations.size} ${t.selected}`}
             </div>
             {totalPages > 1 && (
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
-              }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <button
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="button"
+                  className="admin-button small secondary"
                   style={{
-                    fontSize: "0.7rem",
-                    padding: "0.25rem 0.5rem",
                     opacity: page === 1 ? 0.5 : 1,
                     cursor: page === 1 ? 'not-allowed' : 'pointer'
                   }}
                 >
                   ←
                 </button>
-                <span style={{ fontSize: "0.75rem" }}>
+                <span style={{ fontSize: "0.85rem" }}>
                   {t.page} {page} {t.of} {totalPages}
                 </span>
                 <button
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
-                  className="button"
+                  className="admin-button small secondary"
                   style={{
-                    fontSize: "0.7rem",
-                    padding: "0.25rem 0.5rem",
                     opacity: page === totalPages ? 0.5 : 1,
                     cursor: page === totalPages ? 'not-allowed' : 'pointer'
                   }}
@@ -660,13 +488,10 @@ export default function RegistrationsPage() {
                     setPageSize(Number(e.target.value));
                     setPage(1);
                   }}
+                  className="admin-select"
                   style={{
-                    background: "#111",
-                    border: "1px solid #333",
-                    color: "#eee",
-                    borderRadius: "6px",
-                    padding: "4px 8px",
-                    fontSize: "0.7rem",
+                    padding: "0.35rem 0.7rem",
+                    fontSize: "0.75rem",
                     marginLeft: "0.5rem"
                   }}
                 >
@@ -683,91 +508,42 @@ export default function RegistrationsPage() {
 
       {/* Detail Modal */}
       {showDetailModal && selectedRegistration && (
-        <div
-          onClick={closeDetailModal}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #333',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '80vh',
-              overflowY: 'auto'
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem',
-              paddingBottom: '1rem',
-              borderBottom: '1px solid #333'
-            }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{t.registrationDetails}</h2>
-              <button
-                onClick={closeDetailModal}
-                className="button"
-                style={{
-                  backgroundColor: '#dc2626',
-                  color: '#fff',
-                  fontSize: '0.8rem',
-                  padding: '0.25rem 0.75rem'
-                }}
-              >
-                ✕ {t.close}
+        <div className="admin-modal-overlay" onClick={closeDetailModal}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2 className="admin-modal-title">{t.registrationDetails}</h2>
+              <button className="admin-modal-close" onClick={closeDetailModal}>
+                ✕
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>ID</div>
-                <div style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{selectedRegistration.id}</div>
+                <div className="admin-stat-label">ID</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>{selectedRegistration.id}</div>
               </div>
 
               <div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Email</div>
-                <div style={{ fontSize: '0.9rem' }}>{selectedRegistration.email}</div>
+                <div className="admin-stat-label">Email</div>
+                <div style={{ fontSize: '0.95rem' }}>{selectedRegistration.email}</div>
               </div>
 
               <div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Status</div>
-                <span style={{
-                  padding: '0.3rem 0.6rem',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  display: 'inline-block',
-                  backgroundColor: selectedRegistration.status === 'confirmed' ? '#d4edda' :
-                    selectedRegistration.status === 'pending' ? '#fff3cd' : '#f8d7da',
-                  color: selectedRegistration.status === 'confirmed' ? '#155724' :
-                    selectedRegistration.status === 'pending' ? '#856404' : '#721c24'
-                }}>
+                <div className="admin-stat-label">Status</div>
+                <span className={`status-badge ${
+                  selectedRegistration.status === 'confirmed' ? 'active' :
+                  selectedRegistration.status === 'pending' ? 'pending' : 'ended'
+                }`}>
                   {selectedRegistration.status}
                 </span>
               </div>
 
               {selectedRegistration.event && (
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Event</div>
-                  <div style={{ fontSize: '0.9rem' }}>{selectedRegistration.event.name}</div>
+                  <div className="admin-stat-label">Event</div>
+                  <div style={{ fontSize: '0.95rem' }}>{selectedRegistration.event.name}</div>
                   {selectedRegistration.event.startDate && (
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.25rem' }}>
                       {new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
                     </div>
                   )}
@@ -776,10 +552,10 @@ export default function RegistrationsPage() {
 
               {selectedRegistration.ticket && (
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Ticket</div>
-                  <div style={{ fontSize: '0.9rem' }}>{selectedRegistration.ticket.name}</div>
+                  <div className="admin-stat-label">Ticket</div>
+                  <div style={{ fontSize: '0.95rem' }}>{selectedRegistration.ticket.name}</div>
                   {selectedRegistration.ticket.price !== undefined && (
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.25rem' }}>
                       Price: ${selectedRegistration.ticket.price}
                     </div>
                   )}
@@ -788,36 +564,36 @@ export default function RegistrationsPage() {
 
               {selectedRegistration.referredBy && (
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>{t.referredBy}</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{selectedRegistration.referredBy}</div>
+                  <div className="admin-stat-label">{t.referredBy}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>{selectedRegistration.referredBy}</div>
                 </div>
               )}
 
               <div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Created At</div>
-                <div style={{ fontSize: '0.9rem' }}>{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+                <div className="admin-stat-label">Created At</div>
+                <div style={{ fontSize: '0.95rem' }}>{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
               </div>
 
               <div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>Updated At</div>
-                <div style={{ fontSize: '0.9rem' }}>{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+                <div className="admin-stat-label">Updated At</div>
+                <div style={{ fontSize: '0.95rem' }}>{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
               </div>
 
               {selectedRegistration.formData && Object.keys(selectedRegistration.formData).length > 0 && (
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.5rem' }}>{t.formData}</div>
+                  <div className="admin-stat-label" style={{ marginBottom: '0.5rem' }}>{t.formData}</div>
                   <div style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '4px',
+                    backgroundColor: 'var(--color-gray-900)',
+                    border: '2px solid var(--color-gray-700)',
+                    borderRadius: '8px',
                     padding: '0.75rem',
                     fontFamily: 'monospace',
-                    fontSize: '0.8rem'
+                    fontSize: '0.85rem'
                   }}>
                     {Object.entries(selectedRegistration.formData).map(([key, value]) => (
                       <div key={key} style={{ marginBottom: '0.5rem' }}>
-                        <span style={{ color: '#8b5cf6', fontWeight: 600 }}>{key}:</span>{' '}
-                        <span style={{ color: '#eee' }}>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                        <span style={{ color: '#a78bfa', fontWeight: 600 }}>{key}:</span>{' '}
+                        <span style={{ color: 'var(--color-gray-100)' }}>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
                       </div>
                     ))}
                   </div>
