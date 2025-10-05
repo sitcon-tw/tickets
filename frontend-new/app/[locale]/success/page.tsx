@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Nav from "@/components/Nav";
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
-import { authAPI, registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
+import { authAPI, registrationsAPI } from '@/lib/api/endpoints';
 
 export default function Success() {
 	const locale = useLocale();
@@ -78,36 +78,35 @@ export default function Success() {
 	const [copyText, setCopyText] = useState<string>('');
 
 	useEffect(() => {
+		const loadSuccessInfo = async () => {
+			try {
+				// Check if user is authenticated
+				await authAPI.getSession();
+
+				// Get user's registrations to show count
+				let count: number | string = t.loadFailed;
+				try {
+					const registrations = await registrationsAPI.getAll();
+					if (registrations.success && registrations.data) {
+						count = registrations.data.length || 1;
+					}
+				} catch (error) {
+					console.error('Failed to load registrations:', error);
+				}
+				setParticipantCount(count);
+
+				// Get referral code - Note: This endpoint needs to be implemented in the API
+				const code = t.loadFailed;
+				setReferralCode(code);
+
+			} catch (error) {
+				console.error('Failed to load success info:', error);
+				window.location.href = '/login/';
+			}
+		};
 		setCopyText(t.copyInvite);
 		loadSuccessInfo();
-	}, []);
-
-	const loadSuccessInfo = async () => {
-		try {
-			// Check if user is authenticated
-			await authAPI.getSession();
-
-			// Get user's registrations to show count
-			let count: number | string = t.loadFailed;
-			try {
-				const registrations = await registrationsAPI.getAll();
-				if (registrations.success && registrations.data) {
-					count = registrations.data.length || 1;
-				}
-			} catch (error) {
-				console.error('Failed to load registrations:', error);
-			}
-			setParticipantCount(count);
-
-			// Get referral code - Note: This endpoint needs to be implemented in the API
-			const code = t.loadFailed;
-			setReferralCode(code);
-
-		} catch (error) {
-			console.error('Failed to load success info:', error);
-			window.location.href = '/login/';
-		}
-	};
+	}, [t.copyInvite, t.loadFailed]);
 
 	const handleCopy = () => {
 		const baseUrl = window.location.origin;

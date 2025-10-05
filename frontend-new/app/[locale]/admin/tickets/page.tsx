@@ -4,13 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { adminTicketsAPI, adminEventsAPI } from "@/lib/api/endpoints";
-import type { Ticket, Event } from "@/lib/types/api";
+import { adminTicketsAPI } from "@/lib/api/endpoints";
+import type { Ticket } from "@/lib/types/api";
 
 export default function TicketsPage() {
   const locale = useLocale();
 
-  const [events, setEvents] = useState<Event[]>([]);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +18,6 @@ export default function TicketsPage() {
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
-    selectEvent: { "zh-Hant": "選擇活動", "zh-Hans": "选择活动", en: "Select Event" },
     ticketTypes: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Types" },
     startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start Time" },
     endTime: { "zh-Hant": "結束時間", "zh-Hans": "结束时间", en: "End Time" },
@@ -41,33 +39,25 @@ export default function TicketsPage() {
     ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" }
   });
 
-  const loadEvents = useCallback(async () => {
-    try {
-      const response = await adminEventsAPI.getAll();
-      if (response.success && response.data && response.data.length > 0) {
-        setEvents(response.data);
-
-        // Check localStorage for saved event selection
-        const savedEventId = localStorage.getItem('selectedEventId');
-        const eventExists = response.data.find(e => e.id === savedEventId);
-
-        if (savedEventId && eventExists) {
-          setCurrentEventId(savedEventId);
-        } else {
-          // Default to first event
-          setCurrentEventId(response.data[0].id);
-          localStorage.setItem('selectedEventId', response.data[0].id);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load events:', error);
+  // Load event ID from localStorage on mount
+  useEffect(() => {
+    const savedEventId = localStorage.getItem('selectedEventId');
+    if (savedEventId) {
+      setCurrentEventId(savedEventId);
     }
   }, []);
 
-  const handleEventChange = (eventId: string) => {
-    setCurrentEventId(eventId);
-    localStorage.setItem('selectedEventId', eventId);
-  };
+  // Listen for event changes from AdminNav
+  useEffect(() => {
+    const handleEventChange = (e: CustomEvent) => {
+      setCurrentEventId(e.detail.eventId);
+    };
+
+    window.addEventListener('selectedEventChanged', handleEventChange as EventListener);
+    return () => {
+      window.removeEventListener('selectedEventChanged', handleEventChange as EventListener);
+    };
+  }, []);
 
   const loadTickets = useCallback(async () => {
     if (!currentEventId) return;
@@ -84,10 +74,6 @@ export default function TicketsPage() {
       setIsLoading(false);
     }
   }, [currentEventId]);
-
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
 
   useEffect(() => {
     if (currentEventId) {
@@ -207,36 +193,6 @@ export default function TicketsPage() {
       <AdminNav />
       <main>
         <h1>{t.title}</h1>
-
-        <section style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            maxWidth: '400px'
-          }}>
-            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.selectEvent}</span>
-            <select
-              value={currentEventId || ''}
-              onChange={(e) => handleEventChange(e.target.value)}
-              style={{
-                padding: '0.75rem',
-                border: '2px solid var(--color-gray-600)',
-                background: 'var(--color-gray-800)',
-                color: 'inherit',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                cursor: 'pointer'
-              }}
-            >
-              {events.map(event => (
-                <option key={event.id} value={event.id}>
-                  {event.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
 
         <section>
           <div style={{

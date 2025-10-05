@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { useRouter as defaultUseRouter } from "next/navigation";
+import { adminEventsAPI } from "@/lib/api/endpoints";
+import type { Event } from "@/lib/types/api";
 
 const activityLinks = [
   { href: "/admin/", i18nKey: "overview" },
@@ -65,6 +67,42 @@ export default function AdminNav() {
   const defaultRouter = defaultUseRouter();
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
+
+  const loadEvents = useCallback(async () => {
+    try {
+      const response = await adminEventsAPI.getAll();
+      if (response.success && response.data && response.data.length > 0) {
+        setEvents(response.data);
+
+        // Check localStorage for saved event selection
+        const savedEventId = localStorage.getItem('selectedEventId');
+        const eventExists = response.data.find(e => e.id === savedEventId);
+
+        if (savedEventId && eventExists) {
+          setCurrentEventId(savedEventId);
+        } else {
+          // Default to first event
+          setCurrentEventId(response.data[0].id);
+          localStorage.setItem('selectedEventId', response.data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load events:', error);
+    }
+  }, []);
+
+  const handleEventChange = (eventId: string) => {
+    setCurrentEventId(eventId);
+    localStorage.setItem('selectedEventId', eventId);
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('selectedEventChanged', { detail: { eventId } }));
+  };
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   useEffect(() => {
     // Inject global styles for main element
@@ -150,6 +188,11 @@ export default function AdminNav() {
       "zh-Hant": "回到首頁",
       "zh-Hans": "回到首页",
       en: "Back to Home"
+    },
+    selectEvent: {
+      "zh-Hant": "選擇活動",
+      "zh-Hans": "选择活动",
+      en: "Select Event"
     }
   });
 
@@ -158,6 +201,36 @@ export default function AdminNav() {
       <div style={styles.activity}>{t.activityName}</div>
       <div style={styles.title}>{t.systemTitle}</div>
       <nav style={styles.nav}>
+        {events.length > 0 && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', opacity: 0.8 }}>{t.selectEvent}</span>
+              <select
+                value={currentEventId || ''}
+                onChange={(e) => handleEventChange(e.target.value)}
+                style={{
+                  padding: '0.6rem',
+                  border: '1px solid var(--color-gray-700)',
+                  background: 'var(--color-gray-900)',
+                  color: 'inherit',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {events.map(event => (
+                  <option key={event.id} value={event.id}>
+                    {event.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <ul style={styles.navList}>
           {activityLinks.map(({ href, i18nKey }) => (
             <li key={href} style={styles.navItem}>

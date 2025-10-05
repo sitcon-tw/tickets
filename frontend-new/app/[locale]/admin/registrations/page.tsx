@@ -16,6 +16,7 @@ export default function RegistrationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [activeColumns, setActiveColumns] = useState(new Set(['id', 'status', 'ticket', 'event', 'createdAt']));
 
   const t = getTranslations(locale, {
@@ -41,10 +42,35 @@ export default function RegistrationsPage() {
     { id: "tags", label: "Tags", accessor: () => "" }
   ];
 
+  // Load event ID from localStorage on mount
+  useEffect(() => {
+    const savedEventId = localStorage.getItem('selectedEventId');
+    if (savedEventId) {
+      setCurrentEventId(savedEventId);
+    }
+  }, []);
+
+  // Listen for event changes from AdminNav
+  useEffect(() => {
+    const handleEventChange = (e: CustomEvent) => {
+      setCurrentEventId(e.detail.eventId);
+    };
+
+    window.addEventListener('selectedEventChanged', handleEventChange as EventListener);
+    return () => {
+      window.removeEventListener('selectedEventChanged', handleEventChange as EventListener);
+    };
+  }, []);
+
   const loadRegistrations = useCallback(async () => {
+    if (!currentEventId) return;
+
     setIsLoading(true);
     try {
-      const params: { limit: number; status?: 'pending' | 'confirmed' | 'cancelled' } = { limit: 100 };
+      const params: { limit: number; status?: 'pending' | 'confirmed' | 'cancelled'; eventId?: string } = {
+        limit: 100,
+        eventId: currentEventId
+      };
       if (statusFilter) params.status = statusFilter as 'pending' | 'confirmed' | 'cancelled';
 
       const response = await adminRegistrationsAPI.getAll(params);
@@ -56,7 +82,7 @@ export default function RegistrationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, currentEventId]);
 
   useEffect(() => {
     loadRegistrations();

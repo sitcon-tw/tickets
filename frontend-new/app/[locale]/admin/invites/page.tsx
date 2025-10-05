@@ -35,6 +35,7 @@ export default function InvitesPage() {
   const [showCodesModal, setShowCodesModal] = useState(false);
   const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -57,30 +58,57 @@ export default function InvitesPage() {
     amount: { "zh-Hant": "數量", "zh-Hans": "数量", en: "Amount" }
   });
 
+  // Load event ID from localStorage on mount
+  useEffect(() => {
+    const savedEventId = localStorage.getItem('selectedEventId');
+    if (savedEventId) {
+      setCurrentEventId(savedEventId);
+    }
+  }, []);
+
+  // Listen for event changes from AdminNav
+  useEffect(() => {
+    const handleEventChange = (e: CustomEvent) => {
+      setCurrentEventId(e.detail.eventId);
+    };
+
+    window.addEventListener('selectedEventChanged', handleEventChange as EventListener);
+    return () => {
+      window.removeEventListener('selectedEventChanged', handleEventChange as EventListener);
+    };
+  }, []);
+
   const loadInvitationCodes = useCallback(async () => {
+    if (!currentEventId) return;
+
     setIsLoading(true);
     try {
       const response = await adminInvitationCodesAPI.getAll();
       if (response.success) {
         const codesByType: Record<string, InviteType> = {};
+        // Filter codes by tickets that belong to the current event
         (response.data || []).forEach((code: InvitationCodeInfo) => {
-          const typeName = code.name || 'Default';
-          if (!codesByType[typeName]) {
-            codesByType[typeName] = {
-              id: typeName,
-              name: typeName,
-              createdAt: code.createdAt,
-              codes: []
-            };
+          const ticket = tickets.find(t => t.id === code.ticketId);
+          // Only include codes for tickets that belong to the current event
+          if (ticket && ticket.eventId === currentEventId) {
+            const typeName = code.name || 'Default';
+            if (!codesByType[typeName]) {
+              codesByType[typeName] = {
+                id: typeName,
+                name: typeName,
+                createdAt: code.createdAt,
+                codes: []
+              };
+            }
+            codesByType[typeName].codes.push({
+              id: code.id,
+              code: code.code,
+              usedCount: code.usedCount || 0,
+              usageLimit: code.usageLimit || 1,
+              usedBy: '',
+              active: code.isActive !== false
+            });
           }
-          codesByType[typeName].codes.push({
-            id: code.id,
-            code: code.code,
-            usedCount: code.usedCount || 0,
-            usageLimit: code.usageLimit || 1,
-            usedBy: '',
-            active: code.isActive !== false
-          });
         });
         setInviteTypes(Object.values(codesByType));
         setFilteredTypes(Object.values(codesByType));
@@ -90,23 +118,32 @@ export default function InvitesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentEventId, tickets]);
 
   const loadTickets = useCallback(async () => {
+    if (!currentEventId) return;
+
     try {
-      const response = await adminTicketsAPI.getAll();
+      const response = await adminTicketsAPI.getAll({ eventId: currentEventId });
       if (response.success) {
         setTickets(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load tickets:', error);
     }
-  }, []);
+  }, [currentEventId]);
 
   useEffect(() => {
-    loadInvitationCodes();
-    loadTickets();
-  }, [loadInvitationCodes, loadTickets]);
+    if (currentEventId) {
+      loadTickets();
+    }
+  }, [currentEventId, loadTickets]);
+
+  useEffect(() => {
+    if (currentEventId && tickets.length > 0) {
+      loadInvitationCodes();
+    }
+  }, [currentEventId, tickets, loadInvitationCodes]);
 
   useEffect(() => {
     const q = searchTerm.toLowerCase();
