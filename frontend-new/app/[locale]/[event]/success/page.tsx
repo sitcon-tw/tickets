@@ -51,11 +51,17 @@ export default function Success() {
 			"zh-Hans": "回到首页",
 			en: "Go back home"
 		},
+		viewReferralStatus: {
+			"zh-Hant": "查看推薦狀態",
+			"zh-Hans": "查看推荐状态",
+			en: "View Referral Status"
+		},
 	});
 
 	const [referralCode, setReferralCode] = useState<string>(t.loading);
 	const [copiedCode, setCopiedCode] = useState(false);
 	const [copiedUrl, setCopiedUrl] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
@@ -137,7 +143,10 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button" style={{ marginTop: '1rem' }}>{t.goBackHome}</button>
+						<div className="flex gap-4" style={{ marginTop: '2rem' }}>
+							<button onClick={() => {setLoading(true); router.push(`${window.location.href.replace(/\/success$/, '')}/referral-status`)}} className="button">{loading && <Spinner size='sm' />} {t.viewReferralStatus}</button>
+							<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button">{t.goBackHome}</button>
+						</div>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">
