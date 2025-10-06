@@ -101,7 +101,7 @@ export default function Main() {
 			<Nav />
 			<main>
 				<Header />
-				<Welcome />
+				<Welcome eventId={event.id} eventSlug={eventSlug} />
 				<Tickets eventId={event.id} eventSlug={eventSlug} />
 				<Info eventId={event.id} />
 				<Footer />

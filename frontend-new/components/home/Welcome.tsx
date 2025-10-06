@@ -9,7 +9,12 @@ import Spinner from "@/components/Spinner";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "default";
 
-export default function Welcome() {
+interface WelcomeProps {
+  eventId: string;
+  eventSlug: string;
+}
+
+export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
   const locale = useLocale();
   const router = useRouter();
 
@@ -93,10 +98,12 @@ export default function Welcome() {
         try {
           const registrations = await registrationsAPI.getAll();
           if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
-            if (!cancelled) {
+            // Check if user has registered for this specific event
+            const hasRegisteredForEvent = registrations.data.some(reg => reg.event?.id === eventId);
+            if (hasRegisteredForEvent && !cancelled) {
               setWelcomeState("registered");
+              return;
             }
-            return;
           }
         } catch (error) {
           console.error("Failed to load registrations", error);
@@ -123,7 +130,7 @@ export default function Welcome() {
     return () => {
       cancelled = true;
     };
-  }, [referralParam, t.loadFailed]);
+  }, [referralParam, eventId, t.loadFailed]);
 
   return (
     <section>
@@ -148,7 +155,7 @@ export default function Welcome() {
           <div className="items-center justify-center flex">
             <button
               className="button"
-              onClick={() => {setLoading(true); router.push(`${window.location.href}/success`)}}>
+              onClick={() => {setLoading(true); router.push(`/${eventSlug}/success`)}}>
               {loading ? <><Spinner size="sm" />{" "}</> : null}
               {t.viewRegDetail}
             </button>
