@@ -14,6 +14,7 @@ const activityLinks = [
   { href: "/admin/tickets/", i18nKey: "ticketTypes" },
   { href: "/admin/invites/", i18nKey: "invitationCodes" },
   { href: "/admin/registrations/", i18nKey: "registrations" },
+  { href: "/admin/campaigns/", i18nKey: "emailCampaigns" },
   { href: "/admin/users/", i18nKey: "users" },
  ] as const;
 
@@ -168,6 +169,11 @@ export default function AdminNav() {
       "zh-Hant": "報名資料",
       "zh-Hans": "报名资料",
       en: "Registrations"
+    },
+    emailCampaigns: {
+      "zh-Hant": "郵件發送",
+      "zh-Hans": "邮件发送",
+      en: "Email Campaigns"
     },
     users: {
       "zh-Hant": "使用者管理",

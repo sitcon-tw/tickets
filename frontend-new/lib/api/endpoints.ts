@@ -316,8 +316,14 @@ export const adminEmailCampaignsAPI = {
     targetAudience?: {
       roles?: string[];
       eventIds?: string[];
+      ticketIds?: string[];
       registrationStatuses?: string[];
+      hasReferrals?: boolean;
+      isReferrer?: boolean;
+      registeredAfter?: string;
+      registeredBefore?: string;
       tags?: string[];
+      emailDomains?: string[];
     };
     scheduledAt?: string;
   }) => apiClient.post<ApiResponse<EmailCampaign>>('/api/admin/email-campaigns', data),
@@ -327,6 +333,12 @@ export const adminEmailCampaignsAPI = {
 
   preview: (campaignId: string) =>
     apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`),
+
+  calculateRecipients: (campaignId: string) =>
+    apiClient.post<ApiResponse<{ recipientCount: number; recipients: Array<{ email: string }> }>>(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`),
+
+  send: (campaignId: string, sendNow: boolean = true) =>
+    apiClient.post<ApiResponse<EmailCampaign>>(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }),
 
   cancel: (campaignId: string) =>
     apiClient.delete(`/api/admin/email-campaigns/${campaignId}`),

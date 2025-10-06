@@ -4,13 +4,14 @@
  * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
-import { 
-	successResponse, 
-	validationErrorResponse, 
-	serverErrorResponse 
+import {
+	successResponse,
+	validationErrorResponse,
+	serverErrorResponse
 } from "#utils/response.js";
 import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 import prisma from "#config/database.js";
+import { calculateRecipients, sendCampaignEmail } from "#utils/email.js";
 
 /**
  * Admin email campaigns routes with modular schemas and types
@@ -254,6 +255,185 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 			} catch (error) {
 				console.error("Preview email campaign error:", error);
 				const { response, statusCode } = serverErrorResponse("預覽郵件內容失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Calculate recipient count
+	fastify.post(
+		"/email-campaigns/:campaignId/calculate-recipients",
+		{
+			schema: {
+				description: "計算收件人數量",
+				tags: ["admin/email-campaigns"],
+				params: {
+					type: 'object',
+					properties: {
+						campaignId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['campaignId']
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { campaignId } = request.params;
+
+				const campaign = await prisma.emailCampaign.findUnique({
+					where: { id: campaignId }
+				});
+
+				if (!campaign) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					return reply.code(statusCode).send(response);
+				}
+
+				const recipients = await calculateRecipients(campaign.recipientFilter);
+
+				return reply.send(successResponse({
+					campaignId,
+					recipientCount: recipients.length,
+					recipients: recipients.slice(0, 10).map(r => ({ email: r.email }))
+				}, "成功計算收件人數量"));
+			} catch (error) {
+				console.error("Calculate recipients error:", error);
+				const { response, statusCode } = serverErrorResponse("計算收件人數量失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Send email campaign
+	fastify.post(
+		"/email-campaigns/:campaignId/send",
+		{
+			schema: {
+				description: "發送郵件",
+				tags: ["admin/email-campaigns"],
+				params: {
+					type: 'object',
+					properties: {
+						campaignId: {
+							type: 'string',
+							description: '活動 ID'
+						}
+					},
+					required: ['campaignId']
+				},
+				body: {
+					type: 'object',
+					properties: {
+						sendNow: {
+							type: 'boolean',
+							description: '是否立即發送',
+							default: true
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}, Body: {sendNow?: boolean}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { campaignId } = request.params;
+				const { sendNow = true } = request.body || {};
+
+				const campaign = await prisma.emailCampaign.findUnique({
+					where: { id: campaignId }
+				});
+
+				if (!campaign) {
+					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (campaign.status === 'sent') {
+					const { response, statusCode } = validationErrorResponse("郵件任務已發送");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (campaign.status === 'cancelled') {
+					const { response, statusCode } = validationErrorResponse("已取消的郵件任務無法發送");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (!sendNow) {
+					// Schedule for later - just update status
+					await prisma.emailCampaign.update({
+						where: { id: campaignId },
+						data: {
+							status: 'scheduled',
+							updatedAt: new Date()
+						}
+					});
+					return reply.send(successResponse(campaign, "郵件已排程"));
+				}
+
+				// Calculate recipients
+				const recipients = await calculateRecipients(campaign.recipientFilter);
+
+				if (recipients.length === 0) {
+					const { response, statusCode } = validationErrorResponse("沒有符合條件的收件人");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Update status to sending
+				await prisma.emailCampaign.update({
+					where: { id: campaignId },
+					data: {
+						status: 'sending',
+						totalCount: recipients.length,
+						updatedAt: new Date()
+					}
+				});
+
+				// Send emails
+				const result = await sendCampaignEmail(campaign, recipients);
+
+				// Update campaign with results
+				const updatedCampaign = await prisma.emailCampaign.update({
+					where: { id: campaignId },
+					data: {
+						status: 'sent',
+						sentCount: result.sentCount,
+						totalCount: result.totalRecipients,
+						sentAt: new Date(),
+						updatedAt: new Date()
+					}
+				});
+
+				return reply.send(successResponse({
+					...updatedCampaign,
+					sendResult: result
+				}, "郵件發送完成"));
+			} catch (error) {
+				console.error("Send email campaign error:", error);
+
+				// Update campaign status to failed
+				try {
+					await prisma.emailCampaign.update({
+						where: { id: request.params.campaignId },
+						data: {
+							status: 'draft',
+							updatedAt: new Date()
+						}
+					});
+				} catch (updateError) {
+					console.error("Failed to update campaign status:", updateError);
+				}
+
+				const { response, statusCode } = serverErrorResponse("發送郵件失敗：" + error.message);
 				return reply.code(statusCode).send(response);
 			}
 		}

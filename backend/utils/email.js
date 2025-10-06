@@ -1,4 +1,5 @@
 import { MailtrapClient } from "mailtrap";
+import prisma from "#config/database.js";
 
 const client = new MailtrapClient({
 	token: process.env.MAILTRAP_TOKEN,
@@ -334,5 +335,201 @@ export const sendMagicLink = async (email, magicLink) => {
 	} catch (error) {
 		console.error("Email sending error:", error);
 		return false;
+	}
+};
+/**
+ * Calculate recipients based on target audience filters
+ */
+export const calculateRecipients = async (targetAudience) => {
+	try {
+		const where = {};
+
+		// Parse targetAudience if it's a string
+		const filters = typeof targetAudience === 'string'
+			? JSON.parse(targetAudience)
+			: targetAudience;
+
+		if (!filters) {
+			// If no filters, return all registrations
+			const allRegistrations = await prisma.registration.findMany({
+				where: { status: 'confirmed' },
+				select: { email: true, id: true, formData: true },
+				distinct: ['email']
+			});
+			return allRegistrations;
+		}
+
+		// Event filter
+		if (filters.eventIds && filters.eventIds.length > 0) {
+			where.eventId = { in: filters.eventIds };
+		}
+
+		// Ticket filter
+		if (filters.ticketIds && filters.ticketIds.length > 0) {
+			where.ticketId = { in: filters.ticketIds };
+		}
+
+		// Registration status filter
+		if (filters.registrationStatuses && filters.registrationStatuses.length > 0) {
+			where.status = { in: filters.registrationStatuses };
+		} else {
+			// Default to confirmed registrations only
+			where.status = 'confirmed';
+		}
+
+		// Referral filters
+		if (filters.hasReferrals !== undefined) {
+			if (filters.hasReferrals) {
+				where.referredBy = { not: null };
+			} else {
+				where.referredBy = null;
+			}
+		}
+
+		// Date range filters
+		if (filters.registeredAfter) {
+			where.createdAt = { ...where.createdAt, gte: new Date(filters.registeredAfter) };
+		}
+		if (filters.registeredBefore) {
+			where.createdAt = { ...where.createdAt, lte: new Date(filters.registeredBefore) };
+		}
+
+		// Get initial registrations
+		let registrations = await prisma.registration.findMany({
+			where,
+			include: {
+				user: { select: { email: true, role: true } },
+				event: true,
+				ticket: true
+			}
+		});
+
+		// Filter by email domains
+		if (filters.emailDomains && filters.emailDomains.length > 0) {
+			registrations = registrations.filter(r => {
+				const emailDomain = r.email.split('@')[1];
+				return filters.emailDomains.includes(emailDomain);
+			});
+		}
+
+		// Filter by user roles
+		if (filters.roles && filters.roles.length > 0) {
+			registrations = registrations.filter(r =>
+				r.user && filters.roles.includes(r.user.role)
+			);
+		}
+
+		// Filter by isReferrer
+		if (filters.isReferrer !== undefined) {
+			const referrerIds = await prisma.referral.findMany({
+				select: { registrationId: true }
+			});
+			const referrerIdSet = new Set(referrerIds.map(r => r.registrationId));
+
+			registrations = registrations.filter(r =>
+				filters.isReferrer ? referrerIdSet.has(r.id) : !referrerIdSet.has(r.id)
+			);
+		}
+
+		// Deduplicate by email and return
+		const uniqueEmails = new Map();
+		registrations.forEach(r => {
+			if (!uniqueEmails.has(r.email)) {
+				uniqueEmails.set(r.email, {
+					email: r.email,
+					id: r.id,
+					formData: r.formData,
+					event: r.event,
+					ticket: r.ticket
+				});
+			}
+		});
+
+		return Array.from(uniqueEmails.values());
+	} catch (error) {
+		console.error("Error calculating recipients:", error);
+		throw error;
+	}
+};
+
+/**
+ * Replace template variables in email content
+ */
+const replaceTemplateVariables = (content, data) => {
+	let result = content;
+
+	// Parse formData if it's a string
+	const formData = typeof data.formData === 'string'
+		? JSON.parse(data.formData)
+		: data.formData || {};
+
+	// Replace common variables
+	result = result.replace(/\{\{email\}\}/g, data.email || '');
+	result = result.replace(/\{\{name\}\}/g, formData.name || '');
+	result = result.replace(/\{\{eventName\}\}/g, data.event?.name || '');
+	result = result.replace(/\{\{ticketName\}\}/g, data.ticket?.name || '');
+	result = result.replace(/\{\{registrationId\}\}/g, data.id || '');
+
+	return result;
+};
+
+/**
+ * Send campaign email to recipients
+ */
+export const sendCampaignEmail = async (campaign, recipients) => {
+	try {
+		const sender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
+		};
+
+		let sentCount = 0;
+		let failedCount = 0;
+
+		// Send emails in batches to avoid rate limits
+		const batchSize = 10;
+		for (let i = 0; i < recipients.length; i += batchSize) {
+			const batch = recipients.slice(i, i + batchSize);
+
+			const promises = batch.map(async (recipient) => {
+				try {
+					const personalizedContent = replaceTemplateVariables(
+						campaign.content,
+						recipient
+					);
+
+					await client.send({
+						from: sender,
+						to: [{ email: recipient.email }],
+						subject: campaign.subject,
+						html: personalizedContent,
+					});
+
+					sentCount++;
+					return { success: true, email: recipient.email };
+				} catch (error) {
+					console.error(`Failed to send to ${recipient.email}:`, error);
+					failedCount++;
+					return { success: false, email: recipient.email, error: error.message };
+				}
+			});
+
+			await Promise.all(promises);
+
+			// Small delay between batches to respect rate limits
+			if (i + batchSize < recipients.length) {
+				await new Promise(resolve => setTimeout(resolve, 1000));
+			}
+		}
+
+		return {
+			success: true,
+			sentCount,
+			failedCount,
+			totalRecipients: recipients.length
+		};
+	} catch (error) {
+		console.error("Campaign email sending error:", error);
+		throw error;
 	}
 };

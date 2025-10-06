@@ -44,15 +44,41 @@ export const emailCampaignProperties = {
 				items: { type: 'string' },
 				description: '目標活動 ID'
 			},
+			ticketIds: {
+				type: 'array',
+				items: { type: 'string' },
+				description: '目標票種 ID'
+			},
 			registrationStatuses: {
 				type: 'array',
 				items: { type: 'string' },
 				description: '目標報名狀態'
 			},
+			hasReferrals: {
+				type: 'boolean',
+				description: '是否有推薦人'
+			},
+			isReferrer: {
+				type: 'boolean',
+				description: '是否為推薦人'
+			},
+			registeredAfter: {
+				...dateTimeString,
+				description: '報名時間晚於'
+			},
+			registeredBefore: {
+				...dateTimeString,
+				description: '報名時間早於'
+			},
 			tags: {
 				type: 'array',
 				items: { type: 'string' },
 				description: '目標標籤'
+			},
+			emailDomains: {
+				type: 'array',
+				items: { type: 'string' },
+				description: '電子郵件網域'
 			}
 		},
 		description: '目標受眾篩選條件'
@@ -123,15 +149,41 @@ export const emailCampaignCreateBody = {
 					items: { type: 'string' },
 					description: '目標活動 ID'
 				},
+				ticketIds: {
+					type: 'array',
+					items: { type: 'string' },
+					description: '目標票種 ID'
+				},
 				registrationStatuses: {
 					type: 'array',
 					items: { type: 'string' },
 					description: '目標報名狀態'
 				},
+				hasReferrals: {
+					type: 'boolean',
+					description: '是否有推薦人'
+				},
+				isReferrer: {
+					type: 'boolean',
+					description: '是否為推薦人'
+				},
+				registeredAfter: {
+					...dateTimeString,
+					description: '報名時間晚於'
+				},
+				registeredBefore: {
+					...dateTimeString,
+					description: '報名時間早於'
+				},
 				tags: {
 					type: 'array',
 					items: { type: 'string' },
 					description: '目標標籤'
+				},
+				emailDomains: {
+					type: 'array',
+					items: { type: 'string' },
+					description: '電子郵件網域'
 				}
 			},
 			description: '目標受眾篩選條件'

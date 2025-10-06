@@ -283,23 +283,34 @@ export interface ReferralSource {
 // Email Campaign Types
 export interface EmailCampaign {
   id: string;
+  userId: string;
   name: string;
   subject: string;
   content: string;
-  eventId?: string;
+  recipientFilter?: string;
   targetAudience?: {
     roles?: string[];
     eventIds?: string[];
+    ticketIds?: string[];
     registrationStatuses?: string[];
+    hasReferrals?: boolean;
+    isReferrer?: boolean;
+    registeredAfter?: string;
+    registeredBefore?: string;
     tags?: string[];
+    emailDomains?: string[];
   };
-  status: 'draft' | 'sent' | 'scheduled';
+  status: 'draft' | 'sent' | 'scheduled' | 'sending' | 'cancelled';
+  sentCount: number;
+  totalCount: number;
   scheduledAt?: string;
   sentAt?: string;
-  recipientCount: number;
-  createdBy: string;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface EmailCampaignStatus {
