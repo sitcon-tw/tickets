@@ -98,7 +98,9 @@ export default function Nav({ children }: NavProps) {
 
   const userDisplayName =
     session.status === "authenticated"
-      ? session.user.name || session.user.email || t.user
+      ? session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "")
+        : session.user.email ? session.user.email
+          : t.user
       : "";
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
@@ -159,12 +161,7 @@ export default function Nav({ children }: NavProps) {
                 gap: '1rem'
               }}
             >
-              <span
-                style={{
-                  fontWeight: 'bold',
-                  color: 'var(--color-primary, #007acc)'
-                }}
-              >
+              <span className="text-blue-400">
                 {userDisplayName}
               </span>
               {hasAdminAccess && (

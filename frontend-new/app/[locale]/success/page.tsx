@@ -6,6 +6,7 @@ import Nav from "@/components/Nav";
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from '@/lib/api/endpoints';
+import Lanyard from '@/components/Lanyard';
 
 export default function Success() {
 	const locale = useLocale();
@@ -127,31 +128,33 @@ export default function Success() {
 	return (
 		<>
 			<Nav />
-			<main>
+			<main style={{
+				display: 'grid',
+				gridTemplateColumns: '1fr 1fr',
+				minHeight: '100vh',
+				gap: '2rem'
+			}}>
 				<section style={{
 					paddingTop: '5rem',
+					paddingLeft: '2rem',
+					paddingRight: '2rem',
 					display: 'flex',
 					flexDirection: 'column',
-					maxHeight: 'calc(100vh - 4rem)',
-					gap: '1rem',
-					textAlign: 'center'
+					justifyContent: 'center',
+					gap: '1rem'
 				}}>
 					<h1 style={{
 						marginBlock: '1rem',
-						fontSize: '3rem',
-						textAlign: 'center'
+						fontSize: '3rem'
 					}}>{t.success}</h1>
 					<p>{t.emailCheck}</p>
 					<p>{t.participantCount} <span id="participant-count" style={{ fontSize: '2em' }}>{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
 					<div id="referral-code" style={{
 						border: '1px solid var(--color-gray-900)',
 						padding: '0.8rem 1.5rem',
-						height: '0',
 						overflowY: 'auto',
-						flex: '1',
 						width: '100%',
-						maxWidth: '10rem',
-						margin: 'auto'
+						maxWidth: '15rem'
 					}}>{referralCode}</div>
 					<div id="copy" onClick={handleCopy} style={{
 						textDecoration: 'underline',
@@ -159,8 +162,14 @@ export default function Success() {
 						marginBottom: '1.5rem'
 					}}>{copyText}</div>
 					<p>{t.reward}</p>
-					<Link href="/form/" className="button" style={{ margin: 'auto' }}>{t.edit}</Link>
+					<Link href="/form/" className="button" style={{ width: 'fit-content' }}>{t.edit}</Link>
 				</section>
+				<div style={{
+					position: 'relative',
+					overflow: 'hidden'
+				}}>
+					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+				</div>
 			</main>
 		</>
 	);
