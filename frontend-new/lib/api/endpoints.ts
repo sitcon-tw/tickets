@@ -119,7 +119,7 @@ export const adminAnalyticsAPI = {
     apiClient.get<ApiResponse<DashboardData>>('/api/admin/dashboard'),
 
   getReferralSources: () =>
-    apiClient.get('/api/admin/referral-sources'),
+    apiClient.get<ApiResponse<unknown>>('/api/admin/referral-sources'),
 
   getRegistrationTrends: (params?: { period?: 'daily' | 'weekly' | 'monthly'; eventId?: string }) =>
     apiClient.get<ApiResponse<RegistrationTrend[]>>('/api/admin/registration-trends', params),
@@ -275,28 +275,28 @@ export const adminInvitationCodesAPI = {
     usageLimit?: number;
     validFrom?: string;
     validUntil?: string;
-  }) => apiClient.post('/api/admin/invitation-codes/bulk', data),
+  }) => apiClient.post<ApiResponse<InvitationCodeInfo[]>>('/api/admin/invitation-codes/bulk', data),
 };
 
 // Admin - Referrals
 export const adminReferralsAPI = {
   getOverview: () =>
-    apiClient.get('/api/admin/referrals/overview'),
+    apiClient.get<ApiResponse<unknown>>('/api/admin/referrals/overview'),
 
   getLeaderboard: () =>
-    apiClient.get('/api/admin/referrals/leaderboard'),
+    apiClient.get<ApiResponse<unknown>>('/api/admin/referrals/leaderboard'),
 
   getTree: (regId: string) =>
-    apiClient.get(`/api/admin/referrals/tree/${regId}`),
+    apiClient.get<ApiResponse<unknown>>(`/api/admin/referrals/tree/${regId}`),
 
   getQualified: () =>
-    apiClient.get('/api/admin/referrals/qualified'),
+    apiClient.get<ApiResponse<unknown>>('/api/admin/referrals/qualified'),
 
   draw: () =>
-    apiClient.post('/api/admin/referrals/draw'),
+    apiClient.post<ApiResponse<unknown>>('/api/admin/referrals/draw'),
 
   getStats: () =>
-    apiClient.get('/api/admin/referrals/stats'),
+    apiClient.get<ApiResponse<unknown>>('/api/admin/referrals/stats'),
 };
 
 // Admin - Email Campaigns
@@ -329,10 +329,10 @@ export const adminEmailCampaignsAPI = {
   }) => apiClient.post<ApiResponse<EmailCampaign>>('/api/admin/email-campaigns', data),
 
   getStatus: (campaignId: string) =>
-    apiClient.get(`/api/admin/email-campaigns/${campaignId}/status`),
+    apiClient.get<ApiResponse<{ status: string; sentCount: number }>>(`/api/admin/email-campaigns/${campaignId}/status`),
 
   preview: (campaignId: string) =>
-    apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`),
+    apiClient.post<ApiResponse<{ previewHtml: string }>>(`/api/admin/email-campaigns/${campaignId}/preview`),
 
   calculateRecipients: (campaignId: string) =>
     apiClient.post<ApiResponse<{ recipientCount: number; recipients: Array<{ email: string }> }>>(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`),
@@ -341,5 +341,5 @@ export const adminEmailCampaignsAPI = {
     apiClient.post<ApiResponse<EmailCampaign>>(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }),
 
   cancel: (campaignId: string) =>
-    apiClient.delete(`/api/admin/email-campaigns/${campaignId}`),
+    apiClient.delete<ApiResponse<void>>(`/api/admin/email-campaigns/${campaignId}`),
 };

@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Canvas, extend, useFrame } from '@react-three/fiber';
@@ -10,7 +9,8 @@ import {
   RigidBody,
   useRopeJoint,
   useSphericalJoint,
-  RigidBodyProps
+  RigidBodyProps,
+  RapierRigidBody
 } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
@@ -86,20 +86,19 @@ interface BandProps {
 }
 
 function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
-  // Using "any" for refs since the exact types depend on Rapier's internals
-  const band = useRef<any>(null);
-  const fixed = useRef<any>(null);
-  const j1 = useRef<any>(null);
-  const j2 = useRef<any>(null);
-  const j3 = useRef<any>(null);
-  const card = useRef<any>(null);
+  const band = useRef<THREE.Mesh & { geometry: MeshLineGeometry }>(null);
+  const fixed = useRef<RapierRigidBody>(null!);
+  const j1 = useRef<RapierRigidBody>(null!);
+  const j2 = useRef<RapierRigidBody>(null!);
+  const j3 = useRef<RapierRigidBody>(null!);
+  const card = useRef<RapierRigidBody>(null!);
 
   const vec = new THREE.Vector3();
   const ang = new THREE.Vector3();
   const rot = new THREE.Vector3();
   const dir = new THREE.Vector3();
 
-  const segmentProps: any = {
+  const segmentProps: Partial<RigidBodyProps> = {
     type: 'dynamic' as RigidBodyProps['type'],
     canSleep: true,
     colliders: false,
@@ -107,7 +106,10 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
     linearDamping: 4
   };
 
-  const { nodes, materials } = useGLTF(cardGLB) as any;
+  const { nodes, materials } = useGLTF(cardGLB) as {
+    nodes: Record<string, THREE.Object3D & { geometry?: THREE.BufferGeometry }>;
+    materials: Record<string, THREE.Material & { map?: THREE.Texture }>
+  };
   const texture = useTexture(lanyard);
   const [curve] = useState(
     () =>
@@ -163,21 +165,24 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
     }
     if (fixed.current) {
       [j1, j2].forEach(ref => {
-        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
-        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
-        ref.current.lerped.lerp(
-          ref.current.translation(),
+        if (!((ref.current as unknown) as { lerped?: THREE.Vector3 }).lerped) {
+          ((ref.current as unknown) as { lerped: THREE.Vector3 }).lerped = new THREE.Vector3().copy(ref.current!.translation());
+        }
+        const lerped = ((ref.current as unknown) as { lerped: THREE.Vector3 }).lerped;
+        const clampedDistance = Math.max(0.1, Math.min(1, lerped.distanceTo(ref.current!.translation())));
+        lerped.lerp(
+          ref.current!.translation(),
           delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
         );
       });
-      curve.points[0].copy(j3.current.translation());
-      curve.points[1].copy(j2.current.lerped);
-      curve.points[2].copy(j1.current.lerped);
+      curve.points[0].copy(j3.current!.translation());
+      curve.points[1].copy(((j2.current as unknown) as { lerped: THREE.Vector3 }).lerped);
+      curve.points[2].copy(((j1.current as unknown) as { lerped: THREE.Vector3 }).lerped);
       curve.points[3].copy(fixed.current.translation());
-      band.current.geometry.setPoints(curve.getPoints(32));
-      ang.copy(card.current.angvel());
-      rot.copy(card.current.rotation());
-      card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
+      band.current!.geometry.setPoints(curve.getPoints(32));
+      ang.copy(card.current!.angvel());
+      rot.copy(card.current!.rotation());
+      card.current!.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z }, false);
     }
   });
 
@@ -209,13 +214,13 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
             position={[0, -1.2, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
-            onPointerUp={(e: any) => {
-              e.target.releasePointerCapture(e.pointerId);
+            onPointerUp={(e: React.PointerEvent<THREE.Group>) => {
+              (e.target as Element).releasePointerCapture(e.pointerId);
               drag(false);
             }}
-            onPointerDown={(e: any) => {
-              e.target.setPointerCapture(e.pointerId);
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+            onPointerDown={(e: React.PointerEvent<THREE.Group> & { point: THREE.Vector3 }) => {
+              (e.target as Element).setPointerCapture(e.pointerId);
+              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current!.translation())));
             }}
           >
             <mesh geometry={nodes.card.geometry}>
