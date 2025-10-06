@@ -128,49 +128,26 @@ export default function Success() {
 	return (
 		<>
 			<Nav />
-			<main style={{
-				display: 'grid',
-				gridTemplateColumns: '1fr 1fr',
-				minHeight: '100vh',
-				gap: '2rem'
-			}}>
-				<section style={{
-					paddingTop: '5rem',
-					paddingLeft: '2rem',
-					paddingRight: '2rem',
-					display: 'flex',
-					flexDirection: 'column',
-					justifyContent: 'center',
-					gap: '1rem'
-				}}>
-					<h1 style={{
-						marginBlock: '1rem',
-						fontSize: '3rem'
-					}}>{t.success}</h1>
-					<p>{t.emailCheck}</p>
-					<p>{t.participantCount} <span id="participant-count" style={{ fontSize: '2em' }}>{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
-					<div id="referral-code" style={{
-						border: '1px solid var(--color-gray-900)',
-						padding: '0.8rem 1.5rem',
-						overflowY: 'auto',
-						width: '100%',
-						maxWidth: '15rem'
-					}}>{referralCode}</div>
-					<div id="copy" onClick={handleCopy} style={{
-						textDecoration: 'underline',
-						cursor: 'pointer',
-						marginBottom: '1.5rem'
-					}}>{copyText}</div>
-					<p>{t.reward}</p>
-					<Link href="/form/" className="button" style={{ width: 'fit-content' }}>{t.edit}</Link>
+			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] min-h-screen max-w-full overflow-hidden">
+				<section className="pt-20 flex flex-col justify-center items-end">
+					<div className="flex flex-col gap-4">
+						<h1 className="my-4 text-5xl">{t.success}</h1>
+						<p>{t.emailCheck}</p>
+						<p>{t.participantCount} <span id="participant-count" className="text-2xl">{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
+						<div id="referral-code" className="border border-gray-900 p-3 px-6 overflow-y-auto w-full max-w-60">
+							{referralCode}
+						</div>
+						<div id="copy" onClick={handleCopy} className="underline cursor-pointer mb-6">
+							{copyText}
+						</div>
+						<p>{t.reward}</p>
+						<Link href="/form/" className="button w-fit">{t.edit}</Link>
+					</div>
 				</section>
-				<div style={{
-					position: 'relative',
-					overflow: 'hidden'
-				}}>
+				<div className="relative overflow-hidden hidden sm:block">
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
 				</div>
-			</main>
+			</div>
 		</>
 	);
 }
