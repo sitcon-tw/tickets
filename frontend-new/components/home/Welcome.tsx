@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { useRouter } from "@/i18n/navigation";
+import ElectricBorder from "../ElectricBorder";
 import Spinner from "@/components/Spinner";
 
 type WelcomeState = "hidden" | "registered" | "referral" | "default";
@@ -135,9 +136,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
   return (
     <section>
       {welcomeState === "registered" ? (
+        <ElectricBorder
+          color="#5A738F"
+          chaos={0.7}
+          thickness={5}
+        >
         <section
           style={{
-            backgroundColor: 'var(--color-gray-800)',
             padding: '2rem',
             margin: '1rem',
             textAlign: 'center',
@@ -161,6 +166,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
             </button>
           </div>
         </section>
+        </ElectricBorder>
       ) : null}
 
       {welcomeState === "referral" ? (
