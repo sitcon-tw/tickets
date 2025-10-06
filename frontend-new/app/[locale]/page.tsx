@@ -1,38 +1,73 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import Header from "@/components/home/Header";
-import Welcome from "@/components/home/Welcome";
-import Tickets from "@/components/home/Tickets";
-import Info from "@/components/home/Info";
-import Footer from "@/components/Footer";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { eventsAPI } from "@/lib/api/endpoints";
+import PageSpinner from "@/components/PageSpinner";
 import Nav from "@/components/Nav";
-import { useRouter } from '@/i18n/navigation';
 
-export default function Main() {
-	const router = useRouter();
+export default function LocaleRedirect() {
+  const router = useRouter();
+  const locale = useLocale();
 
-	useEffect(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const referralCode = urlParams.get('ref');
+  useEffect(() => {
+    async function redirectToNearestEvent() {
+      try {
+        const eventsData = await eventsAPI.getAll({ isActive: true });
 
-		if (referralCode) {
-			sessionStorage.setItem('referralCode', referralCode);
-			router.refresh();
-			router.replace("/", { scroll: false });
-		}
-	}, [router]);
+        if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
+          const now = new Date();
 
-	return (
-		<>
-			<Nav />
-			<main>
-				<Header />
-				<Welcome />
-				<Tickets />
-				<Info />
-				<Footer />
-			</main>
-		</>
-	);
-};
+          // Filter upcoming events (events that haven't started yet or are currently happening)
+          const upcomingEvents = eventsData.data.filter(event => {
+            const startDate = new Date(event.startDate);
+            return startDate >= now;
+          });
+
+          // Sort by start date (earliest first)
+          const sortedEvents = upcomingEvents.sort((a, b) => {
+            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          });
+
+          if (sortedEvents.length > 0) {
+            const nearestEvent = sortedEvents[0];
+            const eventSlug = nearestEvent.id.slice(-6);
+            router.replace(`/${locale}/${eventSlug}`);
+          } else {
+            // If no upcoming events, use the most recent past event
+            const pastEvents = eventsData.data.sort((a, b) => {
+              return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+            });
+
+            if (pastEvents.length > 0) {
+              const latestEvent = pastEvents[0];
+              const eventSlug = latestEvent.id.slice(-6);
+              router.replace(`/${locale}/${eventSlug}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to redirect to event:', error);
+      }
+    }
+
+    redirectToNearestEvent();
+  }, [router, locale]);
+
+  return (
+    <>
+      <Nav />
+      <main>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh'
+        }}>
+          <PageSpinner size={48} />
+        </div>
+      </main>
+    </>
+  );
+}

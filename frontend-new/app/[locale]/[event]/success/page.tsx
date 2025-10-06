@@ -9,9 +9,11 @@ import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 import { Copy, Check } from 'lucide-react';
 import Spinner from '@/components/Spinner';
 import Lanyard from '@/components/Lanyard';
+import { useRouter } from '@/i18n/navigation';
 
 export default function Success() {
 	const locale = useLocale();
+	const router = useRouter();
 
 	const t = getTranslations(locale, {
 		success: {
@@ -135,7 +137,7 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<button onClick={() => window.location.href = '/'} className="button" style={{ marginTop: '1rem' }}>{t.goBackHome}</button>
+						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button" style={{ marginTop: '1rem' }}>{t.goBackHome}</button>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">

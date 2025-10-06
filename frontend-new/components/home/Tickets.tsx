@@ -11,7 +11,12 @@ import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
 
-export default function Tickets() {
+interface TicketsProps {
+  eventId: string;
+  eventSlug: string;
+}
+
+export default function Tickets({ eventId, eventSlug }: TicketsProps) {
   const locale = useLocale();
   const router = useRouter();
 
@@ -38,7 +43,6 @@ export default function Tickets() {
     },
   });
 
-  const [eventId, setEventId] = useState<string>("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -52,23 +56,15 @@ export default function Tickets() {
   useEffect(() => {
     async function loadTickets() {
       try {
-        const eventsData = await eventsAPI.getAll();
+        const ticketsData = await eventsAPI.getTickets(eventId);
 
-        if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
-          const event = eventsData.data[0];
-          setEventId(event.id);
-
-          const ticketsData = await eventsAPI.getTickets(event.id);
-
-          if (ticketsData.success && Array.isArray(ticketsData.data)) {
-            const prosceedTicketData = ticketsData.data.map(ticket => ({
-              ...ticket,
-              saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A",
-              saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"
-            }));
-            setTickets(prosceedTicketData);
-            return;
-          }
+        if (ticketsData.success && Array.isArray(ticketsData.data)) {
+          const prosceedTicketData = ticketsData.data.map(ticket => ({
+            ...ticket,
+            saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A",
+            saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"
+          }));
+          setTickets(prosceedTicketData);
         }
       } catch (error) {
         console.error("Failed to load tickets", error);
@@ -89,7 +85,7 @@ export default function Tickets() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [locale]);
+  }, [locale, eventId]);
 
   function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
     setSelectedTicket(ticket);
@@ -148,7 +144,7 @@ export default function Tickets() {
     if (!selectedTicket || typeof window === "undefined" || isSubmitting) return;
     setIsSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for UX
-    router.push('/form');
+    router.push(`/${eventSlug}/form`);
   };
 
   function closeConfirm() {

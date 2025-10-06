@@ -148,8 +148,7 @@ export default function Welcome() {
           <div className="items-center justify-center flex">
             <button
               className="button"
-              onClick={() => {setLoading(true); router.push("/success")}}
-            >
+              onClick={() => {setLoading(true); router.push(`${window.location.href}/success`)}}>
               {loading ? <><Spinner size="sm" />{" "}</> : null}
               {t.viewRegDetail}
             </button>
