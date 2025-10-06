@@ -1,10 +1,21 @@
 "use client"
 
+import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { getTranslations } from '@/i18n/helpers';
+import { eventsAPI } from '@/lib/api/endpoints';
+import PageSpinner from '@/components/PageSpinner';
 
-export default function Header() {
+interface HeaderProps {
+  eventId: string;
+}
+
+export default function Header({ eventId }: HeaderProps) {
   const locale = useLocale();
+
+  const [eventName, setEventName] = useState<string>('');
+  const [registrationCount, setRegistrationCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
   const t = getTranslations(locale, {
     description: {
@@ -24,6 +35,28 @@ export default function Header() {
     }
   });
 
+  useEffect(() => {
+    async function fetchEventInfo() {
+      try {
+        const eventData = await eventsAPI.getInfo(eventId);
+        if (eventData?.success && eventData.data) {
+          setEventName(eventData.data.name);
+        }
+
+        const statsData = await eventsAPI.getStats(eventId);
+        if (statsData?.success && statsData.data) {
+          setRegistrationCount(statsData.data.confirmedRegistrations);
+        }
+      } catch (error) {
+        console.error('Failed to load event info:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEventInfo();
+  }, [eventId]);
+
   return (
     <section style={{
 			paddingTop: '5rem',
@@ -34,7 +67,7 @@ export default function Header() {
 				marginBottom: '1rem',
 				fontWeight: 'bold',
 			}}>
-        SITCON 2026 <span style={{
+        {loading ? <PageSpinner size={32} /> : eventName} <span style={{
 					display: 'block',
 					fontSize: '0.8em'
 				}}>{t.description}</span>
@@ -46,7 +79,7 @@ export default function Header() {
         <span style={{
 					fontWeight: 'bold',
 					fontSize: '1.5em'
-				}}>20</span>
+				}}>{loading ? '...' : registrationCount}</span>
         {t.signBack}
       </p>
     </section>
