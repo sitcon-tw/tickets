@@ -18,7 +18,8 @@ export default function Main() {
 
 		if (referralCode) {
 			sessionStorage.setItem('referralCode', referralCode);
-			router.replace(window.location.pathname + window.location.search.replace(/([?&])ref=[^&]*&?/, '$1').replace(/&$/, '') + window.location.hash);
+			router.refresh();
+			router.replace("/", { scroll: false });
 		}
 	}, [router]);
 

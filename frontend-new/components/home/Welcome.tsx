@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
-import { authAPI, registrationsAPI, referralsAPI } from "@/lib/api/endpoints";
-import { Copy, Check } from "lucide-react";
+import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
 
@@ -21,19 +20,19 @@ export default function Welcome() {
       en: "Elvis Mao's Website starter template using Astro and Fastify."
     },
     loggedInWelcome: {
-      "zh-Hant": "歡迎回來！",
-      "zh-Hans": "欢迎回来！",
-      en: "Welcome back!"
+      "zh-Hant": "歡迎回來！趕緊開始報名吧！",
+      "zh-Hans": "欢迎回来！赶紧开始报名吧！",
+      en: "Welcome back! Let's get you registered!"
     },
     registeredWelcome: {
       "zh-Hant": "你已完成報名！",
       "zh-Hans": "你已完成报名！",
       en: "Registration Complete!"
     },
-    inviteCode: {
-      "zh-Hant": "歡迎使用以下優惠碼邀請朋友一起參加：",
-      "zh-Hans": "欢迎使用以下优惠码邀请朋友一起参加：",
-      en: "Use this code to invite friends:"
+    viewRegDetail: {
+      "zh-Hant": "查看報名資料",
+      "zh-Hans": "查看报名资料",
+      en: "View Registration Details"
     },
     referralWelcome: {
       "zh-Hant": "邀請你一起參加 SITCON！",
@@ -68,15 +67,12 @@ export default function Welcome() {
   });
 
   const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
-  const [referralCode, setReferralCode] = useState(t.loading);
   const [referralParam, setReferralParam] = useState<string | null>(null);
-  const [codeHovered, setCodeHovered] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const urlParams = new URLSearchParams(window.location.search);
     const referral = sessionStorage.getItem("referralCode");
 
     setReferralParam(referral);
@@ -99,7 +95,6 @@ export default function Welcome() {
           if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
             if (!cancelled) {
               setWelcomeState("registered");
-              await loadReferralCode(registrations.data[0].id);
             }
             return;
           }
@@ -111,16 +106,6 @@ export default function Welcome() {
       } catch (error) {
         console.error("Failed to handle welcome section", error);
         decideState(false);
-      }
-    };
-
-    async function loadReferralCode(regId: string) {
-      try {
-        const refCode = await referralsAPI.getReferralLink(regId);
-        if (!cancelled) setReferralCode(refCode.data.referralCode);
-      } catch (error) {
-        console.error("Failed to load referral code", error);
-        if (!cancelled) setReferralCode(t.loadFailed);
       }
     };
 
@@ -139,45 +124,6 @@ export default function Welcome() {
       cancelled = true;
     };
   }, [referralParam, t.loadFailed]);
-
-  async function handleCopy() {
-    if (typeof window === "undefined") return;
-    if (!referralCode || referralCode === t.loading || referralCode === t.loadFailed) return;
-    try {
-      await navigator.clipboard.writeText(referralCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy referral code", error);
-    }
-  };
-
-  useEffect(() => {
-    // Inject keyframes animation into document
-    const styleId = 'welcome-blink-keyframes';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        @keyframes blink {
-          to {
-            opacity: 0.1;
-          }
-        }
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
 
   return (
     <section>
@@ -199,51 +145,15 @@ export default function Welcome() {
           >
             {t.registeredWelcome}
           </h2>
-          <p>{t.inviteCode}</p>
-          <button
-            type="button"
-            onClick={handleCopy}
-            onMouseEnter={() => setCodeHovered(true)}
-            onMouseLeave={() => setCodeHovered(false)}
-            disabled={referralCode === t.loading || referralCode === t.loadFailed}
-            style={{
-              backgroundColor: codeHovered ? 'var(--color-gray-600)' : 'var(--color-gray-700)',
-              padding: '0.5rem',
-              maxWidth: '10rem',
-              margin: '1rem auto 0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: (referralCode === t.loading || referralCode === t.loadFailed) ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s, opacity 0.2s',
-              border: 'none',
-              color: 'inherit',
-              opacity: (referralCode === t.loading || referralCode === t.loadFailed) ? 0.7 : 1
-            }}
-          >
-            <span
-              style={{
-                textAlign: 'center',
-                flex: 1,
-                fontWeight: 'bold',
-                marginRight: '0.5rem',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
+          <div className="items-center justify-center flex">
+            <button
+              className="button"
+              onClick={() => {setLoading(true); router.push("/success")}}
             >
-              {referralCode === t.loading ? (
-                <>
-                  <Spinner size="sm" />
-                  {referralCode}
-                </>
-              ) : referralCode}
-            </span>
-            <span>
-              {copied ? <Check className="text-green-400" /> : <Copy />}
-            </span>
-          </button>
+              {loading ? <><Spinner size="sm" />{" "}</> : null}
+              {t.viewRegDetail}
+            </button>
+          </div>
         </section>
       ) : null}
 
