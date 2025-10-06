@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
@@ -15,6 +16,7 @@ export default function EventsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [descriptionPreview, setDescriptionPreview] = useState('');
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Event Management" },
@@ -58,12 +60,14 @@ export default function EventsPage() {
 
   const openModal = (event: Event | null = null) => {
     setEditingEvent(event);
+    setDescriptionPreview(event?.description || '');
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingEvent(null);
+    setDescriptionPreview('');
   };
 
   const saveEvent = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -204,8 +208,20 @@ export default function EventsPage() {
                     <input name="name" type="text" required defaultValue={editingEvent?.name || ''} className="admin-input" />
                   </div>
                   <div className="admin-form-group">
-                    <label className="admin-form-label">{t.description}</label>
-                    <textarea name="description" defaultValue={editingEvent?.description || ''} className="admin-textarea" />
+                    <label className="admin-form-label">{t.description} (Markdown)</label>
+                    <textarea
+                      name="description"
+                      value={descriptionPreview}
+                      onChange={(e) => setDescriptionPreview(e.target.value)}
+                      className="admin-textarea"
+                      rows={6}
+                    />
+                    {descriptionPreview && (
+                      <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
+                        <MarkdownContent content={descriptionPreview} />
+                      </div>
+                    )}
                   </div>
                   <div className="admin-form-group">
                     <label className="admin-form-label">{t.location}</label>

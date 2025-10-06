@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
@@ -221,7 +222,7 @@ export default function Tickets() {
             </div>
             <div className="content">
               <h2 className="text-2xl font-bold">{selectedTicket.name}</h2>
-              <p>{selectedTicket.description}</p>
+              <MarkdownContent content={selectedTicket.description || ''} />
               {selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
             </div>
           </div>

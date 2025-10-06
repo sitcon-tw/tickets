@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import AdminNav from "@/components/AdminNav";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
@@ -15,6 +16,7 @@ export default function TicketsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+  const [descriptionPreview, setDescriptionPreview] = useState('');
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -83,12 +85,14 @@ export default function TicketsPage() {
 
   const openModal = (ticket: Ticket | null = null) => {
     setEditingTicket(ticket);
+    setDescriptionPreview(ticket?.description || '');
     setShowModal(true);
   };
 
   function closeModal() {
     setShowModal(false);
     setEditingTicket(null);
+    setDescriptionPreview('');
   };
 
   const saveTicket = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -242,8 +246,20 @@ export default function TicketsPage() {
                     <input name="name" type="text" required defaultValue={editingTicket?.name || ''} className="admin-input" />
                   </div>
                   <div className="admin-form-group">
-                    <label className="admin-form-label">{t.description}</label>
-                    <textarea name="description" defaultValue={editingTicket?.description || ''} className="admin-textarea" />
+                    <label className="admin-form-label">{t.description} (Markdown)</label>
+                    <textarea
+                      name="description"
+                      value={descriptionPreview}
+                      onChange={(e) => setDescriptionPreview(e.target.value)}
+                      className="admin-textarea"
+                      rows={6}
+                    />
+                    {descriptionPreview && (
+                      <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
+                        <MarkdownContent content={descriptionPreview} />
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="admin-form-group">
