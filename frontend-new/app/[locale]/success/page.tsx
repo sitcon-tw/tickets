@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Nav from "@/components/Nav";
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
-import { authAPI, registrationsAPI } from '@/lib/api/endpoints';
+import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
+import { Copy, Check } from 'lucide-react';
+import Spinner from '@/components/Spinner';
 import Lanyard from '@/components/Lanyard';
 
 export default function Success() {
@@ -22,35 +23,15 @@ export default function Success() {
 			"zh-Hans": "请检查电子邮件确认",
 			en: "Please check your email for confirmation."
 		},
-		participantCount: {
-			"zh-Hant": "你是第",
-			"zh-Hans": "你是第",
-			en: "You are the "
-		},
-		participantSuffix: {
-			"zh-Hant": "位參與者",
-			"zh-Hans": "位参与者",
-			en: "th participant"
-		},
 		inviteFriends: {
 			"zh-Hant": "歡迎使用以下優惠碼 邀請朋友一起參加：",
 			"zh-Hans": "欢迎使用以下优惠码 邀请朋友一起参加：",
 			en: "Use the following code to invite friends:"
 		},
-		copyInvite: {
-			"zh-Hant": "複製邀請連結",
-			"zh-Hans": "复制邀请链接",
-			en: "Copy invite link"
-		},
-		reward: {
-			"zh-Hant": "邀請三位朋友可以獲得◯◯◯",
-			"zh-Hans": "邀请三位朋友可以获得◯◯◯",
-			en: "Invite three friends to earn ◯◯◯"
-		},
-		edit: {
-			"zh-Hant": "編輯報名資訊",
-			"zh-Hans": "编辑报名信息",
-			en: "Edit registration info"
+		copyInviteLink: {
+			"zh-Hant": "或複製邀請連結：",
+			"zh-Hans": "或复制邀请链接：",
+			en: "Or copy invite link:"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
@@ -62,86 +43,98 @@ export default function Success() {
 			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
-		copied: {
-			"zh-Hant": "已複製!",
-			"zh-Hans": "已复制!",
-			en: "Copied!"
+		goBackHome: {
+			"zh-Hant": "回到首頁",
+			"zh-Hans": "回到首页",
+			en: "Go back home"
 		},
-		copyFailed: {
-			"zh-Hant": "複製失敗，請手動複製: ",
-			"zh-Hans": "复制失败，请手动复制: ",
-			en: "Copy failed, please copy manually: "
-		}
 	});
 
-	const [participantCount, setParticipantCount] = useState<number | string>(t.loading);
 	const [referralCode, setReferralCode] = useState<string>(t.loading);
-	const [copyText, setCopyText] = useState<string>('');
+	const [copiedCode, setCopiedCode] = useState(false);
+	const [copiedUrl, setCopiedUrl] = useState(false);
 
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
 			try {
-				// Check if user is authenticated
-				await authAPI.getSession();
-
-				// Get user's registrations to show count
-				let count: number | string = t.loadFailed;
 				try {
 					const registrations = await registrationsAPI.getAll();
-					if (registrations.success && registrations.data) {
-						count = registrations.data.length || 1;
-					}
+				const code = (await referralsAPI.getReferralLink(registrations.data[0].id)).data.referralCode;
+				setReferralCode(code);
 				} catch (error) {
 					console.error('Failed to load registrations:', error);
 				}
-				setParticipantCount(count);
-
-				// Get referral code - Note: This endpoint needs to be implemented in the API
-				const code = t.loadFailed;
-				setReferralCode(code);
 
 			} catch (error) {
 				console.error('Failed to load success info:', error);
 				window.location.href = '/login/';
 			}
 		};
-		setCopyText(t.copyInvite);
 		loadSuccessInfo();
 	}, [t.copyInvite, t.loadFailed]);
 
-	const handleCopy = () => {
-		const baseUrl = window.location.origin;
-		const inviteUrl = `${baseUrl}/?ref=${referralCode}`;
-
-		navigator.clipboard.writeText(inviteUrl).then(() => {
-			const originalText = copyText;
-			setCopyText(t.copied);
-			setTimeout(() => {
-				setCopyText(originalText);
-			}, 2000);
-		}).catch(err => {
-			console.error('Failed to copy: ', err);
-			alert(t.copyFailed + inviteUrl);
+	function handleCopyRefCode() {
+		setCopiedCode(false);
+		if (referralCode === t.loading || referralCode === t.loadFailed) return;
+		navigator.clipboard.writeText(referralCode).then(() => {
+			setCopiedCode(true);
+		}).catch(() => {
+			alert(t.copyFailed + referralCode);
 		});
+		setTimeout(() => setCopiedCode(false), 2000);
+	};
+
+	function handleCopyRefUrl() {
+		setCopiedUrl(false);
+		if (referralCode === t.loading || referralCode === t.loadFailed) return;
+		const url = `${window.location.origin}/?ref=${referralCode}`;
+		navigator.clipboard.writeText(url).then(() => {
+			setCopiedUrl(true);
+		}).catch(() => {
+			alert(t.copyFailed + url);
+		});
+		setTimeout(() => setCopiedUrl(false), 2000);
 	};
 
 	return (
 		<>
 			<Nav />
 			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] min-h-screen max-w-full overflow-hidden">
-				<section className="pt-20 flex flex-col justify-center items-end">
+				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
-						<h1 className="my-4 text-5xl">{t.success}</h1>
+						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
 						<p>{t.emailCheck}</p>
-						<p>{t.participantCount} <span id="participant-count" className="text-2xl">{participantCount}</span> {t.participantSuffix}<br />{t.inviteFriends}</p>
-						<div id="referral-code" className="border border-gray-900 p-3 px-6 overflow-y-auto w-full max-w-60">
-							{referralCode}
+						<p>{t.inviteFriends}</p>
+						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: '0.1rem 0.5rem' }}>
+							{referralCode === t.loading ? (
+								<Spinner />
+							) : (
+								<div className="flex items-center gap-2">
+									<span className="font-mono text-lg">{referralCode}</span>
+									{referralCode !== t.loadFailed && (
+										<span className="cursor-pointer" title={t.copyInvite}>
+											{copiedCode ? <Check className="text-green-500" /> : <Copy />}
+										</span>
+									)}
+								</div>
+							)}
 						</div>
-						<div id="copy" onClick={handleCopy} className="underline cursor-pointer mb-6">
-							{copyText}
+						<p>{t.copyInviteLink}</p>
+						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: '0.1rem 0.5rem' }}>
+							{referralCode === t.loading ? (
+								<Spinner />
+							) : (
+								<div className="flex items-center gap-2">
+									<span className="font-mono text-lg">{`${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${referralCode}`}</span>
+									{referralCode !== t.loadFailed && (
+										<span className="cursor-pointer" title={t.copyInvite}>
+											{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
+										</span>
+									)}
+								</div>
+							)}
 						</div>
-						<p>{t.reward}</p>
-						<Link href="/form/" className="button w-fit">{t.edit}</Link>
+						<button onClick={() => window.location.href = '/'} className="button" style={{ marginTop: '1rem' }}>{t.goBackHome}</button>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">
