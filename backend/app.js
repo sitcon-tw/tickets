@@ -140,7 +140,7 @@ fastify.all(
 			// Set headers, modifying SameSite=Lax to SameSite=None for cross-domain cookies
 			for (const [key, value] of response.headers) {
 				if (key.toLowerCase() === 'set-cookie') {
-					reply.header(key, value.replace(/SameSite=Lax/gi, 'SameSite=None'));
+					reply.header(key, value.replace(/SameSite=Lax/gi, 'SameSite=None; Secure'));
 				} else {
 					reply.header(key, value);
 				}
