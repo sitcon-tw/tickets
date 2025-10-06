@@ -23,7 +23,23 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
-				await sendMagicLink(email, url);
+				let locale = 'zh-Hant';
+				try {
+					const constructedUrl = new URL(url);
+					const callbackURL = constructedUrl.searchParams.get('callbackURL');
+					if (callbackURL) {
+						const callbackUrl = new URL(callbackURL);
+						const callbackPathParts = callbackUrl.pathname.split('/').filter(Boolean);
+						if (callbackPathParts.length > 0 && ['en', 'zh-Hant', 'zh-Hans'].includes(callbackPathParts[0])) {
+							locale = callbackPathParts[0];
+						}
+					}
+				} catch (e) {
+					console.error('Error parsing URL for locale:', e);
+				}
+
+				const frontendUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/${locale}/login/magic-link?token=${token}`;
+				await sendMagicLink(email, frontendUrl);
 			}
 		})
 	],

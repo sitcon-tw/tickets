@@ -120,7 +120,7 @@ export default async function referralRoutes(fastify, options) {
 					});
 				}
 
-				const baseUrl = process.env.FRONTEND_URL || 'http://localhost:4321';
+				const baseUrl = process.env.FRONTEND_URI || 'http://localhost:4321';
 				const referralLink = `${baseUrl}/register?ref=${referral.code}`;
 
 				return successResponse({

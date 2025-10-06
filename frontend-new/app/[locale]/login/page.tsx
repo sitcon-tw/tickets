@@ -52,7 +52,7 @@ export default function Login() {
 
 		setIsLoading(true);
 		try {
-			await authAPI.getMagicLink(email);
+			await authAPI.getMagicLink(email, locale);
 			setViewState('sent');
 		} catch (error) {
 			console.error("Login error:", error);

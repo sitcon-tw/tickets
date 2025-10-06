@@ -91,7 +91,7 @@ export const sendEditLink = async (email, editToken, event) => {
 			}
 		];
 
-		const editUrl = `${process.env.FRONTEND_URL || 'http://localhost:4321'}/edit/${editToken}`;
+		const editUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/edit/${editToken}`;
 
 		await client.send({
 			from: sender,
