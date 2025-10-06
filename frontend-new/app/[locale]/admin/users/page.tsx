@@ -120,7 +120,6 @@ export default function UsersPage() {
             {isLoading && (
               <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p>Now Loading...</p>
               </div>
             )}
             {!isLoading && (

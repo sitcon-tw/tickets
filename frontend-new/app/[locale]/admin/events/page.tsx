@@ -31,7 +31,6 @@ export default function EventsPage() {
     cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
     delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
     edit: { "zh-Hant": "編輯", "zh-Hans": "编辑", en: "Edit" },
-    loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Now Loading..." },
     empty: { "zh-Hant": "沒有活動", "zh-Hans": "没有活动", en: "No events" },
     active: { "zh-Hant": "進行中", "zh-Hans": "进行中", en: "Active" },
     upcoming: { "zh-Hant": "即將開始", "zh-Hans": "即将开始", en: "Upcoming" },

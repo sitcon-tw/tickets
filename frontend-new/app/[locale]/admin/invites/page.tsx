@@ -327,7 +327,6 @@ export default function InvitesPage() {
             {isLoading && (
               <div className="admin-loading">
                 <PageSpinner size={48} />
-                <p>Now Loading...</p>
               </div>
             )}
             {!isLoading && (

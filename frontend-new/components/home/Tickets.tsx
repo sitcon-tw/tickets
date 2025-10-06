@@ -179,7 +179,6 @@ export default function Tickets() {
             height: '500px'
           }}>
             <PageSpinner size={48} />
-            <p style={{ fontSize: '0.9rem' }}>Now Loading...</p>
           </div>
         ) : null}
         {!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
