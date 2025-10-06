@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Nav from "@/components/Nav";
 import Footer from '@/components/Footer';
 import { useLocale } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 import { Copy, Check } from 'lucide-react';
@@ -14,12 +15,14 @@ import { useRouter } from '@/i18n/navigation';
 export default function Success() {
 	const locale = useLocale();
 	const router = useRouter();
+	const params = useParams();
+	const eventSlug = params.event as string;
 
 	const t = getTranslations(locale, {
 		success: {
 			"zh-Hant": "報名成功！",
 			"zh-Hans": "报名成功！",
-			en: "Registration Successful!"
+			en: "You're In!"
 		},
 		emailCheck: {
 			"zh-Hant": "請檢查電子郵件確認",
@@ -96,7 +99,7 @@ export default function Success() {
 	function handleCopyRefUrl() {
 		setCopiedUrl(false);
 		if (referralCode === t.loading || referralCode === t.loadFailed) return;
-		const url = `${window.location.origin}/?ref=${referralCode}`;
+		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referralCode}`;
 		navigator.clipboard.writeText(url).then(() => {
 			setCopiedUrl(true);
 		}).catch(() => {
@@ -134,7 +137,7 @@ export default function Success() {
 								<Spinner />
 							) : (
 								<div className="flex items-center gap-2">
-									<span className="font-mono text-lg">{`${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${referralCode}`}</span>
+									<span className="font-mono text-lg">{`${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/${eventSlug}?ref=${referralCode}`}</span>
 									{referralCode !== t.loadFailed && (
 										<span className="cursor-pointer" title={t.copyInvite}>
 											{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
