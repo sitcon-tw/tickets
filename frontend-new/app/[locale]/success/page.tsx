@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Nav from "@/components/Nav";
+import Footer from '@/components/Footer';
 import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
@@ -24,14 +25,14 @@ export default function Success() {
 			en: "Please check your email for confirmation."
 		},
 		inviteFriends: {
-			"zh-Hant": "歡迎使用以下優惠碼 邀請朋友一起參加：",
-			"zh-Hans": "欢迎使用以下优惠码 邀请朋友一起参加：",
+			"zh-Hant": "歡迎使用以下推薦碼 邀請朋友一起參加：",
+			"zh-Hans": "欢迎使用以下推荐码 邀请朋友一起参加：",
 			en: "Use the following code to invite friends:"
 		},
 		copyInviteLink: {
-			"zh-Hant": "或複製邀請連結：",
-			"zh-Hans": "或复制邀请链接：",
-			en: "Or copy invite link:"
+			"zh-Hant": "或複製推薦連結：",
+			"zh-Hans": "或复制推荐链接：",
+			en: "Or copy referral link:"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
@@ -141,6 +142,7 @@ export default function Success() {
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
 				</div>
 			</div>
+			<Footer />
 		</>
 	);
 }

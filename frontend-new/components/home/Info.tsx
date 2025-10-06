@@ -1,7 +1,5 @@
 "use client";
 
-import { useLocale } from "next-intl";
-import { getTranslations } from "@/i18n/helpers";
 import MarkdownContent from "../MarkdownContent";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
@@ -9,7 +7,6 @@ import { useState, useEffect } from "react";
 import PageSpinner from "../PageSpinner";
 
 export default function Info() {
-  const locale = useLocale();
   const [eventDescription, setEventDescription] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
