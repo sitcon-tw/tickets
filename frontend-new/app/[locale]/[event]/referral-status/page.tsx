@@ -7,7 +7,6 @@ import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 import { useRouter } from '@/i18n/navigation';
-import Spinner from '@/components/Spinner';
 import PageSpinner from '@/components/PageSpinner';
 import type { RegistrationStats } from '@/lib/types/api';
 

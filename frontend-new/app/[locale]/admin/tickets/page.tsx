@@ -13,7 +13,6 @@ export default function TicketsPage() {
 
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [descriptionPreview, setDescriptionPreview] = useState('');
@@ -64,7 +63,6 @@ export default function TicketsPage() {
   const loadTickets = useCallback(async () => {
     if (!currentEventId) return;
 
-    setIsLoading(true);
     try {
       const response = await adminTicketsAPI.getAll({ eventId: currentEventId });
       if (response.success) {
@@ -73,7 +71,6 @@ export default function TicketsPage() {
     } catch (error) {
       console.error('Failed to load tickets:', error);
     } finally {
-      setIsLoading(false);
     }
   }, [currentEventId]);
 

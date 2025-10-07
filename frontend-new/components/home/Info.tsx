@@ -2,7 +2,6 @@
 
 import MarkdownContent from "../MarkdownContent";
 import { eventsAPI } from "@/lib/api/endpoints";
-import { Event } from "@/lib/types/api";
 import { useState, useEffect } from "react";
 import PageSpinner from "../PageSpinner";
 
