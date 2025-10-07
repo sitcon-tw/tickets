@@ -24,18 +24,24 @@ export default function Confirm({ isOpen, onClose, children, isConfirming = fals
         backgroundColor: '#00000029',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        paddingTop: '10rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
         opacity: (isOpen && isConfirming) ? 1 : 0,
         pointerEvents: (isOpen && isConfirming) ? 'all' : 'none',
         transition: 'opacity 0.3s ease-in-out',
-        zIndex: 400
+        zIndex: 1001,
+        overflowY: 'auto'
       }}
     >
       <div
         style={{
           maxWidth: '800px',
-          margin: 'auto',
-          padding: '2rem',
+          width: '100%',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
           position: 'relative'
         }}
       >
@@ -45,14 +51,15 @@ export default function Confirm({ isOpen, onClose, children, isConfirming = fals
           onClick={onClose}
           style={{
             position: 'absolute',
-            right: '2rem',
-            top: '-1rem',
+            right: '0.5rem',
+            top: '0.5rem',
             cursor: 'pointer',
             fontSize: '2rem',
             background: 'transparent',
             border: 'none',
             color: 'inherit',
-            lineHeight: 1
+            lineHeight: 1,
+            zIndex: 10
           }}
         >
           ×

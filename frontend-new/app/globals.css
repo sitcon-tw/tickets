@@ -544,8 +544,17 @@ nav img {
   transform: rotate(-1.17deg);
 }
 
+.about {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .about + .button {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 .ticket {
@@ -575,7 +584,7 @@ nav img {
   display: none;
   position: fixed;
   transition: none;
-  z-index: 500;
+  z-index: 1002;
   width: 100%;
   max-width: 350px;
 }
