@@ -48,48 +48,23 @@ export default function MagicLinkVerify() {
 	});
 
 	useEffect(() => {
-		const verifyMagicLink = async () => {
-			try {
-				// Get the full URL path with query parameters
-				const token = searchParams.get('token');
+		// Check if we were redirected back with a status
+		const status = searchParams.get('status');
 
-				if (!token) {
-					setStatus('error');
-					setErrorMessage(t.errorInvalidLink);
-					return;
-				}
-
-				// Construct the BetterAuth verification URL
-				const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URI || 'http://localhost:3000';
-				const verifyUrl = `${backendUrl}/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
-
-				// Make the verification request
-				const response = await fetch(verifyUrl, {
-					method: 'GET',
-					credentials: 'include',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-				});
-
-				if (response.ok) {
-					setStatus('success');
-					// Redirect to home page after 1.5 seconds
-					setTimeout(() => {
-						router.push(`/${locale}/`);
-					}, 1500);
-				} else {
-					setStatus('error');
-					setErrorMessage(t.errorInvalidLink);
-				}
-			} catch (error) {
-				console.error('Magic link verification error:', error);
-				setStatus('error');
-				setErrorMessage(t.errorInvalidLink);
-			}
-		};
-
-		verifyMagicLink();
+		if (status === 'success') {
+			setStatus('success');
+			// Redirect to home page after 1.5 seconds
+			setTimeout(() => {
+				router.push(`/${locale}/`);
+			}, 1500);
+		} else if (status === 'error') {
+			setStatus('error');
+			setErrorMessage(t.errorInvalidLink);
+		} else {
+			// No status means user hasn't clicked the magic link yet
+			setStatus('error');
+			setErrorMessage(t.errorInvalidLink);
+		}
 	}, [searchParams, router, locale, t.errorInvalidLink]);
 
 	return (

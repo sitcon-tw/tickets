@@ -159,6 +159,47 @@ fastify.all(
 	}
 );
 
+// Handle magic link verification with redirect
+fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
+	try {
+		const { token, locale = 'zh-Hant' } = request.query;
+
+		if (!token) {
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
+		}
+
+		// Call the Better Auth verification endpoint
+		const protocol = request.headers["x-forwarded-proto"] || "http";
+		const host = request.headers.host;
+		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${token}`;
+
+		const webRequest = new Request(authUrl, {
+			method: "GET",
+			headers: request.headers
+		});
+
+		const response = await auth.handler(webRequest);
+
+		// Forward the Set-Cookie headers to the client
+		const cookies = response.headers.get('set-cookie');
+		if (cookies) {
+			reply.header('set-cookie', cookies.replace(/SameSite=Lax/gi, 'SameSite=None; Secure'));
+		}
+
+		if (response.ok) {
+			// Redirect to frontend success page
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`);
+		} else {
+			// Redirect to frontend error page
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
+		}
+	} catch (error) {
+		console.error("Magic link verification error:", error);
+		const locale = request.query.locale || 'zh-Hant';
+		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
+	}
+});
+
 // 剩下的 routes
 await fastify.register(routes);
 
