@@ -145,15 +145,18 @@ class APIClient {
   }
 
   async get<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
-    const url = new URL(endpoint, this.baseURL);
+    let finalEndpoint = endpoint;
     if (params) {
+      const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
+          searchParams.append(key, String(value));
         }
       });
+      const queryString = searchParams.toString();
+      finalEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
     }
-    return this.request<T>(url.pathname + url.search, { method: 'GET' });
+    return this.request<T>(finalEndpoint, { method: 'GET' });
   }
 
   // POST request

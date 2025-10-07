@@ -168,7 +168,7 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
 		}
 
-		// Call the Better Auth verification endpoint
+		// Call the Better Auth verification endpoint internally
 		const protocol = request.headers["x-forwarded-proto"] || "http";
 		const host = request.headers.host;
 		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${token}`;
@@ -180,11 +180,21 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		const response = await auth.handler(webRequest);
 
-		// Forward the Set-Cookie headers to the client
-		const cookies = response.headers.get('set-cookie');
-		if (cookies) {
-			reply.header('set-cookie', cookies.replace(/SameSite=Lax/gi, 'SameSite=None; Secure'));
-		}
+		// Forward all Set-Cookie headers with cross-origin attributes
+		response.headers.forEach((value, key) => {
+			if (key.toLowerCase() === 'set-cookie') {
+				const modifiedCookie = value
+					.replace(/SameSite=Lax/gi, 'SameSite=None')
+					.replace(/SameSite=Strict/gi, 'SameSite=None');
+
+				// Ensure Secure flag is set
+				if (!modifiedCookie.includes('Secure')) {
+					reply.header('set-cookie', `${modifiedCookie}; Secure`);
+				} else {
+					reply.header('set-cookie', modifiedCookie);
+				}
+			}
+		});
 
 		if (response.ok) {
 			// Redirect to frontend success page
