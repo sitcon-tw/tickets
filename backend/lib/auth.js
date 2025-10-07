@@ -17,6 +17,13 @@ export const auth = betterAuth({
 		cookieCache: {
 			enabled: true,
 			maxAge: 60 * 60 * 24 * 30 // 30 days
+		},
+		cookieOptions: {
+			sameSite: "none",
+			secure: true,
+			httpOnly: true,
+			path: "/",
+			domain: undefined // Let browser determine domain
 		}
 	},
 	plugins: [
