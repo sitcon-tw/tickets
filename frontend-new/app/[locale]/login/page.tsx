@@ -6,7 +6,6 @@ import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from '@/lib/api/endpoints';
 import Spinner from "@/components/Spinner";
-import Email from '@/components/input/Email';
 
 export default function Login() {
 	const locale = useLocale();

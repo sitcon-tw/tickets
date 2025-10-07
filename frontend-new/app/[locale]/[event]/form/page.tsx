@@ -8,7 +8,6 @@ import Nav from "@/components/Nav";
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
 import { FormField } from '@/components/form/FormField';
-import { formStyles } from '@/components/form/formStyles';
 import { TicketFormField } from '@/lib/types/api';
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
