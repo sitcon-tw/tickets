@@ -48,23 +48,47 @@ export default function MagicLinkVerify() {
 	});
 
 	useEffect(() => {
-		// Check if we were redirected back with a status
-		const status = searchParams.get('status');
+		const verifyMagicLink = async () => {
+			try {
+				// Get the token from the URL
+				const token = searchParams.get('token');
 
-		if (status === 'success') {
-			setStatus('success');
-			// Redirect to home page after 1.5 seconds
-			setTimeout(() => {
-				router.push(`/${locale}/`);
-			}, 1500);
-		} else if (status === 'error') {
-			setStatus('error');
-			setErrorMessage(t.errorInvalidLink);
-		} else {
-			// No status means user hasn't clicked the magic link yet
-			setStatus('error');
-			setErrorMessage(t.errorInvalidLink);
-		}
+				if (!token) {
+					setStatus('error');
+					setErrorMessage(t.errorInvalidLink);
+					return;
+				}
+
+				// Use relative URL to go through Next.js proxy (same-origin request)
+				const verifyUrl = `/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
+
+				// Make the verification request
+				const response = await fetch(verifyUrl, {
+					method: 'GET',
+					credentials: 'include',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				});
+
+				if (response.ok) {
+					setStatus('success');
+					// Redirect to home page after 1.5 seconds
+					setTimeout(() => {
+						router.push(`/${locale}/`);
+					}, 1500);
+				} else {
+					setStatus('error');
+					setErrorMessage(t.errorInvalidLink);
+				}
+			} catch (error) {
+				console.error('Magic link verification error:', error);
+				setStatus('error');
+				setErrorMessage(t.errorInvalidLink);
+			}
+		};
+
+		verifyMagicLink();
 	}, [searchParams, router, locale, t.errorInvalidLink]);
 
 	return (
