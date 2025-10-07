@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     // Backend URL is hardcoded for proxy - users only access via frontend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = process.env.BACKEND_URI || 'http://localhost:3000';
     return [
       {
         source: '/api/:path*',
