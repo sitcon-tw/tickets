@@ -11,14 +11,6 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/auth/:path*',
-        destination: `${process.env.BACKEND_URI || 'http://localhost:3000'}/api/auth/:path*`,
-      },
-    ];
-  },
 };
 
 export default withNextIntl(nextConfig);

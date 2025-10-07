@@ -1,5 +1,4 @@
 import { apiClient } from './client';
-import { authAPIClient } from './auth-client';
 import type {
   HealthStatus,
   Event,
@@ -30,17 +29,17 @@ export const healthAPI = {
   check: (): Promise<HealthStatus> => apiClient.get('/system/health'),
 };
 
-// Auth (uses same-origin requests through Next.js proxy to avoid cookie blocking)
+// Auth (handled by BetterAuth)
 export const authAPI = {
-  getMagicLink: (email: string, locale?: string) => authAPIClient.post('/api/auth/sign-in/magic-link', {
+  getMagicLink: (email: string, locale?: string) => apiClient.post('/api/auth/sign-in/magic-link', {
     email,
     name: email.split('@')[0],
     callbackURL: `${window.location.origin}/${locale || 'zh-Hant'}/`,
     newUserCallbackURL: `${window.location.origin}/${locale || 'zh-Hant'}/`,
     errorCallbackURL: `${window.location.origin}/${locale || 'zh-Hant'}/login/`
   }),
-  getSession: () => authAPIClient.get<SessionResponse>('/api/auth/get-session'),
-  signOut: () => authAPIClient.post('/api/auth/sign-out'),
+  getSession: () => apiClient.get<SessionResponse>('/api/auth/get-session'),
+  signOut: () => apiClient.post('/api/auth/sign-out'),
 };
 
 // Events - Public

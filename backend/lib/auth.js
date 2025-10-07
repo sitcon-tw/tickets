@@ -38,9 +38,9 @@ export const auth = betterAuth({
 					console.error('Error parsing URL for locale:', e);
 				}
 
-				// Send the frontend URL which will proxy to backend
-				const frontendUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/${locale}/login/magic-link?token=${token}`;
-				await sendMagicLink(email, frontendUrl);
+				// Send the backend verification URL directly
+				const backendUrl = `${process.env.BACKEND_URI || 'http://localhost:3000'}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
+				await sendMagicLink(email, backendUrl);
 			}
 		})
 	],
