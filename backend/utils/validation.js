@@ -131,12 +131,6 @@ export const validateRegistrationFormData = (formData, formFields) => {
 
 		// Type-specific validation
 		switch (field.type) {
-			case 'checkbox':
-				if (typeof value !== 'boolean') {
-					fieldErrors.push(`${field.description}必須為 true 或 false`);
-				}
-				break;
-
 			case 'text':
 			case 'textarea':
 				if (typeof value !== 'string') {
