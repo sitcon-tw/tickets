@@ -112,7 +112,7 @@ export default function Nav({ children }: NavProps) {
         top: 0,
         left: 0,
         zIndex: 1000,
-        backgroundColor: 'var(--color-gray-900)',
+        backgroundColor: isScrolled ? 'var(--color-gray-900)' : 'transparent',
         width: '100%',
         transition: 'border-color 0.3s ease-in-out',
         borderBottom: `${isScrolled ? 'var(--color-gray-500)' : 'transparent'} solid 1px`
