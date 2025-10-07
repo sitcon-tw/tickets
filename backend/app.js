@@ -137,13 +137,9 @@ fastify.all(
 
 			reply.code(response.status);
 
-			// Set headers, modifying SameSite=Lax to SameSite=None for cross-domain cookies
+			// Set headers as-is (proxy makes requests same-origin)
 			for (const [key, value] of response.headers) {
-				if (key.toLowerCase() === 'set-cookie') {
-					reply.header(key, value.replace(/SameSite=Lax/gi, 'SameSite=None; Secure'));
-				} else {
-					reply.header(key, value);
-				}
+				reply.header(key, value);
 			}
 
 			if (response.body) {
@@ -180,19 +176,10 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		const response = await auth.handler(webRequest);
 
-		// Forward all Set-Cookie headers with cross-origin attributes
+		// Forward all Set-Cookie headers as-is
 		response.headers.forEach((value, key) => {
 			if (key.toLowerCase() === 'set-cookie') {
-				const modifiedCookie = value
-					.replace(/SameSite=Lax/gi, 'SameSite=None')
-					.replace(/SameSite=Strict/gi, 'SameSite=None');
-
-				// Ensure Secure flag is set
-				if (!modifiedCookie.includes('Secure')) {
-					reply.header('set-cookie', `${modifiedCookie}; Secure`);
-				} else {
-					reply.header('set-cookie', modifiedCookie);
-				}
+				reply.header('set-cookie', value);
 			}
 		});
 

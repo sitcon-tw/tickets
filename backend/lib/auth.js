@@ -19,11 +19,10 @@ export const auth = betterAuth({
 			maxAge: 60 * 60 * 24 * 30 // 30 days
 		},
 		cookieOptions: {
-			sameSite: "none",
-			secure: true,
+			sameSite: "lax", // Use Lax for same-origin via proxy
+			secure: process.env.NODE_ENV === 'production',
 			httpOnly: true,
-			path: "/",
-			domain: undefined // Let browser determine domain
+			path: "/"
 		}
 	},
 	plugins: [
@@ -45,9 +44,9 @@ export const auth = betterAuth({
 					console.error('Error parsing URL for locale:', e);
 				}
 
-				// Send the backend verification URL directly
-				const backendUrl = `${process.env.BACKEND_URI || 'http://localhost:3000'}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
-				await sendMagicLink(email, backendUrl);
+				// Send users to frontend, which will proxy the verification to backend
+				const frontendUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
+				await sendMagicLink(email, frontendUrl);
 			}
 		})
 	],

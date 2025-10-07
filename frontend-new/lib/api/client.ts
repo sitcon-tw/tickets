@@ -19,7 +19,8 @@ class APIClient {
   private baseURL: string;
   private retryConfig: RetryConfig;
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_BACKEND_URI || 'http://localhost:3000') {
+  constructor(baseURL: string = '') {
+    // Always use relative URLs - routes through Next.js proxy
     this.baseURL = baseURL;
     this.retryConfig = {
       maxRetries: 3,
