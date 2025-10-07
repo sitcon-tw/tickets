@@ -1,10 +1,14 @@
-import { CSSProperties } from "react";
+import { CSSProperties, ChangeEvent } from "react";
+
+type RadioOption = string | { value: string; label: string };
 
 type RadioProps = {
   label: string;
   name: string;
-  options: string[];
+  options: RadioOption[];
   required?: boolean;
+  value?: string;
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 };
 
 const styles: Record<"fieldset" | "legend" | "option" | "radio", CSSProperties> = {
@@ -28,23 +32,27 @@ const styles: Record<"fieldset" | "legend" | "option" | "radio", CSSProperties> 
   }
 };
 
-export default function Radio({ label, name, options, required = true }: RadioProps) {
+export default function Radio({ label, name, options, required = true, value, onChange }: RadioProps) {
   return (
     <fieldset style={styles.fieldset}>
       <legend style={styles.legend}>{label}</legend>
-      {options.map(option => {
-        const optionId = `${name}-${option}`;
+      {options.map((option, i) => {
+        const optionValue = typeof option === 'object' && option !== null && 'value' in option ? option.value : String(option);
+        const optionLabel = typeof option === 'object' && option !== null && 'label' in option ? option.label : String(option);
+        const optionId = `${name}-${optionValue}`;
         return (
           <div key={optionId} style={styles.option}>
             <input
               type="radio"
               id={optionId}
               name={name}
-              value={option}
-              required={required}
+              value={optionValue}
+              required={required && i === 0}
+              checked={value === optionValue}
+              onChange={onChange}
               style={styles.radio}
             />
-            <label htmlFor={optionId}>{option}</label>
+            <label htmlFor={optionId}>{optionLabel}</label>
           </div>
         );
       })}

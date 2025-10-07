@@ -1,10 +1,13 @@
-import { CSSProperties } from "react";
+import { CSSProperties, ChangeEvent } from "react";
 
 type TextareaProps = {
   label: string;
   id: string;
   required?: boolean;
   rows?: number;
+  value?: string;
+  onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
 };
 
 const styles: Record<"label" | "textarea", CSSProperties> = {
@@ -24,7 +27,7 @@ const styles: Record<"label" | "textarea", CSSProperties> = {
   }
 };
 
-export default function Textarea({ label, id, required = true, rows = 4 }: TextareaProps) {
+export default function Textarea({ label, id, required = true, rows = 4, value, onChange, placeholder }: TextareaProps) {
   return (
     <div>
       <label htmlFor={id} style={styles.label}>
@@ -36,6 +39,9 @@ export default function Textarea({ label, id, required = true, rows = 4 }: Texta
         aria-label={label}
         required={required}
         rows={rows}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
         style={styles.textarea}
       />
     </div>

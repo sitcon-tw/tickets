@@ -12,6 +12,7 @@ import { formStyles } from '@/components/form/formStyles';
 import { TicketFormField } from '@/lib/types/api';
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
+import Text from "@/components/input/Text";
 
 type FormDataType = {
   [key: string]: string | boolean | string[];
@@ -263,21 +264,14 @@ export default function FormPage() {
 						}}>
 							{/* Invitation code field - shown if ticket requires it */}
 							{requiresInviteCode && (
-								<div style={formStyles.formGroup}>
-									<label style={formStyles.label}>
-										{t.invitationCode}
-										<span style={{ color: 'red' }}> *</span>
-									</label>
-									<input
-										type="text"
-										name="invitationCode"
-										value={invitationCode}
-										onChange={(e) => setInvitationCode(e.target.value)}
-										required={requiresInviteCode}
-										placeholder={t.invitationCode}
-										style={formStyles.input}
-									/>
-								</div>
+								<Text
+									label={`${t.invitationCode} *`}
+									id="invitationCode"
+									value={invitationCode}
+									onChange={(e) => setInvitationCode(e.target.value)}
+									required={requiresInviteCode}
+									placeholder={t.invitationCode}
+								/>
 							)}
 
 							{/* Dynamic form fields from API */}
@@ -294,16 +288,12 @@ export default function FormPage() {
 
 							{/* Referral code field - shown if present */}
 							{referralCode && (
-								<div style={formStyles.formGroup}>
-									<label style={formStyles.label}>{t.referralCode}</label>
-									<input
-										type="text"
-										name="referralCode"
-										value={referralCode}
-										readOnly
-										style={formStyles.input}
-									/>
-								</div>
+								<Text
+									label={t.referralCode}
+									id="referralCode"
+									value={referralCode}
+									readOnly
+								/>
 							)}
 
 							<button

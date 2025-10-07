@@ -1,12 +1,17 @@
-import { CSSProperties } from "react";
+import { CSSProperties, ChangeEvent } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
+
+type SelectOption = string | { value: string; label: string };
 
 type SelectProps = {
   label: string;
   id: string;
-  options: string[];
+  options: SelectOption[];
   required?: boolean;
+  value?: string;
+  onChange?: (e: ChangeEvent<HTMLSelectElement>) => void;
+  pleaseSelectText?: string;
 };
 
 const styles: Record<"label" | "select", CSSProperties> = {
@@ -24,7 +29,7 @@ const styles: Record<"label" | "select", CSSProperties> = {
   }
 };
 
-export default function Select({ label, id, options, required = true }: SelectProps) {
+export default function Select({ label, id, options, required = true, value, onChange, pleaseSelectText }: SelectProps) {
   const locale = useLocale();
 
   const t = getTranslations(locale, {
@@ -35,18 +40,32 @@ export default function Select({ label, id, options, required = true }: SelectPr
     }
   });
 
+  const placeholder = pleaseSelectText || t.pleaseSelect;
+
   return (
     <div>
       <label htmlFor={id} style={styles.label}>
         {label}
       </label>
-      <select id={id} name={id} aria-label={label} required={required} style={styles.select}>
-        <option value="">{t.pleaseSelect}</option>
-        {options.map(option => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+      <select
+        id={id}
+        name={id}
+        aria-label={label}
+        required={required}
+        value={value}
+        onChange={onChange}
+        style={styles.select}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option, i) => {
+          const optionValue = typeof option === 'object' && option !== null && 'value' in option ? option.value : String(option);
+          const optionLabel = typeof option === 'object' && option !== null && 'label' in option ? option.label : String(option);
+          return (
+            <option key={i} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
     </div>
   );
