@@ -205,7 +205,7 @@ export default function FormPage() {
 				// Clear stored data
 				localStorage.removeItem('formData');
 				// Redirect to success page
-				router.push('/success');
+				router.push(window.location.href.replace('/form', '/success'));
 			} else {
 				throw new Error('Registration failed');
 			}
