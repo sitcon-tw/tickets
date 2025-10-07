@@ -2,7 +2,7 @@ import { CSSProperties, ChangeEvent } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 
-type SelectOption = string | { value: string; label: string };
+export type SelectOption = string | { value: string; label: string };
 
 type SelectProps = {
   label: string;

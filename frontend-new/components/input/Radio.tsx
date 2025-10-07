@@ -1,6 +1,6 @@
 import { CSSProperties, ChangeEvent } from "react";
 
-type RadioOption = string | { value: string; label: string };
+export type RadioOption = string | { value: string; label: string };
 
 type RadioProps = {
   label: string;

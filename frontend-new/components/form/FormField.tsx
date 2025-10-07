@@ -8,7 +8,9 @@ import Select from '@/components/input/Select';
 import Radio from '@/components/input/Radio';
 import Checkbox from '@/components/input/Checkbox';
 import MultiCheckbox from '@/components/input/MultiCheckbox';
-import { formStyles } from './formStyles';
+import { SelectOption } from '@/components/input/Select';
+import { RadioOption } from '@/components/input/Radio';
+import { CheckboxOption } from '@/components/input/MultiCheckbox';
 
 interface FormFieldProps {
   field: TicketFormField;
@@ -53,7 +55,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
         <Select
           label={label}
           id={field.name}
-          options={field.options || []}
+          options={field.options as SelectOption[] || []}
           required={field.required}
           value={(value as string) || ''}
           onChange={onTextChange}
@@ -64,9 +66,9 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
     case 'radio':
       return (
         <Radio
-          label={field.description}
+          label={field.description || ''}
           name={field.name}
-          options={field.options || []}
+          options={field.options as RadioOption[] || []}
           required={field.required}
           value={(value as string) || ''}
           onChange={onTextChange}
@@ -81,7 +83,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
           <MultiCheckbox
             label={`${field.description}${requiredMark}`}
             name={field.name}
-            options={field.options}
+            options={field.options as CheckboxOption[] || []}
             values={currentValues}
             onChange={onCheckboxChange}
           />
@@ -90,7 +92,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
         // Single checkbox
         return (
           <Checkbox
-            label={field.description}
+            label={field.description || ''}
             id={field.name}
             required={field.required}
             value="true"

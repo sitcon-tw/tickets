@@ -1,7 +1,7 @@
 import React, { CSSProperties, ChangeEvent } from "react";
 import styled from 'styled-components';
 
-type CheckboxOption = string | { value: string; label: string };
+export type CheckboxOption = string | { value: string; label: string };
 
 type MultiCheckboxProps = {
   label: string;
