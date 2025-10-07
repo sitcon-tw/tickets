@@ -52,7 +52,7 @@ export default function Main() {
 		const referralCode = urlParams.get('ref');
 
 		if (referralCode) {
-			sessionStorage.setItem('referralCode', referralCode);
+			localStorage.setItem('referralCode', referralCode);
 			router.refresh();
 		}
 	}, [eventSlug, router]);

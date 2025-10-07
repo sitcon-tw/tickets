@@ -79,7 +79,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const referral = sessionStorage.getItem("referralCode");
+    const referral = localStorage.getItem("referralCode");
 
     setReferralParam(referral);
   }, []);
