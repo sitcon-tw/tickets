@@ -24,7 +24,8 @@ const styles: Record<"label" | "select", CSSProperties> = {
     padding: "0.4rem 0.8rem",
     border: "1px solid var(--color-gray-700)",
     borderRadius: "0.25rem",
-    backgroundColor: "white",
+    backgroundColor: "var(--color-gray-800)",
+    color: "var(--color-gray-100)",
     maxWidth: "15rem"
   }
 };
