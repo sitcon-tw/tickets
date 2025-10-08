@@ -214,8 +214,8 @@ export const userRegistrationsResponse = {
 							type: 'object',
 							properties: {
 								id: { type: 'string' },
-								name: { type: 'string' },
-								description: { type: 'string' },
+								name: { type: 'object', additionalProperties: true },
+								description: { type: 'object', additionalProperties: true },
 								location: { type: 'string' },
 								startDate: { type: 'string', format: 'date-time' },
 								endDate: { type: 'string', format: 'date-time' },
@@ -226,8 +226,8 @@ export const userRegistrationsResponse = {
 							type: 'object',
 							properties: {
 								id: { type: 'string' },
-								name: { type: 'string' },
-								description: { type: 'string' },
+								name: { type: 'object', additionalProperties: true },
+								description: { type: 'object', additionalProperties: true },
 								price: { type: 'number' }
 							}
 						},

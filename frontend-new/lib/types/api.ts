@@ -203,7 +203,7 @@ export interface RegistrationStats {
   referralList: Array<{
     id: string;
     status: string;
-    ticketName: string;
+    ticketName: LocalizedText;
     registeredAt: string;
     email: string;
   }>;

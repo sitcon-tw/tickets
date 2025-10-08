@@ -44,8 +44,8 @@ export default async function publicTicketsRoutes(fastify, options) {
 								type: 'object',
 								properties: {
 									id: { type: 'string' },
-									name: { type: 'string' },
-									description: { type: 'string' },
+									name: { type: 'object' },
+									description: { type: 'object' },
 									price: { type: 'number' },
 									quantity: { type: 'integer' },
 									soldCount: { type: 'integer' },

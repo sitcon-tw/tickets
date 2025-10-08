@@ -173,10 +173,21 @@ export default async function referralRoutes(fastify, options) {
 					where: {
 						referralId: referral.id
 					},
-					include: {
+					select: {
+						id: true,
+						usedAt: true,
 						registration: {
-							include: {
-								ticket: true
+							select: {
+								id: true,
+								status: true,
+								email: true,
+								ticket: {
+									select: {
+										id: true,
+										name: true,
+										price: true
+									}
+								}
 							}
 						}
 					},

@@ -182,7 +182,7 @@ export const referralStatsResponse = {
 							properties: {
 								id: { type: 'string' },
 								status: { type: 'string' },
-								ticketName: { type: 'string' },
+								ticketName: { type: 'object', additionalProperties: true },
 								registeredAt: { type: 'string', format: 'date-time' },
 								email: { type: 'string' }
 							}

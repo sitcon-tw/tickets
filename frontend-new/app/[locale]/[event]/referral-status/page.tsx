@@ -9,6 +9,7 @@ import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
 import { useRouter } from '@/i18n/navigation';
 import PageSpinner from '@/components/PageSpinner';
 import type { RegistrationStats } from '@/lib/types/api';
+import { getLocalizedText } from '@/lib/utils/localization';
 
 export default function ReferralStatus() {
 	const locale = useLocale();
@@ -196,7 +197,7 @@ export default function ReferralStatus() {
 											{stats.referralList.map((referral) => (
 												<tr key={referral.id} className="border-b border-gray-800 hover:bg-gray-900">
 													<td style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>{referral.email}</td>
-													<td style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>{referral.ticketName}</td>
+													<td style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>{getLocalizedText(referral.ticketName, locale)}</td>
 													<td className={`font-semibold ${getStatusColor(referral.status)}`} style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem', paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>
 														{getStatusText(referral.status)}
 													</td>

@@ -153,7 +153,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						required: field.required,
 						validater: field.validater,
 						placeholder: field.placeholder,
-						options: field.values, // values is already JSON
+						options: field.values || [], // values is already JSON
 						order: field.order
 					}));
 
@@ -390,7 +390,7 @@ export default async function publicEventsRoutes(fastify, options) {
 									type: 'object',
 									properties: {
 										id: { type: 'string' },
-										name: { type: 'string' },
+										name: { type: 'object' },
 										description: { type: 'string' },
 										type: { type: 'string' },
 										required: { type: 'boolean' },
@@ -462,7 +462,7 @@ export default async function publicEventsRoutes(fastify, options) {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values, // values is already JSON
+					options: field.values || [], // values is already JSON
 					order: field.order
 				}));
 
