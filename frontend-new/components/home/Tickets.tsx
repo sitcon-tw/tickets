@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
-import { eventsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
@@ -42,6 +42,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
       "zh-Hans": "确认报名",
       en: "Confirm Registration"
     },
+    cannotRegister: {
+      "zh-Hant": "你已經報名過了！",
+      "zh-Hans": "你已经报名过了！",
+      en: "You have already registered!"
+    },
   });
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -49,6 +54,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canRegister, setCanRegister] = useState(true);
 
   const ticketAnimationRef = useRef<HTMLDivElement>(null);
   const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -74,7 +80,20 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
       }
     };
 
+    async function checkRegistrationStatus() {
+      try {
+        const regDataRes = await registrationsAPI.getAll();
+        if (regDataRes.success && regDataRes.data) {
+          const hasRegistered = regDataRes.data.some(reg => reg.event?.id === eventId);
+          setCanRegister(!hasRegistered);
+        }
+      } catch (error) {
+        console.error("Failed to check registration status", error);
+      }
+    };
+
     loadTickets();
+    checkRegistrationStatus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -142,9 +161,9 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
   };
 
   async function handleConfirmRegistration() {
+    if (!canRegister) return;
     if (!selectedTicket || typeof window === "undefined" || isSubmitting) return;
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for UX
     router.push(`/${eventSlug}/form`);
   };
 
@@ -224,12 +243,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
             </div>
           </div>
         ) : null}
-        <a
+        <button
           className="button"
           onClick={() => handleConfirmRegistration()}
           style={{
             opacity: isSubmitting ? 0.7 : 1,
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            cursor: !canRegister || isSubmitting ? 'not-allowed' : 'pointer',
             pointerEvents: isSubmitting ? 'none' : 'auto',
             transition: 'opacity 0.2s',
             display: 'inline-flex',
@@ -238,8 +257,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
           }}
         >
           {isSubmitting && <Spinner size="sm" color="currentColor" />}
-          {t.confirm}
-        </a>
+          {canRegister ? t.confirm : t.cannotRegister}
+        </button>
       </Confirm>
 
       {/* Animation ticket */}
