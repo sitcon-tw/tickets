@@ -14,6 +14,7 @@ import {
 	conflictResponse
 } from "#utils/response.js";
 import { eventSchemas } from "#schemas/event.js";
+import { sanitizeObject } from "#utils/sanitize.js";
 
 /**
  * Admin events routes with modular schemas and types
@@ -34,7 +35,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {EventCreateRequest} */
-				const { name, description, startDate, endDate, location } = request.body;
+				const rawBody = request.body;
+				
+				// Sanitize inputs to prevent XSS
+				const sanitizedBody = sanitizeObject(rawBody, true);
+				const { name, description, startDate, endDate, location } = sanitizedBody;
 
 				// Validate dates
 				const start = new Date(startDate);

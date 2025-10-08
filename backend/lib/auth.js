@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
 import { PrismaClient } from "../generated/prisma/index.js";
 import { sendMagicLink } from "#utils/email.js";
+import { getAdminEmails } from "../config/security.js";
 
 const prisma = new PrismaClient();
 
@@ -57,8 +58,9 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async (user) => {
-					// Automatically assign admin role to specific email
-					if (user.email === "hi@nelsongx.com") {
+					// Automatically assign admin role to emails specified in ADMIN_EMAILS env var
+					const adminEmails = getAdminEmails();
+					if (adminEmails.includes(user.email)) {
 						return {
 							data: {
 								...user,

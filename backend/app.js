@@ -1,4 +1,6 @@
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
@@ -7,24 +9,30 @@ import Fastify from "fastify";
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
 import { initializeDatabase, cleanup } from "./utils/database-init.js";
+import { rateLimitConfig, helmetConfig, getCorsConfig, bodySizeConfig } from "./config/security.js";
 
 dotenv.config();
 
 const fastify = Fastify({
-	logger: true
+	logger: true,
+	bodyLimit: bodySizeConfig.bodyLimit,
+	// Trust proxy for proper rate limiting and IP detection
+	trustProxy: process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production'
 });
 
 /*
-	註冊基本的 Routes、CORS
+	註冊基本的安全中間件、Routes、CORS
 	其他的 route 在下面
 */
 
-await fastify.register(cors, {
-	origin: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"],
-	credentials: true,
-	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-	allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
-});
+// Register security headers (helmet)
+await fastify.register(helmet, helmetConfig);
+
+// Register rate limiting
+await fastify.register(rateLimit, rateLimitConfig.global);
+
+// Register CORS with secure configuration
+await fastify.register(cors, getCorsConfig());
 
 // Swagger UI
 await fastify.register(fastifySwagger, {
@@ -99,13 +107,16 @@ await fastify.register(fastifySwaggerUi, {
 	}
 });
 
-// Better Auth routes
+// Better Auth routes with rate limiting
 fastify.all(
 	"/api/auth/*",
 	{
 		schema: {
 			description: "send auth link: POST /api/auth/sign-in/magic-link; get session: GET /api/auth/get-session",
 			tags: ["auth"]
+		},
+		config: {
+			rateLimit: rateLimitConfig.auth
 		}
 	},
 	async (request, reply) => {
