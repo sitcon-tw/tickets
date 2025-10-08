@@ -2,16 +2,13 @@
  * @fileoverview Admin analytics trends routes with efficient response functions
  */
 
-import { 
-	successResponse, 
-	serverErrorResponse 
-} from "#utils/response.js";
 import prisma from "#config/database.js";
+import { serverErrorResponse, successResponse } from "#utils/response.js";
 
 /**
  * Admin analytics trends routes
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function trendsRoutes(fastify, options) {
 	// Registration trends analysis
@@ -22,17 +19,17 @@ export default async function trendsRoutes(fastify, options) {
 				description: "報名趨勢分析",
 				tags: ["admin/analytics"],
 				querystring: {
-					type: 'object',
+					type: "object",
 					properties: {
 						period: {
-							type: 'string',
-							enum: ['daily', 'weekly', 'monthly'],
-							default: 'daily',
-							description: '統計週期'
+							type: "string",
+							enum: ["daily", "weekly", "monthly"],
+							default: "daily",
+							description: "統計週期"
 						},
 						eventId: {
-							type: 'string',
-							description: '活動 ID 篩選'
+							type: "string",
+							description: "活動 ID 篩選"
 						}
 					}
 				}
@@ -47,17 +44,17 @@ export default async function trendsRoutes(fastify, options) {
 				const { period = "daily", eventId } = request.query;
 
 				const whereClause = eventId ? { eventId } : {};
-				const daysBack = period === 'daily' ? 30 : period === 'weekly' ? 84 : 365;
-				
+				const daysBack = period === "daily" ? 30 : period === "weekly" ? 84 : 365;
+
 				let groupByClause;
 				switch (period) {
-					case 'daily':
+					case "daily":
 						groupByClause = "DATE(createdAt)";
 						break;
-					case 'weekly':
+					case "weekly":
 						groupByClause = "strftime('%Y-%W', createdAt)";
 						break;
-					case 'monthly':
+					case "monthly":
 						groupByClause = "strftime('%Y-%m', createdAt)";
 						break;
 					default:
@@ -81,15 +78,15 @@ export default async function trendsRoutes(fastify, options) {
 				registrations.forEach(reg => {
 					let key;
 					switch (period) {
-						case 'daily':
-							key = reg.createdAt.toISOString().split('T')[0];
+						case "daily":
+							key = reg.createdAt.toISOString().split("T")[0];
 							break;
-						case 'weekly':
+						case "weekly":
 							const weekStart = new Date(reg.createdAt);
 							weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-							key = weekStart.toISOString().split('T')[0];
+							key = weekStart.toISOString().split("T")[0];
 							break;
-						case 'monthly':
+						case "monthly":
 							key = reg.createdAt.toISOString().substring(0, 7);
 							break;
 					}
@@ -108,21 +105,21 @@ export default async function trendsRoutes(fastify, options) {
 				const totalRegistrations = registrations.length;
 				const totalDays = Object.keys(trendsMap).length;
 				const averagePerDay = totalDays > 0 ? totalRegistrations / totalDays : 0;
-				const peakDay = trends.reduce((max, day) => 
-					day.total > (max?.total || 0) ? day : max, null
-				);
+				const peakDay = trends.reduce((max, day) => (day.total > (max?.total || 0) ? day : max), null);
 
-				return reply.send(successResponse({
-					trends,
-					period,
-					eventId,
-					summary: {
-						peakDay,
-						averagePerDay: Math.round(averagePerDay * 100) / 100,
-						totalDays,
-						totalRegistrations
-					}
-				}));
+				return reply.send(
+					successResponse({
+						trends,
+						period,
+						eventId,
+						summary: {
+							peakDay,
+							averagePerDay: Math.round(averagePerDay * 100) / 100,
+							totalDays,
+							totalRegistrations
+						}
+					})
+				);
 			} catch (error) {
 				console.error("Get registration trends error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名趨勢失敗");

@@ -7,26 +7,19 @@
  */
 
 import prisma from "#config/database.js";
-import { 
-	successResponse, 
-	validationErrorResponse, 
-	notFoundResponse, 
-	serverErrorResponse,
-	conflictResponse,
-	createPagination
-} from "#utils/response.js";
 import { registrationSchemas } from "#schemas/registration.js";
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
  * Admin registrations routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function adminRegistrationsRoutes(fastify, options) {
 	// List registrations with pagination and filters
@@ -41,13 +34,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				const { 
-					page = 1, 
-					limit = 20, 
-					eventId, 
-					status, 
-					userId
-				} = request.query;
+				const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
 				// Build where clause
 				const where = {};
@@ -91,7 +78,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: "desc" },
 					skip: (page - 1) * limit,
 					take: limit
 				});
@@ -111,7 +98,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.get(
 		"/registrations/:id",
 		{
-			schema: {...registrationSchemas.getRegistration, tags: ["admin/registrations"]}
+			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
@@ -177,7 +164,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.put(
 		"/registrations/:id",
 		{
-			schema: {...registrationSchemas.updateRegistration, tags: ["admin/registrations"]}
+			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>} request
@@ -261,37 +248,37 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				description: "匯出報名資料",
 				tags: ["admin/registrations"],
 				querystring: {
-					type: 'object',
+					type: "object",
 					properties: {
 						eventId: {
-							type: 'string',
-							description: '活動 ID'
+							type: "string",
+							description: "活動 ID"
 						},
 						status: {
-							type: 'string',
-							enum: ['confirmed', 'cancelled', 'pending'],
-							description: '報名狀態'
+							type: "string",
+							enum: ["confirmed", "cancelled", "pending"],
+							description: "報名狀態"
 						},
 						format: {
-							type: 'string',
-							enum: ['csv', 'excel'],
-							default: 'csv',
-							description: '匯出格式'
+							type: "string",
+							enum: ["csv", "excel"],
+							default: "csv",
+							description: "匯出格式"
 						}
 					}
 				},
 				response: {
 					200: {
-						type: 'object',
+						type: "object",
 						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
+							success: { type: "boolean" },
+							message: { type: "string" },
 							data: {
-								type: 'object',
+								type: "object",
 								properties: {
-									downloadUrl: { type: 'string' },
-									filename: { type: 'string' },
-									count: { type: 'integer' }
+									downloadUrl: { type: "string" },
+									filename: { type: "string" },
+									count: { type: "integer" }
 								}
 							}
 						}
@@ -305,7 +292,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				const { eventId, status, format = 'csv' } = request.query;
+				const { eventId, status, format = "csv" } = request.query;
 
 				// Build where clause
 				const where = {};
@@ -334,34 +321,39 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' }
+					orderBy: { createdAt: "desc" }
 				});
 
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format}`;
-				
-				const downloadsDir = path.join(__dirname, '../../downloads');
+
+				const downloadsDir = path.join(__dirname, "../../downloads");
 				if (!fs.existsSync(downloadsDir)) {
 					fs.mkdirSync(downloadsDir, { recursive: true });
 				}
-				
+
 				const filePath = path.join(downloadsDir, filename);
-				
-				if (format === 'csv') {
+
+				if (format === "csv") {
 					const csvContent = generateCSV(registrations);
-					fs.writeFileSync(filePath, csvContent, 'utf8');
-				} else if (format === 'excel') {
+					fs.writeFileSync(filePath, csvContent, "utf8");
+				} else if (format === "excel") {
 					const excelContent = generateExcel(registrations);
 					fs.writeFileSync(filePath, excelContent);
 				}
-				
+
 				const downloadUrl = `/downloads/${filename}`;
 
-				return reply.send(successResponse({
-					downloadUrl,
-					filename,
-					count: registrations.length
-				}, "匯出準備完成"));
+				return reply.send(
+					successResponse(
+						{
+							downloadUrl,
+							filename,
+							count: registrations.length
+						},
+						"匯出準備完成"
+					)
+				);
 			} catch (error) {
 				console.error("Export registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("匯出失敗");
@@ -371,71 +363,27 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	function generateCSV(registrations) {
-		const headers = [
-			'ID',
-			'Email',
-			'Event',
-			'Ticket',
-			'Price',
-			'Status',
-			'Name',
-			'Phone',
-			'Created At'
-		];
-		
+		const headers = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Name", "Phone", "Created At"];
+
 		const rows = registrations.map(reg => {
 			const formData = reg.formData ? JSON.parse(reg.formData) : {};
-			return [
-				reg.id,
-				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
-				reg.ticket?.price || 0,
-				reg.status,
-				formData.name || '',
-				formData.phone || '',
-				new Date(reg.createdAt).toISOString()
-			];
+			return [reg.id, reg.email, reg.event?.name || "", reg.ticket?.name || "", reg.ticket?.price || 0, reg.status, formData.name || "", formData.phone || "", new Date(reg.createdAt).toISOString()];
 		});
-		
+
 		const csvRows = [headers, ...rows];
-		return csvRows.map(row => 
-			row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-		).join('\n');
+		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
-	
+
 	function generateExcel(registrations) {
-		const headers = [
-			'ID',
-			'Email',
-			'Event',
-			'Ticket',
-			'Price',
-			'Status',
-			'Name',
-			'Phone',
-			'Created At'
-		];
-		
+		const headers = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Name", "Phone", "Created At"];
+
 		const rows = registrations.map(reg => {
 			const formData = reg.formData ? JSON.parse(reg.formData) : {};
-			return [
-				reg.id,
-				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
-				reg.ticket?.price || 0,
-				reg.status,
-				formData.name || '',
-				formData.phone || '',
-				new Date(reg.createdAt).toISOString()
-			];
+			return [reg.id, reg.email, reg.event?.name || "", reg.ticket?.name || "", reg.ticket?.price || 0, reg.status, formData.name || "", formData.phone || "", new Date(reg.createdAt).toISOString()];
 		});
-		
-		const csvContent = [headers, ...rows]
-			.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-			.join('\n');
-			
+
+		const csvContent = [headers, ...rows].map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+
 		return csvContent;
 	}
 }

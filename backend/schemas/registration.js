@@ -2,146 +2,146 @@
  * @fileoverview Registration-related schema definitions
  */
 
-import { dateTimeString, successResponse, errorResponse, idParam, statusEnum, paginationQuery } from './common.js';
+import { dateTimeString, errorResponse, idParam, paginationQuery, statusEnum, successResponse } from "./common.js";
 
 export const registrationProperties = {
 	id: {
-		type: 'string',
-		description: '報名 ID'
+		type: "string",
+		description: "報名 ID"
 	},
 	eventId: {
-		type: 'string',
-		description: '活動 ID'
+		type: "string",
+		description: "活動 ID"
 	},
 	ticketId: {
-		type: 'string',
-		description: '票券 ID'
+		type: "string",
+		description: "票券 ID"
 	},
 	email: {
-		type: 'string',
-		description: '電子郵件'
+		type: "string",
+		description: "電子郵件"
 	},
 	status: {
-		type: 'string',
-		enum: ['confirmed', 'cancelled', 'pending'],
-		description: '報名狀態'
+		type: "string",
+		enum: ["confirmed", "cancelled", "pending"],
+		description: "報名狀態"
 	},
 	referredBy: {
-		type: 'string',
-		description: '推薦人報名 ID'
+		type: "string",
+		description: "推薦人報名 ID"
 	},
 	formData: {
-		type: 'object',
-		description: '表單資料'
+		type: "object",
+		description: "表單資料"
 	},
 	createdAt: {
 		...dateTimeString,
-		description: '建立時間'
+		description: "建立時間"
 	},
 	updatedAt: {
 		...dateTimeString,
-		description: '更新時間'
+		description: "更新時間"
 	}
 };
 
 export const registrationCreateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		eventId: {
-			type: 'string',
-			description: '活動 ID'
+			type: "string",
+			description: "活動 ID"
 		},
 		ticketId: {
-			type: 'string',
-			description: '票券 ID'
+			type: "string",
+			description: "票券 ID"
 		},
 		invitationCode: {
-			type: 'string',
-			description: '邀請碼'
+			type: "string",
+			description: "邀請碼"
 		},
 		referralCode: {
-			type: 'string',
-			description: '推薦碼'
+			type: "string",
+			description: "推薦碼"
 		},
 		formData: {
-			type: 'object',
-			description: '表單資料',
+			type: "object",
+			description: "表單資料"
 		}
 	},
-	required: ['eventId', 'ticketId', 'formData']
+	required: ["eventId", "ticketId", "formData"]
 };
 
 export const registrationUpdateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		formData: {
-			type: 'object',
-			description: '表單資料',
+			type: "object",
+			description: "表單資料",
 			additionalProperties: true
 		},
 		status: {
 			...statusEnum,
-			description: '報名狀態'
+			description: "報名狀態"
 		},
 		tags: {
-			type: 'array',
-			items: { type: 'string' },
-			description: '標籤列表'
+			type: "array",
+			items: { type: "string" },
+			description: "標籤列表"
 		}
 	}
 };
 
 export const registrationQuery = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...paginationQuery.properties,
 		eventId: {
-			type: 'string',
-			description: '篩選活動 ID'
+			type: "string",
+			description: "篩選活動 ID"
 		},
 		status: {
 			...statusEnum,
-			description: '篩選報名狀態'
+			description: "篩選報名狀態"
 		},
 		userId: {
-			type: 'string',
-			description: '篩選用戶 ID'
-		},
+			type: "string",
+			description: "篩選用戶 ID"
+		}
 	}
 };
 
 export const registrationResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'object',
+			type: "object",
 			properties: registrationProperties,
-			required: ['id', 'eventId', 'ticketId', 'email', 'status']
+			required: ["id", "eventId", "ticketId", "email", "status"]
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const registrationsListResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				properties: registrationProperties
 			}
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const registrationSchemas = {
 	createRegistration: {
-		description: '創建新報名',
-		tags: ['registrations'],
+		description: "創建新報名",
+		tags: ["registrations"],
 		body: registrationCreateBody,
 		params: undefined,
 		querystring: undefined,
@@ -152,10 +152,10 @@ export const registrationSchemas = {
 			409: errorResponse
 		}
 	},
-	
+
 	getRegistration: {
-		description: '取得報名詳情',
-		tags: ['registrations'],
+		description: "取得報名詳情",
+		tags: ["registrations"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -166,10 +166,10 @@ export const registrationSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	updateRegistration: {
-		description: '更新報名',
-		tags: ['registrations'],
+		description: "更新報名",
+		tags: ["registrations"],
 		body: registrationUpdateBody,
 		params: idParam,
 		querystring: undefined,
@@ -181,10 +181,10 @@ export const registrationSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	listRegistrations: {
-		description: '取得報名列表',
-		tags: ['admin/registrations'],
+		description: "取得報名列表",
+		tags: ["admin/registrations"],
 		body: undefined,
 		params: undefined,
 		querystring: registrationQuery,
@@ -193,48 +193,48 @@ export const registrationSchemas = {
 			401: errorResponse,
 			403: errorResponse
 		}
-	},
+	}
 };
 
 export const userRegistrationsResponse = {
 	200: {
-		type: 'object',
+		type: "object",
 		properties: {
 			...successResponse.properties,
 			data: {
-				type: 'array',
+				type: "array",
 				items: {
-					type: 'object',
+					type: "object",
 					properties: {
-						id: { type: 'string' },
-						status: { type: 'string' },
-						formData: { type: 'object', additionalProperties: true },
-						createdAt: { type: 'string', format: 'date-time' },
+						id: { type: "string" },
+						status: { type: "string" },
+						formData: { type: "object", additionalProperties: true },
+						createdAt: { type: "string", format: "date-time" },
 						event: {
-							type: 'object',
+							type: "object",
 							properties: {
-								id: { type: 'string' },
-								name: { type: 'object', additionalProperties: true },
-								description: { type: 'object', additionalProperties: true },
-								location: { type: 'string' },
-								startDate: { type: 'string', format: 'date-time' },
-								endDate: { type: 'string', format: 'date-time' },
-								ogImage: { type: ['string', 'null'] }
+								id: { type: "string" },
+								name: { type: "object", additionalProperties: true },
+								description: { type: "object", additionalProperties: true },
+								location: { type: "string" },
+								startDate: { type: "string", format: "date-time" },
+								endDate: { type: "string", format: "date-time" },
+								ogImage: { type: ["string", "null"] }
 							}
 						},
 						ticket: {
-							type: 'object',
+							type: "object",
 							properties: {
-								id: { type: 'string' },
-								name: { type: 'object', additionalProperties: true },
-								description: { type: 'object', additionalProperties: true },
-								price: { type: 'number' }
+								id: { type: "string" },
+								name: { type: "object", additionalProperties: true },
+								description: { type: "object", additionalProperties: true },
+								price: { type: "number" }
 							}
 						},
-						isUpcoming: { type: 'boolean' },
-						isPast: { type: 'boolean' },
-						canEdit: { type: 'boolean' },
-						canCancel: { type: 'boolean' }
+						isUpcoming: { type: "boolean" },
+						isPast: { type: "boolean" },
+						canEdit: { type: "boolean" },
+						canCancel: { type: "boolean" }
 					}
 				}
 			}

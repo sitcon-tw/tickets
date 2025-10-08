@@ -78,28 +78,28 @@ const t = i18n.t(lang, {
 		try {
 			// Get URL parameters
 			const urlParams = new URLSearchParams(window.location.search);
-			const referralCode = urlParams.get('ref');
-			const invitationCode = urlParams.get('invite');
-			
+			const referralCode = urlParams.get("ref");
+			const invitationCode = urlParams.get("invite");
+
 			// Check authentication status
-			const response = await fetch('http://localhost:3000/api/auth/get-session', {
-				credentials: 'include'
+			const response = await fetch("http://localhost:3000/api/auth/get-session", {
+				credentials: "include"
 			});
-			
+
 			if (response.ok) {
 				const session = await response.json();
-				
+
 				if (session && session.user) {
 					// User is authenticated
 					// Check if user has registered for any event
 					try {
-						const registrationsResponse = await fetch('http://localhost:3000/api/registrations', {
-							credentials: 'include'
+						const registrationsResponse = await fetch("http://localhost:3000/api/registrations", {
+							credentials: "include"
 						});
-						
+
 						if (registrationsResponse.ok) {
 							const registrations = await registrationsResponse.json();
-							
+
 							if (registrations.success && registrations.data && registrations.data.length > 0) {
 								// User is registered, show referral code
 								showRegisteredWelcome();
@@ -107,9 +107,9 @@ const t = i18n.t(lang, {
 							}
 						}
 					} catch (error) {
-						console.error('Failed to check registrations:', error);
+						console.error("Failed to check registrations:", error);
 					}
-					
+
 					// User is logged in but not registered
 					if (invitationCode) {
 						showInvitationWelcome();
@@ -129,83 +129,83 @@ const t = i18n.t(lang, {
 				}
 			}
 		} catch (error) {
-			console.error('Failed to handle welcome section:', error);
+			console.error("Failed to handle welcome section:", error);
 		}
 	}
-	
+
 	function showRegisteredWelcome() {
-		document.getElementById('registered-welcome').style.display = 'block';
-		
+		document.getElementById("registered-welcome").style.display = "block";
+
 		// Load user's referral code
 		loadReferralCode();
-		
+
 		// Add copy functionality
-		document.querySelector('.code').addEventListener('click', copyReferralCode);
+		document.querySelector(".code").addEventListener("click", copyReferralCode);
 	}
-	
+
 	function showReferralWelcome() {
 		const urlParams = new URLSearchParams(window.location.search);
-		const referralCode = urlParams.get('ref');
+		const referralCode = urlParams.get("ref");
 		if (referralCode) {
 			// Store referral code for later use
-			sessionStorage.setItem('referralCode', referralCode);
+			sessionStorage.setItem("referralCode", referralCode);
 		}
-		document.getElementById('referral-welcome').style.display = 'block';
+		document.getElementById("referral-welcome").style.display = "block";
 	}
-	
+
 	function showInvitationWelcome() {
 		const urlParams = new URLSearchParams(window.location.search);
-		const invitationCode = urlParams.get('invite');
+		const invitationCode = urlParams.get("invite");
 		if (invitationCode) {
 			// Store invitation code for later use
-			sessionStorage.setItem('invitationCode', invitationCode);
+			sessionStorage.setItem("invitationCode", invitationCode);
 		}
-		document.getElementById('invitation-welcome').style.display = 'block';
-		
+		document.getElementById("invitation-welcome").style.display = "block";
+
 		// Add click handler for registration button
-		document.getElementById('invitation-register-btn').addEventListener('click', (e) => {
+		document.getElementById("invitation-register-btn").addEventListener("click", e => {
 			e.preventDefault();
 			const params = new URLSearchParams();
 			if (invitationCode) {
-				params.set('invite', invitationCode);
+				params.set("invite", invitationCode);
 			}
 			window.location.href = `/form/?${params.toString()}`;
 		});
 	}
-	
+
 	function showDefaultWelcome() {
 		//document.getElementById('default-welcome').style.display = 'block';
 	}
-	
+
 	async function loadReferralCode() {
 		try {
-			const response = await fetch('http://localhost:3000/api/referrals', {
-				credentials: 'include'
+			const response = await fetch("http://localhost:3000/api/referrals", {
+				credentials: "include"
 			});
-			
+
 			if (response.ok) {
 				const referralData = await response.json();
 				if (referralData.success && referralData.data && referralData.data.code) {
-					document.getElementById('referral-code').textContent = referralData.data.code;
+					document.getElementById("referral-code").textContent = referralData.data.code;
 				}
 			}
 		} catch (error) {
-			console.error('Failed to load referral code:', error);
-			document.getElementById('referral-code').textContent = '載入失敗';
+			console.error("Failed to load referral code:", error);
+			document.getElementById("referral-code").textContent = "載入失敗";
 		}
 	}
-	
+
 	function copyReferralCode() {
-		const code = document.getElementById('referral-code').textContent;
-		if (code && code !== '載入中...' && code !== '載入失敗') {
+		const code = document.getElementById("referral-code").textContent;
+		if (code && code !== "載入中..." && code !== "載入失敗") {
 			navigator.clipboard.writeText(code).then(() => {
-				alert('推薦碼已複製到剪貼簿！');
+				alert("推薦碼已複製到剪貼簿！");
 			});
 		}
 	}
-	
+
 	// Initialize when DOM is loaded
-	document.addEventListener('DOMContentLoaded', handleWelcomeSection);
+	document.addEventListener("DOMContentLoaded", handleWelcomeSection);
 </script>
 
 <style>
@@ -226,7 +226,7 @@ const t = i18n.t(lang, {
 		cursor: pointer;
 		transition: background-color 0.2s;
 	}
-	
+
 	.code:hover {
 		background-color: var(--color-gray-600);
 	}

@@ -2,34 +2,26 @@
  * @fileoverview Public registrations routes with modular types and schemas
  * @typedef {import('#types/database.js').Registration} Registration
  * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
- * @typedef {import('#types/api.js').InvitationCode} InvitationCode 
+ * @typedef {import('#types/api.js').InvitationCode} InvitationCode
  */
 
 import prisma from "#config/database.js";
-import { 
-	successResponse, 
-	validationErrorResponse, 
-	notFoundResponse, 
-	serverErrorResponse,
-	conflictResponse,
-	unauthorizedResponse
-} from "#utils/response.js";
-import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
-import { validateRegistrationFormData } from "#utils/validation.js";
 import { auth } from "#lib/auth.js";
+import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
-
+import { validateRegistrationFormData } from "#utils/validation.js";
 
 /**
  * Public registrations routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function publicRegistrationsRoutes(fastify, options) {
 	// Apply preHandler if provided
 	if (options.preHandler) {
-		fastify.addHook('preHandler', options.preHandler);
+		fastify.addHook("preHandler", options.preHandler);
 	}
 
 	// Create new registration
@@ -46,10 +38,10 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 			try {
 				/** @type {RegistrationCreateRequest} */
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
-				
+
 				// Sanitize form data to prevent XSS attacks
 				const sanitizedFormData = sanitizeObject(formData, false);
-				
+
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
@@ -86,7 +78,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						},
 						include: {
 							fromFields: {
-								orderBy: { order: 'asc' }
+								orderBy: { order: "asc" }
 							}
 						}
 					})
@@ -171,8 +163,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						}
 					});
 
-					if (code && (!code.expiresAt || now <= code.expiresAt) && 
-						(!code.usageLimit || code.usedCount < code.usageLimit)) {
+					if (code && (!code.expiresAt || now <= code.expiresAt) && (!code.usageLimit || code.usedCount < code.usageLimit)) {
 						invitationCodeId = code.id;
 					}
 				}
@@ -204,7 +195,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Create registration in transaction
-				const result = await prisma.$transaction(async (tx) => {
+				const result = await prisma.$transaction(async tx => {
 					// Re-check ticket availability within transaction to prevent race conditions
 					const currentTicket = await tx.ticket.findUnique({
 						where: { id: ticketId },
@@ -222,8 +213,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 							eventId,
 							ticketId,
 							email: user.email,
-							formData: safeJsonStringify(sanitizedFormData, '{}', 'registration creation'),
-							status: 'confirmed',
+							formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
+							status: "confirmed"
 						},
 						include: {
 							event: {
@@ -268,7 +259,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					}
 
 					// Add parsed form data to response with error handling
-					const parsedFormData = safeJsonParse(registration.formData, {}, 'registration response');
+					const parsedFormData = safeJsonParse(registration.formData, {}, "registration response");
 
 					return {
 						...registration,
@@ -279,13 +270,13 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				return reply.code(201).send(successResponse(result, "報名成功"));
 			} catch (error) {
 				request.log.error("Create registration error:", error);
-				
+
 				// Handle specific transaction errors
 				if (error.message === "TICKET_SOLD_OUT") {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
 				}
-				
+
 				const { response, statusCode } = serverErrorResponse("報名失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -337,7 +328,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' }
+					orderBy: { createdAt: "desc" }
 				});
 
 				// Parse form data and add status indicators
@@ -350,8 +341,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						formData: parsedFormData,
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
-						canEdit: reg.status === 'confirmed' && reg.event.startDate > now,
-						canCancel: reg.status === 'confirmed' && reg.event.startDate > now
+						canEdit: reg.status === "confirmed" && reg.event.startDate > now,
+						canCancel: reg.status === "confirmed" && reg.event.startDate > now
 					};
 				});
 
@@ -410,7 +401,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 								description: true,
 								price: true
 							}
-						},
+						}
 					}
 				});
 
@@ -428,8 +419,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
-					canEdit: registration.status === 'confirmed' && registration.event.startDate > now,
-					canCancel: registration.status === 'confirmed' && registration.event.startDate > now
+					canEdit: registration.status === "confirmed" && registration.event.startDate > now,
+					canCancel: registration.status === "confirmed" && registration.event.startDate > now
 				};
 
 				return reply.send(successResponse(registrationWithStatus));
@@ -464,7 +455,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const userId = session.user?.id;
 				const id = request.params.id;
 				const { formData } = request.body;
-				
+
 				// Sanitize form data to prevent XSS attacks
 				const sanitizedFormData = sanitizeObject(formData, false);
 
@@ -494,7 +485,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Check if registration can be edited
-				if (registration.status !== 'confirmed') {
+				if (registration.status !== "confirmed") {
 					const { response, statusCode } = validationErrorResponse("只能編輯已確認的報名");
 					return reply.code(statusCode).send(response);
 				}
@@ -515,7 +506,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const updatedRegistration = await prisma.registration.update({
 					where: { id },
 					data: {
-						formData: safeJsonStringify(sanitizedFormData, '{}', 'registration update'),
+						formData: safeJsonStringify(sanitizedFormData, "{}", "registration update"),
 						updatedAt: new Date()
 					},
 					include: {
@@ -542,15 +533,17 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				});
 
 				// Parse form data for response
-				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, 'updated registration response');
+				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, "updated registration response");
 
-				return reply.send(successResponse(
-					{ 
-						...updatedRegistration, 
-						formData: parsedFormData 
-					}, 
-					"報名資料已更新"
-				));
+				return reply.send(
+					successResponse(
+						{
+							...updatedRegistration,
+							formData: parsedFormData
+						},
+						"報名資料已更新"
+					)
+				);
 			} catch (error) {
 				request.log.error("Edit registration error:", error);
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
@@ -602,7 +595,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Check if registration can be cancelled
-				if (registration.status !== 'confirmed') {
+				if (registration.status !== "confirmed") {
 					const { response, statusCode } = validationErrorResponse("只能取消已確認的報名");
 					return reply.code(statusCode).send(response);
 				}
@@ -613,12 +606,12 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Cancel registration and update ticket count
-				await prisma.$transaction(async (tx) => {
+				await prisma.$transaction(async tx => {
 					// Update registration status
 					await tx.registration.update({
 						where: { id },
 						data: {
-							status: 'cancelled',
+							status: "cancelled",
 							updatedAt: new Date()
 						}
 					});

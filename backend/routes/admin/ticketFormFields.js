@@ -6,14 +6,8 @@
  */
 
 import prisma from "#config/database.js";
-import {
-	successResponse,
-	validationErrorResponse,
-	notFoundResponse,
-	serverErrorResponse,
-	conflictResponse
-} from "#utils/response.js";
 import { ticketFormFieldSchemas } from "#schemas/ticketFormFields.js";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin ticket form fields routes with modular schemas and types
@@ -174,22 +168,21 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 				delete data.ticketId; // ticketId is immutable
 
 				// Handle nullable string fields - convert empty strings to null
-				if (updateData.validater === '') data.validater = null;
-				if (updateData.placeholder === '') data.placeholder = null;
-				if (updateData.description === '') data.description = null;
+				if (updateData.validater === "") data.validater = null;
+				if (updateData.placeholder === "") data.placeholder = null;
+				if (updateData.description === "") data.description = null;
 
 				// Handle JSON fields - ensure proper serialization for PostgreSQL
-				if ('name' in updateData) {
-					if (updateData.name === '' || updateData.name === null) {
+				if ("name" in updateData) {
+					if (updateData.name === "" || updateData.name === null) {
 						delete data.name;
-					} else if (typeof updateData.name === 'object') {
+					} else if (typeof updateData.name === "object") {
 						data.name = JSON.parse(JSON.stringify(updateData.name));
 					}
 				}
 
-				if ('values' in updateData) {
-					if (updateData.values === '' || updateData.values === null ||
-					    (Array.isArray(updateData.values) && updateData.values.length === 0)) {
+				if ("values" in updateData) {
+					if (updateData.values === "" || updateData.values === null || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
 						data.values = null;
 					} else if (Array.isArray(updateData.values)) {
 						data.values = JSON.parse(JSON.stringify(updateData.values));
@@ -290,10 +283,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: [
-						{ ticketId: 'asc' },
-						{ order: 'asc' }
-					]
+					orderBy: [{ ticketId: "asc" }, { order: "asc" }]
 				});
 
 				return reply.send(successResponse(formFields));
@@ -310,54 +300,54 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 		"/tickets/:ticketId/form-fields/reorder",
 		{
 			schema: {
-				description: '重新排序票券表單欄位',
-				tags: ['admin/tickets'],
+				description: "重新排序票券表單欄位",
+				tags: ["admin/tickets"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
 						ticketId: {
-							type: 'string',
-							description: '票券 ID'
+							type: "string",
+							description: "票券 ID"
 						}
 					},
-					required: ['ticketId']
+					required: ["ticketId"]
 				},
 				body: {
-					type: 'object',
+					type: "object",
 					properties: {
 						fieldOrders: {
-							type: 'array',
+							type: "array",
 							items: {
-								type: 'object',
+								type: "object",
 								properties: {
-									id: { type: 'string' },
-									order: { type: 'integer', minimum: 0 }
+									id: { type: "string" },
+									order: { type: "integer", minimum: 0 }
 								},
-								required: ['id', 'order']
+								required: ["id", "order"]
 							}
 						}
 					},
-					required: ['fieldOrders']
+					required: ["fieldOrders"]
 				},
 				response: {
 					200: {
-						type: 'object',
+						type: "object",
 						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: { type: 'null' }
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: { type: "null" }
 						},
-						required: ['success', 'message']
+						required: ["success", "message"]
 					},
 					400: {
-						type: 'object',
+						type: "object",
 						properties: {
-							success: { type: 'boolean' },
+							success: { type: "boolean" },
 							error: {
-								type: 'object',
+								type: "object",
 								properties: {
-									code: { type: 'string' },
-									message: { type: 'string' }
+									code: { type: "string" },
+									message: { type: "string" }
 								}
 							}
 						}
@@ -407,7 +397,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 				}
 
 				// Update field orders in a transaction
-				await prisma.$transaction(async (prisma) => {
+				await prisma.$transaction(async prisma => {
 					for (const { id, order } of fieldOrders) {
 						await prisma.ticketFromFields.update({
 							where: { id },

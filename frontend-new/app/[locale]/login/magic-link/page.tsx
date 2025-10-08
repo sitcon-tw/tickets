@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
 import Nav from "@/components/Nav";
-import { getTranslations } from "@/i18n/helpers";
 import Spinner from "@/components/Spinner";
+import { getTranslations } from "@/i18n/helpers";
+import { useLocale } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function MagicLinkVerify() {
 	const locale = useLocale();
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
-	const [errorMessage, setErrorMessage] = useState('');
+	const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+	const [errorMessage, setErrorMessage] = useState("");
 
 	const t = getTranslations(locale, {
 		verifying: {
@@ -49,20 +49,20 @@ export default function MagicLinkVerify() {
 
 	useEffect(() => {
 		// Check if we were redirected back with a status
-		const status = searchParams.get('status');
+		const status = searchParams.get("status");
 
-		if (status === 'success') {
-			setStatus('success');
+		if (status === "success") {
+			setStatus("success");
 			// Redirect to home page after 1.5 seconds
 			setTimeout(() => {
 				router.push(`/${locale}/`);
 			}, 1500);
-		} else if (status === 'error') {
-			setStatus('error');
+		} else if (status === "error") {
+			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
 		} else {
 			// No status means user hasn't clicked the magic link yet
-			setStatus('error');
+			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
 		}
 	}, [searchParams, router, locale, t.errorInvalidLink]);
@@ -72,74 +72,82 @@ export default function MagicLinkVerify() {
 			<Nav />
 			<main>
 				<section>
-					<div style={{
-						position: 'absolute',
-						top: '50%',
-						left: '50%',
-						transform: 'translate(-50%, -50%)',
-						textAlign: 'center',
-						maxWidth: '500px',
-						padding: '2rem',
-					}}>
-						{status === 'verifying' && (
+					<div
+						style={{
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%)",
+							textAlign: "center",
+							maxWidth: "500px",
+							padding: "2rem"
+						}}
+					>
+						{status === "verifying" && (
 							<>
-								<div style={{ marginBottom: '1.5rem' }}>
+								<div style={{ marginBottom: "1.5rem" }}>
 									<Spinner size="lg" />
 								</div>
-								<h1 style={{ marginBottom: '0.5rem' }}>{t.verifying}</h1>
-								<p style={{ color: 'var(--color-gray-700)' }}>
-									{t.redirecting}
-								</p>
+								<h1 style={{ marginBottom: "0.5rem" }}>{t.verifying}</h1>
+								<p style={{ color: "var(--color-gray-700)" }}>{t.redirecting}</p>
 							</>
 						)}
 
-						{status === 'success' && (
+						{status === "success" && (
 							<>
-								<div style={{
-									fontSize: '3rem',
-									marginBottom: '1rem',
-									color: 'var(--color-primary)'
-								}}>
+								<div
+									style={{
+										fontSize: "3rem",
+										marginBottom: "1rem",
+										color: "var(--color-primary)"
+									}}
+								>
 									✓
 								</div>
-								<h1 style={{
-									marginBottom: '0.5rem',
-									color: 'var(--color-primary)'
-								}}>
+								<h1
+									style={{
+										marginBottom: "0.5rem",
+										color: "var(--color-primary)"
+									}}
+								>
 									{t.success}
 								</h1>
-								<p style={{ color: 'var(--color-gray-700)' }}>
-									{t.redirecting}
-								</p>
+								<p style={{ color: "var(--color-gray-700)" }}>{t.redirecting}</p>
 							</>
 						)}
 
-						{status === 'error' && (
+						{status === "error" && (
 							<>
-								<div style={{
-									fontSize: '3rem',
-									marginBottom: '1rem',
-									color: 'var(--color-error, #dc2626)'
-								}}>
+								<div
+									style={{
+										fontSize: "3rem",
+										marginBottom: "1rem",
+										color: "var(--color-error, #dc2626)"
+									}}
+								>
 									✗
 								</div>
-								<h1 style={{
-									marginBottom: '1rem',
-									color: 'var(--color-error, #dc2626)'
-								}}>
+								<h1
+									style={{
+										marginBottom: "1rem",
+										color: "var(--color-error, #dc2626)"
+									}}
+								>
 									{t.error}
 								</h1>
-								<p style={{
-									marginBottom: '2rem',
-									color: 'var(--color-gray-700)'
-								}}>
+								<p
+									style={{
+										marginBottom: "2rem",
+										color: "var(--color-gray-700)"
+									}}
+								>
 									{errorMessage}
 								</p>
 								<button
 									className="button"
 									onClick={() => router.push(`/${locale}/login`)}
 									style={{
-										margin: '0 auto'
+										margin: "0 auto"
 									}}
 								>
 									{t.backToLogin}

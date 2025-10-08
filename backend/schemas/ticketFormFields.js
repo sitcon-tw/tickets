@@ -2,188 +2,188 @@
  * @fileoverview TicketFromFields-related schema definitions
  */
 
-import { successResponse, errorResponse, idParam } from './common.js';
+import { errorResponse, idParam, successResponse } from "./common.js";
 
 export const ticketFormFieldProperties = {
 	id: {
-		type: 'string',
-		description: '表單欄位 ID'
+		type: "string",
+		description: "表單欄位 ID"
 	},
 	ticketId: {
-		type: 'string',
-		description: '票券 ID'
+		type: "string",
+		description: "票券 ID"
 	},
 	order: {
-		type: 'integer',
+		type: "integer",
 		minimum: 0,
-		description: '欄位排序'
+		description: "欄位排序"
 	},
 	type: {
-		type: 'string',
-		enum: ['text', 'textarea', 'select', 'checkbox', 'radio'],
-		description: '欄位類型'
+		type: "string",
+		enum: ["text", "textarea", "select", "checkbox", "radio"],
+		description: "欄位類型"
 	},
 	validater: {
-		type: 'string',
-		description: '驗證規則（正規表達式）'
+		type: "string",
+		description: "驗證規則（正規表達式）"
 	},
 	name: {
-		type: 'object',
+		type: "object",
 		additionalProperties: true,
-		description: '欄位名稱 (localized JSON object)'
+		description: "欄位名稱 (localized JSON object)"
 	},
 	description: {
-		type: 'string',
-		description: '欄位標籤'
+		type: "string",
+		description: "欄位標籤"
 	},
 	placeholder: {
-		type: 'string',
-		description: '欄位提示文字'
+		type: "string",
+		description: "欄位提示文字"
 	},
 	required: {
-		type: 'boolean',
-		description: '是否必填'
+		type: "boolean",
+		description: "是否必填"
 	},
 	values: {
-		type: 'array',
+		type: "array",
 		items: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true
 		},
-		description: '選項值（localized array of objects，用於 select、radio 類型）'
+		description: "選項值（localized array of objects，用於 select、radio 類型）"
 	}
 };
 
 export const ticketFormFieldCreateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		ticketId: {
-			type: 'string',
-			description: '票券 ID'
+			type: "string",
+			description: "票券 ID"
 		},
 		order: {
-			type: 'integer',
+			type: "integer",
 			minimum: 0,
-			description: '欄位排序'
+			description: "欄位排序"
 		},
 		type: {
-			type: 'string',
-			enum: ['text', 'textarea', 'select', 'checkbox', 'radio'],
-			description: '欄位類型'
+			type: "string",
+			enum: ["text", "textarea", "select", "checkbox", "radio"],
+			description: "欄位類型"
 		},
 		validater: {
-			type: 'string',
-			description: '驗證規則（正規表達式）'
+			type: "string",
+			description: "驗證規則（正規表達式）"
 		},
 		name: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '欄位名稱 (localized JSON object)'
+			description: "欄位名稱 (localized JSON object)"
 		},
 		description: {
-			type: 'string',
+			type: "string",
 			minLength: 1,
-			description: '欄位標籤'
+			description: "欄位標籤"
 		},
 		placeholder: {
-			type: 'string',
-			description: '欄位提示文字'
+			type: "string",
+			description: "欄位提示文字"
 		},
 		required: {
-			type: 'boolean',
+			type: "boolean",
 			default: false,
-			description: '是否必填'
+			description: "是否必填"
 		},
 		values: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				additionalProperties: true
 			},
-			description: '選項值（localized array of objects，用於 select、radio 類型）'
+			description: "選項值（localized array of objects，用於 select、radio 類型）"
 		}
 	},
-	required: ['ticketId', 'order', 'type', 'name']
+	required: ["ticketId", "order", "type", "name"]
 };
 
 export const ticketFormFieldUpdateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		order: {
-			type: 'integer',
+			type: "integer",
 			minimum: 0,
-			description: '欄位排序'
+			description: "欄位排序"
 		},
 		type: {
-			type: 'string',
-			enum: ['text', 'textarea', 'select', 'checkbox', 'radio'],
-			description: '欄位類型'
+			type: "string",
+			enum: ["text", "textarea", "select", "checkbox", "radio"],
+			description: "欄位類型"
 		},
 		validater: {
-			type: 'string',
-			description: '驗證規則（正規表達式）'
+			type: "string",
+			description: "驗證規則（正規表達式）"
 		},
 		name: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '欄位名稱 (localized JSON object)'
+			description: "欄位名稱 (localized JSON object)"
 		},
 		description: {
-			type: 'string',
+			type: "string",
 			minLength: 1,
-			description: '欄位標籤'
+			description: "欄位標籤"
 		},
 		placeholder: {
-			type: 'string',
-			description: '欄位提示文字'
+			type: "string",
+			description: "欄位提示文字"
 		},
 		required: {
-			type: 'boolean',
-			description: '是否必填'
+			type: "boolean",
+			description: "是否必填"
 		},
 		values: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				additionalProperties: true
 			},
-			description: '選項值（localized array of objects，用於 select、radio 類型）'
+			description: "選項值（localized array of objects，用於 select、radio 類型）"
 		}
 	}
 };
 
 export const ticketFormFieldResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'object',
+			type: "object",
 			properties: ticketFormFieldProperties,
-			required: ['id', 'ticketId', 'order', 'type', 'name']
+			required: ["id", "ticketId", "order", "type", "name"]
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const ticketFormFieldsListResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				properties: ticketFormFieldProperties
 			}
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const ticketFormFieldSchemas = {
 	createTicketFormField: {
-		description: '創建票券表單欄位',
-		tags: ['admin/tickets'],
+		description: "創建票券表單欄位",
+		tags: ["admin/tickets"],
 		body: ticketFormFieldCreateBody,
 		params: undefined,
 		querystring: undefined,
@@ -193,14 +193,14 @@ export const ticketFormFieldSchemas = {
 				oneOf: [
 					errorResponse,
 					{
-						type: 'object',
+						type: "object",
 						properties: {
-							statusCode: { type: 'number' },
-							code: { type: 'string' },
-							error: { type: 'string' },
-							message: { type: 'string' },
-							validation: { type: 'array' },
-							validationContext: { type: 'string' }
+							statusCode: { type: "number" },
+							code: { type: "string" },
+							error: { type: "string" },
+							message: { type: "string" },
+							validation: { type: "array" },
+							validationContext: { type: "string" }
 						}
 					}
 				]
@@ -212,8 +212,8 @@ export const ticketFormFieldSchemas = {
 	},
 
 	getTicketFormField: {
-		description: '取得票券表單欄位詳情',
-		tags: ['admin/tickets'],
+		description: "取得票券表單欄位詳情",
+		tags: ["admin/tickets"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -224,8 +224,8 @@ export const ticketFormFieldSchemas = {
 	},
 
 	updateTicketFormField: {
-		description: '更新票券表單欄位',
-		tags: ['admin/tickets'],
+		description: "更新票券表單欄位",
+		tags: ["admin/tickets"],
 		body: ticketFormFieldUpdateBody,
 		params: idParam,
 		querystring: undefined,
@@ -239,8 +239,8 @@ export const ticketFormFieldSchemas = {
 	},
 
 	deleteTicketFormField: {
-		description: '刪除票券表單欄位',
-		tags: ['admin/tickets'],
+		description: "刪除票券表單欄位",
+		tags: ["admin/tickets"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -253,16 +253,16 @@ export const ticketFormFieldSchemas = {
 	},
 
 	listTicketFormFields: {
-		description: '取得票券表單欄位列表',
-		tags: ['admin/tickets'],
+		description: "取得票券表單欄位列表",
+		tags: ["admin/tickets"],
 		body: undefined,
 		params: undefined,
 		querystring: {
-			type: 'object',
+			type: "object",
 			properties: {
 				ticketId: {
-					type: 'string',
-					description: '篩選票券 ID'
+					type: "string",
+					description: "篩選票券 ID"
 				}
 			}
 		},

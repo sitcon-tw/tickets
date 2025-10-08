@@ -2,14 +2,11 @@
  * @fileoverview Admin referrals routes with efficient response functions
  */
 
-import { 
-	successResponse, 
-	validationErrorResponse,
-	serverErrorResponse 
-} from "#utils/response.js";
 import prisma from "#config/database.js";
+import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-export default async function adminReferralsRoutes(fastify, options) {	// 推薦機制總覽統計
+export default async function adminReferralsRoutes(fastify, options) {
+	// 推薦機制總覽統計
 	fastify.get(
 		"/referrals/overview",
 		{
@@ -42,7 +39,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					},
 					orderBy: {
 						referredUsers: {
-							_count: 'desc'
+							_count: "desc"
 						}
 					},
 					take: 10
@@ -56,7 +53,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 						id: r.id,
 						code: r.code,
 						email: r.registration.email,
-						name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+						name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
 						referralCount: r._count.referredUsers
 					}))
 				});
@@ -96,7 +93,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					},
 					orderBy: {
 						referredUsers: {
-							_count: 'desc'
+							_count: "desc"
 						}
 					},
 					take: parseInt(limit)
@@ -107,7 +104,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
 					referralCount: r._count.referredUsers,
 					createdAt: r.createdAt
 				}));
@@ -155,10 +152,10 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					return reply.code(statusCode).send(response);
 				}
 
-				const buildTree = (reg) => ({
+				const buildTree = reg => ({
 					id: reg.id,
 					email: reg.email,
-					name: JSON.parse(reg.formData || '{}').name || 'Unknown',
+					name: JSON.parse(reg.formData || "{}").name || "Unknown",
 					referralCode: reg.referral?.code,
 					createdAt: reg.createdAt,
 					children: reg.referrals?.map(buildTree) || []
@@ -187,7 +184,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				const { minReferrals = 1 } = request.query;
 
 				const qualifiedReferrers = await prisma.referral.findMany({
-					where: { 
+					where: {
 						isActive: true,
 						referredUsers: {
 							some: {}
@@ -206,15 +203,13 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					}
 				});
 
-				const filtered = qualifiedReferrers.filter(r => 
-					r._count.referredUsers >= parseInt(minReferrals)
-				);
+				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals));
 
 				const formattedList = filtered.map(r => ({
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
 					referralCount: r._count.referredUsers,
 					createdAt: r.createdAt
 				}));
@@ -247,7 +242,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				}
 
 				const qualifiedReferrers = await prisma.referral.findMany({
-					where: { 
+					where: {
 						isActive: true,
 						referredUsers: {
 							some: {}
@@ -266,9 +261,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					}
 				});
 
-				const eligible = qualifiedReferrers.filter(r => 
-					r._count.referredUsers >= parseInt(minReferrals)
-				);
+				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals));
 
 				if (eligible.length === 0) {
 					const { response, statusCode } = validationErrorResponse("沒有符合條件的推薦者");
@@ -277,8 +270,8 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 
 				const actualDrawCount = Math.min(parseInt(drawCount), eligible.length);
 				const usedSeed = seed || Date.now().toString();
-				
-				const seededRandom = (seed) => {
+
+				const seededRandom = seed => {
 					let x = Math.sin(parseInt(seed)) * 10000;
 					return x - Math.floor(x);
 				};
@@ -294,7 +287,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
 					referralCount: r._count.referredUsers
 				}));
 
@@ -324,7 +317,7 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 		async (request, reply) => {
 			try {
 				const { startDate, endDate } = request.query;
-				
+
 				const dateFilter = {};
 				if (startDate) dateFilter.gte = new Date(startDate);
 				if (endDate) dateFilter.lte = new Date(endDate);
@@ -346,14 +339,16 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 
 				const dailyStats = {};
 				referralUsages.forEach(usage => {
-					const date = usage.usedAt.toISOString().split('T')[0];
+					const date = usage.usedAt.toISOString().split("T")[0];
 					dailyStats[date] = (dailyStats[date] || 0) + 1;
 				});
 
-				const dailyStatsArray = Object.entries(dailyStats).map(([date, count]) => ({
-					date,
-					count
-				})).sort((a, b) => a.date.localeCompare(b.date));
+				const dailyStatsArray = Object.entries(dailyStats)
+					.map(([date, count]) => ({
+						date,
+						count
+					}))
+					.sort((a, b) => a.date.localeCompare(b.date));
 
 				const totalRegistrations = await prisma.registration.count({
 					where: {
@@ -365,15 +360,15 @@ export default async function adminReferralsRoutes(fastify, options) {	// 推薦
 				const conversionRate = totalRegistrations > 0 ? (totalReferralUsages / totalRegistrations) * 100 : 0;
 
 				const conversionFunnel = [
-					{ stage: '總報名數', count: totalRegistrations },
-					{ stage: '使用推薦碼', count: totalReferralUsages },
-					{ stage: '轉換率', count: `${Math.round(conversionRate * 100) / 100}%` }
+					{ stage: "總報名數", count: totalRegistrations },
+					{ stage: "使用推薦碼", count: totalReferralUsages },
+					{ stage: "轉換率", count: `${Math.round(conversionRate * 100) / 100}%` }
 				];
 
 				const referralCounts = {};
 				referralUsages.forEach(usage => {
 					const code = usage.referral.code;
-					const name = JSON.parse(usage.referral.registration.formData || '{}').name || 'Unknown';
+					const name = JSON.parse(usage.referral.registration.formData || "{}").name || "Unknown";
 					const key = `${name} (${code})`;
 					referralCounts[key] = (referralCounts[key] || 0) + 1;
 				});

@@ -102,7 +102,6 @@ export const validateQuery = schema => {
 	};
 };
 
-
 /**
  * Helper function to get field name key from formData
  * Handles both string field names and localized field name objects
@@ -112,12 +111,12 @@ export const validateQuery = schema => {
  */
 const getFieldNameKey = (fieldName, formData) => {
 	// If fieldName is a simple string, use it directly
-	if (typeof fieldName === 'string') {
+	if (typeof fieldName === "string") {
 		return fieldName;
 	}
 
 	// If fieldName is an object (localized), find which locale key exists in formData
-	if (typeof fieldName === 'object' && fieldName !== null) {
+	if (typeof fieldName === "object" && fieldName !== null) {
 		// Try each locale value to see if it exists in formData
 		for (const locale in fieldName) {
 			const localizedName = fieldName[locale];
@@ -158,22 +157,22 @@ export const validateRegistrationFormData = (formData, formFields) => {
 		const fieldErrors = [];
 
 		// Check required fields
-		if (field.required && (value === undefined || value === null || value === '')) {
+		if (field.required && (value === undefined || value === null || value === "")) {
 			fieldErrors.push(`${field.description}為必填欄位`);
 			errors[fieldNameKey] = fieldErrors;
 			continue;
 		}
 
 		// Skip validation if field is empty and not required
-		if (!field.required && (value === undefined || value === null || value === '')) {
+		if (!field.required && (value === undefined || value === null || value === "")) {
 			continue;
 		}
 
 		// Type-specific validation
 		switch (field.type) {
-			case 'text':
-			case 'textarea':
-				if (typeof value !== 'string') {
+			case "text":
+			case "textarea":
+				if (typeof value !== "string") {
 					fieldErrors.push(`${field.description}必須為文字`);
 					break;
 				}
@@ -190,31 +189,31 @@ export const validateRegistrationFormData = (formData, formFields) => {
 				}
 				break;
 
-			case 'select':
-			case 'radio':
+			case "select":
+			case "radio":
 				if (field.values) {
 					try {
 						// Handle both JSON object (from Prisma) and JSON string
-						const options = typeof field.values === 'string'
-							? JSON.parse(field.values)
-							: field.values;
+						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
 
 						// Extract valid values from options array
 						// Options can be localized objects like {"en": "Yes", "zh": "是"} or simple strings
-						const validValues = options.map(opt => {
-							if (typeof opt === 'object' && opt !== null) {
-								// If it has a 'value' property, use that
-								if (opt.value !== undefined) {
-									return opt.value;
+						const validValues = options
+							.map(opt => {
+								if (typeof opt === "object" && opt !== null) {
+									// If it has a 'value' property, use that
+									if (opt.value !== undefined) {
+										return opt.value;
+									}
+									// Otherwise, collect all locale values
+									return Object.values(opt);
 								}
-								// Otherwise, collect all locale values
-								return Object.values(opt);
-							}
-							return opt;
-						}).flat();
+								return opt;
+							})
+							.flat();
 
 						if (!validValues.includes(value)) {
-							fieldErrors.push(`${field.description}選項無效，可選值: ${validValues.join(', ')}`);
+							fieldErrors.push(`${field.description}選項無效，可選值: ${validValues.join(", ")}`);
 						}
 					} catch (e) {
 						fieldErrors.push(`${field.description}選項配置錯誤`);
@@ -222,7 +221,7 @@ export const validateRegistrationFormData = (formData, formFields) => {
 				}
 				break;
 
-			case 'checkbox':
+			case "checkbox":
 				if (field.values) {
 					try {
 						// Checkbox values should be an array
@@ -232,27 +231,27 @@ export const validateRegistrationFormData = (formData, formFields) => {
 						}
 
 						// Handle both JSON object (from Prisma) and JSON string
-						const options = typeof field.values === 'string'
-							? JSON.parse(field.values)
-							: field.values;
+						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
 
 						// Extract valid values from options array
-						const validValues = options.map(opt => {
-							if (typeof opt === 'object' && opt !== null) {
-								// If it has a 'value' property, use that
-								if (opt.value !== undefined) {
-									return opt.value;
+						const validValues = options
+							.map(opt => {
+								if (typeof opt === "object" && opt !== null) {
+									// If it has a 'value' property, use that
+									if (opt.value !== undefined) {
+										return opt.value;
+									}
+									// Otherwise, collect all locale values
+									return Object.values(opt);
 								}
-								// Otherwise, collect all locale values
-								return Object.values(opt);
-							}
-							return opt;
-						}).flat();
+								return opt;
+							})
+							.flat();
 
 						// Check each selected value is valid
 						const invalidValues = value.filter(v => !validValues.includes(v));
 						if (invalidValues.length > 0) {
-							fieldErrors.push(`${field.description}包含無效選項: ${invalidValues.join(', ')}`);
+							fieldErrors.push(`${field.description}包含無效選項: ${invalidValues.join(", ")}`);
 						}
 					} catch (e) {
 						fieldErrors.push(`${field.description}選項配置錯誤`);

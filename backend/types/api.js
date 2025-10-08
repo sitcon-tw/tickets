@@ -96,7 +96,7 @@
  * @property {string} [saleEnd] - ISO date string
  * @property {boolean} [isActive] - Whether ticket is active
  * @property {boolean} [requireInviteCode] - Whether invitation code is required
-*/
+ */
 
 /**
  * @typedef {Object} InvitationCodeCreateRequest
@@ -107,7 +107,7 @@
  * @property {string} [validFrom] - ISO date string for start time
  * @property {string} [validUntil] - ISO date string for end time
  * @property {string} [ticketId] - Associated ticket ID
-*/
+ */
 
 /**
  * @typedef {Object} InvitationCode
@@ -123,7 +123,7 @@
  * @property {string} ticketId - Associated ticket ID
  * @property {string} createdAt - ISO date string for creation time
  * @property {string} updatedAt - ISO date string for last update time
-*/
+ */
 
 /**
  * @typedef {Object} InvitationCodeUpdateRequest
@@ -199,4 +199,4 @@
  * @property {string} [values] - JSON array for select/radio options
  */
 
-export {}
+export {};

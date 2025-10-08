@@ -280,12 +280,12 @@ const l = i18n.l(Astro.url);
 					updateDashboardStats();
 					initCharts();
 				} else {
-					console.error('Failed to load dashboard data:', response.message);
+					console.error("Failed to load dashboard data:", response.message);
 					// Fall back to fake data
 					initCharts();
 				}
 			} catch (error) {
-				console.error('Dashboard initialization failed:', error);
+				console.error("Dashboard initialization failed:", error);
 				// Fall back to fake data
 				initCharts();
 			}
@@ -296,24 +296,18 @@ const l = i18n.l(Astro.url);
 			if (!dashboardData) return;
 
 			// Update main stats
-			document.querySelector('.stats-grid .stat-card:nth-child(1) .stat-number').textContent = 
-				dashboardData.totalTickets || '0';
-			document.querySelector('.stats-grid .stat-card:nth-child(2) .stat-number').textContent = 
-				dashboardData.soldTickets || '0';
-			document.querySelector('.stats-grid .stat-card:nth-child(3) .stat-number').textContent = 
-				dashboardData.remainingTickets || '0';
-			
-			const salesRate = dashboardData.totalTickets > 0 
-				? ((dashboardData.soldTickets / dashboardData.totalTickets) * 100).toFixed(1)
-				: '0';
-			document.querySelector('.stats-grid .stat-card:nth-child(4) .stat-number').textContent = 
-				salesRate + '%';
+			document.querySelector(".stats-grid .stat-card:nth-child(1) .stat-number").textContent = dashboardData.totalTickets || "0";
+			document.querySelector(".stats-grid .stat-card:nth-child(2) .stat-number").textContent = dashboardData.soldTickets || "0";
+			document.querySelector(".stats-grid .stat-card:nth-child(3) .stat-number").textContent = dashboardData.remainingTickets || "0";
+
+			const salesRate = dashboardData.totalTickets > 0 ? ((dashboardData.soldTickets / dashboardData.totalTickets) * 100).toFixed(1) : "0";
+			document.querySelector(".stats-grid .stat-card:nth-child(4) .stat-number").textContent = salesRate + "%";
 
 			// Update registration stats
 			const totalReg = dashboardData.totalRegistrations || 0;
 			const confirmedReg = dashboardData.confirmedRegistrations || 0;
 			const pendingReg = dashboardData.pendingRegistrations || 0;
-			
+
 			if (totalReg > 0) {
 				// Update progress cards with real data from ticket sales
 				updateProgressCards();
@@ -328,14 +322,14 @@ const l = i18n.l(Astro.url);
 			Object.entries(dashboardData.ticketSales).forEach(([ticketType, sales], index) => {
 				const progressCard = document.querySelector(`.progress-card:nth-child(${index + 1})`);
 				if (progressCard) {
-					const remainingElement = progressCard.querySelector('.remaining-number');
-					const totalElement = progressCard.querySelector('.detail-item:nth-child(1) span:last-child');
-					const soldElement = progressCard.querySelector('.detail-item:nth-child(2) span:last-child');
-					
+					const remainingElement = progressCard.querySelector(".remaining-number");
+					const totalElement = progressCard.querySelector(".detail-item:nth-child(1) span:last-child");
+					const soldElement = progressCard.querySelector(".detail-item:nth-child(2) span:last-child");
+
 					const salesData = sales as any;
-					if (remainingElement) remainingElement.textContent = salesData.remaining || '0';
-					if (totalElement) totalElement.textContent = salesData.total || '0';
-					if (soldElement) soldElement.textContent = salesData.sold || '0';
+					if (remainingElement) remainingElement.textContent = salesData.remaining || "0";
+					if (totalElement) totalElement.textContent = salesData.total || "0";
+					if (soldElement) soldElement.textContent = salesData.sold || "0";
 				}
 			});
 		}
@@ -546,7 +540,7 @@ const l = i18n.l(Astro.url);
 						// @ts-ignore - Chart.js plugin typing issue
 						plugins: [
 							{
-								id: 'centerText',
+								id: "centerText",
 								afterDraw: function (chart) {
 									const ctx = chart.ctx;
 									const width = chart.width;
@@ -573,7 +567,7 @@ const l = i18n.l(Astro.url);
 		};
 
 		// Initialize dashboard when page loads
-		document.addEventListener('DOMContentLoaded', initializeDashboard);
+		document.addEventListener("DOMContentLoaded", initializeDashboard);
 	</script>
 
 	<style>

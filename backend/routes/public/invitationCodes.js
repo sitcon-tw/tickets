@@ -6,42 +6,36 @@
  */
 
 import prisma from "#config/database.js";
-import { 
-	successResponse, 
-	validationErrorResponse,
-	notFoundResponse, 
-	serverErrorResponse 
-} from "#utils/response.js";
 import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode.js";
+import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 // Custom param schemas for invitation code routes
 const codeParam = {
-	type: 'object',
+	type: "object",
 	properties: {
 		code: {
-			type: 'string',
-			description: '邀請碼'
+			type: "string",
+			description: "邀請碼"
 		}
 	},
-	required: ['code']
+	required: ["code"]
 };
 
 const ticketIdQuery = {
-	type: 'object',
+	type: "object",
 	properties: {
 		ticketId: {
-			type: 'string',
-			description: '票券 ID'
+			type: "string",
+			description: "票券 ID"
 		}
 	},
-	required: ['ticketId']
+	required: ["ticketId"]
 };
-
 
 /**
  * Public invitation codes routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function invitationCodesRoutes(fastify, options) {
 	// Verify invitation code
@@ -71,17 +65,19 @@ export default async function invitationCodesRoutes(fastify, options) {
 
 				// Verify ticket exists and is active
 				const ticket = await prisma.ticket.findUnique({
-					where: { 
+					where: {
 						id: ticketId,
-						isActive: true 
+						isActive: true
 					}
 				});
 
 				if (!ticket) {
-					return reply.send(successResponse({
-						valid: false,
-						message: "票券不存在或已關閉"
-					}));
+					return reply.send(
+						successResponse({
+							valid: false,
+							message: "票券不存在或已關閉"
+						})
+					);
 				}
 
 				// Find invitation code
@@ -95,27 +91,33 @@ export default async function invitationCodesRoutes(fastify, options) {
 				});
 
 				if (!invitationCode) {
-					return reply.send(successResponse({
-						valid: false,
-						message: "邀請碼不存在"
-					}));
+					return reply.send(
+						successResponse({
+							valid: false,
+							message: "邀請碼不存在"
+						})
+					);
 				}
 
 				// Check if code is expired
 				const now = new Date();
 				if (invitationCode.expiresAt && now > invitationCode.expiresAt) {
-					return reply.send(successResponse({
-						valid: false,
-						message: "邀請碼已過期"
-					}));
+					return reply.send(
+						successResponse({
+							valid: false,
+							message: "邀請碼已過期"
+						})
+					);
 				}
 
 				// Check if code has remaining uses
 				if (invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit) {
-					return reply.send(successResponse({
-						valid: false,
-						message: "邀請碼已達使用上限"
-					}));
+					return reply.send(
+						successResponse({
+							valid: false,
+							message: "邀請碼已達使用上限"
+						})
+					);
 				}
 
 				// Get available tickets for the event
@@ -136,36 +138,38 @@ export default async function invitationCodesRoutes(fastify, options) {
 						saleEnd: true,
 						isActive: true
 					},
-					orderBy: { createdAt: 'asc' }
+					orderBy: { createdAt: "asc" }
 				});
 
 				// Filter and add availability info to tickets
-				const availableTickets = tickets.map(ticket => {
-					const available = ticket.quantity - ticket.soldCount;
-					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
-						(!ticket.saleEnd || now <= ticket.saleEnd) &&
-						ticket.isActive && available > 0;
+				const availableTickets = tickets
+					.map(ticket => {
+						const available = ticket.quantity - ticket.soldCount;
+						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd) && ticket.isActive && available > 0;
 
-					return {
-						...ticket,
-						available,
-						isOnSale
-					};
-				}).filter(ticket => ticket.isOnSale);
+						return {
+							...ticket,
+							available,
+							isOnSale
+						};
+					})
+					.filter(ticket => ticket.isOnSale);
 
-				return reply.send(successResponse({
-					valid: true,
-					invitationCode: {
-						id: invitationCode.id,
-						code: invitationCode.code,
-						description: invitationCode.description,
-						usedCount: invitationCode.usedCount,
-						usageLimit: invitationCode.usageLimit,
-						expiresAt: invitationCode.expiresAt,
-						ticketId: invitationCode.ticketId
-					},
-					availableTickets
-				}));
+				return reply.send(
+					successResponse({
+						valid: true,
+						invitationCode: {
+							id: invitationCode.id,
+							code: invitationCode.code,
+							description: invitationCode.description,
+							usedCount: invitationCode.usedCount,
+							usageLimit: invitationCode.usageLimit,
+							expiresAt: invitationCode.expiresAt,
+							ticketId: invitationCode.ticketId
+						},
+						availableTickets
+					})
+				);
 			} catch (error) {
 				console.error("Verify invitation code error:", error);
 				const { response, statusCode } = serverErrorResponse("驗證邀請碼失敗");
@@ -226,17 +230,17 @@ export default async function invitationCodesRoutes(fastify, options) {
 				// Check validity
 				const now = new Date();
 				const isExpired = invitationCode.expiresAt && now > invitationCode.expiresAt;
-				const isUsageExceeded = invitationCode.usageLimit && 
-					invitationCode.usedCount >= invitationCode.usageLimit;
+				const isUsageExceeded = invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit;
 
-				return reply.send(successResponse({
-					...invitationCode,
-					isValid: !isExpired && !isUsageExceeded,
-					isExpired,
-					isUsageExceeded,
-					remainingUses: invitationCode.usageLimit ? 
-						Math.max(0, invitationCode.usageLimit - invitationCode.usedCount) : null
-				}));
+				return reply.send(
+					successResponse({
+						...invitationCode,
+						isValid: !isExpired && !isUsageExceeded,
+						isExpired,
+						isUsageExceeded,
+						remainingUses: invitationCode.usageLimit ? Math.max(0, invitationCode.usageLimit - invitationCode.usedCount) : null
+					})
+				);
 			} catch (error) {
 				console.error("Get invitation code info error:", error);
 				const { response, statusCode } = serverErrorResponse("取得邀請碼資訊失敗");
