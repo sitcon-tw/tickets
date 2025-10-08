@@ -3,6 +3,8 @@
 import MarkdownContent from "../MarkdownContent";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { useState, useEffect } from "react";
+import { useLocale } from "next-intl";
+import { getLocalizedText } from "@/lib/utils/localization";
 import PageSpinner from "../PageSpinner";
 
 interface InfoProps {
@@ -10,6 +12,7 @@ interface InfoProps {
 }
 
 export default function Info({ eventId }: InfoProps) {
+  const locale = useLocale();
   const [eventDescription, setEventDescription] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -21,7 +24,7 @@ export default function Info({ eventId }: InfoProps) {
       try {
         const eventData = await eventsAPI.getInfo(eventId);
         if (eventData?.success && eventData.data) {
-          setEventDescription(eventData.data.description || "");
+          setEventDescription(getLocalizedText(eventData.data.description, locale));
         } else {
           setLoadError("No event data available.");
         }
@@ -34,7 +37,7 @@ export default function Info({ eventId }: InfoProps) {
     }
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId, locale]);
 
   return (
     <section className="content"

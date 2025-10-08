@@ -52,11 +52,14 @@ export interface User {
   updatedAt: string;
 }
 
+// Localized Text Type
+export type LocalizedText = Record<string, string>; // e.g., { "en": "SITCON 2026", "zh-Hant": "學生計算機年會 2026" }
+
 // Event Types
 export interface Event {
   id: string;
-  name: string;
-  description?: string;
+  name: LocalizedText;
+  description?: LocalizedText;
   location?: string;
   startDate: string;
   endDate: string;
@@ -90,8 +93,8 @@ export interface EventStats {
 export interface Ticket {
   id: string;
   eventId?: string;
-  name: string;
-  description?: string;
+  name: LocalizedText;
+  description?: LocalizedText;
   price: number;
   quantity: number;
   soldCount: number;
@@ -112,12 +115,12 @@ export interface TicketFormField {
   order: number;
   type: 'text' | 'email' | 'textarea' | 'select' | 'checkbox' | 'radio';
   validater?: string;
-  name: string;
+  name: LocalizedText;
   description?: string;
   placeholder?: string;
   required: boolean;
-  values?: string; // JSON array string
-  options?: unknown[]; // Parsed options for frontend use
+  values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
+  options?: LocalizedText[]; // Parsed options for frontend use
   helpText?: string;
 }
 
@@ -153,8 +156,8 @@ export interface Registration {
   updatedAt: string;
   event?: {
     id: string;
-    name: string;
-    description?: string;
+    name: LocalizedText;
+    description?: LocalizedText;
     location?: string;
     startDate: string;
     endDate: string;
@@ -162,8 +165,8 @@ export interface Registration {
   };
   ticket?: {
     id: string;
-    name: string;
-    description?: string;
+    name: LocalizedText;
+    description?: LocalizedText;
     price: number;
   };
   isUpcoming?: boolean;
@@ -243,8 +246,8 @@ export interface InvitationCodeVerification {
   };
   availableTickets: Array<{
     id: string;
-    name: string;
-    description?: string;
+    name: LocalizedText;
+    description?: LocalizedText;
     price: number;
     quantity: number;
     soldCount: number;

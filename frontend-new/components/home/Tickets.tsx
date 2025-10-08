@@ -10,6 +10,7 @@ import { Ticket } from "@/lib/types/api";
 import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
+import { getLocalizedText } from "@/lib/utils/localization";
 
 interface TicketsProps {
   eventId: string;
@@ -193,7 +194,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
               }
             }}
           >
-            <h3>{ticket.name}</h3>
+            <h3>{getLocalizedText(ticket.name, locale)}</h3>
             <p>
               {t.time}{ticket.saleStart} - {ticket.saleEnd}
             </p>
@@ -208,7 +209,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
         {selectedTicket ? (
           <div className="about">
             <div className="ticket ticketConfirm" ref={ticketConfirmRef}>
-              <h3>{selectedTicket.name}</h3>
+              <h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
               <p>
                 {t.time}{selectedTicket.saleStart} - {selectedTicket.saleEnd}
               </p>
@@ -217,8 +218,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
               </p>
             </div>
             <div className="content">
-              <h2 className="text-2xl font-bold">{selectedTicket.name}</h2>
-              <MarkdownContent content={selectedTicket.description || ''} />
+              <h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
+              <MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
               {selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
             </div>
           </div>
@@ -245,7 +246,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
       <div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
         {selectedTicket ? (
           <>
-            <h3>{selectedTicket.name}</h3>
+            <h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
             <p>
               {t.time}{selectedTicket.saleStart} - {selectedTicket.saleEnd}
             </p>

@@ -15,7 +15,15 @@ export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-  const [descriptionPreview, setDescriptionPreview] = useState('');
+  const [activeTab, setActiveTab] = useState<'en' | 'zh-Hant' | 'zh-Hans'>('en');
+
+  // Multi-language form state
+  const [nameEn, setNameEn] = useState('');
+  const [nameZhHant, setNameZhHant] = useState('');
+  const [nameZhHans, setNameZhHans] = useState('');
+  const [descEn, setDescEn] = useState('');
+  const [descZhHant, setDescZhHant] = useState('');
+  const [descZhHans, setDescZhHans] = useState('');
 
   const t = getTranslations(locale, {
     title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -82,14 +90,38 @@ export default function TicketsPage() {
 
   const openModal = (ticket: Ticket | null = null) => {
     setEditingTicket(ticket);
-    setDescriptionPreview(ticket?.description || '');
+
+    if (ticket) {
+      const name = typeof ticket.name === 'object' ? ticket.name : { en: ticket.name };
+      const desc = typeof ticket.description === 'object' ? ticket.description : { en: ticket.description || '' };
+
+      setNameEn(name.en || '');
+      setNameZhHant(name['zh-Hant'] || '');
+      setNameZhHans(name['zh-Hans'] || '');
+      setDescEn(desc.en || '');
+      setDescZhHant(desc['zh-Hant'] || '');
+      setDescZhHans(desc['zh-Hans'] || '');
+    } else {
+      setNameEn('');
+      setNameZhHant('');
+      setNameZhHans('');
+      setDescEn('');
+      setDescZhHant('');
+      setDescZhHans('');
+    }
+
     setShowModal(true);
   };
 
   function closeModal() {
     setShowModal(false);
     setEditingTicket(null);
-    setDescriptionPreview('');
+    setNameEn('');
+    setNameZhHant('');
+    setNameZhHans('');
+    setDescEn('');
+    setDescZhHant('');
+    setDescZhHans('');
   };
 
   const saveTicket = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -102,8 +134,8 @@ export default function TicketsPage() {
 
     const data: {
       eventId: string;
-      name: string;
-      description: string;
+      name: { en: string; 'zh-Hant': string; 'zh-Hans': string };
+      description: { en: string; 'zh-Hant': string; 'zh-Hans': string };
       price: number;
       quantity: number;
       requireInviteCode: boolean;
@@ -111,8 +143,16 @@ export default function TicketsPage() {
       saleEnd?: string;
     } = {
       eventId: currentEventId,
-      name: formData.get('name') as string,
-      description: formData.get('description') as string || '',
+      name: {
+        en: nameEn,
+        'zh-Hant': nameZhHant,
+        'zh-Hans': nameZhHans
+      },
+      description: {
+        en: descEn,
+        'zh-Hant': descZhHant,
+        'zh-Hans': descZhHans
+      },
       price: parseInt(formData.get('price') as string) || 0,
       quantity: parseInt(formData.get('quantity') as string) || 0,
       requireInviteCode: formData.get('requireInviteCode') === 'on',
@@ -196,7 +236,7 @@ export default function TicketsPage() {
                   const status = computeStatus(ticket);
                   return (
                     <tr key={ticket.id}>
-                      <td>{ticket.name}</td>
+                      <td>{typeof ticket.name === 'object' ? ticket.name['en'] || ticket.name[locale] || Object.values(ticket.name)[0] : ticket.name}</td>
                       <td>{formatDateTime(ticket.saleStart)}</td>
                       <td>{formatDateTime(ticket.saleEnd)}</td>
                       <td>
@@ -238,26 +278,123 @@ export default function TicketsPage() {
               </div>
               <form onSubmit={saveTicket}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div className="admin-form-group">
-                    <label className="admin-form-label">{t.ticketName}</label>
-                    <input name="name" type="text" required defaultValue={editingTicket?.name || ''} className="admin-input" />
+                  {/* Language Tabs */}
+                  <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--color-gray-700)', marginBottom: '1rem' }}>
+                    {[
+                      { key: 'en' as const, label: 'English' },
+                      { key: 'zh-Hant' as const, label: '繁體中文' },
+                      { key: 'zh-Hans' as const, label: '简体中文' }
+                    ].map(tab => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: activeTab === tab.key ? 'var(--color-gray-600)' : 'transparent',
+                          border: 'none',
+                          borderBottom: activeTab === tab.key ? '2px solid var(--color-blue-500)' : 'none',
+                          color: activeTab === tab.key ? 'var(--color-gray-100)' : 'var(--color-gray-400)',
+                          cursor: 'pointer',
+                          fontWeight: activeTab === tab.key ? 'bold' : 'normal',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
-                  <div className="admin-form-group">
-                    <label className="admin-form-label">{t.description} (Markdown)</label>
-                    <textarea
-                      name="description"
-                      value={descriptionPreview}
-                      onChange={(e) => setDescriptionPreview(e.target.value)}
-                      className="admin-textarea"
-                      rows={6}
-                    />
-                    {descriptionPreview && (
-                      <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
-                        <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
-                        <MarkdownContent content={descriptionPreview} />
+
+                  {/* English Fields */}
+                  {activeTab === 'en' && (
+                    <>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.ticketName} (English) *</label>
+                        <input
+                          type="text"
+                          required
+                          value={nameEn}
+                          onChange={(e) => setNameEn(e.target.value)}
+                          className="admin-input"
+                        />
                       </div>
-                    )}
-                  </div>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.description} (English, Markdown)</label>
+                        <textarea
+                          value={descEn}
+                          onChange={(e) => setDescEn(e.target.value)}
+                          className="admin-textarea"
+                          rows={6}
+                        />
+                        {descEn && (
+                          <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
+                            <MarkdownContent content={descEn} />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Traditional Chinese Fields */}
+                  {activeTab === 'zh-Hant' && (
+                    <>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.ticketName} (繁體中文)</label>
+                        <input
+                          type="text"
+                          value={nameZhHant}
+                          onChange={(e) => setNameZhHant(e.target.value)}
+                          className="admin-input"
+                        />
+                      </div>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.description} (繁體中文, Markdown)</label>
+                        <textarea
+                          value={descZhHant}
+                          onChange={(e) => setDescZhHant(e.target.value)}
+                          className="admin-textarea"
+                          rows={6}
+                        />
+                        {descZhHant && (
+                          <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
+                            <MarkdownContent content={descZhHant} />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Simplified Chinese Fields */}
+                  {activeTab === 'zh-Hans' && (
+                    <>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.ticketName} (简体中文)</label>
+                        <input
+                          type="text"
+                          value={nameZhHans}
+                          onChange={(e) => setNameZhHans(e.target.value)}
+                          className="admin-input"
+                        />
+                      </div>
+                      <div className="admin-form-group">
+                        <label className="admin-form-label">{t.description} (简体中文, Markdown)</label>
+                        <textarea
+                          value={descZhHans}
+                          onChange={(e) => setDescZhHans(e.target.value)}
+                          className="admin-textarea"
+                          rows={6}
+                        />
+                        {descZhHans && (
+                          <div style={{ marginTop: '0.5rem', padding: '0.75rem', border: '1px solid var(--color-gray-600)', borderRadius: '4px', backgroundColor: 'var(--color-gray-750)' }}>
+                            <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--color-gray-300)' }}>Preview:</div>
+                            <MarkdownContent content={descZhHans} />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="admin-form-group">
                       <label className="admin-form-label">{t.price}</label>

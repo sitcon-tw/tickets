@@ -16,10 +16,17 @@ type ShowIf = {
 type Question = {
   id: string;
   label: string;
+  labelEn?: string;
+  labelZhHant?: string;
+  labelZhHans?: string;
   type: string;
   required: boolean;
   help?: string;
-  options?: string[];
+  options?: Array<{
+    en: string;
+    'zh-Hant'?: string;
+    'zh-Hans'?: string;
+  }>;
   showIf?: ShowIf;
 };
 
@@ -91,24 +98,58 @@ export default function FormsPage() {
 
       if (response.success) {
         const loadedFields = (response.data || []).map((field: TicketFormField) => {
-          let options: string[] | undefined = undefined;
+          let options: Array<{ en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }> = [];
 
-          // Try to parse values as JSON array
-          if (field.values) {
+          // Handle options from field.options (from API response) or field.values (from database)
+          const rawOptions = (field as any).options || field.values;
+
+          if (rawOptions && Array.isArray(rawOptions)) {
+            options = rawOptions.map((opt: any) => {
+              if (typeof opt === 'object' && opt !== null) {
+                // Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
+                if ('label' in opt && typeof opt.label === 'object') {
+                  return {
+                    en: opt.label['en'] || opt.value || '',
+                    'zh-Hant': opt.label['zh-Hant'] || '',
+                    'zh-Hans': opt.label['zh-Hans'] || ''
+                  };
+                }
+                // Already in the right format: { en: "...", zh-Hant: "...", zh-Hans: "..." }
+                return {
+                  en: opt['en'] || opt.en || '',
+                  'zh-Hant': opt['zh-Hant'] || '',
+                  'zh-Hans': opt['zh-Hans'] || ''
+                };
+              }
+              // Convert string to localized object
+              return { en: String(opt), 'zh-Hant': '', 'zh-Hans': '' };
+            });
+          } else if (rawOptions && typeof rawOptions === 'string') {
+            // Legacy format: JSON string
             try {
-              const parsed = JSON.parse(field.values);
+              const parsed = JSON.parse(rawOptions);
               if (Array.isArray(parsed)) {
-                options = parsed;
+                options = parsed.map((opt: any) =>
+                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt
+                );
               }
             } catch (e) {
-              // If parsing fails, treat it as a single value or ignore
-              console.warn('Failed to parse field values as JSON:', field.values);
+              console.warn('Failed to parse field values as JSON:', rawOptions);
             }
           }
 
+          // Handle localized field name
+          const fieldName = typeof field.name === 'object' ? field.name['en'] || Object.values(field.name)[0] : field.name;
+
+          // Extract multi-language labels from name field
+          const nameObj = typeof field.name === 'object' ? field.name : { en: fieldName };
+
           return {
             id: field.id,
-            label: field.description || field.name,
+            label: field.description || fieldName,
+            labelEn: nameObj.en || '',
+            labelZhHant: nameObj['zh-Hant'] || '',
+            labelZhHans: nameObj['zh-Hans'] || '',
             type: field.type,
             required: field.required || false,
             help: field.helpText || '',
@@ -152,22 +193,55 @@ export default function FormsPage() {
 
       if (response.success && response.data) {
         const copiedQuestions = response.data.map((field: TicketFormField) => {
-          let options: string[] | undefined = undefined;
+          let options: Array<{ en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }> = [];
 
-          if (field.values) {
+          // Handle options from field.options (from API response) or field.values (from database)
+          const rawOptions = (field as any).options || field.values;
+
+          if (rawOptions && Array.isArray(rawOptions)) {
+            options = rawOptions.map((opt: any) => {
+              if (typeof opt === 'object' && opt !== null) {
+                // Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
+                if ('label' in opt && typeof opt.label === 'object') {
+                  return {
+                    en: opt.label['en'] || opt.value || '',
+                    'zh-Hant': opt.label['zh-Hant'] || '',
+                    'zh-Hans': opt.label['zh-Hans'] || ''
+                  };
+                }
+                // Already in the right format
+                return {
+                  en: opt['en'] || opt.en || '',
+                  'zh-Hant': opt['zh-Hant'] || '',
+                  'zh-Hans': opt['zh-Hans'] || ''
+                };
+              }
+              return { en: String(opt), 'zh-Hant': '', 'zh-Hans': '' };
+            });
+          } else if (rawOptions && typeof rawOptions === 'string') {
+            // Legacy format: JSON string
             try {
-              const parsed = JSON.parse(field.values);
+              const parsed = JSON.parse(rawOptions);
               if (Array.isArray(parsed)) {
-                options = parsed;
+                options = parsed.map((opt: any) =>
+                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt
+                );
               }
             } catch (e) {
-              console.warn('Failed to parse field values as JSON:', field.values);
+              console.warn('Failed to parse field values as JSON:', rawOptions);
             }
           }
 
+          // Handle localized field name
+          const fieldName = typeof field.name === 'object' ? field.name['en'] || Object.values(field.name)[0] : field.name;
+          const nameObj = typeof field.name === 'object' ? field.name : { en: fieldName };
+
           return {
             id: 'temp-' + crypto.randomUUID(),
-            label: field.description || field.name,
+            label: field.description || fieldName,
+            labelEn: nameObj.en || '',
+            labelZhHant: nameObj['zh-Hant'] || '',
+            labelZhHans: nameObj['zh-Hans'] || '',
             type: field.type,
             required: field.required || false,
             help: field.helpText || '',
@@ -195,12 +269,17 @@ export default function FormsPage() {
     try {
       const formFieldsData = questions.map((q, index) => ({
         id: q.id.startsWith('temp-') ? undefined : q.id,
-        name: q.label.toLowerCase().replace(/\s+/g, '_'),
+        name: {
+          en: q.labelEn || q.label,
+          'zh-Hant': q.labelZhHant || '',
+          'zh-Hans': q.labelZhHans || ''
+        },
         description: q.label,
         type: q.type as 'text' | 'textarea' | 'select' | 'checkbox' | 'radio',
         required: q.required,
         helpText: q.help,
-        values: q.options ? JSON.stringify(q.options) : undefined,
+        // Options are already in the right format
+        values: q.options,
         order: index
       }));
 
@@ -264,7 +343,10 @@ export default function FormsPage() {
   const addQuestion = () => {
     setQuestions([...questions, {
       id: 'temp-' + crypto.randomUUID(),
-      label: "新問題",
+      label: "New Question",
+      labelEn: "New Question",
+      labelZhHant: "新問題",
+      labelZhHans: "新问题",
       type: "text",
       required: false
     }]);
@@ -325,10 +407,12 @@ export default function FormsPage() {
           {currentTicket && (
             <div className="admin-stat-card" style={{ marginTop: '1rem' }}>
               <div className="admin-stat-label">{t.ticketLabel}</div>
-              <div className="admin-stat-value" style={{ fontSize: '1.5rem' }}>{currentTicket.name}</div>
+              <div className="admin-stat-value" style={{ fontSize: '1.5rem' }}>
+                {typeof currentTicket.name === 'object' ? currentTicket.name['en'] || Object.values(currentTicket.name)[0] : currentTicket.name}
+              </div>
               {currentTicket.description && (
                 <div style={{ marginTop: '0.5rem', opacity: 0.7, fontSize: '0.9rem' }}>
-                  {currentTicket.description}
+                  {typeof currentTicket.description === 'object' ? currentTicket.description['en'] || Object.values(currentTicket.description)[0] : currentTicket.description}
                 </div>
               )}
             </div>
@@ -356,7 +440,7 @@ export default function FormsPage() {
                 <option value="">{t.selectTicket}</option>
                 {allTickets.map(ticket => (
                   <option key={ticket.id} value={ticket.id}>
-                    {ticket.name}
+                    {typeof ticket.name === 'object' ? ticket.name['en'] || Object.values(ticket.name)[0] : ticket.name}
                   </option>
                 ))}
               </select>
@@ -417,16 +501,54 @@ export default function FormsPage() {
                       letterSpacing: '0.05em',
                       color: 'var(--color-gray-400)',
                       fontWeight: 500
-                    }}>問題</label>
+                    }}>EN</label>
                     <input
                       type="text"
-                      value={q.label}
-                      placeholder="問題標籤"
-                      onChange={(e) => updateQuestion(q.id, { label: e.target.value })}
+                      value={q.labelEn || ''}
+                      placeholder="English Label"
+                      onChange={(e) => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
                       className="admin-input"
                       style={{
                         fontSize: '0.85rem',
-                        minWidth: '160px',
+                        minWidth: '120px',
+                        padding: '0.5rem 0.7rem'
+                      }}
+                    />
+                    <label style={{
+                      fontSize: '0.7rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--color-gray-400)',
+                      fontWeight: 500
+                    }}>繁</label>
+                    <input
+                      type="text"
+                      value={q.labelZhHant || ''}
+                      placeholder="繁體中文"
+                      onChange={(e) => updateQuestion(q.id, { labelZhHant: e.target.value })}
+                      className="admin-input"
+                      style={{
+                        fontSize: '0.85rem',
+                        minWidth: '100px',
+                        padding: '0.5rem 0.7rem'
+                      }}
+                    />
+                    <label style={{
+                      fontSize: '0.7rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--color-gray-400)',
+                      fontWeight: 500
+                    }}>簡</label>
+                    <input
+                      type="text"
+                      value={q.labelZhHans || ''}
+                      placeholder="简体中文"
+                      onChange={(e) => updateQuestion(q.id, { labelZhHans: e.target.value })}
+                      className="admin-input"
+                      style={{
+                        fontSize: '0.85rem',
+                        minWidth: '100px',
                         padding: '0.5rem 0.7rem'
                       }}
                     />
@@ -518,19 +640,57 @@ export default function FormsPage() {
                           <div key={i} style={{
                             display: 'flex',
                             gap: '0.5rem',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            flexWrap: 'wrap'
                           }}>
                             <span style={{ cursor: 'grab', color: 'var(--color-gray-500)' }} title="Drag option">⋮⋮</span>
                             <input
                               type="text"
-                              value={opt}
+                              value={typeof opt === 'object' ? opt.en || '' : opt}
+                              placeholder="EN"
                               onChange={(e) => {
                                 const newOptions = [...(q.options || [])];
-                                newOptions[i] = e.target.value;
+                                if (typeof newOptions[i] === 'object') {
+                                  newOptions[i] = { ...newOptions[i] as any, en: e.target.value };
+                                } else {
+                                  newOptions[i] = { en: e.target.value };
+                                }
                                 updateQuestion(q.id, { options: newOptions });
                               }}
                               className="admin-input"
-                              style={{ flex: 1, fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                              style={{ minWidth: '120px', fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                            />
+                            <input
+                              type="text"
+                              value={typeof opt === 'object' ? opt['zh-Hant'] || '' : ''}
+                              placeholder="繁"
+                              onChange={(e) => {
+                                const newOptions = [...(q.options || [])];
+                                if (typeof newOptions[i] === 'object') {
+                                  newOptions[i] = { ...newOptions[i] as any, 'zh-Hant': e.target.value };
+                                } else {
+                                  newOptions[i] = { en: typeof opt === 'string' ? opt : '', 'zh-Hant': e.target.value };
+                                }
+                                updateQuestion(q.id, { options: newOptions });
+                              }}
+                              className="admin-input"
+                              style={{ minWidth: '100px', fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                            />
+                            <input
+                              type="text"
+                              value={typeof opt === 'object' ? opt['zh-Hans'] || '' : ''}
+                              placeholder="簡"
+                              onChange={(e) => {
+                                const newOptions = [...(q.options || [])];
+                                if (typeof newOptions[i] === 'object') {
+                                  newOptions[i] = { ...newOptions[i] as any, 'zh-Hans': e.target.value };
+                                } else {
+                                  newOptions[i] = { en: typeof opt === 'string' ? opt : '', 'zh-Hans': e.target.value };
+                                }
+                                updateQuestion(q.id, { options: newOptions });
+                              }}
+                              className="admin-input"
+                              style={{ minWidth: '100px', fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
                             />
                             <button
                               type="button"
@@ -549,7 +709,7 @@ export default function FormsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const newOptions = [...(q.options || []), ""];
+                            const newOptions = [...(q.options || []), { en: '', 'zh-Hant': '', 'zh-Hans': '' }];
                             updateQuestion(q.id, { options: newOptions });
                           }}
                           className="admin-button small secondary"

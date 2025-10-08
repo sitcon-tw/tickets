@@ -9,6 +9,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
 import { FormField } from '@/components/form/FormField';
 import { TicketFormField } from '@/lib/types/api';
+import { getLocalizedText } from '@/lib/utils/localization';
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
 import Text from "@/components/input/Text";
@@ -163,7 +164,52 @@ export default function FormPage() {
 					throw new Error('Failed to load form fields');
 				}
 
-				setFormFields(formFieldsData.data || []);
+				// Process form fields to fix malformed data from backend
+				const processedFields = (formFieldsData.data || []).map(field => {
+					// Fix name if it's stringified
+					let name = field.name;
+					if (typeof name === 'string' && name === '[object Object]') {
+						name = { en: field.description || 'field' };
+					} else if (typeof name === 'string') {
+						try {
+							name = JSON.parse(name);
+						} catch {
+							name = { en: name };
+						}
+					}
+
+					// Fix description if it's a JSON string
+					let description = field.description;
+					if (typeof description === 'string' && description.startsWith('{')) {
+						try {
+							const parsed = JSON.parse(description);
+							description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
+						} catch {
+							// Keep original if parse fails
+						}
+					}
+
+					// Fix options to flatten label objects
+					const options = (field.values || field.options || []).map((opt: any) => {
+						if (typeof opt === 'object' && opt !== null && 'label' in opt) {
+							// Option has a label object, flatten it
+							const labelValue = typeof opt.label === 'object'
+								? opt.label.en || opt.label[Object.keys(opt.label)[0]]
+								: opt.label;
+							return { en: labelValue };
+						}
+						return opt;
+					});
+
+					return {
+						...field,
+						name,
+						description,
+						options
+					};
+				});
+
+				setFormFields(processedFields);
 				setLoading(false);
 			} catch (error) {
 				console.error('Failed to initialize form:', error);
@@ -274,16 +320,19 @@ export default function FormPage() {
 							)}
 
 							{/* Dynamic form fields from API */}
-							{formFields.map((field, index) => (
-								<FormField
-									key={index}
-									field={field}
-									value={formData[field.name] || ''}
-									onTextChange={handleTextChange}
-									onCheckboxChange={handleCheckboxChange}
-									pleaseSelectText={t.pleaseSelect}
-								/>
-							))}
+							{formFields.map((field, index) => {
+								const fieldName = getLocalizedText(field.name, locale);
+								return (
+									<FormField
+										key={index}
+										field={field}
+										value={formData[fieldName] || ''}
+										onTextChange={handleTextChange}
+										onCheckboxChange={handleCheckboxChange}
+										pleaseSelectText={t.pleaseSelect}
+									/>
+								);
+							})}
 
 							{/* Referral code field - shown if present */}
 							{referralCode && (

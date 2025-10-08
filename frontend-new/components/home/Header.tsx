@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { getTranslations } from '@/i18n/helpers';
 import { eventsAPI } from '@/lib/api/endpoints';
+import { getLocalizedText } from '@/lib/utils/localization';
 import PageSpinner from '@/components/PageSpinner';
 
 interface HeaderProps {
@@ -40,7 +41,7 @@ export default function Header({ eventId }: HeaderProps) {
       try {
         const eventData = await eventsAPI.getInfo(eventId);
         if (eventData?.success && eventData.data) {
-          setEventName(eventData.data.name);
+          setEventName(getLocalizedText(eventData.data.name, locale));
         }
 
         const statsData = await eventsAPI.getStats(eventId);
@@ -55,7 +56,7 @@ export default function Header({ eventId }: HeaderProps) {
     }
 
     fetchEventInfo();
-  }, [eventId]);
+  }, [eventId, locale]);
 
   return (
     <section style={{

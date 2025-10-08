@@ -6,6 +6,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { useRouter as defaultUseRouter } from "next/navigation";
 import { adminEventsAPI } from "@/lib/api/endpoints";
+import { getLocalizedText } from "@/lib/utils/localization";
 import type { Event } from "@/lib/types/api";
 
 const activityLinks = [
@@ -228,7 +229,7 @@ export default function AdminNav() {
           >
             {events.map(event => (
               <option key={event.id} value={event.id}>
-                {event.name}
+                {getLocalizedText(event.name, locale)}
               </option>
             ))}
           </select>
