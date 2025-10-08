@@ -19,7 +19,8 @@ export const requireAuth = async (request, reply) => {
 		request.user = session.user;
 		request.session = session;
 	} catch (error) {
-		console.error("Auth middleware error:", error);
+		// Use Fastify's built-in logger which is more secure
+		request.log.error("Auth middleware error:", error);
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
 		return reply.code(statusCode).send(response);
 	}

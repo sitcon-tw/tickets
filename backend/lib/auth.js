@@ -42,7 +42,7 @@ export const auth = betterAuth({
 						}
 					}
 				} catch (e) {
-					console.error('Error parsing URL for locale:', e);
+					// Silently fail locale detection, use default
 				}
 
 				// Send users to frontend, which will proxy the verification to backend

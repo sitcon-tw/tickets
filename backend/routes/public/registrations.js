@@ -278,7 +278,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
 			} catch (error) {
-				console.error("Create registration error:", error);
+				request.log.error("Create registration error:", error);
 				
 				// Handle specific transaction errors
 				if (error.message === "TICKET_SOLD_OUT") {
@@ -357,7 +357,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(registrationsWithStatus));
 			} catch (error) {
-				console.error("Get user registrations error:", error);
+				request.log.error("Get user registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -434,7 +434,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(registrationWithStatus));
 			} catch (error) {
-				console.error("Get registration error:", error);
+				request.log.error("Get registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -552,7 +552,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					"報名資料已更新"
 				));
 			} catch (error) {
-				console.error("Edit registration error:", error);
+				request.log.error("Edit registration error:", error);
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -632,7 +632,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(null, "報名已取消"));
 			} catch (error) {
-				console.error("Cancel registration error:", error);
+				request.log.error("Cancel registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取消報名失敗");
 				return reply.code(statusCode).send(response);
 			}

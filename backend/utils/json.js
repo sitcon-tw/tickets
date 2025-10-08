@@ -17,7 +17,7 @@ export const safeJsonParse = (jsonString, fallback = {}, context = 'unknown') =>
 	try {
 		return JSON.parse(jsonString);
 	} catch (parseError) {
-		console.error(`Error parsing JSON in ${context}:`, parseError);
+		// Silently return fallback - parsing errors are expected in some cases
 		return fallback;
 	}
 };
@@ -33,7 +33,7 @@ export const safeJsonStringify = (object, fallback = '{}', context = 'unknown') 
 	try {
 		return JSON.stringify(object);
 	} catch (stringifyError) {
-		console.error(`Error stringifying object in ${context}:`, stringifyError);
+		// Silently return fallback - stringify errors are expected in some cases
 		return fallback;
 	}
 };

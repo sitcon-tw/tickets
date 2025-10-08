@@ -159,7 +159,7 @@ fastify.all(
 
 			return "";
 		} catch (error) {
-			console.error("Auth handler error:", error);
+			fastify.log.error("Auth handler error:", error);
 			reply.code(500);
 			return { error: "Internal server error" };
 		}
@@ -202,7 +202,7 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
 		}
 	} catch (error) {
-		console.error("Magic link verification error:", error);
+		fastify.log.error("Magic link verification error:", error);
 		const locale = request.query.locale || 'zh-Hant';
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
@@ -231,25 +231,25 @@ fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-	console.log('Received SIGINT, shutting down gracefully...');
+	fastify.log.info('Received SIGINT, shutting down gracefully...');
 	try {
 		await cleanup();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		console.error('Error during shutdown:', error);
+		fastify.log.error('Error during shutdown:', error);
 		process.exit(1);
 	}
 });
 
 process.on('SIGTERM', async () => {
-	console.log('Received SIGTERM, shutting down gracefully...');
+	fastify.log.info('Received SIGTERM, shutting down gracefully...');
 	try {
 		await cleanup();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		console.error('Error during shutdown:', error);
+		fastify.log.error('Error during shutdown:', error);
 		process.exit(1);
 	}
 });
