@@ -191,15 +191,19 @@ export default function FormPage() {
 					}
 
 					// Fix options to flatten label objects
-					const options = (field.values || field.options || []).map((opt: any) => {
+					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
 						if (typeof opt === 'object' && opt !== null && 'label' in opt) {
 							// Option has a label object, flatten it
-							const labelValue = typeof opt.label === 'object'
-								? opt.label.en || opt.label[Object.keys(opt.label)[0]]
-								: opt.label;
-							return { en: labelValue };
+							const optWithLabel = opt as { label: unknown };
+							const labelValue = typeof optWithLabel.label === 'object' && optWithLabel.label !== null && 'en' in optWithLabel.label
+								? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
+								: optWithLabel.label;
+							return { en: String(labelValue) };
 						}
-						return opt;
+						if (typeof opt === 'object' && opt !== null) {
+							return opt as Record<string, string>;
+						}
+						return { en: String(opt) };
 					});
 
 					return {

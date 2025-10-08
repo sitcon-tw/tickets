@@ -36,7 +36,6 @@ export default function FormsPage() {
 
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [copyFromTicketId, setCopyFromTicketId] = useState<string>('');
   const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
@@ -91,8 +90,6 @@ export default function FormsPage() {
   const loadFormFields = useCallback(async () => {
     if (!currentTicket?.id) return;
 
-    setIsLoading(true);
-
     try {
       const response = await adminTicketFormFieldsAPI.getAll({ ticketId: currentTicket.id });
 
@@ -101,24 +98,30 @@ export default function FormsPage() {
           let options: Array<{ en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }> = [];
 
           // Handle options from field.options (from API response) or field.values (from database)
-          const rawOptions = (field as any).options || field.values;
+          const fieldWithOptions = field as TicketFormField & { options?: unknown };
+          const rawOptions = fieldWithOptions.options || field.values;
 
           if (rawOptions && Array.isArray(rawOptions)) {
-            options = rawOptions.map((opt: any) => {
+            options = rawOptions.map((opt: unknown) => {
               if (typeof opt === 'object' && opt !== null) {
                 // Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
-                if ('label' in opt && typeof opt.label === 'object') {
-                  return {
-                    en: opt.label['en'] || opt.value || '',
-                    'zh-Hant': opt.label['zh-Hant'] || '',
-                    'zh-Hans': opt.label['zh-Hans'] || ''
-                  };
+                if ('label' in opt) {
+                  const optWithLabel = opt as { label: unknown; value?: string };
+                  if (typeof optWithLabel.label === 'object' && optWithLabel.label !== null) {
+                    const label = optWithLabel.label as Record<string, string>;
+                    return {
+                      en: label['en'] || optWithLabel.value || '',
+                      'zh-Hant': label['zh-Hant'] || '',
+                      'zh-Hans': label['zh-Hans'] || ''
+                    };
+                  }
                 }
                 // Already in the right format: { en: "...", zh-Hant: "...", zh-Hans: "..." }
+                const optRecord = opt as Record<string, string>;
                 return {
-                  en: opt['en'] || opt.en || '',
-                  'zh-Hant': opt['zh-Hant'] || '',
-                  'zh-Hans': opt['zh-Hans'] || ''
+                  en: optRecord['en'] || '',
+                  'zh-Hant': optRecord['zh-Hant'] || '',
+                  'zh-Hans': optRecord['zh-Hans'] || ''
                 };
               }
               // Convert string to localized object
@@ -129,11 +132,11 @@ export default function FormsPage() {
             try {
               const parsed = JSON.parse(rawOptions);
               if (Array.isArray(parsed)) {
-                options = parsed.map((opt: any) =>
-                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt
+                options = parsed.map((opt: unknown) =>
+                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt as { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }
                 );
               }
-            } catch (e) {
+            } catch {
               console.warn('Failed to parse field values as JSON:', rawOptions);
             }
           }
@@ -165,24 +168,8 @@ export default function FormsPage() {
       }
     } catch (error) {
       console.error('Failed to load form fields:', error);
-      loadDemoData();
-    } finally {
-      setIsLoading(false);
     }
   }, [currentTicket?.id]);
-
-  // Load demo data (fallback)
-  const loadDemoData = () => {
-    setQuestions([
-      { id: crypto.randomUUID(), label: "全名", type: "text", required: true, help: "請輸入您的真實姓名。" },
-      { id: crypto.randomUUID(), label: "電子郵件", type: "email", required: true, help: "請輸入您的電子郵件地址。" },
-      { id: crypto.randomUUID(), label: "電話號碼", type: "phone", required: false, help: "請輸入您的電話號碼。" },
-      { id: crypto.randomUUID(), label: "T恤尺寸", type: "select", required: true, options: ["XS", "S", "M", "L", "XL"], help: "請選擇您的T恤尺寸。" },
-      { id: crypto.randomUUID(), label: "飲食偏好", type: "radio", required: false, options: ["無", "素", "清蒸", "蛋奶素"], help: "請選擇您的飲食偏好。" },
-      { id: crypto.randomUUID(), label: "技能", type: "checkbox", required: false, options: ["Frontend", "Backend", "Design", "DevOps"], help: "請選擇您的技能。" },
-      { id: crypto.randomUUID(), label: "關於你", type: "textarea", required: false, help: "請簡要介紹自己。" }
-    ]);
-  };
 
   // Copy form from another ticket
   const copyFormFromTicket = async (sourceTicketId: string) => {
@@ -196,24 +183,30 @@ export default function FormsPage() {
           let options: Array<{ en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }> = [];
 
           // Handle options from field.options (from API response) or field.values (from database)
-          const rawOptions = (field as any).options || field.values;
+          const fieldWithOptions = field as TicketFormField & { options?: unknown };
+          const rawOptions = fieldWithOptions.options || field.values;
 
           if (rawOptions && Array.isArray(rawOptions)) {
-            options = rawOptions.map((opt: any) => {
+            options = rawOptions.map((opt: unknown) => {
               if (typeof opt === 'object' && opt !== null) {
                 // Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
-                if ('label' in opt && typeof opt.label === 'object') {
-                  return {
-                    en: opt.label['en'] || opt.value || '',
-                    'zh-Hant': opt.label['zh-Hant'] || '',
-                    'zh-Hans': opt.label['zh-Hans'] || ''
-                  };
+                if ('label' in opt) {
+                  const optWithLabel = opt as { label: unknown; value?: string };
+                  if (typeof optWithLabel.label === 'object' && optWithLabel.label !== null) {
+                    const label = optWithLabel.label as Record<string, string>;
+                    return {
+                      en: label['en'] || optWithLabel.value || '',
+                      'zh-Hant': label['zh-Hant'] || '',
+                      'zh-Hans': label['zh-Hans'] || ''
+                    };
+                  }
                 }
                 // Already in the right format
+                const optRecord = opt as Record<string, string>;
                 return {
-                  en: opt['en'] || opt.en || '',
-                  'zh-Hant': opt['zh-Hant'] || '',
-                  'zh-Hans': opt['zh-Hans'] || ''
+                  en: optRecord['en'] || '',
+                  'zh-Hant': optRecord['zh-Hant'] || '',
+                  'zh-Hans': optRecord['zh-Hans'] || ''
                 };
               }
               return { en: String(opt), 'zh-Hant': '', 'zh-Hans': '' };
@@ -223,11 +216,11 @@ export default function FormsPage() {
             try {
               const parsed = JSON.parse(rawOptions);
               if (Array.isArray(parsed)) {
-                options = parsed.map((opt: any) =>
-                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt
+                options = parsed.map((opt: unknown) =>
+                  typeof opt === 'string' ? { en: opt, 'zh-Hant': '', 'zh-Hans': '' } : opt as { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }
                 );
               }
-            } catch (e) {
+            } catch {
               console.warn('Failed to parse field values as JSON:', rawOptions);
             }
           }
@@ -360,13 +353,6 @@ export default function FormsPage() {
     setQuestions(questions.filter(q => q.id !== id));
   };
 
-  const moveQuestion = (fromIndex: number, toIndex: number) => {
-    const newQuestions = [...questions];
-    const [movedQuestion] = newQuestions.splice(fromIndex, 1);
-    newQuestions.splice(toIndex, 0, movedQuestion);
-    setQuestions(newQuestions);
-  };
-
   if (!searchParams.get('ticket')) {
     return (
       <>
@@ -460,7 +446,7 @@ export default function FormsPage() {
                 borderRadius: '8px'
               }}>尚無問題</div>
             )}
-            {questions.map((q, index) => (
+            {questions.map((q) => (
               <div key={q.id} data-id={q.id} style={{
                 background: 'var(--color-gray-800)',
                 border: '1px solid var(--color-gray-700)',
@@ -651,7 +637,7 @@ export default function FormsPage() {
                               onChange={(e) => {
                                 const newOptions = [...(q.options || [])];
                                 if (typeof newOptions[i] === 'object') {
-                                  newOptions[i] = { ...newOptions[i] as any, en: e.target.value };
+                                  newOptions[i] = { ...(newOptions[i] as { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }), en: e.target.value };
                                 } else {
                                   newOptions[i] = { en: e.target.value };
                                 }
@@ -667,7 +653,7 @@ export default function FormsPage() {
                               onChange={(e) => {
                                 const newOptions = [...(q.options || [])];
                                 if (typeof newOptions[i] === 'object') {
-                                  newOptions[i] = { ...newOptions[i] as any, 'zh-Hant': e.target.value };
+                                  newOptions[i] = { ...(newOptions[i] as { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }), 'zh-Hant': e.target.value };
                                 } else {
                                   newOptions[i] = { en: typeof opt === 'string' ? opt : '', 'zh-Hant': e.target.value };
                                 }
@@ -683,7 +669,7 @@ export default function FormsPage() {
                               onChange={(e) => {
                                 const newOptions = [...(q.options || [])];
                                 if (typeof newOptions[i] === 'object') {
-                                  newOptions[i] = { ...newOptions[i] as any, 'zh-Hans': e.target.value };
+                                  newOptions[i] = { ...(newOptions[i] as { en: string; 'zh-Hant'?: string; 'zh-Hans'?: string }), 'zh-Hans': e.target.value };
                                 } else {
                                   newOptions[i] = { en: typeof opt === 'string' ? opt : '', 'zh-Hans': e.target.value };
                                 }

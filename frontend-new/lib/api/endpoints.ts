@@ -22,6 +22,7 @@ import type {
   ExportData,
   ApiResponse,
   SessionResponse,
+  LocalizedText,
 } from '@/lib/types/api';
 
 // System
@@ -146,8 +147,8 @@ export const adminEventsAPI = {
     apiClient.get<ApiResponse<Event>>(`/api/admin/events/${id}`),
 
   create: (data: {
-    name: string;
-    description?: string;
+    name: LocalizedText;
+    description?: LocalizedText;
     startDate: string;
     endDate: string;
     location?: string;
@@ -170,8 +171,8 @@ export const adminTicketsAPI = {
 
   create: (data: {
     eventId: string;
-    name: string;
-    description?: string;
+    name: LocalizedText;
+    description?: LocalizedText;
     price: number;
     quantity: number;
     saleStart?: string;
@@ -201,12 +202,12 @@ export const adminTicketFormFieldsAPI = {
     ticketId: string;
     order: number;
     type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
-    name: string;
+    name: LocalizedText;
     description?: string;
     placeholder?: string;
     required?: boolean;
     validater?: string;
-    values?: string;
+    values?: LocalizedText[];
   }) => apiClient.post<ApiResponse<TicketFormField>>('/api/admin/ticket-form-fields', data),
 
   update: (id: string, data: Partial<TicketFormField>) =>

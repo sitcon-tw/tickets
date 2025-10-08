@@ -7,6 +7,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
 import PageSpinner from "@/components/PageSpinner";
+import { getLocalizedText } from "@/lib/utils/localization";
 
 type SortField = 'id' | 'email' | 'status' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
@@ -61,8 +62,8 @@ export default function RegistrationsPage() {
     { id: "id", label: "ID", accessor: (r: Registration) => r.id.slice(0, 8) + '...', sortable: true },
     { id: "email", label: "Email", accessor: (r: Registration) => r.email, sortable: true },
     { id: "status", label: "Status", accessor: (r: Registration) => r.status, sortable: true },
-    { id: "ticket", label: "Ticket", accessor: (r: Registration) => r.ticket?.name || r.ticketId || "", sortable: false },
-    { id: "event", label: "Event", accessor: (r: Registration) => r.event?.name || r.eventId || "", sortable: false },
+    { id: "ticket", label: "Ticket", accessor: (r: Registration) => getLocalizedText(r.ticket?.name, locale) || r.ticketId || "", sortable: false },
+    { id: "event", label: "Event", accessor: (r: Registration) => getLocalizedText(r.event?.name, locale) || r.eventId || "", sortable: false },
     { id: "referredBy", label: "Referred By", accessor: (r: Registration) => r.referredBy ? r.referredBy.slice(0, 8) + '...' : '-', sortable: false },
     { id: "createdAt", label: "Created", accessor: (r: Registration) => r.createdAt ? new Date(r.createdAt).toLocaleString() : "", sortable: true },
     { id: "updatedAt", label: "Updated", accessor: (r: Registration) => r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "", sortable: false }
@@ -542,7 +543,7 @@ export default function RegistrationsPage() {
               {selectedRegistration.event && (
                 <div>
                   <div className="admin-stat-label">Event</div>
-                  <div style={{ fontSize: '0.95rem' }}>{selectedRegistration.event.name}</div>
+                  <div style={{ fontSize: '0.95rem' }}>{getLocalizedText(selectedRegistration.event.name, locale)}</div>
                   {selectedRegistration.event.startDate && (
                     <div style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.25rem' }}>
                       {new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
@@ -554,7 +555,7 @@ export default function RegistrationsPage() {
               {selectedRegistration.ticket && (
                 <div>
                   <div className="admin-stat-label">Ticket</div>
-                  <div style={{ fontSize: '0.95rem' }}>{selectedRegistration.ticket.name}</div>
+                  <div style={{ fontSize: '0.95rem' }}>{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
                   {selectedRegistration.ticket.price !== undefined && (
                     <div style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: '0.25rem' }}>
                       Price: ${selectedRegistration.ticket.price}

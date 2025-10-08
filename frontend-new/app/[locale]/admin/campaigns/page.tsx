@@ -7,6 +7,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import PageSpinner from "@/components/PageSpinner";
+import { getLocalizedText } from '@/lib/utils/localization';
 
 export default function EmailCampaignsPage() {
   const locale = useLocale();
@@ -398,7 +399,7 @@ export default function EmailCampaignsPage() {
                     style={{ width: '100%', minHeight: '80px' }}
                   >
                     {events.map(event => (
-                      <option key={event.id} value={event.id}>{event.name}</option>
+                      <option key={event.id} value={event.id}>{getLocalizedText(event.name, locale)}</option>
                     ))}
                   </select>
                 </div>
@@ -419,7 +420,7 @@ export default function EmailCampaignsPage() {
                     style={{ width: '100%', minHeight: '80px' }}
                   >
                     {tickets.map(ticket => (
-                      <option key={ticket.id} value={ticket.id}>{ticket.name}</option>
+                      <option key={ticket.id} value={ticket.id}>{getLocalizedText(ticket.name, locale)}</option>
                     ))}
                   </select>
                 </div>

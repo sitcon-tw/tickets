@@ -7,6 +7,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import PageSpinner from "@/components/PageSpinner";
+import { getLocalizedText } from '@/lib/utils/localization';
 
 type InviteCode = {
   id: string;
@@ -381,7 +382,7 @@ export default function InvitesPage() {
                       <option value="">{t.pleaseSelectTicket}</option>
                       {tickets.map(ticket => (
                         <option key={ticket.id} value={ticket.id}>
-                          {ticket.name}
+                          {getLocalizedText(ticket.name, locale)}
                         </option>
                       ))}
                     </select>

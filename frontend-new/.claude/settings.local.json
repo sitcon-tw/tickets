@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//mnt/e/program things/js/2026-tickets/node_modules/.pnpm/@react-three+rapier@2.1.0_@react-three+fiber@9.3.0_@types+react@19.1.13_react-dom@19.1.0_reac_frcbfvajemrl237aj7jk7o5yna/node_modules/@react-three/rapier/dist/declarations/src/**)"
+      "Read(//mnt/e/program things/js/2026-tickets/node_modules/.pnpm/@react-three+rapier@2.1.0_@react-three+fiber@9.3.0_@types+react@19.1.13_react-dom@19.1.0_reac_frcbfvajemrl237aj7jk7o5yna/node_modules/@react-three/rapier/dist/declarations/src/**)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []
