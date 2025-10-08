@@ -99,7 +99,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
         try {
           const registrations = await registrationsAPI.getAll();
           if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
-            // Check if user has registered for this specific event
             const hasRegisteredForEvent = registrations.data.some(reg => reg.event?.id === eventId);
             if (hasRegisteredForEvent && !cancelled) {
               setWelcomeState("registered");

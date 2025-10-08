@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
-import { eventsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, registrationsAPI, authAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { useRouter } from "@/i18n/navigation";
 import Spinner from "@/components/Spinner";
@@ -92,8 +92,30 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
       }
     };
 
-    loadTickets();
-    checkRegistrationStatus();
+    async function checkAuth() {
+      try {
+        const sessionData = await authAPI.getSession();
+        if (!sessionData) {
+          setCanRegister(false);
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Failed to check auth status", error);
+        setCanRegister(false);
+        return false;
+      }
+    };
+
+    async function init() {
+      await loadTickets();
+      
+      if (await checkAuth()) {
+        await checkRegistrationStatus();
+      }
+    };
+
+    init();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
