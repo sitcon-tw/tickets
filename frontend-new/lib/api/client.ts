@@ -101,14 +101,22 @@ class APIClient {
     for (let attempt = 1; attempt <= this.retryConfig.maxRetries + 1; attempt++) {
       try {
         const response = await this.fetchWithTimeout(url, config);
-        
+
         if (!response.ok) {
+          // Handle 401 Unauthorized on admin endpoints
+          if (response.status === 401 && endpoint.includes('/admin')) {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/';
+            }
+            throw new Error('Unauthorized access');
+          }
+
           const errorData: APIError = await response.json().catch(() => ({
             detail: [{ loc: [], msg: '發生了未知的錯誤 [C]', type: 'unknown' }]
           }));
-          
+
           const error = new Error(
-            errorData.message || 
+            errorData.message ||
             `HTTP ${response.status}: ${response.statusText}`
           );
 
