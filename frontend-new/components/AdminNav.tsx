@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
-import { useRouter as defaultUseRouter } from "next/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { adminEventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { routing } from "@/i18n/routing";
+import { Globe } from "lucide-react";
 import type { Event } from "@/lib/types/api";
 
 const activityLinks = [
@@ -66,11 +67,21 @@ const styles = {
 export default function AdminNav() {
   const locale = useLocale();
   const router = useRouter();
-  const defaultRouter = defaultUseRouter();
+  const pathname = usePathname();
 
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
+
+  const handleLocaleChange = (newLocale: string) => {
+    router.replace(pathname, { locale: newLocale });
+  };
+
+  const localeNames: Record<string, string> = {
+    en: "English",
+    "zh-Hant": "繁體中文",
+    "zh-Hans": "简体中文"
+  };
 
   const loadEvents = useCallback(async () => {
     try {
@@ -280,42 +291,20 @@ export default function AdminNav() {
             {t.backHome}
           </a>
         </div>
-        <div style={styles.logout}>
-          <a
-            onClick={() => defaultRouter.push("/zh-Hant")}
-            onMouseEnter={() => setHoveredLink('zh-Hant')}
-            onMouseLeave={() => setHoveredLink(null)}
-            style={{
-              textDecoration: hoveredLink === 'zh-Hant' ? 'underline' : 'none'
-            }}
-            className="cursor-pointer"
+        <div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <Globe size={16} className="text-gray-500" />
+          <select
+            value={locale}
+            onChange={(e) => handleLocaleChange(e.target.value)}
+            className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            style={{ padding: "0.25rem 0.5rem" }}
           >
-            繁
-          </a>
-          <span>・</span>
-          <a
-            onClick={() => defaultRouter.push("/zh-Hans")}
-            onMouseEnter={() => setHoveredLink('zh-Hans')}
-            onMouseLeave={() => setHoveredLink(null)}
-            style={{
-              textDecoration: hoveredLink === 'zh-Hans' ? 'underline' : 'none'
-            }}
-            className="cursor-pointer"
-          >
-            簡
-          </a>
-          <span>・</span>
-          <a
-            onClick={() => defaultRouter.push("/en")}
-            onMouseEnter={() => setHoveredLink('en')}
-            onMouseLeave={() => setHoveredLink(null)}
-            style={{
-              textDecoration: hoveredLink === 'en' ? 'underline' : 'none'
-            }}
-            className="cursor-pointer"
-          >
-            EN
-          </a>
+            {routing.locales.map((loc) => (
+          <option key={loc} value={loc}>
+            {localeNames[loc]}
+          </option>
+            ))}
+          </select>
         </div>
       </div>
     </aside>
