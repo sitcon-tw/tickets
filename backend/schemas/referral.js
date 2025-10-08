@@ -25,7 +25,7 @@ export const referralProperties = {
 		type: 'string',
 		description: '描述'
 	},
-	usageCount: {
+	usedCount: {
 		type: 'integer',
 		minimum: 0,
 		description: '使用次數'

@@ -230,7 +230,7 @@ export interface InvitationCode {
 
 export interface InvitationCodeInfo extends InvitationCode {
   description?: string;
-  usageCount?: number;
+  usedCount?: number;
   expiresAt?: string;
 }
 
@@ -240,7 +240,7 @@ export interface InvitationCodeVerification {
     id: string;
     code: string;
     description?: string;
-    usageCount: number;
+    usedCount: number;
     usageLimit?: number;
     expiresAt?: string;
   };

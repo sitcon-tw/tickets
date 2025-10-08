@@ -111,7 +111,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 				}
 
 				// Check if code has remaining uses
-				if (invitationCode.usageLimit && invitationCode.usageCount >= invitationCode.usageLimit) {
+				if (invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit) {
 					return reply.send(successResponse({
 						valid: false,
 						message: "邀請碼已達使用上限"
@@ -159,7 +159,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 						id: invitationCode.id,
 						code: invitationCode.code,
 						description: invitationCode.description,
-						usageCount: invitationCode.usageCount,
+						usedCount: invitationCode.usedCount,
 						usageLimit: invitationCode.usageLimit,
 						expiresAt: invitationCode.expiresAt,
 						ticketId: invitationCode.ticketId
@@ -205,7 +205,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 						id: true,
 						code: true,
 						description: true,
-						usageCount: true,
+						usedCount: true,
 						usageLimit: true,
 						expiresAt: true,
 						event: {
@@ -227,7 +227,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 				const now = new Date();
 				const isExpired = invitationCode.expiresAt && now > invitationCode.expiresAt;
 				const isUsageExceeded = invitationCode.usageLimit && 
-					invitationCode.usageCount >= invitationCode.usageLimit;
+					invitationCode.usedCount >= invitationCode.usageLimit;
 
 				return reply.send(successResponse({
 					...invitationCode,
@@ -235,7 +235,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 					isExpired,
 					isUsageExceeded,
 					remainingUses: invitationCode.usageLimit ? 
-						Math.max(0, invitationCode.usageLimit - invitationCode.usageCount) : null
+						Math.max(0, invitationCode.usageLimit - invitationCode.usedCount) : null
 				}));
 			} catch (error) {
 				console.error("Get invitation code info error:", error);

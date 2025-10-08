@@ -145,7 +145,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					}
 
 					// Check if code has remaining uses
-					if (code.usageLimit && code.usageCount >= code.usageLimit) {
+					if (code.usageLimit && code.usedCount >= code.usageLimit) {
 						const { response, statusCode } = validationErrorResponse("邀請碼已達使用上限");
 						return reply.code(statusCode).send(response);
 					}
@@ -167,7 +167,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					});
 
 					if (code && (!code.expiresAt || now <= code.expiresAt) && 
-						(!code.usageLimit || code.usageCount < code.usageLimit)) {
+						(!code.usageLimit || code.usedCount < code.usageLimit)) {
 						invitationCodeId = code.id;
 					}
 				}

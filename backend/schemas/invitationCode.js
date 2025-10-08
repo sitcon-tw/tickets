@@ -297,7 +297,7 @@ export const invitationCodeVerifyResponse = {
 							id: { type: 'string' },
 							code: { type: 'string' },
 							description: { type: 'string' },
-							usageCount: { type: 'integer' },
+							usedCount: { type: 'integer' },
 							usageLimit: { type: 'integer' },
 							expiresAt: { type: 'string', format: 'date-time' }
 						}

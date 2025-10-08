@@ -116,7 +116,7 @@
  * @property {string} code - The invitation code
  * @property {string} name - Code name/description
  * @property {number} usageLimit - Maximum usage limit
- * @property {number} usageCount - Current usage count
+ * @property {number} usedCount - Current usage count
  * @property {string|null} validFrom - ISO date string for start time
  * @property {string|null} validUntil - ISO date string for end time
  * @property {boolean} isActive - Whether code is active
