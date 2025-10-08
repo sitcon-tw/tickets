@@ -1,23 +1,23 @@
 "use client";
 
-import Footer from "@/components/Footer";
-import { FormField } from "@/components/form/FormField";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import Nav from "@/components/Nav";
-import PageSpinner from "@/components/PageSpinner";
-import Spinner from "@/components/Spinner";
+import Footer from '@/components/Footer';
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
-import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { Registration, TicketFormField } from "@/lib/types/api";
-import { getLocalizedText } from "@/lib/utils/localization";
-import { ChevronLeft, Save, X } from "lucide-react";
-import { useLocale } from "next-intl";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
+import { FormField } from '@/components/form/FormField';
+import { Registration, TicketFormField } from '@/lib/types/api';
+import { getLocalizedText } from '@/lib/utils/localization';
+import Spinner from "@/components/Spinner";
+import PageSpinner from "@/components/PageSpinner";
+import { ChevronLeft, Save, X } from 'lucide-react';
 
 type FormDataType = {
-	[key: string]: string | boolean | string[];
+  [key: string]: string | boolean | string[];
 };
 
 export default function MyRegistrationPage() {
@@ -181,13 +181,13 @@ export default function MyRegistrationPage() {
 	const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value, checked } = e.target;
 
-		if (value === "true") {
+		if (value === 'true') {
 			// Single checkbox
 			setFormData(prev => ({ ...prev, [name]: checked }));
 		} else {
 			// Multiple checkbox options
 			setFormData(prev => {
-				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
+				const currentValues = Array.isArray(prev[name]) ? prev[name] as string[] : [];
 				if (checked) {
 					return { ...prev, [name]: [...currentValues, value] };
 				} else {
@@ -204,7 +204,7 @@ export default function MyRegistrationPage() {
 				// Check auth
 				const session = await authAPI.getSession();
 				if (!session || !session.user) {
-					router.push("/login/");
+					router.push('/login/');
 					return;
 				}
 
@@ -230,9 +230,9 @@ export default function MyRegistrationPage() {
 						// Process form fields similar to form page
 						const processedFields = (fieldsResponse.data || []).map(field => {
 							let name = field.name;
-							if (typeof name === "string" && name === "[object Object]") {
-								name = { en: field.description || "field" };
-							} else if (typeof name === "string") {
+							if (typeof name === 'string' && name === '[object Object]') {
+								name = { en: field.description || 'field' };
+							} else if (typeof name === 'string') {
 								try {
 									name = JSON.parse(name);
 								} catch {
@@ -241,7 +241,7 @@ export default function MyRegistrationPage() {
 							}
 
 							let description = field.description;
-							if (typeof description === "string" && description.startsWith("{")) {
+							if (typeof description === 'string' && description.startsWith('{')) {
 								try {
 									const parsed = JSON.parse(description);
 									description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
@@ -251,12 +251,14 @@ export default function MyRegistrationPage() {
 							}
 
 							const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
-								if (typeof opt === "object" && opt !== null && "label" in opt) {
+								if (typeof opt === 'object' && opt !== null && 'label' in opt) {
 									const optWithLabel = opt as { label: unknown };
-									const labelValue = typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label ? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0] : optWithLabel.label;
+									const labelValue = typeof optWithLabel.label === 'object' && optWithLabel.label !== null && 'en' in optWithLabel.label
+										? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
+										: optWithLabel.label;
 									return { en: String(labelValue) };
 								}
-								if (typeof opt === "object" && opt !== null) {
+								if (typeof opt === 'object' && opt !== null) {
 									return opt as Record<string, string>;
 								}
 								return { en: String(opt) };
@@ -279,8 +281,8 @@ export default function MyRegistrationPage() {
 
 				setLoading(false);
 			} catch (error) {
-				console.error("Failed to load registration:", error);
-				setError(error instanceof Error ? error.message : "Unknown error");
+				console.error('Failed to load registration:', error);
+				setError(error instanceof Error ? error.message : 'Unknown error');
 				setLoading(false);
 			}
 		}
@@ -304,11 +306,11 @@ export default function MyRegistrationPage() {
 				setRegistration({ ...registration, formData: result.data.formData as Record<string, unknown> });
 				setIsEditing(false);
 			} else {
-				throw new Error("Failed to update registration");
+				throw new Error('Failed to update registration');
 			}
 		} catch (error) {
-			console.error("Save error:", error);
-			alert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"));
+			console.error('Save error:', error);
+			alert(t.saveFailed + (error instanceof Error ? error.message : 'Unknown error'));
 		} finally {
 			setIsSaving(false);
 		}
@@ -326,11 +328,11 @@ export default function MyRegistrationPage() {
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
 		return date.toLocaleString(locale, {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit"
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 	};
 
@@ -338,78 +340,63 @@ export default function MyRegistrationPage() {
 		<>
 			<Nav />
 			<main>
-				<section
-					style={{
-						marginTop: "6rem",
-						maxWidth: "900px",
-						marginLeft: "auto",
-						marginRight: "auto",
-						padding: "0 1rem",
-						marginBottom: "4rem"
-					}}
-				>
-					<button onClick={() => router.back()} className="button" style={{ marginBottom: "2rem" }}>
+				<section style={{
+					marginTop: '6rem',
+					maxWidth: '900px',
+					marginLeft: 'auto',
+					marginRight: 'auto',
+					padding: '0 1rem',
+					marginBottom: '4rem'
+				}}>
+					<button onClick={() => router.back()} className="button" style={{ marginBottom: '2rem' }}>
 						<div className="flex items-center">
 							<ChevronLeft />
 							<p>{t.backToRegistrations}</p>
 						</div>
 					</button>
 
-					<h1
-						style={{
-							marginBlock: "1rem",
-							fontSize: "2.5rem"
-						}}
-					>
-						{t.myRegistration}
-					</h1>
+					<h1 style={{
+						marginBlock: '1rem',
+						fontSize: '2.5rem'
+					}}>{t.myRegistration}</h1>
 
 					{loading && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "1rem",
-								padding: "3rem",
-								opacity: 0.7
-							}}
-						>
+						<div style={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							gap: '1rem',
+							padding: '3rem',
+							opacity: 0.7
+						}}>
 							<PageSpinner size={48} />
 							<p>{t.loading}</p>
 						</div>
 					)}
 
 					{error && (
-						<div style={{ textAlign: "center", padding: "2rem" }}>
-							<p style={{ color: "red" }}>
-								{t.loadFailed}
-								{error}
-							</p>
+						<div style={{ textAlign: 'center', padding: '2rem' }}>
+							<p style={{ color: 'red' }}>{t.loadFailed}{error}</p>
 							<Link href="/">{t.backToRegistrations}</Link>
 						</div>
 					)}
 
 					{!loading && !error && registration && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "2rem"
-							}}
-						>
+						<div style={{
+							display: 'flex',
+							flexDirection: 'column',
+							gap: '2rem'
+						}}>
 							{/* Event Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.eventInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div style={{
+								padding: '1.5rem',
+								border: '1px solid var(--border-color)',
+								borderRadius: '8px',
+								backgroundColor: 'var(--background-secondary)'
+							}}>
+								<h2 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>{t.eventInfo}</h2>
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 									<div>
 										<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
 									</div>
@@ -419,22 +406,20 @@ export default function MyRegistrationPage() {
 										</div>
 									)}
 									<div>
-										<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate || "")} - {formatDate(registration.event?.endDate || "")}
+										<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate || '')} - {formatDate(registration.event?.endDate || '')}
 									</div>
 								</div>
 							</div>
 
 							{/* Ticket Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.ticketInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div style={{
+								padding: '1.5rem',
+								border: '1px solid var(--border-color)',
+								borderRadius: '8px',
+								backgroundColor: 'var(--background-secondary)'
+							}}>
+								<h2 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>{t.ticketInfo}</h2>
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 									<div>
 										<strong>{t.ticketType}:</strong> {getLocalizedText(registration.ticket?.name || {}, locale)}
 									</div>
@@ -442,13 +427,14 @@ export default function MyRegistrationPage() {
 										<strong>{t.ticketPrice}:</strong> {registration.ticket?.price === 0 ? t.free : `$${registration.ticket?.price}`}
 									</div>
 									<div>
-										<strong>{t.registrationStatus}:</strong>{" "}
-										<span
-											style={{
-												color: registration.status === "confirmed" ? "green" : registration.status === "cancelled" ? "red" : "orange"
-											}}
-										>
-											{registration.status === "confirmed" ? t.statusConfirmed : registration.status === "cancelled" ? t.statusCancelled : registration.status === "pending" ? t.statusPending : registration.status}
+										<strong>{t.registrationStatus}:</strong>{' '}
+										<span style={{
+											color: registration.status === 'confirmed' ? 'green' : registration.status === 'cancelled' ? 'red' : 'orange'
+										}}>
+											{registration.status === 'confirmed' ? t.statusConfirmed :
+											 registration.status === 'cancelled' ? t.statusCancelled :
+											 registration.status === 'pending' ? t.statusPending :
+											 registration.status}
 										</span>
 									</div>
 									<div>
@@ -458,62 +444,71 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Registration Form Data - Editable */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px"
-								}}
-							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-									<h2 style={{ fontSize: "1.5rem" }}>{t.registrationInfo}</h2>
+							<div style={{
+								padding: '1.5rem',
+								border: '1px solid var(--border-color)',
+								borderRadius: '8px'
+							}}>
+								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+									<h2 style={{ fontSize: '1.5rem' }}>{t.registrationInfo}</h2>
 									{!isEditing && registration.canEdit && (
-										<button onClick={() => setIsEditing(true)} className="button" style={{ padding: "0.5rem 1rem" }}>
+										<button onClick={() => setIsEditing(true)} className="button" style={{ padding: '0.5rem 1rem' }}>
 											{t.edit}
 										</button>
 									)}
 								</div>
 
-								{!registration.canEdit && <p style={{ color: "var(--text-secondary)", marginBottom: "1rem", fontSize: "0.9rem" }}>{t.cannotEdit}</p>}
+								{!registration.canEdit && (
+									<p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+										{t.cannotEdit}
+									</p>
+								)}
 
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "1.5rem"
-									}}
-								>
+								<div style={{
+									display: 'flex',
+									flexDirection: 'column',
+									gap: '1.5rem'
+								}}>
 									{formFields.map((field, index) => {
 										const fieldName = getLocalizedText(field.name, locale);
 
 										if (isEditing) {
-											return <FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
+											return (
+												<FormField
+													key={index}
+													field={field}
+													value={formData[fieldName] || ''}
+													onTextChange={handleTextChange}
+													onCheckboxChange={handleCheckboxChange}
+													pleaseSelectText={t.pleaseSelect}
+												/>
+											);
 										} else {
 											// Display as read-only
 											const value = formData[fieldName];
 											let displayValue: string;
 
 											if (Array.isArray(value)) {
-												displayValue = value.join(", ");
-											} else if (typeof value === "boolean") {
-												displayValue = value ? "✓" : "✗";
+												displayValue = value.join(', ');
+											} else if (typeof value === 'boolean') {
+												displayValue = value ? '✓' : '✗';
 											} else {
-												displayValue = String(value || "-");
+												displayValue = String(value || '-');
 											}
 
 											return (
 												<div key={index}>
-													<div style={{ fontWeight: "bold", marginBottom: "0.25rem" }}>{fieldName}</div>
-													<div
-														style={{
-															padding: "0.5rem",
-															backgroundColor: "var(--background-secondary)",
-															borderRadius: "4px",
-															minHeight: "2.5rem",
-															display: "flex",
-															alignItems: "center"
-														}}
-													>
+													<div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+														{fieldName}
+													</div>
+													<div style={{
+														padding: '0.5rem',
+														backgroundColor: 'var(--background-secondary)',
+														borderRadius: '4px',
+														minHeight: '2.5rem',
+														display: 'flex',
+														alignItems: 'center'
+													}}>
 														{displayValue}
 													</div>
 												</div>
@@ -523,24 +518,22 @@ export default function MyRegistrationPage() {
 								</div>
 
 								{isEditing && (
-									<div
-										style={{
-											display: "flex",
-											gap: "1rem",
-											marginTop: "2rem",
-											justifyContent: "center"
-										}}
-									>
+									<div style={{
+										display: 'flex',
+										gap: '1rem',
+										marginTop: '2rem',
+										justifyContent: 'center'
+									}}>
 										<button
 											onClick={handleSave}
 											disabled={isSaving}
 											className="button"
 											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
+												cursor: isSaving ? 'not-allowed' : 'pointer',
 												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: '0.5rem'
 											}}
 										>
 											{isSaving ? <Spinner size="sm" /> : <Save size={18} />}
@@ -551,11 +544,11 @@ export default function MyRegistrationPage() {
 											disabled={isSaving}
 											className="button"
 											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
+												cursor: isSaving ? 'not-allowed' : 'pointer',
 												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
+												display: 'inline-flex',
+												alignItems: 'center',
+												gap: '0.5rem'
 											}}
 										>
 											<X size={18} />

@@ -5,13 +5,19 @@
  */
 
 import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse
+} from "#utils/response.js";
 import { userSchemas } from "#schemas/user.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin users routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
  */
 export default async function adminUsersRoutes(fastify, options) {
 	// List users
@@ -54,7 +60,7 @@ export default async function adminUsersRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: "desc" }
+					orderBy: { createdAt: 'desc' }
 				});
 
 				return reply.send(successResponse(users));
@@ -155,7 +161,7 @@ export default async function adminUsersRoutes(fastify, options) {
 				// Check for email conflicts
 				if (updateData.email && updateData.email !== existingUser.email) {
 					const emailConflict = await prisma.user.findFirst({
-						where: {
+						where: { 
 							email: updateData.email,
 							id: { not: id }
 						}
@@ -168,7 +174,7 @@ export default async function adminUsersRoutes(fastify, options) {
 				}
 
 				// Validate role
-				const validRoles = ["admin", "viewer"];
+				const validRoles = ['admin', 'viewer'];
 				if (updateData.role && !validRoles.includes(updateData.role)) {
 					const { response, statusCode } = validationErrorResponse("無效的用戶角色");
 					return reply.code(statusCode).send(response);

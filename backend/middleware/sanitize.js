@@ -12,7 +12,7 @@ import { sanitizeObject } from "#utils/sanitize.js";
  */
 export const sanitizeBody = (allowHtml = false) => {
 	return async (request, reply) => {
-		if (request.body && typeof request.body === "object") {
+		if (request.body && typeof request.body === 'object') {
 			request.body = sanitizeObject(request.body, allowHtml);
 		}
 	};
@@ -24,7 +24,7 @@ export const sanitizeBody = (allowHtml = false) => {
  */
 export const sanitizeQuery = () => {
 	return async (request, reply) => {
-		if (request.query && typeof request.query === "object") {
+		if (request.query && typeof request.query === 'object') {
 			request.query = sanitizeObject(request.query, false);
 		}
 	};
@@ -36,7 +36,7 @@ export const sanitizeQuery = () => {
  */
 export const sanitizeParams = () => {
 	return async (request, reply) => {
-		if (request.params && typeof request.params === "object") {
+		if (request.params && typeof request.params === 'object') {
 			request.params = sanitizeObject(request.params, false);
 		}
 	};

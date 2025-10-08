@@ -1,21 +1,22 @@
 import prisma from "#config/database.js";
-import { auth } from "#lib/auth.js";
+import { errorResponse, successResponse, unauthorizedResponse, forbiddenResponse } from "#utils/response.js";
 import { referralSchemas, referralStatsResponse } from "#schemas/referral.js";
-import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response.js";
+import { auth } from "#lib/auth.js";
 
 // Custom param schema for regId parameter
 const regIdParam = {
-	type: "object",
+	type: 'object',
 	properties: {
 		regId: {
-			type: "string",
-			description: "報名 ID"
+			type: 'string',
+			description: '報名 ID'
 		}
 	},
-	required: ["regId"]
+	required: ['regId']
 };
 
-export default async function referralRoutes(fastify, options) {
+
+export default async function referralRoutes(fastify, options) {	
 	// 獲取專屬推薦連結
 	fastify.get(
 		"/registrations/:regId/referral-link",
@@ -26,19 +27,19 @@ export default async function referralRoutes(fastify, options) {
 				params: regIdParam,
 				response: {
 					200: {
-						type: "object",
+						type: 'object',
 						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
+							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
-								type: "object",
+								type: 'object',
 								properties: {
-									id: { type: "string" },
-									referralLink: { type: "string" },
-									referralCode: { type: "string" },
-									eventId: { type: "string" }
+									id: { type: 'string' },
+									referralLink: { type: 'string' },
+									referralCode: { type: 'string' },
+									eventId: { type: 'string' }
 								},
-								required: ["id", "referralLink", "referralCode", "eventId"]
+								required: ['id', 'referralLink', 'referralCode', 'eventId']
 							}
 						}
 					}
@@ -55,7 +56,7 @@ export default async function referralRoutes(fastify, options) {
 					include: { event: true }
 				});
 
-				if (!registration || registration.status !== "confirmed") {
+				if (!registration || registration.status !== 'confirmed') {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
@@ -85,11 +86,11 @@ export default async function referralRoutes(fastify, options) {
 					while (!isUnique && attempts < maxAttempts) {
 						const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
 						referralCode = `${randomString}`;
-
+						
 						const existingReferral = await prisma.referral.findUnique({
 							where: { code: referralCode }
 						});
-
+						
 						if (!existingReferral) {
 							isUnique = true;
 						}
@@ -120,7 +121,7 @@ export default async function referralRoutes(fastify, options) {
 					});
 				}
 
-				const baseUrl = process.env.FRONTEND_URI || "http://localhost:4321";
+				const baseUrl = process.env.FRONTEND_URI || 'http://localhost:4321';
 				const referralLink = `${baseUrl}/register?ref=${referral.code}`;
 
 				return successResponse({
@@ -173,7 +174,7 @@ export default async function referralRoutes(fastify, options) {
 					}
 				});
 
-				if (!referral || referral.registration.status !== "confirmed") {
+				if (!referral || referral.registration.status !== 'confirmed') {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
@@ -208,12 +209,12 @@ export default async function referralRoutes(fastify, options) {
 						}
 					},
 					orderBy: {
-						usedAt: "desc"
+						usedAt: 'desc'
 					}
 				});
 
 				// Count successful referrals (confirmed registrations)
-				const successfulReferrals = referralUsages.filter(usage => usage.registration.status === "confirmed");
+				const successfulReferrals = referralUsages.filter(usage => usage.registration.status === 'confirmed');
 
 				// Build referral list with anonymized data for privacy
 				const referralList = referralUsages.map(usage => ({
@@ -224,7 +225,7 @@ export default async function referralRoutes(fastify, options) {
 					// Don't expose email or other personal info - improved masking
 					email: usage.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
 						const maskedLength = Math.max(3, match.length - start.length - domain.length);
-						return start + "*".repeat(maskedLength) + domain;
+						return start + '*'.repeat(maskedLength) + domain;
 					})
 				}));
 
@@ -236,7 +237,7 @@ export default async function referralRoutes(fastify, options) {
 						id: referral.registration.id,
 						email: referral.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
 							const maskedLength = Math.max(3, match.length - start.length - domain.length);
-							return start + "*".repeat(maskedLength) + domain;
+							return start + '*'.repeat(maskedLength) + domain;
 						})
 					}
 				});
@@ -270,7 +271,7 @@ export default async function referralRoutes(fastify, options) {
 				});
 
 				return successResponse({
-					isValid: !!(referral && referral.registration.status === "confirmed"),
+					isValid: !!(referral && referral.registration.status === 'confirmed'),
 					referrerId: referral?.registrationId || null
 				});
 			} catch (error) {

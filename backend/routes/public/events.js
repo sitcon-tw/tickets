@@ -6,13 +6,19 @@
  */
 
 import prisma from "#config/database.js";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event.js";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
+import { 
+	successResponse, 
+	notFoundResponse, 
+	serverErrorResponse
+} from "#utils/response.js";
+import { eventSchemas, eventTicketsResponse, publicEventsListResponse, eventStatsResponse } from "#schemas/event.js";
+import { ticketSchemas } from "#schemas/ticket.js";
+
 
 /**
  * Public events routes - accessible without authentication
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
  */
 export default async function publicEventsRoutes(fastify, options) {
 	// Get public event information
@@ -34,7 +40,7 @@ export default async function publicEventsRoutes(fastify, options) {
 
 				/** @type {Event | null} */
 				const event = await prisma.event.findUnique({
-					where: {
+					where: { 
 						id,
 						isActive: true // Only show active events
 					},
@@ -85,9 +91,9 @@ export default async function publicEventsRoutes(fastify, options) {
 
 				// Verify event exists and is active
 				const event = await prisma.event.findUnique({
-					where: {
+					where: { 
 						id,
-						isActive: true
+						isActive: true 
 					}
 				});
 
@@ -123,17 +129,19 @@ export default async function publicEventsRoutes(fastify, options) {
 								values: true,
 								order: true
 							},
-							orderBy: { order: "asc" }
+							orderBy: { order: 'asc' }
 						}
 					},
-					orderBy: { createdAt: "asc" }
+					orderBy: { createdAt: 'asc' }
 				});
 
 				// Add availability and sale status to each ticket
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
 					const available = ticket.quantity - ticket.soldCount;
-					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd) && ticket.isActive;
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+						(!ticket.saleEnd || now <= ticket.saleEnd) &&
+						ticket.isActive;
 					const isSoldOut = available <= 0;
 
 					// Transform form fields
@@ -181,12 +189,12 @@ export default async function publicEventsRoutes(fastify, options) {
 				...eventSchemas.listEvents,
 				description: "獲取所有活動列表",
 				querystring: {
-					type: "object",
+					type: 'object',
 					properties: {
 						...eventSchemas.listEvents.querystring.properties,
 						upcoming: {
-							type: "boolean",
-							description: "僅顯示即將開始的活動"
+							type: 'boolean',
+							description: '僅顯示即將開始的活動'
 						}
 					}
 				},
@@ -243,14 +251,15 @@ export default async function publicEventsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { startDate: "asc" }
+					orderBy: { startDate: 'asc' }
 				});
 
 				// Add computed properties
 				const eventsWithStatus = events.map(event => {
 					const now = new Date();
 					const activeTickets = event.tickets.filter(ticket => {
-						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
+						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+							(!ticket.saleEnd || now <= ticket.saleEnd);
 						const hasAvailable = ticket.quantity > ticket.soldCount;
 						return ticket.isActive && isOnSale && hasAvailable;
 					});
@@ -299,9 +308,9 @@ export default async function publicEventsRoutes(fastify, options) {
 
 				// Get event with registration counts
 				const event = await prisma.event.findUnique({
-					where: {
+					where: { 
 						id,
-						isActive: true
+						isActive: true 
 					},
 					select: {
 						name: true,
@@ -315,7 +324,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						_count: {
 							select: {
 								registrations: {
-									where: { status: "confirmed" }
+									where: { status: 'confirmed' }
 								}
 							}
 						}
@@ -332,7 +341,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
 				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.soldCount, 0);
 				const availableTickets = totalTickets - soldTickets;
-				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
+				const registrationRate = totalTickets > 0 ? (soldTickets / totalTickets) : 0;
 
 				const stats = {
 					eventName: event.name,
@@ -360,35 +369,35 @@ export default async function publicEventsRoutes(fastify, options) {
 				description: "獲取票券報名表單欄位",
 				tags: ["events"],
 				params: {
-					type: "object",
+					type: 'object',
 					properties: {
 						id: {
-							type: "string",
-							description: "票券 ID"
+							type: 'string',
+							description: '票券 ID'
 						}
 					},
-					required: ["id"]
+					required: ['id']
 				},
 				response: {
 					200: {
-						type: "object",
+						type: 'object',
 						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
+							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
-								type: "array",
+								type: 'array',
 								items: {
-									type: "object",
+									type: 'object',
 									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "string" },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" }
+										id: { type: 'string' },
+										name: { type: 'object', additionalProperties: true },
+										description: { type: 'string' },
+										type: { type: 'string' },
+										required: { type: 'boolean' },
+										options: { type: 'array' },
+										validater: { type: 'string' },
+										placeholder: { type: 'string' },
+										order: { type: 'integer' }
 									}
 								}
 							}
@@ -441,7 +450,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						values: true,
 						order: true
 					},
-					orderBy: { order: "asc" }
+					orderBy: { order: 'asc' }
 				});
 
 				// Transform the data to match the expected format

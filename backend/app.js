@@ -6,10 +6,10 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
 
-import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
-import { cleanup } from "./utils/database-init.js";
+import { initializeDatabase, cleanup } from "./utils/database-init.js";
+import { rateLimitConfig, helmetConfig, getCorsConfig, bodySizeConfig } from "./config/security.js";
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ const fastify = Fastify({
 	logger: true,
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
-	trustProxy: process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production"
+	trustProxy: process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production'
 });
 
 /*
@@ -169,7 +169,7 @@ fastify.all(
 // Handle magic link verification with redirect
 fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 	try {
-		const { token, locale = "zh-Hant" } = request.query;
+		const { token, locale = 'zh-Hant' } = request.query;
 
 		if (!token) {
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
@@ -189,8 +189,8 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		// Forward all Set-Cookie headers as-is
 		response.headers.forEach((value, key) => {
-			if (key.toLowerCase() === "set-cookie") {
-				reply.header("set-cookie", value);
+			if (key.toLowerCase() === 'set-cookie') {
+				reply.header('set-cookie', value);
 			}
 		});
 
@@ -203,7 +203,7 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		}
 	} catch (error) {
 		fastify.log.error("Magic link verification error:", error);
-		const locale = request.query.locale || "zh-Hant";
+		const locale = request.query.locale || 'zh-Hant';
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
 });
@@ -230,26 +230,26 @@ fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 });
 
 // Graceful shutdown
-process.on("SIGINT", async () => {
-	fastify.log.info("Received SIGINT, shutting down gracefully...");
+process.on('SIGINT', async () => {
+	fastify.log.info('Received SIGINT, shutting down gracefully...');
 	try {
 		await cleanup();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		fastify.log.error("Error during shutdown:", error);
+		fastify.log.error('Error during shutdown:', error);
 		process.exit(1);
 	}
 });
 
-process.on("SIGTERM", async () => {
-	fastify.log.info("Received SIGTERM, shutting down gracefully...");
+process.on('SIGTERM', async () => {
+	fastify.log.info('Received SIGTERM, shutting down gracefully...');
 	try {
 		await cleanup();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		fastify.log.error("Error during shutdown:", error);
+		fastify.log.error('Error during shutdown:', error);
 		process.exit(1);
 	}
 });

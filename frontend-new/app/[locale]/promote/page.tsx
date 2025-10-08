@@ -1,19 +1,19 @@
 "use client";
 
+import React, { useState } from 'react';
 import Nav from "@/components/Nav";
-import Spinner from "@/components/Spinner";
+import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
-import { userAPI } from "@/lib/api/endpoints";
-import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { userAPI } from '@/lib/api/endpoints';
+import Spinner from "@/components/Spinner";
+import { useRouter } from 'next/navigation';
 
 export default function PromoteToAdmin() {
 	const locale = useLocale();
 	const router = useRouter();
-	const [viewState, setViewState] = useState<"form" | "success" | "error">("form");
+	const [viewState, setViewState] = useState<'form' | 'success' | 'error'>('form');
 	const [isLoading, setIsLoading] = useState(false);
-	const [errorMessage, setErrorMessage] = useState("");
+	const [errorMessage, setErrorMessage] = useState('');
 
 	const t = getTranslations(locale, {
 		title: {
@@ -69,11 +69,11 @@ export default function PromoteToAdmin() {
 		if (!password || isLoading) return;
 
 		setIsLoading(true);
-		setErrorMessage("");
+		setErrorMessage('');
 
 		try {
 			await userAPI.promoteToAdmin(password);
-			setViewState("success");
+			setViewState('success');
 
 			// Redirect to admin dashboard after 2 seconds
 			setTimeout(() => {
@@ -82,27 +82,27 @@ export default function PromoteToAdmin() {
 		} catch (error: unknown) {
 			console.error("Promote error:", error);
 			setErrorMessage("錯誤!!!!!");
-			setViewState("error");
+			setViewState('error');
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
 	const containerStyle: React.CSSProperties = {
-		position: "absolute",
-		top: "50%",
-		left: "50%",
-		transform: "translate(-50%, -50%)",
-		maxWidth: "100%",
-		padding: "1rem",
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: 'translate(-50%, -50%)',
+		maxWidth: '100%',
+		padding: '1rem',
 		opacity: 0,
-		pointerEvents: "none"
+		pointerEvents: 'none'
 	};
 
 	const activeContainerStyle: React.CSSProperties = {
 		...containerStyle,
 		opacity: 1,
-		pointerEvents: "all"
+		pointerEvents: 'all'
 	};
 
 	return (
@@ -110,49 +110,36 @@ export default function PromoteToAdmin() {
 			<Nav />
 			<main>
 				<section>
-					<div id="promote-form" style={viewState === "form" ? activeContainerStyle : containerStyle}>
-						<h1
-							style={{
-								marginBlock: "1rem",
-								textAlign: "center"
-							}}
-						>
-							{t.title}
-						</h1>
-						<p
-							style={{
-								textAlign: "center",
-								marginBottom: "1.5rem",
-								color: "var(--color-gray-700)"
-							}}
-						>
-							{t.description}
-						</p>
-						<label
-							htmlFor="password"
-							style={{
-								display: "block",
-								marginBottom: "0.5rem",
-								fontWeight: "bold"
-							}}
-						>
-							{t.passwordLabel}
-						</label>
+					<div id="promote-form" style={viewState === 'form' ? activeContainerStyle : containerStyle}>
+						<h1 style={{
+							marginBlock: '1rem',
+							textAlign: 'center'
+						}}>{t.title}</h1>
+						<p style={{
+							textAlign: 'center',
+							marginBottom: '1.5rem',
+							color: 'var(--color-gray-700)'
+						}}>{t.description}</p>
+						<label htmlFor="password" style={{
+							display: 'block',
+							marginBottom: '0.5rem',
+							fontWeight: 'bold'
+						}}>{t.passwordLabel}</label>
 						<input
 							type="password"
 							name="password"
 							id="password"
 							autoComplete="off"
-							onKeyDown={e => {
-								if (e.key === "Enter") {
+							onKeyDown={(e) => {
+								if (e.key === 'Enter') {
 									handlePromote();
 								}
 							}}
 							style={{
-								border: "2px solid var(--color-gray-900)",
-								width: "20rem",
-								padding: "0.5rem",
-								maxWidth: "100%"
+								border: '2px solid var(--color-gray-900)',
+								width: '20rem',
+								padding: '0.5rem',
+								maxWidth: '100%'
 							}}
 						/>
 						<button
@@ -162,13 +149,13 @@ export default function PromoteToAdmin() {
 							onClick={handlePromote}
 							disabled={isLoading}
 							style={{
-								margin: "1rem auto",
+								margin: '1rem auto',
 								opacity: isLoading ? 0.7 : 1,
-								cursor: isLoading ? "not-allowed" : "pointer",
-								transition: "opacity 0.2s",
-								display: "flex",
-								alignItems: "center",
-								gap: "0.5rem"
+								cursor: isLoading ? 'not-allowed' : 'pointer',
+								transition: 'opacity 0.2s',
+								display: 'flex',
+								alignItems: 'center',
+								gap: '0.5rem'
 							}}
 						>
 							{isLoading && <Spinner size="sm" />}
@@ -176,23 +163,25 @@ export default function PromoteToAdmin() {
 						</button>
 					</div>
 
-					<div style={viewState === "success" ? activeContainerStyle : containerStyle}>
-						<h2 style={{ textAlign: "center", color: "green" }}>{t.success}</h2>
-						<p style={{ textAlign: "center" }}>{t.successMessage}</p>
+					<div style={viewState === 'success' ? activeContainerStyle : containerStyle}>
+						<h2 style={{ textAlign: 'center', color: 'green' }}>{t.success}</h2>
+						<p style={{ textAlign: 'center' }}>{t.successMessage}</p>
 					</div>
 
-					<div style={viewState === "error" ? activeContainerStyle : containerStyle}>
-						<h2 style={{ textAlign: "center", color: "red" }}>{t.error}</h2>
-						<p style={{ textAlign: "center", marginBottom: "1rem" }}>{errorMessage || t.invalidPassword}</p>
+					<div style={viewState === 'error' ? activeContainerStyle : containerStyle}>
+						<h2 style={{ textAlign: 'center', color: 'red' }}>{t.error}</h2>
+						<p style={{ textAlign: 'center', marginBottom: '1rem' }}>
+							{errorMessage || t.invalidPassword}
+						</p>
 						<button
 							className="button"
 							onClick={() => {
-								setViewState("form");
+								setViewState('form');
 								setIsLoading(false);
-								setErrorMessage("");
+								setErrorMessage('');
 							}}
 							style={{
-								margin: "1rem auto"
+								margin: '1rem auto'
 							}}
 						>
 							{t.retry}

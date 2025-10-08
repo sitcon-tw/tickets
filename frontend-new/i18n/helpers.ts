@@ -1,4 +1,4 @@
-import { routing } from "./routing";
+import { routing } from './routing';
 
 type TranslationRecord = Record<string, Record<string, string>>;
 
@@ -17,14 +17,17 @@ type TranslationRecord = Record<string, Record<string, string>>;
  * });
  * console.log(t.title); // "Title"
  */
-export function getTranslations(locale: string, data: TranslationRecord): Record<string, string> {
-	const result: Record<string, string> = {};
+export function getTranslations(
+  locale: string,
+  data: TranslationRecord
+): Record<string, string> {
+  const result: Record<string, string> = {};
 
-	for (const key in data) {
-		result[key] = data[key][locale] || data[key][routing.defaultLocale];
-	}
+  for (const key in data) {
+    result[key] = data[key][locale] || data[key][routing.defaultLocale];
+  }
 
-	return result;
+  return result;
 }
 
 /**
@@ -40,10 +43,10 @@ export function getTranslations(locale: string, data: TranslationRecord): Record
  * linkBuilder("/admin/", "zh-Hant"); // "/zh-Hant/admin/"
  */
 export function buildLocalizedLink(currentLocale: string) {
-	return (path: string = "/", locale: string = ""): string => {
-		const targetLocale = locale || currentLocale;
-		// Ensure path starts with /
-		const cleanPath = path.startsWith("/") ? path : `/${path}`;
-		return `/${targetLocale}${cleanPath}`;
-	};
+  return (path: string = "/", locale: string = ""): string => {
+    const targetLocale = locale || currentLocale;
+    // Ensure path starts with /
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `/${targetLocale}${cleanPath}`;
+  };
 }

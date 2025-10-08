@@ -87,4 +87,4 @@
  * @property {'viewer'} viewer - Read-only access
  */
 
-export {};
+export {}

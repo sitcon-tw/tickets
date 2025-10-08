@@ -62,40 +62,38 @@ MAX_JSON_SIZE=524288
 **Purpose**: Prevent brute force attacks and DoS
 
 **How it works**:
-
 - Global rate limit applied to all endpoints
 - Stricter limits on authentication endpoints
 - Moderate limits on registration endpoints
 - IP-based tracking
 
-**Bypass in development**: Localhost (127.0.0.1, ::1) is automatically exempted in non-production environments.
+**Bypass in development**:
+Localhost (127.0.0.1, ::1) is automatically exempted in non-production environments.
 
 ### 2. Security Headers (Helmet)
 
 **Purpose**: Protect against common web vulnerabilities
 
 **Headers configured**:
-
 - Content Security Policy (CSP)
 - HTTP Strict Transport Security (HSTS)
 - X-Frame-Options (clickjacking protection)
 - X-Content-Type-Options (MIME-sniffing protection)
 - X-XSS-Protection
 
-**Customization**: Edit `backend/config/security.js` to modify CSP directives and other header settings.
+**Customization**:
+Edit `backend/config/security.js` to modify CSP directives and other header settings.
 
 ### 3. Input Sanitization
 
 **Purpose**: Prevent XSS attacks
 
 **How it works**:
-
 - All user inputs are sanitized using DOMPurify
 - HTML tags are removed or escaped
 - Applied automatically in registration and admin routes
 
 **Usage in your routes**:
-
 ```javascript
 import { sanitizeObject } from "#utils/sanitize.js";
 
@@ -111,25 +109,24 @@ const sanitizedHtml = sanitizeObject(content, true);
 **Purpose**: Prevent unauthorized cross-origin requests
 
 **Configuration**:
-
 - Whitelist specified in environment variables
 - Development mode allows localhost
 - Credentials properly configured
 
-**Modify allowed origins**: Edit `FRONTEND_URI` and `BACKEND_URI` in `.env`
+**Modify allowed origins**:
+Edit `FRONTEND_URI` and `BACKEND_URI` in `.env`
 
 ### 5. Admin Access Control
 
 **Purpose**: Secure admin role assignment
 
-**Configuration**: Set admin emails in environment variable (comma-separated):
-
+**Configuration**:
+Set admin emails in environment variable (comma-separated):
 ```bash
 ADMIN_EMAILS=admin1@example.com,admin2@example.com
 ```
 
 **How it works**:
-
 - When a user signs up with an email in `ADMIN_EMAILS`, they automatically get admin role
 - No hardcoded credentials in source code
 - Can be changed without code deployment
@@ -138,7 +135,8 @@ ADMIN_EMAILS=admin1@example.com,admin2@example.com
 
 **Purpose**: Prevent sensitive data exposure in logs
 
-**Usage**: Use Fastify's built-in logger or the secure logger utility:
+**Usage**:
+Use Fastify's built-in logger or the secure logger utility:
 
 ```javascript
 // In route handlers (preferred)
@@ -156,7 +154,6 @@ logger.debug("Context", "message", { data }); // Only in development
 ```
 
 **What gets redacted**:
-
 - Passwords, tokens, secrets
 - API keys, authorization headers
 - Database connection strings
@@ -219,7 +216,6 @@ curl -I http://localhost:3000/api/system/health
 ```
 
 Expected headers:
-
 - X-Frame-Options: DENY
 - X-Content-Type-Options: nosniff
 - Strict-Transport-Security (in production)
@@ -257,35 +253,29 @@ grep '"context":"Auth middleware error"' logs.json
 ## Troubleshooting
 
 ### Rate Limit Too Strict
-
 Increase limits in `.env`:
-
 ```bash
 RATE_LIMIT_MAX=200
 AUTH_RATE_LIMIT_MAX=10
 ```
 
 ### CSP Blocking Resources
-
 Edit `backend/config/security.js` to add domains to CSP directives:
-
 ```javascript
 contentSecurityPolicy: {
-	directives: {
-		scriptSrc: ["'self'", "https://trusted-cdn.com"];
-	}
+  directives: {
+    scriptSrc: ["'self'", "https://trusted-cdn.com"]
+  }
 }
 ```
 
 ### Admin Role Not Assigned
-
 1. Check `ADMIN_EMAILS` in `.env`
 2. Verify email matches exactly (case-sensitive)
 3. Check logs for database hook execution
 4. Try recreating the user account
 
 ### CORS Issues
-
 1. Verify `FRONTEND_URI` and `BACKEND_URI` in `.env`
 2. Check if running behind proxy (set `TRUST_PROXY=true`)
 3. Review origin in CORS error message
@@ -301,7 +291,6 @@ contentSecurityPolicy: {
 ## Support
 
 For security concerns or questions:
-
 1. Review this documentation
 2. Check SECURITY.md for detailed information
 3. Contact the development team
@@ -309,13 +298,11 @@ For security concerns or questions:
 ## Updates
 
 Keep security dependencies updated:
-
 ```bash
 pnpm update @fastify/helmet @fastify/rate-limit isomorphic-dompurify
 ```
 
 Check for security advisories:
-
 ```bash
 pnpm audit
 ```

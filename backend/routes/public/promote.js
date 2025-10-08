@@ -3,7 +3,12 @@
  */
 
 import prisma from "#config/database.js";
-import { serverErrorResponse, successResponse, unauthorizedResponse } from "#utils/response.js";
+import {
+	successResponse,
+	validationErrorResponse,
+	unauthorizedResponse,
+	serverErrorResponse
+} from "#utils/response.js";
 import { requireAuth } from "../../middleware/auth.js";
 
 /**

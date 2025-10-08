@@ -10,13 +10,18 @@
  */
 
 import prisma from "#config/database.js";
-import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse 
+} from "#utils/response.js";
 import { eventSchemas } from "../schemas/event.js";
 
 /**
  * Example route handler using modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
  */
 export default async function exampleRoutes(fastify, options) {
 	// Create Event - Using modular schema
@@ -127,7 +132,7 @@ export default async function exampleRoutes(fastify, options) {
 				/** @type {Event[]} */
 				const events = await prisma.event.findMany({
 					where: isActive !== undefined ? { isActive } : {},
-					orderBy: { createdAt: "desc" }
+					orderBy: { createdAt: 'desc' }
 				});
 
 				return reply.send(successResponse(events));

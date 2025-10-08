@@ -6,13 +6,20 @@
  */
 
 import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse,
+	createPagination
+} from "#utils/response.js";
 import { ticketSchemas } from "#schemas/ticket.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin tickets routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
  */
 export default async function adminTicketsRoutes(fastify, options) {
 	// Create new ticket
@@ -114,7 +121,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 							}
 						},
 						fromFields: {
-							orderBy: { order: "asc" }
+							orderBy: { order: 'asc' }
 						},
 						_count: {
 							select: {
@@ -179,14 +186,18 @@ export default async function adminTicketsRoutes(fastify, options) {
 
 				// Prevent quantity reduction below sold amount
 				if (updateData.quantity !== undefined && updateData.quantity < existingTicket.soldCount) {
-					const { response, statusCode } = validationErrorResponse(`票券數量不能低於已售出數量 (${existingTicket.soldCount})`);
+					const { response, statusCode } = validationErrorResponse(
+						`票券數量不能低於已售出數量 (${existingTicket.soldCount})`
+					);
 					return reply.code(statusCode).send(response);
 				}
 
 				// Validate sale dates if provided
 				if (updateData.saleStart || updateData.saleEnd) {
-					const saleStart = updateData.saleStart ? new Date(updateData.saleStart) : existingTicket.saleStart;
-					const saleEnd = updateData.saleEnd ? new Date(updateData.saleEnd) : existingTicket.saleEnd;
+					const saleStart = updateData.saleStart ? 
+						new Date(updateData.saleStart) : existingTicket.saleStart;
+					const saleEnd = updateData.saleEnd ? 
+						new Date(updateData.saleEnd) : existingTicket.saleEnd;
 
 					if (updateData.saleStart && isNaN(new Date(updateData.saleStart).getTime())) {
 						const { response, statusCode } = validationErrorResponse("無效的販售開始日期格式");
@@ -312,7 +323,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 							}
 						},
 						fromFields: {
-							orderBy: { order: "asc" }
+							orderBy: { order: 'asc' }
 						},
 						_count: {
 							select: {
@@ -320,13 +331,14 @@ export default async function adminTicketsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: "desc" }
+					orderBy: { createdAt: 'desc' }
 				});
 
 				// Add availability status to each ticket
 				const ticketsWithAvailability = tickets.map(ticket => {
 					const now = new Date();
-					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+						(!ticket.saleEnd || now <= ticket.saleEnd);
 					const available = ticket.quantity - ticket.soldCount;
 					const isSoldOut = available <= 0;
 
@@ -355,29 +367,29 @@ export default async function adminTicketsRoutes(fastify, options) {
 				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],
 				params: {
-					type: "object",
+					type: 'object',
 					properties: {
 						id: {
-							type: "string",
-							description: "票券 ID"
+							type: 'string',
+							description: '票券 ID'
 						}
 					},
-					required: ["id"]
+					required: ['id']
 				},
 				response: {
 					200: {
-						type: "object",
+						type: 'object',
 						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
+							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
-								type: "object",
+								type: 'object',
 								properties: {
-									totalsoldCount: { type: "integer" },
-									totalRevenue: { type: "number" },
-									availableQuantity: { type: "integer" },
-									salesByStatus: { type: "object" },
-									dailySales: { type: "array" }
+									totalsoldCount: { type: 'integer' },
+									totalRevenue: { type: 'number' },
+									availableQuantity: { type: 'integer' },
+									salesByStatus: { type: 'object' },
+									dailySales: { type: 'array' }
 								}
 							}
 						}
@@ -407,7 +419,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 				const [salesByStatus, dailySales] = await Promise.all([
 					// Sales by registration status
 					prisma.registration.groupBy({
-						by: ["status"],
+						by: ['status'],
 						where: { ticketId: id },
 						_count: { id: true }
 					}),

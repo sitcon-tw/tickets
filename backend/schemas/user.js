@@ -2,171 +2,171 @@
  * @fileoverview User-related schema definitions
  */
 
-import { dateTimeString, errorResponse, idParam, roleEnum, successResponse } from "./common.js";
+import { dateTimeString, successResponse, errorResponse, idParam, roleEnum } from './common.js';
 
 export const userProperties = {
 	id: {
-		type: "string",
-		description: "用戶 ID"
+		type: 'string',
+		description: '用戶 ID'
 	},
 	name: {
-		type: "string",
-		description: "用戶名稱"
+		type: 'string',
+		description: '用戶名稱'
 	},
 	email: {
-		type: "string",
-		format: "email",
-		description: "電子郵件"
+		type: 'string',
+		format: 'email',
+		description: '電子郵件'
 	},
 	emailVerified: {
-		type: "boolean",
-		description: "電子郵件是否已驗證"
+		type: 'boolean',
+		description: '電子郵件是否已驗證'
 	},
 	image: {
-		type: "string",
-		description: "用戶頭像 URL"
+		type: 'string',
+		description: '用戶頭像 URL'
 	},
 	role: {
 		...roleEnum,
-		description: "用戶角色"
+		description: '用戶角色'
 	},
 	permissions: {
-		type: "array",
-		items: { type: "string" },
-		description: "用戶權限列表"
+		type: 'array',
+		items: { type: 'string' },
+		description: '用戶權限列表'
 	},
 	isActive: {
-		type: "boolean",
-		description: "是否啟用"
+		type: 'boolean',
+		description: '是否啟用'
 	},
 	createdAt: {
 		...dateTimeString,
-		description: "建立時間"
+		description: '建立時間'
 	},
 	updatedAt: {
 		...dateTimeString,
-		description: "更新時間"
+		description: '更新時間'
 	}
 };
 
 export const userCreateBody = {
-	type: "object",
+	type: 'object',
 	properties: {
 		name: {
-			type: "string",
-			description: "用戶名稱",
+			type: 'string',
+			description: '用戶名稱',
 			minLength: 1
 		},
 		email: {
-			type: "string",
-			format: "email",
-			description: "電子郵件"
+			type: 'string',
+			format: 'email',
+			description: '電子郵件'
 		},
 		role: {
 			...roleEnum,
-			description: "用戶角色"
+			description: '用戶角色'
 		},
 		permissions: {
-			type: "array",
-			items: { type: "string" },
-			description: "用戶權限列表"
+			type: 'array',
+			items: { type: 'string' },
+			description: '用戶權限列表'
 		}
 	},
-	required: ["name", "email", "role"]
+	required: ['name', 'email', 'role']
 };
 
 export const userUpdateBody = {
-	type: "object",
+	type: 'object',
 	properties: {
 		name: {
-			type: "string",
-			description: "用戶名稱",
+			type: 'string',
+			description: '用戶名稱',
 			minLength: 1
 		},
 		email: {
-			type: "string",
-			format: "email",
-			description: "電子郵件"
+			type: 'string',
+			format: 'email',
+			description: '電子郵件'
 		},
 		role: {
 			...roleEnum,
-			description: "用戶角色"
+			description: '用戶角色'
 		},
 		permissions: {
-			type: "array",
-			items: { type: "string" },
-			description: "用戶權限列表"
+			type: 'array',
+			items: { type: 'string' },
+			description: '用戶權限列表'
 		},
 		isActive: {
-			type: "boolean",
-			description: "是否啟用"
+			type: 'boolean',
+			description: '是否啟用'
 		}
 	}
 };
 
 export const profileUpdateBody = {
-	type: "object",
+	type: 'object',
 	properties: {
 		name: {
-			type: "string",
-			description: "用戶名稱",
+			type: 'string',
+			description: '用戶名稱',
 			minLength: 1
 		},
 		image: {
-			type: "string",
-			description: "用戶頭像 URL"
+			type: 'string',
+			description: '用戶頭像 URL'
 		}
 	}
 };
 
 export const changePasswordBody = {
-	type: "object",
+	type: 'object',
 	properties: {
 		currentPassword: {
-			type: "string",
-			description: "目前密碼"
+			type: 'string',
+			description: '目前密碼'
 		},
 		newPassword: {
-			type: "string",
+			type: 'string',
 			minLength: 6,
-			description: "新密碼"
+			description: '新密碼'
 		}
 	},
-	required: ["currentPassword", "newPassword"]
+	required: ['currentPassword', 'newPassword']
 };
 
 export const userResponse = {
-	type: "object",
+	type: 'object',
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: "object",
+			type: 'object',
 			properties: userProperties,
-			required: ["id", "name", "email", "role"]
+			required: ['id', 'name', 'email', 'role']
 		}
 	},
-	required: ["success", "message", "data"]
+	required: ['success', 'message', 'data']
 };
 
 export const usersListResponse = {
-	type: "object",
+	type: 'object',
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: "array",
+			type: 'array',
 			items: {
-				type: "object",
+				type: 'object',
 				properties: userProperties
 			}
 		}
 	},
-	required: ["success", "message", "data"]
+	required: ['success', 'message', 'data']
 };
 
 export const userSchemas = {
 	createUser: {
-		description: "創建新用戶",
-		tags: ["admin/users"],
+		description: '創建新用戶',
+		tags: ['admin/users'],
 		body: userCreateBody,
 		params: undefined,
 		querystring: undefined,
@@ -178,10 +178,10 @@ export const userSchemas = {
 			409: errorResponse
 		}
 	},
-
+	
 	getUser: {
-		description: "取得用戶詳情",
-		tags: ["admin/users"],
+		description: '取得用戶詳情',
+		tags: ['admin/users'],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -192,10 +192,10 @@ export const userSchemas = {
 			404: errorResponse
 		}
 	},
-
+	
 	updateUser: {
-		description: "更新用戶",
-		tags: ["admin/users"],
+		description: '更新用戶',
+		tags: ['admin/users'],
 		body: userUpdateBody,
 		params: idParam,
 		querystring: undefined,
@@ -207,10 +207,10 @@ export const userSchemas = {
 			404: errorResponse
 		}
 	},
-
+	
 	updateProfile: {
-		description: "更新個人資料",
-		tags: ["auth"],
+		description: '更新個人資料',
+		tags: ['auth'],
 		body: profileUpdateBody,
 		params: undefined,
 		querystring: undefined,
@@ -220,10 +220,10 @@ export const userSchemas = {
 			401: errorResponse
 		}
 	},
-
+	
 	changePassword: {
-		description: "變更密碼",
-		tags: ["auth"],
+		description: '變更密碼',
+		tags: ['auth'],
 		body: changePasswordBody,
 		params: undefined,
 		querystring: undefined,
@@ -233,22 +233,22 @@ export const userSchemas = {
 			401: errorResponse
 		}
 	},
-
+	
 	listUsers: {
-		description: "取得用戶列表",
-		tags: ["admin/users"],
+		description: '取得用戶列表',
+		tags: ['admin/users'],
 		body: undefined,
 		params: undefined,
 		querystring: {
-			type: "object",
+			type: 'object',
 			properties: {
 				role: {
 					...roleEnum,
-					description: "篩選角色"
+					description: '篩選角色'
 				},
 				isActive: {
-					type: "boolean",
-					description: "篩選啟用狀態"
+					type: 'boolean',
+					description: '篩選啟用狀態'
 				}
 			}
 		},

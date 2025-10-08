@@ -3,153 +3,153 @@
  */
 
 export const idParam = {
-	type: "object",
+	type: 'object',
 	properties: {
 		id: {
-			type: "string",
-			description: "資源 ID"
+			type: 'string',
+			description: '資源 ID'
 		}
 	},
-	required: ["id"]
+	required: ['id']
 };
 
 export const paginationQuery = {
-	type: "object",
+	type: 'object',
 	properties: {
 		page: {
-			type: "integer",
+			type: 'integer',
 			minimum: 1,
 			default: 1,
-			description: "頁數"
+			description: '頁數'
 		},
 		limit: {
-			type: "integer",
+			type: 'integer',
 			minimum: 1,
 			maximum: 100,
 			default: 10,
-			description: "每頁項目數"
+			description: '每頁項目數'
 		}
 	}
 };
 
 export const searchQuery = {
-	type: "object",
+	type: 'object',
 	properties: {
 		q: {
-			type: "string",
-			description: "搜尋關鍵字"
+			type: 'string',
+			description: '搜尋關鍵字'
 		},
 		sortBy: {
-			type: "string",
-			description: "排序欄位"
+			type: 'string',
+			description: '排序欄位'
 		},
 		sortOrder: {
-			type: "string",
-			enum: ["asc", "desc"],
-			default: "desc",
-			description: "排序方向"
+			type: 'string',
+			enum: ['asc', 'desc'],
+			default: 'desc',
+			description: '排序方向'
 		}
 	}
 };
 
 export const successResponse = {
-	type: "object",
+	type: 'object',
 	properties: {
-		success: {
-			type: "boolean",
-			const: true
+		success: { 
+			type: 'boolean',
+			const: true 
 		},
-		message: {
-			type: "string",
-			description: "回應訊息"
+		message: { 
+			type: 'string',
+			description: '回應訊息'
 		},
 		data: {
-			description: "回應資料"
+			description: '回應資料'
 		}
 	},
-	required: ["success", "message"]
+	required: ['success', 'message']
 };
 
 export const errorResponse = {
-	type: "object",
+	type: 'object',
 	properties: {
-		success: {
-			type: "boolean",
-			const: false
+		success: { 
+			type: 'boolean',
+			const: false 
 		},
 		error: {
-			type: "object",
+			type: 'object',
 			properties: {
-				code: {
-					type: "string",
-					description: "錯誤代碼"
+				code: { 
+					type: 'string',
+					description: '錯誤代碼'
 				},
-				message: {
-					type: "string",
-					description: "錯誤訊息"
+				message: { 
+					type: 'string',
+					description: '錯誤訊息'
 				},
 				details: {
-					description: "錯誤詳細資訊"
+					description: '錯誤詳細資訊'
 				}
 			},
-			required: ["code", "message"]
+			required: ['code', 'message']
 		}
 	},
-	required: ["success", "error"]
+	required: ['success', 'error']
 };
 
 export const paginatedResponse = {
-	type: "object",
+	type: 'object',
 	properties: {
 		...successResponse.properties,
 		pagination: {
-			type: "object",
+			type: 'object',
 			properties: {
 				page: {
-					type: "integer",
-					description: "當前頁數"
+					type: 'integer',
+					description: '當前頁數'
 				},
 				limit: {
-					type: "integer",
-					description: "每頁項目數"
+					type: 'integer',
+					description: '每頁項目數'
 				},
 				total: {
-					type: "integer",
-					description: "總項目數"
+					type: 'integer',
+					description: '總項目數'
 				},
 				totalPages: {
-					type: "integer",
-					description: "總頁數"
+					type: 'integer',
+					description: '總頁數'
 				},
 				hasNext: {
-					type: "boolean",
-					description: "是否有下一頁"
+					type: 'boolean',
+					description: '是否有下一頁'
 				},
 				hasPrev: {
-					type: "boolean",
-					description: "是否有上一頁"
+					type: 'boolean',
+					description: '是否有上一頁'
 				}
 			},
-			required: ["page", "limit", "total", "totalPages", "hasNext", "hasPrev"]
+			required: ['page', 'limit', 'total', 'totalPages', 'hasNext', 'hasPrev']
 		}
 	},
-	required: ["success", "message", "pagination"]
+	required: ['success', 'message', 'pagination']
 };
 
 export const dateTimeString = {
-	type: "string",
-	format: "date-time",
-	description: "ISO 8601 日期時間格式"
+	type: 'string',
+	format: 'date-time',
+	description: 'ISO 8601 日期時間格式'
 };
 
 export const statusEnum = {
-	type: "string",
-	enum: ["pending", "confirmed", "cancelled"],
-	description: "狀態"
+	type: 'string',
+	enum: ['pending', 'confirmed', 'cancelled'],
+	description: '狀態'
 };
 
 export const roleEnum = {
-	type: "string",
-	enum: ["admin", "viewer"],
-	description: "用戶角色"
+	type: 'string',
+	enum: ['admin', 'viewer'],
+	description: '用戶角色'
 };

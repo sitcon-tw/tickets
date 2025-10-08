@@ -62,6 +62,7 @@
  * @property {Date} updatedAt - Last update timestamp
  */
 
+
 /**
  * @typedef {Object} InvitationCode
  * @property {string} id - Invitation code unique identifier
@@ -129,4 +130,4 @@
  * @property {string|null} values - JSON array for select/radio options
  */
 
-export {};
+export {}

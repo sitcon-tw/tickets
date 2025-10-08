@@ -6,8 +6,8 @@ import eventsRoutes from "./admin/events.js";
 import invitationCodesRoutes from "./admin/invitationCodes.js";
 import referralsRoutes from "./admin/referrals.js";
 import registrationsRoutes from "./admin/registrations.js";
-import ticketFormFieldsRoutes from "./admin/ticketFormFields.js";
 import ticketsRoutes from "./admin/tickets.js";
+import ticketFormFieldsRoutes from "./admin/ticketFormFields.js";
 import usersRoutes from "./admin/users.js";
 
 export default async function adminRoutes(fastify) {

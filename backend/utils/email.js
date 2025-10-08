@@ -1,20 +1,20 @@
-import prisma from "#config/database.js";
 import { MailtrapClient } from "mailtrap";
+import prisma from "#config/database.js";
 
 const client = new MailtrapClient({
-	token: process.env.MAILTRAP_TOKEN
+	token: process.env.MAILTRAP_TOKEN,
 });
 
 export const sendRegistrationConfirmation = async (registration, event, qrCodeUrl) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
 		const recipients = [
 			{
-				email: registration.email
+				email: registration.email,
 			}
 		];
 
@@ -38,8 +38,8 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
 						<h2 style="color: #2c3e50; margin-top: 0;">活動資訊 Event Information</h2>
 						<p><strong>活動名稱 Event Name:</strong> ${event.name}</p>
-						<p><strong>活動時間 Event Date:</strong> ${new Date(event.startDate).toLocaleDateString("zh-TW")} - ${new Date(event.endDate).toLocaleDateString("zh-TW")}</p>
-						<p><strong>活動地點 Location:</strong> ${event.location || "待公布 TBA"}</p>
+						<p><strong>活動時間 Event Date:</strong> ${new Date(event.startDate).toLocaleDateString('zh-TW')} - ${new Date(event.endDate).toLocaleDateString('zh-TW')}</p>
+						<p><strong>活動地點 Location:</strong> ${event.location || '待公布 TBA'}</p>
 					</div>
 
 					<div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -69,7 +69,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 					</div>
 				</body>
 				</html>
-			`
+			`,
 		});
 
 		return true;
@@ -82,17 +82,17 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 export const sendEditLink = async (email, editToken, event) => {
 	try {
 		const sender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org", 
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
 		const recipients = [
 			{
-				email: email
+				email: email,
 			}
 		];
 
-		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
+		const editUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/edit/${editToken}`;
 
 		await client.send({
 			from: sender,
@@ -140,7 +140,7 @@ export const sendEditLink = async (email, editToken, event) => {
 					</div>
 				</body>
 				</html>
-			`
+			`,
 		});
 
 		return true;
@@ -154,12 +154,12 @@ export const sendMagicLink = async (email, magicLink) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
 		const recipients = [
 			{
-				email: email
+				email: email,
 			}
 		];
 
@@ -328,7 +328,7 @@ export const sendMagicLink = async (email, magicLink) => {
 				</table>
 			</body>
 			</html>
-			`
+			`,
 		});
 
 		return true;
@@ -340,19 +340,21 @@ export const sendMagicLink = async (email, magicLink) => {
 /**
  * Calculate recipients based on target audience filters
  */
-export const calculateRecipients = async targetAudience => {
+export const calculateRecipients = async (targetAudience) => {
 	try {
 		const where = {};
 
 		// Parse targetAudience if it's a string
-		const filters = typeof targetAudience === "string" ? JSON.parse(targetAudience) : targetAudience;
+		const filters = typeof targetAudience === 'string'
+			? JSON.parse(targetAudience)
+			: targetAudience;
 
 		if (!filters) {
 			// If no filters, return all registrations
 			const allRegistrations = await prisma.registration.findMany({
-				where: { status: "confirmed" },
+				where: { status: 'confirmed' },
 				select: { email: true, id: true, formData: true },
-				distinct: ["email"]
+				distinct: ['email']
 			});
 			return allRegistrations;
 		}
@@ -372,7 +374,7 @@ export const calculateRecipients = async targetAudience => {
 			where.status = { in: filters.registrationStatuses };
 		} else {
 			// Default to confirmed registrations only
-			where.status = "confirmed";
+			where.status = 'confirmed';
 		}
 
 		// Referral filters
@@ -405,14 +407,16 @@ export const calculateRecipients = async targetAudience => {
 		// Filter by email domains
 		if (filters.emailDomains && filters.emailDomains.length > 0) {
 			registrations = registrations.filter(r => {
-				const emailDomain = r.email.split("@")[1];
+				const emailDomain = r.email.split('@')[1];
 				return filters.emailDomains.includes(emailDomain);
 			});
 		}
 
 		// Filter by user roles
 		if (filters.roles && filters.roles.length > 0) {
-			registrations = registrations.filter(r => r.user && filters.roles.includes(r.user.role));
+			registrations = registrations.filter(r =>
+				r.user && filters.roles.includes(r.user.role)
+			);
 		}
 
 		// Filter by isReferrer
@@ -422,7 +426,9 @@ export const calculateRecipients = async targetAudience => {
 			});
 			const referrerIdSet = new Set(referrerIds.map(r => r.registrationId));
 
-			registrations = registrations.filter(r => (filters.isReferrer ? referrerIdSet.has(r.id) : !referrerIdSet.has(r.id)));
+			registrations = registrations.filter(r =>
+				filters.isReferrer ? referrerIdSet.has(r.id) : !referrerIdSet.has(r.id)
+			);
 		}
 
 		// Deduplicate by email and return
@@ -453,14 +459,16 @@ const replaceTemplateVariables = (content, data) => {
 	let result = content;
 
 	// Parse formData if it's a string
-	const formData = typeof data.formData === "string" ? JSON.parse(data.formData) : data.formData || {};
+	const formData = typeof data.formData === 'string'
+		? JSON.parse(data.formData)
+		: data.formData || {};
 
 	// Replace common variables
-	result = result.replace(/\{\{email\}\}/g, data.email || "");
-	result = result.replace(/\{\{name\}\}/g, formData.name || "");
-	result = result.replace(/\{\{eventName\}\}/g, data.event?.name || "");
-	result = result.replace(/\{\{ticketName\}\}/g, data.ticket?.name || "");
-	result = result.replace(/\{\{registrationId\}\}/g, data.id || "");
+	result = result.replace(/\{\{email\}\}/g, data.email || '');
+	result = result.replace(/\{\{name\}\}/g, formData.name || '');
+	result = result.replace(/\{\{eventName\}\}/g, data.event?.name || '');
+	result = result.replace(/\{\{ticketName\}\}/g, data.ticket?.name || '');
+	result = result.replace(/\{\{registrationId\}\}/g, data.id || '');
 
 	return result;
 };
@@ -472,7 +480,7 @@ export const sendCampaignEmail = async (campaign, recipients) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
 		let sentCount = 0;
@@ -483,15 +491,18 @@ export const sendCampaignEmail = async (campaign, recipients) => {
 		for (let i = 0; i < recipients.length; i += batchSize) {
 			const batch = recipients.slice(i, i + batchSize);
 
-			const promises = batch.map(async recipient => {
+			const promises = batch.map(async (recipient) => {
 				try {
-					const personalizedContent = replaceTemplateVariables(campaign.content, recipient);
+					const personalizedContent = replaceTemplateVariables(
+						campaign.content,
+						recipient
+					);
 
 					await client.send({
 						from: sender,
 						to: [{ email: recipient.email }],
 						subject: campaign.subject,
-						html: personalizedContent
+						html: personalizedContent,
 					});
 
 					sentCount++;
@@ -530,21 +541,21 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCON 2026",
 		};
 
 		const recipients = [
 			{
-				email: email
+				email: email,
 			}
 		];
 
-		const codesHtml = codes.map(code => `<li style="font-family: monospace; font-size: 16px; padding: 8px; background-color: #f8f9fa; margin: 5px 0; border-radius: 4px;">${code}</li>`).join("");
+		const codesHtml = codes.map(code => `<li style="font-family: monospace; font-size: 16px; padding: 8px; background-color: #f8f9fa; margin: 5px 0; border-radius: 4px;">${code}</li>`).join('');
 
 		await client.send({
 			from: sender,
 			to: recipients,
-			subject: `【SITCON 2026】邀請碼 Invitation Codes${groupName ? ` - ${groupName}` : ""}`,
+			subject: `【SITCON 2026】邀請碼 Invitation Codes${groupName ? ` - ${groupName}` : ''}`,
 			html: `
 				<!DOCTYPE html>
 				<html>
@@ -559,16 +570,12 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 						<h2 style="color: #2c3e50;">Invitation Codes</h2>
 					</div>
 					
-					${
-						groupName
-							? `
+					${groupName ? `
 					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
 						<h3 style="color: #2c3e50; margin-top: 0;">邀請碼組別 Group Name</h3>
 						<p><strong>${groupName}</strong></p>
 					</div>
-					`
-							: ""
-					}
+					` : ''}
 
 					<div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
 						<h3 style="color: #2c3e50; margin-top: 0;">邀請碼列表 Invitation Codes (${codes.length} 個)</h3>
@@ -594,7 +601,7 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 					</div>
 				</body>
 				</html>
-			`
+			`,
 		});
 
 		return true;

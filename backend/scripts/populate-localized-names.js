@@ -3,12 +3,12 @@
  * Run with: node scripts/populate-localized-names.js
  */
 
-import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaClient } from '../generated/prisma/index.js';
 
 const prisma = new PrismaClient();
 
 async function populateLocalizedNames() {
-	console.log("Starting to populate localized names...\n");
+	console.log('Starting to populate localized names...\n');
 
 	try {
 		// Get all tickets with empty name objects
@@ -16,7 +16,7 @@ async function populateLocalizedNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -30,8 +30,8 @@ async function populateLocalizedNames() {
 			if (!ticket.name || Object.keys(ticket.name).length === 0) {
 				updates.name = {
 					en: `Ticket ${ticket.id.substring(0, 8)}`,
-					"zh-Hant": `票券 ${ticket.id.substring(0, 8)}`,
-					"zh-Hans": `票券 ${ticket.id.substring(0, 8)}`
+					'zh-Hant': `票券 ${ticket.id.substring(0, 8)}`,
+					'zh-Hans': `票券 ${ticket.id.substring(0, 8)}`
 				};
 				needsUpdate = true;
 				console.log(`  - Ticket ${ticket.id}: Adding name`);
@@ -40,9 +40,9 @@ async function populateLocalizedNames() {
 			// Check if description is empty object
 			if (!ticket.description || Object.keys(ticket.description).length === 0) {
 				updates.description = {
-					en: "Please update this ticket description",
-					"zh-Hant": "請更新此票券說明",
-					"zh-Hans": "请更新此票券说明"
+					en: 'Please update this ticket description',
+					'zh-Hant': '請更新此票券說明',
+					'zh-Hans': '请更新此票券说明'
 				};
 				needsUpdate = true;
 				console.log(`  - Ticket ${ticket.id}: Adding description`);
@@ -62,7 +62,7 @@ async function populateLocalizedNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -76,8 +76,8 @@ async function populateLocalizedNames() {
 			if (!event.name || Object.keys(event.name).length === 0) {
 				updates.name = {
 					en: `Event ${event.id.substring(0, 8)}`,
-					"zh-Hant": `活動 ${event.id.substring(0, 8)}`,
-					"zh-Hans": `活动 ${event.id.substring(0, 8)}`
+					'zh-Hant': `活動 ${event.id.substring(0, 8)}`,
+					'zh-Hans': `活动 ${event.id.substring(0, 8)}`
 				};
 				needsUpdate = true;
 				console.log(`  - Event ${event.id}: Adding name`);
@@ -86,9 +86,9 @@ async function populateLocalizedNames() {
 			// Check if description is empty object
 			if (!event.description || Object.keys(event.description).length === 0) {
 				updates.description = {
-					en: "Please update this event description",
-					"zh-Hant": "請更新此活動說明",
-					"zh-Hans": "请更新此活动说明"
+					en: 'Please update this event description',
+					'zh-Hant': '請更新此活動說明',
+					'zh-Hans': '请更新此活动说明'
 				};
 				needsUpdate = true;
 				console.log(`  - Event ${event.id}: Adding description`);
@@ -108,7 +108,7 @@ async function populateLocalizedNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -124,8 +124,8 @@ async function populateLocalizedNames() {
 				const fallbackName = field.description || `Field ${field.id.substring(0, 8)}`;
 				updates.name = {
 					en: fallbackName,
-					"zh-Hant": fallbackName,
-					"zh-Hans": fallbackName
+					'zh-Hant': fallbackName,
+					'zh-Hans': fallbackName
 				};
 				needsUpdate = true;
 				console.log(`  - Form Field ${field.id}: Adding name`);
@@ -140,9 +140,9 @@ async function populateLocalizedNames() {
 			}
 		}
 
-		console.log("\n✓ Successfully populated localized names!");
+		console.log('\n✓ Successfully populated localized names!');
 	} catch (error) {
-		console.error("Error populating localized names:", error);
+		console.error('Error populating localized names:', error);
 		throw error;
 	} finally {
 		await prisma.$disconnect();
@@ -152,10 +152,10 @@ async function populateLocalizedNames() {
 // Run the script
 populateLocalizedNames()
 	.then(() => {
-		console.log("\nDone!");
+		console.log('\nDone!');
 		process.exit(0);
 	})
-	.catch(error => {
-		console.error("Script failed:", error);
+	.catch((error) => {
+		console.error('Script failed:', error);
 		process.exit(1);
 	});

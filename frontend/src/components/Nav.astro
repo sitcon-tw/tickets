@@ -102,51 +102,51 @@ const t = i18n.t(i18n.local(Astro.url.pathname), {
 	// Check authentication status
 	async function checkAuthStatus() {
 		try {
-			const response = await fetch("http://localhost:3000/api/auth/get-session", {
-				credentials: "include"
+			const response = await fetch('http://localhost:3000/api/auth/get-session', {
+				credentials: 'include'
 			});
-
-			const loginLink = document.getElementById("login-link");
-			const userMenu = document.getElementById("user-menu");
-			const userName = document.getElementById("user-name");
-			const adminLink = document.getElementById("admin-link");
-			const logoutLink = document.getElementById("logout-link");
-
+			
+			const loginLink = document.getElementById('login-link');
+			const userMenu = document.getElementById('user-menu');
+			const userName = document.getElementById('user-name');
+			const adminLink = document.getElementById('admin-link');
+			const logoutLink = document.getElementById('logout-link');
+			
 			if (response.ok) {
 				const session = await response.json();
-
+				
 				if (session && session.user) {
 					// User is authenticated
-					loginLink.style.display = "none";
-					userMenu.style.display = "flex";
-					userName.textContent = session.user.name || session.user.email || "使用者";
-
+					loginLink.style.display = 'none';
+					userMenu.style.display = 'flex';
+					userName.textContent = session.user.name || session.user.email || '使用者';
+					
 					// Show admin link if user has admin role
-					if (session.user.role && (session.user.role.includes("admin") || session.user.role.includes("super-admin"))) {
-						adminLink.style.display = "block";
+					if (session.user.role && (session.user.role.includes('admin') || session.user.role.includes('super-admin'))) {
+						adminLink.style.display = 'block';
 					}
-
+					
 					// Handle logout
-					logoutLink.addEventListener("click", async e => {
+					logoutLink.addEventListener('click', async (e) => {
 						e.preventDefault();
 						try {
-							await fetch("http://localhost:3000/api/auth/sign-out", {
-								method: "POST",
-								credentials: "include"
+							await fetch('http://localhost:3000/api/auth/sign-out', {
+								method: 'POST',
+								credentials: 'include'
 							});
 							window.location.reload();
 						} catch (error) {
-							console.error("Logout failed:", error);
+							console.error('Logout failed:', error);
 						}
 					});
 				}
 			}
 		} catch (error) {
-			console.error("Auth status check failed:", error);
+			console.error('Auth status check failed:', error);
 			// Show login link on error
 		}
 	}
-
+	
 	// Initialize auth check on page load
-	document.addEventListener("DOMContentLoaded", checkAuthStatus);
+	document.addEventListener('DOMContentLoaded', checkAuthStatus);
 </script>

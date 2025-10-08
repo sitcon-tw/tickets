@@ -1,9 +1,9 @@
-import { sendMagicLink } from "#utils/email.js";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
-import { getAdminEmails } from "../config/security.js";
 import { PrismaClient } from "../generated/prisma/index.js";
+import { sendMagicLink } from "#utils/email.js";
+import { getAdminEmails } from "../config/security.js";
 
 const prisma = new PrismaClient();
 
@@ -21,7 +21,7 @@ export const auth = betterAuth({
 		},
 		cookieOptions: {
 			sameSite: "lax", // Use Lax for same-origin via proxy
-			secure: process.env.NODE_ENV === "production",
+			secure: process.env.NODE_ENV === 'production',
 			httpOnly: true,
 			path: "/"
 		}
@@ -30,14 +30,14 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
-				let locale = "zh-Hant";
+				let locale = 'zh-Hant';
 				try {
 					const constructedUrl = new URL(url);
-					const callbackURL = constructedUrl.searchParams.get("callbackURL");
+					const callbackURL = constructedUrl.searchParams.get('callbackURL');
 					if (callbackURL) {
 						const callbackUrl = new URL(callbackURL);
-						const callbackPathParts = callbackUrl.pathname.split("/").filter(Boolean);
-						if (callbackPathParts.length > 0 && ["en", "zh-Hant", "zh-Hans"].includes(callbackPathParts[0])) {
+						const callbackPathParts = callbackUrl.pathname.split('/').filter(Boolean);
+						if (callbackPathParts.length > 0 && ['en', 'zh-Hant', 'zh-Hans'].includes(callbackPathParts[0])) {
 							locale = callbackPathParts[0];
 						}
 					}
@@ -46,7 +46,7 @@ export const auth = betterAuth({
 				}
 
 				// Send users to frontend, which will proxy the verification to backend
-				const frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
+				const frontendUrl = `${process.env.FRONTEND_URI || 'http://localhost:4321'}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
 				await sendMagicLink(email, frontendUrl);
 			}
 		})
@@ -57,7 +57,7 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				before: async user => {
+				before: async (user) => {
 					// Automatically assign admin role to emails specified in ADMIN_EMAILS env var
 					const adminEmails = getAdminEmails();
 					if (adminEmails.includes(user.email)) {

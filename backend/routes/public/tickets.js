@@ -5,7 +5,11 @@
  */
 
 import prisma from "#config/database.js";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
+import {
+	successResponse,
+	notFoundResponse,
+	serverErrorResponse
+} from "#utils/response.js";
 
 /**
  * Public tickets routes - accessible without authentication
@@ -21,49 +25,49 @@ export default async function publicTicketsRoutes(fastify, options) {
 				description: "獲取票券公開資訊",
 				tags: ["tickets"],
 				params: {
-					type: "object",
+					type: 'object',
 					properties: {
 						id: {
-							type: "string",
-							description: "票券 ID"
+							type: 'string',
+							description: '票券 ID'
 						}
 					},
-					required: ["id"]
+					required: ['id']
 				},
 				response: {
 					200: {
-						type: "object",
+						type: 'object',
 						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
+							success: { type: 'boolean' },
+							message: { type: 'string' },
 							data: {
-								type: "object",
+								type: 'object',
 								properties: {
-									id: { type: "string" },
-									name: { type: "object" },
-									description: { type: "object" },
-									price: { type: "number" },
-									quantity: { type: "integer" },
-									soldCount: { type: "integer" },
-									available: { type: "integer" },
-									saleStart: { type: "string" },
-									saleEnd: { type: "string" },
-									isOnSale: { type: "boolean" },
-									isSoldOut: { type: "boolean" },
-									requireInviteCode: { type: "boolean" }
+									id: { type: 'string' },
+									name: { type: 'object' },
+									description: { type: 'object' },
+									price: { type: 'number' },
+									quantity: { type: 'integer' },
+									soldCount: { type: 'integer' },
+									available: { type: 'integer' },
+									saleStart: { type: 'string' },
+									saleEnd: { type: 'string' },
+									isOnSale: { type: 'boolean' },
+									isSoldOut: { type: 'boolean' },
+									requireInviteCode: { type: 'boolean' }
 								}
 							}
 						}
 					},
 					404: {
-						type: "object",
+						type: 'object',
 						properties: {
-							success: { type: "boolean" },
+							success: { type: 'boolean' },
 							error: {
-								type: "object",
+								type: 'object',
 								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
+									code: { type: 'string' },
+									message: { type: 'string' }
 								}
 							}
 						}
@@ -106,7 +110,8 @@ export default async function publicTicketsRoutes(fastify, options) {
 				// Add availability and sale status
 				const now = new Date();
 				const available = ticket.quantity - ticket.soldCount;
-				const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
+				const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) &&
+					(!ticket.saleEnd || now <= ticket.saleEnd);
 				const isSoldOut = available <= 0;
 
 				const ticketWithStatus = {

@@ -1,8 +1,9 @@
 "use client";
 
+import React from 'react';
 import Nav from "@/components/Nav";
+import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
-import { useLocale } from "next-intl";
 
 export default function Terms() {
 	const locale = useLocale();
@@ -38,44 +39,32 @@ export default function Terms() {
 		<>
 			<Nav />
 			<main>
-				<section
-					style={{
-						paddingTop: "5rem",
-						display: "flex",
-						flexDirection: "column",
-						maxHeight: "calc(100vh - 4rem)",
-						gap: "1rem"
-					}}
-				>
-					<h1
-						style={{
-							marginBlock: "1rem",
-							textAlign: "center"
-						}}
-					>
-						{t.newAccount}
-					</h1>
-					<div
-						style={{
-							border: "1px solid var(--color-gray-900)",
-							padding: "1.5rem",
-							height: "0",
-							overflowY: "auto",
-							flex: "1"
-						}}
-					>
+				<section style={{
+					paddingTop: '5rem',
+					display: 'flex',
+					flexDirection: 'column',
+					maxHeight: 'calc(100vh - 4rem)',
+					gap: '1rem'
+				}}>
+					<h1 style={{
+						marginBlock: '1rem',
+						textAlign: 'center'
+					}}>{t.newAccount}</h1>
+					<div style={{
+						border: '1px solid var(--color-gray-900)',
+						padding: '1.5rem',
+						height: '0',
+						overflowY: 'auto',
+						flex: '1'
+					}}>
 						{/* TODO: Import and render TermsContent markdown */}
 						<p>Terms content will go here</p>
 					</div>
 					<div>
 						<input type="checkbox" name="" id="checkbox" />
-						<label htmlFor="checkbox" style={{ cursor: "pointer" }}>
-							{t.agree}
-						</label>
+						<label htmlFor="checkbox" style={{ cursor: 'pointer' }}>{t.agree}</label>
 					</div>
-					<button id="submit-btn" className="button" type="submit" onClick={login} style={{ margin: "auto" }}>
-						{t.signUp}
-					</button>
+					<button id="submit-btn" className="button" type="submit" onClick={login} style={{ margin: 'auto' }}>{t.signUp}</button>
 				</section>
 			</main>
 		</>

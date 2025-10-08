@@ -6,14 +6,20 @@
  */
 
 import prisma from "#config/database.js";
+import { 
+	successResponse, 
+	validationErrorResponse, 
+	notFoundResponse, 
+	serverErrorResponse,
+	conflictResponse
+} from "#utils/response.js";
 import { eventSchemas } from "#schemas/event.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
 
 /**
  * Admin events routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
+ * @param {import('fastify').FastifyInstance} fastify 
+ * @param {Object} options 
  */
 export default async function adminEventsRoutes(fastify, options) {
 	// Create new event
@@ -30,7 +36,7 @@ export default async function adminEventsRoutes(fastify, options) {
 			try {
 				/** @type {EventCreateRequest} */
 				const rawBody = request.body;
-
+				
 				// Sanitize inputs to prevent XSS
 				const sanitizedBody = sanitizeObject(rawBody, true);
 				const { name, description, startDate, endDate, location } = sanitizedBody;
@@ -90,7 +96,7 @@ export default async function adminEventsRoutes(fastify, options) {
 					include: {
 						tickets: {
 							where: { isActive: true },
-							orderBy: { createdAt: "asc" }
+							orderBy: { createdAt: 'asc' }
 						},
 						_count: {
 							select: {
@@ -237,7 +243,7 @@ export default async function adminEventsRoutes(fastify, options) {
 	fastify.get(
 		"/events",
 		{
-			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
+			schema: {	...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Querystring: {isActive?: boolean}}>} request
@@ -258,7 +264,7 @@ export default async function adminEventsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: "desc" }
+					orderBy: { createdAt: 'desc' }
 				});
 
 				return reply.send(successResponse(events));

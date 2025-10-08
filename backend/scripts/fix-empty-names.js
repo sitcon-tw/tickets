@@ -3,18 +3,18 @@
  * Run with: node scripts/fix-empty-names.js
  */
 
-import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaClient } from '../generated/prisma/index.js';
 
 const prisma = new PrismaClient();
 
 function isEmpty(obj) {
 	if (!obj) return true;
-	if (typeof obj !== "object") return true;
+	if (typeof obj !== 'object') return true;
 	return Object.keys(obj).length === 0;
 }
 
 async function fixEmptyNames() {
-	console.log("Starting to fix empty localized names...\n");
+	console.log('Starting to fix empty localized names...\n');
 
 	try {
 		// Get all tickets
@@ -22,7 +22,7 @@ async function fixEmptyNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -40,17 +40,17 @@ async function fixEmptyNames() {
 			if (isEmpty(ticket.name)) {
 				updates.name = {
 					en: `Ticket ${ticket.id.substring(0, 8)}`,
-					"zh-Hant": `票券 ${ticket.id.substring(0, 8)}`,
-					"zh-Hans": `票券 ${ticket.id.substring(0, 8)}`
+					'zh-Hant': `票券 ${ticket.id.substring(0, 8)}`,
+					'zh-Hans': `票券 ${ticket.id.substring(0, 8)}`
 				};
 				console.log(`  → Will update name to:`, JSON.stringify(updates.name));
 			}
 
 			if (isEmpty(ticket.description)) {
 				updates.description = {
-					en: "Please update this ticket description",
-					"zh-Hant": "請更新此票券說明",
-					"zh-Hans": "请更新此票券说明"
+					en: 'Please update this ticket description',
+					'zh-Hant': '請更新此票券說明',
+					'zh-Hans': '请更新此票券说明'
 				};
 				console.log(`  → Will update description`);
 			}
@@ -73,7 +73,7 @@ async function fixEmptyNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -90,17 +90,17 @@ async function fixEmptyNames() {
 			if (isEmpty(event.name)) {
 				updates.name = {
 					en: `Event ${event.id.substring(0, 8)}`,
-					"zh-Hant": `活動 ${event.id.substring(0, 8)}`,
-					"zh-Hans": `活动 ${event.id.substring(0, 8)}`
+					'zh-Hant': `活動 ${event.id.substring(0, 8)}`,
+					'zh-Hans': `活动 ${event.id.substring(0, 8)}`
 				};
 				console.log(`  → Will update name to:`, JSON.stringify(updates.name));
 			}
 
 			if (isEmpty(event.description)) {
 				updates.description = {
-					en: "Please update this event description",
-					"zh-Hant": "請更新此活動說明",
-					"zh-Hans": "请更新此活动说明"
+					en: 'Please update this event description',
+					'zh-Hant': '請更新此活動說明',
+					'zh-Hans': '请更新此活动说明'
 				};
 				console.log(`  → Will update description`);
 			}
@@ -122,7 +122,7 @@ async function fixEmptyNames() {
 			select: {
 				id: true,
 				name: true,
-				description: true
+				description: true,
 			}
 		});
 
@@ -140,8 +140,8 @@ async function fixEmptyNames() {
 				const fallbackName = field.description || `Field ${field.id.substring(0, 8)}`;
 				updates.name = {
 					en: fallbackName,
-					"zh-Hant": fallbackName,
-					"zh-Hans": fallbackName
+					'zh-Hant': fallbackName,
+					'zh-Hans': fallbackName
 				};
 				console.log(`  → Will update name to:`, JSON.stringify(updates.name));
 			}
@@ -158,13 +158,14 @@ async function fixEmptyNames() {
 			}
 		}
 
-		console.log("\n\n=== SUMMARY ===");
+		console.log('\n\n=== SUMMARY ===');
 		console.log(`Tickets updated: ${ticketsUpdated}/${tickets.length}`);
 		console.log(`Events updated: ${eventsUpdated}/${events.length}`);
 		console.log(`Form fields updated: ${fieldsUpdated}/${formFields.length}`);
-		console.log("\n✓ Done!");
+		console.log('\n✓ Done!');
+
 	} catch (error) {
-		console.error("Error:", error);
+		console.error('Error:', error);
 		throw error;
 	} finally {
 		await prisma.$disconnect();
@@ -176,7 +177,7 @@ fixEmptyNames()
 	.then(() => {
 		process.exit(0);
 	})
-	.catch(error => {
-		console.error("Script failed:", error);
+	.catch((error) => {
+		console.error('Script failed:', error);
 		process.exit(1);
 	});

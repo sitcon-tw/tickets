@@ -1,12 +1,12 @@
 "use client";
 
+import React, { useState } from 'react';
+import styled from 'styled-components';
 import Nav from "@/components/Nav";
-import Spinner from "@/components/Spinner";
+import { useLocale } from 'next-intl';
 import { getTranslations } from "@/i18n/helpers";
-import { authAPI } from "@/lib/api/endpoints";
-import { useLocale } from "next-intl";
-import React, { useState } from "react";
-import styled from "styled-components";
+import { authAPI } from '@/lib/api/endpoints';
+import Spinner from "@/components/Spinner";
 
 const StyledMain = styled.main`
 	section {
@@ -22,8 +22,8 @@ const Container = styled.div<{ isActive: boolean }>`
 	transform: translate(-50%, -50%);
 	max-width: 100%;
 	padding: 1rem;
-	opacity: ${props => (props.isActive ? 1 : 0)};
-	pointer-events: ${props => (props.isActive ? "all" : "none")};
+	opacity: ${props => props.isActive ? 1 : 0};
+	pointer-events: ${props => props.isActive ? 'all' : 'none'};
 	transition: opacity 0.3s ease-in-out;
 `;
 
@@ -46,7 +46,12 @@ const EmailInput = styled.input`
 	border-radius: 8px;
 `;
 
-const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
+const SendButton = ({ onClick, disabled, isLoading, children }: {
+	onClick: () => void;
+	disabled: boolean;
+	isLoading: boolean;
+	children: React.ReactNode;
+}) => {
 	return (
 		<StyledButton disabled={disabled}>
 			<button onClick={onClick} disabled={disabled}>
@@ -81,9 +86,9 @@ const StyledButton = styled.div<{ disabled: boolean }>`
 		border-radius: 8px;
 		overflow: hidden;
 		transition: all 0.2s;
-		cursor: ${props => (props.disabled ? "not-allowed" : "pointer")};
+		cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
 		margin: 1rem auto;
-		opacity: ${props => (props.disabled ? 0.7 : 1)};
+		opacity: ${props => props.disabled ? 0.7 : 1};
 
 		span {
 			display: block;
@@ -138,7 +143,7 @@ const MessageContainer = styled.div`
 
 export default function Login() {
 	const locale = useLocale();
-	const [viewState, setViewState] = useState<"login" | "sent" | "error">("login");
+	const [viewState, setViewState] = useState<'login' | 'sent' | 'error'>('login');
 	const [isLoading, setIsLoading] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -177,10 +182,10 @@ export default function Login() {
 		setIsLoading(true);
 		try {
 			await authAPI.getMagicLink(email, locale);
-			setViewState("sent");
+			setViewState('sent');
 		} catch (error) {
 			console.error("Login error:", error);
-			setViewState("error");
+			setViewState('error');
 		} finally {
 			setIsLoading(false);
 		}
@@ -191,23 +196,27 @@ export default function Login() {
 			<Nav />
 			<StyledMain>
 				<section>
-					<Container isActive={viewState === "login"}>
+					<Container isActive={viewState === 'login'}>
 						<Title>{t.login}</Title>
 						<Label htmlFor="email">Email</Label>
 						<EmailInput type="email" name="email" id="email" />
-						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
+						<SendButton
+							onClick={login}
+							disabled={isLoading}
+							isLoading={isLoading}
+						>
 							{t.continue}
 						</SendButton>
 					</Container>
 
-					<Container isActive={viewState === "sent"}>
+					<Container isActive={viewState === 'sent'}>
 						<MessageContainer>
 							<h2>{t.sent}</h2>
 							<p>{t.message}</p>
 						</MessageContainer>
 					</Container>
 
-					<Container isActive={viewState === "error"}>
+					<Container isActive={viewState === 'error'}>
 						<MessageContainer>
 							<h2>{t.error}</h2>
 							<p>{t.error}</p>

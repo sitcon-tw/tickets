@@ -1,14 +1,14 @@
-import crypto from "crypto";
+import crypto from 'crypto';
 
 export const generateEditToken = () => {
-	return crypto.randomBytes(32).toString("hex");
+	return crypto.randomBytes(32).toString('hex');
 };
 
-export const hashToken = token => {
-	return crypto.createHash("sha256").update(token).digest("hex");
+export const hashToken = (token) => {
+	return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-export const isTokenExpired = expiryDate => {
+export const isTokenExpired = (expiryDate) => {
 	return new Date() > new Date(expiryDate);
 };
 

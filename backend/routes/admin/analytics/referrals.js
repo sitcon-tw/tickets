@@ -1,5 +1,5 @@
-import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database.js";
 
 export default async function referralsRoutes(fastify, options) {
 	// 來源統計分析
@@ -42,8 +42,8 @@ export default async function referralsRoutes(fastify, options) {
 
 				const sourceCounts = {};
 				referralUsages.forEach(usage => {
-					const referrerData = JSON.parse(usage.referral.registration.formData || "{}");
-					const source = `${referrerData.name || "Unknown"} (${usage.referral.code})`;
+					const referrerData = JSON.parse(usage.referral.registration.formData || '{}');
+					const source = `${referrerData.name || 'Unknown'} (${usage.referral.code})`;
 					sourceCounts[source] = (sourceCounts[source] || 0) + 1;
 				});
 

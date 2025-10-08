@@ -31,14 +31,14 @@ const tt = i18n.t(lang, {
 		"zh-Hant": "編輯表單",
 		"zh-Hans": "编辑表单",
 		en: "Edit Form"
-	}
+	},
 });
 const l = i18n.l(Astro.url);
 ---
 
 <Layout i18n={t.t} path="" title={t.title} lang={lang}>
 	<AdminNav />
-	<main>
+	<main >
 		<h1>{t.title}</h1>
 		<div id="form-editor" class="editor">
 			<div id="questions" class="questions"></div>
@@ -257,22 +257,23 @@ const l = i18n.l(Astro.url);
 
 				// Load events and tickets to get form fields
 				await loadEventAndTicket();
-
+				
 				if (currentTicketId) {
 					await loadFormFields();
 				} else {
 					// Fall back to demo data if no ticket found
 					loadDemoData();
 				}
-
+				
 				// Setup event listeners
 				setupEventListeners();
-
+				
 				// Initial render
 				render();
+				
 			} catch (error) {
-				console.error("Failed to initialize forms page:", error);
-				showError("Failed to load page. Please try refreshing.");
+				console.error('Failed to initialize forms page:', error);
+				showError('Failed to load page. Please try refreshing.');
 				// Fall back to demo data
 				loadDemoData();
 				render();
@@ -286,7 +287,7 @@ const l = i18n.l(Astro.url);
 				const eventsResponse = await eventsAPI.list();
 				if (eventsResponse.success && eventsResponse.data && eventsResponse.data.length > 0) {
 					currentEventId = eventsResponse.data[0].id;
-
+					
 					// Get first ticket of the event
 					const ticketsResponse = await ticketsAPI.list(currentEventId);
 					if (ticketsResponse.success && ticketsResponse.data && ticketsResponse.data.length > 0) {
@@ -294,7 +295,7 @@ const l = i18n.l(Astro.url);
 					}
 				}
 			} catch (error) {
-				console.error("Failed to load event and ticket:", error);
+				console.error('Failed to load event and ticket:', error);
 				throw error;
 			}
 		}
@@ -302,13 +303,13 @@ const l = i18n.l(Astro.url);
 		// Load form fields from backend
 		async function loadFormFields() {
 			if (isLoading || !currentTicketId) return;
-
+			
 			isLoading = true;
 			showLoading(true);
-
+			
 			try {
 				const response = await formFieldsAPI.list(currentTicketId);
-
+				
 				if (response.success) {
 					// Convert backend form fields to frontend question format
 					questions = (response.data || []).map(field => ({
@@ -316,15 +317,15 @@ const l = i18n.l(Astro.url);
 						label: field.description || field.name,
 						type: field.type,
 						required: field.required || false,
-						help: field.helpText || "",
+						help: field.helpText || '',
 						options: field.values ? JSON.parse(field.values) : undefined
 					}));
 				} else {
-					throw new Error(response.message || "Failed to load form fields");
+					throw new Error(response.message || 'Failed to load form fields');
 				}
 			} catch (error) {
-				console.error("Failed to load form fields:", error);
-				showError("Failed to load form fields: " + error.message);
+				console.error('Failed to load form fields:', error);
+				showError('Failed to load form fields: ' + error.message);
 				// Fall back to demo data
 				loadDemoData();
 			} finally {
@@ -350,11 +351,11 @@ const l = i18n.l(Astro.url);
 		function setupEventListeners() {
 			const addBtn = document.getElementById("add-question");
 			const saveBtn = document.getElementById("save-form");
-
+			
 			if (addBtn) {
 				addBtn.addEventListener("click", addQuestion);
 			}
-
+			
 			if (saveBtn) {
 				saveBtn.addEventListener("click", saveForm);
 			}
@@ -363,18 +364,18 @@ const l = i18n.l(Astro.url);
 		// Save form to backend
 		async function saveForm() {
 			if (!currentTicketId) {
-				alert("無法保存：未找到票種");
+				alert('無法保存：未找到票種');
 				return;
 			}
 
 			try {
 				saveBtn.disabled = true;
-				saveBtn.textContent = "保存中...";
+				saveBtn.textContent = '保存中...';
 
 				// Convert questions to backend format
 				const formFieldsData = questions.map((q, index) => ({
-					id: q.id.startsWith("temp-") ? undefined : q.id, // Don't send temp IDs
-					name: q.label.toLowerCase().replace(/\s+/g, "_"),
+					id: q.id.startsWith('temp-') ? undefined : q.id, // Don't send temp IDs
+					name: q.label.toLowerCase().replace(/\s+/g, '_'),
 					description: q.label,
 					type: q.type,
 					required: q.required,
@@ -388,7 +389,7 @@ const l = i18n.l(Astro.url);
 				for (const fieldData of formFieldsData) {
 					// Add ticketId to the field data
 					fieldData.ticketId = currentTicketId;
-
+					
 					if (fieldData.id) {
 						// Update existing field
 						await formFieldsAPI.update(fieldData.id, fieldData);
@@ -398,13 +399,13 @@ const l = i18n.l(Astro.url);
 					}
 				}
 
-				alert("表單已保存！");
+				alert('表單已保存！');
 			} catch (error) {
-				console.error("Failed to save form:", error);
-				alert("保存失敗: " + error.message);
+				console.error('Failed to save form:', error);
+				alert('保存失敗: ' + error.message);
 			} finally {
 				saveBtn.disabled = false;
-				saveBtn.textContent = "💾 保存表單";
+				saveBtn.textContent = '💾 保存表單';
 			}
 		}
 
@@ -773,16 +774,16 @@ const l = i18n.l(Astro.url);
 
 		// Add question function
 		function addQuestion() {
-			questions.push({
-				id: "temp-" + crypto.randomUUID(),
-				label: "新問題",
-				type: "text",
-				required: false
+			questions.push({ 
+				id: 'temp-' + crypto.randomUUID(), 
+				label: "新問題", 
+				type: "text", 
+				required: false 
 			});
 			render();
 		}
 
 		// Initialize page when DOM is ready
-		document.addEventListener("DOMContentLoaded", initializePage);
+		document.addEventListener('DOMContentLoaded', initializePage);
 	</script>
 </Layout>
