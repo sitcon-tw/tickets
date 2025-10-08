@@ -1,6 +1,7 @@
 import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+import { errorResponse, successResponse, unauthorizedResponse, forbiddenResponse } from "#utils/response.js";
 import { referralSchemas, referralStatsResponse } from "#schemas/referral.js";
+import { auth } from "#lib/auth.js";
 
 // Custom param schema for regId parameter
 const regIdParam = {
@@ -152,6 +153,16 @@ export default async function referralRoutes(fastify, options) {
 			try {
 				const { regId } = request.params;
 
+				// Check if user is authenticated
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+
+				if (!session) {
+					const { response, statusCode } = unauthorizedResponse("請先登入");
+					return reply.code(statusCode).send(response);
+				}
+
 				// Find referral by registration ID
 				const referral = await prisma.referral.findFirst({
 					where: {
@@ -165,6 +176,12 @@ export default async function referralRoutes(fastify, options) {
 
 				if (!referral || referral.registration.status !== 'confirmed') {
 					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check if the authenticated user owns this registration
+				if (referral.registration.userId !== session.user.id) {
+					const { response, statusCode } = forbiddenResponse("您無權訪問此推薦統計");
 					return reply.code(statusCode).send(response);
 				}
 
