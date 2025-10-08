@@ -96,13 +96,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
       try {
         const sessionData = await authAPI.getSession();
         if (!sessionData) {
-          setCanRegister(false);
           return false;
         }
         return true;
       } catch (error) {
         console.error("Failed to check auth status", error);
-        setCanRegister(false);
         return false;
       }
     };
