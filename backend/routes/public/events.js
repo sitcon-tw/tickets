@@ -145,29 +145,17 @@ export default async function publicEventsRoutes(fastify, options) {
 					const isSoldOut = available <= 0;
 
 					// Transform form fields
-					const formFields = ticket.fromFields.map(field => {
-						let options = null;
-						if (field.values) {
-							try {
-								options = JSON.parse(field.values);
-							} catch (e) {
-								console.warn(`Invalid JSON in values for field ${field.name}: ${field.values}`);
-								options = null;
-							}
-						}
-
-						return {
-							id: field.id,
-							name: field.name,
-							description: field.description,
-							type: field.type,
-							required: field.required,
-							validater: field.validater,
-							placeholder: field.placeholder,
-							options,
-							order: field.order
-						};
-					});
+					const formFields = ticket.fromFields.map(field => ({
+						id: field.id,
+						name: field.name,
+						description: field.description,
+						type: field.type,
+						required: field.required,
+						validater: field.validater,
+						placeholder: field.placeholder,
+						options: field.values, // values is already JSON
+						order: field.order
+					}));
 
 					return {
 						id: ticket.id,
@@ -466,29 +454,17 @@ export default async function publicEventsRoutes(fastify, options) {
 				});
 
 				// Transform the data to match the expected format
-				const transformedFields = formFields.map(field => {
-					let options = null;
-					if (field.values) {
-						try {
-							options = JSON.parse(field.values);
-						} catch (e) {
-							console.warn(`Invalid JSON in values for field ${field.name}: ${field.values}`);
-							options = null;
-						}
-					}
-
-					return {
-						id: field.id,
-						name: field.name,
-						description: field.description,
-						type: field.type,
-						required: field.required,
-						validater: field.validater,
-						placeholder: field.placeholder,
-						options,
-						order: field.order
-					};
-				});
+				const transformedFields = formFields.map(field => ({
+					id: field.id,
+					name: field.name,
+					description: field.description,
+					type: field.type,
+					required: field.required,
+					validater: field.validater,
+					placeholder: field.placeholder,
+					options: field.values, // values is already JSON
+					order: field.order
+				}));
 
 				return reply.send(successResponse(transformedFields));
 			} catch (error) {

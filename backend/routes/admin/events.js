@@ -50,16 +50,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for duplicate event names
-				const existingEvent = await prisma.event.findFirst({
-					where: { name }
-				});
-
-				if (existingEvent) {
-					const { response, statusCode } = conflictResponse("活動名稱已存在");
-					return reply.code(statusCode).send(response);
-				}
-
 				/** @type {Event} */
 				const event = await prisma.event.create({
 					data: {
@@ -169,21 +159,6 @@ export default async function adminEventsRoutes(fastify, options) {
 
 					if (startDate >= endDate) {
 						const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
-						return reply.code(statusCode).send(response);
-					}
-				}
-
-				// Check for name conflicts
-				if (updateData.name && updateData.name !== existingEvent.name) {
-					const nameConflict = await prisma.event.findFirst({
-						where: { 
-							name: updateData.name,
-							id: { not: id }
-						}
-					});
-
-					if (nameConflict) {
-						const { response, statusCode } = conflictResponse("活動名稱已存在");
 						return reply.code(statusCode).send(response);
 					}
 				}

@@ -46,29 +46,6 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate JSON values for select/radio types
-				if ((type === 'select' || type === 'radio') && values) {
-					try {
-						JSON.parse(values);
-					} catch (error) {
-						const { response, statusCode } = validationErrorResponse("選項值必須是有效的 JSON 陣列");
-						return reply.code(statusCode).send(response);
-					}
-				}
-
-				// Check for duplicate field names in the same ticket
-				const existingField = await prisma.ticketFromFields.findFirst({
-					where: {
-						ticketId,
-						name
-					}
-				});
-
-				if (existingField) {
-					const { response, statusCode } = conflictResponse("此票券已存在同名欄位");
-					return reply.code(statusCode).send(response);
-				}
-
 				// Check for duplicate order in the same ticket
 				const existingOrder = await prisma.ticketFromFields.findFirst({
 					where: {
@@ -172,33 +149,6 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 				if (!existingField) {
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
-				}
-
-				// Validate JSON values for select/radio types
-				if ((updateData.type === 'select' || updateData.type === 'radio' ||
-					(existingField.type === 'select' || existingField.type === 'radio')) && updateData.values) {
-					try {
-						JSON.parse(updateData.values);
-					} catch (error) {
-						const { response, statusCode } = validationErrorResponse("選項值必須是有效的 JSON 陣列");
-						return reply.code(statusCode).send(response);
-					}
-				}
-
-				// Check for name conflicts in the same ticket
-				if (updateData.name && updateData.name !== existingField.name) {
-					const nameConflict = await prisma.ticketFromFields.findFirst({
-						where: {
-							ticketId: existingField.ticketId,
-							name: updateData.name,
-							id: { not: id }
-						}
-					});
-
-					if (nameConflict) {
-						const { response, statusCode } = conflictResponse("此票券已存在同名欄位");
-						return reply.code(statusCode).send(response);
-					}
 				}
 
 				// Check for order conflicts in the same ticket

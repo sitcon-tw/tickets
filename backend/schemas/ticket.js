@@ -14,12 +14,14 @@ export const ticketProperties = {
 		description: '活動 ID'
 	},
 	name: {
-		type: 'string',
-		description: '票券名稱'
+		type: 'object',
+		additionalProperties: true,
+		description: '票券名稱 (localized JSON object)'
 	},
 	description: {
-		type: 'string',
-		description: '票券描述'
+		type: 'object',
+		additionalProperties: true,
+		description: '票券描述 (localized JSON object)'
 	},
 	price: {
 		type: 'number',
@@ -69,13 +71,14 @@ export const ticketCreateBody = {
 			description: '活動 ID'
 		},
 		name: {
-			type: 'string',
-			description: '票券名稱',
-			minLength: 1
+			type: 'object',
+			additionalProperties: true,
+			description: '票券名稱 (localized JSON object)'
 		},
 		description: {
-			type: 'string',
-			description: '票券描述'
+			type: 'object',
+			additionalProperties: true,
+			description: '票券描述 (localized JSON object)'
 		},
 		price: {
 			type: 'number',
@@ -107,13 +110,14 @@ export const ticketUpdateBody = {
 	type: 'object',
 	properties: {
 		name: {
-			type: 'string',
-			description: '票券名稱',
-			minLength: 1
+			type: 'object',
+			additionalProperties: true,
+			description: '票券名稱 (localized JSON object)'
 		},
 		description: {
-			type: 'string',
-			description: '票券描述'
+			type: 'object',
+			additionalProperties: true,
+			description: '票券描述 (localized JSON object)'
 		},
 		price: {
 			type: 'number',

@@ -10,12 +10,14 @@ export const eventProperties = {
 		description: '活動 ID'
 	},
 	name: {
-		type: 'string',
-		description: '活動名稱'
+		type: 'object',
+		additionalProperties: true,
+		description: '活動名稱 (localized JSON object)'
 	},
 	description: {
-		type: 'string',
-		description: '活動描述'
+		type: 'object',
+		additionalProperties: true,
+		description: '活動描述 (localized JSON object)'
 	},
 	location: {
 		type: 'string',
@@ -55,13 +57,14 @@ export const eventCreateBody = {
 	type: 'object',
 	properties: {
 		name: {
-			type: 'string',
-			description: '活動名稱',
-			minLength: 1
+			type: 'object',
+			additionalProperties: true,
+			description: '活動名稱 (localized JSON object)'
 		},
 		description: {
-			type: 'string',
-			description: '活動描述'
+			type: 'object',
+			additionalProperties: true,
+			description: '活動描述 (localized JSON object)'
 		},
 		startDate: {
 			...dateTimeString,
@@ -83,13 +86,14 @@ export const eventUpdateBody = {
 	type: 'object',
 	properties: {
 		name: {
-			type: 'string',
-			description: '活動名稱',
-			minLength: 1
+			type: 'object',
+			additionalProperties: true,
+			description: '活動名稱 (localized JSON object)'
 		},
 		description: {
-			type: 'string',
-			description: '活動描述'
+			type: 'object',
+			additionalProperties: true,
+			description: '活動描述 (localized JSON object)'
 		},
 		startDate: {
 			...dateTimeString,
@@ -226,8 +230,8 @@ export const eventTicketsResponse = {
 					type: 'object',
 					properties: {
 						id: { type: 'string' },
-						name: { type: 'string' },
-						description: { type: 'string' },
+						name: { type: 'object', additionalProperties: true },
+						description: { type: 'object', additionalProperties: true },
 						price: { type: 'number' },
 						quantity: { type: 'integer' },
 						soldCount: { type: 'integer' },
@@ -254,8 +258,8 @@ export const publicEventsListResponse = {
 					type: 'object',
 					properties: {
 						id: { type: 'string' },
-						name: { type: 'string' },
-						description: { type: 'string' },
+						name: { type: 'object', additionalProperties: true },
+						description: { type: 'object', additionalProperties: true },
 						location: { type: 'string' },
 						startDate: { type: 'string', format: 'date-time' },
 						endDate: { type: 'string', format: 'date-time' },
@@ -278,7 +282,7 @@ export const eventStatsResponse = {
 			data: {
 				type: 'object',
 				properties: {
-					eventName: { type: 'string' },
+					eventName: { type: 'object', additionalProperties: true },
 					totalRegistrations: { type: 'integer' },
 					confirmedRegistrations: { type: 'integer' },
 					totalTickets: { type: 'integer' },

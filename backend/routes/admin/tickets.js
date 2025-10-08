@@ -69,19 +69,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 					}
 				}
 
-				// Check for duplicate ticket names in the same event
-				const existingTicket = await prisma.ticket.findFirst({
-					where: { 
-						eventId,
-						name 
-					}
-				});
-
-				if (existingTicket) {
-					const { response, statusCode } = conflictResponse("此活動已存在同名票券");
-					return reply.code(statusCode).send(response);
-				}
-
 				/** @type {Ticket} */
 				const ticket = await prisma.ticket.create({
 					data: {
@@ -229,22 +216,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 
 					if (saleEnd && saleEnd > existingTicket.event.startDate) {
 						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
-						return reply.code(statusCode).send(response);
-					}
-				}
-
-				// Check for name conflicts in the same event
-				if (updateData.name && updateData.name !== existingTicket.name) {
-					const nameConflict = await prisma.ticket.findFirst({
-						where: { 
-							eventId: existingTicket.eventId,
-							name: updateData.name,
-							id: { not: id }
-						}
-					});
-
-					if (nameConflict) {
-						const { response, statusCode } = conflictResponse("此活動已存在同名票券");
 						return reply.code(statusCode).send(response);
 					}
 				}

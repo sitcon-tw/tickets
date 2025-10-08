@@ -28,8 +28,9 @@ export const ticketFormFieldProperties = {
 		description: '驗證規則（正規表達式）'
 	},
 	name: {
-		type: 'string',
-		description: '欄位名稱'
+		type: 'object',
+		additionalProperties: true,
+		description: '欄位名稱 (localized JSON object)'
 	},
 	description: {
 		type: 'string',
@@ -44,8 +45,12 @@ export const ticketFormFieldProperties = {
 		description: '是否必填'
 	},
 	values: {
-		type: 'string',
-		description: '選項值（JSON 陣列，用於 select、radio 類型）'
+		type: 'array',
+		items: {
+			type: 'object',
+			additionalProperties: true
+		},
+		description: '選項值（localized array of objects，用於 select、radio 類型）'
 	}
 };
 
@@ -71,9 +76,9 @@ export const ticketFormFieldCreateBody = {
 			description: '驗證規則（正規表達式）'
 		},
 		name: {
-			type: 'string',
-			minLength: 1,
-			description: '欄位名稱'
+			type: 'object',
+			additionalProperties: true,
+			description: '欄位名稱 (localized JSON object)'
 		},
 		description: {
 			type: 'string',
@@ -90,8 +95,12 @@ export const ticketFormFieldCreateBody = {
 			description: '是否必填'
 		},
 		values: {
-			type: 'string',
-			description: '選項值（JSON 陣列，用於 select、radio 類型）'
+			type: 'array',
+			items: {
+				type: 'object',
+				additionalProperties: true
+			},
+			description: '選項值（localized array of objects，用於 select、radio 類型）'
 		}
 	},
 	required: ['ticketId', 'order', 'type', 'name']
@@ -115,9 +124,9 @@ export const ticketFormFieldUpdateBody = {
 			description: '驗證規則（正規表達式）'
 		},
 		name: {
-			type: 'string',
-			minLength: 1,
-			description: '欄位名稱'
+			type: 'object',
+			additionalProperties: true,
+			description: '欄位名稱 (localized JSON object)'
 		},
 		description: {
 			type: 'string',
@@ -133,8 +142,12 @@ export const ticketFormFieldUpdateBody = {
 			description: '是否必填'
 		},
 		values: {
-			type: 'string',
-			description: '選項值（JSON 陣列，用於 select、radio 類型）'
+			type: 'array',
+			items: {
+				type: 'object',
+				additionalProperties: true
+			},
+			description: '選項值（localized array of objects，用於 select、radio 類型）'
 		}
 	}
 };
