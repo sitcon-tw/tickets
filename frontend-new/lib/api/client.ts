@@ -103,12 +103,21 @@ class APIClient {
         const response = await this.fetchWithTimeout(url, config);
 
         if (!response.ok) {
-          // Handle 401 Unauthorized on admin endpoints
-          if (response.status === 401 && endpoint.includes('/admin')) {
+          // Handle 401 Unauthorized - redirect to login
+          if (response.status === 401) {
+            if (typeof window !== 'undefined') {
+              const locale = window.location.pathname.split('/')[1] || 'zh-Hant';
+              window.location.href = `/${locale}/login`;
+            }
+            throw new Error('Unauthorized - please login');
+          }
+
+          // Handle 403 Forbidden - redirect to home
+          if (response.status === 403) {
             if (typeof window !== 'undefined') {
               window.location.href = '/';
             }
-            throw new Error('Unauthorized access');
+            throw new Error('Forbidden access');
           }
 
           const errorData: APIError = await response.json().catch(() => ({
