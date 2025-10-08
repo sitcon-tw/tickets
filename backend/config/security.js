@@ -8,8 +8,8 @@
 export const rateLimitConfig = {
 	// Global rate limit
 	global: {
-		max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
-		timeWindow: process.env.RATE_LIMIT_WINDOW || '15 minutes',
+		max: parseInt(process.env.RATE_LIMIT_MAX) || 30000,
+		timeWindow: process.env.RATE_LIMIT_WINDOW || '10 minutes',
 		cache: 10000,
 		allowList: (req) => {
 			// Allow localhost in development
@@ -22,9 +22,9 @@ export const rateLimitConfig = {
 	// Auth endpoints - stricter limits
 	auth: {
 		max: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 5,
-		timeWindow: '15 minutes',
+		timeWindow: '10 minutes',
 		skipOnError: false,
-		ban: 3, // Ban after 3 violations
+		ban: 20000,
 		errorResponseBuilder: (req, context) => {
 			return {
 				success: false,
