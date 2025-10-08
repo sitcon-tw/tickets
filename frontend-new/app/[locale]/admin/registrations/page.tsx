@@ -222,15 +222,20 @@ export default function RegistrationsPage() {
 
   const syncToSheets = async () => {
     try {
-      const params: { format: 'excel'; eventId?: string } = { format: 'excel' };
-      if (currentEventId) params.eventId = currentEventId;
-
-      const response = await adminRegistrationsAPI.export(params);
-      if (response.success && response.data?.downloadUrl) {
-        window.open(response.data.downloadUrl, '_blank');
-      } else {
-        alert('Successfully exported data!');
-      }
+      // Build export URL with params
+      const params = new URLSearchParams();
+      params.append('format', 'excel');
+      if (currentEventId) params.append('eventId', currentEventId);
+      
+      const exportUrl = `/api/admin/registrations/export?${params.toString()}`;
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = exportUrl;
+      link.download = `registrations_${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       alert('Export failed: ' + (error instanceof Error ? error.message : String(error)));
     }
