@@ -5,7 +5,7 @@ import { defineConfig } from "astro/config";
 import { defaultLocale, locales } from "./src/i18n/config.js";
 
 export default defineConfig({
-	site: "https://example.com",
+	site: "https://tickets.sitcon.org",
 	trailingSlash: "always",
 	build: {
 		format: "directory"

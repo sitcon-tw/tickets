@@ -1,0 +1,19 @@
+---
+const { label, id, required = true } = Astro.props;
+---
+
+<label for={id}>{label}</label>
+<input type="text" id={id} name={id} aria-label={label} required={required} />
+
+<style>
+	label {
+		display: block;
+	}
+	input[type="text"] {
+		width: 100%;
+		padding: 0.4rem 0.8rem;
+		border: 1px solid var(--color-gray-700);
+		border-radius: 0.25rem;
+		max-width: 15rem;
+	}
+</style>

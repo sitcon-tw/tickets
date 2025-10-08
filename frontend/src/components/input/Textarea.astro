@@ -1,0 +1,23 @@
+---
+const { label, id, required = true, rows = 4 } = Astro.props;
+---
+
+<label for={id}>{label}</label>
+<textarea id={id} name={id} aria-label={label} required={required} rows={rows}></textarea>
+
+<style>
+	label {
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+	textarea {
+		width: 100%;
+		padding: 0.4rem 0.8rem;
+		border: 1px solid var(--color-gray-700);
+		border-radius: 0.25rem;
+		resize: vertical;
+		font-family: inherit;
+		background-color: transparent;
+		color: #fff;
+	}
+</style>

@@ -1,7 +1,6 @@
 ---
 import { defaultLocale } from "src/i18n/config";
 import { localesList, l } from "src/i18n";
-import { ClientRouter } from "astro:transitions";
 const { i18n = [], path = "", favicon = true, ga = true, title, description, image, theme = "#000", lang = defaultLocale } = Astro.props;
 const site = import.meta.env.SITE;
 const links = i18n
@@ -13,12 +12,11 @@ const links = i18n
 const xDefault = `<link rel="alternate" hreflang="x-default" href="${site}/${path}" />`;
 const canonical = `${site}/${path}`;
 const fullImage = image?.startsWith("http") ? image : image ? `${site}${image}` : null;
-let url = l(Astro.url);
 const supportedLangs = localesList();
 ---
 
 <!doctype html>
-<html lang={lang} transition:name="root" transition:animate="none">
+<html lang={lang}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -58,7 +56,7 @@ const supportedLangs = localesList();
 		</script>
 
 		<!-- Favicon -->
-		{
+		<!-- {
 			favicon && (
 				<>
 					<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png" />
@@ -70,7 +68,7 @@ const supportedLangs = localesList();
 					<meta name="msapplication-config" content="/static/icons/browserconfig.xml" />
 				</>
 			)
-		}
+		} -->
 
 		<!-- Google Analytics -->
 		{
@@ -97,7 +95,6 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 				});
 			});
 		</script>
-		<ClientRouter />
 	</body>
 </html>
 
@@ -109,8 +106,17 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 	}
 
 	:root {
-		--black: #1d1d1f;
-		--white: #fff;
+		--color-gray-50: oklch(0.985 0.002 247.839);
+		--color-gray-100: oklch(0.967 0.003 264.542);
+		--color-gray-200: oklch(0.928 0.006 264.531);
+		--color-gray-300: oklch(0.872 0.01 258.338);
+		--color-gray-400: oklch(0.707 0.022 261.325);
+		--color-gray-500: oklch(0.551 0.027 264.364);
+		--color-gray-600: oklch(0.446 0.03 256.802);
+		--color-gray-700: oklch(0.373 0.034 259.733);
+		--color-gray-800: oklch(0.278 0.033 256.848);
+		--color-gray-900: oklch(0.21 0.034 264.665);
+		--color-gray-950: oklch(0.13 0.028 261.692);
 	}
 
 	body {
@@ -126,14 +132,19 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 			"Open Sans",
 			"Helvetica Neue",
 			sans-serif;
-		background-color: var(--white);
-		color: var(--black);
+		background-color: var(--color-gray-900);
+		color: var(--color-gray-100);
+		min-height: 100dvh;
+	}
+
+	body:has(.confirming) {
+		overflow: hidden;
 	}
 
 	main {
 		padding-bottom: 0;
 	}
-	nav,
+	nav > div,
 	main {
 		max-width: 800px;
 		margin: 0 auto;
@@ -145,19 +156,67 @@ gtag('config', 'G-GVRT4CHSQJ');`}
 	}
 
 	.button {
-		background-color: var(--white);
-		border: 2px solid var(--black);
-		padding: 0.3rem 0.5rem;
+		background-color: var(--color-gray-700);
+		border: 2px solid var(--color-gray-500);
+		padding: 0.5rem 0.8rem;
 		text-decoration: none;
 		display: block;
 		width: fit-content;
+		cursor: pointer;
+		font-size: 1.1rem;
+		font-family: inherit;
+		border-radius: 0.5rem;
+		color: inherit;
+	}
+
+	input {
+		background-color: var(--color-gray-800);
+		color: inherit;
+		font-family: inherit;
 	}
 
 	.button:hover {
-		background-color: #efefef;
+		background-color: var(--color-gray-600);
 	}
 
 	.button:active {
-		background-color: #ddd;
+		background-color: var(--color-gray-500);
+	}
+
+	.content h2 {
+		margin-bottom: 1rem;
+	}
+	.content p {
+		margin-bottom: 1rem;
+	}
+	.content h3 {
+		margin-bottom: 0.5rem;
+	}
+
+	.content h4 {
+		margin-bottom: 0.4rem;
+	}
+	.content li {
+		margin-bottom: 0.3rem;
+	}
+	.content ol,
+	.content ul {
+		padding-left: 1.5rem;
+		margin-bottom: 1rem;
+	}
+	.content hr {
+		margin-block: 2rem;
+	}
+
+	ol,
+	ul {
+		padding-left: 1.5rem;
+		margin-bottom: 1rem;
+	}
+	li {
+		margin-bottom: 0.5rem;
+	}
+	nav img {
+		filter: invert(1);
 	}
 </style>

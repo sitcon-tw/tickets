@@ -1,0 +1,184 @@
+:root {
+	--admin-bg: var(--color-gray-950);
+	--admin-radius-sm: 4px;
+	--admin-radius: 6px;
+	--admin-radius-lg: 10px;
+	--admin-font-xs: 0.55rem;
+	--admin-font-sm: 0.65rem;
+	--admin-font: 0.75rem;
+	--admin-transition: 120ms ease;
+}
+
+/* Layout wrappers */
+.admin-section {
+	margin: 1.25rem 0;
+}
+
+p {
+	margin-bottom: 2rem;
+}
+
+main a {
+	color: var(--color-gray-400);
+}
+
+/* Toolbar */
+.admin-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 1rem 0;
+	align-items: center;
+}
+input,
+select {
+	background: #111;
+	border: 1px solid var(--color-gray-600);
+	color: #eee;
+	border-radius: var(--admin-radius);
+	padding: 6px 10px;
+	font-size: var(--admin-font);
+}
+button {
+	background: #1f1f1f;
+	border: 1px solid var(--color-gray-600);
+	color: #eee;
+	border-radius: var(--admin-radius);
+	padding: 6px 12px;
+	font-size: var(--admin-font-sm);
+	cursor: pointer;
+	transition: var(--admin-transition);
+}
+button:hover {
+	background: #2a2a2a;
+}
+button.secondary {
+	background: #24324a;
+	border-color: var(--color-gray-600);
+}
+button.secondary:hover {
+	background: var(--color-gray-600);
+}
+button.primary {
+	background: #155e29;
+	border-color: #1d7b34;
+}
+button.primary:hover {
+	background: #1d7b34;
+}
+
+/* Tables */
+.admin-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: var(--admin-font);
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background-color: var(--color-gray-900);
+	border: 2px solid var(--color-gray-900);
+}
+.admin-table thead th {
+	text-align: left;
+	padding: 8px 10px;
+	background: var(--color-gray-700);
+	position: sticky;
+	top: 0;
+	border-bottom: 1px solid var(--color-gray-700);
+	z-index: 2;
+	font-weight: 600;
+}
+.admin-table tbody td {
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--color-gray-800);
+	vertical-align: middle;
+}
+.admin-table tbody tr:hover {
+	background: var(--color-gray-800);
+}
+
+/* Pills / badges */
+.label-pill,
+.status-pill,
+.badge {
+	display: inline-block;
+	background: #222;
+	border: 1px solid var(--color-gray-600);
+	padding: 2px 6px;
+	border-radius: var(--admin-radius-sm);
+	font-size: var(--admin-font-xs);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.status-confirmed {
+	color: #4ade80;
+}
+.status-pending {
+	color: #fbbf24;
+}
+.status-cancelled {
+	color: #f87171;
+}
+.status-pill.active {
+	color: #4ade80;
+}
+.status-pill.usedup {
+	color: #f87171;
+}
+.status-pill.inactive {
+	color: #666;
+}
+
+/* Toggles */
+.toggles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+.toggles .toggle {
+	background: #222;
+	border: 1px solid var(--color-gray-600);
+	padding: 4px 8px;
+	font-size: var(--admin-font-sm);
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	border-radius: 999px;
+	cursor: pointer;
+}
+.toggles .toggle[data-on="false"] {
+	opacity: 0.45;
+}
+
+/* States */
+.loading,
+.empty {
+	padding: 2rem;
+	text-align: center;
+	opacity: 0.6;
+}
+.empty {
+	font-style: italic;
+}
+
+/* Utilities */
+.truncate {
+	max-width: 220px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.flex-col {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+@media (max-width: 900px) {
+	.admin-table {
+		font-size: 0.65rem;
+	}
+	.truncate {
+		max-width: 120px;
+	}
+}

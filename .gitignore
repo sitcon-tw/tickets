@@ -1,1 +1,6 @@
 node_modules
+/backend/prisma/migrations
+/backend/prisma/dev.db
+.env
+.env.local
+/backend/generated
