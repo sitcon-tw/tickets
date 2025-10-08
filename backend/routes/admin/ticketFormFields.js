@@ -167,15 +167,39 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 					}
 				}
 
+				// Prepare update data, handling JSON fields properly
+				const data = { ...updateData };
+
+				// Remove fields that shouldn't be updated
+				delete data.ticketId; // ticketId is immutable
+
+				// Handle nullable string fields - convert empty strings to null
+				if (updateData.validater === '') data.validater = null;
+				if (updateData.placeholder === '') data.placeholder = null;
+				if (updateData.description === '') data.description = null;
+
+				// Handle JSON fields - ensure proper serialization for PostgreSQL
+				if ('name' in updateData) {
+					if (updateData.name === '' || updateData.name === null) {
+						delete data.name;
+					} else if (typeof updateData.name === 'object') {
+						data.name = JSON.parse(JSON.stringify(updateData.name));
+					}
+				}
+
+				if ('values' in updateData) {
+					if (updateData.values === '' || updateData.values === null ||
+					    (Array.isArray(updateData.values) && updateData.values.length === 0)) {
+						data.values = null;
+					} else if (Array.isArray(updateData.values)) {
+						data.values = JSON.parse(JSON.stringify(updateData.values));
+					}
+				}
+
 				/** @type {TicketFromFields} */
 				const formField = await prisma.ticketFromFields.update({
 					where: { id },
-					data: {
-						...updateData,
-						...(updateData.validater === '' && { validater: null }),
-						...(updateData.placeholder === '' && { placeholder: null }),
-						...(updateData.values === '' && { values: null })
-					}
+					data
 				});
 
 				return reply.send(successResponse(formField, "表單欄位更新成功"));
