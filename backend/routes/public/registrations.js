@@ -18,6 +18,7 @@ import { registrationSchemas, userRegistrationsResponse } from "#schemas/registr
 import { validateRegistrationFormData } from "#utils/validation.js";
 import { auth } from "#lib/auth.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
+import { sanitizeObject } from "#utils/sanitize.js";
 
 
 /**
@@ -45,6 +46,10 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 			try {
 				/** @type {RegistrationCreateRequest} */
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
+				
+				// Sanitize form data to prevent XSS attacks
+				const sanitizedFormData = sanitizeObject(formData, false);
+				
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
@@ -192,7 +197,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(formData, ticket.fromFields);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, ticket.fromFields);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -210,14 +215,14 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						throw new Error("TICKET_SOLD_OUT");
 					}
 
-					// Create registration with form data as JSON
+					// Create registration with sanitized form data as JSON
 					const registration = await tx.registration.create({
 						data: {
 							userId: user.id,
 							eventId,
 							ticketId,
 							email: user.email,
-							formData: safeJsonStringify(formData, '{}', 'registration creation'),
+							formData: safeJsonStringify(sanitizedFormData, '{}', 'registration creation'),
 							status: 'confirmed',
 						},
 						include: {
@@ -273,7 +278,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
 			} catch (error) {
-				console.error("Create registration error:", error);
+				request.log.error("Create registration error:", error);
 				
 				// Handle specific transaction errors
 				if (error.message === "TICKET_SOLD_OUT") {
@@ -352,7 +357,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(registrationsWithStatus));
 			} catch (error) {
-				console.error("Get user registrations error:", error);
+				request.log.error("Get user registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -429,7 +434,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(registrationWithStatus));
 			} catch (error) {
-				console.error("Get registration error:", error);
+				request.log.error("Get registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -459,6 +464,9 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const userId = session.user?.id;
 				const id = request.params.id;
 				const { formData } = request.body;
+				
+				// Sanitize form data to prevent XSS attacks
+				const sanitizedFormData = sanitizeObject(formData, false);
 
 				// Check if registration exists and belongs to user
 				const registration = await prisma.registration.findFirst({
@@ -497,17 +505,17 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(formData, registration.ticket.fromFields);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, registration.ticket.fromFields);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
 				}
 
-				// Update registration form data
+				// Update registration form data with sanitized data
 				const updatedRegistration = await prisma.registration.update({
 					where: { id },
 					data: {
-						formData: safeJsonStringify(formData, '{}', 'registration update'),
+						formData: safeJsonStringify(sanitizedFormData, '{}', 'registration update'),
 						updatedAt: new Date()
 					},
 					include: {
@@ -544,7 +552,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					"報名資料已更新"
 				));
 			} catch (error) {
-				console.error("Edit registration error:", error);
+				request.log.error("Edit registration error:", error);
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -624,7 +632,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				return reply.send(successResponse(null, "報名已取消"));
 			} catch (error) {
-				console.error("Cancel registration error:", error);
+				request.log.error("Cancel registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取消報名失敗");
 				return reply.code(statusCode).send(response);
 			}

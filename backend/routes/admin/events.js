@@ -14,6 +14,7 @@ import {
 	conflictResponse
 } from "#utils/response.js";
 import { eventSchemas } from "#schemas/event.js";
+import { sanitizeObject } from "#utils/sanitize.js";
 
 /**
  * Admin events routes with modular schemas and types
@@ -34,7 +35,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {EventCreateRequest} */
-				const { name, description, startDate, endDate, location } = request.body;
+				const rawBody = request.body;
+				
+				// Sanitize inputs to prevent XSS
+				const sanitizedBody = sanitizeObject(rawBody, true);
+				const { name, description, startDate, endDate, location } = sanitizedBody;
 
 				// Validate dates
 				const start = new Date(startDate);
@@ -64,7 +69,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
-				console.error("Create event error:", error);
+				request.log.error("Create event error:", error);
 				const { response, statusCode } = serverErrorResponse("創建活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -109,7 +114,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				return reply.send(successResponse(event));
 			} catch (error) {
-				console.error("Get event error:", error);
+				request.log.error("Get event error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -179,7 +184,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
-				console.error("Update event error:", error);
+				request.log.error("Update event error:", error);
 				const { response, statusCode } = serverErrorResponse("更新活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -227,7 +232,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				return reply.send(successResponse(null, "活動刪除成功"));
 			} catch (error) {
-				console.error("Delete event error:", error);
+				request.log.error("Delete event error:", error);
 				const { response, statusCode } = serverErrorResponse("刪除活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -264,7 +269,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				return reply.send(successResponse(events));
 			} catch (error) {
-				console.error("List events error:", error);
+				request.log.error("List events error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
 				return reply.code(statusCode).send(response);
 			}

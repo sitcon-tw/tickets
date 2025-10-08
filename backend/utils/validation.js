@@ -150,7 +150,7 @@ export const validateRegistrationFormData = (formData, formFields) => {
 		const fieldNameKey = getFieldNameKey(field.name, formData);
 
 		if (!fieldNameKey) {
-			console.warn(`Unable to determine field name key for field:`, field.name);
+			// Skip field if name key cannot be determined
 			continue;
 		}
 
@@ -185,7 +185,7 @@ export const validateRegistrationFormData = (formData, formFields) => {
 							fieldErrors.push(`${field.description}格式不正確`);
 						}
 					} catch (e) {
-						console.warn(`Invalid regex for field ${fieldNameKey}: ${field.validater}`);
+						// Invalid regex pattern, skip validation
 					}
 				}
 				break;
@@ -217,7 +217,6 @@ export const validateRegistrationFormData = (formData, formFields) => {
 							fieldErrors.push(`${field.description}選項無效，可選值: ${validValues.join(', ')}`);
 						}
 					} catch (e) {
-						console.warn(`Invalid JSON options for field ${fieldNameKey}:`, e, field.values);
 						fieldErrors.push(`${field.description}選項配置錯誤`);
 					}
 				}
@@ -256,7 +255,6 @@ export const validateRegistrationFormData = (formData, formFields) => {
 							fieldErrors.push(`${field.description}包含無效選項: ${invalidValues.join(', ')}`);
 						}
 					} catch (e) {
-						console.warn(`Invalid JSON options for field ${fieldNameKey}:`, e, field.values);
 						fieldErrors.push(`${field.description}選項配置錯誤`);
 					}
 				}
