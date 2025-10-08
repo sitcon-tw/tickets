@@ -21,7 +21,7 @@ export const rateLimitConfig = {
 	
 	// Auth endpoints - stricter limits
 	auth: {
-		max: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 5,
+		max: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 20000,
 		timeWindow: '10 minutes',
 		skipOnError: false,
 		ban: 20000,
