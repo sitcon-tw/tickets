@@ -436,6 +436,121 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		}
 	);
 
+	// Edit registration (only form data can be edited)
+	fastify.put(
+		"/registrations/:id",
+		{
+			schema: {
+				description: "編輯報名記錄（僅限表單資料）",
+				tags: ["registrations"],
+				body: registrationSchemas.updateRegistration.body,
+				response: registrationSchemas.updateRegistration.response
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: {formData: Object}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const session = await auth.api.getSession({
+					headers: request.headers
+				});
+				const userId = session.user?.id;
+				const id = request.params.id;
+				const { formData } = request.body;
+
+				// Check if registration exists and belongs to user
+				const registration = await prisma.registration.findFirst({
+					where: {
+						id,
+						userId
+					},
+					include: {
+						ticket: {
+							include: {
+								fromFields: true
+							}
+						},
+						event: {
+							select: {
+								startDate: true
+							}
+						}
+					}
+				});
+
+				if (!registration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check if registration can be edited
+				if (registration.status !== 'confirmed') {
+					const { response, statusCode } = validationErrorResponse("只能編輯已確認的報名");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (new Date() >= registration.event.startDate) {
+					const { response, statusCode } = validationErrorResponse("活動已開始，無法編輯報名");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate form data with dynamic fields from database
+				const formErrors = validateRegistrationFormData(formData, registration.ticket.fromFields);
+				if (formErrors) {
+					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
+					return reply.code(statusCode).send(response);
+				}
+
+				// Update registration form data
+				const updatedRegistration = await prisma.registration.update({
+					where: { id },
+					data: {
+						formData: safeJsonStringify(formData, '{}', 'registration update'),
+						updatedAt: new Date()
+					},
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								description: true,
+								location: true,
+								startDate: true,
+								endDate: true,
+								ogImage: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								description: true,
+								price: true
+							}
+						}
+					}
+				});
+
+				// Parse form data for response
+				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, 'updated registration response');
+
+				return reply.send(successResponse(
+					{ 
+						...updatedRegistration, 
+						formData: parsedFormData 
+					}, 
+					"報名資料已更新"
+				));
+			} catch (error) {
+				console.error("Edit registration error:", error);
+				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
 	// Cancel registration
 	fastify.put(
 		"/registrations/:id/cancel",

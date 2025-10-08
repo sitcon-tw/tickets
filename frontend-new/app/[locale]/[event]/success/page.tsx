@@ -59,20 +59,29 @@ export default function Success() {
 			"zh-Hans": "查看推荐状态",
 			en: "View Referral Status"
 		},
+		viewMyRegistration: {
+			"zh-Hant": "查看/編輯報名",
+			"zh-Hans": "查看/编辑报名",
+			en: "View/Edit Registration"
+		},
 	});
 
 	const [referralCode, setReferralCode] = useState<string>(t.loading);
 	const [copiedCode, setCopiedCode] = useState(false);
 	const [copiedUrl, setCopiedUrl] = useState(false);
-	const [loading, setLoading] = useState(false);
+	const [viewRefLoading, setViewRefLoading] = useState(false);
+	const [viewRegLoading, setViewRegLoading] = useState(false);
+	const [registrationId, setRegistrationId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
 			try {
 				try {
 					const registrations = await registrationsAPI.getAll();
-				const code = (await referralsAPI.getReferralLink(registrations.data[0].id)).data.referralCode;
-				setReferralCode(code);
+					const firstRegistration = registrations.data[0];
+					setRegistrationId(firstRegistration.id);
+					const code = (await referralsAPI.getReferralLink(firstRegistration.id)).data.referralCode;
+					setReferralCode(code);
 				} catch (error) {
 					console.error('Failed to load registrations:', error);
 				}
@@ -115,7 +124,7 @@ export default function Success() {
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
-						<p>{t.emailCheck}</p>
+						<p style={{ marginBottom: '1rem' }}>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
 						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: '0.1rem 0.5rem' }}>
 							{referralCode === t.loading ? (
@@ -146,10 +155,13 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<div className="flex gap-4" style={{ marginTop: '2rem' }}>
-							<button onClick={() => {setLoading(true); router.push(`${window.location.href.replace(/\/success$/, '')}/referral-status`)}} className="button">{loading && <Spinner size='sm' />} {t.viewReferralStatus}</button>
-							<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button">{t.goBackHome}</button>
+						<div className="flex gap-4 flex-wrap" style={{ marginTop: '2rem' }}>
+							{registrationId && (
+								<button onClick={() => {setViewRegLoading(true); router.push(`/my-registration/${registrationId}`)}} className="button">{viewRegLoading && <Spinner size='sm' />} {t.viewMyRegistration}</button>
+							)}
+							<button onClick={() => {setViewRefLoading(true); router.push(`${window.location.href.replace(/\/success$/, '')}/referral-status`)}} className="button">{viewRefLoading && <Spinner size='sm' />} {t.viewReferralStatus}</button>
 						</div>
+							<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button">{t.goBackHome}</button>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">

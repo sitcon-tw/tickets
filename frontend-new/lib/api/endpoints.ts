@@ -83,6 +83,9 @@ export const registrationsAPI = {
   getById: (id: string) =>
     apiClient.get<ApiResponse<Registration>>(`/api/registrations/${id}`),
 
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put<ApiResponse<Registration>>(`/api/registrations/${id}`, data),
+
   cancel: (id: string) =>
     apiClient.put<ApiResponse<Registration>>(`/api/registrations/${id}/cancel`),
 };
