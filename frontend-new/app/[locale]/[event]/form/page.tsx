@@ -14,6 +14,7 @@ import { getLocalizedText } from '@/lib/utils/localization';
 import Spinner from "@/components/Spinner";
 import PageSpinner from "@/components/PageSpinner";
 import Text from "@/components/input/Text";
+import { ChevronLeft } from 'lucide-react';
 
 type FormDataType = {
   [key: string]: string | boolean | string[];
@@ -272,13 +273,13 @@ export default function FormPage() {
 			<Nav />
 			<main>
 				<section style={{
-					marginTop: '8rem',
+					marginTop: '6rem',
 					maxWidth: '800px',
 					marginLeft: 'auto',
 					marginRight: 'auto',
 					padding: '0 1rem'
 				}}>
-					<p><Link href="/">{t.reselectTicket}</Link></p>
+					<button onClick={() => router.back()} className="button" style={{ marginBottom: '2rem' }}><div className="flex items-center"><ChevronLeft /><p>{t.reselectTicket}</p></div></button>
 					<h1 style={{
 						marginBlock: '1rem',
 						fontSize: '2.5rem'
