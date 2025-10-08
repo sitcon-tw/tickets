@@ -208,7 +208,7 @@ export default function EventsPage() {
                     const status = computeStatus(event);
                     return (
                       <tr key={event.id}>
-                        <td>{typeof event.name === 'object' ? event.name['en'] || event.name[locale] || Object.values(event.name)[0] : event.name}</td>
+                        <td>{typeof event.name === 'object' ? event.name[locale] || event.name['en'] || Object.values(event.name)[0] : event.name}</td>
                         <td>{event.location}</td>
                         <td>{formatDateTime(event.startDate)}</td>
                         <td>{formatDateTime(event.endDate)}</td>

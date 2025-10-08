@@ -236,7 +236,7 @@ export default function TicketsPage() {
                   const status = computeStatus(ticket);
                   return (
                     <tr key={ticket.id}>
-                      <td>{typeof ticket.name === 'object' ? ticket.name['en'] || ticket.name[locale] || Object.values(ticket.name)[0] : ticket.name}</td>
+                      <td>{typeof ticket.name === 'object' ? ticket.name[locale] || ticket.name['en'] || Object.values(ticket.name)[0] : ticket.name}</td>
                       <td>{formatDateTime(ticket.saleStart)}</td>
                       <td>{formatDateTime(ticket.saleEnd)}</td>
                       <td>
