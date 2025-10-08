@@ -73,7 +73,16 @@ export default function InvitesPage() {
     bulkDeleteSuccess: { "zh-Hant": "成功刪除 {count} 個邀請碼！", "zh-Hans": "成功删除 {count} 个邀请码！", en: "Successfully deleted {count} invitation codes!" },
     selectAll: { "zh-Hant": "全選", "zh-Hans": "全选", en: "Select All" },
     deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
-    selected: { "zh-Hant": "已選 {count} 個", "zh-Hans": "已选 {count} 个", en: "{count} selected" }
+    selected: { "zh-Hant": "已選 {count} 個", "zh-Hans": "已选 {count} 个", en: "{count} selected" },
+    downloadTxt: { "zh-Hant": "下載 TXT", "zh-Hans": "下载 TXT", en: "Download TXT" },
+    sendEmail: { "zh-Hant": "寄送 Email", "zh-Hans": "发送 Email", en: "Send Email" },
+    emailAddress: { "zh-Hant": "Email 地址", "zh-Hans": "Email 地址", en: "Email Address" },
+    emailPlaceholder: { "zh-Hant": "請輸入 Email 地址", "zh-Hans": "请输入 Email 地址", en: "Please enter email address" },
+    send: { "zh-Hant": "發送", "zh-Hans": "发送", en: "Send" },
+    sendSuccess: { "zh-Hant": "成功寄送郵件！", "zh-Hans": "成功发送邮件！", en: "Email sent successfully!" },
+    sendError: { "zh-Hant": "寄送失敗", "zh-Hans": "发送失败", en: "Failed to send email" },
+    pleaseSelectCodes: { "zh-Hant": "請選擇要操作的邀請碼", "zh-Hans": "请选择要操作的邀请码", en: "Please select invitation codes" },
+    downloadSuccess: { "zh-Hant": "下載成功！", "zh-Hans": "下载成功！", en: "Download successful!" }
   });
 
   // Load event ID from localStorage on mount
@@ -273,6 +282,78 @@ export default function InvitesPage() {
     }
   };
 
+  const downloadSelectedCodesAsTxt = () => {
+    if (selectedCodes.size === 0) {
+      alert(t.pleaseSelectCodes);
+      return;
+    }
+
+    if (!currentType) return;
+
+    const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
+    const codesText = selectedCodesList.map(c => c.code).join('\n');
+    
+    const blob = new Blob([codesText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `invitation-codes-${currentType.name}-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(t.downloadSuccess);
+  };
+
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const sendCodesViaEmail = async () => {
+    if (selectedCodes.size === 0) {
+      alert(t.pleaseSelectCodes);
+      return;
+    }
+
+    if (!emailAddress || !emailAddress.includes('@')) {
+      alert('請輸入有效的 Email 地址');
+      return;
+    }
+
+    if (!currentType) return;
+
+    const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
+    
+    setIsSendingEmail(true);
+    try {
+      const response = await fetch('/api/admin/invitation-codes/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailAddress,
+          codes: selectedCodesList.map(c => c.code),
+          groupName: currentType.name
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send email');
+      }
+
+      alert(t.sendSuccess);
+      setShowEmailModal(false);
+      setEmailAddress('');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert(t.sendError + ': ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   const toggleCodeSelection = (codeId: string) => {
     const newSelection = new Set(selectedCodes);
     if (newSelection.has(codeId)) {
@@ -468,9 +549,17 @@ export default function InvitesPage() {
                   {selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
                 </button>
                 {selectedCodes.size > 0 && (
-                  <button className="admin-button small danger" onClick={bulkDeleteInvitationCodes}>
-                    {t.bulkDelete} ({selectedCodes.size})
-                  </button>
+                  <>
+                    <button className="admin-button small primary" onClick={downloadSelectedCodesAsTxt}>
+                      📥 {t.downloadTxt} ({selectedCodes.size})
+                    </button>
+                    <button className="admin-button small primary" onClick={() => setShowEmailModal(true)}>
+                      📧 {t.sendEmail} ({selectedCodes.size})
+                    </button>
+                    <button className="admin-button small danger" onClick={bulkDeleteInvitationCodes}>
+                      {t.bulkDelete} ({selectedCodes.size})
+                    </button>
+                  </>
                 )}
               </div>
               <div className="admin-table-container">
@@ -527,6 +616,51 @@ export default function InvitesPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEmailModal && (
+          <div className="admin-modal-overlay" onClick={() => setShowEmailModal(false)}>
+            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 className="admin-modal-title">{t.sendEmail}</h2>
+                <button className="admin-modal-close" onClick={() => setShowEmailModal(false)}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
+                <p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
+                <div className="admin-form-group">
+                  <label className="admin-form-label">{t.emailAddress}</label>
+                  <input
+                    type="email"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    placeholder={t.emailPlaceholder}
+                    className="admin-input"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="admin-modal-actions">
+                <button 
+                  type="button" 
+                  className="admin-button success" 
+                  onClick={sendCodesViaEmail}
+                  disabled={isSendingEmail}
+                >
+                  {isSendingEmail ? '發送中...' : t.send}
+                </button>
+                <button 
+                  type="button" 
+                  className="admin-button secondary" 
+                  onClick={() => setShowEmailModal(false)}
+                  disabled={isSendingEmail}
+                >
+                  {t.cancel}
+                </button>
               </div>
             </div>
           </div>

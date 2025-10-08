@@ -487,4 +487,56 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			}
 		}
 	);
+
+	// Send invitation codes via email
+	fastify.post(
+		"/invitation-codes/send-email",
+		{
+			schema: {
+				description: "透過 Email 寄送邀請碼",
+				tags: ["admin/invitation-codes"],
+				body: {
+					type: 'object',
+					properties: {
+						email: {
+							type: 'string',
+							format: 'email',
+							description: '收件者 Email'
+						},
+						codes: {
+							type: 'array',
+							items: { type: 'string' },
+							description: '邀請碼列表'
+						},
+						groupName: {
+							type: 'string',
+							description: '邀請碼組名稱'
+						}
+					},
+					required: ['email', 'codes']
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: {email: string, codes: string[], groupName?: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { email, codes, groupName } = request.body;
+
+				// Import email utility
+				const { sendInvitationCodes } = await import("#utils/email.js");
+
+				// Send email
+				await sendInvitationCodes(email, codes, groupName);
+
+				return reply.send(successResponse(null, "成功寄送邀請碼"));
+			} catch (error) {
+				console.error("Send invitation codes email error:", error);
+				const { response, statusCode } = serverErrorResponse("寄送邀請碼失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
 }
