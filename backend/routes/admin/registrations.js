@@ -73,14 +73,18 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							select: {
 								id: true,
 								name: true,
+								description: true,
+								location: true,
 								startDate: true,
-								endDate: true
+								endDate: true,
+								ogImage: true
 							}
 						},
 						ticket: {
 							select: {
 								id: true,
 								name: true,
+								description: true,
 								price: true
 							}
 						},
@@ -96,9 +100,15 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					take: limit
 				});
 
+				// Parse formData JSON strings
+				const processedRegistrations = registrations.map(reg => ({
+					...reg,
+					formData: reg.formData ? JSON.parse(reg.formData) : {}
+				}));
+
 				const pagination = createPagination(page, limit, total);
 
-				return reply.send(successResponse(registrations, "取得報名列表成功", pagination));
+				return reply.send(successResponse(processedRegistrations, "取得報名列表成功", pagination));
 			} catch (error) {
 				console.error("List registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名列表失敗");
@@ -164,7 +174,13 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(registration));
+				// Parse formData JSON string
+				const processedRegistration = {
+					...registration,
+					formData: registration.formData ? JSON.parse(registration.formData) : {}
+				};
+
+				return reply.send(successResponse(processedRegistration));
 			} catch (error) {
 				console.error("Get registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名詳情失敗");
@@ -279,23 +295,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							description: '匯出格式'
 						}
 					}
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									downloadUrl: { type: 'string' },
-									filename: { type: 'string' },
-									count: { type: 'integer' }
-								}
-							}
-						}
-					}
 				}
 			}
 		},
@@ -340,28 +339,25 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format}`;
 				
-				const downloadsDir = path.join(__dirname, '../../downloads');
-				if (!fs.existsSync(downloadsDir)) {
-					fs.mkdirSync(downloadsDir, { recursive: true });
-				}
-				
-				const filePath = path.join(downloadsDir, filename);
+				// Generate CSV content
+				let content;
+				let contentType;
 				
 				if (format === 'csv') {
-					const csvContent = generateCSV(registrations);
-					fs.writeFileSync(filePath, csvContent, 'utf8');
+					content = generateCSV(registrations);
+					contentType = 'text/csv; charset=utf-8';
 				} else if (format === 'excel') {
-					const excelContent = generateExcel(registrations);
-					fs.writeFileSync(filePath, excelContent);
+					content = generateExcel(registrations);
+					contentType = 'text/csv; charset=utf-8'; // Excel format is also CSV for now
+				} else {
+					content = generateCSV(registrations);
+					contentType = 'text/csv; charset=utf-8';
 				}
 				
-				const downloadUrl = `/downloads/${filename}`;
-
-				return reply.send(successResponse({
-					downloadUrl,
-					filename,
-					count: registrations.length
-				}, "匯出準備完成"));
+				// Stream the file directly to client
+				reply.header('Content-Type', contentType);
+				reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+				return reply.send(content);
 			} catch (error) {
 				console.error("Export registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("匯出失敗");
@@ -369,6 +365,18 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			}
 		}
 	);
+
+	/**
+	 * Helper function to get localized text, preferring zh-Hant
+	 * @param {Object} localizedObj - Object with locale keys like {en: "...", "zh-Hant": "..."}
+	 * @returns {string}
+	 */
+	function getLocalizedName(localizedObj) {
+		if (!localizedObj) return '';
+		if (typeof localizedObj === 'string') return localizedObj;
+		// Try preferred locales in order
+		return localizedObj['zh-Hant'] || localizedObj['zh-Hans'] || localizedObj['en'] || Object.values(localizedObj)[0] || '';
+	}
 
 	function generateCSV(registrations) {
 		const headers = [
@@ -388,8 +396,8 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			return [
 				reg.id,
 				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
+				getLocalizedName(reg.event?.name),
+				getLocalizedName(reg.ticket?.name),
 				reg.ticket?.price || 0,
 				reg.status,
 				formData.name || '',
@@ -422,8 +430,8 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			return [
 				reg.id,
 				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
+				getLocalizedName(reg.event?.name),
+				getLocalizedName(reg.ticket?.name),
 				reg.ticket?.price || 0,
 				reg.status,
 				formData.name || '',

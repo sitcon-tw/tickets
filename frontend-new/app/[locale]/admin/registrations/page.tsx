@@ -222,15 +222,44 @@ export default function RegistrationsPage() {
 
   const syncToSheets = async () => {
     try {
-      const params: { format: 'excel'; eventId?: string } = { format: 'excel' };
-      if (currentEventId) params.eventId = currentEventId;
-
-      const response = await adminRegistrationsAPI.export(params);
-      if (response.success && response.data?.downloadUrl) {
-        window.open(response.data.downloadUrl, '_blank');
-      } else {
-        alert('Successfully exported data!');
+      // Build URL with query parameters
+      const params = new URLSearchParams({ format: 'excel' });
+      if (currentEventId) params.set('eventId', currentEventId);
+      
+      const url = `/api/admin/registrations/export?${params.toString()}`;
+      
+      // Direct download approach - fetch the file and trigger download
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
       }
+      
+      // Get the filename from the Content-Disposition header if available
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'registrations.csv';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      // Create a blob from the response and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      alert('Export completed successfully!');
     } catch (error) {
       alert('Export failed: ' + (error instanceof Error ? error.message : String(error)));
     }
