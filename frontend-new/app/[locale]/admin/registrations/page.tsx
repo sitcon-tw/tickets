@@ -225,12 +225,19 @@ export default function RegistrationsPage() {
       const params: { format: 'excel'; eventId?: string } = { format: 'excel' };
       if (currentEventId) params.eventId = currentEventId;
 
-      const response = await adminRegistrationsAPI.export(params);
-      if (response.success && response.data?.downloadUrl) {
-        window.open(response.data.downloadUrl, '_blank');
-      } else {
-        alert('Successfully exported data!');
-      }
+      // Build query string
+      const queryParams = new URLSearchParams();
+      if (params.format) queryParams.append('format', params.format);
+      if (params.eventId) queryParams.append('eventId', params.eventId);
+
+      // Create a temporary link to trigger download
+      const downloadUrl = `/api/admin/registrations/export?${queryParams.toString()}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `registrations_${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       alert('Export failed: ' + (error instanceof Error ? error.message : String(error)));
     }

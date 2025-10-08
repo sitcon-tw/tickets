@@ -7,21 +7,15 @@
  */
 
 import prisma from "#config/database.js";
-import { 
-	successResponse, 
-	validationErrorResponse, 
-	notFoundResponse, 
+import {
+	successResponse,
+	validationErrorResponse,
+	notFoundResponse,
 	serverErrorResponse,
 	conflictResponse,
 	createPagination
 } from "#utils/response.js";
 import { registrationSchemas } from "#schemas/registration.js";
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -96,9 +90,46 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					take: limit
 				});
 
+				// Parse formData from JSON string to object
+				const parsedRegistrations = registrations.map(reg => {
+					let parsedFormData = {};
+					try {
+						if (reg.formData) {
+							parsedFormData = JSON.parse(reg.formData);
+							// Log for debugging
+							if (registrations.indexOf(reg) === 0) {
+								console.log('Sample formData (raw):', reg.formData);
+								console.log('Sample formData (parsed):', parsedFormData);
+							}
+						}
+					} catch (error) {
+						console.error(`Failed to parse formData for registration ${reg.id}:`, error);
+						console.error(`Raw formData was:`, reg.formData);
+					}
+
+					// Create a plain object without Prisma metadata
+					const plainReg = {
+						id: reg.id,
+						eventId: reg.eventId,
+						ticketId: reg.ticketId,
+						email: reg.email,
+						status: reg.status,
+						referredBy: reg.referredBy || '',
+						formData: parsedFormData,
+						createdAt: reg.createdAt,
+						updatedAt: reg.updatedAt,
+						user: reg.user,
+						event: reg.event,
+						ticket: reg.ticket,
+						referral: reg.referral
+					};
+
+					return plainReg;
+				});
+
 				const pagination = createPagination(page, limit, total);
 
-				return reply.send(successResponse(registrations, "取得報名列表成功", pagination));
+				return reply.send(successResponse(parsedRegistrations, "取得報名列表成功", pagination));
 			} catch (error) {
 				console.error("List registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名列表失敗");
@@ -164,7 +195,13 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(registration));
+				// Parse formData from JSON string to object
+				const parsedRegistration = {
+					...registration,
+					formData: registration.formData ? JSON.parse(registration.formData) : {}
+				};
+
+				return reply.send(successResponse(parsedRegistration));
 			} catch (error) {
 				console.error("Get registration error:", error);
 				const { response, statusCode } = serverErrorResponse("取得報名詳情失敗");
@@ -279,23 +316,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							description: '匯出格式'
 						}
 					}
-				},
-				response: {
-					200: {
-						type: 'object',
-						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
-							data: {
-								type: 'object',
-								properties: {
-									downloadUrl: { type: 'string' },
-									filename: { type: 'string' },
-									count: { type: 'integer' }
-								}
-							}
-						}
-					}
 				}
 			}
 		},
@@ -338,30 +358,17 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				});
 
 				const timestamp = Date.now();
-				const filename = `registrations_${timestamp}.${format}`;
-				
-				const downloadsDir = path.join(__dirname, '../../downloads');
-				if (!fs.existsSync(downloadsDir)) {
-					fs.mkdirSync(downloadsDir, { recursive: true });
-				}
-				
-				const filePath = path.join(downloadsDir, filename);
-				
-				if (format === 'csv') {
-					const csvContent = generateCSV(registrations);
-					fs.writeFileSync(filePath, csvContent, 'utf8');
-				} else if (format === 'excel') {
-					const excelContent = generateExcel(registrations);
-					fs.writeFileSync(filePath, excelContent);
-				}
-				
-				const downloadUrl = `/downloads/${filename}`;
+				const filename = `registrations_${timestamp}.${format === 'excel' ? 'csv' : format}`;
 
-				return reply.send(successResponse({
-					downloadUrl,
-					filename,
-					count: registrations.length
-				}, "匯出準備完成"));
+				// Generate CSV content
+				const csvContent = generateCSV(registrations);
+
+				// Set headers to trigger download
+				reply.header('Content-Type', 'text/csv; charset=utf-8');
+				reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+
+				// Add BOM for Excel UTF-8 compatibility
+				return reply.send('\uFEFF' + csvContent);
 			} catch (error) {
 				console.error("Export registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("匯出失敗");
@@ -382,14 +389,20 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			'Phone',
 			'Created At'
 		];
-		
+
 		const rows = registrations.map(reg => {
 			const formData = reg.formData ? JSON.parse(reg.formData) : {};
+			// Handle localized text - use Chinese (zh-Hant) as default, fallback to other languages
+			const getLocalizedName = (nameObj) => {
+				if (!nameObj || typeof nameObj !== 'object') return '';
+				return nameObj['zh-Hant'] || nameObj['zh-Hans'] || nameObj['en'] || Object.values(nameObj)[0] || '';
+			};
+
 			return [
 				reg.id,
 				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
+				getLocalizedName(reg.event?.name),
+				getLocalizedName(reg.ticket?.name),
 				reg.ticket?.price || 0,
 				reg.status,
 				formData.name || '',
@@ -397,45 +410,10 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				new Date(reg.createdAt).toISOString()
 			];
 		});
-		
+
 		const csvRows = [headers, ...rows];
-		return csvRows.map(row => 
+		return csvRows.map(row =>
 			row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
 		).join('\n');
-	}
-	
-	function generateExcel(registrations) {
-		const headers = [
-			'ID',
-			'Email',
-			'Event',
-			'Ticket',
-			'Price',
-			'Status',
-			'Name',
-			'Phone',
-			'Created At'
-		];
-		
-		const rows = registrations.map(reg => {
-			const formData = reg.formData ? JSON.parse(reg.formData) : {};
-			return [
-				reg.id,
-				reg.email,
-				reg.event?.name || '',
-				reg.ticket?.name || '',
-				reg.ticket?.price || 0,
-				reg.status,
-				formData.name || '',
-				formData.phone || '',
-				new Date(reg.createdAt).toISOString()
-			];
-		});
-		
-		const csvContent = [headers, ...rows]
-			.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-			.join('\n');
-			
-		return csvContent;
 	}
 }

@@ -32,6 +32,7 @@ export const registrationProperties = {
 	},
 	formData: {
 		type: 'object',
+		additionalProperties: true,
 		description: '表單資料'
 	},
 	createdAt: {
@@ -131,7 +132,8 @@ export const registrationsListResponse = {
 			type: 'array',
 			items: {
 				type: 'object',
-				properties: registrationProperties
+				properties: registrationProperties,
+				additionalProperties: true
 			}
 		}
 	},
