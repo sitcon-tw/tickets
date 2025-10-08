@@ -2,174 +2,174 @@
  * @fileoverview Invitation code-related schema definitions
  */
 
-import { dateTimeString, successResponse, errorResponse, idParam } from './common.js';
+import { dateTimeString, errorResponse, idParam, successResponse } from "./common.js";
 
 export const invitationCodeProperties = {
 	id: {
-		type: 'string',
-		description: '邀請碼 ID'
+		type: "string",
+		description: "邀請碼 ID"
 	},
 	code: {
-		type: 'string',
-		description: '邀請碼'
+		type: "string",
+		description: "邀請碼"
 	},
 	name: {
-		type: 'string',
-		description: '名稱/描述'
+		type: "string",
+		description: "名稱/描述"
 	},
 	usageLimit: {
-		type: 'integer',
+		type: "integer",
 		minimum: 1,
-		description: '使用次數限制'
+		description: "使用次數限制"
 	},
 	usedCount: {
-		type: 'integer',
+		type: "integer",
 		minimum: 0,
-		description: '已使用次數'
+		description: "已使用次數"
 	},
 	validFrom: {
 		...dateTimeString,
-		description: '開始時間'
+		description: "開始時間"
 	},
 	validUntil: {
 		...dateTimeString,
-		description: '結束時間'
+		description: "結束時間"
 	},
 	isActive: {
-		type: 'boolean',
-		description: '是否啟用'
+		type: "boolean",
+		description: "是否啟用"
 	},
 	createdAt: {
 		...dateTimeString,
-		description: '建立時間'
+		description: "建立時間"
 	},
 	updatedAt: {
 		...dateTimeString,
-		description: '更新時間'
+		description: "更新時間"
 	},
 	ticketId: {
-		type: 'string',
-		description: '關聯票券 ID'
+		type: "string",
+		description: "關聯票券 ID"
 	}
 };
 
 export const invitationCodeCreateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		code: {
-			type: 'string',
-			description: '邀請碼',
+			type: "string",
+			description: "邀請碼",
 			minLength: 1
 		},
 		name: {
-			type: 'string',
-			description: '名稱/描述'
+			type: "string",
+			description: "名稱/描述"
 		},
 		usageLimit: {
-			type: 'integer',
+			type: "integer",
 			minimum: 1,
-			description: '使用次數限制'
+			description: "使用次數限制"
 		},
 		validFrom: {
 			...dateTimeString,
-			description: '開始時間'
+			description: "開始時間"
 		},
 		validUntil: {
 			...dateTimeString,
-			description: '結束時間'
+			description: "結束時間"
 		},
 		ticketId: {
-			type: 'string',
-			description: '關聯票券 ID'
+			type: "string",
+			description: "關聯票券 ID"
 		}
 	},
-	required: ['ticketId', 'code']
+	required: ["ticketId", "code"]
 };
 
 export const invitationCodeUpdateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		code: {
-			type: 'string',
-			description: '邀請碼',
+			type: "string",
+			description: "邀請碼",
 			minLength: 1
 		},
 		name: {
-			type: 'string',
-			description: '名稱/描述'
+			type: "string",
+			description: "名稱/描述"
 		},
 		usageLimit: {
-			type: 'integer',
+			type: "integer",
 			minimum: 1,
-			description: '使用次數限制'
+			description: "使用次數限制"
 		},
 		validFrom: {
 			...dateTimeString,
-			description: '開始時間'
+			description: "開始時間"
 		},
 		validUntil: {
 			...dateTimeString,
-			description: '結束時間'
+			description: "結束時間"
 		},
 		isActive: {
-			type: 'boolean',
-			description: '是否啟用'
+			type: "boolean",
+			description: "是否啟用"
 		},
 		ticketId: {
-			type: 'string',
-			description: '關聯票券 ID'
+			type: "string",
+			description: "關聯票券 ID"
 		}
 	}
 };
 
 export const invitationCodeValidateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		code: {
-			type: 'string',
-			description: '邀請碼',
+			type: "string",
+			description: "邀請碼",
 			minLength: 1
 		},
 		ticketId: {
-			type: 'string',
-			description: '票券 ID'
+			type: "string",
+			description: "票券 ID"
 		}
 	},
-	required: ['code', 'ticketId']
+	required: ["code", "ticketId"]
 };
 
 export const invitationCodeResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'object',
+			type: "object",
 			properties: invitationCodeProperties,
-			required: ['id', 'ticketId', 'code']
+			required: ["id", "ticketId", "code"]
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const invitationCodesListResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				properties: invitationCodeProperties
 			}
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const invitationCodeSchemas = {
 	createInvitationCode: {
-		description: '創建新邀請碼',
-		tags: ['admin/invitation-codes'],
+		description: "創建新邀請碼",
+		tags: ["admin/invitation-codes"],
 		body: invitationCodeCreateBody,
 		params: undefined,
 		querystring: undefined,
@@ -181,10 +181,10 @@ export const invitationCodeSchemas = {
 			409: errorResponse
 		}
 	},
-	
+
 	getInvitationCode: {
-		description: '取得邀請碼詳情',
-		tags: ['admin/invitation-codes'],
+		description: "取得邀請碼詳情",
+		tags: ["admin/invitation-codes"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -193,10 +193,10 @@ export const invitationCodeSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	updateInvitationCode: {
-		description: '更新邀請碼',
-		tags: ['admin/invitation-codes'],
+		description: "更新邀請碼",
+		tags: ["admin/invitation-codes"],
 		body: invitationCodeUpdateBody,
 		params: idParam,
 		querystring: undefined,
@@ -208,10 +208,10 @@ export const invitationCodeSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	deleteInvitationCode: {
-		description: '刪除邀請碼',
-		tags: ['admin/invitation-codes'],
+		description: "刪除邀請碼",
+		tags: ["admin/invitation-codes"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -222,22 +222,22 @@ export const invitationCodeSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	listInvitationCodes: {
-		description: '取得邀請碼列表',
-		tags: ['admin/invitation-codes'],
+		description: "取得邀請碼列表",
+		tags: ["admin/invitation-codes"],
 		body: undefined,
 		params: undefined,
 		querystring: {
-			type: 'object',
+			type: "object",
 			properties: {
 				ticketId: {
-					type: 'string',
-					description: '篩選票券 ID'
+					type: "string",
+					description: "篩選票券 ID"
 				},
 				isActive: {
-					type: 'boolean',
-					description: '篩選啟用狀態'
+					type: "boolean",
+					description: "篩選啟用狀態"
 				}
 			}
 		},
@@ -245,32 +245,32 @@ export const invitationCodeSchemas = {
 			200: invitationCodesListResponse
 		}
 	},
-	
+
 	validateInvitationCode: {
-		description: '驗證邀請碼',
-		tags: ['public'],
+		description: "驗證邀請碼",
+		tags: ["public"],
 		body: invitationCodeValidateBody,
 		params: undefined,
 		querystring: undefined,
 		response: {
 			200: {
-				type: 'object',
+				type: "object",
 				properties: {
 					...successResponse.properties,
 					data: {
-						type: 'object',
+						type: "object",
 						properties: {
 							isValid: {
-								type: 'boolean',
-								description: '是否有效'
+								type: "boolean",
+								description: "是否有效"
 							},
 							code: {
-								type: 'string',
-								description: '邀請碼'
+								type: "string",
+								description: "邀請碼"
 							},
 							remainingUses: {
-								type: 'integer',
-								description: '剩餘使用次數'
+								type: "integer",
+								description: "剩餘使用次數"
 							}
 						}
 					}
@@ -284,37 +284,37 @@ export const invitationCodeSchemas = {
 
 export const invitationCodeVerifyResponse = {
 	200: {
-		type: 'object',
+		type: "object",
 		properties: {
 			...successResponse.properties,
 			data: {
-				type: 'object',
+				type: "object",
 				properties: {
-					valid: { type: 'boolean' },
+					valid: { type: "boolean" },
 					invitationCode: {
-						type: 'object',
+						type: "object",
 						properties: {
-							id: { type: 'string' },
-							code: { type: 'string' },
-							description: { type: 'string' },
-							usedCount: { type: 'integer' },
-							usageLimit: { type: 'integer' },
-							expiresAt: { type: 'string', format: 'date-time' }
+							id: { type: "string" },
+							code: { type: "string" },
+							description: { type: "string" },
+							usedCount: { type: "integer" },
+							usageLimit: { type: "integer" },
+							expiresAt: { type: "string", format: "date-time" }
 						}
 					},
 					availableTickets: {
-						type: 'array',
+						type: "array",
 						items: {
-							type: 'object',
+							type: "object",
 							properties: {
-								id: { type: 'string' },
-								name: { type: 'string' },
-								description: { type: 'string' },
-								price: { type: 'number' },
-								quantity: { type: 'integer' },
-								soldCount: { type: 'integer' },
-								available: { type: 'integer' },
-								isOnSale: { type: 'boolean' }
+								id: { type: "string" },
+								name: { type: "string" },
+								description: { type: "string" },
+								price: { type: "number" },
+								quantity: { type: "integer" },
+								soldCount: { type: "integer" },
+								available: { type: "integer" },
+								isOnSale: { type: "boolean" }
 							}
 						}
 					}

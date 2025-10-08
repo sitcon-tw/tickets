@@ -2,150 +2,150 @@
  * @fileoverview Event-related schema definitions
  */
 
-import { dateTimeString, successResponse, errorResponse, idParam } from './common.js';
+import { dateTimeString, errorResponse, idParam, successResponse } from "./common.js";
 
 export const eventProperties = {
 	id: {
-		type: 'string',
-		description: '活動 ID'
+		type: "string",
+		description: "活動 ID"
 	},
 	name: {
-		type: 'object',
+		type: "object",
 		additionalProperties: true,
-		description: '活動名稱 (localized JSON object)'
+		description: "活動名稱 (localized JSON object)"
 	},
 	description: {
-		type: 'object',
+		type: "object",
 		additionalProperties: true,
-		description: '活動描述 (localized JSON object)'
+		description: "活動描述 (localized JSON object)"
 	},
 	location: {
-		type: 'string',
-		description: '活動地點'
+		type: "string",
+		description: "活動地點"
 	},
 	startDate: {
 		...dateTimeString,
-		description: '開始時間'
+		description: "開始時間"
 	},
 	endDate: {
 		...dateTimeString,
-		description: '結束時間'
+		description: "結束時間"
 	},
 	ogImage: {
-		type: 'string',
-		description: 'Open Graph 圖片 URL'
+		type: "string",
+		description: "Open Graph 圖片 URL"
 	},
 	landingPage: {
-		type: 'string',
-		description: '登陸頁面 JSON 內容'
+		type: "string",
+		description: "登陸頁面 JSON 內容"
 	},
 	isActive: {
-		type: 'boolean',
-		description: '是否啟用'
+		type: "boolean",
+		description: "是否啟用"
 	},
 	createdAt: {
 		...dateTimeString,
-		description: '建立時間'
+		description: "建立時間"
 	},
 	updatedAt: {
 		...dateTimeString,
-		description: '更新時間'
+		description: "更新時間"
 	}
 };
 
 export const eventCreateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		name: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '活動名稱 (localized JSON object)'
+			description: "活動名稱 (localized JSON object)"
 		},
 		description: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '活動描述 (localized JSON object)'
+			description: "活動描述 (localized JSON object)"
 		},
 		startDate: {
 			...dateTimeString,
-			description: '開始時間'
+			description: "開始時間"
 		},
 		endDate: {
 			...dateTimeString,
-			description: '結束時間'
+			description: "結束時間"
 		},
 		location: {
-			type: 'string',
-			description: '地點'
+			type: "string",
+			description: "地點"
 		}
 	},
-	required: ['name', 'startDate', 'endDate']
+	required: ["name", "startDate", "endDate"]
 };
 
 export const eventUpdateBody = {
-	type: 'object',
+	type: "object",
 	properties: {
 		name: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '活動名稱 (localized JSON object)'
+			description: "活動名稱 (localized JSON object)"
 		},
 		description: {
-			type: 'object',
+			type: "object",
 			additionalProperties: true,
-			description: '活動描述 (localized JSON object)'
+			description: "活動描述 (localized JSON object)"
 		},
 		startDate: {
 			...dateTimeString,
-			description: '開始時間'
+			description: "開始時間"
 		},
 		endDate: {
 			...dateTimeString,
-			description: '結束時間'
+			description: "結束時間"
 		},
 		location: {
-			type: 'string',
-			description: '地點'
+			type: "string",
+			description: "地點"
 		},
 		isActive: {
-			type: 'boolean',
-			description: '是否啟用'
+			type: "boolean",
+			description: "是否啟用"
 		}
 	}
 };
 
 export const eventResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'object',
+			type: "object",
 			properties: eventProperties,
-			required: ['id', 'name', 'startDate', 'endDate']
-		},
+			required: ["id", "name", "startDate", "endDate"]
+		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const eventsListResponse = {
-	type: 'object',
+	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
-			type: 'array',
+			type: "array",
 			items: {
-				type: 'object',
+				type: "object",
 				properties: eventProperties
 			}
 		}
 	},
-	required: ['success', 'message', 'data']
+	required: ["success", "message", "data"]
 };
 
 export const eventSchemas = {
 	createEvent: {
-		description: '創建新活動',
-		tags: ['admin/events'],
+		description: "創建新活動",
+		tags: ["admin/events"],
 		body: eventCreateBody,
 		params: undefined,
 		querystring: undefined,
@@ -156,10 +156,10 @@ export const eventSchemas = {
 			403: errorResponse
 		}
 	},
-	
+
 	getEvent: {
-		description: '取得活動詳情',
-		tags: ['events'],
+		description: "取得活動詳情",
+		tags: ["events"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -168,10 +168,10 @@ export const eventSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	updateEvent: {
-		description: '更新活動',
-		tags: ['admin/events'],
+		description: "更新活動",
+		tags: ["admin/events"],
 		body: eventUpdateBody,
 		params: idParam,
 		querystring: undefined,
@@ -183,10 +183,10 @@ export const eventSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	deleteEvent: {
-		description: '刪除活動',
-		tags: ['admin/events'],
+		description: "刪除活動",
+		tags: ["admin/events"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -197,18 +197,18 @@ export const eventSchemas = {
 			404: errorResponse
 		}
 	},
-	
+
 	listEvents: {
-		description: '取得活動列表',
-		tags: ['events'],
+		description: "取得活動列表",
+		tags: ["events"],
 		body: undefined,
 		params: undefined,
 		querystring: {
-			type: 'object',
+			type: "object",
 			properties: {
 				isActive: {
-					type: 'boolean',
-					description: '篩選啟用狀態'
+					type: "boolean",
+					description: "篩選啟用狀態"
 				}
 			}
 		},
@@ -221,25 +221,25 @@ export const eventSchemas = {
 // Public event response schemas with computed properties
 export const eventTicketsResponse = {
 	200: {
-		type: 'object',
+		type: "object",
 		properties: {
 			...successResponse.properties,
 			data: {
-				type: 'array',
+				type: "array",
 				items: {
-					type: 'object',
+					type: "object",
 					properties: {
-						id: { type: 'string' },
-						name: { type: 'object', additionalProperties: true },
-						description: { type: 'object', additionalProperties: true },
-						price: { type: 'number' },
-						quantity: { type: 'integer' },
-						soldCount: { type: 'integer' },
-						available: { type: 'integer' },
-						saleStart: { type: 'string', format: 'date-time' },
-						saleEnd: { type: 'string', format: 'date-time' },
-						isOnSale: { type: 'boolean' },
-						isSoldOut: { type: 'boolean' }
+						id: { type: "string" },
+						name: { type: "object", additionalProperties: true },
+						description: { type: "object", additionalProperties: true },
+						price: { type: "number" },
+						quantity: { type: "integer" },
+						soldCount: { type: "integer" },
+						available: { type: "integer" },
+						saleStart: { type: "string", format: "date-time" },
+						saleEnd: { type: "string", format: "date-time" },
+						isOnSale: { type: "boolean" },
+						isSoldOut: { type: "boolean" }
 					}
 				}
 			}
@@ -249,24 +249,24 @@ export const eventTicketsResponse = {
 
 export const publicEventsListResponse = {
 	200: {
-		type: 'object',
+		type: "object",
 		properties: {
 			...successResponse.properties,
 			data: {
-				type: 'array',
+				type: "array",
 				items: {
-					type: 'object',
+					type: "object",
 					properties: {
-						id: { type: 'string' },
-						name: { type: 'object', additionalProperties: true },
-						description: { type: 'object', additionalProperties: true },
-						location: { type: 'string' },
-						startDate: { type: 'string', format: 'date-time' },
-						endDate: { type: 'string', format: 'date-time' },
-						ogImage: { type: 'string' },
-						ticketCount: { type: 'integer' },
-						registrationCount: { type: 'integer' },
-						hasAvailableTickets: { type: 'boolean' }
+						id: { type: "string" },
+						name: { type: "object", additionalProperties: true },
+						description: { type: "object", additionalProperties: true },
+						location: { type: "string" },
+						startDate: { type: "string", format: "date-time" },
+						endDate: { type: "string", format: "date-time" },
+						ogImage: { type: "string" },
+						ticketCount: { type: "integer" },
+						registrationCount: { type: "integer" },
+						hasAvailableTickets: { type: "boolean" }
 					}
 				}
 			}
@@ -276,18 +276,18 @@ export const publicEventsListResponse = {
 
 export const eventStatsResponse = {
 	200: {
-		type: 'object',
+		type: "object",
 		properties: {
 			...successResponse.properties,
 			data: {
-				type: 'object',
+				type: "object",
 				properties: {
-					eventName: { type: 'object', additionalProperties: true },
-					totalRegistrations: { type: 'integer' },
-					confirmedRegistrations: { type: 'integer' },
-					totalTickets: { type: 'integer' },
-					availableTickets: { type: 'integer' },
-					registrationRate: { type: 'number' }
+					eventName: { type: "object", additionalProperties: true },
+					totalRegistrations: { type: "integer" },
+					confirmedRegistrations: { type: "integer" },
+					totalTickets: { type: "integer" },
+					availableTickets: { type: "integer" },
+					registrationRate: { type: "number" }
 				}
 			}
 		}

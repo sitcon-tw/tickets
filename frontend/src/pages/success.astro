@@ -67,20 +67,20 @@ const l = i18n.l(Astro.url);
 		async function loadSuccessInfo() {
 			try {
 				// Check if user is authenticated
-				const sessionResponse = await fetch('http://localhost:3000/api/auth/session', {
-					credentials: 'include'
+				const sessionResponse = await fetch("http://localhost:3000/api/auth/session", {
+					credentials: "include"
 				});
-				
+
 				if (!sessionResponse.ok) {
-					window.location.href = '/login/';
+					window.location.href = "/login/";
 					return;
 				}
-				
+
 				// Get user's registrations to show count
-				const registrationsResponse = await fetch('http://localhost:3000/api/registrations', {
-					credentials: 'include'
+				const registrationsResponse = await fetch("http://localhost:3000/api/registrations", {
+					credentials: "include"
 				});
-				
+
 				let participantCount = "載入失敗";
 				if (registrationsResponse.ok) {
 					const registrations = await registrationsResponse.json();
@@ -88,13 +88,13 @@ const l = i18n.l(Astro.url);
 						participantCount = registrations.data.length || 1;
 					}
 				}
-				
+
 				// Get referral code
 				let referralCode = "載入失敗";
-				const referralResponse = await fetch('http://localhost:3000/api/referrals', {
-					credentials: 'include'
+				const referralResponse = await fetch("http://localhost:3000/api/referrals", {
+					credentials: "include"
 				});
-				
+
 				if (referralResponse.ok) {
 					const referral = await referralResponse.json();
 					if (referral.success && referral.data) {
@@ -102,11 +102,11 @@ const l = i18n.l(Astro.url);
 					}
 				} else if (referralResponse.status === 404) {
 					// Create referral code if it doesn't exist
-					const createResponse = await fetch('http://localhost:3000/api/referrals', {
-						method: 'POST',
-						credentials: 'include'
+					const createResponse = await fetch("http://localhost:3000/api/referrals", {
+						method: "POST",
+						credentials: "include"
 					});
-					
+
 					if (createResponse.ok) {
 						const created = await createResponse.json();
 						if (created.success && created.data) {
@@ -114,36 +114,38 @@ const l = i18n.l(Astro.url);
 						}
 					}
 				}
-				
+
 				// Update UI
-				document.getElementById('participant-count').textContent = participantCount;
-				document.getElementById('referral-code').textContent = referralCode;
-				
+				document.getElementById("participant-count").textContent = participantCount;
+				document.getElementById("referral-code").textContent = referralCode;
+
 				// Set up copy functionality
-				document.getElementById('copy').addEventListener('click', () => {
+				document.getElementById("copy").addEventListener("click", () => {
 					const baseUrl = window.location.origin;
 					const inviteUrl = `${baseUrl}/?ref=${referralCode}`;
-					
-					navigator.clipboard.writeText(inviteUrl).then(() => {
-						const copyBtn = document.getElementById('copy');
-						const originalText = copyBtn.textContent;
-						copyBtn.textContent = '已複製!';
-						setTimeout(() => {
-							copyBtn.textContent = originalText;
-						}, 2000);
-					}).catch(err => {
-						console.error('Failed to copy: ', err);
-						alert('複製失敗，請手動複製: ' + inviteUrl);
-					});
+
+					navigator.clipboard
+						.writeText(inviteUrl)
+						.then(() => {
+							const copyBtn = document.getElementById("copy");
+							const originalText = copyBtn.textContent;
+							copyBtn.textContent = "已複製!";
+							setTimeout(() => {
+								copyBtn.textContent = originalText;
+							}, 2000);
+						})
+						.catch(err => {
+							console.error("Failed to copy: ", err);
+							alert("複製失敗，請手動複製: " + inviteUrl);
+						});
 				});
-				
 			} catch (error) {
-				console.error('Failed to load success info:', error);
+				console.error("Failed to load success info:", error);
 			}
 		}
-		
+
 		// Initialize on page load
-		document.addEventListener('DOMContentLoaded', loadSuccessInfo);
+		document.addEventListener("DOMContentLoaded", loadSuccessInfo);
 	</script>
 
 	<style is:inline>

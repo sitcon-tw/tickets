@@ -6,19 +6,13 @@
  */
 
 import prisma from "#config/database.js";
-import { 
-	successResponse, 
-	validationErrorResponse, 
-	notFoundResponse, 
-	serverErrorResponse,
-	conflictResponse
-} from "#utils/response.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin invitation codes routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function adminInvitationCodesRoutes(fastify, options) {
 	// Create new invitation code
@@ -38,9 +32,9 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 
 				// Check for duplicate codes
 				const existingCode = await prisma.invitationCode.findFirst({
-					where: { 
+					where: {
 						ticketId,
-						code 
+						code
 					}
 				});
 
@@ -65,7 +59,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 
 				// Create invitation code in transaction
 				/** @type {InvitationCode} */
-				const invitationCode = await prisma.$transaction(async (tx) => {
+				const invitationCode = await prisma.$transaction(async tx => {
 					// Verify ticket exists if provided
 					if (ticketId) {
 						const ticket = await tx.ticket.findFirst({
@@ -183,7 +177,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				// Check for code conflicts in the same event
 				if (code && code !== existingCode.code) {
 					const codeConflict = await prisma.invitationCode.findFirst({
-						where: { 
+						where: {
 							ticketId: existingCode.ticketId,
 							code,
 							id: { not: id }
@@ -212,15 +206,13 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 
 				// Don't allow reducing usage limit below current usage
 				if (usageLimit !== undefined && usageLimit < existingCode.usedCount) {
-					const { response, statusCode } = validationErrorResponse(
-						`使用次數限制不能低於已使用次數 (${existingCode.usedCount})`
-					);
+					const { response, statusCode } = validationErrorResponse(`使用次數限制不能低於已使用次數 (${existingCode.usedCount})`);
 					return reply.code(statusCode).send(response);
 				}
 
 				// Update invitation code in transaction
 				/** @type {InvitationCode} */
-				const invitationCode = await prisma.$transaction(async (tx) => {
+				const invitationCode = await prisma.$transaction(async tx => {
 					// Prepare update data
 					const updatePayload = {};
 					if (code !== undefined) updatePayload.code = code;
@@ -347,7 +339,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' }
+					orderBy: { createdAt: "desc" }
 				});
 
 				// Add status indicators
@@ -377,40 +369,40 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				description: "批量創建邀請碼",
 				tags: ["admin/invitation-codes"],
 				body: {
-					type: 'object',
+					type: "object",
 					properties: {
 						ticketId: {
-							type: 'string',
-							description: '票券 ID'
+							type: "string",
+							description: "票券 ID"
 						},
 						prefix: {
-							type: 'string',
-							description: '邀請碼前綴',
+							type: "string",
+							description: "邀請碼前綴",
 							minLength: 1
 						},
 						count: {
-							type: 'integer',
+							type: "integer",
 							minimum: 1,
 							maximum: 100,
-							description: '生成數量'
+							description: "生成數量"
 						},
 						usageLimit: {
-							type: 'integer',
+							type: "integer",
 							minimum: 1,
-							description: '使用次數限制'
+							description: "使用次數限制"
 						},
 						validFrom: {
-							type: 'string',
-							format: 'date-time',
-							description: '開始時間'
+							type: "string",
+							format: "date-time",
+							description: "開始時間"
 						},
 						validUntil: {
-							type: 'string',
-							format: 'date-time',
-							description: '結束時間'
+							type: "string",
+							format: "date-time",
+							description: "結束時間"
 						}
 					},
-					required: ['ticketId', 'prefix', 'count']
+					required: ["ticketId", "prefix", "count"]
 				}
 			}
 		},
@@ -476,10 +468,15 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					)
 				);
 
-				return reply.code(201).send(successResponse({
-					count: codes.length,
-					codes: codes.map(c => c.code)
-				}, `成功創建 ${codes.length} 個邀請碼`));
+				return reply.code(201).send(
+					successResponse(
+						{
+							count: codes.length,
+							codes: codes.map(c => c.code)
+						},
+						`成功創建 ${codes.length} 個邀請碼`
+					)
+				);
 			} catch (error) {
 				console.error("Bulk create invitation codes error:", error);
 				const { response, statusCode } = serverErrorResponse("批量創建邀請碼失敗");
@@ -496,24 +493,24 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				description: "透過 Email 寄送邀請碼",
 				tags: ["admin/invitation-codes"],
 				body: {
-					type: 'object',
+					type: "object",
 					properties: {
 						email: {
-							type: 'string',
-							format: 'email',
-							description: '收件者 Email'
+							type: "string",
+							format: "email",
+							description: "收件者 Email"
 						},
 						codes: {
-							type: 'array',
-							items: { type: 'string' },
-							description: '邀請碼列表'
+							type: "array",
+							items: { type: "string" },
+							description: "邀請碼列表"
 						},
 						groupName: {
-							type: 'string',
-							description: '邀請碼組名稱'
+							type: "string",
+							description: "邀請碼組名稱"
 						}
 					},
-					required: ['email', 'codes']
+					required: ["email", "codes"]
 				}
 			}
 		},

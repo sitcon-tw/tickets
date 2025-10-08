@@ -29,6 +29,7 @@ Rate limiting is applied to prevent abuse and DoS attacks:
 - **Registration Endpoints**: 10 requests per hour per IP
 
 Configure these limits via environment variables:
+
 ```bash
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=15 minutes
@@ -60,6 +61,7 @@ To prevent DoS attacks via large payloads:
 - **JSON Size Limit**: 512KB (default)
 
 Configure via environment variables:
+
 ```bash
 MAX_BODY_SIZE=1048576
 MAX_JSON_SIZE=524288
@@ -71,6 +73,7 @@ MAX_JSON_SIZE=524288
 - **Environment-Based Assignment**: Automatic admin role assignment based on `ADMIN_EMAILS` env var
 
 Example:
+
 ```bash
 ADMIN_EMAILS=admin@example.com,another-admin@example.com
 ```
@@ -128,10 +131,10 @@ If you discover a security vulnerability, please follow responsible disclosure:
 1. **Do NOT** open a public issue
 2. Email security concerns to: [security contact email]
 3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if any)
+    - Description of the vulnerability
+    - Steps to reproduce
+    - Potential impact
+    - Suggested fix (if any)
 
 We will respond within 48 hours and work with you to address the issue.
 
@@ -139,19 +142,19 @@ We will respond within 48 hours and work with you to address the issue.
 
 - Regularly update dependencies using `pnpm update`
 - Monitor security advisories from:
-  - npm security advisories
-  - Prisma security updates
-  - Fastify security releases
-  - Better Auth security announcements
+    - npm security advisories
+    - Prisma security updates
+    - Fastify security releases
+    - Better Auth security announcements
 
 ## Audit Log
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2024-XX-XX | 1.0.0 | Initial security implementation |
-| - | - | Added rate limiting, helmet, input sanitization |
-| - | - | Removed hardcoded admin credentials |
-| - | - | Implemented CORS whitelisting |
+| Date       | Version | Changes                                         |
+| ---------- | ------- | ----------------------------------------------- |
+| 2024-XX-XX | 1.0.0   | Initial security implementation                 |
+| -          | -       | Added rate limiting, helmet, input sanitization |
+| -          | -       | Removed hardcoded admin credentials             |
+| -          | -       | Implemented CORS whitelisting                   |
 
 ## Additional Resources
 

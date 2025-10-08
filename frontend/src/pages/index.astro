@@ -31,21 +31,21 @@ const t = i18n.t(lang, {
 		<Info />
 		<Footer />
 	</main>
-	
+
 	<script is:inline>
 		// Handle referral code from URL
-		document.addEventListener('DOMContentLoaded', () => {
+		document.addEventListener("DOMContentLoaded", () => {
 			const urlParams = new URLSearchParams(window.location.search);
-			const referralCode = urlParams.get('ref');
-			
+			const referralCode = urlParams.get("ref");
+
 			if (referralCode) {
 				// Store referral code for later use during registration
-				sessionStorage.setItem('referralCode', referralCode);
-				
+				sessionStorage.setItem("referralCode", referralCode);
+
 				// Clean up URL by removing the ref parameter
 				const newUrl = new URL(window.location);
-				newUrl.searchParams.delete('ref');
-				window.history.replaceState({}, '', newUrl.pathname + newUrl.search + newUrl.hash);
+				newUrl.searchParams.delete("ref");
+				window.history.replaceState({}, "", newUrl.pathname + newUrl.search + newUrl.hash);
 			}
 		});
 	</script>

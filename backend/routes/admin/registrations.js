@@ -7,20 +7,13 @@
  */
 
 import prisma from "#config/database.js";
-import {
-	successResponse,
-	validationErrorResponse,
-	notFoundResponse,
-	serverErrorResponse,
-	conflictResponse,
-	createPagination
-} from "#utils/response.js";
 import { registrationSchemas } from "#schemas/registration.js";
+import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin registrations routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function adminRegistrationsRoutes(fastify, options) {
 	// List registrations with pagination and filters
@@ -35,13 +28,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				const { 
-					page = 1, 
-					limit = 20, 
-					eventId, 
-					status, 
-					userId
-				} = request.query;
+				const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
 				// Build where clause
 				const where = {};
@@ -85,7 +72,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' },
+					orderBy: { createdAt: "desc" },
 					skip: (page - 1) * limit,
 					take: limit
 				});
@@ -98,8 +85,8 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							parsedFormData = JSON.parse(reg.formData);
 							// Log for debugging
 							if (registrations.indexOf(reg) === 0) {
-								console.log('Sample formData (raw):', reg.formData);
-								console.log('Sample formData (parsed):', parsedFormData);
+								console.log("Sample formData (raw):", reg.formData);
+								console.log("Sample formData (parsed):", parsedFormData);
 							}
 						}
 					} catch (error) {
@@ -114,7 +101,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 						ticketId: reg.ticketId,
 						email: reg.email,
 						status: reg.status,
-						referredBy: reg.referredBy || '',
+						referredBy: reg.referredBy || "",
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
@@ -142,7 +129,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.get(
 		"/registrations/:id",
 		{
-			schema: {...registrationSchemas.getRegistration, tags: ["admin/registrations"]}
+			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
@@ -214,7 +201,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.put(
 		"/registrations/:id",
 		{
-			schema: {...registrationSchemas.updateRegistration, tags: ["admin/registrations"]}
+			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
 		/**
 		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>} request
@@ -298,22 +285,22 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				description: "匯出報名資料",
 				tags: ["admin/registrations"],
 				querystring: {
-					type: 'object',
+					type: "object",
 					properties: {
 						eventId: {
-							type: 'string',
-							description: '活動 ID'
+							type: "string",
+							description: "活動 ID"
 						},
 						status: {
-							type: 'string',
-							enum: ['confirmed', 'cancelled', 'pending'],
-							description: '報名狀態'
+							type: "string",
+							enum: ["confirmed", "cancelled", "pending"],
+							description: "報名狀態"
 						},
 						format: {
-							type: 'string',
-							enum: ['csv', 'excel'],
-							default: 'csv',
-							description: '匯出格式'
+							type: "string",
+							enum: ["csv", "excel"],
+							default: "csv",
+							description: "匯出格式"
 						}
 					}
 				}
@@ -325,7 +312,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		 */
 		async (request, reply) => {
 			try {
-				const { eventId, status, format = 'csv' } = request.query;
+				const { eventId, status, format = "csv" } = request.query;
 
 				// Build where clause
 				const where = {};
@@ -354,21 +341,21 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 							}
 						}
 					},
-					orderBy: { createdAt: 'desc' }
+					orderBy: { createdAt: "desc" }
 				});
 
 				const timestamp = Date.now();
-				const filename = `registrations_${timestamp}.${format === 'excel' ? 'csv' : format}`;
+				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
 				// Generate CSV content
 				const csvContent = generateCSV(registrations);
 
 				// Set headers to trigger download
-				reply.header('Content-Type', 'text/csv; charset=utf-8');
-				reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+				reply.header("Content-Type", "text/csv; charset=utf-8");
+				reply.header("Content-Disposition", `attachment; filename="${filename}"`);
 
 				// Add BOM for Excel UTF-8 compatibility
-				return reply.send('\uFEFF' + csvContent);
+				return reply.send("\uFEFF" + csvContent);
 			} catch (error) {
 				console.error("Export registrations error:", error);
 				const { response, statusCode } = serverErrorResponse("匯出失敗");
@@ -378,42 +365,20 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	function generateCSV(registrations) {
-		const headers = [
-			'ID',
-			'Email',
-			'Event',
-			'Ticket',
-			'Price',
-			'Status',
-			'Name',
-			'Phone',
-			'Created At'
-		];
+		const headers = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Name", "Phone", "Created At"];
 
 		const rows = registrations.map(reg => {
 			const formData = reg.formData ? JSON.parse(reg.formData) : {};
 			// Handle localized text - use Chinese (zh-Hant) as default, fallback to other languages
-			const getLocalizedName = (nameObj) => {
-				if (!nameObj || typeof nameObj !== 'object') return '';
-				return nameObj['zh-Hant'] || nameObj['zh-Hans'] || nameObj['en'] || Object.values(nameObj)[0] || '';
+			const getLocalizedName = nameObj => {
+				if (!nameObj || typeof nameObj !== "object") return "";
+				return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 			};
 
-			return [
-				reg.id,
-				reg.email,
-				getLocalizedName(reg.event?.name),
-				getLocalizedName(reg.ticket?.name),
-				reg.ticket?.price || 0,
-				reg.status,
-				formData.name || '',
-				formData.phone || '',
-				new Date(reg.createdAt).toISOString()
-			];
+			return [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, formData.name || "", formData.phone || "", new Date(reg.createdAt).toISOString()];
 		});
 
 		const csvRows = [headers, ...rows];
-		return csvRows.map(row =>
-			row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-		).join('\n');
+		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
 }

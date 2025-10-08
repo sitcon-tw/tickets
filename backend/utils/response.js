@@ -39,7 +39,7 @@ export const errorResponse = (code, message, details = null, statusCode = 400) =
 		error: {
 			code,
 			message
-		},
+		}
 	};
 
 	if (details) {

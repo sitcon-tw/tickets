@@ -112,9 +112,9 @@ const l = i18n.l(Astro.url);
 		const login = async () => {
 			const email = document.getElementById("email").value;
 			if (!email) return;
-			
+
 			try {
-				const BACKEND_URI = 'http://localhost:3000';
+				const BACKEND_URI = "http://localhost:3000";
 				const response = await fetch(`${BACKEND_URI}/api/auth/sign-in/magic-link`, {
 					method: "POST",
 					headers: {
@@ -128,7 +128,7 @@ const l = i18n.l(Astro.url);
 						errorCallbackURL: `${window.location.origin}/login/`
 					})
 				});
-				
+
 				if (response.ok) {
 					document.querySelector("section").classList = "sent";
 				} else {

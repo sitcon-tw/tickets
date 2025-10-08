@@ -383,16 +383,15 @@ const l = i18n.l(Astro.url);
 
 				// Load invitation codes from backend
 				await loadInvitationCodes();
-				
+
 				// Setup event listeners
 				setupEventListeners();
-				
+
 				// Initial render
 				renderTable();
-				
 			} catch (error) {
-				console.error('Failed to initialize invites page:', error);
-				showError('Failed to load page. Please try refreshing.');
+				console.error("Failed to initialize invites page:", error);
+				showError("Failed to load page. Please try refreshing.");
 				// Fall back to mock data
 				seedMock();
 				renderTable();
@@ -402,19 +401,19 @@ const l = i18n.l(Astro.url);
 		// Load invitation codes from backend
 		async function loadInvitationCodes() {
 			if (isLoading) return;
-			
+
 			isLoading = true;
 			showLoading(true);
-			
+
 			try {
 				const response = await invitationCodesAPI.list({ limit: 500 });
-				
+
 				if (response.success) {
 					// Transform backend data to frontend format
 					// Group by invitation code type/name
 					const codesByType = {};
 					(response.data || []).forEach(code => {
-						const typeName = code.type || 'Default';
+						const typeName = code.type || "Default";
 						if (!codesByType[typeName]) {
 							codesByType[typeName] = {
 								id: typeName,
@@ -432,14 +431,14 @@ const l = i18n.l(Astro.url);
 							active: code.isActive !== false
 						});
 					});
-					
+
 					inviteTypes = Object.values(codesByType);
 				} else {
-					throw new Error(response.message || 'Failed to load invitation codes');
+					throw new Error(response.message || "Failed to load invitation codes");
 				}
 			} catch (error) {
-				console.error('Failed to load invitation codes:', error);
-				showError('Failed to load invitation codes: ' + error.message);
+				console.error("Failed to load invitation codes:", error);
+				showError("Failed to load invitation codes: " + error.message);
 				// Fall back to mock data
 				seedMock();
 			} finally {
@@ -451,19 +450,19 @@ const l = i18n.l(Astro.url);
 		// Setup event listeners
 		function setupEventListeners() {
 			// Search functionality
-			searchTypesEl?.addEventListener('input', applyFilter);
-			
+			searchTypesEl?.addEventListener("input", applyFilter);
+
 			// Add new invitation code group
-			addBtn?.addEventListener('click', openAddModal);
-			
+			addBtn?.addEventListener("click", openAddModal);
+
 			// Modal controls
-			closeModalBtn?.addEventListener('click', closeModal);
-			cancelModalBtn?.addEventListener('click', closeModal);
-			typeForm?.addEventListener('submit', handleFormSubmit);
-			
+			closeModalBtn?.addEventListener("click", closeModal);
+			cancelModalBtn?.addEventListener("click", closeModal);
+			typeForm?.addEventListener("submit", handleFormSubmit);
+
 			// Codes modal controls
-			closeCodesBtn?.addEventListener('click', closeCodesModal);
-			searchCodesEl?.addEventListener('input', filterCodes);
+			closeCodesBtn?.addEventListener("click", closeCodesModal);
+			searchCodesEl?.addEventListener("input", filterCodes);
 		}
 
 		// Create new invitation codes
@@ -477,18 +476,18 @@ const l = i18n.l(Astro.url);
 				};
 
 				const response = await invitationCodesAPI.bulkCreate(data);
-				
+
 				if (response.success) {
 					// Reload data
 					await loadInvitationCodes();
 					renderTable();
 					closeModal();
 				} else {
-					throw new Error(response.message || 'Failed to create invitation codes');
+					throw new Error(response.message || "Failed to create invitation codes");
 				}
 			} catch (error) {
-				console.error('Failed to create invitation codes:', error);
-				alert('創建失敗: ' + error.message);
+				console.error("Failed to create invitation codes:", error);
+				alert("創建失敗: " + error.message);
 			}
 		}
 
@@ -645,20 +644,20 @@ const l = i18n.l(Astro.url);
 			const form = e.target;
 			const formData = new FormData(form);
 			const data = {
-				name: (formData.get('name') as string)?.trim(),
-				amount: formData.get('amount') as string,
-				limit: formData.get('limit') as string,
-				expires: formData.get('expires') as string
+				name: (formData.get("name") as string)?.trim(),
+				amount: formData.get("amount") as string,
+				limit: formData.get("limit") as string,
+				expires: formData.get("expires") as string
 			};
 
 			if (!data.name) {
-				alert('名稱是必填的');
+				alert("名稱是必填的");
 				return;
 			}
 
 			if (currentEditing) {
 				// Edit existing type - not implemented in backend yet
-				alert('編輯功能尚未實作');
+				alert("編輯功能尚未實作");
 			} else {
 				// Create new invitation codes
 				createInvitationCodes(data);

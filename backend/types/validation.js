@@ -38,5 +38,4 @@
  * @property {string[]} messages - Error messages
  */
 
-
-export {}
+export {};

@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import Footer from "@/components/Footer";
+import Lanyard from "@/components/Lanyard";
 import Nav from "@/components/Nav";
-import Footer from '@/components/Footer';
-import { useLocale } from 'next-intl';
-import { useParams } from 'next/navigation';
+import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
-import { registrationsAPI, referralsAPI } from '@/lib/api/endpoints';
-import { Copy, Check } from 'lucide-react';
-import Spinner from '@/components/Spinner';
-import Lanyard from '@/components/Lanyard';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from "@/i18n/navigation";
+import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { Check, Copy } from "lucide-react";
+import { useLocale } from "next-intl";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Success() {
 	const locale = useLocale();
@@ -63,7 +63,7 @@ export default function Success() {
 			"zh-Hant": "查看/編輯報名",
 			"zh-Hans": "查看/编辑报名",
 			en: "View/Edit Registration"
-		},
+		}
 	});
 
 	const [referralCode, setReferralCode] = useState<string>(t.loading);
@@ -83,12 +83,11 @@ export default function Success() {
 					const code = (await referralsAPI.getReferralLink(firstRegistration.id)).data.referralCode;
 					setReferralCode(code);
 				} catch (error) {
-					console.error('Failed to load registrations:', error);
+					console.error("Failed to load registrations:", error);
 				}
-
 			} catch (error) {
-				console.error('Failed to load success info:', error);
-				window.location.href = '/login/';
+				console.error("Failed to load success info:", error);
+				window.location.href = "/login/";
 			}
 		};
 		loadSuccessInfo();
@@ -97,25 +96,31 @@ export default function Success() {
 	function handleCopyRefCode() {
 		setCopiedCode(false);
 		if (referralCode === t.loading || referralCode === t.loadFailed) return;
-		navigator.clipboard.writeText(referralCode).then(() => {
-			setCopiedCode(true);
-		}).catch(() => {
-			alert(t.copyFailed + referralCode);
-		});
+		navigator.clipboard
+			.writeText(referralCode)
+			.then(() => {
+				setCopiedCode(true);
+			})
+			.catch(() => {
+				alert(t.copyFailed + referralCode);
+			});
 		setTimeout(() => setCopiedCode(false), 2000);
-	};
+	}
 
 	function handleCopyRefUrl() {
 		setCopiedUrl(false);
 		if (referralCode === t.loading || referralCode === t.loadFailed) return;
 		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referralCode}`;
-		navigator.clipboard.writeText(url).then(() => {
-			setCopiedUrl(true);
-		}).catch(() => {
-			alert(t.copyFailed + url);
-		});
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				setCopiedUrl(true);
+			})
+			.catch(() => {
+				alert(t.copyFailed + url);
+			});
 		setTimeout(() => setCopiedUrl(false), 2000);
-	};
+	}
 
 	return (
 		<>
@@ -124,9 +129,9 @@ export default function Success() {
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
-						<p style={{ marginBottom: '1rem' }}>{t.emailCheck}</p>
+						<p style={{ marginBottom: "1rem" }}>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
-						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: '0.1rem 0.5rem' }}>
+						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : (
@@ -141,12 +146,12 @@ export default function Success() {
 							)}
 						</div>
 						<p>{t.copyInviteLink}</p>
-						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: '0.1rem 0.5rem' }}>
+						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : (
 								<div className="flex items-center gap-2">
-									<span className="font-mono text-lg">{`${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/${eventSlug}?ref=${referralCode}`}</span>
+									<span className="font-mono text-lg">{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}</span>
 									{referralCode !== t.loadFailed && (
 										<span className="cursor-pointer" title={t.copyInvite}>
 											{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
@@ -155,13 +160,31 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<div className="flex gap-4 flex-wrap" style={{ marginTop: '2rem' }}>
+						<div className="flex gap-4 flex-wrap" style={{ marginTop: "2rem" }}>
 							{registrationId && (
-								<button onClick={() => {setViewRegLoading(true); router.push(`/my-registration/${registrationId}`)}} className="button">{viewRegLoading && <Spinner size='sm' />} {t.viewMyRegistration}</button>
+								<button
+									onClick={() => {
+										setViewRegLoading(true);
+										router.push(`/my-registration/${registrationId}`);
+									}}
+									className="button"
+								>
+									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
+								</button>
 							)}
-							<button onClick={() => {setViewRefLoading(true); router.push(`${window.location.href.replace(/\/success$/, '')}/referral-status`)}} className="button">{viewRefLoading && <Spinner size='sm' />} {t.viewReferralStatus}</button>
+							<button
+								onClick={() => {
+									setViewRefLoading(true);
+									router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
+								}}
+								className="button"
+							>
+								{viewRefLoading && <Spinner size="sm" />} {t.viewReferralStatus}
+							</button>
 						</div>
-							<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, '')}`)} className="button">{t.goBackHome}</button>
+						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)} className="button">
+							{t.goBackHome}
+						</button>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">

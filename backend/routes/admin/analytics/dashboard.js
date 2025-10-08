@@ -2,8 +2,8 @@
  * @typedef {import('#../types/api.js').AnalyticsData} AnalyticsData
  */
 
-import { successResponse, serverErrorResponse } from "#utils/response.js";
 import prisma from "#config/database.js";
+import { serverErrorResponse, successResponse } from "#utils/response.js";
 
 export default async function dashboardRoutes(fastify, options) {
 	// 管理後台儀表板數據
@@ -15,22 +15,22 @@ export default async function dashboardRoutes(fastify, options) {
 				tags: ["admin/analytics"],
 				response: {
 					200: {
-						type: 'object',
+						type: "object",
 						properties: {
-							success: { type: 'boolean' },
-							message: { type: 'string' },
+							success: { type: "boolean" },
+							message: { type: "string" },
 							data: {
-								type: 'object',
+								type: "object",
 								properties: {
-									totalRegistrations: { type: 'integer' },
-									confirmedRegistrations: { type: 'integer' },
-									pendingRegistrations: { type: 'integer' },
-									cancelledRegistrations: { type: 'integer' },
-									checkedInCount: { type: 'integer' },
-									totalRevenue: { type: 'number' },
-									registrationsByDate: { type: 'object' },
-									ticketSales: { type: 'object' },
-									referralStats: { type: 'object' }
+									totalRegistrations: { type: "integer" },
+									confirmedRegistrations: { type: "integer" },
+									pendingRegistrations: { type: "integer" },
+									cancelledRegistrations: { type: "integer" },
+									checkedInCount: { type: "integer" },
+									totalRevenue: { type: "number" },
+									registrationsByDate: { type: "object" },
+									ticketSales: { type: "object" },
+									referralStats: { type: "object" }
 								}
 							}
 						}
@@ -44,12 +44,12 @@ export default async function dashboardRoutes(fastify, options) {
 				const [totalStats, revenueData] = await Promise.all([
 					// Total registrations by status
 					prisma.registration.groupBy({
-						by: ['status'],
+						by: ["status"],
 						_count: { id: true }
 					}),
 					// Revenue calculation
 					prisma.registration.findMany({
-						where: { status: 'confirmed' },
+						where: { status: "confirmed" },
 						include: {
 							ticket: {
 								select: { price: true }
@@ -62,10 +62,13 @@ export default async function dashboardRoutes(fastify, options) {
 				const checkedInCount = 0;
 
 				// Calculate totals
-				const registrationCounts = totalStats.reduce((acc, stat) => {
-					acc[stat.status] = stat._count.id;
-					return acc;
-				}, { confirmed: 0, pending: 0, cancelled: 0 });
+				const registrationCounts = totalStats.reduce(
+					(acc, stat) => {
+						acc[stat.status] = stat._count.id;
+						return acc;
+					},
+					{ confirmed: 0, pending: 0, cancelled: 0 }
+				);
 
 				const totalRegistrations = Object.values(registrationCounts).reduce((sum, count) => sum + count, 0);
 				const totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
@@ -88,20 +91,18 @@ export default async function dashboardRoutes(fastify, options) {
 
 				// Group by date
 				const dailyRegistrations = registrationsLast30Days.reduce((acc, reg) => {
-					const date = reg.createdAt.toISOString().split('T')[0];
+					const date = reg.createdAt.toISOString().split("T")[0];
 					if (!acc[date]) {
 						acc[date] = { date, count: 0, confirmed: 0 };
 					}
 					acc[date].count++;
-					if (reg.status === 'confirmed') {
+					if (reg.status === "confirmed") {
 						acc[date].confirmed++;
 					}
 					return acc;
 				}, {});
 
-				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort((a, b) =>
-					new Date(b.date) - new Date(a.date)
-				);
+				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort((a, b) => new Date(b.date) - new Date(a.date));
 
 				// Get ticket sales summary
 				const ticketSales = await prisma.ticket.findMany({
@@ -169,7 +170,7 @@ export default async function dashboardRoutes(fastify, options) {
 				},
 				orderBy: {
 					referredUsers: {
-						_count: 'desc'
+						_count: "desc"
 					}
 				},
 				take: 5
@@ -178,16 +179,16 @@ export default async function dashboardRoutes(fastify, options) {
 			return {
 				totalReferrals,
 				activeReferrers,
-				conversionRate: activeReferrers > 0 ? (totalReferrals / activeReferrers) : 0,
+				conversionRate: activeReferrers > 0 ? totalReferrals / activeReferrers : 0,
 				topReferrers: topReferrers.map(r => ({
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || '{}').name || 'Unknown',
+					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
 					referralCount: r._count.referredUsers
 				}))
 			};
 		} catch (error) {
-			console.error('Error getting referral stats:', error);
+			console.error("Error getting referral stats:", error);
 			return {
 				totalReferrals: 0,
 				activeReferrers: 0,

@@ -4,19 +4,15 @@
  * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
-import {
-	successResponse,
-	validationErrorResponse,
-	serverErrorResponse
-} from "#utils/response.js";
-import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 import prisma from "#config/database.js";
+import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email.js";
+import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin email campaigns routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify 
- * @param {Object} options 
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {Object} options
  */
 export default async function adminEmailCampaignsRoutes(fastify, options) {
 	// Get email campaigns with pagination
@@ -27,21 +23,21 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				...emailCampaignSchemas.listEmailCampaigns,
 				description: "獲取郵件發送記錄",
 				querystring: {
-					type: 'object',
+					type: "object",
 					properties: {
 						...emailCampaignSchemas.listEmailCampaigns.querystring.properties,
 						page: {
-							type: 'integer',
+							type: "integer",
 							minimum: 1,
 							default: 1,
-							description: '頁碼'
+							description: "頁碼"
 						},
 						limit: {
-							type: 'integer',
+							type: "integer",
 							minimum: 1,
 							maximum: 100,
 							default: 20,
-							description: '每頁筆數'
+							description: "每頁筆數"
 						}
 					}
 				}
@@ -64,7 +60,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 							select: { name: true, email: true }
 						}
 					},
-					orderBy: { createdAt: 'desc' }
+					orderBy: { createdAt: "desc" }
 				});
 				const total = await prisma.emailCampaign.count();
 
@@ -106,13 +102,13 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 
 				const campaign = await prisma.emailCampaign.create({
 					data: {
-						userId: request.user?.id || 'system',
+						userId: request.user?.id || "system",
 						name,
 						subject,
 						content,
 						recipientFilter: targetAudience ? JSON.stringify(targetAudience) : null,
 						scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-						status: 'draft'
+						status: "draft"
 					}
 				});
 
@@ -133,14 +129,14 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				description: "獲取郵件發送狀態",
 				tags: ["admin/email-campaigns"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
-						campaignId: { 
-							type: 'string',
-							description: '活動 ID' 
+						campaignId: {
+							type: "string",
+							description: "活動 ID"
 						}
 					},
-					required: ['campaignId']
+					required: ["campaignId"]
 				}
 			}
 		},
@@ -166,17 +162,19 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse({
-					id: campaign.id,
-					name: campaign.name,
-					status: campaign.status,
-					sentCount: campaign.sentCount,
-					failedCount: campaign.totalCount - campaign.sentCount,
-					totalRecipients: campaign.totalCount,
-					scheduledAt: campaign.scheduledAt,
-					sentAt: campaign.sentAt,
-					createdAt: campaign.createdAt
-				}));
+				return reply.send(
+					successResponse({
+						id: campaign.id,
+						name: campaign.name,
+						status: campaign.status,
+						sentCount: campaign.sentCount,
+						failedCount: campaign.totalCount - campaign.sentCount,
+						totalRecipients: campaign.totalCount,
+						scheduledAt: campaign.scheduledAt,
+						sentAt: campaign.sentAt,
+						createdAt: campaign.createdAt
+					})
+				);
 			} catch (error) {
 				console.error("Get email campaign status error:", error);
 				const { response, statusCode } = serverErrorResponse("取得郵件發送狀態失敗");
@@ -193,14 +191,14 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				description: "預覽郵件內容",
 				tags: ["admin/email-campaigns"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
-						campaignId: { 
-							type: 'string',
-							description: '活動 ID' 
+						campaignId: {
+							type: "string",
+							description: "活動 ID"
 						}
 					},
-					required: ['campaignId']
+					required: ["campaignId"]
 				}
 			}
 		},
@@ -222,7 +220,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 
 				let previewHtml = campaign.content;
-				let previewText = campaign.content.replace(/<[^>]*>/g, '');
+				let previewText = campaign.content.replace(/<[^>]*>/g, "");
 
 				const sampleRegistration = await prisma.registration.findFirst({
 					include: {
@@ -232,26 +230,28 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				});
 
 				if (sampleRegistration) {
-					const formData = JSON.parse(sampleRegistration.formData || '{}');
+					const formData = JSON.parse(sampleRegistration.formData || "{}");
 					previewHtml = previewHtml
-						.replace(/{{name}}/g, formData.name || 'Sample User')
+						.replace(/{{name}}/g, formData.name || "Sample User")
 						.replace(/{{email}}/g, sampleRegistration.email)
 						.replace(/{{eventName}}/g, sampleRegistration.event.name)
 						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
-					
+
 					previewText = previewText
-						.replace(/{{name}}/g, formData.name || 'Sample User')
+						.replace(/{{name}}/g, formData.name || "Sample User")
 						.replace(/{{email}}/g, sampleRegistration.email)
 						.replace(/{{eventName}}/g, sampleRegistration.event.name)
 						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
 				}
 
-				return reply.send(successResponse({
-					campaignId,
-					subject: campaign.subject,
-					previewHtml,
-					previewText
-				}));
+				return reply.send(
+					successResponse({
+						campaignId,
+						subject: campaign.subject,
+						previewHtml,
+						previewText
+					})
+				);
 			} catch (error) {
 				console.error("Preview email campaign error:", error);
 				const { response, statusCode } = serverErrorResponse("預覽郵件內容失敗");
@@ -268,14 +268,14 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				description: "計算收件人數量",
 				tags: ["admin/email-campaigns"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
 						campaignId: {
-							type: 'string',
-							description: '活動 ID'
+							type: "string",
+							description: "活動 ID"
 						}
 					},
-					required: ['campaignId']
+					required: ["campaignId"]
 				}
 			}
 		},
@@ -298,11 +298,16 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 
 				const recipients = await calculateRecipients(campaign.recipientFilter);
 
-				return reply.send(successResponse({
-					campaignId,
-					recipientCount: recipients.length,
-					recipients: recipients.slice(0, 10).map(r => ({ email: r.email }))
-				}, "成功計算收件人數量"));
+				return reply.send(
+					successResponse(
+						{
+							campaignId,
+							recipientCount: recipients.length,
+							recipients: recipients.slice(0, 10).map(r => ({ email: r.email }))
+						},
+						"成功計算收件人數量"
+					)
+				);
 			} catch (error) {
 				console.error("Calculate recipients error:", error);
 				const { response, statusCode } = serverErrorResponse("計算收件人數量失敗");
@@ -319,21 +324,21 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				description: "發送郵件",
 				tags: ["admin/email-campaigns"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
 						campaignId: {
-							type: 'string',
-							description: '活動 ID'
+							type: "string",
+							description: "活動 ID"
 						}
 					},
-					required: ['campaignId']
+					required: ["campaignId"]
 				},
 				body: {
-					type: 'object',
+					type: "object",
 					properties: {
 						sendNow: {
-							type: 'boolean',
-							description: '是否立即發送',
+							type: "boolean",
+							description: "是否立即發送",
 							default: true
 						}
 					}
@@ -358,12 +363,12 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (campaign.status === 'sent') {
+				if (campaign.status === "sent") {
 					const { response, statusCode } = validationErrorResponse("郵件任務已發送");
 					return reply.code(statusCode).send(response);
 				}
 
-				if (campaign.status === 'cancelled') {
+				if (campaign.status === "cancelled") {
 					const { response, statusCode } = validationErrorResponse("已取消的郵件任務無法發送");
 					return reply.code(statusCode).send(response);
 				}
@@ -373,7 +378,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					await prisma.emailCampaign.update({
 						where: { id: campaignId },
 						data: {
-							status: 'scheduled',
+							status: "scheduled",
 							updatedAt: new Date()
 						}
 					});
@@ -392,7 +397,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				await prisma.emailCampaign.update({
 					where: { id: campaignId },
 					data: {
-						status: 'sending',
+						status: "sending",
 						totalCount: recipients.length,
 						updatedAt: new Date()
 					}
@@ -405,7 +410,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				const updatedCampaign = await prisma.emailCampaign.update({
 					where: { id: campaignId },
 					data: {
-						status: 'sent',
+						status: "sent",
 						sentCount: result.sentCount,
 						totalCount: result.totalRecipients,
 						sentAt: new Date(),
@@ -413,10 +418,15 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					}
 				});
 
-				return reply.send(successResponse({
-					...updatedCampaign,
-					sendResult: result
-				}, "郵件發送完成"));
+				return reply.send(
+					successResponse(
+						{
+							...updatedCampaign,
+							sendResult: result
+						},
+						"郵件發送完成"
+					)
+				);
 			} catch (error) {
 				console.error("Send email campaign error:", error);
 
@@ -425,7 +435,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					await prisma.emailCampaign.update({
 						where: { id: request.params.campaignId },
 						data: {
-							status: 'draft',
+							status: "draft",
 							updatedAt: new Date()
 						}
 					});
@@ -447,14 +457,14 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				description: "取消郵件發送任務",
 				tags: ["admin/email-campaigns"],
 				params: {
-					type: 'object',
+					type: "object",
 					properties: {
-						campaignId: { 
-							type: 'string',
-							description: '活動 ID' 
+						campaignId: {
+							type: "string",
+							description: "活動 ID"
 						}
 					},
-					required: ['campaignId']
+					required: ["campaignId"]
 				}
 			}
 		},
@@ -475,15 +485,15 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (campaign.status === 'sent') {
+				if (campaign.status === "sent") {
 					const { response, statusCode } = validationErrorResponse("已發送的郵件任務無法取消");
 					return reply.code(statusCode).send(response);
 				}
 
 				const updatedCampaign = await prisma.emailCampaign.update({
 					where: { id: campaignId },
-					data: { 
-						status: 'cancelled',
+					data: {
+						status: "cancelled",
 						updatedAt: new Date()
 					}
 				});

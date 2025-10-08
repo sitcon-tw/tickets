@@ -81,25 +81,25 @@ const t = i18n.t(lang, {
 	async function loadTickets() {
 		try {
 			// Get the default event (first active event)
-			const eventsResponse = await fetch('http://localhost:3000/api/events');
+			const eventsResponse = await fetch("http://localhost:3000/api/events");
 			const eventsData = await eventsResponse.json();
-			
+
 			if (eventsData.success && eventsData.data && eventsData.data.length > 0) {
 				const event = eventsData.data[0];
 				const eventId = event.id;
-				const eventName = event.name || 'SITCON 2025';
-				
+				const eventName = event.name || "SITCON 2025";
+
 				// Get tickets for the event
 				const ticketsResponse = await fetch(`http://localhost:3000/api/events/${eventId}/tickets`);
 				const ticketsData = await ticketsResponse.json();
-				
+
 				if (ticketsData.success && ticketsData.data) {
 					return {
 						eventName,
 						tickets: ticketsData.data.map(ticket => ({
 							id: ticket.id,
 							name: ticket.name,
-							time: `${ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString() : 'TBD'} - ${ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString() : 'TBD'}`,
+							time: `${ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString() : "TBD"} - ${ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString() : "TBD"}`,
 							remaining: `${ticket.available} / ${ticket.available + (ticket.quantity - ticket.available)}`,
 							price: ticket.price,
 							isOnSale: ticket.isOnSale,
@@ -110,16 +110,16 @@ const t = i18n.t(lang, {
 				}
 			}
 		} catch (error) {
-			console.error('Failed to load tickets:', error);
+			console.error("Failed to load tickets:", error);
 		}
-		
+
 		// Fallback to static data
 		return {
-			eventName: 'SITCON 2025',
+			eventName: "SITCON 2025",
 			tickets: Object.entries(ticketsData).map(([name, data]) => ({
 				name,
 				...data,
-				id: name,
+				id: name
 			}))
 		};
 	}
@@ -137,11 +137,11 @@ const t = i18n.t(lang, {
 				<p class="remain">${t.remaining} ${ticket.remaining}</p>
 			</div>`;
 		}
-		
+
 		if (ticketsContainer) {
 			ticketsContainer.innerHTML = ticketsHTML;
 		}
-		
+
 		// track press of all tickets
 		const ticketElements = document.querySelectorAll(".ticket");
 		const confirmElement = document.querySelector(".confirm");
@@ -154,11 +154,11 @@ const t = i18n.t(lang, {
 				const ticketId = ticket.dataset.ticketId;
 				const ticketName = ticket.dataset.ticketName;
 				const eventName = ticket.dataset.eventName;
-				
-				sessionStorage.setItem('selectedTicketId', ticketId);
-				sessionStorage.setItem('selectedTicketName', ticketName);
-				sessionStorage.setItem('selectedEventName', eventName);
-				
+
+				sessionStorage.setItem("selectedTicketId", ticketId);
+				sessionStorage.setItem("selectedTicketName", ticketName);
+				sessionStorage.setItem("selectedEventName", eventName);
+
 				ticketAnimation.innerHTML = ticket.innerHTML;
 				ticketConfirm.innerHTML = ticket.innerHTML;
 				hidden = ticket;
@@ -195,40 +195,40 @@ const t = i18n.t(lang, {
 		});
 
 		// Handle confirmation button click
-		document.getElementById("confirm-registration").addEventListener("click", (e) => {
+		document.getElementById("confirm-registration").addEventListener("click", e => {
 			e.preventDefault();
-			
-			const selectedTicketId = sessionStorage.getItem('selectedTicketId');
-			const selectedTicketName = sessionStorage.getItem('selectedTicketName');
-			const selectedEventName = sessionStorage.getItem('selectedEventName');
-			
+
+			const selectedTicketId = sessionStorage.getItem("selectedTicketId");
+			const selectedTicketName = sessionStorage.getItem("selectedTicketName");
+			const selectedEventName = sessionStorage.getItem("selectedEventName");
+
 			if (!selectedTicketId) {
-				alert('請先選擇票種');
+				alert("請先選擇票種");
 				return;
 			}
 
 			// Build URL with parameters
 			const params = new URLSearchParams();
-			params.set('ticket', selectedTicketId);
-			
+			params.set("ticket", selectedTicketId);
+
 			// Add event name and ticket type to URL parameters
 			if (selectedEventName) {
-				params.set('eventName', selectedEventName);
+				params.set("eventName", selectedEventName);
 			}
 			if (selectedTicketName) {
-				params.set('ticketType', selectedTicketName);
+				params.set("ticketType", selectedTicketName);
 			}
 
 			// Add invitation code if present
-			const invitationCode = sessionStorage.getItem('invitationCode');
+			const invitationCode = sessionStorage.getItem("invitationCode");
 			if (invitationCode) {
-				params.set('invite', invitationCode);
+				params.set("invite", invitationCode);
 			}
 
 			// Add referral code if present
-			const referralCode = sessionStorage.getItem('referralCode');
+			const referralCode = sessionStorage.getItem("referralCode");
 			if (referralCode) {
-				params.set('ref', referralCode);
+				params.set("ref", referralCode);
 			}
 
 			// Redirect to form with parameters
