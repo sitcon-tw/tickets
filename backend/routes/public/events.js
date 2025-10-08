@@ -390,7 +390,7 @@ export default async function publicEventsRoutes(fastify, options) {
 									type: 'object',
 									properties: {
 										id: { type: 'string' },
-										name: { type: 'object' },
+										name: { type: 'object', additionalProperties: true },
 										description: { type: 'string' },
 										type: { type: 'string' },
 										required: { type: 'boolean' },

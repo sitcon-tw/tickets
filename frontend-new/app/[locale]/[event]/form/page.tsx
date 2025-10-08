@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import Link from 'next/link';
 import Nav from "@/components/Nav";
+import Footer from '@/components/Footer';
 import { getTranslations } from "@/i18n/helpers";
 import { registrationsAPI, authAPI, ticketsAPI } from '@/lib/api/endpoints';
 import { FormField } from '@/components/form/FormField';
@@ -174,7 +175,7 @@ export default function FormPage() {
 						try {
 							name = JSON.parse(name);
 						} catch {
-							name = { en: name };
+							name = { en: name.toString() };
 						}
 					}
 
@@ -367,6 +368,7 @@ export default function FormPage() {
 					)}
 				</section>
 			</main>
+			<Footer />
 		</>
 	);
 }

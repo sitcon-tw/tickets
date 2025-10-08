@@ -25,11 +25,12 @@ interface FormFieldProps {
 export function FormField({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
   const locale = useLocale();
   const requiredMark = field.required ? ' *' : '';
-  const label = `${field.description}${requiredMark}`;
+  const fieldLabel = getLocalizedText(field.name, locale);
+  const label = `${fieldLabel}${requiredMark}`;
 
   // Convert localized options to display strings
   const localizedOptions = field.options?.map(opt => ({
-    value: getLocalizedText(opt, locale),
+    value: typeof opt === 'object' && opt !== null ? (opt.en || getLocalizedText(opt, locale)) : String(opt),
     label: getLocalizedText(opt, locale)
   })) || [];
 
@@ -75,7 +76,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
     case 'radio':
       return (
         <Radio
-          label={field.description || ''}
+          label={fieldLabel}
           name={getLocalizedText(field.name, locale)}
           options={localizedOptions as RadioOption[]}
           required={field.required}
@@ -90,7 +91,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
         const currentValues = Array.isArray(value) ? value : [];
         return (
           <MultiCheckbox
-            label={`${field.description}${requiredMark}`}
+            label={label}
             name={getLocalizedText(field.name, locale)}
             options={localizedOptions as CheckboxOption[]}
             values={currentValues}
@@ -101,7 +102,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
         // Single checkbox
         return (
           <Checkbox
-            label={field.description || ''}
+            label={fieldLabel}
             id={getLocalizedText(field.name, locale)}
             required={field.required}
             value="true"
