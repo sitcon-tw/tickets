@@ -26,6 +26,11 @@ import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
  * @param {Object} options 
  */
 export default async function publicRegistrationsRoutes(fastify, options) {
+	// Apply preHandler if provided
+	if (options.preHandler) {
+		fastify.addHook('preHandler', options.preHandler);
+	}
+
 	// Create new registration
 	fastify.post(
 		"/registrations",

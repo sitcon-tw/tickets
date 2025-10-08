@@ -13,16 +13,15 @@ export const requireAuth = async (request, reply) => {
 
 		if (!session) {
 			const { response, statusCode } = unauthorizedResponse("請先登入");
-			reply.code(statusCode).send(response);
-			return;
-		}
+			return reply.code(statusCode).send(response);
+			}
 
 		request.user = session.user;
 		request.session = session;
 	} catch (error) {
 		console.error("Auth middleware error:", error);
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
-		reply.code(statusCode).send(response);
+		return reply.code(statusCode).send(response);
 	}
 };
 
@@ -38,7 +37,6 @@ export const requireRole = allowedRoles => {
 		});
 
 		const userRole = user?.role || 'user';
-		console.log("User role from DB:", userRole);
 
 		const userRoles = userRole.split(',').map(role => role.trim());
 		
@@ -48,7 +46,7 @@ export const requireRole = allowedRoles => {
 
 		if (!hasPermission) {
 			const { response, statusCode } = forbiddenResponse("權限不足 [R]");
-			reply.code(statusCode).send(response);
+			return reply.code(statusCode).send(response);
 		}
 	};
 };
@@ -63,7 +61,7 @@ export const requirePermission = permission => {
 
 		if (!userPermissions.includes(permission) && request.user.role !== "admin") {
 			const { response, statusCode } = forbiddenResponse("權限不足 [P]");
-			reply.code(statusCode).send(response);
+			return reply.code(statusCode).send(response);
 		}
 	};
 };
