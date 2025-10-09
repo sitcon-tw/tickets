@@ -30,7 +30,7 @@ export default function FormPage() {
 	const [ticketId, setTicketId] = useState<string | null>(null);
 	const [eventId, setEventId] = useState<string | null>(null);
 	const [invitationCode, setInvitationCode] = useState<string>("");
-	const [referralCode, setReferralCode] = useState<string | null>(null);
+	const [referralCode, setReferralCode] = useState<string>("");
 	const [requiresInviteCode, setRequiresInviteCode] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,6 +95,11 @@ export default function FormPage() {
 			"zh-Hans": "推荐码",
 			en: "Referral Code"
 		},
+		referralCodeOptional: {
+			"zh-Hant": "推薦碼（選填）",
+			"zh-Hans": "推荐码（选填）",
+			en: "Referral Code (Optional)"
+		},
 		submitRegistration: {
 			"zh-Hant": "提交報名",
 			"zh-Hans": "提交报名",
@@ -149,7 +154,7 @@ export default function FormPage() {
 				const parsedData = JSON.parse(storedData);
 				setTicketId(parsedData.ticketId);
 				setEventId(parsedData.eventId);
-				setReferralCode(parsedData.referralCode || null);
+				setReferralCode(parsedData.referralCode || "");
 
 				// Load ticket info to check if it requires invite code
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
@@ -246,7 +251,7 @@ export default function FormPage() {
 					...formData
 				},
 				invitationCode: invitationCode.trim() || undefined,
-				referralCode: referralCode || undefined
+				referralCode: referralCode.trim() || undefined
 			};
 
 			const result = await registrationsAPI.create(registrationData);
@@ -339,8 +344,8 @@ export default function FormPage() {
 								return <FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
 							})}
 
-							{/* Referral code field - shown if present */}
-							{referralCode && <Text label={t.referralCode} id="referralCode" value={referralCode} readOnly />}
+							{/* Referral code field - always shown and editable */}
+							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
 
 							<button
 								type="submit"
