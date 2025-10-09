@@ -2,7 +2,7 @@
 
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
-import { adminAnalyticsAPI } from "@/lib/api/endpoints";
+import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
@@ -17,6 +17,8 @@ export default function AdminDashboard() {
 	const locale = useLocale();
 
 	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+	const [registrationTrends, setRegistrationTrends] = useState<any[]>([]);
+	const [tickets, setTickets] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	// Chart refs
@@ -55,11 +57,31 @@ export default function AdminDashboard() {
 	// Initialize dashboard
 	const initializeDashboard = useCallback(async () => {
 		try {
-			const response = await adminAnalyticsAPI.getDashboard();
-			if (response.success && response.data) {
-				setDashboardData(response.data);
+			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([
+				adminAnalyticsAPI.getDashboard(),
+				adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }),
+				adminTicketsAPI.getAll()
+			]);
+
+			if (dashboardResponse.success && dashboardResponse.data) {
+				setDashboardData(dashboardResponse.data);
 			} else {
-				console.error("Failed to load dashboard data:", response.message);
+				console.error("Failed to load dashboard data:", dashboardResponse.message);
+			}
+
+			if (trendsResponse.success && trendsResponse.data) {
+				console.log("Registration trends data:", trendsResponse.data);
+				// The API returns data with a 'trends' property
+				const trends = trendsResponse.data || [];
+				setRegistrationTrends(trends);
+			} else {
+				console.error("Failed to load trends data:", trendsResponse.message);
+			}
+
+			if (ticketsResponse.success && ticketsResponse.data) {
+				setTickets(ticketsResponse.data);
+			} else {
+				console.error("Failed to load tickets data:", ticketsResponse.message);
 			}
 		} catch (error) {
 			console.error("Dashboard initialization failed:", error);
@@ -74,52 +96,36 @@ export default function AdminDashboard() {
 		chartsInstancesRef.current.forEach(chart => chart.destroy());
 		chartsInstancesRef.current = [];
 
-		const ticketTypes = [t.student, t.regular, t.distant, t.invite, t.opensource];
 		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
 
-		// Line Chart - Ticket Sales Trends
+		// Line Chart - Registration Trends
 		if (trendsChartRef.current) {
 			const ctx = trendsChartRef.current.getContext("2d");
 			if (ctx) {
+				// Format dates and counts from registration trends
+				// If no trends data, show empty chart
+				const labels = registrationTrends.length > 0
+					? registrationTrends.map(trend => {
+						const date = new Date(trend.date);
+						return `${date.getMonth() + 1}/${date.getDate()}`;
+					})
+					: [];
+				const counts = registrationTrends.length > 0
+					? registrationTrends.map(trend => trend.total || trend.count || 0)
+					: [];
+
 				const chart = new Chart(ctx, {
 					type: "line",
 					data: {
-						labels: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月"],
+						labels: labels,
 						datasets: [
 							{
-								label: t.student,
-								data: [150, 145, 140, 135, 130, 128, 126, 124],
+								label: locale === "zh-Hant" ? "註冊數" : locale === "zh-Hans" ? "注册数" : "Registrations",
+								data: counts,
 								borderColor: colors[0],
 								backgroundColor: colors[0] + "20",
-								tension: 0.4
-							},
-							{
-								label: t.regular,
-								data: [200, 190, 180, 170, 160, 155, 148, 143],
-								borderColor: colors[1],
-								backgroundColor: colors[1] + "20",
-								tension: 0.4
-							},
-							{
-								label: t.distant,
-								data: [80, 75, 70, 65, 58, 52, 48, 45],
-								borderColor: colors[2],
-								backgroundColor: colors[2] + "20",
-								tension: 0.4
-							},
-							{
-								label: t.invite,
-								data: [50, 48, 45, 40, 35, 32, 28, 25],
-								borderColor: colors[3],
-								backgroundColor: colors[3] + "20",
-								tension: 0.4
-							},
-							{
-								label: t.opensource,
-								data: [20, 18, 16, 15, 13, 12, 11, 10],
-								borderColor: colors[4],
-								backgroundColor: colors[4] + "20",
-								tension: 0.4
+								tension: 0.4,
+								fill: true
 							}
 						]
 					},
@@ -134,12 +140,20 @@ export default function AdminDashboard() {
 						scales: {
 							y: {
 								beginAtZero: true,
-								title: { display: true, text: "剩餘票券數量", color: "#f3f4f6" },
+								title: {
+									display: true,
+									text: locale === "zh-Hant" ? "註冊數量" : locale === "zh-Hans" ? "注册数量" : "Registration Count",
+									color: "#f3f4f6"
+								},
 								ticks: { color: "#d1d5db" },
 								grid: { color: "#4b5563" }
 							},
 							x: {
-								title: { display: true, text: "月份", color: "#f3f4f6" },
+								title: {
+									display: true,
+									text: locale === "zh-Hant" ? "日期" : locale === "zh-Hans" ? "日期" : "Date",
+									color: "#f3f4f6"
+								},
 								ticks: { color: "#d1d5db" },
 								grid: { color: "#4b5563" }
 							}
@@ -151,18 +165,21 @@ export default function AdminDashboard() {
 		}
 
 		// Doughnut Chart - Ticket Distribution
-		if (distributionChartRef.current) {
+		if (distributionChartRef.current && tickets.length > 0) {
 			const ctx = distributionChartRef.current.getContext("2d");
 			if (ctx) {
+				const ticketLabels = tickets.map(ticket => ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown");
+				const soldCounts = tickets.map(ticket => ticket.soldCount || 0);
+
 				const chart = new Chart(ctx, {
 					type: "doughnut",
 					data: {
-						labels: ticketTypes,
+						labels: ticketLabels,
 						datasets: [
 							{
-								label: "剩餘票券",
-								data: [26, 57, 35, 25, 10],
-								backgroundColor: colors,
+								label: locale === "zh-Hant" ? "已售票券" : locale === "zh-Hans" ? "已售票券" : "Sold Tickets",
+								data: soldCounts,
+								backgroundColor: colors.slice(0, tickets.length),
 								borderWidth: 2,
 								borderColor: "#fff"
 							}
@@ -184,8 +201,9 @@ export default function AdminDashboard() {
 								callbacks: {
 									label: function (context: TooltipItem<"pie">) {
 										const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-										const percentage = ((context.parsed / total) * 100).toFixed(1);
-										return context.label + ": " + context.parsed + " 張 (" + percentage + "%)";
+										const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : "0";
+										const ticketLabel = locale === "zh-Hant" ? "張" : locale === "zh-Hans" ? "张" : " tickets";
+										return context.label + ": " + context.parsed + " " + ticketLabel + " (" + percentage + "%)";
 									}
 								}
 							}
@@ -196,30 +214,31 @@ export default function AdminDashboard() {
 			}
 		}
 
-		// Progress Charts (Half Doughnut)
-		const ticketData = [
-			{ ref: studentChartRef, soldCount: 124, total: 150, color: "#FF6384" },
-			{ ref: regularChartRef, soldCount: 143, total: 200, color: "#36A2EB" },
-			{ ref: distantChartRef, soldCount: 45, total: 80, color: "#FFCE56" },
-			{ ref: inviteChartRef, soldCount: 25, total: 50, color: "#4BC0C0" },
-			{ ref: opensourceChartRef, soldCount: 10, total: 20, color: "#9966FF" }
-		];
+		// Progress Charts (Half Doughnut) - Use real ticket data
+		const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
 
-		ticketData.forEach(ticket => {
-			if (ticket.ref.current) {
-				const ctx = ticket.ref.current.getContext("2d");
+		tickets.forEach((ticket, index) => {
+			const ref = chartRefs[index];
+			if (ref && ref.current && index < chartRefs.length) {
+				const ctx = ref.current.getContext("2d");
 				if (ctx) {
-					const percentage = ((ticket.soldCount / ticket.total) * 100).toFixed(1);
-					const remaining = ticket.total - ticket.soldCount;
+					const soldCount = ticket.soldCount || 0;
+					const total = ticket.quantity || 0;
+					const percentage = total > 0 ? ((soldCount / total) * 100).toFixed(1) : "0";
+					const remaining = total - soldCount;
+					const color = colors[index % colors.length];
 
 					const chart = new Chart(ctx, {
 						type: "doughnut",
 						data: {
-							labels: ["已售出", "剩餘"],
+							labels: [
+								locale === "zh-Hant" ? "已售出" : locale === "zh-Hans" ? "已售出" : "Sold",
+								locale === "zh-Hant" ? "剩餘" : locale === "zh-Hans" ? "剩余" : "Remaining"
+							],
 							datasets: [
 								{
-									data: [ticket.soldCount, remaining],
-									backgroundColor: [ticket.color, "#E5E5E5"],
+									data: [soldCount, remaining],
+									backgroundColor: [color, "#E5E5E5"],
 									borderWidth: 0
 								}
 							]
@@ -241,7 +260,8 @@ export default function AdminDashboard() {
 									borderWidth: 1,
 									callbacks: {
 										label: function (context: TooltipItem<"doughnut">) {
-											return context.label + ": " + context.parsed + " 張";
+											const ticketLabel = locale === "zh-Hant" ? "張" : locale === "zh-Hans" ? "张" : " tickets";
+											return context.label + ": " + context.parsed + " " + ticketLabel;
 										}
 									}
 								}
@@ -259,7 +279,7 @@ export default function AdminDashboard() {
 									const fontSize = (height / 100).toFixed(2);
 									ctx.font = `bold ${fontSize}em sans-serif`;
 									ctx.textBaseline = "middle";
-									ctx.fillStyle = ticket.color;
+									ctx.fillStyle = color;
 
 									const text = percentage + "%";
 									const textX = Math.round((width - ctx.measureText(text).width) / 2);
@@ -275,7 +295,7 @@ export default function AdminDashboard() {
 				}
 			}
 		});
-	}, [t]);
+	}, [registrationTrends, tickets, locale]);
 
 	useEffect(() => {
 		initializeDashboard();
@@ -292,10 +312,11 @@ export default function AdminDashboard() {
 		};
 	}, [loading, initCharts]);
 
-	const totalTickets = dashboardData?.totalRegistrations || 0;
-	const soldTickets = dashboardData?.confirmedRegistrations || 0;
-	const remainingTickets = dashboardData?.pendingRegistrations || 0;
-	const salesRate = totalTickets > 0 ? ((soldTickets / totalTickets) * 100).toFixed(1) : "0";
+	// Calculate actual ticket stats from tickets data
+	const totalTicketQuantity = tickets.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0);
+	const totalSold = tickets.reduce((sum, ticket) => sum + (ticket.soldCount || 0), 0);
+	const remainingTickets = totalTicketQuantity - totalSold;
+	const salesRate = totalTicketQuantity > 0 ? ((totalSold / totalTicketQuantity) * 100).toFixed(1) : "0";
 
 	const statCardStyle: React.CSSProperties = {
 		background: "var(--color-gray-800)",
@@ -313,6 +334,20 @@ export default function AdminDashboard() {
 		flex: "1",
 		maxWidth: "100%"
 	};
+
+	if (loading) {
+		return (
+			<>
+				<AdminNav />
+				<main>
+					<h1>{t.overview}</h1>
+					<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>
+						{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}
+					</div>
+				</main>
+			</>
+		);
+	}
 
 	return (
 		<>
@@ -346,7 +381,7 @@ export default function AdminDashboard() {
 								marginBottom: "0.5rem"
 							}}
 						>
-							{totalTickets}
+							{totalTicketQuantity}
 						</div>
 						<div
 							style={{
@@ -376,7 +411,7 @@ export default function AdminDashboard() {
 								marginBottom: "0.5rem"
 							}}
 						>
-							{soldTickets}
+							{totalSold}
 						</div>
 						<div
 							style={{
@@ -508,13 +543,14 @@ export default function AdminDashboard() {
 							gap: "1.5rem"
 						}}
 					>
-						{[
-							{ title: t.student, ref: studentChartRef, remaining: 26, total: 150, sold: 124 },
-							{ title: t.regular, ref: regularChartRef, remaining: 57, total: 200, sold: 143 },
-							{ title: t.distant, ref: distantChartRef, remaining: 35, total: 80, sold: 45 },
-							{ title: t.invite, ref: inviteChartRef, remaining: 25, total: 50, sold: 25 },
-							{ title: t.opensource, ref: opensourceChartRef, remaining: 10, total: 20, sold: 10 }
-						].map((ticket, idx) => (
+						{tickets.slice(0, 5).map((ticket, idx) => {
+							const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
+							const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
+							const soldCount = ticket.soldCount || 0;
+							const total = ticket.quantity || 0;
+							const remaining = total - soldCount;
+
+							return (
 							<div
 								key={idx}
 								style={{
@@ -534,7 +570,7 @@ export default function AdminDashboard() {
 										fontWeight: 600
 									}}
 								>
-									{ticket.title}
+									{ticketName}
 								</h3>
 								<div
 									style={{
@@ -543,7 +579,7 @@ export default function AdminDashboard() {
 										marginBottom: "1rem"
 									}}
 								>
-									<canvas ref={ticket.ref} width="200" height="100"></canvas>
+									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
 								</div>
 								<div
 									style={{
@@ -561,7 +597,7 @@ export default function AdminDashboard() {
 											lineHeight: "1"
 										}}
 									>
-										{ticket.remaining}
+										{remaining}
 									</div>
 									<div
 										style={{
@@ -604,7 +640,7 @@ export default function AdminDashboard() {
 												fontSize: "1.1rem"
 											}}
 										>
-											{ticket.total}
+											{total}
 										</span>
 									</div>
 									<div
@@ -631,12 +667,13 @@ export default function AdminDashboard() {
 												fontSize: "1.1rem"
 											}}
 										>
-											{ticket.sold}
+											{soldCount}
 										</span>
 									</div>
 								</div>
 							</div>
-						))}
+						);
+						})}
 					</div>
 				</div>
 			</main>
