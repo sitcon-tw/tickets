@@ -3,11 +3,12 @@
 import Footer from "@/components/Footer";
 import Lanyard from "@/components/Lanyard";
 import Nav from "@/components/Nav";
+import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
-import { Check, Copy } from "lucide-react";
+import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { Check, Copy, QrCode } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -63,6 +64,11 @@ export default function Success() {
 			"zh-Hant": "查看/編輯報名",
 			"zh-Hans": "查看/编辑报名",
 			en: "View/Edit Registration"
+		},
+		viewQRCode: {
+			"zh-Hant": "查看 QR Code",
+			"zh-Hans": "查看 QR Code",
+			en: "View QR Code"
 		}
 	});
 
@@ -72,18 +78,39 @@ export default function Success() {
 	const [viewRefLoading, setViewRefLoading] = useState(false);
 	const [viewRegLoading, setViewRegLoading] = useState(false);
 	const [registrationId, setRegistrationId] = useState<string | null>(null);
+	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
+	const [showQRCode, setShowQRCode] = useState(false);
 
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
 			try {
 				try {
+					// Get all events and find by last 6 characters of ID
+					const eventsData = await eventsAPI.getAll();
+					const foundEvent = eventsData.data.find((e) => e.id.slice(-6) === eventSlug);
+
+					if (!foundEvent) {
+						setReferralCode(t.loadFailed);
+						return;
+					}
+
+					const currentEventId = foundEvent.id;
+
+					// Get all registrations and filter by current event
 					const registrations = await registrationsAPI.getAll();
-					const firstRegistration = registrations.data[0];
-					setRegistrationId(firstRegistration.id);
-					const code = (await referralsAPI.getReferralLink(firstRegistration.id)).data.referralCode;
-					setReferralCode(code);
+					const eventRegistration = registrations.data.find((reg) => reg.event?.id === currentEventId);
+					console.log(eventRegistration)
+					if (eventRegistration) {
+						setRegistrationId(eventRegistration.id);
+						setRegistrationTime(eventRegistration.createdAt);
+						const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
+						setReferralCode(code);
+					} else {
+						setReferralCode(t.loadFailed);
+					}
 				} catch (error) {
 					console.error("Failed to load registrations:", error);
+					setReferralCode(t.loadFailed);
 				}
 			} catch (error) {
 				console.error("Failed to load success info:", error);
@@ -91,7 +118,7 @@ export default function Success() {
 			}
 		};
 		loadSuccessInfo();
-	}, [t.copyInvite, t.loadFailed]);
+	}, [eventSlug, t.loadFailed]);
 
 	function handleCopyRefCode() {
 		setCopiedCode(false);
@@ -181,6 +208,11 @@ export default function Success() {
 							>
 								{viewRefLoading && <Spinner size="sm" />} {t.viewReferralStatus}
 							</button>
+							{registrationId && registrationTime && (
+								<button onClick={() => setShowQRCode(true)} className="button">
+									<QrCode size={20} /> {t.viewQRCode}
+								</button>
+							)}
 						</div>
 						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)} className="button">
 							{t.goBackHome}
@@ -192,6 +224,7 @@ export default function Success() {
 				</div>
 			</div>
 			<Footer />
+			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}
 		</>
 	);
 }
