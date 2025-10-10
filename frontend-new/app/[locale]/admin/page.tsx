@@ -111,7 +111,7 @@ export default function AdminDashboard() {
 					})
 					: [];
 				const counts = registrationTrends.length > 0
-					? registrationTrends.map(trend => trend.total || trend.count || 0)
+					? registrationTrends.map(trend => trend.count || 0)
 					: [];
 
 				const chart = new Chart(ctx, {
