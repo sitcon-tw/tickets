@@ -6,20 +6,13 @@
 
 </div>
 
-## 更新網頁文案
-
-所有文案都是 Markdown 檔案，放在資料夾 [`frontend/src/pages/markdown`](frontend/src/pages/markdown)。
-
-以下為一些快速連結：
-
-- [FAQ](frontend/src/pages/markdown/faq.md)
-- [intro](frontend/src/pages/markdown/intro.md)
-
-裡面可以撰寫 Markdown 以及 HTML。如果你是工人了還想 XSS...那我也沒辦法。
-
 ## 開發
 
-此系統使用 Astro 與 Fastify，基於 [Fastro](https://github.com/Edit-Mr/Fastro) 模板開發。
+此系統使用 Next.JS 與 Fastify 開發。
+後端在 `backend` 資料夾，前端在 `frontend-new` 資料夾。
+
+在跑起來前，請記得設定 .env 檔案，範例請看 `.env.example` 。
+因為某些原因，請記得把 env 檔案放在前端跟後端的資料夾中。
 
 如果只有要跑前端／後端記得先 `cd` 到相應的資料夾。一起跑就在根目錄。
 
