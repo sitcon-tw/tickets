@@ -345,7 +345,7 @@ export default function FormPage() {
 							})}
 
 							{/* Referral code field - always shown and editable */}
-							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
+							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
 
 							<button
 								type="submit"

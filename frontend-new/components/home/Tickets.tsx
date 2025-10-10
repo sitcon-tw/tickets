@@ -46,6 +46,26 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			"zh-Hant": "你已經報名過了！",
 			"zh-Hans": "你已经报名过了！",
 			en: "You have already registered!"
+		},
+		registrationEnded: {
+			"zh-Hant": "報名已截止",
+			"zh-Hans": "报名已截止",
+			en: "Registration Ended"
+		},
+		ticketSaleEnded: {
+			"zh-Hant": "此票種報名時間已結束",
+			"zh-Hans": "此票种报名时间已结束",
+			en: "This ticket's registration period has ended"
+		},
+		soldOut: {
+			"zh-Hant": "已售完",
+			"zh-Hans": "已售完",
+			en: "Sold Out"
+		},
+		ticketSoldOut: {
+			"zh-Hant": "此票種已售完",
+			"zh-Hans": "此票种已售完",
+			en: "This ticket is sold out"
 		}
 	});
 
@@ -59,6 +79,21 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const ticketAnimationRef = useRef<HTMLDivElement>(null);
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
 	const hiddenTicketRef = useRef<HTMLDivElement | null>(null);
+
+	// Helper function to check if ticket sale has ended
+	const isTicketExpired = (ticket: Ticket): boolean => {
+		if (!ticket.saleEnd) return false;
+		const saleEndDate = typeof ticket.saleEnd === 'string' && ticket.saleEnd !== 'N/A'
+			? new Date(ticket.saleEnd)
+			: null;
+		if (!saleEndDate) return false;
+		return saleEndDate < new Date();
+	};
+
+	// Helper function to check if ticket is sold out
+	const isTicketSoldOut = (ticket: Ticket): boolean => {
+		return ticket.available !== undefined && ticket.available <= 0;
+	};
 
 	useEffect(() => {
 		async function loadTickets() {
@@ -128,6 +163,18 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	}, [locale, eventId]);
 
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
+		// Check if ticket sale has ended
+		if (isTicketExpired(ticket)) {
+			alert(t.ticketSaleEnded);
+			return;
+		}
+
+		// Check if ticket is sold out
+		if (isTicketSoldOut(ticket)) {
+			alert(t.ticketSoldOut);
+			return;
+		}
+
 		setSelectedTicket(ticket);
 
 		try {
@@ -221,30 +268,50 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					</div>
 				) : null}
 				{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-				{tickets.map(ticket => (
-					<div
-						key={ticket.id}
-						className="ticket"
-						role="button"
-						tabIndex={0}
-						onClick={e => handleTicketSelect(ticket, e.currentTarget)}
-						onKeyDown={event => {
-							if (event.key === "Enter" || event.key === " ") {
-								event.preventDefault();
-								handleTicketSelect(ticket, event.currentTarget);
-							}
-						}}
-					>
-						<h3>{getLocalizedText(ticket.name, locale)}</h3>
-						<p>
-							{t.time}
-							{ticket.saleStart} - {ticket.saleEnd}
-						</p>
-						<p className="remain">
-							{t.remaining} {ticket.available} / {ticket.quantity}
-						</p>
-					</div>
-				))}
+				{tickets.map(ticket => {
+					const isExpired = isTicketExpired(ticket);
+					const isSoldOut = isTicketSoldOut(ticket);
+					const isUnavailable = isExpired || isSoldOut;
+					return (
+						<div
+							key={ticket.id}
+							className="ticket"
+							role="button"
+							tabIndex={0}
+							onClick={e => handleTicketSelect(ticket, e.currentTarget)}
+							onKeyDown={event => {
+								if (event.key === "Enter" || event.key === " ") {
+									event.preventDefault();
+									handleTicketSelect(ticket, event.currentTarget);
+								}
+							}}
+							style={{
+								opacity: isUnavailable ? 0.5 : 1,
+								cursor: isUnavailable ? 'not-allowed' : 'pointer',
+								filter: isUnavailable ? 'grayscale(1)' : 'none'
+							}}
+						>
+							<h3>{getLocalizedText(ticket.name, locale)}</h3>
+							<p>
+								{t.time}
+								{ticket.saleStart} - {ticket.saleEnd}
+							</p>
+							<p className="remain">
+								{t.remaining} {ticket.available} / {ticket.quantity}
+								{isExpired && (
+									<span style={{ color: '#dc2626', fontWeight: 'bold', marginLeft: '0.5rem' }}>
+										({t.registrationEnded})
+									</span>
+								)}
+								{isSoldOut && !isExpired && (
+									<span style={{ color: '#dc2626', fontWeight: 'bold', marginLeft: '0.5rem' }}>
+										({t.soldOut})
+									</span>
+								)}
+							</p>
+						</div>
+					);
+				})}
 			</div>
 
 			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
