@@ -83,11 +83,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					try {
 						if (reg.formData) {
 							parsedFormData = JSON.parse(reg.formData);
-							// Log for debugging
-							if (registrations.indexOf(reg) === 0) {
-								console.log("Sample formData (raw):", reg.formData);
-								console.log("Sample formData (parsed):", parsedFormData);
-							}
 						}
 					} catch (error) {
 						console.error(`Failed to parse formData for registration ${reg.id}:`, error);

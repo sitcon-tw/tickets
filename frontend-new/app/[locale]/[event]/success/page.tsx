@@ -8,7 +8,7 @@ import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
-import { Check, Copy, QrCode } from "lucide-react";
+import { Check, Copy, CheckCheck, ArrowLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,9 +26,9 @@ export default function Success() {
 			en: "You're In!"
 		},
 		emailCheck: {
-			"zh-Hant": "請檢查電子郵件確認",
-			"zh-Hans": "请检查电子邮件确认",
-			en: "Please check your email for confirmation."
+			"zh-Hant": "請多留意電子信箱",
+			"zh-Hans": "请多留意电子信箱",
+			en: "Please check your email inbox"
 		},
 		inviteFriends: {
 			"zh-Hant": "歡迎使用以下推薦碼 邀請朋友一起參加：",
@@ -40,6 +40,11 @@ export default function Success() {
 			"zh-Hans": "或复制推荐链接：",
 			en: "Or copy referral link:"
 		},
+		qrDesc: {
+			"zh-Hant": "如何報到？",
+			"zh-Hans": "如何报到？",
+			en: "How to check in?"
+		},
 		loading: {
 			"zh-Hant": "載入中...",
 			"zh-Hans": "载入中...",
@@ -49,11 +54,6 @@ export default function Success() {
 			"zh-Hant": "載入失敗",
 			"zh-Hans": "载入失败",
 			en: "Load failed"
-		},
-		goBackHome: {
-			"zh-Hant": "回到首頁",
-			"zh-Hans": "回到首页",
-			en: "Go back home"
 		},
 		viewReferralStatus: {
 			"zh-Hant": "查看推薦狀態",
@@ -66,9 +66,9 @@ export default function Success() {
 			en: "View/Edit Registration"
 		},
 		viewQRCode: {
-			"zh-Hant": "查看 QR Code",
-			"zh-Hans": "查看 QR Code",
-			en: "View QR Code"
+			"zh-Hant": "查看報到方式",
+			"zh-Hans": "查看报到方式",
+			en: "View Check-in Info"
 		}
 	});
 
@@ -156,7 +156,7 @@ export default function Success() {
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
-						<p style={{ marginBottom: "1rem" }}>{t.emailCheck}</p>
+						<p>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
 						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
 							{referralCode === t.loading ? (
@@ -187,7 +187,14 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<div className="flex gap-4 flex-wrap" style={{ marginTop: "2rem" }}>
+						<h3 className="text-xl font-semibold" style={{ marginTop: "0.5rem" }}>{t.qrDesc}</h3>
+						{registrationId && registrationTime && (
+							<button onClick={() => setShowQRCode(true)} className="button" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+								<CheckCheck size={24} /> {t.viewQRCode}
+							</button>
+						)}
+						<div className="border-t-2 border-gray-700" />
+						<div className="flex gap-4 flex-wrap" style={{ marginTop: "0.5rem" }}>
 							{registrationId && (
 								<button
 									onClick={() => {
@@ -208,14 +215,9 @@ export default function Success() {
 							>
 								{viewRefLoading && <Spinner size="sm" />} {t.viewReferralStatus}
 							</button>
-							{registrationId && registrationTime && (
-								<button onClick={() => setShowQRCode(true)} className="button">
-									<QrCode size={20} /> {t.viewQRCode}
-								</button>
-							)}
 						</div>
 						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)} className="button">
-							{t.goBackHome}
+							<ArrowLeft size={24} />
 						</button>
 					</div>
 				</section>

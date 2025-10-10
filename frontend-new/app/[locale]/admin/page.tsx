@@ -3,7 +3,7 @@
 import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { DashboardData } from "@/lib/types/api";
+import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -17,8 +17,8 @@ export default function AdminDashboard() {
 	const locale = useLocale();
 
 	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-	const [registrationTrends, setRegistrationTrends] = useState<any[]>([]);
-	const [tickets, setTickets] = useState<any[]>([]);
+	const [registrationTrends, setRegistrationTrends] = useState<RegistrationTrend[]>([]);
+	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	// Chart refs
