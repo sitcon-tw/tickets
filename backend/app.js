@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import Fastify from "fastify";
 
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
+import { closeRedis } from "./config/redis.js";
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
 import { cleanup } from "./utils/database-init.js";
@@ -234,6 +235,7 @@ process.on("SIGINT", async () => {
 	fastify.log.info("Received SIGINT, shutting down gracefully...");
 	try {
 		await cleanup();
+		await closeRedis();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
@@ -246,6 +248,7 @@ process.on("SIGTERM", async () => {
 	fastify.log.info("Received SIGTERM, shutting down gracefully...");
 	try {
 		await cleanup();
+		await closeRedis();
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
