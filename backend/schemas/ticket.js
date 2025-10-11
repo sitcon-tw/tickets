@@ -53,6 +53,10 @@ export const ticketProperties = {
 		type: "boolean",
 		description: "是否需要邀請碼"
 	},
+	requireSmsVerification: {
+		type: "boolean",
+		description: "是否需要簡訊驗證"
+	},
 	createdAt: {
 		...dateTimeString,
 		description: "建立時間"
@@ -101,6 +105,10 @@ export const ticketCreateBody = {
 		requireInviteCode: {
 			type: "boolean",
 			description: "是否需要邀請碼"
+		},
+		requireSmsVerification: {
+			type: "boolean",
+			description: "是否需要簡訊驗證"
 		}
 	},
 	required: ["eventId", "name", "price", "quantity"]
@@ -144,6 +152,10 @@ export const ticketUpdateBody = {
 		requireInviteCode: {
 			type: "boolean",
 			description: "是否需要邀請碼"
+		},
+		requireSmsVerification: {
+			type: "boolean",
+			description: "是否需要簡訊驗證"
 		}
 	}
 };

@@ -23,12 +23,15 @@ model User {
   role          String    @default("viewer") // admin, viewer
   permissions   String?   // JSON array of permissions
   isActive      Boolean   @default(true)
+  phoneNumber   String?
+  phoneVerified Boolean   @default(false)
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
   emailCampaigns EmailCampaign[]
   registrations Registration[]
+  smsVerifications SmsVerification[]
 
   @@unique([email])
   @@map("user")
@@ -112,6 +115,7 @@ model Ticket {
   saleStart   DateTime?
   saleEnd     DateTime?
   requireInviteCode Boolean @default(false)
+  requireSmsVerification Boolean @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -229,8 +233,25 @@ model EmailCampaign {
   sentAt       DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@map("email_campaign")
+}
+
+model SmsVerification {
+  id          String   @id @default(cuid())
+  userId      String
+  phoneNumber String
+  code        String   // 6-digit verification code
+  purpose     String   // "ticket_access", "phone_verification"
+  ticketId    String?  // if purpose is ticket_access
+  verified    Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sms_verification")
 }
