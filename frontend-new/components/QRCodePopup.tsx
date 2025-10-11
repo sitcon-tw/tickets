@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { TriangleAlert, ExternalLink } from "lucide-react";
+import generateHash from "@/lib/utils/hash";
 
 interface QRCodePopupProps {
 	isOpen: boolean;
@@ -28,18 +29,8 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 	const [qrValue, setQrValue] = useState<string>("");
 
 	useEffect(() => {
-		const generateHash = async () => {
-			const text = registrationId + registrationTime;
-			const encoder = new TextEncoder();
-			const data = encoder.encode(text);
-			const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-			const hashArray = Array.from(new Uint8Array(hashBuffer));
-			const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-			setQrValue(hashHex);
-		};
-
 		if (isOpen && registrationId && registrationTime) {
-			generateHash();
+			generateHash(registrationId, registrationTime).then((hash) => {setQrValue(hash)});
 		}
 	}, [isOpen, registrationId, registrationTime]);
 

@@ -8,6 +8,7 @@ import type { Registration } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import generateHash from "@/lib/utils/hash";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -29,6 +30,7 @@ export default function RegistrationsPage() {
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(50);
+	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -103,6 +105,14 @@ export default function RegistrationsPage() {
 			const response = await adminRegistrationsAPI.getAll(params);
 			if (response.success) {
 				setRegistrations(response.data || []);
+
+				const hashPromises = response.data.map(r => generateHash(r.id, r.createdAt).then(hash => ({ id: r.id, hash })));
+				const hashes = await Promise.all(hashPromises);
+				const hashMap: { [key: string]: string } = {};
+				hashes.forEach(h => {
+					hashMap[h.id] = h.hash;
+				});
+				setTicketHashes(hashMap);
 			}
 		} catch (error) {
 			console.error("Failed to load registrations:", error);
@@ -486,6 +496,11 @@ export default function RegistrationsPage() {
 						</div>
 
 						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+							<div>
+								<div className="admin-stat-label">Ticket ID</div>
+								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{ticketHashes[selectedRegistration.id]}</div>
+							</div>
+
 							<div>
 								<div className="admin-stat-label">ID</div>
 								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{selectedRegistration.id}</div>
