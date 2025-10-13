@@ -16,8 +16,20 @@
 
 如果只有要跑前端／後端記得先 `cd` 到相應的資料夾。一起跑就在根目錄。
 
+### how to run?
+首先你要裝一下套件
 ```bash
-pnpm i
+pnpm install # 沒有 pnpm 的話請先安裝 pnpm -> npm install -g pnpm
+```
+
+再來跑一下 database
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+然後你就可以開始開發了
+```bash
 pnpm dev
 ```
 
@@ -25,7 +37,7 @@ pnpm dev
 
 在每個元件獨立編輯，不會全部塞在同一個大 JSON 。看了你就懂了不多解釋。
 
-### 來自 Nelson 的留言:
+## 來自 Nelson 的留言:
 
 這票券系統因為換過好幾個技術棧，從 Astro 到 React JS 再到 Next + React TSX，refactor了好幾次，如果來年還有人要維護，可以幫我完成：
 
