@@ -348,6 +348,58 @@ export default function FormsPage() {
 		setQuestions(questions.filter(q => q.id !== id));
 	};
 
+	// Drag and drop handlers
+	const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+		e.dataTransfer.effectAllowed = "move";
+		e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
+		e.dataTransfer.setData("dragIndex", index.toString());
+		e.currentTarget.style.opacity = "0.4";
+	};
+
+	const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+		e.currentTarget.style.opacity = "1";
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = "move";
+	};
+
+	const handleDrop = async (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
+		e.preventDefault();
+		const dragIndex = parseInt(e.dataTransfer.getData("dragIndex"));
+
+		if (dragIndex === dropIndex) return;
+
+		const newQuestions = [...questions];
+		const draggedItem = newQuestions[dragIndex];
+
+		// Remove the dragged item
+		newQuestions.splice(dragIndex, 1);
+		// Insert it at the new position
+		newQuestions.splice(dropIndex, 0, draggedItem);
+
+		setQuestions(newQuestions);
+
+		// Call the reorder API immediately to prevent 409 conflicts
+		if (currentTicket?.id) {
+			try {
+				const fieldOrders = newQuestions.map((q, index) => ({
+					id: q.id,
+					order: index
+				}));
+
+				await adminTicketFormFieldsAPI.reorder(currentTicket.id, { fieldOrders });
+			} catch (error) {
+				console.error("Failed to reorder fields:", error);
+				// Optionally show an error message to the user
+				alert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)));
+				// Reload the form to get the correct order from the backend
+				await loadFormFields();
+			}
+		}
+	};
+
 	if (!searchParams.get("ticket")) {
 		return (
 			<>
@@ -441,10 +493,15 @@ export default function FormsPage() {
 								尚無問題
 							</div>
 						)}
-						{questions.map(q => (
+						{questions.map((q, index) => (
 							<div
 								key={q.id}
 								data-id={q.id}
+								draggable
+								onDragStart={e => handleDragStart(e, index)}
+								onDragEnd={handleDragEnd}
+								onDragOver={handleDragOver}
+								onDrop={e => handleDrop(e, index)}
 								style={{
 									background: "var(--color-gray-800)",
 									border: "1px solid var(--color-gray-700)",
@@ -456,7 +513,8 @@ export default function FormsPage() {
 									alignItems: "start",
 									position: "relative",
 									transition: "all 0.15s ease",
-									boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
+									boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+									cursor: "move"
 								}}
 							>
 								<div
