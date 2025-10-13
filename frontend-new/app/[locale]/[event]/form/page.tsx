@@ -6,6 +6,7 @@ import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { FormField } from "@/components/form/FormField";
 import Text from "@/components/input/Text";
+import Checkbox from "@/components/input/Checkbox";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
@@ -33,6 +34,7 @@ export default function FormPage() {
 	const [referralCode, setReferralCode] = useState<string>("");
 	const [requiresInviteCode, setRequiresInviteCode] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [agreeToTerms, setAgreeToTerms] = useState(false);
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -104,7 +106,17 @@ export default function FormPage() {
 			"zh-Hant": "提交報名",
 			"zh-Hans": "提交报名",
 			en: "Submit Registration"
-		}
+		},
+		agreeToTerms: {
+			"zh-Hant": "我已閱讀並同意服務條款",
+			"zh-Hans": "我已阅读并同意服务条款",
+			en: "I have read and agree to the terms"
+		},
+		termsLink: {
+			"zh-Hant": "服務條款連結",
+			"zh-Hans": "服务条款链接",
+			en: "Terms link"
+		},
 	});
 
 	// Form data handlers
@@ -346,6 +358,12 @@ export default function FormPage() {
 
 							{/* Referral code field - always shown and editable */}
 							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
+
+							{/* Terms and conditions checkbox */}
+							<div>
+								<Checkbox label={t.agreeToTerms} question={t.agreeToTermsQuestion} value={agreeToTerms} required id="agreeToTerms" checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} />
+								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>{t.termsLink}</a>
+							</div>
 
 							<button
 								type="submit"
