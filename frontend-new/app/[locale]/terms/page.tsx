@@ -11,9 +11,9 @@ export default function TermsPage() {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
 		termsOfService: {
-			"zh-Hant": "服務條款",
-			"zh-Hans": "服务条款",
-			en: "Terms of Service"
+			"zh-Hant": "服務條款與隱私政策",
+			"zh-Hans": "服务条款与隐私政策",
+			en: "Terms of Service and Privacy Policy"
 		}
 	});
 

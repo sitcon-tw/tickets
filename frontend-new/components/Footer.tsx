@@ -48,7 +48,7 @@ export default function Footer() {
 					Github
 				</a>
         .
-        <a href={`/${locale}/terms`} className="underline" style={{ marginLeft: "0.5rem" }}>Terms</a>
+        <a href={`/${locale}/terms`} className="underline" style={{ marginLeft: "0.5rem" }}>ToS & PP</a>
 			</p>
 		</footer>
 	);

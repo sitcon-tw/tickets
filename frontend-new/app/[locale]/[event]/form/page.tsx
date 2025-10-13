@@ -108,14 +108,14 @@ export default function FormPage() {
 			en: "Submit Registration"
 		},
 		agreeToTerms: {
-			"zh-Hant": "我已閱讀並同意服務條款",
+			"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
 			"zh-Hans": "我已阅读并同意服务条款",
 			en: "I have read and agree to the terms"
 		},
 		termsLink: {
-			"zh-Hant": "服務條款連結",
-			"zh-Hans": "服务条款链接",
-			en: "Terms link"
+			"zh-Hant": "服務條款與隱私政策連結",
+			"zh-Hans": "服务条款与隐私政策链接",
+			en: "Terms and Privacy Policy link"
 		},
 	});
 
