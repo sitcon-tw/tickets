@@ -81,11 +81,31 @@ According to Taiwan's Personal Information Protection Act:
 - ✅ 主辦方將收到通知 Organizers will be notified
 - ✅ 帳務相關資料將依法保存 Transaction-related data will be kept as required by law
 
-## 測試 Testing
+## 使用介面 User Interface
 
-您可以使用 Swagger UI 測試此端點：
+### 前端管理介面 Frontend Admin Panel
 
-You can test this endpoint using Swagger UI:
+在管理後台的報名資料頁面 (`/admin/registrations`)：
+
+In the admin panel's registrations page (`/admin/registrations`):
+
+1. 點擊任一報名記錄的「檢視詳情」按鈕
+   Click the "View Details" button for any registration
+
+2. 在詳情視窗底部，找到「刪除個人資料」按鈕
+   At the bottom of the details modal, find the "Delete Personal Data" button
+
+3. 點擊後會出現確認對話框
+   A confirmation dialog will appear after clicking
+
+4. 確認後，系統將刪除資料並發送通知信
+   After confirmation, the system will delete the data and send notification email
+
+### API 測試 API Testing
+
+您也可以使用 Swagger UI 直接測試 API 端點：
+
+You can also test the API endpoint directly using Swagger UI:
 
 1. 啟動後端伺服器 Start the backend server:
    ```bash

@@ -50,6 +50,10 @@ export default function RegistrationsPage() {
 		deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
 		exportSelected: { "zh-Hant": "匯出選取", "zh-Hans": "导出选取", en: "Export Selected" },
 		viewDetails: { "zh-Hant": "檢視詳情", "zh-Hans": "查看详情", en: "View Details" },
+		deleteData: { "zh-Hant": "刪除個人資料", "zh-Hans": "删除个人资料", en: "Delete Personal Data" },
+		deleteConfirm: { "zh-Hant": "確定要刪除此報名記錄的個人資料嗎？\n\n此操作無法復原，將會永久刪除該筆記錄及相關資料，並通知活動主辦方。", "zh-Hans": "确定要删除此报名记录的个人资料吗？\n\n此操作无法复原，将会永久删除该笔记录及相关资料，并通知活动主办方。", en: "Are you sure you want to delete this registration's personal data?\n\nThis action cannot be undone and will permanently delete the record and related data, and notify the event organizers." },
+		deleteSuccess: { "zh-Hant": "個人資料已成功刪除，通知信已發送給活動主辦方", "zh-Hans": "个人资料已成功删除，通知信已发送给活动主办方", en: "Personal data deleted successfully. Notification email sent to organizers." },
+		deleteError: { "zh-Hant": "刪除失敗", "zh-Hans": "删除失败", en: "Delete failed" },
 		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
 		registrationDetails: { "zh-Hant": "報名詳情", "zh-Hans": "报名详情", en: "Registration Details" },
 		formData: { "zh-Hant": "表單資料", "zh-Hans": "表单资料", en: "Form Data" },
@@ -260,6 +264,26 @@ export default function RegistrationsPage() {
 		}
 		// This would need backend support for exporting specific IDs
 		alert(`Exporting ${selectedRegistrations.size} selected registrations (feature needs backend support)`);
+	};
+
+	const deleteRegistration = async (registration: Registration) => {
+		if (!confirm(t.deleteConfirm)) {
+			return;
+		}
+
+		try {
+			const response = await adminRegistrationsAPI.delete(registration.id);
+			if (response.success) {
+				alert(t.deleteSuccess);
+				closeDetailModal();
+				await loadRegistrations();
+			} else {
+				alert(`${t.deleteError}: ${response.message || "Unknown error"}`);
+			}
+		} catch (error) {
+			console.error("Failed to delete registration:", error);
+			alert(`${t.deleteError}: ${error instanceof Error ? error.message : String(error)}`);
+		}
 	};
 
 	return (
@@ -576,6 +600,14 @@ export default function RegistrationsPage() {
 									</div>
 								</div>
 							)}
+
+							{/* Delete Personal Data Button */}
+							<div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "2px solid var(--color-gray-700)" }}>
+								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger" style={{ width: "100%" }}>
+									🗑️ {t.deleteData}
+								</button>
+								<p style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem", textAlign: "center" }}>⚠️ {locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合个人资料保护法" : "This action is irreversible and complies with privacy law"}</p>
+							</div>
 						</div>
 					</div>
 				</div>
