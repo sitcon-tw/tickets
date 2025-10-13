@@ -9,6 +9,7 @@
 import prisma from "#config/database.js";
 import { registrationSchemas } from "#schemas/registration.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import { sendDataDeletionNotification } from "#utils/email.js";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -376,4 +377,88 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		const csvRows = [headers, ...rows];
 		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
+
+	// Delete registration and personal data
+	fastify.delete(
+		"/registrations/:id",
+		{
+			schema: {
+				description: "刪除報名記錄與個人資料 (符合個人資料保護法)",
+				tags: ["admin/registrations"],
+				params: {
+					type: "object",
+					properties: {
+						id: {
+							type: "string",
+							description: "報名記錄 ID"
+						}
+					},
+					required: ["id"]
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: { type: "object" }
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Get registration details before deletion
+				const registration = await prisma.registration.findUnique({
+					where: { id },
+					include: {
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true
+							}
+						}
+					}
+				});
+
+				if (!registration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Delete the registration (cascade will handle related records)
+				await prisma.registration.delete({
+					where: { id }
+				});
+
+				// Send notification email to event organizer
+				try {
+					await sendDataDeletionNotification(registration, registration.event);
+				} catch (emailError) {
+					console.error("Failed to send deletion notification email:", emailError);
+					// Continue even if email fails - deletion is already done
+				}
+
+				return reply.send(
+					successResponse(
+						{ id, email: registration.email },
+						"個人資料已成功刪除，通知信已發送給活動主辦方"
+					)
+				);
+			} catch (error) {
+				console.error("Delete registration error:", error);
+				const { response, statusCode } = serverErrorResponse("刪除報名記錄失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
 }
