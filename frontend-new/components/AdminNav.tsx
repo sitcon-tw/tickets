@@ -6,7 +6,7 @@ import { routing } from "@/i18n/routing";
 import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { Globe } from "lucide-react";
+import { Globe, Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -29,7 +29,9 @@ const styles = {
 		position: "fixed" as const,
 		display: "flex",
 		flexDirection: "column" as const,
-		fontSize: "1.2rem"
+		fontSize: "1.2rem",
+		zIndex: 1000,
+		transition: "transform 0.3s ease-in-out"
 	},
 	activity: {
 		fontSize: "1.2rem"
@@ -61,6 +63,46 @@ const styles = {
 	logout: {
 		display: "flex",
 		gap: "0.5rem"
+	},
+	mobileHeader: {
+		display: "none",
+		position: "fixed" as const,
+		top: 0,
+		left: 0,
+		right: 0,
+		backgroundColor: "var(--color-gray-950)",
+		padding: "1rem",
+		zIndex: 999,
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderBottom: "1px solid var(--color-gray-800)"
+	},
+	hamburger: {
+		background: "none",
+		border: "none",
+		color: "var(--color-gray-100)",
+		cursor: "pointer",
+		padding: "0.5rem"
+	},
+	overlay: {
+		display: "none",
+		position: "fixed" as const,
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: "rgba(0, 0, 0, 0.5)",
+		zIndex: 998
+	},
+	closeButton: {
+		position: "absolute" as const,
+		top: "1rem",
+		right: "1rem",
+		background: "none",
+		border: "none",
+		color: "var(--color-gray-100)",
+		cursor: "pointer",
+		padding: "0.5rem"
 	}
 };
 
@@ -72,6 +114,8 @@ export default function AdminNav() {
 	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
 
 	const handleLocaleChange = (newLocale: string) => {
 		router.replace(pathname, { locale: newLocale });
@@ -117,6 +161,20 @@ export default function AdminNav() {
 		loadEvents();
 	}, [loadEvents]);
 
+	// Handle mobile detection and window resize
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+
+		// Initial check
+		checkMobile();
+
+		// Listen to window resize
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
 	useEffect(() => {
 		// Inject global styles for main element
 		const styleId = "admin-nav-global-styles";
@@ -129,6 +187,13 @@ export default function AdminNav() {
           max-width: unset;
           margin-left: 17rem;
         }
+
+        @media (max-width: 768px) {
+          main {
+            margin-left: 0 !important;
+            padding-top: 5rem !important;
+          }
+        }
       `;
 			document.head.appendChild(style);
 		}
@@ -140,6 +205,24 @@ export default function AdminNav() {
 			}
 		};
 	}, []);
+
+	// Close mobile menu when clicking a link
+	const handleNavClick = (href: string) => {
+		router.push(href);
+		setMobileMenuOpen(false);
+	};
+
+	// Close mobile menu on escape key
+	useEffect(() => {
+		const handleEscape = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && mobileMenuOpen) {
+				setMobileMenuOpen(false);
+			}
+		};
+
+		document.addEventListener("keydown", handleEscape);
+		return () => document.removeEventListener("keydown", handleEscape);
+	}, [mobileMenuOpen]);
 
 	const t = getTranslations(locale, {
 		activityName: {
@@ -215,9 +298,36 @@ export default function AdminNav() {
 	});
 
 	return (
-		<aside style={styles.aside}>
-			<div style={styles.activity}>{t.activityName}</div>
-			<div style={styles.title}>{t.systemTitle}</div>
+		<>
+			{/* Mobile Header */}
+			<div style={{ ...styles.mobileHeader, display: isMobile ? "flex" : "none" }}>
+				<button style={styles.hamburger} onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+					<Menu size={24} />
+				</button>
+				<div style={{ fontSize: "1.2rem", fontWeight: 600 }}>{t.activityName}</div>
+				<div style={{ width: "40px" }} /> {/* Spacer for centering */}
+			</div>
+
+			{/* Overlay for mobile */}
+			{mobileMenuOpen && (
+				<div style={{ ...styles.overlay, display: "block" }} onClick={() => setMobileMenuOpen(false)} />
+			)}
+
+			{/* Sidebar */}
+			<aside
+				style={{
+					...styles.aside,
+					transform: isMobile ? (mobileMenuOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)"
+				}}
+			>
+				{/* Close button for mobile */}
+				{isMobile && (
+					<button style={styles.closeButton} onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+						<X size={24} />
+					</button>
+				)}
+				<div style={styles.activity}>{t.activityName}</div>
+				<div style={styles.title}>{t.systemTitle}</div>
 			<div style={{ marginBottom: "1.5rem", marginTop: "1rem" }}>
 				<label
 					style={{
@@ -253,7 +363,7 @@ export default function AdminNav() {
 					{activityLinks.map(({ href, i18nKey }) => (
 						<li key={href} style={styles.navItem}>
 							<a
-								onClick={() => router.push(href)}
+								onClick={() => handleNavClick(href)}
 								onMouseEnter={() => setHoveredLink(href)}
 								onMouseLeave={() => setHoveredLink(null)}
 								style={{
@@ -271,18 +381,25 @@ export default function AdminNav() {
 				<div style={styles.user}>{t.userPlaceholder}</div>
 				<div style={styles.logout}>
 					<a
-						onClick={() => router.push("/logout")}
+						onClick={() => {
+							router.push("/logout");
+							setMobileMenuOpen(false);
+						}}
 						onMouseEnter={() => setHoveredLink("logout")}
 						onMouseLeave={() => setHoveredLink(null)}
 						style={{
 							textDecoration: hoveredLink === "logout" ? "underline" : "none"
 						}}
+						className="cursor-pointer"
 					>
 						{t.logout}
 					</a>
 					<span>・</span>
 					<a
-						onClick={() => router.push("/")}
+						onClick={() => {
+							router.push("/");
+							setMobileMenuOpen(false);
+						}}
 						onMouseEnter={() => setHoveredLink("home")}
 						onMouseLeave={() => setHoveredLink(null)}
 						style={{
@@ -305,5 +422,15 @@ export default function AdminNav() {
 				</div>
 			</div>
 		</aside>
+
+		{/* Inject mobile-specific CSS */}
+		<style jsx>{`
+			@media (max-width: 768px) {
+				aside {
+					transform: ${mobileMenuOpen ? "translateX(0)" : "translateX(-100%)"} !important;
+				}
+			}
+		`}</style>
+		</>
 	);
 }
