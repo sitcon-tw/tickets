@@ -75,13 +75,18 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
 	const [referralParam, setReferralParam] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [isSafari, setIsSafari] = useState(false);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 
 		const referral = localStorage.getItem("referralCode");
-
 		setReferralParam(referral);
+
+		// Detect Safari browser
+		const ua = navigator.userAgent;
+		const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
+		setIsSafari(isSafariBrowser);
 	}, []);
 
 	useEffect(() => {
@@ -132,44 +137,53 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		};
 	}, [referralParam, eventId, t.loadFailed]);
 
+	const registeredContent = (
+		<section
+			style={{
+				padding: "2rem",
+				margin: "1rem",
+				textAlign: "center",
+				animation: "fadeInUp 0.5s ease-out",
+				...(isSafari ? { backgroundColor: "var(--color-gray-800)", border: "5px solid #5A738F" } : {})
+			}}
+		>
+			<h2
+				style={{
+					fontSize: "1.5rem",
+					marginBottom: "0.5rem"
+				}}
+			>
+				{t.registeredWelcome}
+			</h2>
+			<div className="items-center justify-center flex">
+				<button
+					className="button"
+					onClick={() => {
+						setLoading(true);
+						router.push(`/${eventSlug}/success`);
+					}}
+				>
+					{loading ? (
+						<>
+							<Spinner size="sm" />{" "}
+						</>
+					) : null}
+					{t.viewRegDetail}
+				</button>
+			</div>
+		</section>
+	);
+
 	return (
 		<section>
 			{welcomeState === "registered" ? (
-				<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
-					<section
-						style={{
-							padding: "2rem",
-							margin: "1rem",
-							textAlign: "center",
-							animation: "fadeInUp 0.5s ease-out"
-						}}
-					>
-						<h2
-							style={{
-								fontSize: "1.5rem",
-								marginBottom: "0.5rem"
-							}}
-						>
-							{t.registeredWelcome}
-						</h2>
-						<div className="items-center justify-center flex">
-							<button
-								className="button"
-								onClick={() => {
-									setLoading(true);
-									router.push(`/${eventSlug}/success`);
-								}}
-							>
-								{loading ? (
-									<>
-										<Spinner size="sm" />{" "}
-									</>
-								) : null}
-								{t.viewRegDetail}
-							</button>
-						</div>
-					</section>
-				</ElectricBorder>
+				isSafari ? (
+					registeredContent
+				) : (
+					<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
+						{registeredContent}
+					</ElectricBorder>
+				)
 			) : null}
 
 			{welcomeState === "referral" ? (
