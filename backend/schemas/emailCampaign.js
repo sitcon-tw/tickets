@@ -95,10 +95,15 @@ export const emailCampaignProperties = {
 		...dateTimeString,
 		description: "實際發送時間"
 	},
-	recipientCount: {
+	totalCount: {
 		type: "integer",
 		minimum: 0,
 		description: "收件人數量"
+	},
+	sentCount: {
+		type: "integer",
+		minimum: 0,
+		description: "已發送數量"
 	},
 	createdBy: {
 		type: "string",
