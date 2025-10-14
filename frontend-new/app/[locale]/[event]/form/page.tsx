@@ -173,7 +173,7 @@ export default function FormPage() {
 				// Load ticket info to check if it requires invite code
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
 				if (!ticketResponse.success) {
-					throw new Error("Failed to load ticket information");
+					throw new Error(ticketResponse.message || "Failed to load ticket information");
 				}
 
 				const ticket = ticketResponse.data;
@@ -182,7 +182,7 @@ export default function FormPage() {
 				// Load form fields from ticket API
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
-					throw new Error("Failed to load form fields");
+					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
 
 				// Process form fields to fix malformed data from backend
@@ -276,7 +276,7 @@ export default function FormPage() {
 				// Redirect to success page
 				router.push(window.location.href.replace("/form", "/success"));
 			} else {
-				throw new Error("Registration failed");
+				throw new Error(result.message || "Registration failed");
 			}
 		} catch (error) {
 			console.error("Registration error:", error);

@@ -219,7 +219,7 @@ export default function MyRegistrationPage() {
 				// Load registration
 				const regResponse = await registrationsAPI.getById(registrationId);
 				if (!regResponse.success) {
-					throw new Error(t.notFound);
+					throw new Error(regResponse.message || t.notFound);
 				}
 
 				const regData = regResponse.data;
@@ -306,7 +306,7 @@ export default function MyRegistrationPage() {
 				setRegistration({ ...registration, formData: result.data.formData as Record<string, unknown> });
 				setIsEditing(false);
 			} else {
-				throw new Error("Failed to update registration");
+				throw new Error(result.message || "Failed to update registration");
 			}
 		} catch (error) {
 			console.error("Save error:", error);

@@ -457,7 +457,8 @@ export default function InvitesPage() {
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to send email");
+				const errorData = await response.json().catch(() => ({ error: { message: "Failed to send email" } }));
+				throw new Error(errorData.error?.message || errorData.message || "Failed to send email");
 			}
 
 			showAlert(t.sendSuccess, "success");

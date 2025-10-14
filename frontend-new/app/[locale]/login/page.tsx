@@ -7,6 +7,7 @@ import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import React, { useState } from "react";
 import styled from "styled-components";
+import { useAlert } from "@/contexts/AlertContext";
 
 const StyledMain = styled.main`
 	section {
@@ -138,7 +139,8 @@ const MessageContainer = styled.div`
 
 export default function Login() {
 	const locale = useLocale();
-	const [viewState, setViewState] = useState<"login" | "sent" | "error">("login");
+	const { showAlert }	= useAlert();
+	const [viewState, setViewState] = useState<"login" | "sent">("login");
 	const [isLoading, setIsLoading] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -180,7 +182,7 @@ export default function Login() {
 			setViewState("sent");
 		} catch (error) {
 			console.error("Login error:", error);
-			setViewState("error");
+			showAlert(t.error + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsLoading(false);
 		}
@@ -204,13 +206,6 @@ export default function Login() {
 						<MessageContainer>
 							<h2>{t.sent}</h2>
 							<p>{t.message}</p>
-						</MessageContainer>
-					</Container>
-
-					<Container isActive={viewState === "error"}>
-						<MessageContainer>
-							<h2>{t.error}</h2>
-							<p>{t.error}</p>
 						</MessageContainer>
 					</Container>
 				</section>
