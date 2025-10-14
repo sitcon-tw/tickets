@@ -16,6 +16,7 @@ import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -24,6 +25,7 @@ type FormDataType = {
 export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
@@ -158,7 +160,7 @@ export default function FormPage() {
 				// Load form data from localStorage
 				const storedData = localStorage.getItem("formData");
 				if (!storedData) {
-					alert(t.noTicketAlert);
+					showAlert(t.noTicketAlert, "warning");
 					router.push("/");
 					return;
 				}
@@ -248,7 +250,7 @@ export default function FormPage() {
 
 		if (!ticketId || !eventId || isSubmitting) {
 			if (!ticketId || !eventId) {
-				alert(t.incompleteFormAlert);
+				showAlert(t.incompleteFormAlert, "warning");
 				router.push("/");
 			}
 			return;
@@ -278,7 +280,7 @@ export default function FormPage() {
 			}
 		} catch (error) {
 			console.error("Registration error:", error);
-			alert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"));
+			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
 			setIsSubmitting(false);
 		}
 	};

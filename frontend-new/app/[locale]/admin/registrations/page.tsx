@@ -9,12 +9,14 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import generateHash from "@/lib/utils/hash";
+import { useAlert } from "@/contexts/AlertContext";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
 
 export default function RegistrationsPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [registrations, setRegistrations] = useState<Registration[]>([]);
 	const [filtered, setFiltered] = useState<Registration[]>([]);
@@ -253,17 +255,17 @@ export default function RegistrationsPage() {
 			link.click();
 			document.body.removeChild(link);
 		} catch (error) {
-			alert("Export failed: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("Export failed: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const exportSelected = async () => {
 		if (selectedRegistrations.size === 0) {
-			alert("Please select at least one registration");
+			showAlert("Please select at least one registration", "warning");
 			return;
 		}
 		// This would need backend support for exporting specific IDs
-		alert(`Exporting ${selectedRegistrations.size} selected registrations (feature needs backend support)`);
+		showAlert(`Exporting ${selectedRegistrations.size} selected registrations (feature needs backend support)`, "info");
 	};
 
 	const deleteRegistration = async (registration: Registration) => {
@@ -274,15 +276,15 @@ export default function RegistrationsPage() {
 		try {
 			const response = await adminRegistrationsAPI.delete(registration.id);
 			if (response.success) {
-				alert(t.deleteSuccess);
+				showAlert(t.deleteSuccess, "success");
 				closeDetailModal();
 				await loadRegistrations();
 			} else {
-				alert(`${t.deleteError}: ${response.message || "Unknown error"}`);
+				showAlert(`${t.deleteError}: ${response.message || "Unknown error"}`, "error");
 			}
 		} catch (error) {
 			console.error("Failed to delete registration:", error);
-			alert(`${t.deleteError}: ${error instanceof Error ? error.message : String(error)}`);
+			showAlert(`${t.deleteError}: ${error instanceof Error ? error.message : String(error)}`, "error");
 		}
 	};
 

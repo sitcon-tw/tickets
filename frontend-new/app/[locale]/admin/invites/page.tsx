@@ -8,6 +8,7 @@ import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type InviteCode = {
 	id: string;
@@ -27,6 +28,7 @@ type InviteType = {
 
 export default function InvitesPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [inviteTypes, setInviteTypes] = useState<InviteType[]>([]);
 	const [filteredTypes, setFilteredTypes] = useState<InviteType[]>([]);
@@ -199,7 +201,7 @@ export default function InvitesPage() {
 		const ticketId = formData.get("ticketId") as string;
 
 		if (!ticketId) {
-			alert(t.pleaseSelectTicket);
+			showAlert(t.pleaseSelectTicket, "warning");
 			return;
 		}
 
@@ -233,9 +235,9 @@ export default function InvitesPage() {
 			await loadTickets();
 			await loadInvitationCodes();
 			setShowModal(false);
-			alert(t.createSuccess.replace("{count}", count.toString()));
+			showAlert(t.createSuccess.replace("{count}", count.toString()), "success");
 		} catch (error) {
-			alert("創建失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("創建失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -246,15 +248,15 @@ export default function InvitesPage() {
 			await adminInvitationCodesAPI.delete(codeId);
 			await loadTickets();
 			await loadInvitationCodes();
-			alert(t.deleteSuccess);
+			showAlert(t.deleteSuccess, "success");
 		} catch (error) {
-			alert("刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const bulkDeleteInvitationCodes = async () => {
 		if (selectedCodes.size === 0) {
-			alert("請選擇要刪除的邀請碼");
+			showAlert("請選擇要刪除的邀請碼", "warning");
 			return;
 		}
 
@@ -284,18 +286,18 @@ export default function InvitesPage() {
 
 			// Show result
 			if (errorCount > 0) {
-				alert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`);
+				showAlert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`, "error");
 			} else {
-				alert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()));
+				showAlert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()), "success");
 			}
 		} catch (error) {
-			alert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const downloadSelectedCodesAsTxt = () => {
 		if (selectedCodes.size === 0) {
-			alert(t.pleaseSelectCodes);
+			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
@@ -314,7 +316,7 @@ export default function InvitesPage() {
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 
-		alert(t.downloadSuccess);
+		showAlert(t.downloadSuccess, "success");
 	};
 
 	const [showEmailModal, setShowEmailModal] = useState(false);
@@ -329,14 +331,14 @@ export default function InvitesPage() {
 		const ticketId = formData.get("ticketId") as string;
 
 		if (!ticketId) {
-			alert(t.pleaseSelectTicket);
+			showAlert(t.pleaseSelectTicket, "warning");
 			return;
 		}
 
 		// Parse codes from textarea
 		const codesText = bulkImportCodes.trim();
 		if (!codesText) {
-			alert(t.noCodes);
+			showAlert(t.noCodes, "warning");
 			return;
 		}
 
@@ -346,7 +348,7 @@ export default function InvitesPage() {
 			.filter(c => c.length > 0);
 
 		if (codes.length === 0) {
-			alert(t.noCodes);
+			showAlert(t.noCodes, "warning");
 			return;
 		}
 
@@ -402,12 +404,12 @@ export default function InvitesPage() {
 
 			// Show result
 			if (errorCount > 0) {
-				alert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`);
+				showAlert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`, "error");
 			} else {
-				alert(t.importSuccess.replace("{count}", successCount.toString()));
+				showAlert(t.importSuccess.replace("{count}", successCount.toString()), "success");
 			}
 		} catch (error) {
-			alert("匯入失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("匯入失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsImporting(false);
 		}
@@ -427,12 +429,12 @@ export default function InvitesPage() {
 
 	const sendCodesViaEmail = async () => {
 		if (selectedCodes.size === 0) {
-			alert(t.pleaseSelectCodes);
+			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
 		if (!emailAddress || !emailAddress.includes("@")) {
-			alert("請輸入有效的 Email 地址");
+			showAlert("請輸入有效的 Email 地址", "warning");
 			return;
 		}
 
@@ -458,12 +460,12 @@ export default function InvitesPage() {
 				throw new Error("Failed to send email");
 			}
 
-			alert(t.sendSuccess);
+			showAlert(t.sendSuccess, "success");
 			setShowEmailModal(false);
 			setEmailAddress("");
 		} catch (error) {
 			console.error("Error sending email:", error);
-			alert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)));
+			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsSendingEmail(false);
 		}

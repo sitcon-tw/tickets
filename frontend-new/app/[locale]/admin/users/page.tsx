@@ -7,9 +7,11 @@ import { adminUsersAPI } from "@/lib/api/endpoints";
 import type { User } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function UsersPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [users, setUsers] = useState<User[]>([]);
 	const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -93,9 +95,9 @@ export default function UsersPage() {
 			await adminUsersAPI.update(editingUser.id, data);
 			await loadUsers();
 			closeEditModal();
-			alert(t.updateSuccess);
+			showAlert(t.updateSuccess, "success");
 		} catch (error) {
-			alert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)));
+			showAlert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 

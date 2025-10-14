@@ -7,6 +7,7 @@ import type { Ticket, TicketFormField } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type ShowIf = {
 	sourceId: string;
@@ -33,6 +34,7 @@ type Question = {
 export default function FormsPage() {
 	const locale = useLocale();
 	const searchParams = useSearchParams();
+	const { showAlert } = useAlert();
 
 	const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
 	const [questions, setQuestions] = useState<Question[]>([]);
@@ -240,18 +242,18 @@ export default function FormsPage() {
 
 				setQuestions(copiedQuestions);
 				setCopyFromTicketId("");
-				alert(t.copySuccess);
+				showAlert(t.copySuccess, "success");
 			}
 		} catch (error) {
 			console.error("Failed to copy form:", error);
-			alert("複製失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("複製失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	// Save form to backend
 	const saveForm = async () => {
 		if (!currentTicket?.id) {
-			alert("無法保存：未找到票種");
+			showAlert("無法保存：未找到票種", "error");
 			return;
 		}
 
@@ -306,10 +308,10 @@ export default function FormsPage() {
 			// Reload the form to get fresh data and update originalFieldIds
 			await loadFormFields();
 
-			alert("表單已保存！");
+			showAlert("表單已保存！", "success");
 		} catch (error) {
 			console.error("Failed to save form:", error);
-			alert("保存失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -393,7 +395,7 @@ export default function FormsPage() {
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
 				// Optionally show an error message to the user
-				alert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)));
+				showAlert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 				// Reload the form to get the correct order from the backend
 				await loadFormFields();
 			}

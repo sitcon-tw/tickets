@@ -7,9 +7,11 @@ import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function TicketsPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -175,7 +177,7 @@ export default function TicketsPage() {
 			await loadTickets();
 			closeModal();
 		} catch (error) {
-			alert("保存失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -186,7 +188,7 @@ export default function TicketsPage() {
 			await adminTicketsAPI.delete(ticketId);
 			await loadTickets();
 		} catch (error) {
-			alert("刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 

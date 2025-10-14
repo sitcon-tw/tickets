@@ -11,6 +11,7 @@ import { Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 interface TicketsProps {
 	eventId: string;
@@ -20,6 +21,7 @@ interface TicketsProps {
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const locale = useLocale();
 	const router = useRouter();
+	const { showAlert } = useAlert();
 
 	const t = getTranslations(locale, {
 		description: {
@@ -160,13 +162,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		// Check if ticket sale has ended
 		if (isTicketExpired(ticket)) {
-			alert(t.ticketSaleEnded);
+			showAlert(t.ticketSaleEnded, "warning");
 			return;
 		}
 
 		// Check if ticket is sold out
 		if (isTicketSoldOut(ticket)) {
-			alert(t.ticketSoldOut);
+			showAlert(t.ticketSoldOut, "warning");
 			return;
 		}
 

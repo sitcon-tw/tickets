@@ -6,9 +6,11 @@ import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function MagicLinkVerify() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
@@ -53,6 +55,7 @@ export default function MagicLinkVerify() {
 
 		if (status === "success") {
 			setStatus("success");
+			showAlert(t.success, "success"); // BEGIN: Show success alert
 			// Redirect to home page after 1.5 seconds
 			setTimeout(() => {
 				router.push(`/${locale}/`);
@@ -60,12 +63,14 @@ export default function MagicLinkVerify() {
 		} else if (status === "error") {
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
+			showAlert(t.errorInvalidLink, "error"); // BEGIN: Show error alert
 		} else {
 			// No status means user hasn't clicked the magic link yet
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
+			showAlert(t.errorInvalidLink, "error"); // BEGIN: Show error alert
 		}
-	}, [searchParams, router, locale, t.errorInvalidLink]);
+	}, [searchParams, router, locale, t.errorInvalidLink, showAlert]); // END:
 
 	return (
 		<>

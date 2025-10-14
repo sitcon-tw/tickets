@@ -8,9 +8,11 @@ import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -145,10 +147,10 @@ export default function EmailCampaignsPage() {
 				});
 				setRecipientCount(null);
 				loadCampaigns();
-				alert("郵件發送任務已建立");
+				showAlert("郵件發送任務已建立", "success");
 			}
 		} catch (error) {
-			alert("建立失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("建立失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -161,13 +163,13 @@ export default function EmailCampaignsPage() {
 				setShowPreviewModal(true);
 			}
 		} catch (error) {
-			alert("預覽失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("預覽失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const handleCalculateRecipients = async () => {
 		if (!formData.name || !formData.subject || !formData.content) {
-			alert("請先填寫名稱、主旨和內容");
+			showAlert("請先填寫名稱、主旨和內容", "warning");
 			return;
 		}
 
@@ -192,7 +194,7 @@ export default function EmailCampaignsPage() {
 				}
 			}
 		} catch (error) {
-			alert("計算失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("計算失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -204,11 +206,11 @@ export default function EmailCampaignsPage() {
 		try {
 			const response = await adminEmailCampaignsAPI.send(campaign.id, true);
 			if (response.success) {
-				alert("郵件已發送！");
+				showAlert("郵件已發送！", "success");
 				loadCampaigns();
 			}
 		} catch (error) {
-			alert("發送失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("發送失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -219,10 +221,10 @@ export default function EmailCampaignsPage() {
 
 		try {
 			await adminEmailCampaignsAPI.cancel(campaign.id);
-			alert("已取消");
+			showAlert("已取消", "success");
 			loadCampaigns();
 		} catch (error) {
-			alert("取消失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("取消失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
