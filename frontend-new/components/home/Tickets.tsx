@@ -101,12 +101,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				const ticketsData = await eventsAPI.getTickets(eventId);
 
 				if (ticketsData.success && Array.isArray(ticketsData.data)) {
-					const prosceedTicketData = ticketsData.data.map(ticket => ({
-						...ticket,
-						saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A",
-						saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"
-					}));
-					setTickets(prosceedTicketData);
+					setTickets(ticketsData.data);
 				}
 			} catch (error) {
 				console.error("Failed to load tickets", error);
@@ -294,7 +289,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<h3>{getLocalizedText(ticket.name, locale)}</h3>
 							<p>
 								{t.time}
-								{ticket.saleStart} - {ticket.saleEnd}
+				        {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : 'N/A'} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : 'N/A'}
 							</p>
 							<p className="remain">
 								{t.remaining} {ticket.available} / {ticket.quantity}
