@@ -96,6 +96,15 @@ export const conflictResponse = (message = "資源衝突") => {
 };
 
 /**
+ * Creates a standardized locked (423) error response for disabled accounts
+ * @param {string} [message="帳號已停用"] - Account disabled message
+ * @returns {{response: ApiErrorResponse, statusCode: number}} Account locked error response
+ */
+export const accountDisabledResponse = (message = "帳號已停用") => {
+	return errorResponse("ACCOUNT_DISABLED", message, null, 423);
+};
+
+/**
  * Creates a standardized internal server error (500) response
  * @param {string} [message="內部伺服器錯誤"] - Server error message
  * @returns {{response: ApiErrorResponse, statusCode: number}} Server error response

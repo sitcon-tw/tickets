@@ -1,7 +1,7 @@
 import { PrismaClient } from "../generated/prisma/index.js";
 import { auth } from "../lib/auth.js";
 import { safeJsonParse } from "../utils/json.js";
-import { forbiddenResponse, unauthorizedResponse } from "../utils/response.js";
+import { accountDisabledResponse, forbiddenResponse, unauthorizedResponse } from "../utils/response.js";
 
 const prisma = new PrismaClient();
 
@@ -13,6 +13,17 @@ export const requireAuth = async (request, reply) => {
 
 		if (!session) {
 			const { response, statusCode } = unauthorizedResponse("請先登入");
+			return reply.code(statusCode).send(response);
+		}
+
+		// Check if user account is disabled
+		const user = await prisma.user.findUnique({
+			where: { id: session.user.id },
+			select: { isActive: true }
+		});
+
+		if (!user || user.isActive === false) {
+			const { response, statusCode } = accountDisabledResponse("帳號已停用");
 			return reply.code(statusCode).send(response);
 		}
 

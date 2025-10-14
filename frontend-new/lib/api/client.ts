@@ -106,6 +106,15 @@ class APIClient {
 						throw new Error("Unauthorized - please login");
 					}
 
+					// Handle 423 Locked - Account disabled
+					if (response.status === 423) {
+						if (typeof window !== "undefined") {
+							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
+							window.location.href = `/${locale}/account-disabled`;
+						}
+						throw new Error("Account disabled");
+					}
+
 					// Handle 403 Forbidden - redirect to home
 					if (response.status === 403) {
 						if (typeof window !== "undefined") {
