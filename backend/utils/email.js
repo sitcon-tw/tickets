@@ -611,7 +611,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: "KKTIX"
+			name: "SITCON"
 		};
 
 		// Get organizer email from environment or use a default
@@ -647,7 +647,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 					<h2 style="color: #2c3e50;">報名資料異動</h2>
 					<p>Dear Sir,</p>
 					
-					<p>您舉辦的活動中報名人(詳見下列)要求刪除在 KKTIX 存放的個人資料。根據台灣政府的個人資料保護法規定，我們必須刪除該筆記錄，也應告知您不可以繼續保存或持有該筆個人資料。在 KKTIX 上的所有帳務相關資料仍將依法保存。</p>
+					<p>您舉辦的活動中報名人(詳見下列)要求刪除在 SITCON 存放的個人資料。根據台灣政府的個人資料保護法規定，我們必須刪除該筆記錄，也應告知您不可以繼續保存或持有該筆個人資料。在 SITCON 上的所有帳務相關資料仍將依法保存。</p>
 					
 					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
 						<h3 style="color: #2c3e50; margin-top: 0;">刪除資料明細 Deletion Details</h3>
@@ -661,14 +661,14 @@ export const sendDataDeletionNotification = async (registration, event) => {
 					
 					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 					
-					<p>The registrants of your event has asked us to remove his/her personal information on KKTIX. We list the serial numbers below.</p>
+					<p>The registrants of your event has asked us to remove his/her personal information on SITCON. We list the serial numbers below.</p>
 					
 					<p>According to Taiwan's Personal Information Protection Act, we have to remove the data from our service, and need to ask you to delete the related personal information that you might have been download from the service before. Also according to the law, we will still keep the information that related to transactions, include but now limited to the payments information of tickets.</p>
 					
 					<p>Should you have any question, please feel free to contact <a href="mailto:support@kktix.com">support@kktix.com</a>.</p>
 					
 					<p>Sincerely,</p>
-					<p><strong>KKTIX Team</strong></p>
+					<p><strong>SITCON Team</strong></p>
 					
 					<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
 						<p style="color: #666; font-size: 12px;">

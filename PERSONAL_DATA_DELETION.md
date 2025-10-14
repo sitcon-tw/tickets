@@ -67,9 +67,9 @@ When an administrator deletes a registration, the system automatically sends a n
 - 刪除時間 Deletion Time
 - 法律責任說明 Legal Compliance Information
 
-電子郵件範本基於 KKTIX 的個人資料刪除通知格式。
+電子郵件範本基於 SITCON 的個人資料刪除通知格式。
 
-The email template is based on KKTIX's personal data deletion notification format.
+The email template is based on SITCON's personal data deletion notification format.
 
 ## 資料保留政策 Data Retention Policy
 
