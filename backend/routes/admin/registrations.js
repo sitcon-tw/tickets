@@ -361,19 +361,58 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	function generateCSV(registrations) {
-		const headers = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Name", "Phone", "Created At"];
+		// Parse all form data and collect all unique field keys
+		const parsedRegistrations = registrations.map(reg => ({
+			...reg,
+			formData: reg.formData ? JSON.parse(reg.formData) : {}
+		}));
 
-		const rows = registrations.map(reg => {
-			const formData = reg.formData ? JSON.parse(reg.formData) : {};
-			// Handle localized text - use Chinese (zh-Hant) as default, fallback to other languages
-			const getLocalizedName = nameObj => {
-				if (!nameObj || typeof nameObj !== "object") return "";
-				return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
-			};
-
-			return [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, formData.name || "", formData.phone || "", new Date(reg.createdAt).toISOString()];
+		// Collect all unique form field keys from all registrations
+		const formFieldKeys = new Set();
+		parsedRegistrations.forEach(reg => {
+			Object.keys(reg.formData).forEach(key => formFieldKeys.add(key));
 		});
 
+		// Convert to sorted array for consistent column order
+		const sortedFormFields = Array.from(formFieldKeys).sort();
+
+		// Build headers: basic fields + dynamic form fields
+		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Created At"];
+		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
+		const headers = [...baseHeaders, ...formDataHeaders];
+
+		// Helper function to handle localized text
+		const getLocalizedName = nameObj => {
+			if (!nameObj || typeof nameObj !== "object") return "";
+			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
+		};
+
+		// Helper function to format form field values
+		const formatFormValue = value => {
+			if (value === null || value === undefined) return "";
+			if (typeof value === "object") return JSON.stringify(value);
+			return String(value);
+		};
+
+		// Generate rows
+		const rows = parsedRegistrations.map(reg => {
+			const baseValues = [
+				reg.id,
+				reg.email,
+				getLocalizedName(reg.event?.name),
+				getLocalizedName(reg.ticket?.name),
+				reg.ticket?.price || 0,
+				reg.status,
+				new Date(reg.createdAt).toISOString()
+			];
+
+			// Add form data values in the same order as headers
+			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
+
+			return [...baseValues, ...formDataValues];
+		});
+
+		// Convert to CSV format with proper escaping
 		const csvRows = [headers, ...rows];
 		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}

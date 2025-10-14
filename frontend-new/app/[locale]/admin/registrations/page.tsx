@@ -40,7 +40,7 @@ export default function RegistrationsPage() {
 		pending: { "zh-Hant": "待處理", "zh-Hans": "待处理", en: "Pending" },
 		cancelled: { "zh-Hant": "已取消", "zh-Hans": "已取消", en: "Cancelled" },
 		refresh: { "zh-Hant": "重新整理", "zh-Hans": "重新整理", en: "Refresh" },
-		syncSheets: { "zh-Hant": "匯出 Excel", "zh-Hans": "导出 Excel", en: "Export Excel" },
+		syncSheets: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
 		columns: { "zh-Hant": "欄位", "zh-Hans": "栏位", en: "Columns" },
 		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Loading..." },
 		empty: { "zh-Hant": "沒有資料", "zh-Hans": "没有资料", en: "No data" },
@@ -236,7 +236,7 @@ export default function RegistrationsPage() {
 
 	const syncToSheets = async () => {
 		try {
-			const params: { format: "excel"; eventId?: string } = { format: "excel" };
+			const params: { format: "csv"; eventId?: string } = { format: "csv" };
 			if (currentEventId) params.eventId = currentEventId;
 
 			// Build query string
