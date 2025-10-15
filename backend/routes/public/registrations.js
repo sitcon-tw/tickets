@@ -74,7 +74,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						where: {
 							id: ticketId,
 							eventId,
-							isActive: true
+							isActive: true,
+							hidden: false
 						},
 						include: {
 							fromFields: {

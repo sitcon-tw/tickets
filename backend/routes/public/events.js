@@ -100,7 +100,8 @@ export default async function publicEventsRoutes(fastify, options) {
 				const tickets = await prisma.ticket.findMany({
 					where: {
 						eventId: id,
-						isActive: true
+						isActive: true,
+						hidden: false
 					},
 					select: {
 						id: true,
@@ -234,7 +235,8 @@ export default async function publicEventsRoutes(fastify, options) {
 								saleEnd: true
 							},
 							where: {
-								isActive: true
+								isActive: true,
+								hidden: false
 							}
 						},
 						_count: {
@@ -310,6 +312,10 @@ export default async function publicEventsRoutes(fastify, options) {
 								quantity: true,
 								soldCount: true,
 								isActive: true
+							},
+							where: {
+								isActive: true,
+								hidden: false
 							}
 						},
 						_count: {
@@ -409,7 +415,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id,
-						isActive: true
+						isActive: true,
 					},
 					include: {
 						event: {

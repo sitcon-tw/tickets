@@ -49,6 +49,8 @@ export default function TicketsPage() {
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
 		price: { "zh-Hant": "價格", "zh-Hans": "价格", en: "Price" },
 		requireInviteCode: { "zh-Hant": "需要邀請碼", "zh-Hans": "需要邀请码", en: "Require Invite Code" },
+		hideTicket: { "zh-Hant": "隱藏票種（不在公開頁面顯示）", "zh-Hans": "隐藏票种（不在公开页面显示）", en: "Hide ticket (not displayed on public pages)" },
+		hidden: { "zh-Hant": "已隱藏", "zh-Hans": "已隐藏", en: "Hidden" },
 		selling: { "zh-Hant": "販售中", "zh-Hans": "贩售中", en: "Selling" },
 		notStarted: { "zh-Hant": "尚未開始販售", "zh-Hans": "尚未开始贩售", en: "Not Started" },
 		ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" },
@@ -154,6 +156,7 @@ export default function TicketsPage() {
 			price: number;
 			quantity: number;
 			requireInviteCode: boolean;
+			hidden: boolean;
 			saleStart?: string;
 			saleEnd?: string;
 		} = {
@@ -170,7 +173,8 @@ export default function TicketsPage() {
 			},
 			price: parseInt(formData.get("price") as string) || 0,
 			quantity: parseInt(formData.get("quantity") as string) || 0,
-			requireInviteCode: formData.get("requireInviteCode") === "on"
+			requireInviteCode: formData.get("requireInviteCode") === "on",
+			hidden: formData.get("hidden") === "on"
 		};
 
 		// Convert datetime-local to ISO format if provided
@@ -290,7 +294,25 @@ export default function TicketsPage() {
 									const status = computeStatus(ticket);
 									return (
 										<tr key={ticket.id}>
-											<td>{typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}</td>
+											<td>
+												{typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+												{ticket.hidden && (
+													<span
+														style={{
+															marginLeft: "0.5rem",
+															padding: "0.125rem 0.5rem",
+															fontSize: "0.75rem",
+															fontWeight: "bold",
+															color: "var(--color-gray-100)",
+															backgroundColor: "var(--color-gray-600)",
+															borderRadius: "4px",
+															border: "1px solid var(--color-gray-500)"
+														}}
+													>
+														{t.hidden}
+													</span>
+												)}
+											</td>
 											<td>{formatDateTime(ticket.saleStart)}</td>
 											<td>{formatDateTime(ticket.saleEnd)}</td>
 											<td>
@@ -448,6 +470,12 @@ export default function TicketsPage() {
 										<input name="requireInviteCode" type="checkbox" defaultChecked={editingTicket?.requireInviteCode || false} style={{ width: "18px", height: "18px" }} />
 										<span className="admin-form-label" style={{ marginBottom: 0 }}>
 											{t.requireInviteCode}
+										</span>
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+										<input name="hidden" type="checkbox" defaultChecked={editingTicket?.hidden || false} style={{ width: "18px", height: "18px" }} />
+										<span className="admin-form-label" style={{ marginBottom: 0 }}>
+											{t.hideTicket}
 										</span>
 									</label>
 								</div>

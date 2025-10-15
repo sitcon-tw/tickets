@@ -104,6 +104,7 @@ export interface Ticket {
 	isOnSale?: boolean;
 	isSoldOut?: boolean;
 	isActive?: boolean;
+	hidden?: boolean;
 	createdAt?: string;
 	updatedAt?: string;
 	requireInviteCode?: boolean;

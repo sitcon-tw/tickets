@@ -53,6 +53,10 @@ export const ticketProperties = {
 		type: "boolean",
 		description: "是否需要邀請碼"
 	},
+	hidden: {
+		type: "boolean",
+		description: "是否隱藏 (不顯示在公開頁面)"
+	},
 	createdAt: {
 		...dateTimeString,
 		description: "建立時間"
@@ -101,6 +105,10 @@ export const ticketCreateBody = {
 		requireInviteCode: {
 			type: "boolean",
 			description: "是否需要邀請碼"
+		},
+		hidden: {
+			type: "boolean",
+			description: "是否隱藏 (不顯示在公開頁面)"
 		}
 	},
 	required: ["eventId", "name", "price", "quantity"]
@@ -144,6 +152,10 @@ export const ticketUpdateBody = {
 		requireInviteCode: {
 			type: "boolean",
 			description: "是否需要邀請碼"
+		},
+		hidden: {
+			type: "boolean",
+			description: "是否隱藏 (不顯示在公開頁面)"
 		}
 	}
 };
