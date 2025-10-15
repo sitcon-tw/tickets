@@ -1,4 +1,4 @@
-import { requireAdmin } from "#middleware/auth.js";
+import { requireAdmin, requireAdminOrEventAdmin } from "#middleware/auth.js";
 
 import analyticsRoutes from "./admin/analytics.js";
 import emailCampaignsRoutes from "./admin/emailCampaigns.js";
@@ -12,8 +12,10 @@ import ticketsRoutes from "./admin/tickets.js";
 import usersRoutes from "./admin/users.js";
 
 export default async function adminRoutes(fastify) {
-	fastify.addHook("preHandler", requireAdmin);
+	// Apply requireAdminOrEventAdmin globally (allows both admin and eventAdmin)
+	fastify.addHook("preHandler", requireAdminOrEventAdmin);
 
+	// Routes that need admin-only access will add requireAdmin in their route definitions
 	await fastify.register(analyticsRoutes);
 	await fastify.register(usersRoutes);
 	await fastify.register(eventsRoutes);

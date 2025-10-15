@@ -31,6 +31,22 @@ export interface SessionResponse {
 	user: User | null;
 }
 
+export interface UserCapabilities {
+	canManageUsers: boolean;
+	canManageAllEvents: boolean;
+	canViewAnalytics: boolean;
+	canManageEmailCampaigns: boolean;
+	canManageReferrals: boolean;
+	canManageSmsLogs: boolean;
+	managedEventIds: string[];
+}
+
+export interface PermissionsResponse {
+	role: "admin" | "viewer" | "eventAdmin";
+	permissions: string[];
+	capabilities: UserCapabilities;
+}
+
 // System
 export interface HealthStatus {
 	status: "ok" | "error";
@@ -45,7 +61,7 @@ export interface User {
 	email: string;
 	emailVerified: boolean;
 	image?: string;
-	role: "admin" | "viewer";
+	role: "admin" | "viewer" | "eventAdmin";
 	permissions: string[];
 	isActive: boolean;
 	createdAt: string;

@@ -3,21 +3,21 @@
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { adminEventsAPI } from "@/lib/api/endpoints";
-import type { Event } from "@/lib/types/api";
+import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
+import type { Event, UserCapabilities } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 const activityLinks = [
-	{ href: "/admin/", i18nKey: "overview" },
-	{ href: "/admin/events/", i18nKey: "events" },
-	{ href: "/admin/tickets/", i18nKey: "ticketTypes" },
-	{ href: "/admin/invites/", i18nKey: "invitationCodes" },
-	{ href: "/admin/registrations/", i18nKey: "registrations" },
-	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns" },
-	{ href: "/admin/users/", i18nKey: "users" }
+	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
+	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
+	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
+	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null }, // Always show
+	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null }, // Always show
+	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },
+	{ href: "/admin/users/", i18nKey: "users", requireCapability: "canManageUsers" }
 ] as const;
 
 const styles = {
@@ -116,6 +116,7 @@ export default function AdminNav() {
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
+	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
 
 	const handleLocaleChange = (newLocale: string) => {
 		router.replace(pathname, { locale: newLocale });
@@ -126,6 +127,17 @@ export default function AdminNav() {
 		"zh-Hant": "繁體中文",
 		"zh-Hans": "简体中文"
 	};
+
+	const loadPermissions = useCallback(async () => {
+		try {
+			const response = await authAPI.getPermissions();
+			if (response.success && response.data) {
+				setCapabilities(response.data.capabilities);
+			}
+		} catch (error) {
+			console.error("Failed to load permissions:", error);
+		}
+	}, []);
 
 	const loadEvents = useCallback(async () => {
 		try {
@@ -158,8 +170,9 @@ export default function AdminNav() {
 	};
 
 	useEffect(() => {
+		loadPermissions();
 		loadEvents();
-	}, [loadEvents]);
+	}, [loadPermissions, loadEvents]);
 
 	// Handle mobile detection and window resize
 	useEffect(() => {
@@ -360,21 +373,30 @@ export default function AdminNav() {
 			</div>
 			<nav style={styles.nav}>
 				<ul style={styles.navList}>
-					{activityLinks.map(({ href, i18nKey }) => (
-						<li key={href} style={styles.navItem}>
-							<a
-								onClick={() => handleNavClick(href)}
-								onMouseEnter={() => setHoveredLink(href)}
-								onMouseLeave={() => setHoveredLink(null)}
-								style={{
-									textDecoration: hoveredLink === href ? "underline" : "none"
-								}}
-								className="cursor-pointer"
-							>
-								{t[i18nKey]}
-							</a>
-						</li>
-					))}
+					{activityLinks
+						.filter(({ requireCapability }) => {
+							// If no capability required, always show
+							if (!requireCapability) return true;
+							// If capabilities not loaded yet, hide it to prevent flashing
+							if (!capabilities) return false;
+							// Check if user has the required capability
+							return capabilities[requireCapability as keyof UserCapabilities];
+						})
+						.map(({ href, i18nKey }) => (
+							<li key={href} style={styles.navItem}>
+								<a
+									onClick={() => handleNavClick(href)}
+									onMouseEnter={() => setHoveredLink(href)}
+									onMouseLeave={() => setHoveredLink(null)}
+									style={{
+										textDecoration: hoveredLink === href ? "underline" : "none"
+									}}
+									className="cursor-pointer"
+								>
+									{t[i18nKey]}
+								</a>
+							</li>
+						))}
 				</ul>
 			</nav>
 			<div style={styles.links}>

@@ -150,6 +150,6 @@ export const statusEnum = {
 
 export const roleEnum = {
 	type: "string",
-	enum: ["admin", "viewer"],
+	enum: ["admin", "viewer", "eventAdmin"],
 	description: "用戶角色"
 };

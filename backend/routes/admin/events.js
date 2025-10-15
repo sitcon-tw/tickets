@@ -6,6 +6,7 @@
  */
 
 import prisma from "#config/database.js";
+import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth.js";
 import { eventSchemas } from "#schemas/event.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
@@ -16,10 +17,11 @@ import { sanitizeObject } from "#utils/sanitize.js";
  * @param {Object} options
  */
 export default async function adminEventsRoutes(fastify, options) {
-	// Create new event
+	// Create new event - only admin can create events
 	fastify.post(
 		"/events",
 		{
+			preHandler: requireAdmin,
 			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
 		/**
@@ -70,10 +72,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		}
 	);
 
-	// Get event by ID
+	// Get event by ID - admin and eventAdmin (for their events) can access
 	fastify.get(
 		"/events/:id",
 		{
+			preHandler: requireEventAccess,
 			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
 		/**
@@ -115,10 +118,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		}
 	);
 
-	// Update event
+	// Update event - admin and eventAdmin (for their events) can update
 	fastify.put(
 		"/events/:id",
 		{
+			preHandler: requireEventAccess,
 			schema: eventSchemas.updateEvent
 		},
 		/**
@@ -185,10 +189,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		}
 	);
 
-	// Delete event
+	// Delete event - only admin can delete events
 	fastify.delete(
 		"/events/:id",
 		{
+			preHandler: requireAdmin,
 			schema: eventSchemas.deleteEvent
 		},
 		/**
@@ -233,10 +238,11 @@ export default async function adminEventsRoutes(fastify, options) {
 		}
 	);
 
-	// List events
+	// List events - admin sees all, eventAdmin sees only their assigned events
 	fastify.get(
 		"/events",
 		{
+			preHandler: requireEventListAccess,
 			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
 		/**
@@ -247,9 +253,20 @@ export default async function adminEventsRoutes(fastify, options) {
 			try {
 				const { isActive } = request.query;
 
+				// Build where clause
+				const whereClause = {};
+				if (isActive !== undefined) {
+					whereClause.isActive = isActive;
+				}
+
+				// If user is eventAdmin, filter by their event permissions
+				if (request.userEventPermissions && request.userEventPermissions.length > 0) {
+					whereClause.id = { in: request.userEventPermissions };
+				}
+
 				/** @type {Event[]} */
 				const events = await prisma.event.findMany({
-					where: isActive !== undefined ? { isActive } : {},
+					where: whereClause,
 					include: {
 						_count: {
 							select: {

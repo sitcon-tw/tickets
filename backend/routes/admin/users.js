@@ -5,8 +5,10 @@
  */
 
 import prisma from "#config/database.js";
+import { requireAdmin } from "#middleware/auth.js";
 import { userSchemas } from "#schemas/user.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import { safeJsonParse } from "#utils/json.js";
 
 /**
  * Admin users routes with modular schemas and types
@@ -14,10 +16,11 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
  * @param {Object} options
  */
 export default async function adminUsersRoutes(fastify, options) {
-	// List users
+	// List users - admin only
 	fastify.get(
 		"/users",
 		{
+			preHandler: requireAdmin,
 			schema: userSchemas.listUsers
 		},
 		/**
@@ -57,7 +60,13 @@ export default async function adminUsersRoutes(fastify, options) {
 					orderBy: { createdAt: "desc" }
 				});
 
-				return reply.send(successResponse(users));
+				// Parse permissions from JSON string to array
+				const usersWithParsedPermissions = users.map(user => ({
+					...user,
+					permissions: safeJsonParse(user.permissions, [], "user permissions")
+				}));
+
+				return reply.send(successResponse(usersWithParsedPermissions));
 			} catch (error) {
 				console.error("List users error:", error);
 				const { response, statusCode } = serverErrorResponse("取得用戶列表失敗");
@@ -66,10 +75,11 @@ export default async function adminUsersRoutes(fastify, options) {
 		}
 	);
 
-	// Get user by ID
+	// Get user by ID - admin only
 	fastify.get(
 		"/users/:id",
 		{
+			preHandler: requireAdmin,
 			schema: userSchemas.getUser
 		},
 		/**
@@ -117,7 +127,13 @@ export default async function adminUsersRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(user));
+				// Parse permissions from JSON string to array
+				const userWithParsedPermissions = {
+					...user,
+					permissions: safeJsonParse(user.permissions, [], "user permissions")
+				};
+
+				return reply.send(successResponse(userWithParsedPermissions));
 			} catch (error) {
 				console.error("Get user error:", error);
 				const { response, statusCode } = serverErrorResponse("取得用戶詳情失敗");
@@ -126,10 +142,11 @@ export default async function adminUsersRoutes(fastify, options) {
 		}
 	);
 
-	// Update user
+	// Update user - admin only
 	fastify.put(
 		"/users/:id",
 		{
+			preHandler: requireAdmin,
 			schema: userSchemas.updateUser
 		},
 		/**
@@ -168,7 +185,7 @@ export default async function adminUsersRoutes(fastify, options) {
 				}
 
 				// Validate role
-				const validRoles = ["admin", "viewer"];
+				const validRoles = ["admin", "viewer", "eventAdmin"];
 				if (updateData.role && !validRoles.includes(updateData.role)) {
 					const { response, statusCode } = validationErrorResponse("無效的用戶角色");
 					return reply.code(statusCode).send(response);
@@ -199,7 +216,13 @@ export default async function adminUsersRoutes(fastify, options) {
 					}
 				});
 
-				return reply.send(successResponse(user, "用戶更新成功"));
+				// Parse permissions from JSON string to array
+				const userWithParsedPermissions = {
+					...user,
+					permissions: safeJsonParse(user.permissions, [], "user permissions")
+				};
+
+				return reply.send(successResponse(userWithParsedPermissions, "用戶更新成功"));
 			} catch (error) {
 				console.error("Update user error:", error);
 				const { response, statusCode } = serverErrorResponse("更新用戶失敗");

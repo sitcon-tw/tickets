@@ -1,4 +1,4 @@
-import type { ApiResponse, DashboardData, EmailCampaign, Event, EventInfo, EventListItem, EventStats, ExportData, HealthStatus, InvitationCodeInfo, InvitationCodeVerification, LocalizedText, ReferralLink, ReferralValidation, Registration, RegistrationStats, RegistrationTrend, SessionResponse, Ticket, TicketAnalytics, TicketFormField, TicketFormFieldReorder, User } from "@/lib/types/api";
+import type { ApiResponse, DashboardData, EmailCampaign, Event, EventInfo, EventListItem, EventStats, ExportData, HealthStatus, InvitationCodeInfo, InvitationCodeVerification, LocalizedText, PermissionsResponse, ReferralLink, ReferralValidation, Registration, RegistrationStats, RegistrationTrend, SessionResponse, Ticket, TicketAnalytics, TicketFormField, TicketFormFieldReorder, User } from "@/lib/types/api";
 import { apiClient } from "./client";
 
 // System
@@ -17,6 +17,7 @@ export const authAPI = {
 			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
 		}),
 	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),
+	getPermissions: () => apiClient.get<ApiResponse<PermissionsResponse>>("/api/auth/permissions"),
 	signOut: () => apiClient.post("/api/auth/sign-out")
 };
 
@@ -83,7 +84,7 @@ export const adminAnalyticsAPI = {
 
 // Admin - Users
 export const adminUsersAPI = {
-	getAll: (params?: { role?: "admin" | "viewer"; isActive?: boolean }) => apiClient.get<ApiResponse<User[]>>("/api/admin/users", params),
+	getAll: (params?: { role?: "admin" | "viewer" | "eventAdmin"; isActive?: boolean }) => apiClient.get<ApiResponse<User[]>>("/api/admin/users", params),
 
 	getById: (id: string) => apiClient.get<ApiResponse<User>>(`/api/admin/users/${id}`),
 

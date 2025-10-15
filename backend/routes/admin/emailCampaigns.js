@@ -5,6 +5,7 @@
  */
 
 import prisma from "#config/database.js";
+import { requireAdmin } from "#middleware/auth.js";
 import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email.js";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
@@ -15,6 +16,8 @@ import { serverErrorResponse, successResponse, validationErrorResponse } from "#
  * @param {Object} options
  */
 export default async function adminEmailCampaignsRoutes(fastify, options) {
+	// Email campaigns are admin-only
+	fastify.addHook("preHandler", requireAdmin);
 	// Get email campaigns with pagination
 	fastify.get(
 		"/email-campaigns",

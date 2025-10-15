@@ -59,13 +59,13 @@
  * @typedef {Object} AdminUserUpdateRequest
  * @property {string} [name] - User's name
  * @property {string} [email] - User's email
- * @property {'admin'|'viewer'} [role] - User's role
- * @property {string[]} [permissions] - User's permissions
+ * @property {'admin'|'viewer'|'eventAdmin'} [role] - User's role
+ * @property {string[]} [permissions] - User's permissions (for eventAdmin, contains event IDs they can manage)
  * @property {boolean} [isActive] - Whether user is active
  */
 
 /**
- * @typedef {'admin'|'viewer'} UserRole
+ * @typedef {'admin'|'viewer'|'eventAdmin'} UserRole
  */
 
 /**
@@ -79,12 +79,14 @@
  * - 'registrations.write'
  * - 'analytics.read'
  * - 'admin.full'
+ * For eventAdmin role, permissions array contains event IDs (e.g., ['event_id_1', 'event_id_2'])
  */
 
 /**
  * @typedef {Object} RolePermissions
  * @property {'admin'} admin - Full administrative access
  * @property {'viewer'} viewer - Read-only access
+ * @property {'eventAdmin'} eventAdmin - Can view/edit specific events only (event IDs stored in permissions array)
  */
 
 export {};
