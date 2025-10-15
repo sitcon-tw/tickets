@@ -9,7 +9,7 @@
 ## 開發
 
 此系統使用 Next.JS 與 Fastify 開發。
-後端在 `backend` 資料夾，前端在 `frontend-new` 資料夾。
+後端在 `backend` 資料夾，前端在 `frontend` 資料夾。
 
 在跑起來前，請記得設定 .env 檔案，範例請看 `.env.example` 。
 因為某些原因，請記得把 env 檔案放在前端跟後端的資料夾中。
