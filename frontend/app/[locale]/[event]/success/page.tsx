@@ -3,14 +3,14 @@
 import Lanyard from "@/components/Lanyard";
 import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
-import { Check, Copy, CheckCheck, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function Success() {
 	const locale = useLocale();
@@ -86,7 +86,7 @@ export default function Success() {
 			try {
 				try {
 					const eventsData = await eventsAPI.getAll();
-					const foundEvent = eventsData.data.find((e) => e.id.slice(-6) === eventSlug);
+					const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
 
 					if (!foundEvent) {
 						setReferralCode(t.loadFailed);
@@ -96,8 +96,8 @@ export default function Success() {
 					const currentEventId = foundEvent.id;
 
 					const registrations = await registrationsAPI.getAll();
-					const eventRegistration = registrations.data.find((reg) => reg.event?.id === currentEventId);
-					console.log(eventRegistration)
+					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
+					console.log(eventRegistration);
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
 						setRegistrationTime(eventRegistration.createdAt);
@@ -184,7 +184,9 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<h3 className="text-xl font-semibold" style={{ marginTop: "0.5rem" }}>{t.qrDesc}</h3>
+						<h3 className="text-xl font-semibold" style={{ marginTop: "0.5rem" }}>
+							{t.qrDesc}
+						</h3>
 						{registrationId && registrationTime && (
 							<button onClick={() => setShowQRCode(true)} className="button" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
 								<CheckCheck size={24} /> {t.viewQRCode}

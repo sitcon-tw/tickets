@@ -4,6 +4,7 @@ import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
@@ -11,7 +12,6 @@ import { Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 interface TicketsProps {
 	eventId: string;
@@ -85,9 +85,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	// Helper function to check if ticket sale has ended
 	const isTicketExpired = (ticket: Ticket): boolean => {
 		if (!ticket.saleEnd) return false;
-		const saleEndDate = typeof ticket.saleEnd === 'string' && ticket.saleEnd !== 'N/A'
-			? new Date(ticket.saleEnd)
-			: null;
+		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
 		if (!saleEndDate) return false;
 		return saleEndDate < new Date();
 	};
@@ -300,27 +298,19 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							}}
 							style={{
 								opacity: isUnavailable ? 0.5 : 1,
-								cursor: isUnavailable ? 'not-allowed' : 'pointer',
-								filter: isUnavailable ? 'grayscale(1)' : 'none'
+								cursor: isUnavailable ? "not-allowed" : "pointer",
+								filter: isUnavailable ? "grayscale(1)" : "none"
 							}}
 						>
 							<h3>{getLocalizedText(ticket.name, locale)}</h3>
 							<p>
 								{t.time}
-				        {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : 'N/A'} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : 'N/A'}
+								{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
 							</p>
 							<p className="remain">
 								{t.remaining} {ticket.available} / {ticket.quantity}
-								{isExpired && (
-									<span style={{ color: '#dc2626', fontWeight: 'bold', marginLeft: '0.5rem' }}>
-										({t.registrationEnded})
-									</span>
-								)}
-								{isSoldOut && !isExpired && (
-									<span style={{ color: '#dc2626', fontWeight: 'bold', marginLeft: '0.5rem' }}>
-										({t.soldOut})
-									</span>
-								)}
+								{isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.registrationEnded})</span>}
+								{isSoldOut && !isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.soldOut})</span>}
 							</p>
 						</div>
 					);

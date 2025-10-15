@@ -8,11 +8,13 @@ interface RetryConfig {
 
 interface APIError {
 	message?: string;
-	detail?: Array<{
-		loc: Array<string | number>;
-		msg: string;
-		type: string;
-	}> | string;
+	detail?:
+		| Array<{
+				loc: Array<string | number>;
+				msg: string;
+				type: string;
+		  }>
+		| string;
 	error?: {
 		code?: string;
 		message?: string;

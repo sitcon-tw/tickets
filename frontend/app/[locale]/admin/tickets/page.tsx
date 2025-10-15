@@ -2,12 +2,12 @@
 
 import AdminNav from "@/components/AdminNav";
 import MarkdownContent from "@/components/MarkdownContent";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function TicketsPage() {
 	const locale = useLocale();

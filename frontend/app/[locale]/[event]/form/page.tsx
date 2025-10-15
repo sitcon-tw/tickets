@@ -3,8 +3,9 @@
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { FormField } from "@/components/form/FormField";
-import Text from "@/components/input/Text";
 import Checkbox from "@/components/input/Checkbox";
+import Text from "@/components/input/Text";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
@@ -14,7 +15,6 @@ import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -24,7 +24,7 @@ export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
 	const { showAlert } = useAlert();
-	
+
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
@@ -117,7 +117,7 @@ export default function FormPage() {
 			"zh-Hant": "服務條款與隱私政策連結",
 			"zh-Hans": "服务条款与隐私政策链接",
 			en: "Terms and Privacy Policy link"
-		},
+		}
 	});
 
 	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -193,8 +193,7 @@ export default function FormPage() {
 						try {
 							const parsed = JSON.parse(description);
 							description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-						} catch {
-						}
+						} catch {}
 					}
 
 					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
@@ -264,7 +263,7 @@ export default function FormPage() {
 			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
 			setIsSubmitting(false);
 		}
-	};
+	}
 
 	return (
 		<>
@@ -344,7 +343,9 @@ export default function FormPage() {
 							{/* Terms and conditions checkbox */}
 							<div>
 								<Checkbox label={t.agreeToTerms} question={t.agreeToTermsQuestion} value={agreeToTerms} required id="agreeToTerms" checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} />
-								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>{t.termsLink}</a>
+								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>
+									{t.termsLink}
+								</a>
 							</div>
 
 							<button

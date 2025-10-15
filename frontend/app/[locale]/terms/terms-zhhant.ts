@@ -100,4 +100,4 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 
 如對本條款或服務有疑問，請來信 [contact@sitcon.org](mailto:contact@sitcon.org) 與 SITCON 籌備團隊聯繫。
 
-生效日：2025-10-11  `
+生效日：2025-10-11  `;

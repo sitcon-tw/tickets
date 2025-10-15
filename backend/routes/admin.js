@@ -1,4 +1,4 @@
-import { requireAdmin, requireAdminOrEventAdmin } from "#middleware/auth.js";
+import { requireAdminOrEventAdmin } from "#middleware/auth.js";
 
 import analyticsRoutes from "./admin/analytics.js";
 import emailCampaignsRoutes from "./admin/emailCampaigns.js";

@@ -1,10 +1,10 @@
 "use client";
 import Spinner from "@/components/Spinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function MagicLinkVerify() {
 	const locale = useLocale();

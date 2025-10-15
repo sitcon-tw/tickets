@@ -28,7 +28,7 @@ export const rateLimitConfig = {
 				retryAfter: context.after
 			};
 		}
-	},
+	}
 };
 
 /**
@@ -79,7 +79,7 @@ export const getCorsConfig = () => {
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
 		exposedHeaders: ["set-cookie"],
-		maxAge: 86400 
+		maxAge: 86400
 	};
 };
 

@@ -17,7 +17,7 @@ import { serverErrorResponse, successResponse, validationErrorResponse } from "#
  */
 export default async function adminEmailCampaignsRoutes(fastify, options) {
 	fastify.addHook("preHandler", requireAdmin);
-	
+
 	// Get email campaigns with pagination
 	fastify.get(
 		"/email-campaigns",

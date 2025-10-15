@@ -7,10 +7,10 @@
  */
 
 import prisma from "#config/database.js";
-import { registrationSchemas } from "#schemas/registration.js";
-import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
-import { sendDataDeletionNotification } from "#utils/email.js";
 import { requireEventAccess } from "#middleware/auth.js";
+import { registrationSchemas } from "#schemas/registration.js";
+import { sendDataDeletionNotification } from "#utils/email.js";
+import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -378,15 +378,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		};
 
 		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [
-				reg.id,
-				reg.email,
-				getLocalizedName(reg.event?.name),
-				getLocalizedName(reg.ticket?.name),
-				reg.ticket?.price || 0,
-				reg.status,
-				new Date(reg.createdAt).toISOString()
-			];
+			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
 			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
 
@@ -463,12 +455,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					console.error("Failed to send deletion notification email:", emailError);
 				}
 
-				return reply.send(
-					successResponse(
-						{ id, email: registration.email },
-						"個人資料已成功刪除，通知信已發送給活動主辦方"
-					)
-				);
+				return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除，通知信已發送給活動主辦方"));
 			} catch (error) {
 				console.error("Delete registration error:", error);
 				const { response, statusCode } = serverErrorResponse("刪除報名記錄失敗");

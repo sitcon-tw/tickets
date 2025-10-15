@@ -616,7 +616,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 
 		// Get organizer email from environment or use a default
 		const organizerEmail = process.env.ORGANIZER_EMAIL || "organizer@sitcon.org";
-		
+
 		const recipients = [
 			{
 				email: organizerEmail

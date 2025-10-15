@@ -2,13 +2,13 @@
 
 import AdminNav from "@/components/AdminNav";
 import PageSpinner from "@/components/PageSpinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();

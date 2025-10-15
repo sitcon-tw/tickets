@@ -2,12 +2,12 @@
 
 import AdminNav from "@/components/AdminNav";
 import PageSpinner from "@/components/PageSpinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminUsersAPI, adminEventsAPI } from "@/lib/api/endpoints";
-import type { User, Event } from "@/lib/types/api";
+import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
+import type { Event, User } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function UsersPage() {
 	const locale = useLocale();
@@ -233,7 +233,7 @@ export default function UsersPage() {
 										name="role"
 										value={selectedRole}
 										className="admin-select"
-										onChange={(e) => {
+										onChange={e => {
 											const newRole = e.target.value as "admin" | "viewer" | "eventAdmin";
 											setSelectedRole(newRole);
 											// Clear event selections when switching away from eventAdmin
@@ -258,13 +258,15 @@ export default function UsersPage() {
 								{selectedRole === "eventAdmin" && (
 									<div className="admin-form-group" style={{ marginTop: "1rem" }}>
 										<label className="admin-form-label">{t.manageableEvents}</label>
-										<div style={{
-											maxHeight: "200px",
-											overflowY: "auto",
-											border: "1px solid #ddd",
-											borderRadius: "4px",
-											padding: "0.5rem",
-										}}>
+										<div
+											style={{
+												maxHeight: "200px",
+												overflowY: "auto",
+												border: "1px solid #ddd",
+												borderRadius: "4px",
+												padding: "0.5rem"
+											}}
+										>
 											{events.length === 0 ? (
 												<p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7 }}>{t.noEventsSelected}</p>
 											) : (
@@ -279,12 +281,7 @@ export default function UsersPage() {
 															borderBottom: "1px solid #eee"
 														}}
 													>
-														<input
-															type="checkbox"
-															checked={selectedEventIds.includes(event.id)}
-															onChange={() => toggleEventSelection(event.id)}
-															style={{ marginRight: "0.5rem" }}
-														/>
+														<input type="checkbox" checked={selectedEventIds.includes(event.id)} onChange={() => toggleEventSelection(event.id)} style={{ marginRight: "0.5rem" }} />
 														<span>{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
 													</label>
 												))

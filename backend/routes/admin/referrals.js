@@ -8,7 +8,7 @@ import { serverErrorResponse, successResponse, validationErrorResponse } from "#
 
 export default async function adminReferralsRoutes(fastify, options) {
 	fastify.addHook("preHandler", requireAdmin);
-	
+
 	// 推薦機制總覽統計
 	fastify.get(
 		"/referrals/overview",

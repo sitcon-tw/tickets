@@ -322,9 +322,7 @@ export default function AdminNav() {
 			</div>
 
 			{/* Overlay for mobile */}
-			{mobileMenuOpen && (
-				<div style={{ ...styles.overlay, display: "block" }} onClick={() => setMobileMenuOpen(false)} />
-			)}
+			{mobileMenuOpen && <div style={{ ...styles.overlay, display: "block" }} onClick={() => setMobileMenuOpen(false)} />}
 
 			{/* Sidebar */}
 			<aside
@@ -341,118 +339,118 @@ export default function AdminNav() {
 				)}
 				<div style={styles.activity}>{t.activityName}</div>
 				<div style={styles.title}>{t.systemTitle}</div>
-			<div style={{ marginBottom: "1.5rem", marginTop: "1rem" }}>
-				<label
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "0.5rem"
-					}}
-				>
-					<span style={{ fontWeight: 600, fontSize: "0.85rem", opacity: 0.8 }}>{t.selectEvent}</span>
-					<select
-						value={currentEventId || ""}
-						onChange={e => handleEventChange(e.target.value)}
+				<div style={{ marginBottom: "1.5rem", marginTop: "1rem" }}>
+					<label
 						style={{
-							padding: "0.6rem",
-							border: "2px solid var(--color-gray-600)",
-							background: "var(--color-gray-800)",
-							color: "inherit",
-							borderRadius: "6px",
-							fontSize: "0.9rem",
-							cursor: "pointer"
+							display: "flex",
+							flexDirection: "column",
+							gap: "0.5rem"
 						}}
 					>
-						{events.map(event => (
-							<option key={event.id} value={event.id}>
-								{getLocalizedText(event.name, locale)}
-							</option>
-						))}
-					</select>
-				</label>
-			</div>
-			<nav style={styles.nav}>
-				<ul style={styles.navList}>
-					{activityLinks
-						.filter(({ requireCapability }) => {
-							// If no capability required, always show
-							if (!requireCapability) return true;
-							// If capabilities not loaded yet, hide it to prevent flashing
-							if (!capabilities) return false;
-							// Check if user has the required capability
-							return capabilities[requireCapability as keyof UserCapabilities];
-						})
-						.map(({ href, i18nKey }) => (
-							<li key={href} style={styles.navItem}>
-								<a
-									onClick={() => handleNavClick(href)}
-									onMouseEnter={() => setHoveredLink(href)}
-									onMouseLeave={() => setHoveredLink(null)}
-									style={{
-										textDecoration: hoveredLink === href ? "underline" : "none"
-									}}
-									className="cursor-pointer"
-								>
-									{t[i18nKey]}
-								</a>
-							</li>
-						))}
-				</ul>
-			</nav>
-			<div style={styles.links}>
-				<div style={styles.user}>{t.userPlaceholder}</div>
-				<div style={styles.logout}>
-					<a
-						onClick={() => {
-							router.push("/logout");
-							setMobileMenuOpen(false);
-						}}
-						onMouseEnter={() => setHoveredLink("logout")}
-						onMouseLeave={() => setHoveredLink(null)}
-						style={{
-							textDecoration: hoveredLink === "logout" ? "underline" : "none"
-						}}
-						className="cursor-pointer"
-					>
-						{t.logout}
-					</a>
-					<span>・</span>
-					<a
-						onClick={() => {
-							router.push("/");
-							setMobileMenuOpen(false);
-						}}
-						onMouseEnter={() => setHoveredLink("home")}
-						onMouseLeave={() => setHoveredLink(null)}
-						style={{
-							textDecoration: hoveredLink === "home" ? "underline" : "none"
-						}}
-						className="cursor-pointer"
-					>
-						{t.backHome}
-					</a>
+						<span style={{ fontWeight: 600, fontSize: "0.85rem", opacity: 0.8 }}>{t.selectEvent}</span>
+						<select
+							value={currentEventId || ""}
+							onChange={e => handleEventChange(e.target.value)}
+							style={{
+								padding: "0.6rem",
+								border: "2px solid var(--color-gray-600)",
+								background: "var(--color-gray-800)",
+								color: "inherit",
+								borderRadius: "6px",
+								fontSize: "0.9rem",
+								cursor: "pointer"
+							}}
+						>
+							{events.map(event => (
+								<option key={event.id} value={event.id}>
+									{getLocalizedText(event.name, locale)}
+								</option>
+							))}
+						</select>
+					</label>
 				</div>
-				<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
-					<Globe size={16} className="text-gray-500" />
-					<select value={locale} onChange={e => handleLocaleChange(e.target.value)} className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400" style={{ padding: "0.25rem 0.5rem" }}>
-						{routing.locales.map(loc => (
-							<option key={loc} value={loc}>
-								{localeNames[loc]}
-							</option>
-						))}
-					</select>
+				<nav style={styles.nav}>
+					<ul style={styles.navList}>
+						{activityLinks
+							.filter(({ requireCapability }) => {
+								// If no capability required, always show
+								if (!requireCapability) return true;
+								// If capabilities not loaded yet, hide it to prevent flashing
+								if (!capabilities) return false;
+								// Check if user has the required capability
+								return capabilities[requireCapability as keyof UserCapabilities];
+							})
+							.map(({ href, i18nKey }) => (
+								<li key={href} style={styles.navItem}>
+									<a
+										onClick={() => handleNavClick(href)}
+										onMouseEnter={() => setHoveredLink(href)}
+										onMouseLeave={() => setHoveredLink(null)}
+										style={{
+											textDecoration: hoveredLink === href ? "underline" : "none"
+										}}
+										className="cursor-pointer"
+									>
+										{t[i18nKey]}
+									</a>
+								</li>
+							))}
+					</ul>
+				</nav>
+				<div style={styles.links}>
+					<div style={styles.user}>{t.userPlaceholder}</div>
+					<div style={styles.logout}>
+						<a
+							onClick={() => {
+								router.push("/logout");
+								setMobileMenuOpen(false);
+							}}
+							onMouseEnter={() => setHoveredLink("logout")}
+							onMouseLeave={() => setHoveredLink(null)}
+							style={{
+								textDecoration: hoveredLink === "logout" ? "underline" : "none"
+							}}
+							className="cursor-pointer"
+						>
+							{t.logout}
+						</a>
+						<span>・</span>
+						<a
+							onClick={() => {
+								router.push("/");
+								setMobileMenuOpen(false);
+							}}
+							onMouseEnter={() => setHoveredLink("home")}
+							onMouseLeave={() => setHoveredLink(null)}
+							style={{
+								textDecoration: hoveredLink === "home" ? "underline" : "none"
+							}}
+							className="cursor-pointer"
+						>
+							{t.backHome}
+						</a>
+					</div>
+					<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
+						<Globe size={16} className="text-gray-500" />
+						<select value={locale} onChange={e => handleLocaleChange(e.target.value)} className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400" style={{ padding: "0.25rem 0.5rem" }}>
+							{routing.locales.map(loc => (
+								<option key={loc} value={loc}>
+									{localeNames[loc]}
+								</option>
+							))}
+						</select>
+					</div>
 				</div>
-			</div>
-		</aside>
+			</aside>
 
-		{/* Inject mobile-specific CSS */}
-		<style jsx>{`
-			@media (max-width: 768px) {
-				aside {
-					transform: ${mobileMenuOpen ? "translateX(0)" : "translateX(-100%)"} !important;
+			{/* Inject mobile-specific CSS */}
+			<style jsx>{`
+				@media (max-width: 768px) {
+					aside {
+						transform: ${mobileMenuOpen ? "translateX(0)" : "translateX(-100%)"} !important;
+					}
 				}
-			}
-		`}</style>
+			`}</style>
 		</>
 	);
 }

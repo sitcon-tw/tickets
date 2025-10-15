@@ -57,11 +57,7 @@ export default function AdminDashboard() {
 	// Initialize dashboard
 	const initializeDashboard = useCallback(async () => {
 		try {
-			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([
-				adminAnalyticsAPI.getDashboard(),
-				adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }),
-				adminTicketsAPI.getAll()
-			]);
+			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([adminAnalyticsAPI.getDashboard(), adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }), adminTicketsAPI.getAll()]);
 
 			if (dashboardResponse.success && dashboardResponse.data) {
 				setDashboardData(dashboardResponse.data);
@@ -104,15 +100,14 @@ export default function AdminDashboard() {
 			if (ctx) {
 				// Format dates and counts from registration trends
 				// If no trends data, show empty chart
-				const labels = registrationTrends.length > 0
-					? registrationTrends.map(trend => {
-						const date = new Date(trend.date);
-						return `${date.getMonth() + 1}/${date.getDate()}`;
-					})
-					: [];
-				const counts = registrationTrends.length > 0
-					? registrationTrends.map(trend => trend.count || 0)
-					: [];
+				const labels =
+					registrationTrends.length > 0
+						? registrationTrends.map(trend => {
+								const date = new Date(trend.date);
+								return `${date.getMonth() + 1}/${date.getDate()}`;
+							})
+						: [];
+				const counts = registrationTrends.length > 0 ? registrationTrends.map(trend => trend.count || 0) : [];
 
 				const chart = new Chart(ctx, {
 					type: "line",
@@ -231,10 +226,7 @@ export default function AdminDashboard() {
 					const chart = new Chart(ctx, {
 						type: "doughnut",
 						data: {
-							labels: [
-								locale === "zh-Hant" ? "已售出" : locale === "zh-Hans" ? "已售出" : "Sold",
-								locale === "zh-Hant" ? "剩餘" : locale === "zh-Hans" ? "剩余" : "Remaining"
-							],
+							labels: [locale === "zh-Hant" ? "已售出" : locale === "zh-Hans" ? "已售出" : "Sold", locale === "zh-Hant" ? "剩餘" : locale === "zh-Hans" ? "剩余" : "Remaining"],
 							datasets: [
 								{
 									data: [soldCount, remaining],
@@ -341,9 +333,7 @@ export default function AdminDashboard() {
 				<AdminNav />
 				<main>
 					<h1>{t.overview}</h1>
-					<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>
-						{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}
-					</div>
+					<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 				</main>
 			</>
 		);
@@ -551,128 +541,128 @@ export default function AdminDashboard() {
 							const remaining = total - soldCount;
 
 							return (
-							<div
-								key={idx}
-								style={{
-									background: "var(--color-gray-700)",
-									padding: "1.5rem",
-									borderRadius: "12px",
-									boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-									textAlign: "center",
-									maxWidth: "100%"
-								}}
-							>
-								<h3
-									style={{
-										margin: "0 0 1.5rem 0",
-										color: "var(--color-gray-200)",
-										fontSize: "1.1rem",
-										fontWeight: 600
-									}}
-								>
-									{ticketName}
-								</h3>
 								<div
+									key={idx}
 									style={{
-										display: "flex",
-										justifyContent: "center",
-										marginBottom: "1rem"
+										background: "var(--color-gray-700)",
+										padding: "1.5rem",
+										borderRadius: "12px",
+										boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+										textAlign: "center",
+										maxWidth: "100%"
 									}}
 								>
-									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
-								</div>
-								<div
-									style={{
-										marginBottom: "1.5rem",
-										padding: "1rem",
-										background: "var(--color-gray-600)",
-										borderRadius: "8px"
-									}}
-								>
-									<div
+									<h3
 										style={{
-											fontSize: "2.5rem",
-											fontWeight: "bold",
-											color: "var(--color-gray-100)",
-											lineHeight: "1"
+											margin: "0 0 1.5rem 0",
+											color: "var(--color-gray-200)",
+											fontSize: "1.1rem",
+											fontWeight: 600
 										}}
 									>
-										{remaining}
-									</div>
-									<div
-										style={{
-											fontSize: "0.9rem",
-											color: "var(--color-gray-300)",
-											marginTop: "0.25rem"
-										}}
-									>
-										{t.remainingLabel}
-									</div>
-								</div>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "space-around",
-										gap: "1rem"
-									}}
-								>
+										{ticketName}
+									</h3>
 									<div
 										style={{
 											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
+											justifyContent: "center",
+											marginBottom: "1rem"
 										}}
 									>
-										<span
+										<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
+									</div>
+									<div
+										style={{
+											marginBottom: "1.5rem",
+											padding: "1rem",
+											background: "var(--color-gray-600)",
+											borderRadius: "8px"
+										}}
+									>
+										<div
 											style={{
+												fontSize: "2.5rem",
+												fontWeight: "bold",
+												color: "var(--color-gray-100)",
+												lineHeight: "1"
+											}}
+										>
+											{remaining}
+										</div>
+										<div
+											style={{
+												fontSize: "0.9rem",
 												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
+												marginTop: "0.25rem"
 											}}
 										>
-											{t.total}
-										</span>
-										<span
-											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
-											}}
-										>
-											{total}
-										</span>
+											{t.remainingLabel}
+										</div>
 									</div>
 									<div
 										style={{
 											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
+											justifyContent: "space-around",
+											gap: "1rem"
 										}}
 									>
-										<span
+										<div
 											style={{
-												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
+												display: "flex",
+												flexDirection: "column",
+												alignItems: "center",
+												gap: "0.25rem"
 											}}
 										>
-											{t.soldLabel}
-										</span>
-										<span
+											<span
+												style={{
+													color: "var(--color-gray-300)",
+													fontSize: "0.85rem",
+													fontWeight: 500
+												}}
+											>
+												{t.total}
+											</span>
+											<span
+												style={{
+													fontWeight: 600,
+													color: "var(--color-gray-200)",
+													fontSize: "1.1rem"
+												}}
+											>
+												{total}
+											</span>
+										</div>
+										<div
 											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
+												display: "flex",
+												flexDirection: "column",
+												alignItems: "center",
+												gap: "0.25rem"
 											}}
 										>
-											{soldCount}
-										</span>
+											<span
+												style={{
+													color: "var(--color-gray-300)",
+													fontSize: "0.85rem",
+													fontWeight: 500
+												}}
+											>
+												{t.soldLabel}
+											</span>
+											<span
+												style={{
+													fontWeight: 600,
+													color: "var(--color-gray-200)",
+													fontSize: "1.1rem"
+												}}
+											>
+												{soldCount}
+											</span>
+										</div>
 									</div>
 								</div>
-							</div>
-						);
+							);
 						})}
 					</div>
 				</div>

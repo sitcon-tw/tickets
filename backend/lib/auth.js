@@ -41,8 +41,7 @@ export const auth = betterAuth({
 							locale = callbackPathParts[0];
 						}
 					}
-				} catch (e) {
-				}
+				} catch (e) {}
 
 				// Send users to frontend, which will proxy the verification to backend
 				const frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;

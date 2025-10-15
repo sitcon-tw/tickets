@@ -3,6 +3,7 @@
 import { FormField } from "@/components/form/FormField";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
@@ -13,7 +14,6 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];

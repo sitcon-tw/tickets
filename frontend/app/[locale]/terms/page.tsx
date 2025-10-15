@@ -1,6 +1,6 @@
-import { useLocale } from "next-intl";
-import { getTranslations } from "@/i18n/helpers";
 import MarkdownContent from "@/components/MarkdownContent";
+import { getTranslations } from "@/i18n/helpers";
+import { useLocale } from "next-intl";
 import terms_en from "./terms-en";
 import terms_zhhans from "./terms-zhhans";
 import terms_zhhant from "./terms-zhhant";
@@ -25,7 +25,7 @@ export default function TermsPage() {
 			</>
 		);
 	}
-	
+
 	if (locale === "en") {
 		return (
 			<TermsPageLayout>

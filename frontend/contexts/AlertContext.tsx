@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 
 export type AlertType = "success" | "error" | "warning" | "info";
 
@@ -39,11 +39,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 		setAlerts(prev => prev.filter(alert => alert.id !== id));
 	}, []);
 
-	return (
-		<AlertContext.Provider value={{ alerts, showAlert, hideAlert }}>
-			{children}
-		</AlertContext.Provider>
-	);
+	return <AlertContext.Provider value={{ alerts, showAlert, hideAlert }}>{children}</AlertContext.Provider>;
 }
 
 export function useAlert() {

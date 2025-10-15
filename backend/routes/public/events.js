@@ -419,7 +419,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id,
-						isActive: true,
+						isActive: true
 					},
 					include: {
 						event: {

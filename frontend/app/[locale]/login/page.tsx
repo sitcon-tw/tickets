@@ -1,13 +1,13 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useAlert } from "@/contexts/AlertContext";
-import { useSearchParams } from "next/navigation";
 
 const StyledMain = styled.main`
 	section {
@@ -139,7 +139,7 @@ const MessageContainer = styled.div`
 
 export default function Login() {
 	const locale = useLocale();
-	const { showAlert }	= useAlert();
+	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const returnUrl = searchParams.get("returnUrl");
 	const [viewState, setViewState] = useState<"login" | "sent">("login");

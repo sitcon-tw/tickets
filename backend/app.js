@@ -6,8 +6,8 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
 
-import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
 import { closeRedis } from "./config/redis.js";
+import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
 import { auth } from "./lib/auth.js";
 import routes from "./routes/index.js";
 import { cleanup } from "./utils/database-init.js";

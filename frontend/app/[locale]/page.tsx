@@ -16,9 +16,9 @@ export default function LocaleRedirect() {
 				const eventsData = await eventsAPI.getAll({ isActive: true });
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-          if (eventsData.data.length === 0) {
-            router.replace(`/${locale}/hi`);
-          }
+					if (eventsData.data.length === 0) {
+						router.replace(`/${locale}/hi`);
+					}
 
 					const now = new Date();
 

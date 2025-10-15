@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 export default function ReferralStatus() {
 	const locale = useLocale();
 	const router = useRouter();
-	
+
 	const [stats, setStats] = useState<RegistrationStats | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);

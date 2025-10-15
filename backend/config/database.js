@@ -1,5 +1,5 @@
-import { PrismaClient } from "../generated/prisma/index.js";
 import { createPrismaRedisCache } from "prisma-redis-middleware";
+import { PrismaClient } from "../generated/prisma/index.js";
 import { getRedisClient } from "./redis.js";
 
 let prisma;

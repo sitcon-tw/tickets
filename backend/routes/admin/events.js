@@ -17,7 +17,6 @@ import { sanitizeObject } from "#utils/sanitize.js";
  * @param {Object} options
  */
 export default async function adminEventsRoutes(fastify, options) {
-
 	// Create new event - only admin can create events
 	fastify.post(
 		"/events",

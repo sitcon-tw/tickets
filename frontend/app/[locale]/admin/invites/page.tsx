@@ -2,13 +2,13 @@
 
 import AdminNav from "@/components/AdminNav";
 import PageSpinner from "@/components/PageSpinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 type InviteCode = {
 	id: string;
@@ -420,7 +420,7 @@ export default function InvitesPage() {
 		if (!file) return;
 
 		const reader = new FileReader();
-		reader.onload = (event) => {
+		reader.onload = event => {
 			const text = event.target?.result as string;
 			setBulkImportCodes(text);
 		};
@@ -653,7 +653,9 @@ export default function InvitesPage() {
 									</div>
 
 									<div className="admin-form-group">
-										<label className="admin-form-label">{t.name} ({t.optional})</label>
+										<label className="admin-form-label">
+											{t.name} ({t.optional})
+										</label>
 										<input name="name" type="text" placeholder="e.g. VIP Media" className="admin-input" />
 									</div>
 
@@ -664,14 +666,7 @@ export default function InvitesPage() {
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea
-											value={bulkImportCodes}
-											onChange={(e) => setBulkImportCodes(e.target.value)}
-											placeholder={t.codesPlaceholder}
-											rows={10}
-											className="admin-input"
-											style={{ fontFamily: "monospace", resize: "vertical" }}
-										/>
+										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="admin-input" style={{ fontFamily: "monospace", resize: "vertical" }} />
 									</div>
 
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>

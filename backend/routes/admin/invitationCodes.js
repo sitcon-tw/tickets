@@ -17,7 +17,6 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
  * @param {Object} options
  */
 export default async function adminInvitationCodesRoutes(fastify, options) {
-
 	// Create new invitation code
 	fastify.post(
 		"/invitation-codes",
