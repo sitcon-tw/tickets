@@ -18,6 +18,10 @@ export default function TicketsPage() {
 	const [showModal, setShowModal] = useState(false);
 	const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
 	const [activeTab, setActiveTab] = useState<"en" | "zh-Hant" | "zh-Hans">("en");
+	const [showLinkModal, setShowLinkModal] = useState(false);
+	const [selectedTicketForLink, setSelectedTicketForLink] = useState<Ticket | null>(null);
+	const [inviteCode, setInviteCode] = useState("");
+	const [refCode, setRefCode] = useState("");
 
 	// Multi-language form state
 	const [nameEn, setNameEn] = useState("");
@@ -47,7 +51,16 @@ export default function TicketsPage() {
 		requireInviteCode: { "zh-Hant": "需要邀請碼", "zh-Hans": "需要邀请码", en: "Require Invite Code" },
 		selling: { "zh-Hant": "販售中", "zh-Hans": "贩售中", en: "Selling" },
 		notStarted: { "zh-Hant": "尚未開始販售", "zh-Hans": "尚未开始贩售", en: "Not Started" },
-		ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" }
+		ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" },
+		directLink: { "zh-Hant": "直接連結", "zh-Hans": "直接链接", en: "Direct Link" },
+		linkBuilder: { "zh-Hant": "連結產生器", "zh-Hans": "链接生成器", en: "Link Builder" },
+		inviteCode: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invite Code" },
+		referralCode: { "zh-Hant": "推薦碼", "zh-Hans": "推荐码", en: "Referral Code" },
+		optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
+		generatedLink: { "zh-Hant": "產生的連結", "zh-Hans": "生成的链接", en: "Generated Link" },
+		copyLink: { "zh-Hant": "複製連結", "zh-Hans": "复制链接", en: "Copy Link" },
+		copied: { "zh-Hant": "已複製！", "zh-Hans": "已复制！", en: "Copied!" },
+		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" }
 	});
 
 	// Load event ID from localStorage on mount
@@ -213,6 +226,45 @@ export default function TicketsPage() {
 		}
 	};
 
+	const openLinkBuilder = (ticket: Ticket) => {
+		setSelectedTicketForLink(ticket);
+		setInviteCode("");
+		setRefCode("");
+		setShowLinkModal(true);
+	};
+
+	const generateDirectLink = () => {
+		if (!selectedTicketForLink || !currentEventId) return "";
+
+		const eventSlug = currentEventId.slice(-6);
+		let link = `/${locale}/${eventSlug}/ticket/${selectedTicketForLink.id}`;
+
+		const params = new URLSearchParams();
+		if (inviteCode.trim()) {
+			params.append("inv", inviteCode.trim());
+		}
+		if (refCode.trim()) {
+			params.append("ref", refCode.trim());
+		}
+
+		if (params.toString()) {
+			link += `?${params.toString()}`;
+		}
+
+		return `${window.location.origin}${link}`;
+	};
+
+	const copyToClipboard = async () => {
+		const link = generateDirectLink();
+		try {
+			await navigator.clipboard.writeText(link);
+			showAlert(t.copied, "success");
+		} catch (err) {
+			console.error("Failed to copy:", err);
+			showAlert("Failed to copy link", "error");
+		}
+	};
+
 	return (
 		<>
 			<AdminNav />
@@ -252,6 +304,9 @@ export default function TicketsPage() {
 													</button>
 													<button className="admin-button small primary" onClick={() => (window.location.href = `/${locale}/admin/forms?ticket=${ticket.id}`)}>
 														{t.editForms}
+													</button>
+													<button className="admin-button small success" onClick={() => openLinkBuilder(ticket)}>
+														{t.directLink}
 													</button>
 													<button className="admin-button small danger" onClick={() => deleteTicket(ticket.id)}>
 														{t.delete}
@@ -405,6 +460,47 @@ export default function TicketsPage() {
 									</button>
 								</div>
 							</form>
+						</div>
+					</div>
+				)}
+
+				{showLinkModal && selectedTicketForLink && (
+					<div className="admin-modal-overlay" onClick={() => setShowLinkModal(false)}>
+						<div className="admin-modal" onClick={e => e.stopPropagation()}>
+							<div className="admin-modal-header">
+								<h2 className="admin-modal-title">{t.linkBuilder}</h2>
+								<button className="admin-modal-close" onClick={() => setShowLinkModal(false)}>
+									✕
+								</button>
+							</div>
+							<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+								<div className="admin-form-group">
+									<label className="admin-form-label">
+										{t.inviteCode} ({t.optional})
+									</label>
+									<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="admin-input" />
+								</div>
+								<div className="admin-form-group">
+									<label className="admin-form-label">
+										{t.referralCode} ({t.optional})
+									</label>
+									<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="admin-input" />
+								</div>
+								<div className="admin-form-group">
+									<label className="admin-form-label">{t.generatedLink}</label>
+									<div style={{ display: "flex", gap: "0.5rem" }}>
+										<input type="text" value={generateDirectLink()} readOnly className="admin-input" style={{ flex: 1, fontFamily: "monospace", fontSize: "0.9rem" }} />
+										<button className="admin-button primary" onClick={copyToClipboard}>
+											{t.copyLink}
+										</button>
+									</div>
+								</div>
+							</div>
+							<div className="admin-modal-actions">
+								<button type="button" className="admin-button secondary" onClick={() => setShowLinkModal(false)}>
+									{t.close}
+								</button>
+							</div>
 						</div>
 					</div>
 				)}
