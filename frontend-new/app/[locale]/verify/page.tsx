@@ -1,25 +1,40 @@
 "use client";
 
 import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Check, ArrowRight, ArrowLeft, MessageSquare, MessageSquareMore } from "lucide-react";
+
+interface APIError {
+	response?: {
+		data?: {
+			message?: string;
+		};
+	};
+}
 
 export default function VerifyPage() {
 	const locale = useLocale();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
+	const [step, setStep] = useState<"phone" | "verify">("phone");
 	const [phoneNumber, setPhoneNumber] = useState("");
-	const [verificationCode, setVerificationCode] = useState("");
+	const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
 	const [loading, setLoading] = useState(false);
 	const [sendingCode, setSendingCode] = useState(false);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [countdown, setCountdown] = useState(0);
+	const [isVerified, setIsVerified] = useState(false);
+
+	// Refs for code inputs
+	const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	// Get parameters from URL
 	const purpose = (searchParams.get("purpose") as "ticket_access" | "phone_verification") || "phone_verification";
@@ -28,8 +43,8 @@ export default function VerifyPage() {
 
 	const t = getTranslations(locale, {
 		title: {
-			"zh-Hant": "手機驗證",
-			"zh-Hans": "手机验证",
+			"zh-Hant": "簡訊驗證",
+			"zh-Hans": "短信验证",
 			en: "Phone Verification"
 		},
 		phoneNumberLabel: {
@@ -67,10 +82,20 @@ export default function VerifyPage() {
 			"zh-Hans": "验证",
 			en: "Verify"
 		},
+		verified: {
+			"zh-Hant": "已驗證",
+			"zh-Hans": "已验证",
+			en: "Verified"
+		},
 		verifying: {
 			"zh-Hant": "驗證中...",
 			"zh-Hans": "验证中...",
 			en: "Verifying..."
+		},
+		verifyFail: {
+			"zh-Hant": "驗證失敗，請重試",
+			"zh-Hans": "验证失败，请重试",
+			en: "Verification failed, please try again"
 		},
 		invalidPhoneNumber: {
 			"zh-Hant": "無效的手機號碼格式",
@@ -106,6 +131,41 @@ export default function VerifyPage() {
 			"zh-Hant": "秒後可重新發送",
 			"zh-Hans": "秒后可重新发送",
 			en: "seconds until resend"
+		},
+		invalidCode: {
+			"zh-Hant": "驗證碼必須為 6 位數字",
+			"zh-Hans": "验证码必须为 6 位数字",
+			en: "Verification code must be 6 digits"
+		},
+		didntReceiveCode: {
+			"zh-Hant": "沒有收到驗證碼？",
+			"zh-Hans": "没有收到验证码？",
+			en: "Didn't receive the code?"
+		},
+		resendIn: {
+			"zh-Hant": "在",
+			"zh-Hans": "在",
+			en: "Resend in"
+		},
+		resendSeconds: {
+			"zh-Hant": "秒後重新發送...",
+			"zh-Hans": "秒后重新发送...",
+			en: "s"
+		},
+		changePhoneNumber: {
+			"zh-Hant": "更換手機號碼",
+			"zh-Hans": "更换手机号码",
+			en: "Change phone number"
+		},
+		sendingCode: {
+			"zh-Hant": "發送中...",
+			"zh-Hans": "发送中...",
+			en: "Sending..."
+		},
+		continue: {
+			"zh-Hant": "繼續",
+			"zh-Hans": "继续",
+			en: "Continue"
 		}
 	});
 
@@ -123,7 +183,7 @@ export default function VerifyPage() {
 						setPhoneNumber(response.data.phoneNumber);
 					}
 				})
-				.catch(err => {
+				.catch((err: APIError) => {
 					console.error("Failed to check verification status:", err);
 				});
 		}
@@ -137,12 +197,37 @@ export default function VerifyPage() {
 		}
 	}, [countdown]);
 
+	const formatPhoneNumber = (value: string) => {
+		const digits = value.replace(/\D/g, "");
+
+		if (digits.startsWith("09")) {
+			if (digits.length <= 4) return digits;
+			if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+			return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 10)}`;
+		}
+
+		return value;
+	};
+
+	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const input = e.target.value;
+		const formatted = formatPhoneNumber(input);
+		setPhoneNumber(formatted);
+		setError("");
+	};
+
+	const isValidPhone = (phone: string) => {
+		const digits = phone.replace(/\D/g, "");
+		return (digits.startsWith("09") && digits.length === 10) ||
+			   (digits.startsWith("886") && digits.length === 12);
+	};
+
 	const handleSendCode = async () => {
 		setError("");
 		setSuccess("");
 
-		// Validate phone number
-		if (!phoneNumber.match(/^09\d{8}$/)) {
+		// Validate phone number using the new validation function
+		if (!isValidPhone(phoneNumber)) {
 			setError(t.invalidPhoneNumber);
 			return;
 		}
@@ -150,8 +235,13 @@ export default function VerifyPage() {
 		setSendingCode(true);
 
 		try {
+			// Extract raw phone number for API
+			const rawPhone = phoneNumber.replace(/\D/g, "");
+			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
+			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
+
 			await smsVerificationAPI.send({
-				phoneNumber,
+				phoneNumber: formattedApiPhone,
 				purpose,
 				ticketId,
 				locale
@@ -159,101 +249,338 @@ export default function VerifyPage() {
 
 			setSuccess(t.codeSent);
 			setCountdown(60); // 60 seconds cooldown
-		} catch (err: any) {
-			console.error("Failed to send SMS:", err);
-			setError(err?.response?.data?.message || "Failed to send verification code");
+			setStep("verify"); // Move to verification step
+		} catch (err) {
+			const error = err as APIError;
+			console.error("Failed to send SMS:", error);
+			setError(error?.response?.data?.message || "Failed to send verification code");
 		} finally {
 			setSendingCode(false);
 		}
 	};
 
-	const handleVerify = async (e: React.FormEvent) => {
+	const handleCodeChange = (index: number, value: string) => {
+		// Only allow digits
+		if (!/^\d*$/.test(value)) return;
+
+		const newCode = [...verificationCode];
+		newCode[index] = value.slice(-1); // Only take the last character
+		setVerificationCode(newCode);
+		setError("");
+
+		// Auto-focus next input
+		if (value && index < 5) {
+			codeInputRefs.current[index + 1]?.focus();
+		}
+
+		// Auto-verify when all digits are entered
+		if (newCode.every(digit => digit !== "") && newCode.join("").length === 6) {
+			verifyCode(newCode.join(""));
+		}
+	};
+
+	const handleCodeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+		// Handle backspace
+		if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
+			codeInputRefs.current[index - 1]?.focus();
+		} else if (e.key === "Enter" && verificationCode.every(digit => digit !== "")) {
+			verifyCode(verificationCode.join(""));
+		}
+	};
+
+	const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
 		e.preventDefault();
+		const pastedData = e.clipboardData.getData("text").slice(0, 6);
+		if (!/^\d+$/.test(pastedData)) return;
+
+		const newCode = [...verificationCode];
+		pastedData.split("").forEach((char, i) => {
+			if (i < 6) newCode[i] = char;
+		});
+		setVerificationCode(newCode);
+
+		const nextEmpty = newCode.findIndex(digit => digit === "");
+		if (nextEmpty !== -1) {
+			codeInputRefs.current[nextEmpty]?.focus();
+		} else {
+			codeInputRefs.current[5]?.focus();
+			verifyCode(newCode.join(""));
+		}
+	};
+
+	const verifyCode = async (codeStr: string) => {
+		setLoading(true);
 		setError("");
 		setSuccess("");
 
-		if (!verificationCode.match(/^\d{6}$/)) {
-			setError("驗證碼必須為 6 位數字");
+		if (!codeStr.match(/^\d{6}$/)) {
+			setError(t.invalidCode);
+			setLoading(false);
 			return;
 		}
 
-		setLoading(true);
-
 		try {
+			// Extract raw phone number for API
+			const rawPhone = phoneNumber.replace(/\D/g, "");
+			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
+			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
+
 			await smsVerificationAPI.verify({
-				phoneNumber,
-				code: verificationCode,
+				phoneNumber: formattedApiPhone,
+				code: codeStr,
 				purpose,
 				ticketId
 			});
 
 			setSuccess(t.verificationSuccess);
+			setIsVerified(true);
 
 			// Redirect after successful verification
 			setTimeout(() => {
 				router.push(redirectUrl);
-			}, 1500);
-		} catch (err: any) {
-			console.error("Verification failed:", err);
-			setError(err?.response?.data?.message || "Verification failed");
+			}, 2000);
+		} catch (err) {
+			const error = err as APIError;
+			console.error("Verification failed:", error);
+			setError(error?.response?.data?.message || t.verifyFail);
+			setVerificationCode(["", "", "", "", "", ""]);
+			codeInputRefs.current[0]?.focus();
+		} finally {
 			setLoading(false);
 		}
 	};
 
+	const handleResend = async () => {
+		setSendingCode(true);
+		setError("");
+		setSuccess("");
+
+		try {
+			const rawPhone = phoneNumber.replace(/\D/g, "");
+			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
+			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
+
+			await smsVerificationAPI.send({
+				phoneNumber: formattedApiPhone,
+				purpose,
+				ticketId,
+				locale
+			});
+
+			setCountdown(60);
+			setVerificationCode(["", "", "", "", "", ""]);
+			codeInputRefs.current[0]?.focus();
+		} catch (err) {
+			const error = err as APIError;
+			console.error("Failed to resend SMS:", error);
+			setError(error?.response?.data?.message || "Failed to resend verification code");
+		} finally {
+			setSendingCode(false);
+		}
+	};
+
+	const handleBack = () => {
+		setStep("phone");
+		setVerificationCode(["", "", "", "", "", ""]);
+		setError("");
+		setSuccess("");
+	};
+
+	const handleContinue = () => {
+		router.push(redirectUrl);
+	};
+
+	const isCodeComplete = verificationCode.every(digit => digit !== "");
+
 	return (
 		<>
 			<Nav />
-			<main>
-				<section style={{ padding: "2rem 1rem", maxWidth: "500px", margin: "0 auto" }}>
-					<div style={{ textAlign: "center", marginBottom: "2rem" }}>
-						<h1 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem" }}>{purpose === "ticket_access" ? t.ticketAccessTitle : t.title}</h1>
-						<p style={{ color: "var(--color-gray-700)" }}>{purpose === "ticket_access" ? t.ticketAccessDescription : t.phoneVerificationDescription}</p>
-					</div>
+			<div className="min-h-screen flex items-center justify-center" style={{ padding: "1rem" }}>
+				<div className="w-full max-w-md">
+					<div style={{ padding: "2rem" }}>
+						{step === "phone" && !isVerified && (
+							<>
+								<div className="text-center" style={{ marginBottom: "2rem" }}>
+									<div className="inline-flex items-center justify-center" style={{ marginBottom: "1.5rem" }}>
+										<MessageSquare size={32} />
+									</div>
+									<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>
+										{purpose === "ticket_access" ? t.ticketAccessTitle : t.title}
+									</h2>
+									<p className="text-gray-400 text-sm">
+										{purpose === "ticket_access" ? t.ticketAccessDescription : t.phoneVerificationDescription}
+									</p>
+								</div>
 
-					<form onSubmit={handleVerify}>
-						<div style={{ marginBottom: "1.5rem" }}>
-							<label htmlFor="phoneNumber" style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-								{t.phoneNumberLabel}
-							</label>
-							<div style={{ display: "flex", gap: "0.5rem" }}>
-								<input type="tel" id="phoneNumber" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder={t.phoneNumberPlaceholder} style={{ flex: 1, padding: "0.5rem", border: "1px solid var(--color-gray-300)", borderRadius: "0.25rem" }} maxLength={10} disabled={countdown > 0 || loading} />
-								<button type="button" onClick={handleSendCode} disabled={sendingCode || countdown > 0 || loading} className="button" style={{ whiteSpace: "nowrap", minWidth: "120px" }}>
-									{sendingCode ? <Spinner size="sm" /> : countdown > 0 ? `${countdown}${t.waitSeconds}` : success ? t.resendCode : t.sendCode}
+								<div style={{ marginBottom: "1.5rem" }}>
+									<label className="block text-gray-300 text-sm font-medium" style={{ marginBottom: "0.5rem" }}>
+										{t.phoneNumberLabel}
+									</label>
+									<input
+										type="tel"
+										value={phoneNumber}
+										onChange={handlePhoneChange}
+										placeholder="09XX-XXX-XXX"
+										className={`w-full bg-gray-700/50 border-2 rounded-md text-white text-lg
+											transition-all duration-200 outline-none
+											${error ? "border-red-500" : "border-gray-600"}
+											focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20
+											placeholder-gray-500`}
+										style={{ padding: "0.75rem 1rem" }}
+										autoFocus
+										onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
+									/>
+									{error && (
+										<p className="text-red-400 text-sm" style={{ marginTop: "0.5rem" }}>{error}</p>
+									)}
+								</div>
+
+								<div className="flex justify-center">
+									<button
+										onClick={handleSendCode}
+										disabled={sendingCode || !phoneNumber}
+										className="button"
+										style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}
+									>
+										<div className="flex items-center justify-center">
+										{sendingCode ? (
+											<>
+												<Spinner />
+												<p>{t.sendingCode}</p>
+											</>
+										) : (
+											<>
+												<p>{t.sendCode}</p>
+												<ArrowRight className="w-5 h-5" />
+											</>
+										)}
+										</div>
+									</button>
+								</div>
+							</>
+						)}
+
+						{step === "verify" && !isVerified && (
+							<>
+								<div className="text-center" style={{ marginBottom: "2rem" }}>
+									<div className="inline-flex items-center justify-center" style={{ marginBottom: "1.5rem" }}>
+										<MessageSquareMore size={32} />
+									</div>
+									<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>{t.codeLabel}</h2>
+									<p className="text-gray-400 text-sm">
+										{t.codeSent} <span className="text-white font-medium">{phoneNumber}</span>
+									</p>
+								</div>
+
+								<div style={{ marginBottom: "1.5rem" }}>
+									<div className="flex justify-center" style={{ gap: "0.75rem", marginBottom: "0.5rem" }}>
+										{verificationCode.map((digit, index) => (
+											<input
+												key={index}
+												ref={el => codeInputRefs.current[index] = el}
+												type="text"
+												inputMode="numeric"
+												maxLength={1}
+												value={digit}
+												onChange={(e) => handleCodeChange(index, e.target.value)}
+												onKeyDown={(e) => handleCodeKeyDown(index, e)}
+												onPaste={handlePaste}
+												disabled={loading}
+												className={`w-12 h-14 text-center text-2xl font-semibold bg-gray-700/50 border-2 rounded-md
+													transition-all duration-200 outline-none
+													${digit ? "border-blue-500 text-white" : "border-gray-600 text-gray-400"}
+													${error ? "border-red-500 shake" : ""}
+													${loading ? "opacity-50 cursor-not-allowed" : "hover:border-gray-500"}
+													focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20`}
+												autoFocus={index === 0}
+											/>
+										))}
+									</div>
+
+									{error && (
+										<p className="text-red-400 text-sm text-center" style={{ marginTop: "0.75rem" }}>
+											{error}
+										</p>
+									)}
+
+									{loading && (
+										<div className="flex items-center justify-center" style={{ gap: "0.5rem", marginTop: "1rem" }}>
+											<Spinner size="sm" style={{ marginRight: "4px" }} />
+											<span className="text-gray-400 text-sm">{t.verifying}</span>
+										</div>
+									)}
+								</div>
+
+								<div className="text-center" style={{ marginBottom: "1rem" }}>
+									<p className="text-gray-400 text-sm" style={{ marginBottom: "0.5rem" }}>{t.didntReceiveCode}</p>
+									{countdown > 0 ? (
+										<p className="text-gray-500 text-sm">
+											{t.resendIn} <span className="text-blue-400 font-medium">{countdown}{t.resendSeconds}</span>
+										</p>
+									) : (
+										<button
+											onClick={handleResend}
+											disabled={sendingCode}
+											className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors underline cursor-pointer disabled:opacity-50"
+										>
+											{sendingCode ? "Sending..." : t.resendCode}
+										</button>
+									)}
+								</div>
+
+								<button
+									onClick={handleBack}
+									className="w-full text-gray-400 hover:text-white text-sm transition-colors flex items-center justify-center cursor-pointer"
+								>
+									<ArrowLeft size={16} style={{ marginRight: "0.5rem" }} />{t.changePhoneNumber}
+								</button>
+							</>
+						)}
+
+						{isVerified && (
+							<div className="text-center" style={{ padding: "1rem 0" }}>
+								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale" style={{ marginBottom: "1rem" }}>
+									<Check className="w-10 h-10 text-green-400" />
+								</div>
+								<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>{t.verified}</h2>
+								<p className="text-gray-400 text-sm" style={{ marginBottom: "1.5rem" }}>
+									{t.verificationSuccess}
+								</p>
+								<button
+									onClick={handleContinue}
+									className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center"
+									style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}
+								>
+									{t.continue}
+									<ArrowRight className="w-5 h-5" />
 								</button>
 							</div>
-						</div>
-
-						<div style={{ marginBottom: "1.5rem" }}>
-							<label htmlFor="code" style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-								{t.codeLabel}
-							</label>
-							<input type="text" id="code" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} placeholder={t.codePlaceholder} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--color-gray-300)", borderRadius: "0.25rem" }} maxLength={6} disabled={loading} />
-						</div>
-
-						{error && (
-							<div style={{ padding: "0.75rem", marginBottom: "1rem", backgroundColor: "var(--color-error-bg, #fee)", color: "var(--color-error, #c00)", borderRadius: "0.25rem", border: "1px solid var(--color-error, #c00)" }}>
-								{error}
-							</div>
 						)}
+					</div>
+				</div>
+			</div>
 
-						{success && (
-							<div style={{ padding: "0.75rem", marginBottom: "1rem", backgroundColor: "var(--color-success-bg, #efe)", color: "var(--color-success, #0a0)", borderRadius: "0.25rem", border: "1px solid var(--color-success, #0a0)" }}>
-								{success}
-							</div>
-						)}
+			<style>{`
+				@keyframes shake {
+					0%, 100% { transform: translateX(0); }
+					25% { transform: translateX(-5px); }
+					75% { transform: translateX(5px); }
+				}
 
-						<button type="submit" disabled={loading || !verificationCode || !phoneNumber} className="button" style={{ width: "100%" }}>
-							{loading ? (
-								<>
-									<Spinner size="sm" /> {t.verifying}
-								</>
-							) : (
-								t.verify
-							)}
-						</button>
-					</form>
-				</section>
-			</main>
+				@keyframes scale {
+					0% { transform: scale(0); }
+					50% { transform: scale(1.1); }
+					100% { transform: scale(1); }
+				}
+
+				.shake {
+					animation: shake 0.3s ease-in-out;
+				}
+
+				.animate-scale {
+					animation: scale 0.5s ease-out;
+				}
+			`}</style>
 		</>
 	);
 }
