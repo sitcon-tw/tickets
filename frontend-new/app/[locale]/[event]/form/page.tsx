@@ -169,6 +169,7 @@ export default function FormPage() {
 				setTicketId(parsedData.ticketId);
 				setEventId(parsedData.eventId);
 				setReferralCode(parsedData.referralCode || "");
+				setInvitationCode(parsedData.invitationCode || "");
 
 				// Load ticket info to check if it requires invite code
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);

@@ -50,9 +50,14 @@ export default function Main() {
 
 		const urlParams = new URLSearchParams(window.location.search);
 		const referralCode = urlParams.get("ref");
+		const invitationCode = urlParams.get("inv");
 
 		if (referralCode) {
 			localStorage.setItem("referralCode", referralCode);
+			router.refresh();
+		}
+		if (invitationCode) {
+			localStorage.setItem("invitationCode", invitationCode);
 			router.refresh();
 		}
 	}, [eventSlug, router]);
