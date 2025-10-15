@@ -106,7 +106,8 @@ class APIClient {
 					if (response.status === 401) {
 						if (typeof window !== "undefined") {
 							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							window.location.href = `/${locale}/login`;
+							const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+							window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
 						}
 						throw new Error("Unauthorized - please login");
 					}
