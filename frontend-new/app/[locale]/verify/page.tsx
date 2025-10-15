@@ -424,7 +424,7 @@ export default function VerifyPage() {
 										className={`w-full bg-gray-700/50 border-2 rounded-md text-white text-lg
 											transition-all duration-200 outline-none
 											${error ? "border-red-500" : "border-gray-600"}
-											focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20
+											focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
 											placeholder-gray-500`}
 										style={{ padding: "0.75rem 1rem" }}
 										autoFocus
@@ -436,26 +436,26 @@ export default function VerifyPage() {
 								</div>
 
 								<div className="flex justify-center">
-									<button
-										onClick={handleSendCode}
-										disabled={sendingCode || !phoneNumber}
-										className="button"
-										style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}
-									>
-										<div className="flex items-center justify-center">
-										{sendingCode ? (
-											<>
-												<Spinner />
-												<p>{t.sendingCode}</p>
-											</>
-										) : (
-											<>
-												<p>{t.sendCode}</p>
-												<ArrowRight className="w-5 h-5" />
-											</>
-										)}
-										</div>
-									</button>
+									<div className={`send-button-container ${sendingCode || !phoneNumber ? 'disabled' : ''}`}>
+										<button
+											onClick={handleSendCode}
+											disabled={sendingCode || !phoneNumber}
+										>
+											<div className="svg-wrapper-1">
+												<div className="svg-wrapper">
+													{sendingCode ? (
+														<Spinner size="sm" />
+													) : (
+														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24}>
+															<path fill="none" d="M0 0h24v24H0z" />
+															<path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z" />
+														</svg>
+													)}
+												</div>
+											</div>
+											<span>{sendingCode ? t.sendingCode : t.sendCode}</span>
+										</button>
+									</div>
 								</div>
 							</>
 						)}
@@ -488,10 +488,10 @@ export default function VerifyPage() {
 												disabled={loading}
 												className={`w-12 h-14 text-center text-2xl font-semibold bg-gray-700/50 border-2 rounded-md
 													transition-all duration-200 outline-none
-													${digit ? "border-blue-500 text-white" : "border-gray-600 text-gray-400"}
+													${digit ? "border-gray-200 text-white" : "border-gray-600 text-gray-400"}
 													${error ? "border-red-500 shake" : ""}
 													${loading ? "opacity-50 cursor-not-allowed" : "hover:border-gray-500"}
-													focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20`}
+													focus:border-gray-200 focus:ring-2 focus:ring-gray-200/20`}
 												autoFocus={index === 0}
 											/>
 										))}
@@ -560,6 +560,8 @@ export default function VerifyPage() {
 				</div>
 			</div>
 
+			<Footer />
+
 			<style>{`
 				@keyframes shake {
 					0%, 100% { transform: translateX(0); }
@@ -573,12 +575,70 @@ export default function VerifyPage() {
 					100% { transform: scale(1); }
 				}
 
+				@keyframes fly-1 {
+					from {
+						transform: translateY(0.1em);
+					}
+					to {
+						transform: translateY(-0.1em);
+					}
+				}
+
 				.shake {
 					animation: shake 0.3s ease-in-out;
 				}
 
 				.animate-scale {
 					animation: scale 0.5s ease-out;
+				}
+
+				.send-button-container button {
+					font-family: inherit;
+					font-size: 18px;
+					background: var(--color-gray-800);
+					color: white;
+					padding: 0.6em 1em;
+					display: flex;
+					align-items: center;
+					border: var(--color-gray-600) 2px solid;
+					border-radius: 8px;
+					overflow: hidden;
+					transition: all 0.2s;
+					cursor: pointer;
+					margin: 1rem auto;
+				}
+
+				.send-button-container.disabled button {
+					cursor: not-allowed;
+					opacity: 0.7;
+				}
+
+				.send-button-container button span {
+					display: block;
+					margin-left: 0.3em;
+					transition: all 0.3s ease-in-out;
+				}
+
+				.send-button-container button svg {
+					display: block;
+					transform-origin: center center;
+					transition: transform 0.3s ease-in-out;
+				}
+
+				.send-button-container:not(.disabled) button:hover .svg-wrapper {
+					animation: fly-1 0.8s ease-in-out infinite alternate;
+				}
+
+				.send-button-container:not(.disabled) button:hover svg {
+					transform: translateX(2.4em) rotate(45deg) scale(1.1);
+				}
+
+				.send-button-container:not(.disabled) button:hover span {
+					transform: translateX(9em);
+				}
+
+				.send-button-container:not(.disabled) button:active {
+					transform: scale(0.95);
 				}
 			`}</style>
 		</>
