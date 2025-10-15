@@ -149,7 +149,10 @@ export default function RegistrationsPage() {
 			if (q) {
 				const emailMatch = r.email.toLowerCase().includes(q);
 				const idMatch = r.id.toLowerCase().includes(q);
-				if (!emailMatch && !idMatch) return false;
+				const ticketNameMatch = r.ticket && getLocalizedText(r.ticket.name, locale).toLowerCase().includes(q);
+				const eventNameMatch = r.event && getLocalizedText(r.event.name, locale).toLowerCase().includes(q);
+				const formDataMatch = r.formData && Object.values(r.formData).some(val => String(val).toLowerCase().includes(q));
+				if (!emailMatch && !idMatch && !ticketNameMatch && !eventNameMatch && !formDataMatch) return false;
 			}
 			return true;
 		});
