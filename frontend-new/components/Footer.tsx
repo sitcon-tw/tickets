@@ -45,7 +45,7 @@ export default function Footer() {
 			<p className="text-sm text-gray-500">
 				This project is open-sourced on{" "}
 				<a href="https://github.com/sitcon/2026-tickets" target="_blank" rel="noreferrer" className="underline">
-					Github
+					GitHub
 				</a>
         .
         <a href={`/${locale}/terms`} className="underline" style={{ marginLeft: "0.5rem" }}>ToS & PP</a>
