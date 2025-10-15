@@ -169,6 +169,19 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					}
 				}
 
+				if (ticket.requireSmsVerification) {
+					// Ticket requires SMS verification - check if user has verified phone
+					const verifiedUser = await prisma.user.findUnique({
+						where: { id: user.id },
+						select: { phoneVerified: true }
+					});
+
+					if (!verifiedUser?.phoneVerified) {
+						const { response, statusCode } = validationErrorResponse("此票券需要驗證手機號碼");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
 				// Validate referral code if provided
 				let referralCodeId = null;
 				if (referralCode) {
