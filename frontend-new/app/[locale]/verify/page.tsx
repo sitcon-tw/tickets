@@ -30,8 +30,6 @@ export default function VerifyPage() {
 	const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	// Get parameters from URL
-	const purpose = (searchParams.get("purpose") as "ticket_access" | "phone_verification") || "phone_verification";
-	const ticketId = searchParams.get("ticketId") || undefined;
 	const redirectUrl = searchParams.get("redirect") || `/${locale}/`;
 
 	const t = getTranslations(locale, {
@@ -105,17 +103,7 @@ export default function VerifyPage() {
 			"zh-Hans": "验证成功！正在重定向...",
 			en: "Verification successful! Redirecting..."
 		},
-		ticketAccessTitle: {
-			"zh-Hant": "票券驗證",
-			"zh-Hans": "票券验证",
-			en: "Ticket Verification"
-		},
-		ticketAccessDescription: {
-			"zh-Hant": "此票券需要手機驗證才能存取",
-			"zh-Hans": "此票券需要手机验证才能访问",
-			en: "This ticket requires phone verification to access"
-		},
-		phoneVerificationDescription: {
+		description: {
 			"zh-Hant": "請驗證您的手機號碼",
 			"zh-Hans": "请验证您的手机号码",
 			en: "Please verify your phone number"
@@ -162,25 +150,23 @@ export default function VerifyPage() {
 		}
 	});
 
-	// Check if already verified (for ticket access)
+	// Check if already verified
 	useEffect(() => {
-		if (purpose === "ticket_access" && ticketId) {
-			smsVerificationAPI
-				.check(ticketId)
-				.then(response => {
-					if (response.data.isVerified) {
-						// Already verified, redirect
-						router.push(redirectUrl);
-					}
-					if (response.data.phoneNumber) {
-						setPhoneNumber(response.data.phoneNumber);
-					}
-				})
-				.catch((err: ApiError) => {
-					console.error("Failed to check verification status:", err);
-				});
-		}
-	}, [purpose, ticketId, redirectUrl, router]);
+		smsVerificationAPI
+			.getStatus()
+			.then(response => {
+				if (response.data.phoneVerified) {
+					// Already verified, redirect
+					router.push(redirectUrl);
+				}
+				if (response.data.phoneNumber) {
+					setPhoneNumber(response.data.phoneNumber);
+				}
+			})
+			.catch((err: ApiError) => {
+				console.error("Failed to check verification status:", err);
+			});
+	}, [redirectUrl, router]);
 
 	// Countdown timer
 	useEffect(() => {
@@ -235,8 +221,6 @@ export default function VerifyPage() {
 
 			await smsVerificationAPI.send({
 				phoneNumber: formattedApiPhone,
-				purpose,
-				ticketId,
 				locale
 			});
 
@@ -320,9 +304,7 @@ export default function VerifyPage() {
 
 			await smsVerificationAPI.verify({
 				phoneNumber: formattedApiPhone,
-				code: codeStr,
-				purpose,
-				ticketId
+				code: codeStr
 			});
 
 			setSuccess(t.verificationSuccess);
@@ -355,8 +337,6 @@ export default function VerifyPage() {
 
 			await smsVerificationAPI.send({
 				phoneNumber: formattedApiPhone,
-				purpose,
-				ticketId,
 				locale
 			});
 
@@ -398,10 +378,10 @@ export default function VerifyPage() {
 										<MessageSquare size={32} />
 									</div>
 									<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>
-										{purpose === "ticket_access" ? t.ticketAccessTitle : t.title}
+										{t.title}
 									</h2>
 									<p className="text-gray-400 text-sm">
-										{purpose === "ticket_access" ? t.ticketAccessDescription : t.phoneVerificationDescription}
+										{t.description}
 									</p>
 								</div>
 

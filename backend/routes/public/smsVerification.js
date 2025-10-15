@@ -31,11 +31,9 @@ export default async function smsVerificationRoutes(fastify, options) {
 				tags: ["sms-verification"],
 				body: {
 					type: "object",
-					required: ["phoneNumber", "purpose"],
+					required: ["phoneNumber"],
 					properties: {
 						phoneNumber: { type: "string", pattern: "^09\\d{8}$" },
-						purpose: { type: "string", enum: ["ticket_access", "phone_verification"] },
-						ticketId: { type: "string" },
 						locale: { type: "string", enum: ["zh-Hant", "zh-Hans", "en"] }
 					}
 				}
@@ -52,7 +50,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				const { phoneNumber, purpose, ticketId, locale = "zh-Hant" } = request.body;
+				const { phoneNumber, locale = "zh-Hant" } = request.body;
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const userId = session.user.id;
 
@@ -62,67 +60,29 @@ export default async function smsVerificationRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// If purpose is phone_verification, check if user already verified their phone
-				if (purpose === "phone_verification") {
-					const user = await prisma.user.findUnique({
-						where: { id: userId },
-						select: { phoneVerified: true }
-					});
+				// Check if user already verified their phone
+				const user = await prisma.user.findUnique({
+					where: { id: userId },
+					select: { phoneVerified: true }
+				});
 
-					if (user?.phoneVerified) {
-						const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
-						return reply.code(statusCode).send(response);
-					}
-
-					// Check if phone number is already used by another user
-					const existingUser = await prisma.user.findFirst({
-						where: {
-							phoneNumber: sanitizedPhoneNumber,
-							phoneVerified: true,
-							id: { not: userId }
-						}
-					});
-
-					if (existingUser) {
-						const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
-						return reply.code(statusCode).send(response);
-					}
+				if (user?.phoneVerified) {
+					const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
+					return reply.code(statusCode).send(response);
 				}
 
-				// If purpose is ticket_access, verify the ticket requires SMS verification
-				if (purpose === "ticket_access") {
-					if (!ticketId) {
-						const { response, statusCode } = validationErrorResponse("票券 ID 為必填欄位");
-						return reply.code(statusCode).send(response);
+				// Check if phone number is already used by another user
+				const existingUser = await prisma.user.findFirst({
+					where: {
+						phoneNumber: sanitizedPhoneNumber,
+						phoneVerified: true,
+						id: { not: userId }
 					}
+				});
 
-					const ticket = await prisma.ticket.findUnique({
-						where: { id: ticketId }
-					});
-
-					if (!ticket) {
-						const { response, statusCode } = notFoundResponse("票券不存在");
-						return reply.code(statusCode).send(response);
-					}
-
-					if (!ticket.requireSmsVerification) {
-						const { response, statusCode } = validationErrorResponse("此票券不需要簡訊驗證");
-						return reply.code(statusCode).send(response);
-					}
-
-					// Check if user has registered for this ticket
-					const registration = await prisma.registration.findFirst({
-						where: {
-							userId,
-							ticketId,
-							status: "confirmed"
-						}
-					});
-
-					if (!registration) {
-						const { response, statusCode } = unauthorizedResponse("您尚未報名此票券");
-						return reply.code(statusCode).send(response);
-					}
+				if (existingUser) {
+					const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
+					return reply.code(statusCode).send(response);
 				}
 
 				// Check for existing non-expired verification code (rate limiting)
@@ -130,8 +90,6 @@ export default async function smsVerificationRoutes(fastify, options) {
 					where: {
 						userId,
 						phoneNumber: sanitizedPhoneNumber,
-						purpose,
-						ticketId: purpose === "ticket_access" ? ticketId : null,
 						verified: false,
 						expiresAt: {
 							gt: new Date()
@@ -190,8 +148,6 @@ export default async function smsVerificationRoutes(fastify, options) {
 						userId,
 						phoneNumber: sanitizedPhoneNumber,
 						code,
-						purpose,
-						ticketId: purpose === "ticket_access" ? ticketId : null,
 						expiresAt
 					}
 				});
@@ -224,12 +180,10 @@ export default async function smsVerificationRoutes(fastify, options) {
 				tags: ["sms-verification"],
 				body: {
 					type: "object",
-					required: ["phoneNumber", "code", "purpose"],
+					required: ["phoneNumber", "code"],
 					properties: {
 						phoneNumber: { type: "string", pattern: "^09\\d{8}$" },
-						code: { type: "string", pattern: "^\\d{6}$" },
-						purpose: { type: "string", enum: ["ticket_access", "phone_verification"] },
-						ticketId: { type: "string" }
+						code: { type: "string", pattern: "^\\d{6}$" }
 					}
 				}
 			}
@@ -245,22 +199,20 @@ export default async function smsVerificationRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				const { phoneNumber, code, purpose, ticketId } = request.body;
+				const { phoneNumber, code } = request.body;
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const sanitizedCode = sanitizeText(code);
 				const userId = session.user.id;
 
-				// If purpose is phone_verification, check if user already verified their phone
-				if (purpose === "phone_verification") {
-					const user = await prisma.user.findUnique({
-						where: { id: userId },
-						select: { phoneVerified: true }
-					});
+				// Check if user already verified their phone
+				const user = await prisma.user.findUnique({
+					where: { id: userId },
+					select: { phoneVerified: true }
+				});
 
-					if (user?.phoneVerified) {
-						const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
-						return reply.code(statusCode).send(response);
-					}
+				if (user?.phoneVerified) {
+					const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
+					return reply.code(statusCode).send(response);
 				}
 
 				// Find verification record
@@ -269,8 +221,6 @@ export default async function smsVerificationRoutes(fastify, options) {
 						userId,
 						phoneNumber: sanitizedPhoneNumber,
 						code: sanitizedCode,
-						purpose,
-						ticketId: purpose === "ticket_access" ? ticketId : null,
 						verified: false
 					},
 					orderBy: {
@@ -289,20 +239,18 @@ export default async function smsVerificationRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// If purpose is phone_verification, check if phone is already used by another user before verifying
-				if (purpose === "phone_verification") {
-					const existingUser = await prisma.user.findFirst({
-						where: {
-							phoneNumber: sanitizedPhoneNumber,
-							phoneVerified: true,
-							id: { not: userId }
-						}
-					});
-
-					if (existingUser) {
-						const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
-						return reply.code(statusCode).send(response);
+				// Check if phone is already used by another user before verifying
+				const existingUser = await prisma.user.findFirst({
+					where: {
+						phoneNumber: sanitizedPhoneNumber,
+						phoneVerified: true,
+						id: { not: userId }
 					}
+				});
+
+				if (existingUser) {
+					const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
+					return reply.code(statusCode).send(response);
 				}
 
 				// Mark verification as verified
@@ -311,23 +259,19 @@ export default async function smsVerificationRoutes(fastify, options) {
 					data: { verified: true }
 				});
 
-				// If purpose is phone_verification, update user's phone verification status
-				if (purpose === "phone_verification") {
-					await prisma.user.update({
-						where: { id: userId },
-						data: {
-							phoneNumber: sanitizedPhoneNumber,
-							phoneVerified: true
-						}
-					});
-				}
+				// Update user's phone verification status
+				await prisma.user.update({
+					where: { id: userId },
+					data: {
+						phoneNumber: sanitizedPhoneNumber,
+						phoneVerified: true
+					}
+				});
 
 				return reply.send(
 					successResponse(
 						{
-							verified: true,
-							purpose,
-							ticketId: verification.ticketId
+							verified: true
 						},
 						"驗證成功"
 					)
@@ -335,86 +279,6 @@ export default async function smsVerificationRoutes(fastify, options) {
 			} catch (error) {
 				request.log.error("Verify SMS code error:", error);
 				const { response, statusCode } = serverErrorResponse("驗證失敗");
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	/**
-	 * Check if user needs SMS verification for a ticket
-	 * GET /api/sms-verification/check/:ticketId
-	 */
-	fastify.get(
-		"/sms-verification/check/:ticketId",
-		{
-			schema: {
-				description: "檢查票券是否需要簡訊驗證",
-				tags: ["sms-verification"],
-				params: {
-					type: "object",
-					properties: {
-						ticketId: { type: "string" }
-					}
-				}
-			}
-		},
-		async (request, reply) => {
-			try {
-				const session = await auth.api.getSession({
-					headers: request.headers
-				});
-
-				if (!session?.user) {
-					const { response, statusCode } = unauthorizedResponse("請先登入");
-					return reply.code(statusCode).send(response);
-				}
-
-				const { ticketId } = request.params;
-				const userId = session.user.id;
-
-				// Get ticket info
-				const ticket = await prisma.ticket.findUnique({
-					where: { id: ticketId }
-				});
-
-				if (!ticket) {
-					const { response, statusCode } = notFoundResponse("票券不存在");
-					return reply.code(statusCode).send(response);
-				}
-
-				// If ticket doesn't require SMS verification
-				if (!ticket.requireSmsVerification) {
-					return reply.send(
-						successResponse({
-							requiresVerification: false,
-							isVerified: true
-						})
-					);
-				}
-
-				// Check if user has a verified SMS code for this ticket
-				const verification = await prisma.smsVerification.findFirst({
-					where: {
-						userId,
-						purpose: "ticket_access",
-						ticketId,
-						verified: true,
-						expiresAt: {
-							gt: new Date()
-						}
-					}
-				});
-
-				return reply.send(
-					successResponse({
-						requiresVerification: true,
-						isVerified: !!verification,
-						phoneNumber: verification?.phoneNumber
-					})
-				);
-			} catch (error) {
-				request.log.error("Check SMS verification error:", error);
-				const { response, statusCode } = serverErrorResponse("檢查驗證狀態失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

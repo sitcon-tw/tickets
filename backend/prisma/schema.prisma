@@ -245,8 +245,6 @@ model SmsVerification {
   userId      String
   phoneNumber String
   code        String   // 6-digit verification code
-  purpose     String   // "ticket_access", "phone_verification"
-  ticketId    String?  // if purpose is ticket_access
   verified    Boolean  @default(false)
   expiresAt   DateTime
   createdAt   DateTime @default(now())

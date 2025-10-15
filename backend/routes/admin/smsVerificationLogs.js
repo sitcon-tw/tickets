@@ -29,8 +29,6 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 					properties: {
 						userId: { type: "string" },
 						phoneNumber: { type: "string" },
-						purpose: { type: "string", enum: ["ticket_access", "phone_verification"] },
-						ticketId: { type: "string" },
 						verified: { type: "boolean" },
 						page: { type: "integer", minimum: 1, default: 1 },
 						limit: { type: "integer", minimum: 1, maximum: 100, default: 20 }
@@ -40,14 +38,12 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 		},
 		async (request, reply) => {
 			try {
-				const { userId, phoneNumber, purpose, ticketId, verified, page = 1, limit = 20 } = request.query;
+				const { userId, phoneNumber, verified, page = 1, limit = 20 } = request.query;
 
 				// Build where clause
 				const where = {};
 				if (userId) where.userId = userId;
 				if (phoneNumber) where.phoneNumber = { contains: phoneNumber };
-				if (purpose) where.purpose = purpose;
-				if (ticketId) where.ticketId = ticketId;
 				if (typeof verified === "boolean") where.verified = verified;
 
 				// Get total count
@@ -111,7 +107,7 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 		},
 		async (request, reply) => {
 			try {
-				const [totalSent, totalVerified, totalExpired, totalByPurpose] = await Promise.all([
+				const [totalSent, totalVerified, totalExpired] = await Promise.all([
 					// Total SMS sent
 					prisma.smsVerification.count(),
 					// Total verified
@@ -126,13 +122,6 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 								lt: new Date()
 							}
 						}
-					}),
-					// Count by purpose
-					prisma.smsVerification.groupBy({
-						by: ["purpose"],
-						_count: {
-							id: true
-						}
 					})
 				]);
 
@@ -143,15 +132,11 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 				const sevenDaysAgo = new Date();
 				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-				const recentActivity = await prisma.smsVerification.groupBy({
-					by: ["purpose"],
+				const recentCount = await prisma.smsVerification.count({
 					where: {
 						createdAt: {
 							gte: sevenDaysAgo
 						}
-					},
-					_count: {
-						id: true
 					}
 				});
 
@@ -161,14 +146,7 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 						totalVerified,
 						totalExpired,
 						successRate: parseFloat(successRate),
-						byPurpose: totalByPurpose.reduce((acc, item) => {
-							acc[item.purpose] = item._count.id;
-							return acc;
-						}, {}),
-						recentActivity: recentActivity.reduce((acc, item) => {
-							acc[item.purpose] = item._count.id;
-							return acc;
-						}, {})
+						recentActivity: recentCount
 					})
 				);
 			} catch (error) {
