@@ -28,7 +28,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {TicketCreateRequest} */
-				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode } = request.body;
+				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden } = request.body;
 
 				// Verify event exists
 				const event = await prisma.event.findUnique({
@@ -74,7 +74,8 @@ export default async function adminTicketsRoutes(fastify, options) {
 						saleStart: saleStart ? new Date(saleStart) : null,
 						saleEnd: saleEnd ? new Date(saleEnd) : null,
 						isActive: true,
-						requireInviteCode
+						requireInviteCode,
+						hidden: hidden ?? false
 					}
 				});
 

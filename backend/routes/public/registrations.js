@@ -74,7 +74,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						where: {
 							id: ticketId,
 							eventId,
-							isActive: true
+							isActive: true,
+							hidden: false
 						},
 						include: {
 							fromFields: {
@@ -399,7 +400,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 								id: true,
 								name: true,
 								description: true,
-								price: true
+								price: true,
+								saleEnd: true
 							}
 						}
 					}
@@ -419,8 +421,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
-					canEdit: registration.status === "confirmed" && registration.event.startDate > now,
-					canCancel: registration.status === "confirmed" && registration.event.startDate > now
+					canEdit: registration.status === "confirmed" && registration.event.startDate > now && registration.ticket.saleEnd > now,
+					canCancel: registration.status === "confirmed" && registration.event.startDate > now && registration.ticket.saleEnd > now
 				};
 
 				return reply.send(successResponse(registrationWithStatus));
@@ -469,6 +471,9 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						ticket: {
 							include: {
 								fromFields: true
+							},
+							select: {
+								saleEnd: true
 							}
 						},
 						event: {
@@ -492,6 +497,11 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				if (new Date() >= registration.event.startDate) {
 					const { response, statusCode } = validationErrorResponse("活動已開始，無法編輯報名");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (new Date() >= registration.ticket.saleEnd) {
+					const { response, statusCode } = validationErrorResponse("票券已截止，無法編輯報名");
 					return reply.code(statusCode).send(response);
 				}
 

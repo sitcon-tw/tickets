@@ -16,7 +16,11 @@ export default function LocaleRedirect() {
 			try {
 				const eventsData = await eventsAPI.getAll({ isActive: true });
 
-				if (eventsData?.success && Array.isArray(eventsData.data) && eventsData.data.length > 0) {
+				if (eventsData?.success && Array.isArray(eventsData.data)) {
+          if (eventsData.data.length === 0) {
+            router.replace(`/${locale}/hi`);
+          }
+
 					const now = new Date();
 
 					// Filter upcoming events (events that haven't started yet or are currently happening)

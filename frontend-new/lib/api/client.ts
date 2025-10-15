@@ -8,11 +8,16 @@ interface RetryConfig {
 
 interface APIError {
 	message?: string;
-	detail: Array<{
+	detail?: Array<{
 		loc: Array<string | number>;
 		msg: string;
 		type: string;
-	}>;
+	}> | string;
+	error?: {
+		code?: string;
+		message?: string;
+	};
+	success?: boolean;
 }
 
 class APIClient {
@@ -101,9 +106,19 @@ class APIClient {
 					if (response.status === 401) {
 						if (typeof window !== "undefined") {
 							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							window.location.href = `/${locale}/login`;
+							const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+							window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
 						}
 						throw new Error("Unauthorized - please login");
+					}
+
+					// Handle 423 Locked - Account disabled
+					if (response.status === 423) {
+						if (typeof window !== "undefined") {
+							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
+							window.location.href = `/${locale}/account-disabled`;
+						}
+						throw new Error("Account disabled");
 					}
 
 					// Handle 403 Forbidden - redirect to home
@@ -118,7 +133,29 @@ class APIClient {
 						detail: [{ loc: [], msg: "發生了未知的錯誤 [C]", type: "unknown" }]
 					}));
 
-					const error = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+					// Extract error message from API response
+					// Priority: 1. error.message, 2. message field, 3. detail field (string or array), 4. HTTP status text
+					let errorMessage: string;
+					if (errorData.error && errorData.error.message) {
+						errorMessage = errorData.error.message;
+					} else if (errorData.message) {
+						errorMessage = errorData.message;
+					} else if (errorData.detail) {
+						// Handle detail as string
+						if (typeof errorData.detail === "string") {
+							errorMessage = errorData.detail;
+						}
+						// Handle detail as array
+						else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+							errorMessage = errorData.detail.map(d => d.msg).join(", ");
+						} else {
+							errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+						}
+					} else {
+						errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+					}
+
+					const error = new Error(errorMessage);
 
 					if (attempt <= this.retryConfig.maxRetries && this.isRetryableError(error, response)) {
 						lastError = error;

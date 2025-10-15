@@ -8,6 +8,7 @@ import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type InviteCode = {
 	id: string;
@@ -27,12 +28,14 @@ type InviteType = {
 
 export default function InvitesPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [inviteTypes, setInviteTypes] = useState<InviteType[]>([]);
 	const [filteredTypes, setFilteredTypes] = useState<InviteType[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showModal, setShowModal] = useState(false);
+	const [showBulkImportModal, setShowBulkImportModal] = useState(false);
 	const [showCodesModal, setShowCodesModal] = useState(false);
 	const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -42,6 +45,7 @@ export default function InvitesPage() {
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
 		add: { "zh-Hant": "新增邀請碼組", "zh-Hans": "新增邀请码组", en: "Add Invitation Code Group" },
+		bulkImport: { "zh-Hant": "批次匯入", "zh-Hans": "批量导入", en: "Bulk Import" },
 		exportCSV: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
 		search: { "zh-Hant": "搜尋名稱 / 代碼", "zh-Hans": "搜索名称 / 代码", en: "Search Name / Code" },
 		name: { "zh-Hant": "名稱", "zh-Hans": "名称", en: "Name" },
@@ -82,7 +86,16 @@ export default function InvitesPage() {
 		sendSuccess: { "zh-Hant": "成功寄送郵件！", "zh-Hans": "成功发送邮件！", en: "Email sent successfully!" },
 		sendError: { "zh-Hant": "寄送失敗", "zh-Hans": "发送失败", en: "Failed to send email" },
 		pleaseSelectCodes: { "zh-Hant": "請選擇要操作的邀請碼", "zh-Hans": "请选择要操作的邀请码", en: "Please select invitation codes" },
-		downloadSuccess: { "zh-Hant": "下載成功！", "zh-Hans": "下载成功！", en: "Download successful!" }
+		downloadSuccess: { "zh-Hant": "下載成功！", "zh-Hans": "下载成功！", en: "Download successful!" },
+		bulkImportTitle: { "zh-Hant": "批次匯入邀請碼", "zh-Hans": "批量导入邀请码", en: "Bulk Import Invitation Codes" },
+		bulkImportDescription: { "zh-Hant": "每行一個邀請碼，或上傳文字檔", "zh-Hans": "每行一个邀请码，或上传文本文件", en: "One code per line, or upload a text file" },
+		uploadFile: { "zh-Hant": "上傳檔案", "zh-Hans": "上传文件", en: "Upload File" },
+		pasteOrType: { "zh-Hant": "貼上或輸入邀請碼", "zh-Hans": "粘贴或输入邀请码", en: "Paste or type invitation codes" },
+		codesPlaceholder: { "zh-Hant": "每行一個邀請碼\n例如：\nVIP2026A\nVIP2026B\nVIP2026C", "zh-Hans": "每行一个邀请码\n例如：\nVIP2026A\nVIP2026B\nVIP2026C", en: "One code per line\nExample:\nVIP2026A\nVIP2026B\nVIP2026C" },
+		import: { "zh-Hant": "匯入", "zh-Hans": "导入", en: "Import" },
+		importSuccess: { "zh-Hant": "成功匯入 {count} 個邀請碼！", "zh-Hans": "成功导入 {count} 个邀请码！", en: "Successfully imported {count} invitation codes!" },
+		invalidFormat: { "zh-Hant": "格式錯誤：請確保每行一個邀請碼", "zh-Hans": "格式错误：请确保每行一个邀请码", en: "Invalid format: Please ensure one code per line" },
+		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" }
 	});
 
 	// Load event ID from localStorage on mount
@@ -188,7 +201,7 @@ export default function InvitesPage() {
 		const ticketId = formData.get("ticketId") as string;
 
 		if (!ticketId) {
-			alert(t.pleaseSelectTicket);
+			showAlert(t.pleaseSelectTicket, "warning");
 			return;
 		}
 
@@ -222,9 +235,9 @@ export default function InvitesPage() {
 			await loadTickets();
 			await loadInvitationCodes();
 			setShowModal(false);
-			alert(t.createSuccess.replace("{count}", count.toString()));
+			showAlert(t.createSuccess.replace("{count}", count.toString()), "success");
 		} catch (error) {
-			alert("創建失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("創建失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -235,15 +248,15 @@ export default function InvitesPage() {
 			await adminInvitationCodesAPI.delete(codeId);
 			await loadTickets();
 			await loadInvitationCodes();
-			alert(t.deleteSuccess);
+			showAlert(t.deleteSuccess, "success");
 		} catch (error) {
-			alert("刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const bulkDeleteInvitationCodes = async () => {
 		if (selectedCodes.size === 0) {
-			alert("請選擇要刪除的邀請碼");
+			showAlert("請選擇要刪除的邀請碼", "warning");
 			return;
 		}
 
@@ -273,18 +286,18 @@ export default function InvitesPage() {
 
 			// Show result
 			if (errorCount > 0) {
-				alert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`);
+				showAlert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`, "error");
 			} else {
-				alert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()));
+				showAlert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()), "success");
 			}
 		} catch (error) {
-			alert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
 	const downloadSelectedCodesAsTxt = () => {
 		if (selectedCodes.size === 0) {
-			alert(t.pleaseSelectCodes);
+			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
@@ -303,21 +316,125 @@ export default function InvitesPage() {
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 
-		alert(t.downloadSuccess);
+		showAlert(t.downloadSuccess, "success");
 	};
 
 	const [showEmailModal, setShowEmailModal] = useState(false);
 	const [emailAddress, setEmailAddress] = useState("");
 	const [isSendingEmail, setIsSendingEmail] = useState(false);
+	const [bulkImportCodes, setBulkImportCodes] = useState("");
+	const [isImporting, setIsImporting] = useState(false);
+
+	const handleBulkImport = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const formData = new FormData(e.currentTarget);
+		const ticketId = formData.get("ticketId") as string;
+
+		if (!ticketId) {
+			showAlert(t.pleaseSelectTicket, "warning");
+			return;
+		}
+
+		// Parse codes from textarea
+		const codesText = bulkImportCodes.trim();
+		if (!codesText) {
+			showAlert(t.noCodes, "warning");
+			return;
+		}
+
+		const codes = codesText
+			.split("\n")
+			.map(c => c.trim())
+			.filter(c => c.length > 0);
+
+		if (codes.length === 0) {
+			showAlert(t.noCodes, "warning");
+			return;
+		}
+
+		const name = formData.get("name") as string;
+		const usageLimit = parseInt(formData.get("usageLimit") as string) || 1;
+		const validFromStr = formData.get("validFrom") as string;
+		const validUntilStr = formData.get("validUntil") as string;
+
+		setIsImporting(true);
+		try {
+			let successCount = 0;
+			let errorCount = 0;
+
+			// Import codes one by one
+			for (const code of codes) {
+				try {
+					const data: {
+						ticketId: string;
+						code: string;
+						name?: string;
+						usageLimit: number;
+						validFrom?: string;
+						validUntil?: string;
+					} = {
+						ticketId,
+						code,
+						name: name || undefined,
+						usageLimit
+					};
+
+					if (validFromStr) {
+						data.validFrom = new Date(validFromStr).toISOString();
+					}
+					if (validUntilStr) {
+						data.validUntil = new Date(validUntilStr).toISOString();
+					}
+
+					await adminInvitationCodesAPI.create(data);
+					successCount++;
+				} catch (error) {
+					console.error(`Failed to import code ${code}:`, error);
+					errorCount++;
+				}
+			}
+
+			// Reload data
+			await loadTickets();
+			await loadInvitationCodes();
+
+			// Close modal and reset
+			setShowBulkImportModal(false);
+			setBulkImportCodes("");
+
+			// Show result
+			if (errorCount > 0) {
+				showAlert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`, "error");
+			} else {
+				showAlert(t.importSuccess.replace("{count}", successCount.toString()), "success");
+			}
+		} catch (error) {
+			showAlert("匯入失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsImporting(false);
+		}
+	};
+
+	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const text = event.target?.result as string;
+			setBulkImportCodes(text);
+		};
+		reader.readAsText(file);
+	};
 
 	const sendCodesViaEmail = async () => {
 		if (selectedCodes.size === 0) {
-			alert(t.pleaseSelectCodes);
+			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
 		if (!emailAddress || !emailAddress.includes("@")) {
-			alert("請輸入有效的 Email 地址");
+			showAlert("請輸入有效的 Email 地址", "warning");
 			return;
 		}
 
@@ -340,15 +457,16 @@ export default function InvitesPage() {
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to send email");
+				const errorData = await response.json().catch(() => ({ error: { message: "Failed to send email" } }));
+				throw new Error(errorData.error?.message || errorData.message || "Failed to send email");
 			}
 
-			alert(t.sendSuccess);
+			showAlert(t.sendSuccess, "success");
 			setShowEmailModal(false);
 			setEmailAddress("");
 		} catch (error) {
 			console.error("Error sending email:", error);
-			alert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)));
+			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsSendingEmail(false);
 		}
@@ -394,6 +512,9 @@ export default function InvitesPage() {
 				<section className="admin-controls">
 					<button onClick={() => setShowModal(true)} className="admin-button primary">
 						➕ {t.add}
+					</button>
+					<button onClick={() => setShowBulkImportModal(true)} className="admin-button secondary">
+						📥 {t.bulkImport}
 					</button>
 					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
 				</section>
@@ -498,6 +619,88 @@ export default function InvitesPage() {
 										{t.save}
 									</button>
 									<button type="button" className="admin-button secondary" onClick={() => setShowModal(false)}>
+										{t.cancel}
+									</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				)}
+
+				{showBulkImportModal && (
+					<div className="admin-modal-overlay" onClick={() => setShowBulkImportModal(false)}>
+						<div className="admin-modal" onClick={e => e.stopPropagation()}>
+							<div className="admin-modal-header">
+								<h2 className="admin-modal-title">{t.bulkImportTitle}</h2>
+								<button className="admin-modal-close" onClick={() => setShowBulkImportModal(false)}>
+									✕
+								</button>
+							</div>
+							<form onSubmit={handleBulkImport}>
+								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+									<p style={{ fontSize: "0.9rem", opacity: 0.8 }}>{t.bulkImportDescription}</p>
+
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.ticketType}</label>
+										<select name="ticketId" required className="admin-select">
+											<option value="">{t.pleaseSelectTicket}</option>
+											{tickets.map(ticket => (
+												<option key={ticket.id} value={ticket.id}>
+													{getLocalizedText(ticket.name, locale)}
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.name} ({t.optional})</label>
+										<input name="name" type="text" placeholder="e.g. VIP Media" className="admin-input" />
+									</div>
+
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.uploadFile}</label>
+										<input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="admin-input" />
+									</div>
+
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.pasteOrType}</label>
+										<textarea
+											value={bulkImportCodes}
+											onChange={(e) => setBulkImportCodes(e.target.value)}
+											placeholder={t.codesPlaceholder}
+											rows={10}
+											className="admin-input"
+											style={{ fontFamily: "monospace", resize: "vertical" }}
+										/>
+									</div>
+
+									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.usageLimit}</label>
+											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
+										</div>
+										<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+											<div className="admin-form-group">
+												<label className="admin-form-label">
+													{t.validFrom} ({t.optional})
+												</label>
+												<input name="validFrom" type="datetime-local" className="admin-input" />
+											</div>
+										</div>
+									</div>
+
+									<div className="admin-form-group">
+										<label className="admin-form-label">
+											{t.validUntil} ({t.optional})
+										</label>
+										<input name="validUntil" type="datetime-local" className="admin-input" />
+									</div>
+								</div>
+								<div className="admin-modal-actions">
+									<button type="submit" className="admin-button success" disabled={isImporting}>
+										{isImporting ? "匯入中..." : t.import}
+									</button>
+									<button type="button" className="admin-button secondary" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
 										{t.cancel}
 									</button>
 								</div>

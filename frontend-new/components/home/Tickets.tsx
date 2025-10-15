@@ -11,6 +11,7 @@ import { Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 interface TicketsProps {
 	eventId: string;
@@ -20,6 +21,7 @@ interface TicketsProps {
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const locale = useLocale();
 	const router = useRouter();
+	const { showAlert } = useAlert();
 
 	const t = getTranslations(locale, {
 		description: {
@@ -101,12 +103,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				const ticketsData = await eventsAPI.getTickets(eventId);
 
 				if (ticketsData.success && Array.isArray(ticketsData.data)) {
-					const prosceedTicketData = ticketsData.data.map(ticket => ({
-						...ticket,
-						saleStart: ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A",
-						saleEnd: ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"
-					}));
-					setTickets(prosceedTicketData);
+					setTickets(ticketsData.data);
 				}
 			} catch (error) {
 				console.error("Failed to load tickets", error);
@@ -165,13 +162,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		// Check if ticket sale has ended
 		if (isTicketExpired(ticket)) {
-			alert(t.ticketSaleEnded);
+			showAlert(t.ticketSaleEnded, "warning");
 			return;
 		}
 
 		// Check if ticket is sold out
 		if (isTicketSoldOut(ticket)) {
-			alert(t.ticketSoldOut);
+			showAlert(t.ticketSoldOut, "warning");
 			return;
 		}
 
@@ -311,7 +308,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<h3>{getLocalizedText(ticket.name, locale)}</h3>
 							<p>
 								{t.time}
-								{ticket.saleStart} - {ticket.saleEnd}
+				        {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : 'N/A'} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : 'N/A'}
 							</p>
 							<p className="remain">
 								{t.remaining} {ticket.available} / {ticket.quantity}

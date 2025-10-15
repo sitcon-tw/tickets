@@ -6,6 +6,7 @@ import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { FormField } from "@/components/form/FormField";
 import Text from "@/components/input/Text";
+import Checkbox from "@/components/input/Checkbox";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
@@ -15,6 +16,7 @@ import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -23,6 +25,7 @@ type FormDataType = {
 export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
@@ -33,6 +36,7 @@ export default function FormPage() {
 	const [referralCode, setReferralCode] = useState<string>("");
 	const [requiresInviteCode, setRequiresInviteCode] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [agreeToTerms, setAgreeToTerms] = useState(false);
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -104,7 +108,17 @@ export default function FormPage() {
 			"zh-Hant": "提交報名",
 			"zh-Hans": "提交报名",
 			en: "Submit Registration"
-		}
+		},
+		agreeToTerms: {
+			"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
+			"zh-Hans": "我已阅读并同意服务条款",
+			en: "I have read and agree to the terms"
+		},
+		termsLink: {
+			"zh-Hant": "服務條款與隱私政策連結",
+			"zh-Hans": "服务条款与隐私政策链接",
+			en: "Terms and Privacy Policy link"
+		},
 	});
 
 	// Form data handlers
@@ -146,7 +160,7 @@ export default function FormPage() {
 				// Load form data from localStorage
 				const storedData = localStorage.getItem("formData");
 				if (!storedData) {
-					alert(t.noTicketAlert);
+					showAlert(t.noTicketAlert, "warning");
 					router.push("/");
 					return;
 				}
@@ -155,11 +169,12 @@ export default function FormPage() {
 				setTicketId(parsedData.ticketId);
 				setEventId(parsedData.eventId);
 				setReferralCode(parsedData.referralCode || "");
+				setInvitationCode(parsedData.invitationCode || "");
 
 				// Load ticket info to check if it requires invite code
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
 				if (!ticketResponse.success) {
-					throw new Error("Failed to load ticket information");
+					throw new Error(ticketResponse.message || "Failed to load ticket information");
 				}
 
 				const ticket = ticketResponse.data;
@@ -168,7 +183,7 @@ export default function FormPage() {
 				// Load form fields from ticket API
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
-					throw new Error("Failed to load form fields");
+					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
 
 				// Process form fields to fix malformed data from backend
@@ -236,7 +251,7 @@ export default function FormPage() {
 
 		if (!ticketId || !eventId || isSubmitting) {
 			if (!ticketId || !eventId) {
-				alert(t.incompleteFormAlert);
+				showAlert(t.incompleteFormAlert, "warning");
 				router.push("/");
 			}
 			return;
@@ -262,11 +277,11 @@ export default function FormPage() {
 				// Redirect to success page
 				router.push(window.location.href.replace("/form", "/success"));
 			} else {
-				throw new Error("Registration failed");
+				throw new Error(result.message || "Registration failed");
 			}
 		} catch (error) {
 			console.error("Registration error:", error);
-			alert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"));
+			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
 			setIsSubmitting(false);
 		}
 	};
@@ -346,6 +361,12 @@ export default function FormPage() {
 
 							{/* Referral code field - always shown and editable */}
 							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
+
+							{/* Terms and conditions checkbox */}
+							<div>
+								<Checkbox label={t.agreeToTerms} question={t.agreeToTermsQuestion} value={agreeToTerms} required id="agreeToTerms" checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} />
+								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>{t.termsLink}</a>
+							</div>
 
 							<button
 								type="submit"

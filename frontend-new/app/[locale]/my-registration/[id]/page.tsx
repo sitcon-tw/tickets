@@ -15,6 +15,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -23,6 +24,7 @@ type FormDataType = {
 export default function MyRegistrationPage() {
 	const router = useRouter();
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 	const params = useParams();
 	const registrationId = params?.id as string;
 
@@ -217,7 +219,7 @@ export default function MyRegistrationPage() {
 				// Load registration
 				const regResponse = await registrationsAPI.getById(registrationId);
 				if (!regResponse.success) {
-					throw new Error(t.notFound);
+					throw new Error(regResponse.message || t.notFound);
 				}
 
 				const regData = regResponse.data;
@@ -291,7 +293,7 @@ export default function MyRegistrationPage() {
 	// Handle save
 	const handleSave = async () => {
 		if (!registration || !registration.canEdit) {
-			alert(t.cannotEdit);
+			showAlert(t.cannotEdit, "warning");
 			return;
 		}
 
@@ -300,15 +302,15 @@ export default function MyRegistrationPage() {
 			const result = await registrationsAPI.update(registrationId, { formData });
 
 			if (result.success) {
-				alert(t.saveSuccess);
+				showAlert(t.saveSuccess, "success");
 				setRegistration({ ...registration, formData: result.data.formData as Record<string, unknown> });
 				setIsEditing(false);
 			} else {
-				throw new Error("Failed to update registration");
+				throw new Error(result.message || "Failed to update registration");
 			}
 		} catch (error) {
 			console.error("Save error:", error);
-			alert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"));
+			showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
 		} finally {
 			setIsSaving(false);
 		}

@@ -8,9 +8,11 @@ import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function EventsPage() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	const [events, setEvents] = useState<Event[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -135,7 +137,7 @@ export default function EventsPage() {
 			await loadEvents();
 			closeModal();
 		} catch (error) {
-			alert("保存失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -146,7 +148,7 @@ export default function EventsPage() {
 			await adminEventsAPI.delete(eventId);
 			await loadEvents();
 		} catch (error) {
-			alert("刪除失敗: " + (error instanceof Error ? error.message : String(error)));
+			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 

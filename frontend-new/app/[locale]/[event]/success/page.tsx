@@ -12,9 +12,11 @@ import { Check, Copy, CheckCheck, ArrowLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function Success() {
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 	const router = useRouter();
 	const params = useParams();
 	const eventSlug = params.event as string;
@@ -129,7 +131,7 @@ export default function Success() {
 				setCopiedCode(true);
 			})
 			.catch(() => {
-				alert(t.copyFailed + referralCode);
+				showAlert(t.copyFailed + referralCode, "error");
 			});
 		setTimeout(() => setCopiedCode(false), 2000);
 	}
@@ -144,7 +146,7 @@ export default function Success() {
 				setCopiedUrl(true);
 			})
 			.catch(() => {
-				alert(t.copyFailed + url);
+				showAlert(t.copyFailed + url, "error");
 			});
 		setTimeout(() => setCopiedUrl(false), 2000);
 	}

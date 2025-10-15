@@ -57,6 +57,10 @@ export const ticketProperties = {
 		type: "boolean",
 		description: "是否需要簡訊驗證"
 	},
+	hidden: {
+		type: "boolean",
+		description: "是否隱藏 (不顯示在公開頁面)"
+	},
 	createdAt: {
 		...dateTimeString,
 		description: "建立時間"
@@ -109,6 +113,10 @@ export const ticketCreateBody = {
 		requireSmsVerification: {
 			type: "boolean",
 			description: "是否需要簡訊驗證"
+		},
+		hidden: {
+			type: "boolean",
+			description: "是否隱藏 (不顯示在公開頁面)"
 		}
 	},
 	required: ["eventId", "name", "price", "quantity"]
@@ -156,6 +164,10 @@ export const ticketUpdateBody = {
 		requireSmsVerification: {
 			type: "boolean",
 			description: "是否需要簡訊驗證"
+		},
+		hidden: {
+			type: "boolean",
+			description: "是否隱藏 (不顯示在公開頁面)"
 		}
 	}
 };

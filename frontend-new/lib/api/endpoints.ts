@@ -8,13 +8,13 @@ export const healthAPI = {
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
-	getMagicLink: (email: string, locale?: string) =>
+	getMagicLink: (email: string, locale?: string, returnUrl?: string) =>
 		apiClient.post("/api/auth/sign-in/magic-link", {
 			email,
 			name: email.split("@")[0],
-			callbackURL: `${window.location.origin}/${locale || "zh-Hant"}/`,
-			newUserCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/`,
-			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/`
+			callbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
+			newUserCallbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
+			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
 		}),
 	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),
 	signOut: () => apiClient.post("/api/auth/sign-out")
@@ -147,6 +147,8 @@ export const adminRegistrationsAPI = {
 			tags?: string[];
 		}
 	) => apiClient.put<ApiResponse<Registration>>(`/api/admin/registrations/${id}`, data),
+
+	delete: (id: string) => apiClient.delete<ApiResponse<{ id: string; email: string }>>(`/api/admin/registrations/${id}`),
 
 	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) => apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params)
 };
