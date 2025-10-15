@@ -112,6 +112,8 @@ export default async function publicEventsRoutes(fastify, options) {
 						soldCount: true,
 						saleStart: true,
 						saleEnd: true,
+						requireInviteCode: true,
+						requireSmsVerification: true,
 						fromFields: {
 							select: {
 								id: true,
@@ -161,6 +163,8 @@ export default async function publicEventsRoutes(fastify, options) {
 						isSoldOut,
 						saleStart: ticket.saleStart,
 						saleEnd: ticket.saleEnd,
+						requireInviteCode: ticket.requireInviteCode,
+						requireSmsVerification: ticket.requireSmsVerification,
 						formFields
 					};
 				});

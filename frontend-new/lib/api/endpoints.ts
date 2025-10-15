@@ -217,3 +217,19 @@ export const adminEmailCampaignsAPI = {
 
 	cancel: (campaignId: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/email-campaigns/${campaignId}`)
 };
+
+// SMS Verification - Requires Auth
+export const smsVerificationAPI = {
+	send: (data: { phoneNumber: string; locale?: string }) => apiClient.post<ApiResponse<{ expiresAt: string }>>("/api/sms-verification/send", data),
+
+	verify: (data: { phoneNumber: string; code: string }) => apiClient.post<ApiResponse<{ verified: boolean }>>("/api/sms-verification/verify", data),
+
+	getStatus: () => apiClient.get<ApiResponse<{ phoneNumber?: string; phoneVerified: boolean }>>("/api/sms-verification/status")
+};
+
+// Admin - SMS Verification Logs
+export const adminSmsVerificationAPI = {
+	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-logs", params),
+
+	getStats: () => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-stats")
+};

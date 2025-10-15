@@ -53,6 +53,10 @@ export const ticketProperties = {
 		type: "boolean",
 		description: "是否需要邀請碼"
 	},
+	requireSmsVerification: {
+		type: "boolean",
+		description: "是否需要簡訊驗證"
+	},
 	hidden: {
 		type: "boolean",
 		description: "是否隱藏 (不顯示在公開頁面)"
@@ -106,6 +110,10 @@ export const ticketCreateBody = {
 			type: "boolean",
 			description: "是否需要邀請碼"
 		},
+		requireSmsVerification: {
+			type: "boolean",
+			description: "是否需要簡訊驗證"
+		},
 		hidden: {
 			type: "boolean",
 			description: "是否隱藏 (不顯示在公開頁面)"
@@ -152,6 +160,10 @@ export const ticketUpdateBody = {
 		requireInviteCode: {
 			type: "boolean",
 			description: "是否需要邀請碼"
+		},
+		requireSmsVerification: {
+			type: "boolean",
+			description: "是否需要簡訊驗證"
 		},
 		hidden: {
 			type: "boolean",

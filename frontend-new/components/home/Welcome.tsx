@@ -3,7 +3,7 @@
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import ElectricBorder from "../ElectricBorder";
@@ -29,6 +29,21 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			"zh-Hant": "歡迎回來！趕緊開始報名吧！",
 			"zh-Hans": "欢迎回来！赶紧开始报名吧！",
 			en: "Welcome back! Let's get you registered!"
+		},
+		haveNotVerifySMS1: {
+			"zh-Hant": "您還沒有完成簡訊驗證！",
+			"zh-Hans": "您还没有完成短信验证！",
+			en: "You haven't completed SMS verification!"
+		},
+		haveNotVerifySMS2: {
+			"zh-Hant": "某些票券可能需要驗證手機號碼才能報名。前往驗證：",
+			"zh-Hans": "某些票券可能需要验证手机号码才能报名。前往验证：",
+			en: "Some tickets may require a verified phone number to register. Verify now:"
+		},
+		verifyNow: {
+			"zh-Hant": "驗證手機",
+			"zh-Hans": "验证手机",
+			en: "Verify now"
 		},
 		registeredWelcome: {
 			"zh-Hant": "你已完成報名！",
@@ -74,6 +89,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
 	const [referralParam, setReferralParam] = useState<string | null>(null);
+	const [isSmsVerified, setIsSmsVerified] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [isSafari, setIsSafari] = useState(false);
 
@@ -109,6 +125,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 							setWelcomeState("registered");
 							return;
 						}
+					}
+
+					const smsData = await smsVerificationAPI.getStatus();
+					if (smsData?.success && smsData.data.phoneVerified) {
+						setIsSmsVerified(true);
+					} else {
+						setIsSmsVerified(false);
 					}
 				} catch (error) {
 					console.error("Failed to load registrations", error);
@@ -226,6 +249,22 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					>
 						{t.loggedInWelcome}
 					</h2>
+					{!isSmsVerified && (
+						<div className="text-yellow-200 items-center justify-center flex flex-col gap-2">
+							<div>
+								<p>{t.haveNotVerifySMS1}</p>
+								<p>{t.haveNotVerifySMS2}</p>
+							</div>
+							<button
+								className="button text-white"
+								onClick={() => {
+									router.push(`/verify`);
+								}}
+							>
+								{t.verifyNow}
+							</button>
+						</div>
+					)}
 				</section>
 			) : null}
 

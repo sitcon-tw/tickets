@@ -50,7 +50,8 @@ export default async function publicTicketsRoutes(fastify, options) {
 									saleEnd: { type: "string" },
 									isOnSale: { type: "boolean" },
 									isSoldOut: { type: "boolean" },
-									requireInviteCode: { type: "boolean" }
+									requireInviteCode: { type: "boolean" },
+									requireSmsVerification: { type: "boolean" }
 								}
 							}
 						}
@@ -94,7 +95,8 @@ export default async function publicTicketsRoutes(fastify, options) {
 						soldCount: true,
 						saleStart: true,
 						saleEnd: true,
-						requireInviteCode: true
+						requireInviteCode: true,
+						requireSmsVerification: true
 					}
 				});
 

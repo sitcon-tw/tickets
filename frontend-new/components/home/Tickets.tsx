@@ -6,7 +6,7 @@ import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { authAPI, eventsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
@@ -228,7 +228,23 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		if (!canRegister) return;
 		if (!selectedTicket || typeof window === "undefined" || isSubmitting) return;
 		setIsSubmitting(true);
-		router.push(`/${eventSlug}/form`);
+
+		try {
+			// Check if ticket requires SMS verification
+			const verificationCheck = await smsVerificationAPI.getStatus();
+
+			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
+				const currentUrl = `/${eventSlug}/form`;
+				router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
+			} else {
+				// No verification needed or already verified - proceed to form
+				router.push(`/${eventSlug}/form`);
+			}
+		} catch (error) {
+			console.error("Failed to check SMS verification:", error);
+			// On error, proceed to form anyway
+			router.push(`/${eventSlug}/form`);
+		}
 	}
 
 	function closeConfirm() {

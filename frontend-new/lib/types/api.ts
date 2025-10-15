@@ -108,6 +108,7 @@ export interface Ticket {
 	createdAt?: string;
 	updatedAt?: string;
 	requireInviteCode?: boolean;
+	requireSmsVerification?: boolean;
 }
 
 export interface TicketFormField {

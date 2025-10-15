@@ -239,7 +239,9 @@ export const eventTicketsResponse = {
 						saleStart: { type: "string", format: "date-time" },
 						saleEnd: { type: "string", format: "date-time" },
 						isOnSale: { type: "boolean" },
-						isSoldOut: { type: "boolean" }
+						isSoldOut: { type: "boolean" },
+						requireSmsVerification: { type: "boolean" },
+						requireInviteCode: { type: "boolean" }
 					}
 				}
 			}
