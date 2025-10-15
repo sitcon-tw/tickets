@@ -73,6 +73,20 @@ export default async function smsVerificationRoutes(fastify, options) {
 						const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
 						return reply.code(statusCode).send(response);
 					}
+
+					// Check if phone number is already used by another user
+					const existingUser = await prisma.user.findFirst({
+						where: {
+							phoneNumber: sanitizedPhoneNumber,
+							phoneVerified: true,
+							id: { not: userId }
+						}
+					});
+
+					if (existingUser) {
+						const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
+						return reply.code(statusCode).send(response);
+					}
 				}
 
 				// If purpose is ticket_access, verify the ticket requires SMS verification
@@ -130,6 +144,28 @@ export default async function smsVerificationRoutes(fastify, options) {
 
 				if (existingCode) {
 					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼已發送");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check daily rate limit (3 SMS per user per day)
+				const todayStart = new Date();
+				todayStart.setHours(0, 0, 0, 0);
+
+				const todayEnd = new Date();
+				todayEnd.setHours(23, 59, 59, 999);
+
+				const todaySmsCount = await prisma.smsVerification.count({
+					where: {
+						userId,
+						createdAt: {
+							gte: todayStart,
+							lte: todayEnd
+						}
+					}
+				});
+
+				if (todaySmsCount >= 3) {
+					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3次），請明天再試");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -251,6 +287,22 @@ export default async function smsVerificationRoutes(fastify, options) {
 				if (new Date() > verification.expiresAt) {
 					const { response, statusCode } = validationErrorResponse("驗證碼已過期，請重新發送");
 					return reply.code(statusCode).send(response);
+				}
+
+				// If purpose is phone_verification, check if phone is already used by another user before verifying
+				if (purpose === "phone_verification") {
+					const existingUser = await prisma.user.findFirst({
+						where: {
+							phoneNumber: sanitizedPhoneNumber,
+							phoneVerified: true,
+							id: { not: userId }
+						}
+					});
+
+					if (existingUser) {
+						const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
+						return reply.code(statusCode).send(response);
+					}
 				}
 
 				// Mark verification as verified
