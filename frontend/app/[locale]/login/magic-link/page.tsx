@@ -11,6 +11,7 @@ export default function MagicLinkVerify() {
 	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const router = useRouter();
+
 	const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
 	const [errorMessage, setErrorMessage] = useState("");
 
@@ -48,27 +49,24 @@ export default function MagicLinkVerify() {
 	});
 
 	useEffect(() => {
-		// Check if we were redirected back with a status
 		const status = searchParams.get("status");
 
 		if (status === "success") {
 			setStatus("success");
-			showAlert(t.success, "success"); // BEGIN: Show success alert
-			// Redirect to home page after 1.5 seconds
+			showAlert(t.success, "success");
 			setTimeout(() => {
 				router.push(`/${locale}/`);
 			}, 1500);
 		} else if (status === "error") {
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
-			showAlert(t.errorInvalidLink, "error"); // BEGIN: Show error alert
+			showAlert(t.errorInvalidLink, "error");
 		} else {
-			// No status means user hasn't clicked the magic link yet
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
-			showAlert(t.errorInvalidLink, "error"); // BEGIN: Show error alert
+			showAlert(t.errorInvalidLink, "error");
 		}
-	}, [searchParams, router, locale, t.errorInvalidLink, showAlert]); // END:
+	}, [searchParams, router, locale, t.errorInvalidLink, showAlert, t.success]);
 
 	return (
 		<>

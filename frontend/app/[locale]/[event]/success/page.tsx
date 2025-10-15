@@ -81,6 +81,35 @@ export default function Success() {
 		}
 	});
 
+	function handleCopyRefCode() {
+		setCopiedCode(false);
+		if (referralCode === t.loading || referralCode === t.loadFailed) return;
+		navigator.clipboard
+			.writeText(referralCode)
+			.then(() => {
+				setCopiedCode(true);
+			})
+			.catch(() => {
+				showAlert(t.copyFailed + referralCode, "error");
+			});
+		setTimeout(() => setCopiedCode(false), 2000);
+	}
+
+	function handleCopyRefUrl() {
+		setCopiedUrl(false);
+		if (referralCode === t.loading || referralCode === t.loadFailed) return;
+		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referralCode}`;
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				setCopiedUrl(true);
+			})
+			.catch(() => {
+				showAlert(t.copyFailed + url, "error");
+			});
+		setTimeout(() => setCopiedUrl(false), 2000);
+	}
+
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
 			try {
@@ -117,35 +146,6 @@ export default function Success() {
 		};
 		loadSuccessInfo();
 	}, [eventSlug, t.loadFailed]);
-
-	function handleCopyRefCode() {
-		setCopiedCode(false);
-		if (referralCode === t.loading || referralCode === t.loadFailed) return;
-		navigator.clipboard
-			.writeText(referralCode)
-			.then(() => {
-				setCopiedCode(true);
-			})
-			.catch(() => {
-				showAlert(t.copyFailed + referralCode, "error");
-			});
-		setTimeout(() => setCopiedCode(false), 2000);
-	}
-
-	function handleCopyRefUrl() {
-		setCopiedUrl(false);
-		if (referralCode === t.loading || referralCode === t.loadFailed) return;
-		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referralCode}`;
-		navigator.clipboard
-			.writeText(url)
-			.then(() => {
-				setCopiedUrl(true);
-			})
-			.catch(() => {
-				showAlert(t.copyFailed + url, "error");
-			});
-		setTimeout(() => setCopiedUrl(false), 2000);
-	}
 
 	return (
 		<>

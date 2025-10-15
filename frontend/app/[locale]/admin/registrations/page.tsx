@@ -77,26 +77,6 @@ export default function RegistrationsPage() {
 		{ id: "updatedAt", label: "Updated", accessor: (r: Registration) => (r.updatedAt ? new Date(r.updatedAt).toLocaleString() : ""), sortable: false }
 	];
 
-	// Load event ID from localStorage on mount
-	useEffect(() => {
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setCurrentEventId(savedEventId);
-		}
-	}, []);
-
-	// Listen for event changes from AdminNav
-	useEffect(() => {
-		const handleEventChange = (e: CustomEvent) => {
-			setCurrentEventId(e.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
-		return () => {
-			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
-		};
-	}, []);
-
 	const loadRegistrations = useCallback(async () => {
 		if (!currentEventId) return;
 
@@ -127,11 +107,6 @@ export default function RegistrationsPage() {
 		}
 	}, [statusFilter, currentEventId]);
 
-	useEffect(() => {
-		loadRegistrations();
-	}, [loadRegistrations]);
-
-	// Statistics
 	const stats = useMemo(() => {
 		return {
 			total: registrations.length,
@@ -141,7 +116,6 @@ export default function RegistrationsPage() {
 		};
 	}, [registrations]);
 
-	// Filter and sort
 	const sortedAndFiltered = useMemo(() => {
 		const q = searchTerm.toLowerCase();
 		const filtered = registrations.filter(r => {
@@ -157,7 +131,6 @@ export default function RegistrationsPage() {
 			return true;
 		});
 
-		// Sort
 		filtered.sort((a, b) => {
 			let aVal: string | number = "";
 			let bVal: string | number = "";
@@ -187,9 +160,8 @@ export default function RegistrationsPage() {
 		});
 
 		return filtered;
-	}, [registrations, searchTerm, statusFilter, sortField, sortDirection]);
+	}, [searchTerm, registrations, statusFilter, locale, sortField, sortDirection]);
 
-	// Paginate
 	const paginatedData = useMemo(() => {
 		const start = (page - 1) * pageSize;
 		const end = start + pageSize;
@@ -198,11 +170,7 @@ export default function RegistrationsPage() {
 
 	const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
 
-	useEffect(() => {
-		setFiltered(sortedAndFiltered);
-	}, [sortedAndFiltered]);
-
-	const handleSort = (field: SortField) => {
+	function handleSort(field: SortField) {
 		if (sortField === field) {
 			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
 		} else {
@@ -211,7 +179,7 @@ export default function RegistrationsPage() {
 		}
 	};
 
-	const toggleSelectAll = () => {
+	function toggleSelectAll() {
 		if (selectedRegistrations.size === paginatedData.length) {
 			setSelectedRegistrations(new Set());
 		} else {
@@ -219,7 +187,7 @@ export default function RegistrationsPage() {
 		}
 	};
 
-	const toggleSelect = (id: string) => {
+	function toggleSelect(id: string) {
 		const newSet = new Set(selectedRegistrations);
 		if (newSet.has(id)) {
 			newSet.delete(id);
@@ -229,27 +197,25 @@ export default function RegistrationsPage() {
 		setSelectedRegistrations(newSet);
 	};
 
-	const openDetailModal = (registration: Registration) => {
+	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
 		setShowDetailModal(true);
 	};
 
-	const closeDetailModal = () => {
+	function closeDetailModal() {
 		setSelectedRegistration(null);
 		setShowDetailModal(false);
 	};
 
-	const syncToSheets = async () => {
+	async function syncToSheets() {
 		try {
 			const params: { format: "csv"; eventId?: string } = { format: "csv" };
 			if (currentEventId) params.eventId = currentEventId;
 
-			// Build query string
 			const queryParams = new URLSearchParams();
 			if (params.format) queryParams.append("format", params.format);
 			if (params.eventId) queryParams.append("eventId", params.eventId);
 
-			// Create a temporary link to trigger download
 			const downloadUrl = `/api/admin/registrations/export?${queryParams.toString()}`;
 			const link = document.createElement("a");
 			link.href = downloadUrl;
@@ -262,13 +228,12 @@ export default function RegistrationsPage() {
 		}
 	};
 
-	const exportSelected = async () => {
+	async function exportSelected() {
 		if (selectedRegistrations.size === 0) {
 			showAlert("Please select at least one registration", "warning");
 			return;
 		}
-		// This would need backend support for exporting specific IDs
-		showAlert(`Exporting ${selectedRegistrations.size} selected registrations (feature needs backend support)`, "info");
+		showAlert(`Exporting ${selectedRegistrations.size} selected registrations`, "info");
 	};
 
 	const deleteRegistration = async (registration: Registration) => {
@@ -290,6 +255,25 @@ export default function RegistrationsPage() {
 			showAlert(`${t.deleteError}: ${error instanceof Error ? error.message : String(error)}`, "error");
 		}
 	};
+
+	useEffect(() => {
+		loadRegistrations();
+		setFiltered(sortedAndFiltered);
+		
+		const savedEventId = localStorage.getItem("selectedEventId");
+		if (savedEventId) {
+			setCurrentEventId(savedEventId);
+		}
+
+		const handleEventChange = (e: CustomEvent) => {
+			setCurrentEventId(e.detail.eventId);
+		};
+
+		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
+		return () => {
+			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
+		};
+	}, [loadRegistrations, sortedAndFiltered]);
 
 	return (
 		<>

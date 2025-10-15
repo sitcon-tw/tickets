@@ -23,7 +23,6 @@ export default function TicketsPage() {
 	const [inviteCode, setInviteCode] = useState("");
 	const [refCode, setRefCode] = useState("");
 
-	// Multi-language form state
 	const [nameEn, setNameEn] = useState("");
 	const [nameZhHant, setNameZhHant] = useState("");
 	const [nameZhHans, setNameZhHans] = useState("");
@@ -66,26 +65,6 @@ export default function TicketsPage() {
 		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" }
 	});
 
-	// Load event ID from localStorage on mount
-	useEffect(() => {
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setCurrentEventId(savedEventId);
-		}
-	}, []);
-
-	// Listen for event changes from AdminNav
-	useEffect(() => {
-		const handleEventChange = (e: CustomEvent) => {
-			setCurrentEventId(e.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
-		return () => {
-			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
-		};
-	}, []);
-
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
 
@@ -100,13 +79,7 @@ export default function TicketsPage() {
 		}
 	}, [currentEventId]);
 
-	useEffect(() => {
-		if (currentEventId) {
-			loadTickets();
-		}
-	}, [currentEventId, loadTickets]);
-
-	const openModal = (ticket: Ticket | null = null) => {
+	function openModal(ticket: Ticket | null = null) {
 		setEditingTicket(ticket);
 
 		if (ticket) {
@@ -119,13 +92,6 @@ export default function TicketsPage() {
 			setDescEn(desc.en || "");
 			setDescZhHant(desc["zh-Hant"] || "");
 			setDescZhHans(desc["zh-Hans"] || "");
-		} else {
-			setNameEn("");
-			setNameZhHant("");
-			setNameZhHans("");
-			setDescEn("");
-			setDescZhHant("");
-			setDescZhHans("");
 		}
 
 		setShowModal(true);
@@ -142,7 +108,7 @@ export default function TicketsPage() {
 		setDescZhHans("");
 	}
 
-	const saveTicket = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		if (!currentEventId) return;
 
@@ -180,7 +146,6 @@ export default function TicketsPage() {
 			hidden: formData.get("hidden") === "on"
 		};
 
-		// Convert datetime-local to ISO format if provided
 		if (saleStartStr) {
 			data.saleStart = new Date(saleStartStr).toISOString();
 		}
@@ -201,7 +166,7 @@ export default function TicketsPage() {
 		}
 	};
 
-	const deleteTicket = async (ticketId: string) => {
+	async function deleteTicket(ticketId: string) {
 		if (!confirm("確定要刪除這個票種嗎？")) return;
 
 		try {
@@ -212,7 +177,7 @@ export default function TicketsPage() {
 		}
 	};
 
-	const computeStatus = (ticket: Ticket) => {
+	function computeStatus(ticket: Ticket) {
 		const now = new Date();
 		if (ticket.saleStart && new Date(ticket.saleStart) > now) {
 			return { label: t.notStarted, class: "pending" };
@@ -223,7 +188,7 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	};
 
-	const formatDateTime = (dt?: string) => {
+	function formatDateTime(dt?: string) {
 		if (!dt) return "";
 		try {
 			const d = new Date(dt);
@@ -233,14 +198,14 @@ export default function TicketsPage() {
 		}
 	};
 
-	const openLinkBuilder = (ticket: Ticket) => {
+	function openLinkBuilder(ticket: Ticket) {
 		setSelectedTicketForLink(ticket);
 		setInviteCode("");
 		setRefCode("");
 		setShowLinkModal(true);
 	};
 
-	const generateDirectLink = () => {
+	function generateDirectLink() {
 		if (!selectedTicketForLink || !currentEventId) return "";
 
 		const eventSlug = currentEventId.slice(-6);
@@ -261,7 +226,7 @@ export default function TicketsPage() {
 		return `${window.location.origin}${link}`;
 	};
 
-	const copyToClipboard = async () => {
+	async function copyToClipboard() {
 		const link = generateDirectLink();
 		try {
 			await navigator.clipboard.writeText(link);
@@ -271,6 +236,26 @@ export default function TicketsPage() {
 			showAlert("Failed to copy link", "error");
 		}
 	};
+	
+	useEffect(() => {
+		if (currentEventId) {
+			loadTickets();
+		}
+
+		const savedEventId = localStorage.getItem("selectedEventId");
+		if (savedEventId) {
+			setCurrentEventId(savedEventId);
+		}
+
+		const handleEventChange = (e: CustomEvent) => {
+			setCurrentEventId(e.detail.eventId);
+		};
+
+		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
+		return () => {
+			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
+		};
+	}, [currentEventId, loadTickets]);
 
 	return (
 		<>

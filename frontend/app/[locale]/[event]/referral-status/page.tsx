@@ -95,26 +95,6 @@ export default function ReferralStatus() {
 		}
 	});
 
-	useEffect(() => {
-		const loadReferralStats = async () => {
-			try {
-				const registrations = await registrationsAPI.getAll();
-				if (registrations.data.length === 0) {
-					router.push("/");
-					return;
-				}
-				const referralStats = await referralsAPI.getStats(registrations.data[0].id);
-				setStats(referralStats.data);
-			} catch (error) {
-				console.error("Failed to load referral stats:", error);
-				setError(true);
-			} finally {
-				setLoading(false);
-			}
-		};
-		loadReferralStats();
-	}, [router]);
-
 	const getStatusText = (status: string) => {
 		switch (status) {
 			case "confirmed":
@@ -140,6 +120,26 @@ export default function ReferralStatus() {
 				return "text-gray-500";
 		}
 	};
+
+	useEffect(() => {
+		const loadReferralStats = async () => {
+			try {
+				const registrations = await registrationsAPI.getAll();
+				if (registrations.data.length === 0) {
+					router.push("/");
+					return;
+				}
+				const referralStats = await referralsAPI.getStats(registrations.data[0].id);
+				setStats(referralStats.data);
+			} catch (error) {
+				console.error("Failed to load referral stats:", error);
+				setError(true);
+			} finally {
+				setLoading(false);
+			}
+		};
+		loadReferralStats();
+	}, [router]);
 
 	if (error) {
 		return (

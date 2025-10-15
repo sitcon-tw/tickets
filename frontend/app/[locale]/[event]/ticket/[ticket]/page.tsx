@@ -8,13 +8,16 @@ import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function SetTicket() {
 	const { showAlert } = useAlert();
 	const locale = useLocale();
 	const router = useRouter();
 	const params = useParams();
+
+	const [isLoading, setLoading] = useState(true);
+	const [hasError, setHasError] = useState(false);
 
 	const t = getTranslations(locale, {
 		ticketSaleEnded: {
@@ -36,13 +39,29 @@ export default function SetTicket() {
 			"zh-Hant": "正在重新導向...",
 			"zh-Hans": "正在重定向...",
 			en: "Redirecting..."
-		}
+		},
+		eventNotFound: {
+			"zh-Hant": "找不到活動",
+			"zh-Hans": "找不到活动",
+			en: "Event not found"
+		},
+    failedToLoadEvents: {
+      "zh-Hant": "載入活動失敗",
+      "zh-Hans": "载入活动失败",
+      en: "Failed to load events"
+    },
+    loadFailed: {
+      "zh-Hant": "載入失敗",
+      "zh-Hans": "载入失败",
+      en: "Load failed"
+    },
+    ticketNotFound: {
+      "zh-Hant": "找不到票券",
+      "zh-Hans": "找不到票券",
+      en: "Ticket not found"
+    }
 	});
 
-	const [isLoading, setLoading] = useState(true);
-	const [hasError, setHasError] = useState(false);
-
-	// Helper function to check if ticket sale has ended
 	const isTicketExpired = (ticket: Ticket): boolean => {
 		if (!ticket.saleEnd) return false;
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
@@ -50,35 +69,36 @@ export default function SetTicket() {
 		return saleEndDate < new Date();
 	};
 
-	// Helper function to check if ticket is sold out
 	const isTicketSoldOut = (ticket: Ticket): boolean => {
 		return ticket.available !== undefined && ticket.available <= 0;
 	};
 
-	async function fetchEvent() {
+	const fetchEvent = useCallback(async () => {
 		const eventSlug = params.event as string;
 		try {
 			const eventsData = await eventsAPI.getAll();
 
 			if (eventsData?.success && Array.isArray(eventsData.data)) {
-				// Find event by last 6 characters of ID
 				const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
 
 				if (foundEvent) {
 					return foundEvent.id;
 				} else {
-					showAlert("Event not found", "error");
+					showAlert(t.eventNotFound, "error");
+          setHasError(true);
 				}
 			} else {
-				showAlert("Failed to load events", "error");
+				showAlert(t.loadFailed, "error");
+        setHasError(true);
 			}
 		} catch (err) {
 			console.error("Failed to load event:", err);
-			showAlert("Failed to load event", "error");
+			showAlert(t.loadFailed, "error");
+      setHasError(true);
 		}
-	}
+	}, [params.event, showAlert, t.eventNotFound, t.loadFailed]);
 
-	async function fetchTicket() {
+	const fetchTicket = useCallback(async () => {
 		const ticketId = params.ticket as string;
 		try {
 			const ticketData = await ticketsAPI.getTicket(ticketId);
@@ -89,27 +109,28 @@ export default function SetTicket() {
 				if (foundTicket) {
 					return foundTicket;
 				} else {
-					showAlert("Ticket not found", "error");
+					showAlert(t.ticketNotFound, "error");
+          setHasError(true);
 				}
 			} else {
-				showAlert("Failed to load tickets", "error");
+				showAlert(t.loadFailed, "error");
+        setHasError(true);
 			}
 		} catch (err) {
 			console.error("Failed to load ticket:", err);
-			showAlert("Failed to load ticket", "error");
+			showAlert(t.loadFailed, "error");
+      setHasError(true);
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [params.ticket, showAlert, t.loadFailed, t.ticketNotFound]);
 
-	function handleTicketSelect(ticket: Ticket, eventId: string) {
-		// Check if ticket sale has ended
+	const handleTicketSelect = useCallback((ticket: Ticket, eventId: string) => {
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
 			return;
 		}
 
-		// Check if ticket is sold out
 		if (isTicketSoldOut(ticket)) {
 			showAlert(t.ticketSoldOut, "warning");
 			return;
@@ -129,7 +150,7 @@ export default function SetTicket() {
 		} catch (error) {
 			console.warn("Unable to access localStorage", error);
 		}
-	}
+	}, [t.ticketSaleEnded, t.ticketSoldOut, showAlert]);
 
 	useEffect(() => {
 		const event = fetchEvent();
@@ -144,7 +165,8 @@ export default function SetTicket() {
 				setLoading(false);
 			}
 		});
-	}, []);
+	}, [fetchEvent, fetchTicket, handleTicketSelect, params.event, router]);
+
 	return (
 		<>
 			{isLoading ? (

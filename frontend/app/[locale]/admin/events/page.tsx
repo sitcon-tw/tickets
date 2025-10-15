@@ -20,7 +20,6 @@ export default function EventsPage() {
 	const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 	const [activeTab, setActiveTab] = useState<"en" | "zh-Hant" | "zh-Hans">("en");
 
-	// Multi-language form state
 	const [nameEn, setNameEn] = useState("");
 	const [nameZhHant, setNameZhHant] = useState("");
 	const [nameZhHans, setNameZhHans] = useState("");
@@ -64,15 +63,10 @@ export default function EventsPage() {
 		}
 	}, []);
 
-	useEffect(() => {
-		loadEvents();
-	}, [loadEvents]);
-
 	const openModal = (event: Event | null = null) => {
 		setEditingEvent(event);
 
 		if (event) {
-			// Load all languages
 			const name = typeof event.name === "object" ? event.name : { en: event.name };
 			const desc = typeof event.description === "object" ? event.description : { en: event.description || "" };
 
@@ -83,7 +77,6 @@ export default function EventsPage() {
 			setDescZhHant(desc["zh-Hant"] || "");
 			setDescZhHans(desc["zh-Hans"] || "");
 		} else {
-			// Clear all fields for new event
 			setNameEn("");
 			setNameZhHant("");
 			setNameZhHans("");
@@ -106,7 +99,7 @@ export default function EventsPage() {
 		setDescZhHans("");
 	};
 
-	const saveEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const startDateStr = formData.get("startDate") as string;
@@ -141,7 +134,7 @@ export default function EventsPage() {
 		}
 	};
 
-	const deleteEvent = async (eventId: string) => {
+	async function deleteEvent(eventId: string) {
 		if (!confirm("確定要刪除這個活動嗎？")) return;
 
 		try {
@@ -152,7 +145,7 @@ export default function EventsPage() {
 		}
 	};
 
-	const computeStatus = (event: Event) => {
+	function computeStatus(event: Event) {
 		const now = new Date();
 		if (event.startDate && new Date(event.startDate) > now) {
 			return { label: t.upcoming, class: "pending" };
@@ -163,7 +156,7 @@ export default function EventsPage() {
 		return { label: t.active, class: "active" };
 	};
 
-	const formatDateTime = (dt?: string) => {
+	function formatDateTime(dt?: string) {
 		if (!dt) return "";
 		try {
 			const d = new Date(dt);
@@ -172,6 +165,10 @@ export default function EventsPage() {
 			return dt;
 		}
 	};
+
+	useEffect(() => {
+		loadEvents();
+	}, [loadEvents]);
 
 	return (
 		<>

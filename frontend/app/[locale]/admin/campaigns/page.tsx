@@ -23,8 +23,6 @@ export default function EmailCampaignsPage() {
 	const [recipientCount, setRecipientCount] = useState<number | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
-
-	// Form state
 	const [formData, setFormData] = useState({
 		name: "",
 		subject: "",
@@ -174,7 +172,6 @@ export default function EmailCampaignsPage() {
 		}
 
 		try {
-			// First create a draft campaign
 			const createResponse = await adminEmailCampaignsAPI.create({
 				...formData,
 				targetAudience: {

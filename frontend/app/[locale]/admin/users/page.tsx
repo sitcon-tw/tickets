@@ -76,35 +76,21 @@ export default function UsersPage() {
 		}
 	}, []);
 
-	useEffect(() => {
-		loadUsers();
-		loadEvents();
-	}, [loadUsers, loadEvents]);
-
-	useEffect(() => {
-		const q = searchTerm.toLowerCase();
-		const filtered = users.filter(user => {
-			if (!q) return true;
-			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
-		});
-		setFilteredUsers(filtered);
-	}, [users, searchTerm]);
-
-	const openEditModal = (user: User) => {
+	function openEditModal(user: User) {
 		setEditingUser(user);
 		setSelectedRole(user.role);
 		setSelectedEventIds(user.permissions || []);
 		setShowEditModal(true);
 	};
 
-	const closeEditModal = () => {
+	function closeEditModal() {
 		setEditingUser(null);
 		setSelectedEventIds([]);
 		setSelectedRole("viewer");
 		setShowEditModal(false);
 	};
 
-	const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function handleUpdateUser(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		if (!editingUser) return;
 
@@ -126,7 +112,7 @@ export default function UsersPage() {
 		}
 	};
 
-	const toggleEventSelection = (eventId: string) => {
+	function toggleEventSelection(eventId: string) {
 		setSelectedEventIds(prev => {
 			if (prev.includes(eventId)) {
 				return prev.filter(id => id !== eventId);
@@ -135,7 +121,7 @@ export default function UsersPage() {
 		});
 	};
 
-	const getRoleLabel = (role: string) => {
+	function getRoleLabel(role: string) {
 		switch (role) {
 			case "admin":
 				return t.admin;
@@ -147,6 +133,18 @@ export default function UsersPage() {
 				return role;
 		}
 	};
+
+	useEffect(() => {
+		loadUsers();
+		loadEvents();
+
+		const q = searchTerm.toLowerCase();
+		const filtered = users.filter(user => {
+			if (!q) return true;
+			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
+		});
+		setFilteredUsers(filtered);
+	}, [users, searchTerm, loadUsers, loadEvents]);
 
 	return (
 		<>

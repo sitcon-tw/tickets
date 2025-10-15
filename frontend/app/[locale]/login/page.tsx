@@ -7,52 +7,33 @@ import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
-import styled from "styled-components";
-
-const StyledMain = styled.main`
-	section {
-		position: relative;
-		height: 100vh;
-	}
-`;
-
-const Container = styled.div<{ isActive: boolean }>`
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	max-width: 100%;
-	padding: 1rem;
-	opacity: ${props => (props.isActive ? 1 : 0)};
-	pointer-events: ${props => (props.isActive ? "all" : "none")};
-	transition: opacity 0.3s ease-in-out;
-`;
-
-const Title = styled.h1`
-	margin-block: 1rem;
-	text-align: center;
-`;
-
-const Label = styled.label`
-	display: block;
-	margin-bottom: 0.5rem;
-	font-weight: bold;
-`;
-
-const EmailInput = styled.input`
-	border: 2px solid var(--color-gray-900);
-	width: 20rem;
-	padding: 0.5rem;
-	max-width: 100%;
-	border-radius: 8px;
-`;
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
-		<StyledButton disabled={disabled}>
-			<button onClick={onClick} disabled={disabled}>
-				<div className="svg-wrapper-1">
-					<div className="svg-wrapper">
+		<div style={{
+			opacity: disabled ? 0.7 : 1
+		}}>
+			<button 
+				onClick={onClick} 
+				disabled={disabled}
+				style={{
+					fontFamily: 'inherit',
+					fontSize: '18px',
+					background: 'var(--color-gray-800)',
+					color: 'white',
+					padding: '0.6em 1em',
+					display: 'flex',
+					alignItems: 'center',
+					border: 'var(--color-gray-600) 2px solid',
+					borderRadius: '8px',
+					overflow: 'hidden',
+					transition: 'all 0.2s',
+					cursor: disabled ? 'not-allowed' : 'pointer',
+					margin: '1rem auto'
+				}}
+			>
+				<div style={{ display: 'flex', alignItems: 'center' }}>
+					<div>
 						{isLoading ? (
 							<Spinner size="sm" />
 						) : (
@@ -63,79 +44,17 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 						)}
 					</div>
 				</div>
-				<span>{children}</span>
+				<span style={{
+					display: 'block',
+					marginLeft: '0.3em',
+					transition: 'all 0.3s ease-in-out'
+				}}>
+					{children}
+				</span>
 			</button>
-		</StyledButton>
+		</div>
 	);
 };
-
-const StyledButton = styled.div<{ disabled: boolean }>`
-	button {
-		font-family: inherit;
-		font-size: 18px;
-		background: var(--color-gray-800);
-		color: white;
-		padding: 0.6em 1em;
-		display: flex;
-		align-items: center;
-		border: var(--color-gray-600) 2px solid;
-		border-radius: 8px;
-		overflow: hidden;
-		transition: all 0.2s;
-		cursor: ${props => (props.disabled ? "not-allowed" : "pointer")};
-		margin: 1rem auto;
-		opacity: ${props => (props.disabled ? 0.7 : 1)};
-
-		span {
-			display: block;
-			margin-left: 0.3em;
-			transition: all 0.3s ease-in-out;
-		}
-
-		svg {
-			display: block;
-			transform-origin: center center;
-			transition: transform 0.3s ease-in-out;
-		}
-
-		&:hover:not(:disabled) {
-			.svg-wrapper {
-				animation: fly-1 0.8s ease-in-out infinite alternate;
-			}
-
-			svg {
-				transform: translateX(3.5em) rotate(45deg) scale(1.1);
-			}
-
-			span {
-				transform: translateX(9em);
-			}
-		}
-
-		&:active:not(:disabled) {
-			transform: scale(0.95);
-		}
-	}
-
-	@keyframes fly-1 {
-		from {
-			transform: translateY(0.1em);
-		}
-		to {
-			transform: translateY(-0.1em);
-		}
-	}
-`;
-
-const MessageContainer = styled.div`
-	h2 {
-		margin-bottom: 1rem;
-	}
-
-	p {
-		line-height: 1.6;
-	}
-`;
 
 export default function Login() {
 	const locale = useLocale();
@@ -192,25 +111,70 @@ export default function Login() {
 
 	return (
 		<>
-			<StyledMain>
-				<section>
-					<Container isActive={viewState === "login"}>
-						<Title>{t.login}</Title>
-						<Label htmlFor="email">Email</Label>
-						<EmailInput type="email" name="email" id="email" />
+			<main>
+				<section style={{ position: 'relative', height: '100vh' }}>
+					<div style={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						maxWidth: '100%',
+						padding: '1rem',
+						opacity: viewState === "login" ? 1 : 0,
+						pointerEvents: viewState === "login" ? "all" : "none",
+						transition: 'opacity 0.3s ease-in-out'
+					}}>
+						<h1 style={{
+							marginBlock: '1rem',
+							textAlign: 'center'
+						}}>
+							{t.login}
+						</h1>
+						<label 
+							htmlFor="email"
+							style={{
+								display: 'block',
+								marginBottom: '0.5rem',
+								fontWeight: 'bold'
+							}}
+						>
+							Email
+						</label>
+						<input 
+							type="email" 
+							name="email" 
+							id="email"
+							style={{
+								border: '2px solid var(--color-gray-900)',
+								width: '20rem',
+								padding: '0.5rem',
+								maxWidth: '100%',
+								borderRadius: '8px'
+							}}
+						/>
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
-					</Container>
+					</div>
 
-					<Container isActive={viewState === "sent"}>
-						<MessageContainer>
-							<h2>{t.sent}</h2>
-							<p>{t.message}</p>
-						</MessageContainer>
-					</Container>
+					<div style={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						maxWidth: '100%',
+						padding: '1rem',
+						opacity: viewState === "sent" ? 1 : 0,
+						pointerEvents: viewState === "sent" ? "all" : "none",
+						transition: 'opacity 0.3s ease-in-out'
+					}}>
+						<div>
+							<h2 style={{ marginBottom: '1rem' }}>{t.sent}</h2>
+							<p style={{ lineHeight: 1.6 }}>{t.message}</p>
+						</div>
+					</div>
 				</section>
-			</StyledMain>
+			</main>
 		</>
 	);
 }

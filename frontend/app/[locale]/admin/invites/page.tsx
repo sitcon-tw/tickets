@@ -41,6 +41,11 @@ export default function InvitesPage() {
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 	const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+	const [showEmailModal, setShowEmailModal] = useState(false);
+	const [emailAddress, setEmailAddress] = useState("");
+	const [isSendingEmail, setIsSendingEmail] = useState(false);
+	const [bulkImportCodes, setBulkImportCodes] = useState("");
+	const [isImporting, setIsImporting] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -98,26 +103,6 @@ export default function InvitesPage() {
 		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" }
 	});
 
-	// Load event ID from localStorage on mount
-	useEffect(() => {
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setCurrentEventId(savedEventId);
-		}
-	}, []);
-
-	// Listen for event changes from AdminNav
-	useEffect(() => {
-		const handleEventChange = (e: CustomEvent) => {
-			setCurrentEventId(e.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
-		return () => {
-			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
-		};
-	}, []);
-
 	const loadInvitationCodes = useCallback(async () => {
 		if (!currentEventId) return;
 
@@ -126,10 +111,8 @@ export default function InvitesPage() {
 			const response = await adminInvitationCodesAPI.getAll();
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
-				// Filter codes by tickets that belong to the current event
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
 					const ticket = tickets.find(t => t.id === code.ticketId);
-					// Only include codes for tickets that belong to the current event
 					if (ticket && ticket.eventId === currentEventId) {
 						const typeName = code.name || "Default";
 						if (!codesByType[typeName]) {
@@ -173,29 +156,7 @@ export default function InvitesPage() {
 		}
 	}, [currentEventId]);
 
-	useEffect(() => {
-		if (currentEventId) {
-			loadTickets();
-		}
-	}, [currentEventId, loadTickets]);
-
-	useEffect(() => {
-		if (currentEventId && tickets.length > 0) {
-			loadInvitationCodes();
-		}
-	}, [currentEventId, tickets, loadInvitationCodes]);
-
-	useEffect(() => {
-		const q = searchTerm.toLowerCase();
-		const filtered = inviteTypes.filter(t => {
-			if (!q) return true;
-			if (t.name.toLowerCase().includes(q)) return true;
-			return t.codes.some(c => c.code.toLowerCase().includes(q));
-		});
-		setFilteredTypes(filtered);
-	}, [inviteTypes, searchTerm]);
-
-	const createInvitationCodes = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const ticketId = formData.get("ticketId") as string;
@@ -241,7 +202,7 @@ export default function InvitesPage() {
 		}
 	};
 
-	const deleteInvitationCode = async (codeId: string) => {
+	async function deleteInvitationCode(codeId: string) {
 		if (!confirm(t.confirmDelete)) return;
 
 		try {
@@ -254,7 +215,7 @@ export default function InvitesPage() {
 		}
 	};
 
-	const bulkDeleteInvitationCodes = async () => {
+	async function bulkDeleteInvitationCodes() {
 		if (selectedCodes.size === 0) {
 			showAlert("請選擇要刪除的邀請碼", "warning");
 			return;
@@ -266,7 +227,6 @@ export default function InvitesPage() {
 			let successCount = 0;
 			let errorCount = 0;
 
-			// Delete codes one by one
 			for (const codeId of selectedCodes) {
 				try {
 					await adminInvitationCodesAPI.delete(codeId);
@@ -277,14 +237,11 @@ export default function InvitesPage() {
 				}
 			}
 
-			// Reload data
 			await loadTickets();
 			await loadInvitationCodes();
 
-			// Clear selection
 			setSelectedCodes(new Set());
 
-			// Show result
 			if (errorCount > 0) {
 				showAlert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`, "error");
 			} else {
@@ -295,7 +252,7 @@ export default function InvitesPage() {
 		}
 	};
 
-	const downloadSelectedCodesAsTxt = () => {
+	function downloadSelectedCodesAsTxt() {
 		if (selectedCodes.size === 0) {
 			showAlert(t.pleaseSelectCodes, "warning");
 			return;
@@ -319,13 +276,8 @@ export default function InvitesPage() {
 		showAlert(t.downloadSuccess, "success");
 	};
 
-	const [showEmailModal, setShowEmailModal] = useState(false);
-	const [emailAddress, setEmailAddress] = useState("");
-	const [isSendingEmail, setIsSendingEmail] = useState(false);
-	const [bulkImportCodes, setBulkImportCodes] = useState("");
-	const [isImporting, setIsImporting] = useState(false);
 
-	const handleBulkImport = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function handleBulkImport(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const ticketId = formData.get("ticketId") as string;
@@ -335,7 +287,6 @@ export default function InvitesPage() {
 			return;
 		}
 
-		// Parse codes from textarea
 		const codesText = bulkImportCodes.trim();
 		if (!codesText) {
 			showAlert(t.noCodes, "warning");
@@ -362,7 +313,6 @@ export default function InvitesPage() {
 			let successCount = 0;
 			let errorCount = 0;
 
-			// Import codes one by one
 			for (const code of codes) {
 				try {
 					const data: {
@@ -394,15 +344,12 @@ export default function InvitesPage() {
 				}
 			}
 
-			// Reload data
 			await loadTickets();
 			await loadInvitationCodes();
 
-			// Close modal and reset
 			setShowBulkImportModal(false);
 			setBulkImportCodes("");
 
-			// Show result
 			if (errorCount > 0) {
 				showAlert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`, "error");
 			} else {
@@ -415,7 +362,7 @@ export default function InvitesPage() {
 		}
 	};
 
-	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+	function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
@@ -427,7 +374,7 @@ export default function InvitesPage() {
 		reader.readAsText(file);
 	};
 
-	const sendCodesViaEmail = async () => {
+	async function sendCodesViaEmail() {
 		if (selectedCodes.size === 0) {
 			showAlert(t.pleaseSelectCodes, "warning");
 			return;
@@ -472,7 +419,7 @@ export default function InvitesPage() {
 		}
 	};
 
-	const toggleCodeSelection = (codeId: string) => {
+	function toggleCodeSelection(codeId: string) {
 		const newSelection = new Set(selectedCodes);
 		if (newSelection.has(codeId)) {
 			newSelection.delete(codeId);
@@ -482,26 +429,57 @@ export default function InvitesPage() {
 		setSelectedCodes(newSelection);
 	};
 
-	const toggleSelectAll = () => {
+	function toggleSelectAll() {
 		if (!currentType) return;
 
 		const allCodeIds = currentType.codes.map(c => c.id);
 		if (selectedCodes.size === allCodeIds.length) {
-			// Deselect all
 			setSelectedCodes(new Set());
 		} else {
-			// Select all
 			setSelectedCodes(new Set(allCodeIds));
 		}
 	};
 
-	const openCodesModal = (typeId: string) => {
+	function openCodesModal(typeId: string) {
 		setViewingCodesOf(typeId);
-		setSelectedCodes(new Set()); // Clear selection when opening modal
+		setSelectedCodes(new Set());
 		setShowCodesModal(true);
 	};
 
 	const currentType = inviteTypes.find(t => t.id === viewingCodesOf);
+
+	useEffect(() => {
+		const savedEventId = localStorage.getItem("selectedEventId");
+		if (savedEventId) {
+			setCurrentEventId(savedEventId);
+		}
+		
+		if (currentEventId) {
+			loadTickets();
+		}
+
+		if (currentEventId && tickets.length > 0) {
+			loadInvitationCodes();
+		}
+
+		const q = searchTerm.toLowerCase();
+		const filtered = inviteTypes.filter(t => {
+			if (!q) return true;
+			if (t.name.toLowerCase().includes(q)) return true;
+			return t.codes.some(c => c.code.toLowerCase().includes(q));
+		});
+		setFilteredTypes(filtered);
+
+		const handleEventChange = (e: CustomEvent) => {
+			setCurrentEventId(e.detail.eventId);
+		};
+
+		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
+		return () => {
+			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
+		};
+		
+	}, [currentEventId, inviteTypes, loadInvitationCodes, loadTickets, searchTerm, tickets.length]);
 
 	return (
 		<>

@@ -5,6 +5,8 @@ import Info from "@/components/home/Info";
 import Tickets from "@/components/home/Tickets";
 import Welcome from "@/components/home/Welcome";
 import PageSpinner from "@/components/PageSpinner";
+import { useLocale } from "next-intl";
+import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { EventListItem } from "@/lib/types/api";
 import { useParams, useRouter } from "next/navigation";
@@ -13,11 +15,30 @@ import { useEffect, useState } from "react";
 export default function Main() {
 	const params = useParams();
 	const router = useRouter();
+	const locale = useLocale();
 	const eventSlug = params.event as string;
 
 	const [event, setEvent] = useState<EventListItem | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	const t = getTranslations(locale, {
+		loading: {
+			"zh-Hant": "載入中...",
+			"zh-Hans": "载入中...",
+			en: "Loading..."
+		},
+		eventNotFound: {
+			"zh-Hant": "找不到活動",
+			"zh-Hans": "找不到活动",
+			en: "Event not found"
+		},
+		failedToLoadEvents: {
+			"zh-Hant": "載入活動失敗",
+			"zh-Hans": "载入活动失败",
+			en: "Failed to load events"
+		}
+	});
 
 	useEffect(() => {
 		async function fetchEvent() {
@@ -25,20 +46,19 @@ export default function Main() {
 				const eventsData = await eventsAPI.getAll();
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					// Find event by last 6 characters of ID
 					const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
 
 					if (foundEvent) {
 						setEvent(foundEvent);
 					} else {
-						setError("Event not found");
+						setError(t.eventNotFound);
 					}
 				} else {
-					setError("Failed to load events");
+					setError(t.failedToLoadEvents);
 				}
 			} catch (err) {
 				console.error("Failed to load event:", err);
-				setError("Failed to load event");
+				setError(t.failedToLoadEvents);
 			} finally {
 				setLoading(false);
 			}
@@ -58,7 +78,7 @@ export default function Main() {
 			localStorage.setItem("invitationCode", invitationCode);
 			router.refresh();
 		}
-	}, [eventSlug, router]);
+	}, [eventSlug, router, t.eventNotFound, t.failedToLoadEvents]);
 
 	if (loading) {
 		return (
@@ -93,7 +113,7 @@ export default function Main() {
 							gap: "1rem"
 						}}
 					>
-						<h1>Event Not Found</h1>
+						<h1>{t.eventNotFound}</h1>
 						<p>{error}</p>
 					</div>
 				</main>

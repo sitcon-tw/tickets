@@ -142,6 +142,43 @@ export default function FormPage() {
 		}
 	}, []);
 
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+
+		if (!ticketId || !eventId || isSubmitting) {
+			if (!ticketId || !eventId) {
+				showAlert(t.incompleteFormAlert, "warning");
+				router.push("/");
+			}
+			return;
+		}
+
+		setIsSubmitting(true);
+		try {
+			const registrationData = {
+				eventId,
+				ticketId,
+				formData: {
+					...formData
+				},
+				invitationCode: invitationCode.trim() || undefined,
+				referralCode: referralCode.trim() || undefined
+			};
+
+			const result = await registrationsAPI.create(registrationData);
+
+			if (result.success) {
+				localStorage.removeItem("formData");
+				router.push(window.location.href.replace("/form", "/success"));
+			} else {
+				throw new Error(result.message || "Registration failed");
+			}
+		} catch (error) {
+			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
+			setIsSubmitting(false);
+		}
+	}
+
 	useEffect(() => {
 		async function initForm() {
 			try {
@@ -227,43 +264,6 @@ export default function FormPage() {
 
 		initForm();
 	}, [router, showAlert, t.noTicketAlert]);
-
-	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault();
-
-		if (!ticketId || !eventId || isSubmitting) {
-			if (!ticketId || !eventId) {
-				showAlert(t.incompleteFormAlert, "warning");
-				router.push("/");
-			}
-			return;
-		}
-
-		setIsSubmitting(true);
-		try {
-			const registrationData = {
-				eventId,
-				ticketId,
-				formData: {
-					...formData
-				},
-				invitationCode: invitationCode.trim() || undefined,
-				referralCode: referralCode.trim() || undefined
-			};
-
-			const result = await registrationsAPI.create(registrationData);
-
-			if (result.success) {
-				localStorage.removeItem("formData");
-				router.push(window.location.href.replace("/form", "/success"));
-			} else {
-				throw new Error(result.message || "Registration failed");
-			}
-		} catch (error) {
-			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
-			setIsSubmitting(false);
-		}
-	}
 
 	return (
 		<>

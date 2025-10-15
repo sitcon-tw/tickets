@@ -54,7 +54,6 @@ export default function FormsPage() {
 		copySuccess: { "zh-Hant": "已成功複製表單！", "zh-Hans": "已成功复制表单！", en: "Form copied successfully!" }
 	});
 
-	// Load ticket data from URL param
 	const loadTicket = useCallback(async () => {
 		const ticketId = searchParams.get("ticket");
 
@@ -73,14 +72,12 @@ export default function FormsPage() {
 		}
 	}, [searchParams]);
 
-	// Load all tickets for the copy dropdown
 	const loadAllTickets = useCallback(async () => {
 		if (!currentTicket?.eventId) return;
 
 		try {
 			const response = await adminTicketsAPI.getAll({ eventId: currentTicket.eventId });
 			if (response.success) {
-				// Filter out the current ticket from the list
 				setAllTickets((response.data || []).filter(t => t.id !== currentTicket.id));
 			}
 		} catch (error) {
@@ -88,7 +85,6 @@ export default function FormsPage() {
 		}
 	}, [currentTicket?.eventId, currentTicket?.id]);
 
-	// Load form fields from backend
 	const loadFormFields = useCallback(async () => {
 		if (!currentTicket?.id) return;
 
@@ -99,14 +95,12 @@ export default function FormsPage() {
 				const loadedFields = (response.data || []).map((field: TicketFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 
-					// Handle options from field.options (from API response) or field.values (from database)
 					const fieldWithOptions = field as TicketFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
 						options = rawOptions.map((opt: unknown) => {
 							if (typeof opt === "object" && opt !== null) {
-								// Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
 								if ("label" in opt) {
 									const optWithLabel = opt as { label: unknown; value?: string };
 									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
@@ -118,7 +112,6 @@ export default function FormsPage() {
 										};
 									}
 								}
-								// Already in the right format: { en: "...", zh-Hant: "...", zh-Hans: "..." }
 								const optRecord = opt as Record<string, string>;
 								return {
 									en: optRecord["en"] || "",
@@ -126,11 +119,9 @@ export default function FormsPage() {
 									"zh-Hans": optRecord["zh-Hans"] || ""
 								};
 							}
-							// Convert string to localized object
 							return { en: String(opt), "zh-Hant": "", "zh-Hans": "" };
 						});
 					} else if (rawOptions && typeof rawOptions === "string") {
-						// Legacy format: JSON string
 						try {
 							const parsed = JSON.parse(rawOptions);
 							if (Array.isArray(parsed)) {
@@ -141,10 +132,8 @@ export default function FormsPage() {
 						}
 					}
 
-					// Handle localized field name
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 
-					// Extract multi-language labels from name field
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
 					return {
@@ -161,7 +150,6 @@ export default function FormsPage() {
 				});
 
 				setQuestions(loadedFields);
-				// Track original field IDs to detect deletions
 				setOriginalFieldIds(loadedFields.map((f: Question) => f.id).filter((id: string) => !id.startsWith("temp-")));
 			} else {
 				throw new Error(response.message || "Failed to load form fields");
@@ -171,8 +159,7 @@ export default function FormsPage() {
 		}
 	}, [currentTicket?.id]);
 
-	// Copy form from another ticket
-	const copyFormFromTicket = async (sourceTicketId: string) => {
+	async function copyFormFromTicket(sourceTicketId: string) {
 		if (!sourceTicketId) return;
 
 		try {
@@ -182,14 +169,12 @@ export default function FormsPage() {
 				const copiedQuestions = response.data.map((field: TicketFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 
-					// Handle options from field.options (from API response) or field.values (from database)
 					const fieldWithOptions = field as TicketFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
 						options = rawOptions.map((opt: unknown) => {
 							if (typeof opt === "object" && opt !== null) {
-								// Check if it has the malformed structure: { label: { en: "..." }, value: "..." }
 								if ("label" in opt) {
 									const optWithLabel = opt as { label: unknown; value?: string };
 									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
@@ -201,7 +186,6 @@ export default function FormsPage() {
 										};
 									}
 								}
-								// Already in the right format
 								const optRecord = opt as Record<string, string>;
 								return {
 									en: optRecord["en"] || "",
@@ -212,7 +196,6 @@ export default function FormsPage() {
 							return { en: String(opt), "zh-Hant": "", "zh-Hans": "" };
 						});
 					} else if (rawOptions && typeof rawOptions === "string") {
-						// Legacy format: JSON string
 						try {
 							const parsed = JSON.parse(rawOptions);
 							if (Array.isArray(parsed)) {
@@ -223,7 +206,6 @@ export default function FormsPage() {
 						}
 					}
 
-					// Handle localized field name
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
@@ -250,8 +232,7 @@ export default function FormsPage() {
 		}
 	};
 
-	// Save form to backend
-	const saveForm = async () => {
+	async function saveForm() {
 		if (!currentTicket?.id) {
 			showAlert("無法保存：未找到票種", "error");
 			return;
@@ -269,22 +250,18 @@ export default function FormsPage() {
 				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 				required: q.required,
 				helpText: q.help,
-				// Options are already in the right format
 				values: q.options,
 				order: index
 			}));
 
-			// Find fields that were deleted (in originalFieldIds but not in current questions)
 			const currentFieldIds = questions.map(q => q.id).filter(id => !id.startsWith("temp-"));
 
 			const deletedFieldIds = originalFieldIds.filter(originalId => !currentFieldIds.includes(originalId));
 
-			// Delete removed fields
 			for (const fieldId of deletedFieldIds) {
 				await adminTicketFormFieldsAPI.delete(fieldId);
 			}
 
-			// Create or update existing fields
 			for (const fieldData of formFieldsData) {
 				const data = {
 					ticketId: currentTicket.id,
@@ -305,7 +282,6 @@ export default function FormsPage() {
 				}
 			}
 
-			// Reload the form to get fresh data and update originalFieldIds
 			await loadFormFields();
 
 			showAlert("表單已保存！", "success");
@@ -315,19 +291,7 @@ export default function FormsPage() {
 		}
 	};
 
-	// Initialize page
-	useEffect(() => {
-		loadTicket();
-	}, [loadTicket]);
-
-	useEffect(() => {
-		if (currentTicket?.id) {
-			loadFormFields();
-			loadAllTickets();
-		}
-	}, [currentTicket?.id, loadFormFields, loadAllTickets]);
-
-	const addQuestion = () => {
+	function addQuestion() {
 		setQuestions([
 			...questions,
 			{
@@ -342,32 +306,31 @@ export default function FormsPage() {
 		]);
 	};
 
-	const updateQuestion = (id: string, updates: Partial<Question>) => {
+	function updateQuestion(id: string, updates: Partial<Question>) {
 		setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q)));
 	};
 
-	const deleteQuestion = (id: string) => {
+	function deleteQuestion(id: string) {
 		setQuestions(questions.filter(q => q.id !== id));
 	};
 
-	// Drag and drop handlers
-	const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+	function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
 		e.dataTransfer.setData("dragIndex", index.toString());
 		e.currentTarget.style.opacity = "0.4";
 	};
 
-	const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+	function handleDragEnd(e: React.DragEvent<HTMLDivElement>) {
 		e.currentTarget.style.opacity = "1";
 	};
 
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+	function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = "move";
 	};
 
-	const handleDrop = async (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
+	async function handleDrop(e: React.DragEvent<HTMLDivElement>, dropIndex: number) {
 		e.preventDefault();
 		const dragIndex = parseInt(e.dataTransfer.getData("dragIndex"));
 
@@ -376,14 +339,11 @@ export default function FormsPage() {
 		const newQuestions = [...questions];
 		const draggedItem = newQuestions[dragIndex];
 
-		// Remove the dragged item
 		newQuestions.splice(dragIndex, 1);
-		// Insert it at the new position
 		newQuestions.splice(dropIndex, 0, draggedItem);
 
 		setQuestions(newQuestions);
 
-		// Call the reorder API immediately to prevent 409 conflicts
 		if (currentTicket?.id) {
 			try {
 				const fieldOrders = newQuestions.map((q, index) => ({
@@ -394,13 +354,21 @@ export default function FormsPage() {
 				await adminTicketFormFieldsAPI.reorder(currentTicket.id, { fieldOrders });
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
-				// Optionally show an error message to the user
 				showAlert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)), "error");
-				// Reload the form to get the correct order from the backend
 				await loadFormFields();
 			}
 		}
 	};
+	
+	useEffect(() => {
+		loadTicket();
+
+		if (currentTicket?.id) {
+			loadFormFields();
+			loadAllTickets();
+		}
+
+	}, [currentTicket?.id, loadFormFields, loadAllTickets, loadTicket]);
 
 	if (!searchParams.get("ticket")) {
 		return (
