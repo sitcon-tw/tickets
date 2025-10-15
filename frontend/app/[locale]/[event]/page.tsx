@@ -1,11 +1,9 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import Header from "@/components/home/Header";
 import Info from "@/components/home/Info";
 import Tickets from "@/components/home/Tickets";
 import Welcome from "@/components/home/Welcome";
-import Nav from "@/components/Nav";
 import PageSpinner from "@/components/PageSpinner";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { EventListItem } from "@/lib/types/api";
@@ -65,7 +63,6 @@ export default function Main() {
 	if (loading) {
 		return (
 			<>
-				<Nav />
 				<main>
 					<div
 						style={{
@@ -85,7 +82,6 @@ export default function Main() {
 	if (error || !event) {
 		return (
 			<>
-				<Nav />
 				<main>
 					<div
 						style={{
@@ -107,13 +103,11 @@ export default function Main() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<Header eventId={event.id} />
 				<Welcome eventId={event.id} eventSlug={eventSlug} />
 				<Tickets eventId={event.id} eventSlug={eventSlug} />
 				<Info eventId={event.id} />
-				<Footer />
 			</main>
 		</>
 	);

@@ -1,6 +1,5 @@
 "use client";
 
-import Nav from "@/components/Nav";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { userAPI } from "@/lib/api/endpoints";
@@ -107,7 +106,6 @@ export default function PromoteToAdmin() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<section>
 					<div id="promote-form" style={viewState === "form" ? activeContainerStyle : containerStyle}>

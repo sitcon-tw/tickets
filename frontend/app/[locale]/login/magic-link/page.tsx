@@ -1,6 +1,4 @@
 "use client";
-
-import Nav from "@/components/Nav";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
@@ -74,7 +72,6 @@ export default function MagicLinkVerify() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<section>
 					<div

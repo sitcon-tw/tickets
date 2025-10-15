@@ -1,8 +1,6 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import Lanyard from "@/components/Lanyard";
-import Nav from "@/components/Nav";
 import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
@@ -20,6 +18,15 @@ export default function Success() {
 	const router = useRouter();
 	const params = useParams();
 	const eventSlug = params.event as string;
+
+	const [referralCode, setReferralCode] = useState<string>("Loading...");
+	const [copiedCode, setCopiedCode] = useState(false);
+	const [copiedUrl, setCopiedUrl] = useState(false);
+	const [viewRefLoading, setViewRefLoading] = useState(false);
+	const [viewRegLoading, setViewRegLoading] = useState(false);
+	const [registrationId, setRegistrationId] = useState<string | null>(null);
+	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
+	const [showQRCode, setShowQRCode] = useState(false);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -74,20 +81,10 @@ export default function Success() {
 		}
 	});
 
-	const [referralCode, setReferralCode] = useState<string>(t.loading);
-	const [copiedCode, setCopiedCode] = useState(false);
-	const [copiedUrl, setCopiedUrl] = useState(false);
-	const [viewRefLoading, setViewRefLoading] = useState(false);
-	const [viewRegLoading, setViewRegLoading] = useState(false);
-	const [registrationId, setRegistrationId] = useState<string | null>(null);
-	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
-	const [showQRCode, setShowQRCode] = useState(false);
-
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
 			try {
 				try {
-					// Get all events and find by last 6 characters of ID
 					const eventsData = await eventsAPI.getAll();
 					const foundEvent = eventsData.data.find((e) => e.id.slice(-6) === eventSlug);
 
@@ -98,7 +95,6 @@ export default function Success() {
 
 					const currentEventId = foundEvent.id;
 
-					// Get all registrations and filter by current event
 					const registrations = await registrationsAPI.getAll();
 					const eventRegistration = registrations.data.find((reg) => reg.event?.id === currentEventId);
 					console.log(eventRegistration)
@@ -153,7 +149,6 @@ export default function Success() {
 
 	return (
 		<>
-			<Nav />
 			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] min-h-screen max-w-full overflow-hidden">
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
@@ -227,7 +222,6 @@ export default function Success() {
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
 				</div>
 			</div>
-			<Footer />
 			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}
 		</>
 	);

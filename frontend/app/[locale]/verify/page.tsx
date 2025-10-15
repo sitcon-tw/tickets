@@ -1,7 +1,5 @@
 "use client";
 
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { ApiError } from "@/lib/types/api";
@@ -367,7 +365,6 @@ export default function VerifyPage() {
 
 	return (
 		<>
-			<Nav />
 			<div className="min-h-screen flex items-center justify-center" style={{ padding: "1rem" }}>
 				<div className="w-full max-w-md">
 					<div style={{ padding: "2rem" }}>
@@ -532,8 +529,6 @@ export default function VerifyPage() {
 					</div>
 				</div>
 			</div>
-
-			<Footer />
 
 			<style>{`
 				@keyframes shake {

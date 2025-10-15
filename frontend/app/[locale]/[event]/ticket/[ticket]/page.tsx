@@ -9,8 +9,6 @@ import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import PageSpinner from "@/components/PageSpinner";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
 
 export default function SetTicket() {
   const { showAlert } = useAlert();
@@ -151,7 +149,6 @@ export default function SetTicket() {
   }, []);
   return (
     <>
-    <Nav />
     {
       isLoading ? (
         <main>
@@ -184,7 +181,6 @@ export default function SetTicket() {
         </main>
       )
     }
-    <Footer />
     </>
   )
 }

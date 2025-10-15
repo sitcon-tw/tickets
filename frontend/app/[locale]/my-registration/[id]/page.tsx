@@ -1,8 +1,6 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import { FormField } from "@/components/form/FormField";
-import Nav from "@/components/Nav";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
@@ -338,7 +336,6 @@ export default function MyRegistrationPage() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<section
 					style={{
@@ -570,7 +567,6 @@ export default function MyRegistrationPage() {
 					)}
 				</section>
 			</main>
-			<Footer />
 		</>
 	);
 }

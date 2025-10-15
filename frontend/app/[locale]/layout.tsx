@@ -5,6 +5,8 @@ import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { AlertProvider } from "@/contexts/AlertContext";
 import { AlertContainer } from "@/components/Alert";
+import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
 
 export function generateStaticParams() {
 	return routing.locales.map(locale => ({ locale }));
@@ -49,7 +51,9 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 	return (
 		<NextIntlClientProvider messages={messages}>
 			<AlertProvider>
+				<Nav />
 				{children}
+				<Footer />
 				<AlertContainer />
 			</AlertProvider>
 		</NextIntlClientProvider>

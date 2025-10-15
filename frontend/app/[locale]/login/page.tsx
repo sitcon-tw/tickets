@@ -1,6 +1,5 @@
 "use client";
 
-import Nav from "@/components/Nav";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
@@ -193,7 +192,6 @@ export default function Login() {
 
 	return (
 		<>
-			<Nav />
 			<StyledMain>
 				<section>
 					<Container isActive={viewState === "login"}>

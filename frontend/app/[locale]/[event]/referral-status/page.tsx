@@ -1,7 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
-import Nav from "@/components/Nav";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
@@ -14,6 +12,10 @@ import { useEffect, useState } from "react";
 export default function ReferralStatus() {
 	const locale = useLocale();
 	const router = useRouter();
+	
+	const [stats, setStats] = useState<RegistrationStats | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: {
@@ -93,10 +95,6 @@ export default function ReferralStatus() {
 		}
 	});
 
-	const [stats, setStats] = useState<RegistrationStats | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(false);
-
 	useEffect(() => {
 		const loadReferralStats = async () => {
 			try {
@@ -146,7 +144,6 @@ export default function ReferralStatus() {
 	if (error) {
 		return (
 			<>
-				<Nav />
 				<div className="min-h-screen flex items-center justify-center">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
@@ -155,14 +152,12 @@ export default function ReferralStatus() {
 						</button>
 					</div>
 				</div>
-				<Footer />
 			</>
 		);
 	}
 
 	return (
 		<>
-			<Nav />
 			{loading ? (
 				<div className="min-h-screen flex items-center justify-center">
 					<PageSpinner />
@@ -245,7 +240,6 @@ export default function ReferralStatus() {
 					</div>
 				</main>
 			)}
-			<Footer />
 		</>
 	);
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Nav from "@/components/Nav";
 import PageSpinner from "@/components/PageSpinner";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
@@ -61,7 +60,6 @@ export default function LocaleRedirect() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<div
 					style={{

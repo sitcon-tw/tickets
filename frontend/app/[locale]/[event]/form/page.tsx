@@ -1,7 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
-import Nav from "@/components/Nav";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
 import { FormField } from "@/components/form/FormField";
@@ -26,6 +24,7 @@ export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
 	const { showAlert } = useAlert();
+	
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
@@ -121,7 +120,6 @@ export default function FormPage() {
 		},
 	});
 
-	// Form data handlers
 	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));
@@ -131,10 +129,8 @@ export default function FormPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
-			// Single checkbox
 			setFormData(prev => ({ ...prev, [name]: checked }));
 		} else {
-			// Multiple checkbox options
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -146,18 +142,15 @@ export default function FormPage() {
 		}
 	}, []);
 
-	// Initialize form
 	useEffect(() => {
 		async function initForm() {
 			try {
-				// Check auth
 				const session = await authAPI.getSession();
 				if (!session || !session.user) {
 					router.push("/login/");
 					return;
 				}
 
-				// Load form data from localStorage
 				const storedData = localStorage.getItem("formData");
 				if (!storedData) {
 					showAlert(t.noTicketAlert, "warning");
@@ -171,7 +164,6 @@ export default function FormPage() {
 				setReferralCode(parsedData.referralCode || "");
 				setInvitationCode(parsedData.invitationCode || "");
 
-				// Load ticket info to check if it requires invite code
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
 				if (!ticketResponse.success) {
 					throw new Error(ticketResponse.message || "Failed to load ticket information");
@@ -180,15 +172,11 @@ export default function FormPage() {
 				const ticket = ticketResponse.data;
 				setRequiresInviteCode(ticket.requireInviteCode || false);
 
-				// Load form fields from ticket API
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
-
-				// Process form fields to fix malformed data from backend
 				const processedFields = (formFieldsData.data || []).map(field => {
-					// Fix name if it's stringified
 					let name = field.name;
 					if (typeof name === "string" && name === "[object Object]") {
 						name = { en: field.description || "field" };
@@ -200,21 +188,17 @@ export default function FormPage() {
 						}
 					}
 
-					// Fix description if it's a JSON string
 					let description = field.description;
 					if (typeof description === "string" && description.startsWith("{")) {
 						try {
 							const parsed = JSON.parse(description);
 							description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
 						} catch {
-							// Keep original if parse fails
 						}
 					}
 
-					// Fix options to flatten label objects
 					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
 						if (typeof opt === "object" && opt !== null && "label" in opt) {
-							// Option has a label object, flatten it
 							const optWithLabel = opt as { label: unknown };
 							const labelValue = typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label ? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0] : optWithLabel.label;
 							return { en: String(labelValue) };
@@ -243,10 +227,9 @@ export default function FormPage() {
 		}
 
 		initForm();
-	}, [router, t.noTicketAlert]);
+	}, [router, showAlert, t.noTicketAlert]);
 
-	// Handle form submission
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
 		if (!ticketId || !eventId || isSubmitting) {
@@ -272,15 +255,12 @@ export default function FormPage() {
 			const result = await registrationsAPI.create(registrationData);
 
 			if (result.success) {
-				// Clear stored data
 				localStorage.removeItem("formData");
-				// Redirect to success page
 				router.push(window.location.href.replace("/form", "/success"));
 			} else {
 				throw new Error(result.message || "Registration failed");
 			}
 		} catch (error) {
-			console.error("Registration error:", error);
 			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
 			setIsSubmitting(false);
 		}
@@ -288,7 +268,6 @@ export default function FormPage() {
 
 	return (
 		<>
-			<Nav />
 			<main>
 				<section
 					style={{
@@ -391,7 +370,6 @@ export default function FormPage() {
 					)}
 				</section>
 			</main>
-			<Footer />
 		</>
 	);
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Nav from "@/components/Nav";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
 import FallingText from "@/components/FallingText";
@@ -18,7 +17,6 @@ export default function AccountDisabled() {
 
 	return (
 		<>
-			<Nav />
 			<div className="max-w-6xl h-screen" style={{ margin: "2rem auto", marginTop: "16rem", marginBottom: "-16rem", padding: "0 1rem", textAlign: "center" }}>
 				<FallingText
 					text={t.message}
