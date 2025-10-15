@@ -231,12 +231,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 		try {
 			// Check if ticket requires SMS verification
-			const verificationCheck = await smsVerificationAPI.check(selectedTicket.id);
+			const verificationCheck = await smsVerificationAPI.getStatus();
 
-			if (verificationCheck.data.requiresVerification && !verificationCheck.data.isVerified) {
-				// Need SMS verification - redirect to verify page
-				const currentUrl = `/${locale}/${eventSlug}/form`;
-				router.push(`/verify?purpose=ticket_access&ticketId=${selectedTicket.id}&redirect=${encodeURIComponent(currentUrl)}`);
+			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
+				const currentUrl = `/${eventSlug}/form`;
+				router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
 			} else {
 				// No verification needed or already verified - proceed to form
 				router.push(`/${eventSlug}/form`);
