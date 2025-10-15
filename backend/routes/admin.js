@@ -12,10 +12,8 @@ import ticketsRoutes from "./admin/tickets.js";
 import usersRoutes from "./admin/users.js";
 
 export default async function adminRoutes(fastify) {
-	// Apply requireAdminOrEventAdmin globally (allows both admin and eventAdmin)
 	fastify.addHook("preHandler", requireAdminOrEventAdmin);
 
-	// Routes that need admin-only access will add requireAdmin in their route definitions
 	await fastify.register(analyticsRoutes);
 	await fastify.register(usersRoutes);
 	await fastify.register(eventsRoutes);

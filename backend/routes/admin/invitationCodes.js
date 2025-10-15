@@ -5,6 +5,8 @@
  * @typedef {import('#types/api.js').InvitationCodeUpdateRequest} InvitationCodeUpdateRequest
  */
 
+// TODO: Permissions for eventAdmin
+
 import prisma from "#config/database.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
@@ -15,6 +17,7 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
  * @param {Object} options
  */
 export default async function adminInvitationCodesRoutes(fastify, options) {
+
 	// Create new invitation code
 	fastify.post(
 		"/invitation-codes",
@@ -30,7 +33,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				/** @type {InvitationCodeCreateRequest} */
 				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body;
 
-				// Check for duplicate codes
 				const existingCode = await prisma.invitationCode.findFirst({
 					where: {
 						ticketId,
@@ -43,7 +45,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate date ranges
 				if (validFrom && new Date(validFrom) <= new Date()) {
 					const { response, statusCode } = validationErrorResponse("開始時間必須是未來時間");
 					return reply.code(statusCode).send(response);
@@ -57,10 +58,8 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Create invitation code in transaction
 				/** @type {InvitationCode} */
 				const invitationCode = await prisma.$transaction(async tx => {
-					// Verify ticket exists if provided
 					if (ticketId) {
 						const ticket = await tx.ticket.findFirst({
 							where: {
@@ -164,7 +163,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				const { id } = request.params;
 				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body;
 
-				// Check if invitation code exists
 				const existingCode = await prisma.invitationCode.findUnique({
 					where: { id }
 				});
@@ -174,7 +172,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for code conflicts in the same event
 				if (code && code !== existingCode.code) {
 					const codeConflict = await prisma.invitationCode.findFirst({
 						where: {
@@ -190,7 +187,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					}
 				}
 
-				// Validate date ranges
 				if (validFrom && new Date(validFrom) <= new Date()) {
 					const { response, statusCode } = validationErrorResponse("開始時間必須是未來時間");
 					return reply.code(statusCode).send(response);
@@ -204,7 +200,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Don't allow reducing usage limit below current usage
 				if (usageLimit !== undefined && usageLimit < existingCode.usedCount) {
 					const { response, statusCode } = validationErrorResponse(`使用次數限制不能低於已使用次數 (${existingCode.usedCount})`);
 					return reply.code(statusCode).send(response);
@@ -213,7 +208,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				// Update invitation code in transaction
 				/** @type {InvitationCode} */
 				const invitationCode = await prisma.$transaction(async tx => {
-					// Prepare update data
 					const updatePayload = {};
 					if (code !== undefined) updatePayload.code = code;
 					if (name !== undefined) updatePayload.name = name;
@@ -222,10 +216,8 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					if (validFrom !== undefined) updatePayload.validFrom = validFrom ? new Date(validFrom) : null;
 					if (validUntil !== undefined) updatePayload.validUntil = validUntil ? new Date(validUntil) : null;
 
-					// Update ticket association if provided
 					if (ticketId !== undefined) {
 						if (ticketId) {
-							// Verify ticket exists
 							const ticket = await tx.ticket.findUnique({
 								where: {
 									id: ticketId
@@ -270,7 +262,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Check if invitation code exists
 				const existingCode = await prisma.invitationCode.findUnique({
 					where: { id }
 				});
@@ -280,7 +271,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if code has been used (based on usedCount)
 				if (existingCode.usedCount > 0) {
 					const { response, statusCode } = conflictResponse("無法刪除已被使用的邀請碼");
 					return reply.code(statusCode).send(response);
@@ -414,7 +404,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			try {
 				const { ticketId, prefix, count, usageLimit, validFrom, validUntil } = request.body;
 
-				// Verify ticket exists
 				const ticket = await prisma.ticket.findUnique({
 					where: { id: ticketId }
 				});
@@ -424,7 +413,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Generate unique codes
 				const codes = [];
 				const existingCodes = await prisma.invitationCode.findMany({
 					where: { ticketId },
@@ -459,7 +447,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					existingCodeSet.add(code);
 				}
 
-				// Create all codes in a transaction
 				await prisma.$transaction(
 					codes.map(codeData =>
 						prisma.invitationCode.create({
@@ -522,10 +509,8 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			try {
 				const { email, codes, groupName } = request.body;
 
-				// Import email utility
 				const { sendInvitationCodes } = await import("#utils/email.js");
 
-				// Send email
 				await sendInvitationCodes(email, codes, groupName);
 
 				return reply.send(successResponse(null, "成功寄送邀請碼"));

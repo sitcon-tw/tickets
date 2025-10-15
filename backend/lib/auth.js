@@ -20,7 +20,7 @@ export const auth = betterAuth({
 			maxAge: 60 * 60 * 24 * 30 // 30 days
 		},
 		cookieOptions: {
-			sameSite: "lax", // Use Lax for same-origin via proxy
+			sameSite: "lax",
 			secure: process.env.NODE_ENV === "production",
 			httpOnly: true,
 			path: "/"
@@ -42,7 +42,6 @@ export const auth = betterAuth({
 						}
 					}
 				} catch (e) {
-					// Silently fail locale detection, use default
 				}
 
 				// Send users to frontend, which will proxy the verification to backend
@@ -58,7 +57,6 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async user => {
-					// Automatically assign admin role to emails specified in ADMIN_EMAILS env var
 					const adminEmails = getAdminEmails();
 					if (adminEmails.includes(user.email)) {
 						return {

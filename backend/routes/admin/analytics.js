@@ -4,7 +4,6 @@ import referralsRoutes from "./analytics/referrals.js";
 import trendsRoutes from "./analytics/trends.js";
 
 export default async function analyticsRoutes(fastify, options) {
-	// Analytics routes are admin-only
 	fastify.addHook("preHandler", requireAdmin);
 
 	await fastify.register(dashboardRoutes);

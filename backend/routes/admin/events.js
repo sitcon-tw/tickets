@@ -17,6 +17,7 @@ import { sanitizeObject } from "#utils/sanitize.js";
  * @param {Object} options
  */
 export default async function adminEventsRoutes(fastify, options) {
+
 	// Create new event - only admin can create events
 	fastify.post(
 		"/events",
@@ -33,11 +34,9 @@ export default async function adminEventsRoutes(fastify, options) {
 				/** @type {EventCreateRequest} */
 				const rawBody = request.body;
 
-				// Sanitize inputs to prevent XSS
 				const sanitizedBody = sanitizeObject(rawBody, true);
 				const { name, description, startDate, endDate, location } = sanitizedBody;
 
-				// Validate dates
 				const start = new Date(startDate);
 				const end = new Date(endDate);
 
@@ -135,7 +134,6 @@ export default async function adminEventsRoutes(fastify, options) {
 				/** @type {EventUpdateRequest} */
 				const updateData = request.body;
 
-				// Check if event exists
 				const existingEvent = await prisma.event.findUnique({
 					where: { id }
 				});
@@ -145,7 +143,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate dates if provided
 				if (updateData.startDate || updateData.endDate) {
 					const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
 					const endDate = updateData.endDate ? new Date(updateData.endDate) : existingEvent.endDate;
@@ -166,7 +163,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					}
 				}
 
-				// Prepare update data
 				const updatePayload = {
 					...updateData,
 					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
@@ -204,7 +200,6 @@ export default async function adminEventsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Check if event exists
 				const existingEvent = await prisma.event.findUnique({
 					where: { id },
 					include: {
@@ -219,7 +214,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prevent deletion if there are registrations
 				if (existingEvent._count.registrations > 0) {
 					const { response, statusCode } = conflictResponse("無法刪除已有報名的活動");
 					return reply.code(statusCode).send(response);
@@ -253,13 +247,11 @@ export default async function adminEventsRoutes(fastify, options) {
 			try {
 				const { isActive } = request.query;
 
-				// Build where clause
 				const whereClause = {};
 				if (isActive !== undefined) {
 					whereClause.isActive = isActive;
 				}
 
-				// If user is eventAdmin, filter by their event permissions
 				if (request.userEventPermissions && request.userEventPermissions.length > 0) {
 					whereClause.id = { in: request.userEventPermissions };
 				}
