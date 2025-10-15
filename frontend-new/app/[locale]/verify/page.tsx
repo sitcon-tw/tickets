@@ -4,19 +4,12 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { getTranslations } from "@/i18n/helpers";
+import { ApiError } from "@/lib/types/api";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Check, ArrowRight, ArrowLeft, MessageSquare, MessageSquareMore } from "lucide-react";
-
-interface APIError {
-	response?: {
-		data?: {
-			message?: string;
-		};
-	};
-}
 
 export default function VerifyPage() {
 	const locale = useLocale();
@@ -183,7 +176,7 @@ export default function VerifyPage() {
 						setPhoneNumber(response.data.phoneNumber);
 					}
 				})
-				.catch((err: APIError) => {
+				.catch((err: ApiError) => {
 					console.error("Failed to check verification status:", err);
 				});
 		}
@@ -251,9 +244,9 @@ export default function VerifyPage() {
 			setCountdown(60); // 60 seconds cooldown
 			setStep("verify"); // Move to verification step
 		} catch (err) {
-			const error = err as APIError;
+			const error = err as Error;
 			console.error("Failed to send SMS:", error);
-			setError(error?.response?.data?.message || "Failed to send verification code");
+			setError(error.message || "Failed to send verification code");
 		} finally {
 			setSendingCode(false);
 		}
@@ -340,9 +333,9 @@ export default function VerifyPage() {
 				router.push(redirectUrl);
 			}, 2000);
 		} catch (err) {
-			const error = err as APIError;
+			const error = err as Error;
 			console.error("Verification failed:", error);
-			setError(error?.response?.data?.message || t.verifyFail);
+			setError(error.message || t.verifyFail);
 			setVerificationCode(["", "", "", "", "", ""]);
 			codeInputRefs.current[0]?.focus();
 		} finally {
@@ -371,9 +364,9 @@ export default function VerifyPage() {
 			setVerificationCode(["", "", "", "", "", ""]);
 			codeInputRefs.current[0]?.focus();
 		} catch (err) {
-			const error = err as APIError;
+			const error = err as Error;
 			console.error("Failed to resend SMS:", error);
-			setError(error?.response?.data?.message || "Failed to resend verification code");
+			setError(error.message || "Failed to resend verification code");
 		} finally {
 			setSendingCode(false);
 		}
@@ -477,7 +470,7 @@ export default function VerifyPage() {
 										{verificationCode.map((digit, index) => (
 											<input
 												key={index}
-												ref={el => codeInputRefs.current[index] = el}
+												ref={el => { codeInputRefs.current[index] = el; }}
 												type="text"
 												inputMode="numeric"
 												maxLength={1}

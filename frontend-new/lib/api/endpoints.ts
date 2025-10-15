@@ -231,7 +231,7 @@ export const smsVerificationAPI = {
 
 // Admin - SMS Verification Logs
 export const adminSmsVerificationAPI = {
-	getLogs: (params?: { userId?: string; phoneNumber?: string; purpose?: string; ticketId?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get<ApiResponse<any>>("/api/admin/sms-verification-logs", params),
+	getLogs: (params?: { userId?: string; phoneNumber?: string; purpose?: string; ticketId?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-logs", params),
 
-	getStats: () => apiClient.get<ApiResponse<any>>("/api/admin/sms-verification-stats")
+	getStats: () => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-stats")
 };
