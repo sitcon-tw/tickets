@@ -7,6 +7,7 @@ import terms_zhhant from "./terms-zhhant";
 
 export default function TermsPage() {
 	const locale = useLocale();
+	
 	const t = getTranslations(locale, {
 		termsOfService: {
 			"zh-Hant": "服務條款與隱私政策",

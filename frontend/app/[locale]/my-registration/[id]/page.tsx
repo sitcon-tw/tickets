@@ -172,7 +172,6 @@ export default function MyRegistrationPage() {
 		}
 	});
 
-	// Form data handlers
 	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));
@@ -182,10 +181,8 @@ export default function MyRegistrationPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
-			// Single checkbox
 			setFormData(prev => ({ ...prev, [name]: checked }));
 		} else {
-			// Multiple checkbox options
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -197,11 +194,52 @@ export default function MyRegistrationPage() {
 		}
 	}, []);
 
-	// Load registration data
+	async function handleSave() {
+		if (!registration || !registration.canEdit) {
+			showAlert(t.cannotEdit, "warning");
+			return;
+		}
+
+		setIsSaving(true);
+		try {
+			const result = await registrationsAPI.update(registrationId, { formData });
+
+			if (result.success) {
+				showAlert(t.saveSuccess, "success");
+				setRegistration({ ...registration, formData: result.data.formData as Record<string, unknown> });
+				setIsEditing(false);
+			} else {
+				throw new Error(result.message || "Failed to update registration");
+			}
+		} catch (error) {
+			console.error("Save error:", error);
+			showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	function handleCancelEdit() {
+		if (registration) {
+			setFormData(registration.formData as FormDataType);
+		}
+		setIsEditing(false);
+	};
+
+	function formatDate(dateString: string) {
+		const date = new Date(dateString);
+		return date.toLocaleString(locale, {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit"
+		});
+	};
+
 	useEffect(() => {
 		async function loadRegistration() {
 			try {
-				// Check auth
 				const session = await authAPI.getSession();
 				if (!session || !session.user) {
 					router.push("/login/");
@@ -214,7 +252,6 @@ export default function MyRegistrationPage() {
 					return;
 				}
 
-				// Load registration
 				const regResponse = await registrationsAPI.getById(registrationId);
 				if (!regResponse.success) {
 					throw new Error(regResponse.message || t.notFound);
@@ -223,11 +260,9 @@ export default function MyRegistrationPage() {
 				const regData = regResponse.data;
 				setRegistration(regData);
 
-				// Load form fields for this ticket
 				if (regData.ticketId) {
 					const fieldsResponse = await ticketsAPI.getFormFields(regData.ticketId);
 					if (fieldsResponse.success) {
-						// Process form fields similar to form page
 						const processedFields = (fieldsResponse.data || []).map(field => {
 							let name = field.name;
 							if (typeof name === "string" && name === "[object Object]") {
@@ -246,7 +281,6 @@ export default function MyRegistrationPage() {
 									const parsed = JSON.parse(description);
 									description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
 								} catch {
-									// Keep original if parse fails
 								}
 							}
 
@@ -274,7 +308,6 @@ export default function MyRegistrationPage() {
 					}
 				}
 
-				// Set form data from registration
 				setFormData(regData.formData as FormDataType);
 
 				setLoading(false);
@@ -287,52 +320,6 @@ export default function MyRegistrationPage() {
 
 		loadRegistration();
 	}, [registrationId, router, t.notFound]);
-
-	// Handle save
-	const handleSave = async () => {
-		if (!registration || !registration.canEdit) {
-			showAlert(t.cannotEdit, "warning");
-			return;
-		}
-
-		setIsSaving(true);
-		try {
-			const result = await registrationsAPI.update(registrationId, { formData });
-
-			if (result.success) {
-				showAlert(t.saveSuccess, "success");
-				setRegistration({ ...registration, formData: result.data.formData as Record<string, unknown> });
-				setIsEditing(false);
-			} else {
-				throw new Error(result.message || "Failed to update registration");
-			}
-		} catch (error) {
-			console.error("Save error:", error);
-			showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	// Handle cancel edit
-	const handleCancelEdit = () => {
-		if (registration) {
-			setFormData(registration.formData as FormDataType);
-		}
-		setIsEditing(false);
-	};
-
-	// Format date
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleString(locale, {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit"
-		});
-	};
 
 	return (
 		<>

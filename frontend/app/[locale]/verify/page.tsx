@@ -13,6 +13,8 @@ export default function VerifyPage() {
 	const locale = useLocale();
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+	const redirectUrl = searchParams.get("redirect") || `/${locale}/`;
 
 	const [step, setStep] = useState<"phone" | "verify">("phone");
 	const [phoneNumber, setPhoneNumber] = useState("");
@@ -20,15 +22,9 @@ export default function VerifyPage() {
 	const [loading, setLoading] = useState(false);
 	const [sendingCode, setSendingCode] = useState(false);
 	const [error, setError] = useState("");
-	const [success, setSuccess] = useState("");
 	const [countdown, setCountdown] = useState(0);
 	const [isVerified, setIsVerified] = useState(false);
 
-	// Refs for code inputs
-	const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-	// Get parameters from URL
-	const redirectUrl = searchParams.get("redirect") || `/${locale}/`;
 
 	const t = getTranslations(locale, {
 		title: {
@@ -148,33 +144,7 @@ export default function VerifyPage() {
 		}
 	});
 
-	// Check if already verified
-	useEffect(() => {
-		smsVerificationAPI
-			.getStatus()
-			.then(response => {
-				if (response.data.phoneVerified) {
-					// Already verified, redirect
-					router.push(redirectUrl);
-				}
-				if (response.data.phoneNumber) {
-					setPhoneNumber(response.data.phoneNumber);
-				}
-			})
-			.catch((err: ApiError) => {
-				console.error("Failed to check verification status:", err);
-			});
-	}, [redirectUrl, router]);
-
-	// Countdown timer
-	useEffect(() => {
-		if (countdown > 0) {
-			const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-			return () => clearTimeout(timer);
-		}
-	}, [countdown]);
-
-	const formatPhoneNumber = (value: string) => {
+	function formatPhoneNumber(value: string) {
 		const digits = value.replace(/\D/g, "");
 
 		if (digits.startsWith("09")) {
@@ -186,23 +156,21 @@ export default function VerifyPage() {
 		return value;
 	};
 
-	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const input = e.target.value;
 		const formatted = formatPhoneNumber(input);
 		setPhoneNumber(formatted);
 		setError("");
 	};
 
-	const isValidPhone = (phone: string) => {
+	function isValidPhone(phone: string) {
 		const digits = phone.replace(/\D/g, "");
 		return (digits.startsWith("09") && digits.length === 10) || (digits.startsWith("886") && digits.length === 12);
 	};
 
-	const handleSendCode = async () => {
+	async function handleSendCode() {
 		setError("");
-		setSuccess("");
 
-		// Validate phone number using the new validation function
 		if (!isValidPhone(phoneNumber)) {
 			setError(t.invalidPhoneNumber);
 			return;
@@ -211,7 +179,6 @@ export default function VerifyPage() {
 		setSendingCode(true);
 
 		try {
-			// Extract raw phone number for API
 			const rawPhone = phoneNumber.replace(/\D/g, "");
 			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
 			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
@@ -221,9 +188,8 @@ export default function VerifyPage() {
 				locale
 			});
 
-			setSuccess(t.codeSent);
-			setCountdown(60); // 60 seconds cooldown
-			setStep("verify"); // Move to verification step
+			setCountdown(60);
+			setStep("verify");
 		} catch (err) {
 			const error = err as Error;
 			console.error("Failed to send SMS:", error);
@@ -233,28 +199,24 @@ export default function VerifyPage() {
 		}
 	};
 
-	const handleCodeChange = (index: number, value: string) => {
-		// Only allow digits
+	function handleCodeChange(index: number, value: string) {
 		if (!/^\d*$/.test(value)) return;
 
 		const newCode = [...verificationCode];
-		newCode[index] = value.slice(-1); // Only take the last character
+		newCode[index] = value.slice(-1);
 		setVerificationCode(newCode);
 		setError("");
 
-		// Auto-focus next input
 		if (value && index < 5) {
 			codeInputRefs.current[index + 1]?.focus();
 		}
 
-		// Auto-verify when all digits are entered
 		if (newCode.every(digit => digit !== "") && newCode.join("").length === 6) {
 			verifyCode(newCode.join(""));
 		}
 	};
 
-	const handleCodeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-		// Handle backspace
+	function handleCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
 		if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
 			codeInputRefs.current[index - 1]?.focus();
 		} else if (e.key === "Enter" && verificationCode.every(digit => digit !== "")) {
@@ -262,7 +224,7 @@ export default function VerifyPage() {
 		}
 	};
 
-	const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+	function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
 		e.preventDefault();
 		const pastedData = e.clipboardData.getData("text").slice(0, 6);
 		if (!/^\d+$/.test(pastedData)) return;
@@ -282,10 +244,9 @@ export default function VerifyPage() {
 		}
 	};
 
-	const verifyCode = async (codeStr: string) => {
+	async function verifyCode(codeStr: string) {
 		setLoading(true);
 		setError("");
-		setSuccess("");
 
 		if (!codeStr.match(/^\d{6}$/)) {
 			setError(t.invalidCode);
@@ -294,7 +255,6 @@ export default function VerifyPage() {
 		}
 
 		try {
-			// Extract raw phone number for API
 			const rawPhone = phoneNumber.replace(/\D/g, "");
 			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
 			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
@@ -304,10 +264,8 @@ export default function VerifyPage() {
 				code: codeStr
 			});
 
-			setSuccess(t.verificationSuccess);
 			setIsVerified(true);
 
-			// Redirect after successful verification
 			setTimeout(() => {
 				router.push(redirectUrl);
 			}, 2000);
@@ -322,10 +280,9 @@ export default function VerifyPage() {
 		}
 	};
 
-	const handleResend = async () => {
+	async function handleResend() {
 		setSendingCode(true);
 		setError("");
-		setSuccess("");
 
 		try {
 			const rawPhone = phoneNumber.replace(/\D/g, "");
@@ -349,11 +306,10 @@ export default function VerifyPage() {
 		}
 	};
 
-	const handleBack = () => {
+	function handleBack() {
 		setStep("phone");
 		setVerificationCode(["", "", "", "", "", ""]);
 		setError("");
-		setSuccess("");
 	};
 
 	const handleContinue = () => {
@@ -361,6 +317,27 @@ export default function VerifyPage() {
 	};
 
 	const isCodeComplete = verificationCode.every(digit => digit !== "");
+
+	useEffect(() => {
+		smsVerificationAPI
+			.getStatus()
+			.then(response => {
+				if (response.data.phoneVerified) {
+					router.push(redirectUrl);
+				}
+				if (response.data.phoneNumber) {
+					setPhoneNumber(response.data.phoneNumber);
+				}
+			})
+			.catch((err: ApiError) => {
+				console.error("Failed to check verification status:", err);
+			});
+
+		if (countdown > 0) {
+			const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+			return () => clearTimeout(timer);
+		}
+	}, [redirectUrl, router, countdown]);
 
 	return (
 		<>

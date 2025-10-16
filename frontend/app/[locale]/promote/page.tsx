@@ -10,6 +10,7 @@ import React, { useState } from "react";
 export default function PromoteToAdmin() {
 	const locale = useLocale();
 	const router = useRouter();
+
 	const [viewState, setViewState] = useState<"form" | "success" | "error">("form");
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -62,7 +63,7 @@ export default function PromoteToAdmin() {
 		}
 	});
 
-	const handlePromote = async () => {
+	async function handlePromote() {
 		const passwordInput = document.getElementById("password") as HTMLInputElement;
 		const password = passwordInput?.value;
 		if (!password || isLoading) return;
@@ -74,7 +75,6 @@ export default function PromoteToAdmin() {
 			await userAPI.promoteToAdmin(password);
 			setViewState("success");
 
-			// Redirect to admin dashboard after 2 seconds
 			setTimeout(() => {
 				router.push(`/${locale}/admin`);
 			}, 2000);

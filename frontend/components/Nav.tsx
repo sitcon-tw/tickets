@@ -3,6 +3,7 @@
 import Spinner from "@/components/Spinner";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
+import { usePathname } from "next/navigation";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { ReactNode, useEffect, useMemo, useState } from "react";
@@ -22,6 +23,7 @@ type SessionState = { status: "loading" } | { status: "anonymous" } | { status: 
 export default function Nav({ children }: NavProps) {
 	const locale = useLocale();
 	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
+	const pathname = usePathname();
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
@@ -96,6 +98,8 @@ export default function Nav({ children }: NavProps) {
 	const userDisplayName = session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
 
 	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+
+	if (pathname.includes("/admin")) { return null; }
 
 	return (
 		<nav
