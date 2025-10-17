@@ -239,9 +239,9 @@ export default function AdminNav() {
 
 	const t = getTranslations(locale, {
 		activityName: {
-			"zh-Hant": "SITCON 2026",
-			"zh-Hans": "SITCON 2026",
-			en: "SITCON 2026"
+			"zh-Hant": "SITCON",
+			"zh-Hans": "SITCON",
+			en: "SITCON"
 		},
 		systemTitle: {
 			"zh-Hant": "報名系統後台",

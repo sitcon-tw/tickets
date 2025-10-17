@@ -14,8 +14,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "SITCON 2026",
-	description: "SITCON 2026 Registration System"
+	title: "SITCON 報名系統",
+	description: "趕快來報名 SITCON 的活動吧！",
+	openGraph: {
+		title: "SITCON 報名系統",
+		description: "趕快來報名 SITCON 的活動吧！",
+		siteName: "SITCON 報名系統",
+		type: "website"
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "SITCON 報名系統",
+		description: "趕快來報名 SITCON 的活動吧！"
+	}
 };
 
 export default function RootLayout({
