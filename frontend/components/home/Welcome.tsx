@@ -19,6 +19,12 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const locale = useLocale();
 	const router = useRouter();
 
+	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
+	const [referralParam, setReferralParam] = useState<string | null>(null);
+	const [isSmsVerified, setIsSmsVerified] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [isSafari, setIsSafari] = useState(false);
+
 	const t = getTranslations(locale, {
 		description: {
 			"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
@@ -87,25 +93,16 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		}
 	});
 
-	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
-	const [referralParam, setReferralParam] = useState<string | null>(null);
-	const [isSmsVerified, setIsSmsVerified] = useState(false);
-	const [loading, setLoading] = useState(false);
-	const [isSafari, setIsSafari] = useState(false);
-
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 
 		const referral = localStorage.getItem("referralCode");
 		setReferralParam(referral);
 
-		// Detect Safari browser
 		const ua = navigator.userAgent;
 		const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
 		setIsSafari(isSafariBrowser);
-	}, []);
-
-	useEffect(() => {
+		
 		let cancelled = false;
 
 		async function handleWelcome() {

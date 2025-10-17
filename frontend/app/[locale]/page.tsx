@@ -5,10 +5,12 @@ import { eventsAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
 
 export default function LocaleRedirect() {
 	const router = useRouter();
 	const locale = useLocale();
+	const { showAlert } = useAlert();
 
 	useEffect(() => {
 		async function redirectToNearestEvent() {
@@ -22,13 +24,11 @@ export default function LocaleRedirect() {
 
 					const now = new Date();
 
-					// Filter upcoming events (events that haven't started yet or are currently happening)
 					const upcomingEvents = eventsData.data.filter(event => {
 						const startDate = new Date(event.startDate);
 						return startDate >= now;
 					});
 
-					// Sort by start date (earliest first)
 					const sortedEvents = upcomingEvents.sort((a, b) => {
 						return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
 					});
@@ -38,7 +38,6 @@ export default function LocaleRedirect() {
 						const eventSlug = nearestEvent.id.slice(-6);
 						router.replace(`/${locale}/${eventSlug}`);
 					} else {
-						// If no upcoming events, use the most recent past event
 						const pastEvents = eventsData.data.sort((a, b) => {
 							return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
 						});
@@ -51,7 +50,7 @@ export default function LocaleRedirect() {
 					}
 				}
 			} catch (error) {
-				console.error("Failed to redirect to event:", error);
+				showAlert("Failed to fetch events for redirection.", "error");
 			}
 		}
 

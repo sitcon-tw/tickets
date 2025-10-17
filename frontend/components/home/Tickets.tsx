@@ -82,89 +82,23 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
 	const hiddenTicketRef = useRef<HTMLDivElement | null>(null);
 
-	// Helper function to check if ticket sale has ended
-	const isTicketExpired = (ticket: Ticket): boolean => {
+	function isTicketExpired(ticket: Ticket): boolean {
 		if (!ticket.saleEnd) return false;
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
 		if (!saleEndDate) return false;
 		return saleEndDate < new Date();
 	};
 
-	// Helper function to check if ticket is sold out
-	const isTicketSoldOut = (ticket: Ticket): boolean => {
+	function isTicketSoldOut(ticket: Ticket): boolean {
 		return ticket.available !== undefined && ticket.available <= 0;
 	};
 
-	useEffect(() => {
-		async function loadTickets() {
-			try {
-				const ticketsData = await eventsAPI.getTickets(eventId);
-
-				if (ticketsData.success && Array.isArray(ticketsData.data)) {
-					setTickets(ticketsData.data);
-				}
-			} catch (error) {
-				console.error("Failed to load tickets", error);
-			} finally {
-				setIsLoading(false);
-			}
-		}
-
-		async function checkRegistrationStatus() {
-			try {
-				const regDataRes = await registrationsAPI.getAll();
-				if (regDataRes.success && regDataRes.data) {
-					const hasRegistered = regDataRes.data.some(reg => reg.event?.id === eventId);
-					setCanRegister(!hasRegistered);
-				}
-			} catch (error) {
-				console.error("Failed to check registration status", error);
-			}
-		}
-
-		async function checkAuth() {
-			try {
-				const sessionData = await authAPI.getSession();
-				if (!sessionData) {
-					return false;
-				}
-				return true;
-			} catch (error) {
-				console.error("Failed to check auth status", error);
-				return false;
-			}
-		}
-
-		async function init() {
-			await loadTickets();
-
-			if (await checkAuth()) {
-				await checkRegistrationStatus();
-			}
-		}
-
-		init();
-
-		function handleKeyDown(event: KeyboardEvent) {
-			if (event.key === "Escape") {
-				closeConfirm();
-			}
-		}
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [locale, eventId]);
-
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
-		// Check if ticket sale has ended
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
 			return;
 		}
 
-		// Check if ticket is sold out
 		if (isTicketSoldOut(ticket)) {
 			showAlert(t.ticketSoldOut, "warning");
 			return;
@@ -228,19 +162,16 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		setIsSubmitting(true);
 
 		try {
-			// Check if ticket requires SMS verification
 			const verificationCheck = await smsVerificationAPI.getStatus();
 
 			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
 				const currentUrl = `/${eventSlug}/form`;
 				router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
 			} else {
-				// No verification needed or already verified - proceed to form
 				router.push(`/${eventSlug}/form`);
 			}
 		} catch (error) {
 			console.error("Failed to check SMS verification:", error);
-			// On error, proceed to form anyway
 			router.push(`/${eventSlug}/form`);
 		}
 	}
@@ -258,6 +189,68 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			ticketAnimationRef.current.style.display = "none";
 		}
 	}
+
+	useEffect(() => {
+		async function loadTickets() {
+			try {
+				const ticketsData = await eventsAPI.getTickets(eventId);
+
+				if (ticketsData.success && Array.isArray(ticketsData.data)) {
+					setTickets(ticketsData.data);
+				}
+			} catch (error) {
+				console.error("Failed to load tickets", error);
+			} finally {
+				setIsLoading(false);
+			}
+		}
+
+		async function checkRegistrationStatus() {
+			try {
+				const regDataRes = await registrationsAPI.getAll();
+				if (regDataRes.success && regDataRes.data) {
+					const hasRegistered = regDataRes.data.some(reg => reg.event?.id === eventId);
+					setCanRegister(!hasRegistered);
+				}
+			} catch (error) {
+				console.error("Failed to check registration status", error);
+			}
+		}
+
+		async function checkAuth() {
+			try {
+				const sessionData = await authAPI.getSession();
+				if (!sessionData) {
+					return false;
+				}
+				return true;
+			} catch (error) {
+				console.error("Failed to check auth status", error);
+				return false;
+			}
+		}
+
+		async function init() {
+			await loadTickets();
+
+			if (await checkAuth()) {
+				await checkRegistrationStatus();
+			}
+		}
+
+		init();
+
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key === "Escape") {
+				closeConfirm();
+			}
+		}
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [locale, eventId]);
 
 	return (
 		<>

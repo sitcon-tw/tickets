@@ -25,7 +25,6 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 	const fieldLabel = getLocalizedText(field.name, locale);
 	const label = `${fieldLabel}${requiredMark}`;
 
-	// Convert localized options to display strings
 	const localizedOptions =
 		field.options?.map(opt => ({
 			value: typeof opt === "object" && opt !== null ? opt.en || getLocalizedText(opt, locale) : String(opt),
@@ -47,11 +46,9 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {
-				// Multiple checkbox options
 				const currentValues = Array.isArray(value) ? value : [];
 				return <MultiCheckbox label={label} name={getLocalizedText(field.name, locale)} options={localizedOptions as CheckboxOption[]} values={currentValues} onChange={onCheckboxChange} />;
 			} else {
-				// Single checkbox
 				return <Checkbox label={fieldLabel} id={getLocalizedText(field.name, locale)} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
 			}
 

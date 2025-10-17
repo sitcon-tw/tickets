@@ -11,12 +11,6 @@ type CheckboxProps = {
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 };
 
-const styles: Record<"question", CSSProperties> = {
-	question: {
-		marginBottom: "1rem"
-	}
-};
-
 const StyledLabel = styled.label`
 	display: flex;
 	align-items: center;
@@ -59,7 +53,7 @@ const StyledLabel = styled.label`
 export default function Checkbox({ label, id, question, required = true, value, checked, onChange }: CheckboxProps) {
 	return (
 		<div>
-			{question ? <p style={styles.question}>{question}</p> : null}
+			{question ? <p style={{ marginBottom: "1rem" }}>{question}</p> : null}
 			<StyledLabel htmlFor={id}>
 				<input type="checkbox" id={id} name={id} aria-label={label} required={required} value={typeof value === "string" ? value : "true"} checked={checked} onChange={onChange} />
 				<svg viewBox="0 0 64 64" height="1.5em" width="1.5em">
