@@ -151,7 +151,7 @@ export default function DecryptedText({
 	useEffect(() => {
 		if (animateOn !== "view" && animateOn !== "both") return;
 
-		const observerCallback = (entries: any[]) => {
+		const observerCallback = (entries: IntersectionObserverEntry[]) => {
 			entries.forEach(entry => {
 				if (entry.isIntersecting && !hasAnimated) {
 					setIsHovering(true);
@@ -201,7 +201,7 @@ export default function DecryptedText({
 			}}>{displayText}</span>
 
 			<span aria-hidden="true">
-				{displayText.split("").map((char: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, index: unknown) => {
+				{displayText.split("").map((char: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<unknown>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<unknown>> | Iterable<ReactNode> | null | undefined> | null | undefined, index: unknown) => {
 					const isRevealedOrDone = revealedIndices.has(index) || !isScrambling || !isHovering;
 
 					return (

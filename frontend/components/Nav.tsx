@@ -59,8 +59,6 @@ export default function Nav({ children }: NavProps) {
 
 	const userDisplayName = session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
 
-	if (pathname.includes("/admin")) { return null; }
-
 	useEffect(() => {
 		function handleScroll() {
 			setIsScrolled(window.scrollY > 5);
@@ -99,6 +97,8 @@ export default function Nav({ children }: NavProps) {
 			cancelled = true;
 		};
 	}, []);
+
+	if (pathname.includes("/admin")) { return null; }
 
 	return (
 		<nav
