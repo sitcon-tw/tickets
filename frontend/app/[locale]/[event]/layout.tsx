@@ -37,15 +37,21 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 			const foundEvent = eventsData.data.find((e: { id: string; }) => e.id.slice(-6) === eventSlug);
 
 			if (foundEvent) {
-				const eventName = foundEvent.name || "SITCON Event";
-				const eventDescription = foundEvent.description || `Register for ${eventName}`;
+				const getLocalizedText = (text: Record<string, string> | string | undefined, fallback: string): string => {
+					if (!text) return fallback;
+					if (typeof text === "string") return text;
+					return text[locale] || text["zh-Hant"] || text["en"] || Object.values(text)[0] || fallback;
+				};
+
+				const eventName = getLocalizedText(foundEvent.name, "SITCON Event");
+				const eventDescription = getLocalizedText(foundEvent.description, `Register for ${eventName}`);
 
 				return {
 					title: `${eventName} - ${siteName}`,
-					description: eventDescription.toString(),
+					description: eventDescription,
 					openGraph: {
-						title: eventName.toString(),
-						description: eventDescription.toString(),
+						title: eventName,
+						description: eventDescription,
 						url: `${site}/${locale}/${eventSlug}`,
 						siteName: siteName,
 						locale: locale,
@@ -53,8 +59,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 					},
 					twitter: {
 						card: "summary_large_image",
-						title: eventName.toString(),
-						description: eventDescription.toString(),
+						title: eventName,
+						description: eventDescription,
 					}
 				};
 			}
