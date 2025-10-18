@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 		const eventsData = await response.json();
 
 		if (eventsData?.success && Array.isArray(eventsData.data)) {
-			const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
+			const foundEvent = eventsData.data.find((e: { id: string; }) => e.id.slice(-6) === eventSlug);
 
 			if (foundEvent) {
 				const eventName = foundEvent.name || "SITCON Event";
