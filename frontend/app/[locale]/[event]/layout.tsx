@@ -1,4 +1,3 @@
-import { eventsAPI } from "@/lib/api/endpoints";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; event: string }> }): Promise<Metadata> {
@@ -20,7 +19,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	const fallbackDescription = fallbackDescriptionMap[locale] || fallbackDescriptionMap["zh-Hant"];
 
 	try {
-		const eventsData = await eventsAPI.getAll();
+		// For server-side calls, we need to use the full backend URL
+		const backendUrl = process.env.BACKEND_URI || "http://localhost:3000";
+		const response = await fetch(`${backendUrl}/api/events`, {
+			headers: {
+				"Content-Type": "application/json"
+			}
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to fetch events: ${response.status}`);
+		}
+
+		const eventsData = await response.json();
 
 		if (eventsData?.success && Array.isArray(eventsData.data)) {
 			const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
