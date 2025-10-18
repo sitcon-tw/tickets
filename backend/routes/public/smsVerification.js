@@ -4,8 +4,8 @@
 
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
-import { sendVerificationCode, generateVerificationCode } from "#lib/sms.js";
-import { notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
+import { generateVerificationCode, sendVerificationCode } from "#lib/sms.js";
+import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeText } from "#utils/sanitize.js";
 
 /**

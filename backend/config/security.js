@@ -6,19 +6,16 @@
  * Rate limiting configuration
  */
 export const rateLimitConfig = {
-	// Global rate limit
 	global: {
 		max: parseInt(process.env.RATE_LIMIT_MAX) || 30000,
 		timeWindow: process.env.RATE_LIMIT_WINDOW || "10 minutes",
 		cache: 10000,
 		allowList: req => {
-			// Allow localhost in development
 			return process.env.NODE_ENV !== "production" && (req.ip === "127.0.0.1" || req.ip === "::1");
 		},
 		skipOnError: false
 	},
 
-	// Auth endpoints - stricter limits
 	auth: {
 		max: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 20000,
 		timeWindow: "10 minutes",
@@ -31,13 +28,6 @@ export const rateLimitConfig = {
 				retryAfter: context.after
 			};
 		}
-	},
-
-	// Registration endpoints - moderate limits
-	registration: {
-		max: parseInt(process.env.REGISTRATION_RATE_LIMIT_MAX) || 10,
-		timeWindow: "1 hour",
-		skipOnError: false
 	}
 };
 
@@ -78,7 +68,6 @@ export const helmetConfig = {
 export const getCorsConfig = () => {
 	const allowedOrigins = [process.env.FRONTEND_URI, process.env.BACKEND_URI].filter(Boolean);
 
-	// In development, allow localhost with different ports
 	if (process.env.NODE_ENV !== "production") {
 		allowedOrigins.push(/^http:\/\/localhost:\d+$/);
 		allowedOrigins.push(/^http:\/\/127\.0\.0\.1:\d+$/);
@@ -90,7 +79,7 @@ export const getCorsConfig = () => {
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
 		exposedHeaders: ["set-cookie"],
-		maxAge: 86400 // 24 hours
+		maxAge: 86400
 	};
 };
 

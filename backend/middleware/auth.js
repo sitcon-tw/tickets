@@ -16,7 +16,6 @@ export const requireAuth = async (request, reply) => {
 			return reply.code(statusCode).send(response);
 		}
 
-		// Check if user account is disabled
 		const user = await prisma.user.findUnique({
 			where: { id: session.user.id },
 			select: { isActive: true }
@@ -30,7 +29,6 @@ export const requireAuth = async (request, reply) => {
 		request.user = session.user;
 		request.session = session;
 	} catch (error) {
-		// Use Fastify's built-in logger which is more secure
 		request.log.error("Auth middleware error:", error);
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
 		return reply.code(statusCode).send(response);
@@ -97,26 +95,21 @@ export const requireEventAccess = async (request, reply) => {
 
 	const userRole = user?.role || "user";
 
-	// Admin has access to all events
 	if (userRole === "admin") {
 		return;
 	}
 
-	// Check if user is eventAdmin
 	if (userRole === "eventAdmin") {
-		const eventId = request.params.id;
+		const eventId = request.query.eventId || request.params.id;
 
 		if (!eventId) {
-			// Return 404 instead of 403 to prevent redirect
 			const { response, statusCode } = notFoundResponse("活動不存在");
 			return reply.code(statusCode).send(response);
 		}
 
-		// Parse permissions to get event IDs
 		const userPermissions = safeJsonParse(user.permissions, [], "user permissions");
 
 		if (!userPermissions.includes(eventId)) {
-			// Return 404 instead of 403 to prevent redirect
 			const { response, statusCode } = notFoundResponse("活動不存在");
 			return reply.code(statusCode).send(response);
 		}
@@ -124,7 +117,6 @@ export const requireEventAccess = async (request, reply) => {
 		return;
 	}
 
-	// Other roles cannot access events - use 403 here as they shouldn't be in admin panel
 	const { response, statusCode } = forbiddenResponse("權限不足");
 	return reply.code(statusCode).send(response);
 };
@@ -145,19 +137,15 @@ export const requireEventListAccess = async (request, reply) => {
 
 	const userRole = user?.role || "user";
 
-	// Admin has access to all events
 	if (userRole === "admin") {
 		return;
 	}
 
-	// EventAdmin can list their events
 	if (userRole === "eventAdmin") {
-		// Store the permissions in the request for the route handler to filter
 		request.userEventPermissions = safeJsonParse(user.permissions, [], "user permissions");
 		return;
 	}
 
-	// Other roles cannot list events
 	const { response, statusCode } = forbiddenResponse("權限不足");
 	return reply.code(statusCode).send(response);
 };

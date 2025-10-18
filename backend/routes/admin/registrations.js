@@ -7,9 +7,10 @@
  */
 
 import prisma from "#config/database.js";
+import { requireEventAccess } from "#middleware/auth.js";
 import { registrationSchemas } from "#schemas/registration.js";
-import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 import { sendDataDeletionNotification } from "#utils/email.js";
+import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -17,10 +18,10 @@ import { sendDataDeletionNotification } from "#utils/email.js";
  * @param {Object} options
  */
 export default async function adminRegistrationsRoutes(fastify, options) {
-	// List registrations with pagination and filters
 	fastify.get(
 		"/registrations",
 		{
+			preHandler: requireEventAccess,
 			schema: registrationSchemas.listRegistrations
 		},
 		/**
@@ -31,13 +32,11 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			try {
 				const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
-				// Build where clause
 				const where = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 				if (userId) where.userId = userId;
 
-				// Get total count for pagination
 				const total = await prisma.registration.count({ where });
 
 				/** @type {Registration[]} */
@@ -77,8 +76,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					skip: (page - 1) * limit,
 					take: limit
 				});
-
-				// Parse formData from JSON string to object
 				const parsedRegistrations = registrations.map(reg => {
 					let parsedFormData = {};
 					try {
@@ -90,7 +87,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 						console.error(`Raw formData was:`, reg.formData);
 					}
 
-					// Create a plain object without Prisma metadata
 					const plainReg = {
 						id: reg.id,
 						eventId: reg.eventId,
@@ -122,6 +118,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	// Get registration by ID
+	// TODO: permission
 	fastify.get(
 		"/registrations/:id",
 		{
@@ -178,7 +175,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Parse formData from JSON string to object
 				const parsedRegistration = {
 					...registration,
 					formData: registration.formData ? JSON.parse(registration.formData) : {}
@@ -194,6 +190,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	// Update registration
+	// TODO: permission
 	fastify.put(
 		"/registrations/:id",
 		{
@@ -209,7 +206,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				/** @type {RegistrationUpdateRequest} */
 				const updateData = request.body;
 
-				// Check if registration exists
 				const existingRegistration = await prisma.registration.findUnique({
 					where: { id },
 					include: {
@@ -227,7 +223,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prevent status changes for past events
 				if (updateData.status && new Date() > existingRegistration.event.endDate) {
 					const { response, statusCode } = validationErrorResponse("活動已結束，無法修改報名狀態");
 					return reply.code(statusCode).send(response);
@@ -310,7 +305,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			try {
 				const { eventId, status, format = "csv" } = request.query;
 
-				// Build where clause
 				const where = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
@@ -343,14 +337,9 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
-				// Generate CSV content
 				const csvContent = generateCSV(registrations);
-
-				// Set headers to trigger download
 				reply.header("Content-Type", "text/csv; charset=utf-8");
 				reply.header("Content-Disposition", `attachment; filename="${filename}"`);
-
-				// Add BOM for Excel UTF-8 compatibility
 				return reply.send("\uFEFF" + csvContent);
 			} catch (error) {
 				console.error("Export registrations error:", error);
@@ -361,58 +350,41 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	function generateCSV(registrations) {
-		// Parse all form data and collect all unique field keys
 		const parsedRegistrations = registrations.map(reg => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData) : {}
 		}));
 
-		// Collect all unique form field keys from all registrations
 		const formFieldKeys = new Set();
 		parsedRegistrations.forEach(reg => {
 			Object.keys(reg.formData).forEach(key => formFieldKeys.add(key));
 		});
 
-		// Convert to sorted array for consistent column order
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
-		// Build headers: basic fields + dynamic form fields
 		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Created At"];
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
-		// Helper function to handle localized text
 		const getLocalizedName = nameObj => {
 			if (!nameObj || typeof nameObj !== "object") return "";
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
-		// Helper function to format form field values
 		const formatFormValue = value => {
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
 			return String(value);
 		};
 
-		// Generate rows
 		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [
-				reg.id,
-				reg.email,
-				getLocalizedName(reg.event?.name),
-				getLocalizedName(reg.ticket?.name),
-				reg.ticket?.price || 0,
-				reg.status,
-				new Date(reg.createdAt).toISOString()
-			];
+			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
-			// Add form data values in the same order as headers
 			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
 
 			return [...baseValues, ...formDataValues];
 		});
 
-		// Convert to CSV format with proper escaping
 		const csvRows = [headers, ...rows];
 		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
@@ -454,7 +426,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Get registration details before deletion
 				const registration = await prisma.registration.findUnique({
 					where: { id },
 					include: {
@@ -474,25 +445,17 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Delete the registration (cascade will handle related records)
 				await prisma.registration.delete({
 					where: { id }
 				});
 
-				// Send notification email to event organizer
 				try {
 					await sendDataDeletionNotification(registration, registration.event);
 				} catch (emailError) {
 					console.error("Failed to send deletion notification email:", emailError);
-					// Continue even if email fails - deletion is already done
 				}
 
-				return reply.send(
-					successResponse(
-						{ id, email: registration.email },
-						"個人資料已成功刪除，通知信已發送給活動主辦方"
-					)
-				);
+				return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除，通知信已發送給活動主辦方"));
 			} catch (error) {
 				console.error("Delete registration error:", error);
 				const { response, statusCode } = serverErrorResponse("刪除報名記錄失敗");

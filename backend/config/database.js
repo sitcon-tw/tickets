@@ -1,5 +1,5 @@
-import { PrismaClient } from "../generated/prisma/index.js";
 import { createPrismaRedisCache } from "prisma-redis-middleware";
+import { PrismaClient } from "../generated/prisma/index.js";
 import { getRedisClient } from "./redis.js";
 
 let prisma;
@@ -7,7 +7,6 @@ let prisma;
 if (process.env.NODE_ENV === "production") {
 	prisma = new PrismaClient();
 } else {
-	// In development, use a global variable so that the value is preserved across module reloads
 	if (!globalThis.prisma) {
 		globalThis.prisma = new PrismaClient();
 	}
@@ -45,7 +44,7 @@ const cacheMiddleware = createPrismaRedisCache({
 				type: "redis",
 				options: {
 					client: redis,
-					invalidation: { referencesTTL: 30 }, // 30 seconds reference TTL
+					invalidation: { referencesTTL: 30 },
 					log: process.env.REDIS_DEBUG === "true" ? console : undefined
 				}
 			}
@@ -57,8 +56,8 @@ const cacheMiddleware = createPrismaRedisCache({
 					log: process.env.REDIS_DEBUG === "true" ? console : undefined
 				}
 			},
-	cacheTime: 5, // Default 5 seconds for models not explicitly configured
-	excludeMethods: [], // Cache all supported methods by default
+	cacheTime: 5,
+	excludeMethods: [],
 	onHit: key => {
 		if (process.env.REDIS_DEBUG === "true") {
 			console.log("Cache hit:", key);
@@ -74,7 +73,6 @@ const cacheMiddleware = createPrismaRedisCache({
 	}
 });
 
-// Apply the caching middleware
 prisma.$use(cacheMiddleware);
 
 export default prisma;

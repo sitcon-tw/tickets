@@ -2,6 +2,8 @@
  * @typedef {import('#../types/api.js').AnalyticsData} AnalyticsData
  */
 
+//TODO: This dashboard is not finished.
+
 import prisma from "#config/database.js";
 import { serverErrorResponse, successResponse } from "#utils/response.js";
 
@@ -40,14 +42,11 @@ export default async function dashboardRoutes(fastify, options) {
 		},
 		async (request, reply) => {
 			try {
-				// Get registration statistics
 				const [totalStats, revenueData] = await Promise.all([
-					// Total registrations by status
 					prisma.registration.groupBy({
 						by: ["status"],
 						_count: { id: true }
 					}),
-					// Revenue calculation
 					prisma.registration.findMany({
 						where: { status: "confirmed" },
 						include: {
@@ -58,10 +57,8 @@ export default async function dashboardRoutes(fastify, options) {
 					})
 				]);
 
-				// Get checked in count (field doesn't exist yet, so return 0)
 				const checkedInCount = 0;
 
-				// Calculate totals
 				const registrationCounts = totalStats.reduce(
 					(acc, stat) => {
 						acc[stat.status] = stat._count.id;
@@ -73,7 +70,6 @@ export default async function dashboardRoutes(fastify, options) {
 				const totalRegistrations = Object.values(registrationCounts).reduce((sum, count) => sum + count, 0);
 				const totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
 
-				// Get daily registrations for the last 30 days
 				const thirtyDaysAgo = new Date();
 				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

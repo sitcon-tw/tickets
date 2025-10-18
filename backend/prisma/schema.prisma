@@ -20,7 +20,7 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
-  role          String    @default("viewer") // admin, viewer
+  role          String    @default("viewer") // admin, eventAdmmin, viewer
   permissions   String?   // JSON array of permissions
   isActive      Boolean   @default(true)
   phoneNumber   String?
@@ -82,7 +82,6 @@ model Verification {
   @@map("verification")
 }
 
-// Core business models
 model Event {
   id          String   @id @default(cuid())
   name        Json     // Localized: {"en": "Event Name", "zh": "活動名稱"}
@@ -173,8 +172,8 @@ model Registration {
 
 model Referral {
   id              String   @id @default(cuid())
-  code            String   @unique // unique referral code
-  registrationId  String   @unique // one referral per registration
+  code            String   @unique
+  registrationId  String   @unique
   eventId         String
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
@@ -225,8 +224,8 @@ model EmailCampaign {
   userId       String
   name         String
   subject      String
-  content      String   // HTML content
-  recipientFilter String? // JSON filter criteria
+  content      String
+  recipientFilter String?
   status       String   @default("draft") // draft, sending, sent, cancelled
   sentCount    Int      @default(0)
   totalCount   Int      @default(0)

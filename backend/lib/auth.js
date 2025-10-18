@@ -20,7 +20,7 @@ export const auth = betterAuth({
 			maxAge: 60 * 60 * 24 * 30 // 30 days
 		},
 		cookieOptions: {
-			sameSite: "lax", // Use Lax for same-origin via proxy
+			sameSite: "lax",
 			secure: process.env.NODE_ENV === "production",
 			httpOnly: true,
 			path: "/"
@@ -41,9 +41,7 @@ export const auth = betterAuth({
 							locale = callbackPathParts[0];
 						}
 					}
-				} catch (e) {
-					// Silently fail locale detection, use default
-				}
+				} catch (e) {}
 
 				// Send users to frontend, which will proxy the verification to backend
 				const frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
@@ -58,7 +56,6 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				before: async user => {
-					// Automatically assign admin role to emails specified in ADMIN_EMAILS env var
 					const adminEmails = getAdminEmails();
 					if (adminEmails.includes(user.email)) {
 						return {

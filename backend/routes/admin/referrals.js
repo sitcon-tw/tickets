@@ -7,8 +7,8 @@ import { requireAdmin } from "#middleware/auth.js";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 export default async function adminReferralsRoutes(fastify, options) {
-	// Referrals are admin-only
 	fastify.addHook("preHandler", requireAdmin);
+
 	// 推薦機制總覽統計
 	fastify.get(
 		"/referrals/overview",
