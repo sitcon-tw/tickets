@@ -28,6 +28,7 @@ export default function Nav({ children }: NavProps) {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
@@ -35,6 +36,30 @@ export default function Nav({ children }: NavProps) {
 		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
 		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
 	});
+
+	async function handleLogout() {
+		if (isLoggingOut) return;
+		setIsLoggingOut(true);
+		try {
+			await authAPI.signOut();
+		} catch (error) {
+			console.error("Logout failed", error);
+		} finally {
+			if (typeof window !== "undefined") {
+				window.location.reload();
+			}
+		}
+	};
+
+	const hasAdminAccess = useMemo(() => {
+		if (session.status !== "authenticated" || !session.user.role) return false;
+		const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
+		return roles.some(role => role === "admin");
+	}, [session]);
+
+	const userDisplayName = session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
+
+	if (pathname.includes("/admin")) { return null; }
 
 	useEffect(() => {
 		function handleScroll() {
@@ -74,32 +99,6 @@ export default function Nav({ children }: NavProps) {
 			cancelled = true;
 		};
 	}, []);
-
-	const handleLogout = async () => {
-		if (isLoggingOut) return;
-		setIsLoggingOut(true);
-		try {
-			await authAPI.signOut();
-		} catch (error) {
-			console.error("Logout failed", error);
-		} finally {
-			if (typeof window !== "undefined") {
-				window.location.reload();
-			}
-		}
-	};
-
-	const hasAdminAccess = useMemo(() => {
-		if (session.status !== "authenticated" || !session.user.role) return false;
-		const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
-		return roles.some(role => role === "admin");
-	}, [session]);
-
-	const userDisplayName = session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
-
-	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
-
-	if (pathname.includes("/admin")) { return null; }
 
 	return (
 		<nav

@@ -1,24 +1,39 @@
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { JSXElementConstructor, ReactElement, ReactNode, ReactPortal, useEffect, useRef, useState } from "react";
 
 const styles = {
 	wrapper: {
 		display: "inline-block",
 		whiteSpace: "pre-wrap"
-	},
-	srOnly: {
-		position: "absolute",
-		width: "1px",
-		height: "1px",
-		padding: 0,
-		margin: "-1px",
-		overflow: "hidden",
-		clip: "rect(0,0,0,0)",
-		border: 0
 	}
 };
 
-export default function DecryptedText({ text, speed = 50, maxIterations = 10, sequential = false, revealDirection = "start", useOriginalCharsOnly = false, characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+", className = "", parentClassName = "", encryptedClassName = "", animateOn = "hover", ...props }) {
+export default function DecryptedText({
+	text,
+	speed = 50,
+	maxIterations = 10,
+	sequential = false,
+	revealDirection = "start",
+	useOriginalCharsOnly = false,
+	characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+",
+	className = "",
+	parentClassName = "",
+	encryptedClassName = "",
+	animateOn = "hover",
+	...props
+}: {
+	text: string;
+	speed?: number;
+	maxIterations?: number;
+	sequential?: boolean;
+	revealDirection?: "start" | "end" | "center";
+	useOriginalCharsOnly?: boolean;
+	characters?: string;
+	className?: string;
+	parentClassName?: string;
+	encryptedClassName?: string;
+	animateOn?: string;
+}) {
 	const [displayText, setDisplayText] = useState(text);
 	const [isHovering, setIsHovering] = useState(false);
 	const [isScrambling, setIsScrambling] = useState(false);
@@ -27,10 +42,10 @@ export default function DecryptedText({ text, speed = 50, maxIterations = 10, se
 	const containerRef = useRef(null);
 
 	useEffect(() => {
-		let interval;
+		let interval: string | number | NodeJS.Timeout | undefined;
 		let currentIteration = 0;
 
-		const getNextIndex = revealedSet => {
+		const getNextIndex = (revealedSet: Set<unknown>) => {
 			const textLength = text.length;
 			switch (revealDirection) {
 				case "start":
@@ -58,7 +73,7 @@ export default function DecryptedText({ text, speed = 50, maxIterations = 10, se
 
 		const availableChars = useOriginalCharsOnly ? Array.from(new Set(text.split(""))).filter(char => char !== " ") : characters.split("");
 
-		const shuffleText = (originalText, currentRevealed) => {
+		const shuffleText = (originalText: string, currentRevealed: Set<unknown>) => {
 			if (useOriginalCharsOnly) {
 				const positions = originalText.split("").map((char, i) => ({
 					char,
@@ -136,7 +151,7 @@ export default function DecryptedText({ text, speed = 50, maxIterations = 10, se
 	useEffect(() => {
 		if (animateOn !== "view" && animateOn !== "both") return;
 
-		const observerCallback = entries => {
+		const observerCallback = (entries: any[]) => {
 			entries.forEach(entry => {
 				if (entry.isIntersecting && !hasAnimated) {
 					setIsHovering(true);
@@ -174,14 +189,23 @@ export default function DecryptedText({ text, speed = 50, maxIterations = 10, se
 
 	return (
 		<motion.span className={parentClassName} ref={containerRef} style={styles.wrapper} {...hoverProps} {...props}>
-			<span style={styles.srOnly}>{displayText}</span>
+			<span style={{
+				position: "absolute",
+				width: "1px",
+				height: "1px",
+				padding: 0,
+				margin: "-1px",
+				overflow: "hidden",
+				clip: "rect(0,0,0,0)",
+				border: 0
+			}}>{displayText}</span>
 
 			<span aria-hidden="true">
-				{displayText.split("").map((char, index) => {
+				{displayText.split("").map((char: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, index: unknown) => {
 					const isRevealedOrDone = revealedIndices.has(index) || !isScrambling || !isHovering;
 
 					return (
-						<span key={index} className={isRevealedOrDone ? className : encryptedClassName}>
+						<span key={index as React.Key} className={isRevealedOrDone ? className : encryptedClassName}>
 							{char}
 						</span>
 					);

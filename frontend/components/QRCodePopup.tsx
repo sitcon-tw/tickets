@@ -16,6 +16,9 @@ interface QRCodePopupProps {
 
 export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime }: QRCodePopupProps) {
 	const locale = useLocale();
+
+	const [qrValue, setQrValue] = useState<string>("");
+
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
 		downloadOpass: { "zh-Hant": "您可以下載 OPass APP 進行報到：", "zh-Hans": "您可以下载 OPass APP 进行报到：", en: "You can download the OPass APP for check-in:" },
@@ -24,8 +27,6 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 		scanInfo: { "zh-Hant": "向工作人員出示此 QR Code 以進行驗證", "zh-Hans": "向工作人员出示此 QR Code 以进行验证", en: "Show this QR code to the staff for verification" },
 		qrAlert: { "zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷你資料。", "zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷你资料。", en: "Please do not share this QR code with others or they will steal your data." }
 	});
-
-	const [qrValue, setQrValue] = useState<string>("");
 
 	useEffect(() => {
 		if (isOpen && registrationId && registrationTime) {

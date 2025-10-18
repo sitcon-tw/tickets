@@ -12,7 +12,6 @@ export default function MarkdownContent({ content, className = "" }: MarkdownCon
 	const html = useMemo(() => {
 		if (!content) return "";
 
-		// Configure marked options
 		marked.setOptions({
 			breaks: true, // Convert \n to <br>
 			gfm: true, // GitHub Flavored Markdown

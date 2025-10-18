@@ -143,11 +143,9 @@ class APIClient {
 					} else if (errorData.message) {
 						errorMessage = errorData.message;
 					} else if (errorData.detail) {
-						// Handle detail as string
 						if (typeof errorData.detail === "string") {
 							errorMessage = errorData.detail;
 						}
-						// Handle detail as array
 						else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
 							errorMessage = errorData.detail.map(d => d.msg).join(", ");
 						} else {
@@ -229,10 +227,8 @@ class APIClient {
 	}
 }
 
-// Create singleton instance
 export const apiClient = new APIClient();
 
-// Export types for external configuration
 export type { RetryConfig };
 
 export default APIClient;
