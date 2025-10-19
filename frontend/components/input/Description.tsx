@@ -1,10 +1,6 @@
 import { ReactNode } from "react";
 
-type DescriptionProps = {
-	children: ReactNode;
-};
-
-export default function Description({ children }: DescriptionProps) {
+export default function Description({ children }: { children: ReactNode }) {
 	return (
 		<div
 			style={{

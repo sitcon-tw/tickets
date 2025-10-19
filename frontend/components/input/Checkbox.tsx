@@ -1,4 +1,4 @@
-import { CSSProperties, ChangeEvent } from "react";
+import { ChangeEvent } from "react";
 import styled from "styled-components";
 
 type CheckboxProps = {
