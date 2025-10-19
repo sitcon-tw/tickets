@@ -169,6 +169,8 @@ export default function FormPage() {
 
 			if (result.success) {
 				localStorage.removeItem("formData");
+				localStorage.removeItem("referralCode");
+				localStorage.removeItem("invitationCode");
 				router.push(window.location.href.replace("/form", "/success"));
 			} else {
 				throw new Error(result.message || "Registration failed");
