@@ -257,9 +257,6 @@ export default function RegistrationsPage() {
 	};
 
 	useEffect(() => {
-		loadRegistrations();
-		setFiltered(sortedAndFiltered);
-		
 		const savedEventId = localStorage.getItem("selectedEventId");
 		if (savedEventId) {
 			setCurrentEventId(savedEventId);
@@ -273,7 +270,15 @@ export default function RegistrationsPage() {
 		return () => {
 			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
 		};
-	}, [loadRegistrations, sortedAndFiltered]);
+	}, []);
+
+	useEffect(() => {
+		loadRegistrations();
+	}, [loadRegistrations]);
+
+	useEffect(() => {
+		setFiltered(sortedAndFiltered);
+	}, [sortedAndFiltered]);
 
 	return (
 		<>

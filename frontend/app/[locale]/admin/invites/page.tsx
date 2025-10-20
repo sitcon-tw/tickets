@@ -453,22 +453,6 @@ export default function InvitesPage() {
 		if (savedEventId) {
 			setCurrentEventId(savedEventId);
 		}
-		
-		if (currentEventId) {
-			loadTickets();
-		}
-
-		if (currentEventId && tickets.length > 0) {
-			loadInvitationCodes();
-		}
-
-		const q = searchTerm.toLowerCase();
-		const filtered = inviteTypes.filter(t => {
-			if (!q) return true;
-			if (t.name.toLowerCase().includes(q)) return true;
-			return t.codes.some(c => c.code.toLowerCase().includes(q));
-		});
-		setFilteredTypes(filtered);
 
 		const handleEventChange = (e: CustomEvent) => {
 			setCurrentEventId(e.detail.eventId);
@@ -478,8 +462,29 @@ export default function InvitesPage() {
 		return () => {
 			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
 		};
-		
-	}, [currentEventId, inviteTypes, loadInvitationCodes, loadTickets, searchTerm, tickets.length]);
+	}, []);
+
+	useEffect(() => {
+		if (currentEventId) {
+			loadTickets();
+		}
+	}, [currentEventId, loadTickets]);
+
+	useEffect(() => {
+		if (currentEventId && tickets.length > 0) {
+			loadInvitationCodes();
+		}
+	}, [currentEventId, tickets.length, loadInvitationCodes]);
+
+	useEffect(() => {
+		const q = searchTerm.toLowerCase();
+		const filtered = inviteTypes.filter(t => {
+			if (!q) return true;
+			if (t.name.toLowerCase().includes(q)) return true;
+			return t.codes.some(c => c.code.toLowerCase().includes(q));
+		});
+		setFilteredTypes(filtered);
+	}, [inviteTypes, searchTerm]);
 
 	return (
 		<>

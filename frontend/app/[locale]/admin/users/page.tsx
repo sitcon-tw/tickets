@@ -137,14 +137,16 @@ export default function UsersPage() {
 	useEffect(() => {
 		loadUsers();
 		loadEvents();
+	}, [loadUsers, loadEvents]);
 
+	useEffect(() => {
 		const q = searchTerm.toLowerCase();
 		const filtered = users.filter(user => {
 			if (!q) return true;
 			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
 		});
 		setFilteredUsers(filtered);
-	}, [users, searchTerm, loadUsers, loadEvents]);
+	}, [users, searchTerm]);
 
 	return (
 		<>
