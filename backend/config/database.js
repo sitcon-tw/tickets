@@ -20,24 +20,10 @@ const cacheMiddleware = createPrismaRedisCache({
 	models: [
 		// Cache events for 10 seconds (basic info, rarely changes during registration rush)
 		{ model: "Event", cacheTime: 10 },
-		// Cache tickets for 2-3 seconds (availability needs to be relatively fresh)
+		// Cache tickets for 3 seconds (availability needs to be relatively fresh)
 		{ model: "Ticket", cacheTime: 3 },
 		// Cache ticket form fields for 10 seconds (static data)
 		{ model: "TicketFromFields", cacheTime: 10 },
-		// Cache users for 5 seconds
-		{ model: "User", cacheTime: 5 },
-		// Cache invitation codes for 2 seconds (usage counts must be fresh)
-		{ model: "InvitationCode", cacheTime: 2 },
-		// Cache referrals for 5 seconds
-		{ model: "Referral", cacheTime: 5, invalidateRelated: ["ReferralUsage"] },
-		// Don't cache registrations (critical to be real-time)
-		{ model: "Registration", cacheTime: 0 },
-		// Don't cache sessions (security-sensitive)
-		{ model: "Session", cacheTime: 0 },
-		// Don't cache accounts (security-sensitive)
-		{ model: "Account", cacheTime: 0 },
-		// Don't cache verification tokens (security-sensitive)
-		{ model: "Verification", cacheTime: 0 }
 	],
 	storage: redis
 		? {
@@ -56,7 +42,7 @@ const cacheMiddleware = createPrismaRedisCache({
 					log: process.env.REDIS_DEBUG === "true" ? console : undefined
 				}
 			},
-	cacheTime: 5,
+	cacheTime: 0, // Default: don't cache anything not explicitly listed above
 	excludeMethods: [],
 	onHit: key => {
 		if (process.env.REDIS_DEBUG === "true") {
