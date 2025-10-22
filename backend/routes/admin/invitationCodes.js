@@ -5,9 +5,8 @@
  * @typedef {import('#types/api.js').InvitationCodeUpdateRequest} InvitationCodeUpdateRequest
  */
 
-// TODO: Permissions for eventAdmin
-
 import prisma from "#config/database.js";
+import { requireEventAccessViaTicketBody, requireEventAccessViaCodeId, requireEventAccessViaTicketQuery } from "#middleware/auth.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
@@ -21,6 +20,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.post(
 		"/invitation-codes",
 		{
+			preHandler: requireEventAccessViaTicketBody,
 			schema: invitationCodeSchemas.createInvitationCode
 		},
 		/**
@@ -100,6 +100,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.get(
 		"/invitation-codes/:id",
 		{
+			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.getInvitationCode
 		},
 		/**
@@ -151,6 +152,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.put(
 		"/invitation-codes/:id",
 		{
+			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.updateInvitationCode
 		},
 		/**
@@ -251,6 +253,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.delete(
 		"/invitation-codes/:id",
 		{
+			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.deleteInvitationCode
 		},
 		/**
@@ -292,6 +295,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.get(
 		"/invitation-codes",
 		{
+			preHandler: requireEventAccessViaTicketQuery,
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
 		/**
@@ -354,6 +358,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.post(
 		"/invitation-codes/bulk",
 		{
+			preHandler: requireEventAccessViaTicketBody,
 			schema: {
 				description: "批量創建邀請碼",
 				tags: ["admin/invitation-codes"],

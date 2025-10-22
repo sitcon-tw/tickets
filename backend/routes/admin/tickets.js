@@ -6,6 +6,7 @@
  */
 
 import prisma from "#config/database.js";
+import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth.js";
 import { ticketSchemas } from "#schemas/ticket.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
@@ -19,6 +20,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.post(
 		"/tickets",
 		{
+			preHandler: requireEventAccess,
 			schema: ticketSchemas.createTicket
 		},
 		/**
@@ -92,6 +94,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.get(
 		"/tickets/:id",
 		{
+			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.getTicket
 		},
 		/**
@@ -143,6 +146,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.put(
 		"/tickets/:id",
 		{
+			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.updateTicket
 		},
 		/**
@@ -237,6 +241,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.delete(
 		"/tickets/:id",
 		{
+			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.deleteTicket
 		},
 		/**
@@ -285,6 +290,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.get(
 		"/tickets",
 		{
+			preHandler: requireEventAccess,
 			schema: ticketSchemas.listTickets
 		},
 		/**
@@ -352,6 +358,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.get(
 		"/tickets/:id/analytics",
 		{
+			preHandler: requireEventAccessViaTicketId,
 			schema: {
 				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],

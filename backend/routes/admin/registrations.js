@@ -7,7 +7,7 @@
  */
 
 import prisma from "#config/database.js";
-import { requireEventAccess } from "#middleware/auth.js";
+import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth.js";
 import { registrationSchemas } from "#schemas/registration.js";
 import { sendDataDeletionNotification } from "#utils/email.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
@@ -118,10 +118,10 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	// Get registration by ID
-	// TODO: permission
 	fastify.get(
 		"/registrations/:id",
 		{
+			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
 		/**
@@ -190,10 +190,10 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	);
 
 	// Update registration
-	// TODO: permission
 	fastify.put(
 		"/registrations/:id",
 		{
+			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
 		/**
@@ -393,6 +393,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 	fastify.delete(
 		"/registrations/:id",
 		{
+			preHandler: requireEventAccessViaRegistrationId,
 			schema: {
 				description: "刪除報名記錄與個人資料 (符合個人資料保護法)",
 				tags: ["admin/registrations"],

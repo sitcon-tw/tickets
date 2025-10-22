@@ -6,6 +6,7 @@
  */
 
 import prisma from "#config/database.js";
+import { requireEventAccessViaTicketBody, requireEventAccessViaFieldId, requireEventAccessViaTicketParam, requireEventAccessViaTicketQuery } from "#middleware/auth.js";
 import { ticketFormFieldSchemas } from "#schemas/ticketFormFields.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
@@ -19,6 +20,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.post(
 		"/ticket-form-fields",
 		{
+			preHandler: requireEventAccessViaTicketBody,
 			schema: ticketFormFieldSchemas.createTicketFormField
 		},
 		/**
@@ -81,6 +83,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.get(
 		"/ticket-form-fields/:id",
 		{
+			preHandler: requireEventAccessViaFieldId,
 			schema: ticketFormFieldSchemas.getTicketFormField
 		},
 		/**
@@ -123,6 +126,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.put(
 		"/ticket-form-fields/:id",
 		{
+			preHandler: requireEventAccessViaFieldId,
 			schema: ticketFormFieldSchemas.updateTicketFormField
 		},
 		/**
@@ -208,6 +212,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.delete(
 		"/ticket-form-fields/:id",
 		{
+			preHandler: requireEventAccessViaFieldId,
 			schema: ticketFormFieldSchemas.deleteTicketFormField
 		},
 		/**
@@ -245,6 +250,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.get(
 		"/ticket-form-fields",
 		{
+			preHandler: requireEventAccessViaTicketQuery,
 			schema: ticketFormFieldSchemas.listTicketFormFields
 		},
 		/**
@@ -299,6 +305,7 @@ export default async function adminTicketFormFieldsRoutes(fastify, options) {
 	fastify.put(
 		"/tickets/:ticketId/form-fields/reorder",
 		{
+			preHandler: requireEventAccessViaTicketParam,
 			schema: {
 				description: "重新排序票券表單欄位",
 				tags: ["admin/tickets"],
