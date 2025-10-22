@@ -68,12 +68,7 @@ export const invitationCodesAPI = {
 	getInfo: (code: string, ticketId: string) => apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/invitation-codes/${code}/info`, { ticketId })
 };
 
-// User Promotion (requires auth but not admin)
-export const userAPI = {
-	promoteToAdmin: (password: string) => apiClient.post<ApiResponse<User>>("/api/promote", { password })
-};
-
-// Admin - Analytics
+// User // Admin - Analytics
 export const adminAnalyticsAPI = {
 	getDashboard: () => apiClient.get<ApiResponse<DashboardData>>("/api/admin/dashboard"),
 
