@@ -40,8 +40,9 @@ export default async function publicTicketsRoutes(fastify, options) {
 								type: "object",
 								properties: {
 									id: { type: "string" },
-									name: { type: "object" },
-									description: { type: "object" },
+									name: { type: "object", additionalProperties: true },
+									description: { type: "object", additionalProperties: true },
+									plainDescription: { type: "object", additionalProperties: true },
 									price: { type: "number" },
 									quantity: { type: "integer" },
 									soldCount: { type: "integer" },
@@ -83,24 +84,25 @@ export default async function publicTicketsRoutes(fastify, options) {
 				/** @type {Ticket | null} */
 				const ticket = await prisma.ticket.findUnique({
 					where: {
-						id,
-						isActive: true
+						id
 					},
 					select: {
 						id: true,
 						name: true,
 						description: true,
+						plainDescription: true,
 						price: true,
 						quantity: true,
 						soldCount: true,
 						saleStart: true,
 						saleEnd: true,
 						requireInviteCode: true,
-						requireSmsVerification: true
+						requireSmsVerification: true,
+						isActive: true
 					}
 				});
 
-				if (!ticket) {
+				if (!ticket || !ticket.isActive) {
 					const { response, statusCode } = notFoundResponse("票券不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}

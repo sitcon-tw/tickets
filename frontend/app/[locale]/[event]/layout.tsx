@@ -19,7 +19,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	const fallbackDescription = fallbackDescriptionMap[locale] || fallbackDescriptionMap["zh-Hant"];
 
 	try {
-		// For server-side calls, we need to use the full backend URL
 		const backendUrl = process.env.BACKEND_URI || "http://localhost:3000";
 		const response = await fetch(`${backendUrl}/api/events`, {
 			headers: {
@@ -44,7 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 				};
 
 				const eventName = getLocalizedText(foundEvent.name, "SITCON Event");
-				const eventDescription = getLocalizedText(foundEvent.description, `Register for ${eventName}`);
+				const eventDescription = getLocalizedText(
+					foundEvent.plainDescription || foundEvent.description,
+					`Register for ${eventName}`
+				);
 
 				return {
 					title: `${eventName} - ${siteName}`,

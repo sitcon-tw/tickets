@@ -76,6 +76,7 @@ export interface Event {
 	id: string;
 	name: LocalizedText;
 	description?: LocalizedText;
+	plainDescription?: LocalizedText;
 	location?: string;
 	startDate: string;
 	endDate: string;
@@ -111,6 +112,7 @@ export interface Ticket {
 	eventId?: string;
 	name: LocalizedText;
 	description?: LocalizedText;
+	plainDescription?: LocalizedText;
 	price: number;
 	quantity: number;
 	soldCount: number;
@@ -176,6 +178,7 @@ export interface Registration {
 		id: string;
 		name: LocalizedText;
 		description?: LocalizedText;
+		plainDescription?: LocalizedText;
 		location?: string;
 		startDate: string;
 		endDate: string;
@@ -185,6 +188,7 @@ export interface Registration {
 		id: string;
 		name: LocalizedText;
 		description?: LocalizedText;
+		plainDescription?: LocalizedText;
 		price: number;
 	};
 	isUpcoming?: boolean;
@@ -265,6 +269,7 @@ export interface InvitationCodeVerification {
 		id: string;
 		name: LocalizedText;
 		description?: LocalizedText;
+		plainDescription?: LocalizedText;
 		price: number;
 		quantity: number;
 		soldCount: number;

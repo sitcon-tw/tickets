@@ -23,6 +23,11 @@ export const ticketProperties = {
 		additionalProperties: true,
 		description: "票券描述 (localized JSON object)"
 	},
+	plainDescription: {
+		type: "object",
+		additionalProperties: true,
+		description: "票券純文字描述 (localized JSON object)"
+	},
 	price: {
 		type: "number",
 		description: "票價"
@@ -88,6 +93,11 @@ export const ticketCreateBody = {
 			additionalProperties: true,
 			description: "票券描述 (localized JSON object)"
 		},
+		plainDescription: {
+			type: "object",
+			additionalProperties: true,
+			description: "票券純文字描述 (localized JSON object)"
+		},
 		price: {
 			type: "number",
 			minimum: 0,
@@ -134,6 +144,11 @@ export const ticketUpdateBody = {
 			type: "object",
 			additionalProperties: true,
 			description: "票券描述 (localized JSON object)"
+		},
+		plainDescription: {
+			type: "object",
+			additionalProperties: true,
+			description: "票券純文字描述 (localized JSON object)"
 		},
 		price: {
 			type: "number",
