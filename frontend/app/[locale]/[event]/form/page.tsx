@@ -186,7 +186,8 @@ export default function FormPage() {
 			try {
 				const session = await authAPI.getSession();
 				if (!session || !session.user) {
-					router.push("/login/");
+					const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+					router.push(`/login/?returnUrl=${returnUrl}`);
 					return;
 				}
 

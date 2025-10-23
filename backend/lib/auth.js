@@ -31,6 +31,7 @@ export const auth = betterAuth({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
 				let locale = "zh-Hant";
+				let returnUrl = null;
 				try {
 					const constructedUrl = new URL(url);
 					const callbackURL = constructedUrl.searchParams.get("callbackURL");
@@ -40,11 +41,17 @@ export const auth = betterAuth({
 						if (callbackPathParts.length > 0 && ["en", "zh-Hant", "zh-Hans"].includes(callbackPathParts[0])) {
 							locale = callbackPathParts[0];
 						}
+						// Extract returnUrl from callbackURL (path + search params)
+						returnUrl = callbackUrl.pathname + callbackUrl.search;
 					}
 				} catch (e) {}
 
 				// Send users to frontend, which will proxy the verification to backend
-				const frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
+				// Include returnUrl in the verification link
+				let frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
+				if (returnUrl) {
+					frontendUrl += `&returnUrl=${encodeURIComponent(returnUrl)}`;
+				}
 				await sendMagicLink(email, frontendUrl);
 			}
 		})

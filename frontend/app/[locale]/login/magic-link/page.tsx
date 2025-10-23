@@ -50,12 +50,15 @@ export default function MagicLinkVerify() {
 
 	useEffect(() => {
 		const status = searchParams.get("status");
+		const returnUrl = searchParams.get("returnUrl");
 
 		if (status === "success") {
 			setStatus("success");
 			showAlert(t.success, "success");
 			setTimeout(() => {
-				router.push(`/${locale}/`);
+				// Redirect to returnUrl if provided, otherwise go to home
+				const redirectTo = returnUrl || `/${locale}/`;
+				router.push(redirectTo);
 			}, 1500);
 		} else if (status === "error") {
 			setStatus("error");

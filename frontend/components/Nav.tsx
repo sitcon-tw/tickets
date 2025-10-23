@@ -201,7 +201,7 @@ export default function Nav({ children }: NavProps) {
 						</div>
 					) : (
 						<a
-							href={linkBuilder("/login/")}
+							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
 							onMouseEnter={() => setHoveredLink("login")}
 							onMouseLeave={() => setHoveredLink(null)}
 							style={{

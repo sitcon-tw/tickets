@@ -170,7 +170,7 @@ fastify.all(
 // Handle magic link verification with redirect
 fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 	try {
-		const { token, locale = "zh-Hant" } = request.query;
+		const { token, locale = "zh-Hant", returnUrl } = request.query;
 
 		if (!token) {
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
@@ -196,8 +196,11 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		});
 
 		if (response.ok) {
-			// Redirect to frontend success page
-			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`);
+			// Redirect to frontend success page with returnUrl if available
+			const successUrl = returnUrl
+				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
+				: `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
+			return reply.redirect(successUrl);
 		} else {
 			// Redirect to frontend error page
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);

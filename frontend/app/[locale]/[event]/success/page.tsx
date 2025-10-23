@@ -141,7 +141,8 @@ export default function Success() {
 				}
 			} catch (error) {
 				console.error("Failed to load success info:", error);
-				window.location.href = "/login/";
+				const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+				window.location.href = `/login/?returnUrl=${returnUrl}`;
 			}
 		};
 		loadSuccessInfo();
