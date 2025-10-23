@@ -1,7 +1,12 @@
 packages:
     - frontend
+    - frontend-new
     - backend
 
 onlyBuiltDependencies:
+    - "@prisma/client"
+    - "@prisma/engines"
+    - better-sqlite3
     - esbuild
+    - prisma
     - sharp

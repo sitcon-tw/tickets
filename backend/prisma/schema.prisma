@@ -1,0 +1,255 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  role          String    @default("viewer") // admin, eventAdmmin, viewer
+  permissions   String?   // JSON array of permissions
+  isActive      Boolean   @default(true)
+  phoneNumber   String?
+  phoneVerified Boolean   @default(false)
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  emailCampaigns EmailCampaign[]
+  registrations Registration[]
+  smsVerifications SmsVerification[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        Json     // Localized: {"en": "Event Name", "zh": "活動名稱"}
+  description Json?    // Localized: {"en": "Description", "zh": "描述"}
+  location    String?
+  startDate   DateTime
+  endDate     DateTime
+  ogImage     String?
+  landingPage String?  // JSON content
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tickets       Ticket[]
+  registrations Registration[]
+  referrals     Referral[]
+  referralUsage ReferralUsage[]
+
+  @@map("event")
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        Json     // Localized: {"en": "Ticket Name", "zh": "票券名稱"}
+  description Json?    // Localized: {"en": "Description", "zh": "描述"}
+  price       Int
+  quantity    Int
+  soldCount   Int      @default(0)
+  saleStart   DateTime?
+  saleEnd     DateTime?
+  requireInviteCode Boolean @default(false)
+  requireSmsVerification Boolean @default(false)
+  hidden      Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event         Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations Registration[]
+  invitationCodes InvitationCode[]
+  fromFields    TicketFromFields[]
+
+  @@map("ticket")
+}
+
+
+model TicketFromFields {
+  id          String   @id @default(cuid())
+  ticketId    String
+  order       Int      // order of the field in the form
+  type        String   // text, textarea, select, checkbox, radio
+  validater   String?  // regex pattern for validation
+  name        Json     // Localized: {"en": "Field Name", "zh": "欄位名稱"}
+  description String?
+  placeholder String?
+  required    Boolean  @default(false)
+  values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+
+model Registration {
+  id              String   @id @default(cuid())
+  userId          String
+  eventId         String
+  ticketId        String
+  email           String
+  formData        String?  // JSON form data
+  status          String   @default("confirmed") // confirmed, cancelled, pending
+  referredBy      String?  // registration ID of referrer
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event            Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticket           Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  referrals        Registration[] @relation("RegistrationReferrals")
+  referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
+  referral         Referral?
+  referralUsage    ReferralUsage[] @relation("ReferralUsage")
+  
+  @@unique([email, eventId])
+  @@map("registration")
+}
+
+
+model Referral {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  registrationId  String   @unique
+  eventId         String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  registration    Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  event           Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  referredUsers   ReferralUsage[]
+  
+  @@map("referral")
+}
+
+model ReferralUsage {
+  id           String   @id @default(cuid())
+  referralId   String
+  registrationId String
+  eventId      String
+  usedAt       DateTime @default(now())
+  
+  referral     Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  registration Registration @relation("ReferralUsage", fields: [registrationId], references: [id], onDelete: Cascade)
+  event        Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  @@unique([referralId, registrationId]) // prevent duplicate usage
+  @@map("referral_usage")
+}
+
+model InvitationCode {
+  id          String   @id @default(cuid())
+  ticketId    String   // associated ticket ID
+  code        String   @unique
+  name        String?  // description/name for this code
+  usageLimit  Int?     // null = unlimited
+  usedCount   Int      @default(0)
+  validFrom   DateTime?
+  validUntil  DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticket  Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  @@map("invitation_code")
+}
+
+model EmailCampaign {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  subject      String
+  content      String
+  recipientFilter String?
+  status       String   @default("draft") // draft, sending, sent, cancelled
+  sentCount    Int      @default(0)
+  totalCount   Int      @default(0)
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_campaign")
+}
+
+model SmsVerification {
+  id          String   @id @default(cuid())
+  userId      String
+  phoneNumber String
+  code        String   // 6-digit verification code
+  verified    Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sms_verification")
+}

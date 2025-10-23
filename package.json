@@ -4,7 +4,7 @@
 	"author": "Elvis Mao",
 	"license": "Apache-2.0",
 	"scripts": {
-		"dev:frontend": "pnpm --filter frontend dev",
+		"dev:frontend": "pnpm --filter frontend dev --port 4322",
 		"dev:backend": "pnpm --filter backend dev",
 		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
 		"format": "prettier --write .",
