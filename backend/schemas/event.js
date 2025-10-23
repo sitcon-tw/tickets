@@ -87,6 +87,10 @@ export const eventCreateBody = {
 		location: {
 			type: "string",
 			description: "地點"
+		},
+		ogImage: {
+			type: "string",
+			description: "Open Graph 圖片 URL"
 		}
 	},
 	required: ["name", "startDate", "endDate"]
@@ -121,6 +125,10 @@ export const eventUpdateBody = {
 		location: {
 			type: "string",
 			description: "地點"
+		},
+		ogImage: {
+			type: "string",
+			description: "Open Graph 圖片 URL"
 		},
 		isActive: {
 			type: "boolean",

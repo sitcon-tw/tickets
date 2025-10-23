@@ -47,6 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 					foundEvent.plainDescription || foundEvent.description,
 					`Register for ${eventName}`
 				);
+				const ogImageUrl = foundEvent.ogImage;
 
 				return {
 					title: `${eventName} - ${siteName}`,
@@ -58,11 +59,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 						siteName: siteName,
 						locale: locale,
 						type: "website",
+						...(ogImageUrl && {
+							images: [
+								{
+									url: ogImageUrl,
+								}
+							]
+						})
 					},
 					twitter: {
 						card: "summary_large_image",
 						title: eventName,
 						description: eventDescription,
+						...(ogImageUrl && { images: [ogImageUrl] })
 					}
 				};
 			}

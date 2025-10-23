@@ -29,6 +29,7 @@ export default function EventsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [ogImage, setOgImage] = useState("");
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Event Management" },
@@ -37,6 +38,7 @@ export default function EventsPage() {
 		eventName: { "zh-Hant": "活動名稱", "zh-Hans": "活动名称", en: "Event Name" },
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
 		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
+		ogImage: { "zh-Hant": "OG 圖片網址", "zh-Hans": "OG 图片网址", en: "OG Image URL" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
 		startDate: { "zh-Hant": "開始日期", "zh-Hans": "开始日期", en: "Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
@@ -84,6 +86,7 @@ export default function EventsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setOgImage(event.ogImage || "");
 		} else {
 			setNameEn("");
 			setNameZhHant("");
@@ -94,6 +97,7 @@ export default function EventsPage() {
 			setPlainDescEn("");
 			setPlainDescZhHant("");
 			setPlainDescZhHans("");
+			setOgImage("");
 		}
 
 		setShowModal(true);
@@ -111,6 +115,7 @@ export default function EventsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setOgImage("");
 	};
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
@@ -135,6 +140,7 @@ export default function EventsPage() {
 				"zh-Hant": plainDescZhHant,
 				"zh-Hans": plainDescZhHans
 			},
+			ogImage: ogImage || undefined,
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? new Date(startDateStr).toISOString() : new Date().toISOString(),
 			endDate: endDateStr ? new Date(endDateStr).toISOString() : new Date().toISOString()
@@ -363,6 +369,10 @@ export default function EventsPage() {
 											</div>
 										</>
 									)}
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.ogImage}</label>
+										<input type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} className="admin-input" placeholder="https://example.com/image.jpg" />
+									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.location}</label>
 										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="admin-input" />
