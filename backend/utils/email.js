@@ -152,6 +152,24 @@ export const sendEditLink = async (email, editToken, event) => {
 
 export const sendMagicLink = async (email, magicLink) => {
 	try {
+		// Validate inputs
+		if (!email || typeof email !== "string" || !email.includes("@")) {
+			throw new Error("Invalid email address");
+		}
+
+		if (!magicLink || typeof magicLink !== "string") {
+			throw new Error("Invalid magic link");
+		}
+
+		// Validate Mailtrap configuration
+		if (!process.env.MAILTRAP_TOKEN) {
+			throw new Error("MAILTRAP_TOKEN is not configured");
+		}
+
+		if (!process.env.MAILTRAP_SENDER_EMAIL) {
+			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
+		}
+
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
@@ -163,7 +181,7 @@ export const sendMagicLink = async (email, magicLink) => {
 			}
 		];
 
-		await client.send({
+		const sendResult = await client.send({
 			from: sender,
 			to: recipients,
 			subject: `【SITCON 2026】登入連結 Login Link`,
@@ -322,7 +340,7 @@ export const sendMagicLink = async (email, magicLink) => {
 									</td>
 								</tr>
 							</table>
-							
+
 						</td>
 					</tr>
 				</table>
@@ -331,10 +349,22 @@ export const sendMagicLink = async (email, magicLink) => {
 			`
 		});
 
+		// Log successful email send
+		console.log(`Magic link email sent successfully to ${email}`);
 		return true;
 	} catch (error) {
-		console.error("Email sending error:", error);
-		return false;
+		// Enhanced error logging with more context
+		console.error("Email sending error:", {
+			email,
+			errorMessage: error.message,
+			errorCode: error.code,
+			errorName: error.name,
+			stack: error.stack
+		});
+
+		// Re-throw the error so Better Auth can handle it appropriately
+		// This allows the auth flow to return proper error responses to the client
+		throw new Error(`Failed to send magic link email: ${error.message}`);
 	}
 };
 /**

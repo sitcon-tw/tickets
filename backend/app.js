@@ -169,24 +169,40 @@ fastify.all(
 
 // Handle magic link verification with redirect
 fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
-	try {
-		const { token, locale = "zh-Hant", returnUrl } = request.query;
+	const locale = request.query.locale || "zh-Hant";
 
+	try {
+		const { token, returnUrl } = request.query;
+
+		// Validate token presence
 		if (!token) {
+			fastify.log.warn("Magic link verification attempted without token");
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
+		}
+
+		// Validate token format (should be a non-empty string)
+		if (typeof token !== "string" || token.trim().length === 0) {
+			fastify.log.warn("Magic link verification attempted with invalid token format");
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=invalid_token`);
 		}
 
 		// Call the Better Auth verification endpoint internally
 		const protocol = request.headers["x-forwarded-proto"] || "http";
 		const host = request.headers.host;
-		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${token}`;
+		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
 
 		const webRequest = new Request(authUrl, {
 			method: "GET",
 			headers: request.headers
 		});
 
-		const response = await auth.handler(webRequest);
+		let response;
+		try {
+			response = await auth.handler(webRequest);
+		} catch (authError) {
+			fastify.log.error("Better Auth handler error:", authError);
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
+		}
 
 		// Forward all Set-Cookie headers as-is
 		response.headers.forEach((value, key) => {
@@ -200,14 +216,32 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 			const successUrl = returnUrl
 				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
 				: `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
+
+			fastify.log.info(`Magic link verification successful for token: ${token.substring(0, 10)}...`);
 			return reply.redirect(successUrl);
 		} else {
-			// Redirect to frontend error page
-			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
+			// Log the specific response status for debugging
+			const responseText = await response.text().catch(() => "Unable to read response");
+			fastify.log.warn(`Magic link verification failed with status ${response.status}: ${responseText}`);
+
+			// Determine error type based on status code
+			let errorType = "verification_failed";
+			if (response.status === 400) {
+				errorType = "invalid_token";
+			} else if (response.status === 404) {
+				errorType = "invalid_token";
+			} else if (response.status === 410) {
+				errorType = "token_expired";
+			}
+
+			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=${errorType}`);
 		}
 	} catch (error) {
-		fastify.log.error("Magic link verification error:", error);
-		const locale = request.query.locale || "zh-Hant";
+		fastify.log.error("Magic link verification error:", {
+			error: error.message,
+			stack: error.stack,
+			query: request.query
+		});
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
 });
