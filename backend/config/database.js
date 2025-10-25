@@ -1,64 +1,61 @@
-import { createPrismaRedisCache } from "prisma-redis-middleware";
 import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaExtensionRedis } from "prisma-extension-redis";
 import { getRedisClient } from "./redis.js";
 
-let prisma;
+let basePrisma;
 
 if (process.env.NODE_ENV === "production") {
-	prisma = new PrismaClient();
+	basePrisma = new PrismaClient();
 } else {
 	if (!globalThis.prisma) {
 		globalThis.prisma = new PrismaClient();
 	}
-	prisma = globalThis.prisma;
+	basePrisma = globalThis.prisma;
 }
 
-// Configure Redis caching middleware
+// Configure Redis caching extension
 const redis = getRedisClient();
 
-const cacheMiddleware = createPrismaRedisCache({
+// Configure auto-caching behavior
+const auto = {
+	excludedModels: [], // No models excluded by default
+	excludedOperations: [], // Cache all operations
 	models: [
-		// Cache events for 10 seconds (basic info, rarely changes during registration rush)
-		{ model: "Event", cacheTime: 10 },
-		// Cache tickets for 3 seconds (availability needs to be relatively fresh)
-		{ model: "Ticket", cacheTime: 3 },
-		// Cache ticket form fields for 10 seconds (static data)
-		{ model: "TicketFromFields", cacheTime: 10 },
+		{
+			model: "Event",
+			ttl: 10, // Cache events for 10 seconds (basic info, rarely changes during registration rush)
+			stale: 5 // Allow using stale data for 5 seconds after expiration
+		},
+		{
+			model: "Ticket",
+			ttl: 3, // Cache tickets for 3 seconds (availability needs to be relatively fresh)
+			stale: 1 // Minimal stale period for ticket availability
+		},
+		{
+			model: "TicketFromFields",
+			ttl: 10, // Cache ticket form fields for 10 seconds (static data)
+			stale: 5
+		}
 	],
-	storage: redis
-		? {
-				type: "redis",
-				options: {
-					client: redis,
-					invalidation: { referencesTTL: 30 },
-					log: process.env.REDIS_DEBUG === "true" ? console : undefined
-				}
-			}
-		: {
-				type: "memory",
-				options: {
-					size: 2048,
-					invalidation: true,
-					log: process.env.REDIS_DEBUG === "true" ? console : undefined
-				}
-			},
-	cacheTime: 0, // Default: don't cache anything not explicitly listed above
-	excludeMethods: [],
-	onHit: key => {
-		if (process.env.REDIS_DEBUG === "true") {
-			console.log("Cache hit:", key);
-		}
-	},
-	onMiss: key => {
-		if (process.env.REDIS_DEBUG === "true") {
-			console.log("Cache miss:", key);
-		}
-	},
-	onError: key => {
-		console.error("Cache error:", key);
-	}
-});
+	ttl: 0 // Default: don't cache anything not explicitly listed above
+};
 
-prisma.$use(cacheMiddleware);
+// Configure storage settings
+const config = {
+	ttl: 0, // Default TTL (disabled unless model-specific)
+	stale: 0,
+	auto,
+	logger: process.env.REDIS_DEBUG === "true" ? console : undefined
+};
+
+// Apply Redis caching extension or use base Prisma client
+// The extension accepts an ioredis client directly
+const prisma = redis
+	? basePrisma.$extends(PrismaExtensionRedis({ config, client: redis }))
+	: basePrisma;
+
+if (!redis && process.env.NODE_ENV !== "test") {
+	console.warn("Redis client not available - running without query caching");
+}
 
 export default prisma;
