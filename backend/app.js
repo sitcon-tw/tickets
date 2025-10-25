@@ -2,7 +2,7 @@
 // This ensures OpenTelemetry SDK is initialized before Fastify
 import "./lib/tracing.js";
 
-import { openTelemetryPlugin } from "@autotelic/fastify-opentelemetry";
+import openTelemetryPlugin from "@autotelic/fastify-opentelemetry";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
