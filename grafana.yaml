@@ -46,7 +46,7 @@ spec:
                             static_configs:
                               - targets: ['localhost:9090']
         - name: tempo
-          icon: https://grafana.com/static/img/logos/logo-tempo.svg
+          icon: https://grafana.com/static/assets/img/logos/grafana-tempo.svg
           template: PREBUILT
           spec:
               source:
@@ -55,7 +55,7 @@ spec:
                   - id: otlp
                     port: 4318
                     type: HTTP
-                  - id: tempo-web
+                  - id: tempoweb
                     port: 3200
                     type: HTTP
               volumes:
