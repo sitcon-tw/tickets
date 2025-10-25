@@ -2,28 +2,17 @@ import { context, SpanStatusCode, trace } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { NodeSDK } from "@opentelemetry/sdk-node";
-import resourcesPkg from "@opentelemetry/resources";
-import semanticConventionsPkg from "@opentelemetry/semantic-conventions";
-
-// Extract named exports from CommonJS modules
-const { Resource } = resourcesPkg;
-const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } = semanticConventionsPkg;
 
 // Configure the OTLP trace exporter to send traces to Tempo
 const traceExporter = new OTLPTraceExporter({
 	url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tempo:4318/v1/traces"
 });
 
-// Configure service resource with semantic conventions
-const resource = new Resource({
-	[ATTR_SERVICE_NAME]: "tickets-backend",
-	[ATTR_SERVICE_VERSION]: "1.0.0"
-});
-
-// Initialize the OpenTelemetry SDK
+// Initialize the OpenTelemetry SDK with resource attributes
 const sdk = new NodeSDK({
-	resource,
 	traceExporter,
+	serviceName: "tickets-backend",
+	serviceVersion: "1.0.0",
 	instrumentations: [
 		getNodeAutoInstrumentations({
 			// Custom configuration for HTTP instrumentation
