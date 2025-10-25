@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+    name: Prometheus + Grafana
+spec:
+    description: Monitor your applications with Prometheus and Grafana.
+    icon: https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Grafana_icon.svg/1969px-Grafana_icon.svg.png
+    variables:
+        - key: PUBLIC_DOMAIN
+          type: DOMAIN
+          name: Domain
+          description: The domain name for your Grafana dashboard
+    tags:
+        - monitoring
+        - prometheus
+        - grafana
+    readme: |
+        Monitor your applications with Prometheus and Grafana.
+    services:
+        - name: prometheus
+          icon: https://avatars.githubusercontent.com/u/3380462?s=48&v=4
+          template: PREBUILT
+          spec:
+              source:
+                  image: prom/prometheus
+              ports:
+                  - id: web
+                    port: 9090
+                    type: HTTP
+              volumes:
+                  - id: data
+                    dir: /prometheus
+              configs:
+                  - path: /etc/prometheus/prometheus.yml
+                    template: |
+                        global:
+                          scrape_interval: 15s
+                        scrape_configs:
+                          - job_name: 'prometheus'
+                            static_configs:
+                              - targets: ['localhost:9090']
+                    permission: null
+                    envsubst: null
+        - name: grafana
+          icon: https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Grafana_icon.svg/1969px-Grafana_icon.svg.png
+          template: PREBUILT
+          spec:
+              source:
+                  image: grafana/grafana
+              ports:
+                  - id: web
+                    port: 3000
+                    type: HTTP
+              volumes:
+                  - id: data
+                    dir: /var/lib/grafana
+              env:
+                  GF_SECURITY_ADMIN_PASSWORD:
+                      default: admin
+                  GF_SECURITY_ADMIN_USER:
+                      default: admin
+              configs:
+                  - path: /etc/grafana/provisioning/datasources/datasource.yml
+                    template: |
+                        apiVersion: 1
+                        datasources:
+                          - name: Prometheus
+                            type: prometheus
+                            access: proxy
+                            orgId: 1
+                            url: http://prometheus:9090
+                            basicAuth: false
+                            isDefault: true
+                    permission: null
+                    envsubst: null
+          domainKey: PUBLIC_DOMAIN
