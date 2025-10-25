@@ -29,6 +29,7 @@
 		"@opentelemetry/exporter-trace-otlp-http": "^0.207.0",
 		"@opentelemetry/resources": "^2.2.0",
 		"@opentelemetry/sdk-node": "^0.207.0",
+		"@opentelemetry/semantic-conventions": "^1.37.0",
 		"@prisma/client": "^6.13.0",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/ioredis": "^5.0.0",
