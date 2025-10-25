@@ -39,7 +39,7 @@ await fastify.register(fastifyMetrics, {
 	defaultMetrics: { enabled: true }, // Enable default Node.js metrics
 	routeMetrics: { 
 		enabled: true, // Enable route-specific metrics
-		registeredRoutesOnly: true, // Only track registered routes
+		registeredRoutesOnly: false, // Only track registered routes
 		groupStatusCodes: false // Keep exact status codes
 	}
 });
