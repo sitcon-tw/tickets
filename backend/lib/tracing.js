@@ -12,7 +12,7 @@ const traceExporter = new OTLPTraceExporter({
 
 // Configure service resource with semantic conventions
 const resource = new Resource({
-	[ATTR_SERVICE_NAME]: "2026-tickets-backend",
+	[ATTR_SERVICE_NAME]: "tickets-backend",
 	[ATTR_SERVICE_VERSION]: "1.0.0"
 });
 
@@ -45,7 +45,7 @@ sdk.start();
 console.log("✅ OpenTelemetry tracing initialized");
 
 // Export tracer for manual instrumentation
-const tracer = trace.getTracer("2026-tickets-backend", "1.0.0");
+const tracer = trace.getTracer("tickets-backend", "1.0.0");
 
 /**
  * Wrap an async function with a span for tracing
