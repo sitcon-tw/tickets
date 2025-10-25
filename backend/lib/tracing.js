@@ -1,13 +1,17 @@
 import { context, SpanStatusCode, trace } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { Resource } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
+import resourcesPkg from "@opentelemetry/resources";
+import semanticConventionsPkg from "@opentelemetry/semantic-conventions";
+
+// Extract named exports from CommonJS modules
+const { Resource } = resourcesPkg;
+const { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } = semanticConventionsPkg;
 
 // Configure the OTLP trace exporter to send traces to Tempo
 const traceExporter = new OTLPTraceExporter({
-	url: process.env.NODE_ENV || "http://tempo.zeabur.internal:4381/v1/traces"
+	url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tempo:4318/v1/traces"
 });
 
 // Configure service resource with semantic conventions
