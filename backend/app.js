@@ -1,3 +1,7 @@
+// IMPORTANT: Import tracing FIRST before any other modules
+// This ensures OpenTelemetry SDK is initialized before Fastify
+import "./lib/tracing.js";
+
 import { openTelemetryPlugin } from "@autotelic/fastify-opentelemetry";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -6,7 +10,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
-import "./tracing.js";
+import fastifyMetrics from "fastify-metrics";
 
 import { closeRedis } from "./config/redis.js";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
@@ -23,14 +27,21 @@ const fastify = Fastify({
 	trustProxy: process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production"
 });
 
-app.register(openTelemetryPlugin, {
-	serviceName: "sitcon-tickets-backend",
-	wrapRoutes: true // 自動 trace 每個 route
+// Register OpenTelemetry plugin for automatic HTTP request tracing
+await fastify.register(openTelemetryPlugin, {
+	wrapRoutes: true, // Automatically trace each route with active context
+	exposeApi: true // Expose request.openTelemetry() API
 });
 
-// 啟用 Prometheus metrics
-app.register(fastifyMetrics, {
-	endpoint: "/metrics" // Prometheus 會抓這裡
+// Register Prometheus metrics exporter
+await fastify.register(fastifyMetrics, {
+	endpoint: "/metrics", // Prometheus scrapes this endpoint
+	defaultMetrics: { enabled: true }, // Enable default Node.js metrics
+	routeMetrics: { 
+		enabled: true, // Enable route-specific metrics
+		registeredRoutesOnly: true, // Only track registered routes
+		groupStatusCodes: false // Keep exact status codes
+	}
 });
 
 /*
