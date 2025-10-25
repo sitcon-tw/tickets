@@ -1,3 +1,4 @@
+import { openTelemetryPlugin } from "@autotelic/fastify-opentelemetry";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -5,6 +6,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
+import "./tracing.js";
 
 import { closeRedis } from "./config/redis.js";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
@@ -19,6 +21,16 @@ const fastify = Fastify({
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
 	trustProxy: process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production"
+});
+
+app.register(openTelemetryPlugin, {
+	serviceName: "sitcon-tickets-backend",
+	wrapRoutes: true // 自動 trace 每個 route
+});
+
+// 啟用 Prometheus metrics
+app.register(fastifyMetrics, {
+	endpoint: "/metrics" // Prometheus 會抓這裡
 });
 
 /*
@@ -213,9 +225,7 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		if (response.ok) {
 			// Redirect to frontend success page with returnUrl if available
-			const successUrl = returnUrl
-				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
-				: `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
+			const successUrl = returnUrl ? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}` : `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
 
 			fastify.log.info(`Magic link verification successful for token: ${token.substring(0, 10)}...`);
 			return reply.redirect(successUrl);

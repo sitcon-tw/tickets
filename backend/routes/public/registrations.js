@@ -12,6 +12,8 @@ import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
 import { validateRegistrationFormData } from "#utils/validation.js";
+import { tracePrismaOperation, traceBusinessOperation, traceValidation } from "#utils/trace-db.js";
+import { addSpanEvent } from "#lib/tracing.js";
 
 /**
  * Public registrations routes with modular schemas and types
@@ -50,39 +52,66 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const user = session.user;
 
 				// Check if user already registered for this event
-				const existingRegistration = await prisma.registration.findFirst({
-					where: {
-						email: user.email,
-						eventId
-					}
-				});
+				addSpanEvent("checking_existing_registration");
+				const existingRegistration = await tracePrismaOperation(
+					"Registration",
+					"findFirst",
+					async () => {
+						return prisma.registration.findFirst({
+							where: {
+								email: user.email,
+								eventId
+							}
+						});
+					},
+					{ where: { email: user.email, eventId } }
+				);
 
 				if (existingRegistration) {
+					addSpanEvent("user_already_registered");
 					const { response, statusCode } = conflictResponse("您已經報名此活動");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Verify event and ticket, and get form fields
+				addSpanEvent("fetching_event_and_ticket");
 				const [event, ticket] = await Promise.all([
-					prisma.event.findUnique({
-						where: {
-							id: eventId,
-							isActive: true
-						}
-					}),
-					prisma.ticket.findUnique({
-						where: {
-							id: ticketId,
-							eventId,
-							isActive: true,
-							hidden: false
+					tracePrismaOperation(
+						"Event",
+						"findUnique",
+						async () => {
+							return prisma.event.findUnique({
+								where: {
+									id: eventId,
+									isActive: true
+								}
+							});
 						},
-						include: {
-							fromFields: {
-								orderBy: { order: "asc" }
-							}
+						{ where: { id: eventId, isActive: true } }
+					),
+					tracePrismaOperation(
+						"Ticket",
+						"findUnique",
+						async () => {
+							return prisma.ticket.findUnique({
+								where: {
+									id: ticketId,
+									eventId,
+									isActive: true,
+									hidden: false
+								},
+								include: {
+									fromFields: {
+										orderBy: { order: "asc" }
+									}
+								}
+							});
+						},
+						{ 
+							where: { id: ticketId, eventId, isActive: true, hidden: false },
+							include: { fromFields: true }
 						}
-					})
+					)
 				]);
 
 				if (!event) {
@@ -117,19 +146,27 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				let invitationCodeId = null;
 				if (ticket.requireInviteCode) {
 					// Ticket requires invitation code
+					addSpanEvent("validating_required_invitation_code");
 					if (!invitationCode) {
 						const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
 						return reply.code(statusCode).send(response);
 					}
 
 					/** @type {InvitationCode | null} */
-					const code = await prisma.invitationCode.findFirst({
-						where: {
-							code: invitationCode,
-							ticketId,
-							isActive: true
-						}
-					});
+					const code = await tracePrismaOperation(
+						"InvitationCode",
+						"findFirst",
+						async () => {
+							return prisma.invitationCode.findFirst({
+								where: {
+									code: invitationCode,
+									ticketId,
+									isActive: true
+								}
+							});
+						},
+						{ where: { code: invitationCode, ticketId, isActive: true } }
+					);
 
 					if (!code) {
 						const { response, statusCode } = validationErrorResponse("無效的邀請碼");
