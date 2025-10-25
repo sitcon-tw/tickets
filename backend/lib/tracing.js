@@ -1,13 +1,13 @@
+import { context, SpanStatusCode, trace } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { NodeSDK } from "@opentelemetry/sdk-node";
 import { Resource } from "@opentelemetry/resources";
+import { NodeSDK } from "@opentelemetry/sdk-node";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
-import { trace, context, SpanStatusCode } from "@opentelemetry/api";
 
 // Configure the OTLP trace exporter to send traces to Tempo
 const traceExporter = new OTLPTraceExporter({
-	url: "http://tempo:4318/v1/traces"
+	url: process.env.NODE_ENV || "http://tempo.zeabur.internal:4381/v1/traces"
 });
 
 // Configure service resource with semantic conventions
@@ -24,7 +24,7 @@ const sdk = new NodeSDK({
 		getNodeAutoInstrumentations({
 			// Custom configuration for HTTP instrumentation
 			"@opentelemetry/instrumentation-http": {
-				ignoreIncomingRequestHook: (request) => {
+				ignoreIncomingRequestHook: request => {
 					// Ignore health check and metrics endpoints
 					const url = request.url || "";
 					return url === "/health" || url === "/metrics";
@@ -55,7 +55,7 @@ const tracer = trace.getTracer("tickets-backend", "1.0.0");
  * @returns {Promise<any>} - The result of the function
  */
 export async function withSpan(spanName, fn, attributes = {}) {
-	return tracer.startActiveSpan(spanName, async (span) => {
+	return tracer.startActiveSpan(spanName, async span => {
 		try {
 			// Add custom attributes
 			Object.entries(attributes).forEach(([key, value]) => {
@@ -116,4 +116,4 @@ export function addSpanEvent(name, attributes = {}) {
 	}
 }
 
-export { tracer, trace, context, SpanStatusCode };
+export { context, SpanStatusCode, trace, tracer };
