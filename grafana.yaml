@@ -2,9 +2,9 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-    name: Prometheus + Grafana
+    name: Prometheus + Grafana + Tempo
 spec:
-    description: Monitor your applications with Prometheus and Grafana.
+    description: Complete observability stack for Fastify (metrics + traces)
     icon: https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Grafana_icon.svg/1969px-Grafana_icon.svg.png
     variables:
         - key: PUBLIC_DOMAIN
@@ -13,10 +13,15 @@ spec:
           description: The domain name for your Grafana dashboard
     tags:
         - monitoring
-        - prometheus
         - grafana
+        - prometheus
+        - tempo
+        - opentelemetry
     readme: |
-        Monitor your applications with Prometheus and Grafana.
+        This template deploys Prometheus, Grafana, and Grafana Tempo for full observability.
+        - Prometheus: collects metrics (Fastify via /metrics)
+        - Tempo: stores distributed traces from OpenTelemetry
+        - Grafana: visualizes everything
     services:
         - name: prometheus
           icon: https://avatars.githubusercontent.com/u/3380462?s=48&v=4
@@ -40,6 +45,45 @@ spec:
                           - job_name: 'prometheus'
                             static_configs:
                               - targets: ['localhost:9090']
+        - name: tempo
+          icon: https://grafana.com/static/img/logos/logo-tempo.svg
+          template: PREBUILT
+          spec:
+              source:
+                  image: grafana/tempo
+              ports:
+                  - id: otlp
+                    port: 4318
+                    type: HTTP
+                  - id: tempo-web
+                    port: 3200
+                    type: HTTP
+              volumes:
+                  - id: data
+                    dir: /tmp/tempo
+              configs:
+                  - path: /etc/tempo.yaml
+                    template: |
+                        server:
+                          http_listen_port: 3200
+                        distributor:
+                          receivers:
+                            otlp:
+                              protocols:
+                                http:
+                                grpc:
+                        ingester:
+                          trace_idle_period: 10s
+                          max_block_bytes: 1000000
+                          max_block_duration: 5m
+                        compactor:
+                          compaction:
+                            block_retention: 1h
+                        storage:
+                          trace:
+                            backend: local
+                            local:
+                              path: /tmp/tempo
                     permission: null
                     envsubst: null
         - name: grafana
@@ -72,6 +116,12 @@ spec:
                             url: http://prometheus:9090
                             basicAuth: false
                             isDefault: true
+                          - name: Tempo
+                            type: tempo
+                            access: proxy
+                            url: http://tempo:3200
+                            basicAuth: false
+                            orgId: 1
                     permission: null
                     envsubst: null
           domainKey: PUBLIC_DOMAIN
