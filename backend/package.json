@@ -9,7 +9,7 @@
 	"scripts": {
 		"start": "prisma db push --accept-data-loss && node app.js",
 		"dev": "nodemon app.js",
-		"postinstall": "prisma generate && prisma migrate deploy"
+		"postinstall": "prisma generate"
 	},
 	"license": "Apache-2.0",
 	"packageManager": "pnpm@10.13.1",
