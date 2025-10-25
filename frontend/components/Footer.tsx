@@ -44,7 +44,7 @@ export default function Footer() {
 			</div>
 			<p className="text-sm text-gray-500">
 				This project is open-sourced on{" "}
-				<a href="https://github.com/sitcon/tickets" target="_blank" rel="noreferrer" className="underline">
+				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="underline">
 					GitHub
 				</a>
 				.

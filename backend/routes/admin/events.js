@@ -34,7 +34,7 @@ export default async function adminEventsRoutes(fastify, options) {
 				const rawBody = request.body;
 
 				const sanitizedBody = sanitizeObject(rawBody, true);
-				const { name, description, startDate, endDate, location } = sanitizedBody;
+				const { name, description, plainDescription, startDate, endDate, location, ogImage } = sanitizedBody;
 
 				const start = new Date(startDate);
 				const end = new Date(endDate);
@@ -54,9 +54,11 @@ export default async function adminEventsRoutes(fastify, options) {
 					data: {
 						name,
 						description,
+						plainDescription,
 						startDate: start,
 						endDate: end,
 						location,
+						ogImage,
 						isActive: true
 					}
 				});

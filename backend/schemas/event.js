@@ -19,6 +19,11 @@ export const eventProperties = {
 		additionalProperties: true,
 		description: "活動描述 (localized JSON object)"
 	},
+	plainDescription: {
+		type: "object",
+		additionalProperties: true,
+		description: "活動純文字描述 (localized JSON object)"
+	},
 	location: {
 		type: "string",
 		description: "活動地點"
@@ -66,6 +71,11 @@ export const eventCreateBody = {
 			additionalProperties: true,
 			description: "活動描述 (localized JSON object)"
 		},
+		plainDescription: {
+			type: "object",
+			additionalProperties: true,
+			description: "活動純文字描述 (localized JSON object)"
+		},
 		startDate: {
 			...dateTimeString,
 			description: "開始時間"
@@ -77,6 +87,10 @@ export const eventCreateBody = {
 		location: {
 			type: "string",
 			description: "地點"
+		},
+		ogImage: {
+			type: "string",
+			description: "Open Graph 圖片 URL"
 		}
 	},
 	required: ["name", "startDate", "endDate"]
@@ -95,6 +109,11 @@ export const eventUpdateBody = {
 			additionalProperties: true,
 			description: "活動描述 (localized JSON object)"
 		},
+		plainDescription: {
+			type: "object",
+			additionalProperties: true,
+			description: "活動純文字描述 (localized JSON object)"
+		},
 		startDate: {
 			...dateTimeString,
 			description: "開始時間"
@@ -106,6 +125,10 @@ export const eventUpdateBody = {
 		location: {
 			type: "string",
 			description: "地點"
+		},
+		ogImage: {
+			type: "string",
+			description: "Open Graph 圖片 URL"
 		},
 		isActive: {
 			type: "boolean",
@@ -232,6 +255,7 @@ export const eventTicketsResponse = {
 						id: { type: "string" },
 						name: { type: "object", additionalProperties: true },
 						description: { type: "object", additionalProperties: true },
+						plainDescription: { type: "object", additionalProperties: true },
 						price: { type: "number" },
 						quantity: { type: "integer" },
 						soldCount: { type: "integer" },
@@ -262,6 +286,7 @@ export const publicEventsListResponse = {
 						id: { type: "string" },
 						name: { type: "object", additionalProperties: true },
 						description: { type: "object", additionalProperties: true },
+						plainDescription: { type: "object", additionalProperties: true },
 						location: { type: "string" },
 						startDate: { type: "string", format: "date-time" },
 						endDate: { type: "string", format: "date-time" },

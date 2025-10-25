@@ -6,7 +6,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
 const StyledMain = styled.main`
@@ -142,6 +142,7 @@ export default function Login() {
 	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const returnUrl = searchParams.get("returnUrl");
+	const errorParam = searchParams.get("error");
 	const [viewState, setViewState] = useState<"login" | "sent">("login");
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -170,13 +171,82 @@ export default function Login() {
 			"zh-Hant": "錯誤",
 			"zh-Hans": "错误",
 			en: "Error"
+		},
+		invalidEmail: {
+			"zh-Hant": "請輸入有效的電子郵件地址",
+			"zh-Hans": "请输入有效的电子邮件地址",
+			en: "Please enter a valid email address"
+		},
+		rateLimitError: {
+			"zh-Hant": "請求過於頻繁，請稍後再試",
+			"zh-Hans": "请求过于频繁，请稍后再试",
+			en: "Too many requests. Please try again later"
+		},
+		verificationFailed: {
+			"zh-Hant": "驗證失敗，請重新請求登入連結",
+			"zh-Hans": "验证失败，请重新请求登录链接",
+			en: "Verification failed. Please request a new login link"
+		},
+		invalidToken: {
+			"zh-Hant": "無效的連結，請重新請求登入連結",
+			"zh-Hans": "无效的链接，请重新请求登录链接",
+			en: "Invalid link. Please request a new login link"
+		},
+		serverError: {
+			"zh-Hant": "伺服器錯誤，請稍後再試",
+			"zh-Hans": "服务器错误，请稍后再试",
+			en: "Server error. Please try again later"
+		},
+		emailSendError: {
+			"zh-Hant": "無法發送電子郵件，請稍後再試",
+			"zh-Hans": "无法发送电子邮件，请稍后再试",
+			en: "Failed to send email. Please try again later"
+		},
+		tokenExpired: {
+			"zh-Hant": "連結已過期，請重新請求登入連結",
+			"zh-Hans": "链接已过期，请重新请求登录链接",
+			en: "Link has expired. Please request a new login link"
 		}
 	});
 
+	useEffect(() => {
+		if (errorParam) {
+			let errorMessage = t.error;
+			switch (errorParam) {
+				case "verification_failed":
+					errorMessage = t.verificationFailed;
+					break;
+				case "invalid_token":
+					errorMessage = t.invalidToken;
+					break;
+				case "token_expired":
+					errorMessage = t.tokenExpired;
+					break;
+				case "server_error":
+					errorMessage = t.serverError;
+					break;
+				default:
+					errorMessage = `${t.error}: ${errorParam}`;
+			}
+			showAlert(errorMessage, "error");
+		}
+	}, [errorParam]);
+
+	const validateEmail = (email: string): boolean => {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return emailRegex.test(email);
+	};
+
 	const login = async () => {
 		const emailInput = document.getElementById("email") as HTMLInputElement;
-		const email = emailInput?.value;
+		const email = emailInput?.value?.trim();
+
 		if (!email || isLoading) return;
+
+		if (!validateEmail(email)) {
+			showAlert(t.invalidEmail, "error");
+			return;
+		}
 
 		setIsLoading(true);
 		try {
@@ -184,7 +254,22 @@ export default function Login() {
 			setViewState("sent");
 		} catch (error) {
 			console.error("Login error:", error);
-			showAlert(t.error + ": " + (error instanceof Error ? error.message : String(error)), "error");
+
+			let errorMessage = t.error;
+			if (error instanceof Error) {
+				const errorMsg = error.message.toLowerCase();
+				if (errorMsg.includes("rate limit") || errorMsg.includes("too many")) {
+					errorMessage = t.rateLimitError;
+				} else if (errorMsg.includes("email") || errorMsg.includes("send")) {
+					errorMessage = t.emailSendError;
+				} else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+					errorMessage = t.serverError;
+				} else {
+					errorMessage = error.message;
+				}
+			}
+
+			showAlert(errorMessage, "error");
 		} finally {
 			setIsLoading(false);
 		}

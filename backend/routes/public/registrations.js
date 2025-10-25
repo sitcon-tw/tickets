@@ -484,9 +484,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						ticket: {
 							include: {
 								fromFields: true
-							},
-							select: {
-								saleEnd: true
 							}
 						},
 						event: {

@@ -52,24 +52,36 @@ export default function MagicLinkVerify() {
 		const status = searchParams.get("status");
 		const returnUrl = searchParams.get("returnUrl");
 
+		const verificationTimeout = setTimeout(() => {
+			if (status !== "success" && status !== "error") {
+				setStatus("error");
+				setErrorMessage(t.errorInvalidLink);
+				showAlert(t.errorInvalidLink, "error");
+			}
+		}, 10000); 
+
 		if (status === "success") {
+			clearTimeout(verificationTimeout);
 			setStatus("success");
 			showAlert(t.success, "success");
 			setTimeout(() => {
-				// Redirect to returnUrl if provided, otherwise go to home
 				const redirectTo = returnUrl || `/${locale}/`;
 				router.push(redirectTo);
 			}, 1500);
 		} else if (status === "error") {
+			clearTimeout(verificationTimeout);
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
 			showAlert(t.errorInvalidLink, "error");
-		} else {
+		} else if (!status) {
+			clearTimeout(verificationTimeout);
 			setStatus("error");
 			setErrorMessage(t.errorInvalidLink);
 			showAlert(t.errorInvalidLink, "error");
 		}
-	}, [searchParams, router, locale, t.errorInvalidLink, showAlert, t.success]);
+
+		return () => clearTimeout(verificationTimeout);
+	}, [searchParams, router, locale]);
 
 	return (
 		<>

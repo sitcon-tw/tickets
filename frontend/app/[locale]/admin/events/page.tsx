@@ -26,6 +26,10 @@ export default function EventsPage() {
 	const [descEn, setDescEn] = useState("");
 	const [descZhHant, setDescZhHant] = useState("");
 	const [descZhHans, setDescZhHans] = useState("");
+	const [plainDescEn, setPlainDescEn] = useState("");
+	const [plainDescZhHant, setPlainDescZhHant] = useState("");
+	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [ogImage, setOgImage] = useState("");
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Event Management" },
@@ -33,6 +37,8 @@ export default function EventsPage() {
 		editEvent: { "zh-Hant": "編輯活動", "zh-Hans": "编辑活动", en: "Edit Event" },
 		eventName: { "zh-Hant": "活動名稱", "zh-Hans": "活动名称", en: "Event Name" },
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
+		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
+		ogImage: { "zh-Hant": "OG 圖片網址", "zh-Hans": "OG 图片网址", en: "OG Image URL" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
 		startDate: { "zh-Hant": "開始日期", "zh-Hans": "开始日期", en: "Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
@@ -69,6 +75,7 @@ export default function EventsPage() {
 		if (event) {
 			const name = typeof event.name === "object" ? event.name : { en: event.name };
 			const desc = typeof event.description === "object" ? event.description : { en: event.description || "" };
+			const plainDesc = typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -76,6 +83,10 @@ export default function EventsPage() {
 			setDescEn(desc.en || "");
 			setDescZhHant(desc["zh-Hant"] || "");
 			setDescZhHans(desc["zh-Hans"] || "");
+			setPlainDescEn(plainDesc.en || "");
+			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
+			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setOgImage(event.ogImage || "");
 		} else {
 			setNameEn("");
 			setNameZhHant("");
@@ -83,6 +94,10 @@ export default function EventsPage() {
 			setDescEn("");
 			setDescZhHant("");
 			setDescZhHans("");
+			setPlainDescEn("");
+			setPlainDescZhHant("");
+			setPlainDescZhHans("");
+			setOgImage("");
 		}
 
 		setShowModal(true);
@@ -97,6 +112,10 @@ export default function EventsPage() {
 		setDescEn("");
 		setDescZhHant("");
 		setDescZhHans("");
+		setPlainDescEn("");
+		setPlainDescZhHant("");
+		setPlainDescZhHans("");
+		setOgImage("");
 	};
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
@@ -116,6 +135,12 @@ export default function EventsPage() {
 				"zh-Hant": descZhHant,
 				"zh-Hans": descZhHans
 			},
+			plainDescription: {
+				en: plainDescEn,
+				"zh-Hant": plainDescZhHant,
+				"zh-Hans": plainDescZhHans
+			},
+			ogImage: ogImage || undefined,
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? new Date(startDateStr).toISOString() : new Date().toISOString(),
 			endDate: endDateStr ? new Date(endDateStr).toISOString() : new Date().toISOString()
@@ -290,6 +315,10 @@ export default function EventsPage() {
 													</div>
 												)}
 											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (English)</label>
+												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="admin-textarea" rows={4} placeholder="Plain text description without markdown formatting" />
+											</div>
 										</>
 									)}
 
@@ -309,6 +338,10 @@ export default function EventsPage() {
 														<MarkdownContent content={descZhHant} />
 													</div>
 												)}
+											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
+												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
@@ -330,8 +363,16 @@ export default function EventsPage() {
 													</div>
 												)}
 											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
+												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
+											</div>
 										</>
 									)}
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.ogImage}</label>
+										<input type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} className="admin-input" placeholder="https://example.com/image.jpg" />
+									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.location}</label>
 										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="admin-input" />

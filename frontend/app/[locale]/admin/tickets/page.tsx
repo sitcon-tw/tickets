@@ -29,6 +29,9 @@ export default function TicketsPage() {
 	const [descEn, setDescEn] = useState("");
 	const [descZhHant, setDescZhHant] = useState("");
 	const [descZhHans, setDescZhHans] = useState("");
+	const [plainDescEn, setPlainDescEn] = useState("");
+	const [plainDescZhHant, setPlainDescZhHant] = useState("");
+	const [plainDescZhHans, setPlainDescZhHans] = useState("");
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -46,6 +49,7 @@ export default function TicketsPage() {
 		delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
 		ticketName: { "zh-Hant": "票種名稱", "zh-Hans": "票种名称", en: "Ticket Name" },
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
+		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
 		price: { "zh-Hant": "價格", "zh-Hans": "价格", en: "Price" },
 		requireInviteCode: { "zh-Hant": "需要邀請碼", "zh-Hans": "需要邀请码", en: "Require Invite Code" },
 		requireSmsVerification: { "zh-Hant": "需要簡訊驗證", "zh-Hans": "需要简讯验证", en: "Require SMS Verification" },
@@ -85,6 +89,7 @@ export default function TicketsPage() {
 		if (ticket) {
 			const name = typeof ticket.name === "object" ? ticket.name : { en: ticket.name };
 			const desc = typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
+			const plainDesc = typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -92,6 +97,9 @@ export default function TicketsPage() {
 			setDescEn(desc.en || "");
 			setDescZhHant(desc["zh-Hant"] || "");
 			setDescZhHans(desc["zh-Hans"] || "");
+			setPlainDescEn(plainDesc.en || "");
+			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
+			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
 		}
 
 		setShowModal(true);
@@ -106,6 +114,9 @@ export default function TicketsPage() {
 		setDescEn("");
 		setDescZhHant("");
 		setDescZhHans("");
+		setPlainDescEn("");
+		setPlainDescZhHant("");
+		setPlainDescZhHans("");
 	}
 
 	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
@@ -120,6 +131,7 @@ export default function TicketsPage() {
 			eventId: string;
 			name: { en: string; "zh-Hant": string; "zh-Hans": string };
 			description: { en: string; "zh-Hant": string; "zh-Hans": string };
+			plainDescription: { en: string; "zh-Hant": string; "zh-Hans": string };
 			price: number;
 			quantity: number;
 			requireInviteCode: boolean;
@@ -138,6 +150,11 @@ export default function TicketsPage() {
 				en: descEn,
 				"zh-Hant": descZhHant,
 				"zh-Hans": descZhHans
+			},
+			plainDescription: {
+				en: plainDescEn,
+				"zh-Hant": plainDescZhHant,
+				"zh-Hans": plainDescZhHans
 			},
 			price: parseInt(formData.get("price") as string) || 0,
 			quantity: parseInt(formData.get("quantity") as string) || 0,
@@ -392,6 +409,10 @@ export default function TicketsPage() {
 													</div>
 												)}
 											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (English)</label>
+												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="admin-textarea" rows={4} placeholder="Plain text description without markdown formatting" />
+											</div>
 										</>
 									)}
 
@@ -412,6 +433,10 @@ export default function TicketsPage() {
 													</div>
 												)}
 											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
+												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
+											</div>
 										</>
 									)}
 
@@ -431,6 +456,10 @@ export default function TicketsPage() {
 														<MarkdownContent content={descZhHans} />
 													</div>
 												)}
+											</div>
+											<div className="admin-form-group">
+												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
+												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
