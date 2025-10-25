@@ -44,7 +44,7 @@ await fastify.register(fastifyMetrics, {
 	}
 });
 
-fastify.register.setDefaultLabels({
+await fastify.register.setDefaultLabels({
 	application: "tickets-backend-prod"
 });
 
