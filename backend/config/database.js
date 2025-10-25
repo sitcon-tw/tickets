@@ -44,15 +44,47 @@ const auto = {
 const config = {
 	ttl: 0, // Default TTL (disabled unless model-specific)
 	stale: 0,
+	type: "JSON", // Store cache as JSON for complex objects
 	auto,
-	logger: process.env.REDIS_DEBUG === "true" ? console : undefined
+	logger: process.env.REDIS_DEBUG === "true" ? console : undefined,
+	cacheKey: {
+		delimiter: ":",
+		case: "SNAKE_CASE",
+		prefix: "prisma"
+	}
 };
 
 // Apply Redis caching extension or use base Prisma client
-// The extension accepts an ioredis client directly
-const prisma = redis
-	? basePrisma.$extends(PrismaExtensionRedis({ config, client: redis }))
-	: basePrisma;
+// The extension expects Redis connection config
+let prisma;
+if (redis && process.env.REDIS_URI) {
+	// Parse Redis URI to get connection config
+	const url = new URL(process.env.REDIS_URI);
+
+	const clientConfig = {
+		host: url.hostname,
+		port: parseInt(url.port) || 6379
+	};
+
+	// Add authentication if available in URI
+	if (url.password) {
+		clientConfig.password = url.password;
+	}
+	if (url.username) {
+		clientConfig.username = url.username;
+	}
+	// Parse database number from pathname
+	if (url.pathname && url.pathname.length > 1) {
+		const db = parseInt(url.pathname.substring(1));
+		if (!isNaN(db)) {
+			clientConfig.db = db;
+		}
+	}
+
+	prisma = basePrisma.$extends(PrismaExtensionRedis({ config, client: clientConfig }));
+} else {
+	prisma = basePrisma;
+}
 
 if (!redis && process.env.NODE_ENV !== "test") {
 	console.warn("Redis client not available - running without query caching");
