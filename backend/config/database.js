@@ -1,5 +1,5 @@
 import { PrismaClient } from "../generated/prisma/index.js";
-import { PrismaExtensionRedis } from "prisma-extension-redis";
+import { PrismaExtensionRedis, CacheCase } from "prisma-extension-redis";
 import { getRedisClient } from "./redis.js";
 
 let basePrisma;
@@ -49,7 +49,7 @@ const config = {
 	logger: process.env.REDIS_DEBUG === "true" ? console : undefined,
 	cacheKey: {
 		delimiter: ":",
-		case: "SNAKE_CASE",
+		case: CacheCase.SNAKE_CASE,
 		prefix: "prisma"
 	}
 };
