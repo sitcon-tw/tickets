@@ -44,10 +44,6 @@ await fastify.register(fastifyMetrics, {
 	}
 });
 
-await fastify.register.setDefaultLabels({
-	application: "tickets-backend-prod"
-});
-
 /*
 	註冊基本的安全中間件、Routes、CORS
 	其他的 route 在下面
