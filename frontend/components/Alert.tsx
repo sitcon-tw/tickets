@@ -41,7 +41,7 @@ export function AlertContainer() {
 	if (alerts.length === 0) return null;
 
 	return (
-		<div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col-reverse gap-2 pb-2">
+		<div className="fixed bottom-0 left-0 right-0 z-[1001] flex flex-col-reverse gap-2 pb-2">
 			{alerts.map(alert => (
 				<AlertItem key={alert.id} alert={alert} />
 			))}
