@@ -358,7 +358,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.get(
 		"/tickets/:id/analytics",
 		{
-			preHandler: requireEventAccessViaTicketId,
 			schema: {
 				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],
