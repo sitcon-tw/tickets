@@ -100,7 +100,7 @@ export const requireEventAccess = async (request, reply) => {
 	}
 
 	if (userRole === "eventAdmin") {
-		const eventId = request.query.eventId || request.params.id;
+		const eventId = request.query.eventId || request.params.id || request.body.eventId;
 
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
