@@ -230,7 +230,7 @@ export default function Login() {
 			}
 			showAlert(errorMessage, "error");
 		}
-	}, [errorParam]);
+	}, [errorParam, showAlert, t.error, t.invalidToken, t.serverError, t.tokenExpired, t.verificationFailed]);
 
 	const validateEmail = (email: string): boolean => {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

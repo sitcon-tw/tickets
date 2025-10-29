@@ -37,9 +37,9 @@ await fastify.register(openTelemetryPlugin, {
 await fastify.register(fastifyMetrics, {
 	endpoint: "/metrics", // Prometheus scrapes this endpoint
 	defaultMetrics: { enabled: true }, // Enable default Node.js metrics
-	routeMetrics: { 
+	routeMetrics: {
 		enabled: true, // Enable route-specific metrics
-		registeredRoutesOnly: true, // Only track registered routes
+		registeredRoutesOnly: false, // Only track registered routes
 		groupStatusCodes: false // Keep exact status codes
 	}
 });
