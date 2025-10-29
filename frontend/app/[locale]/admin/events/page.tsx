@@ -40,7 +40,7 @@ export default function EventsPage() {
 		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
 		ogImage: { "zh-Hant": "OG 圖片網址", "zh-Hans": "OG 图片网址", en: "OG Image URL" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
-		startDate: { "zh-Hant": "開始日期", "zh-Hans": "开始日期", en: "Start Date" },
+		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },
