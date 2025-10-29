@@ -3,8 +3,8 @@
 import AdminNav from "@/components/AdminNav";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminTicketFormFieldsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Ticket, TicketFormField } from "@/lib/types/api";
+import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import type { Event, EventFormField, Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -36,66 +36,65 @@ export default function FormsPage() {
 	const searchParams = useSearchParams();
 	const { showAlert } = useAlert();
 
-	const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+	const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
 	const [questions, setQuestions] = useState<Question[]>([]);
-	const [allTickets, setAllTickets] = useState<Ticket[]>([]);
-	const [copyFromTicketId, setCopyFromTicketId] = useState<string>("");
+	const [allEvents, setAllEvents] = useState<Event[]>([]);
+	const [copyFromEventId, setCopyFromEventId] = useState<string>("");
 	const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
-		ticketLabel: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket" },
-		backToTickets: { "zh-Hant": "返回票種列表", "zh-Hans": "返回票种列表", en: "Back to Tickets" },
-		noTicket: { "zh-Hant": "未指定票種", "zh-Hans": "未指定票种", en: "No ticket specified" },
+		eventLabel: { "zh-Hant": "活動", "zh-Hans": "活动", en: "Event" },
+		backToEvents: { "zh-Hant": "返回活動列表", "zh-Hans": "返回活动列表", en: "Back to Events" },
+		noEvent: { "zh-Hant": "未指定活動", "zh-Hans": "未指定活动", en: "No event specified" },
 		addQuestion: { "zh-Hant": "新增問題", "zh-Hans": "新增问题", en: "Add Question" },
 		save: { "zh-Hant": "儲存表單", "zh-Hans": "保存表单", en: "Save Form" },
-		copyFrom: { "zh-Hant": "複製其他票種表單", "zh-Hans": "复制其他票种表单", en: "Copy from other ticket" },
-		selectTicket: { "zh-Hant": "選擇票種...", "zh-Hans": "选择票种...", en: "Select ticket..." },
-		copySuccess: { "zh-Hant": "已成功複製表單！", "zh-Hans": "已成功复制表单！", en: "Form copied successfully!" }
+		copyFrom: { "zh-Hant": "複製其他活動表單", "zh-Hans": "复制其他活动表单", en: "Copy from other event" },
+		selectEvent: { "zh-Hant": "選擇活動...", "zh-Hans": "选择活动...", en: "Select event..." },
+		copySuccess: { "zh-Hant": "已成功複製表單！", "zh-Hans": "已成功复制表单！", en: "Form copied successfully!" },
+		formInfo: { "zh-Hant": "此表單適用於本活動的所有票種", "zh-Hans": "此表单适用于本活动的所有票种", en: "This form applies to all tickets in this event" }
 	});
 
-	const loadTicket = useCallback(async () => {
-		const ticketId = searchParams.get("ticket");
+	const loadEvent = useCallback(async () => {
+		const eventId = searchParams.get("event");
 
-		if (!ticketId) {
-			console.error("No ticket ID provided");
+		if (!eventId) {
+			console.error("No event ID provided");
 			return;
 		}
 
 		try {
-			const response = await adminTicketsAPI.getById(ticketId);
+			const response = await adminEventsAPI.getById(eventId);
 			if (response.success && response.data) {
-				setCurrentTicket(response.data);
+				setCurrentEvent(response.data);
 			}
 		} catch (error) {
-			console.error("Failed to load ticket:", error);
+			console.error("Failed to load event:", error);
 		}
 	}, [searchParams]);
 
-	const loadAllTickets = useCallback(async () => {
-		if (!currentTicket?.eventId) return;
-
+	const loadAllEvents = useCallback(async () => {
 		try {
-			const response = await adminTicketsAPI.getAll({ eventId: currentTicket.eventId });
+			const response = await adminEventsAPI.getAll();
 			if (response.success) {
-				setAllTickets((response.data || []).filter(t => t.id !== currentTicket.id));
+				setAllEvents((response.data || []).filter(e => e.id !== currentEvent?.id));
 			}
 		} catch (error) {
-			console.error("Failed to load tickets:", error);
+			console.error("Failed to load events:", error);
 		}
-	}, [currentTicket?.eventId, currentTicket?.id]);
+	}, [currentEvent?.id]);
 
 	const loadFormFields = useCallback(async () => {
-		if (!currentTicket?.id) return;
+		if (!currentEvent?.id) return;
 
 		try {
-			const response = await adminTicketFormFieldsAPI.getAll({ ticketId: currentTicket.id });
+			const response = await adminEventFormFieldsAPI.getAll({ eventId: currentEvent.id });
 
 			if (response.success) {
-				const loadedFields = (response.data || []).map((field: TicketFormField) => {
+				const loadedFields = (response.data || []).map((field: EventFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 
-					const fieldWithOptions = field as TicketFormField & { options?: unknown };
+					const fieldWithOptions = field as EventFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
@@ -157,19 +156,19 @@ export default function FormsPage() {
 		} catch (error) {
 			console.error("Failed to load form fields:", error);
 		}
-	}, [currentTicket?.id]);
+	}, [currentEvent?.id]);
 
-	async function copyFormFromTicket(sourceTicketId: string) {
-		if (!sourceTicketId) return;
+	async function copyFormFromEvent(sourceEventId: string) {
+		if (!sourceEventId) return;
 
 		try {
-			const response = await adminTicketFormFieldsAPI.getAll({ ticketId: sourceTicketId });
+			const response = await adminEventFormFieldsAPI.getAll({ eventId: sourceEventId });
 
 			if (response.success && response.data) {
-				const copiedQuestions = response.data.map((field: TicketFormField) => {
+				const copiedQuestions = response.data.map((field: EventFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 
-					const fieldWithOptions = field as TicketFormField & { options?: unknown };
+					const fieldWithOptions = field as EventFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
@@ -223,7 +222,7 @@ export default function FormsPage() {
 				});
 
 				setQuestions(copiedQuestions);
-				setCopyFromTicketId("");
+				setCopyFromEventId("");
 				showAlert(t.copySuccess, "success");
 			}
 		} catch (error) {
@@ -233,7 +232,7 @@ export default function FormsPage() {
 	};
 
 	async function saveForm() {
-		if (!currentTicket?.id) {
+		if (!currentEvent?.id) {
 			showAlert("無法保存：未找到票種", "error");
 			return;
 		}
@@ -259,12 +258,12 @@ export default function FormsPage() {
 			const deletedFieldIds = originalFieldIds.filter(originalId => !currentFieldIds.includes(originalId));
 
 			for (const fieldId of deletedFieldIds) {
-				await adminTicketFormFieldsAPI.delete(fieldId);
+				await adminEventFormFieldsAPI.delete(fieldId);
 			}
 
 			for (const fieldData of formFieldsData) {
 				const data = {
-					ticketId: currentTicket.id,
+					eventId: currentEvent.id,
 					order: fieldData.order,
 					type: fieldData.type,
 					name: fieldData.name,
@@ -276,9 +275,9 @@ export default function FormsPage() {
 				};
 
 				if (fieldData.id) {
-					await adminTicketFormFieldsAPI.update(fieldData.id, data);
+					await adminEventFormFieldsAPI.update(fieldData.id, data);
 				} else {
-					await adminTicketFormFieldsAPI.create(data);
+					await adminEventFormFieldsAPI.create(data);
 				}
 			}
 
@@ -344,14 +343,14 @@ export default function FormsPage() {
 
 		setQuestions(newQuestions);
 
-		if (currentTicket?.id) {
+		if (currentEvent?.id) {
 			try {
 				const fieldOrders = newQuestions.map((q, index) => ({
 					id: q.id,
 					order: index
 				}));
 
-				await adminTicketFormFieldsAPI.reorder(currentTicket.id, { fieldOrders });
+				await adminEventFormFieldsAPI.reorder(currentEvent.id, { fieldOrders });
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
 				showAlert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)), "error");
@@ -361,16 +360,16 @@ export default function FormsPage() {
 	};
 	
 	useEffect(() => {
-		loadTicket();
+		loadEvent();
 
-		if (currentTicket?.id) {
+		if (currentEvent?.id) {
 			loadFormFields();
-			loadAllTickets();
+			loadAllEvents();
 		}
 
-	}, [currentTicket?.id, loadFormFields, loadAllTickets, loadTicket]);
+	}, [currentEvent?.id, loadFormFields, loadAllEvents, loadEvent]);
 
-	if (!searchParams.get("ticket")) {
+	if (!searchParams.get("event")) {
 		return (
 			<>
 				<AdminNav />
@@ -381,7 +380,7 @@ export default function FormsPage() {
 						{t.noTicket}
 					</div>
 					<div style={{ textAlign: "center", marginTop: "1rem" }}>
-						<button className="admin-button primary" onClick={() => (window.location.href = `/${locale}/admin/tickets`)}>
+						<button className="admin-button primary" onClick={() => (window.location.href = `/${locale}/admin/events`)}>
 							{t.backToTickets}
 						</button>
 					</div>
@@ -395,18 +394,18 @@ export default function FormsPage() {
 			<AdminNav />
 			<main>
 				<div style={{ marginBottom: "1.5rem" }}>
-					<button className="admin-button secondary" onClick={() => (window.location.href = `/${locale}/admin/tickets`)} style={{ marginBottom: "1rem" }}>
+					<button className="admin-button secondary" onClick={() => (window.location.href = `/${locale}/admin/events`)} style={{ marginBottom: "1rem" }}>
 						← {t.backToTickets}
 					</button>
 					<h1 className="text-3xl font-bold">{t.title}</h1>
 					<div className="h-8" />
-					{currentTicket && (
+					{currentEvent && (
 						<div className="admin-stat-card" style={{ marginTop: "1rem" }}>
 							<div className="admin-stat-label">{t.ticketLabel}</div>
 							<div className="admin-stat-value" style={{ fontSize: "1.5rem" }}>
-								{typeof currentTicket.name === "object" ? currentTicket.name["en"] || Object.values(currentTicket.name)[0] : currentTicket.name}
+								{typeof currentEvent.name === "object" ? currentEvent.name["en"] || Object.values(currentEvent.name)[0] : currentEvent.name}
 							</div>
-							{currentTicket.description && <div style={{ marginTop: "0.5rem", opacity: 0.7, fontSize: "0.9rem" }}>{typeof currentTicket.description === "object" ? currentTicket.description["en"] || Object.values(currentTicket.description)[0] : currentTicket.description}</div>}
+							{currentEvent.description && <div style={{ marginTop: "0.5rem", opacity: 0.7, fontSize: "0.9rem" }}>{typeof currentEvent.description === "object" ? currentEvent.description["en"] || Object.values(currentEvent.description)[0] : currentEvent.description}</div>}
 						</div>
 					)}
 				</div>
@@ -417,25 +416,25 @@ export default function FormsPage() {
 						margin: "1rem auto 4rem"
 					}}
 				>
-					{allTickets.length > 0 && (
+					{allEvents.length > 0 && (
 						<div className="admin-form-group" style={{ marginBottom: "1.5rem" }}>
 							<label className="admin-form-label">{t.copyFrom}</label>
 							<select
-								value={copyFromTicketId}
+								value={copyFromEventId}
 								onChange={e => {
-									const ticketId = e.target.value;
-									if (ticketId && confirm("確定要複製該票種的表單嗎？這會取代目前的表單內容。")) {
-										copyFormFromTicket(ticketId);
+									const eventId = e.target.value;
+									if (eventId && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
+										copyFormFromEvent(eventId);
 									} else {
-										setCopyFromTicketId("");
+										setCopyFromEventId("");
 									}
 								}}
 								className="admin-select"
 							>
-								<option value="">{t.selectTicket}</option>
-								{allTickets.map(ticket => (
-									<option key={ticket.id} value={ticket.id}>
-										{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+								<option value="">{t.selectEvent}</option>
+								{allEvents.map(event => (
+									<option key={event.id} value={event.id}>
+										{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
 									</option>
 								))}
 							</select>

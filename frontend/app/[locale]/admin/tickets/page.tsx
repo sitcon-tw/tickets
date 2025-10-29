@@ -43,7 +43,6 @@ export default function TicketsPage() {
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },
 		addTicket: { "zh-Hant": "新增票種", "zh-Hans": "新增票种", en: "Add Ticket" },
 		editTicket: { "zh-Hant": "編輯票種", "zh-Hans": "编辑票种", en: "Edit Ticket" },
-		editForms: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Forms" },
 		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
 		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
 		delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
@@ -328,9 +327,6 @@ export default function TicketsPage() {
 												<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 													<button className="admin-button small secondary" onClick={() => openModal(ticket)}>
 														{t.editTicket}
-													</button>
-													<button className="admin-button small primary" onClick={() => (window.location.href = `/${locale}/admin/forms?ticket=${ticket.id}`)}>
-														{t.editForms}
 													</button>
 													<button className="admin-button small success" onClick={() => openLinkBuilder(ticket)}>
 														{t.directLink}

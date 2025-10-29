@@ -14,6 +14,7 @@ const activityLinks = [
 	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
 	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
 	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
+	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null, requiresEventId: true }, // Always show, but needs event context
 	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null }, // Always show
 	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null }, // Always show
 	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },
@@ -212,8 +213,12 @@ export default function AdminNav() {
 		};
 	}, []);
 
-	const handleNavClick = (href: string) => {
-		router.push(href);
+	const handleNavClick = (href: string, requiresEventId?: boolean) => {
+		if (requiresEventId && currentEventId) {
+			router.push(`${href}?event=${currentEventId}`);
+		} else {
+			router.push(href);
+		}
 		setMobileMenuOpen(false);
 	};
 
@@ -368,11 +373,11 @@ export default function AdminNav() {
 								if (!capabilities) return false;
 								return capabilities[requireCapability as keyof UserCapabilities];
 							})
-							.map(({ href, i18nKey }) => (
+							.map(({ href, i18nKey, requiresEventId }) => (
 								<>
 									<li key={href} style={styles.navItem}>
 										<a
-											onClick={() => handleNavClick(href)}
+											onClick={() => handleNavClick(href, requiresEventId)}
 											onMouseEnter={() => setHoveredLink(href)}
 											onMouseLeave={() => setHoveredLink(null)}
 											style={{
