@@ -607,7 +607,7 @@ export default function FormsPage() {
 												padding: "0.5rem 0.7rem"
 											}}
 										>
-											{["text", "email", "phone", "textarea", "select", "radio", "checkbox"].map(t => (
+											{["text", "textarea", "select", "radio", "checkbox"].map(t => (
 												<option key={t} value={t}>
 													{t}
 												</option>
