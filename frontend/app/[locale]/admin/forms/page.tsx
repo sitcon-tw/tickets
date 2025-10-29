@@ -22,7 +22,7 @@ type Question = {
 	labelZhHans?: string;
 	type: string;
 	required: boolean;
-	help?: string;
+	description?: string;
 	options?: Array<{
 		en: string;
 		"zh-Hant"?: string;
@@ -143,7 +143,7 @@ export default function FormsPage() {
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						help: field.helpText || "",
+						description: field.description || "",
 						options
 					};
 				});
@@ -210,13 +210,13 @@ export default function FormsPage() {
 
 					return {
 						id: "temp-" + crypto.randomUUID(),
-						label: field.description || fieldName,
+						label: fieldName,
 						labelEn: nameObj.en || "",
 						labelZhHant: nameObj["zh-Hant"] || "",
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						help: field.helpText || "",
+						description: field.description || "",
 						options
 					};
 				});
@@ -245,10 +245,9 @@ export default function FormsPage() {
 					"zh-Hant": q.labelZhHant || "",
 					"zh-Hans": q.labelZhHans || ""
 				},
-				description: q.label,
+				description: q.description,
 				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 				required: q.required,
-				helpText: q.help,
 				values: q.options,
 				order: index
 			}));
@@ -693,9 +692,9 @@ export default function FormsPage() {
 										</label>
 										<input
 											type="text"
-											value={q.help || ""}
+											value={q.description || ""}
 											placeholder="說明文字 (選填)"
-											onChange={e => updateQuestion(q.id, { help: e.target.value })}
+											onChange={e => updateQuestion(q.id, { description: e.target.value })}
 											className="admin-input"
 											style={{
 												fontSize: "0.85rem",
