@@ -20,7 +20,7 @@ export default function Footer() {
 		router.replace(pathname, { locale: newLocale });
 	};
 
-	if (pathname.includes("/admin")) { return null; }
+	if (pathname.includes("/admin") || pathname.includes("/magic-link")) { return null; }
 
 	return (
 		<footer className="text-center" style={{ padding: "0rem", marginTop: "2rem" }}>
