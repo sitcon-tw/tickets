@@ -3,8 +3,9 @@
 import AdminNav from "@/components/AdminNav";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, Ticket } from "@/lib/types/api";
+import { adminEventFormFieldsAPI, adminEventsAPI } from "@/lib/api/endpoints";
+import type { Event, EventFormField } from "@/lib/types/api";
+import { Save, Plus } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -789,10 +790,10 @@ export default function FormsPage() {
 						}}
 					>
 						<button id="add-question" type="button" onClick={addQuestion} className="admin-button secondary">
-							+ {t.addQuestion}
+							<Plus /> {t.addQuestion}
 						</button>
 						<button id="save-form" type="button" onClick={saveForm} className="admin-button success">
-							💾 {t.save}
+							<Save /> {t.save}
 						</button>
 					</div>
 				</div>
