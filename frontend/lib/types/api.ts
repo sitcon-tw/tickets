@@ -133,7 +133,7 @@ export interface EventFormField {
 	id: string;
 	eventId: string;
 	order: number;
-	type: "text" | "email" | "textarea" | "select" | "checkbox" | "radio";
+	type: "text" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
 	name: LocalizedText;
 	description?: string;

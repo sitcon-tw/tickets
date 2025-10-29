@@ -5,7 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event, EventFormField } from "@/lib/types/api";
-import { Save, Plus } from "lucide-react";
+import { Save, Plus, GripVertical } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -41,6 +41,8 @@ export default function FormsPage() {
 	const [allEvents, setAllEvents] = useState<Event[]>([]);
 	const [copyFromEventId, setCopyFromEventId] = useState<string>("");
 	const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
+	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -315,21 +317,34 @@ export default function FormsPage() {
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
 		e.dataTransfer.setData("dragIndex", index.toString());
-		e.currentTarget.style.opacity = "0.4";
+		setDraggedIndex(index);
 	};
 
 	function handleDragEnd(e: React.DragEvent<HTMLDivElement>) {
-		e.currentTarget.style.opacity = "1";
+		setDraggedIndex(null);
+		setDragOverIndex(null);
 	};
 
-	function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+	function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = "move";
+
+		if (draggedIndex !== null && draggedIndex !== index) {
+			setDragOverIndex(index);
+		}
+	};
+
+	function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+		e.preventDefault();
+		setDragOverIndex(null);
 	};
 
 	async function handleDrop(e: React.DragEvent<HTMLDivElement>, dropIndex: number) {
 		e.preventDefault();
 		const dragIndex = parseInt(e.dataTransfer.getData("dragIndex"));
+
+		setDraggedIndex(null);
+		setDragOverIndex(null);
 
 		if (dragIndex === dropIndex) return;
 
@@ -464,45 +479,62 @@ export default function FormsPage() {
 								尚無問題
 							</div>
 						)}
-						{questions.map((q, index) => (
-							<div
-								key={q.id}
-								data-id={q.id}
-								draggable
-								onDragStart={e => handleDragStart(e, index)}
-								onDragEnd={handleDragEnd}
-								onDragOver={handleDragOver}
-								onDrop={e => handleDrop(e, index)}
-								style={{
-									background: "var(--color-gray-800)",
-									border: "1px solid var(--color-gray-700)",
-									borderRadius: "12px",
-									padding: "1rem 1.25rem",
-									display: "grid",
-									gridTemplateColumns: "32px 1fr auto",
-									gap: "12px",
-									alignItems: "start",
-									position: "relative",
-									transition: "all 0.15s ease",
-									boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-									cursor: "move"
-								}}
-							>
+						{questions.map((q, index) => {
+							const isDragging = draggedIndex === index;
+							const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
+
+							return (
 								<div
+									key={q.id}
+									data-id={q.id}
+									draggable
+									onDragStart={e => handleDragStart(e, index)}
+									onDragEnd={handleDragEnd}
+									onDragOver={e => handleDragOver(e, index)}
+									onDragLeave={handleDragLeave}
+									onDrop={e => handleDrop(e, index)}
 									style={{
-										cursor: "grab",
-										userSelect: "none",
-										fontSize: "1.1rem",
-										lineHeight: "1",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										color: "#999"
+										background: isDragging ? "var(--color-gray-900)" : "var(--color-gray-800)",
+										border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
+										borderRadius: "12px",
+										padding: "1rem 1.25rem",
+										display: "grid",
+										gridTemplateColumns: "32px 1fr auto",
+										gap: "12px",
+										alignItems: "start",
+										position: "relative",
+										transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+										boxShadow: isDragging
+											? "0 8px 16px rgba(0, 0, 0, 0.4)"
+											: isDropTarget
+											? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)"
+											: "0 2px 4px rgba(0, 0, 0, 0.2)",
+										opacity: isDragging ? 0.6 : 1,
+										transform: isDragging ? "scale(1.02) rotate(1deg)" : isDropTarget ? "scale(1.01)" : "scale(1)",
+										cursor: isDragging ? "grabbing" : "default"
 									}}
-									title="Drag to reorder"
 								>
-									☰
-								</div>
+									<div
+										style={{
+											cursor: "grab",
+											userSelect: "none",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											color: isDragging ? "var(--color-primary)" : "#999",
+											transition: "color 0.2s ease",
+											padding: "0.25rem"
+										}}
+										title="Drag to reorder"
+										onMouseDown={(e) => {
+											e.currentTarget.style.cursor = "grabbing";
+										}}
+										onMouseUp={(e) => {
+											e.currentTarget.style.cursor = "grab";
+										}}
+									>
+										<GripVertical size={20} />
+									</div>
 								<div
 									style={{
 										display: "flex",
@@ -780,7 +812,8 @@ export default function FormsPage() {
 									)}
 								</div>
 							</div>
-						))}
+						);
+						})}
 					</div>
 					<div
 						style={{
