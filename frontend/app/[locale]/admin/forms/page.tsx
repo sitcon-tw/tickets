@@ -23,6 +23,7 @@ type Question = {
 	type: string;
 	required: boolean;
 	description?: string;
+	validater?: string;
 	options?: Array<{
 		en: string;
 		"zh-Hant"?: string;
@@ -43,6 +44,9 @@ export default function FormsPage() {
 	const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
 	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+	const [draggedOptionIndex, setDraggedOptionIndex] = useState<number | null>(null);
+	const [dragOverOptionIndex, setDragOverOptionIndex] = useState<number | null>(null);
+	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -54,8 +58,23 @@ export default function FormsPage() {
 		copyFrom: { "zh-Hant": "複製其他活動表單", "zh-Hans": "复制其他活动表单", en: "Copy from other event" },
 		selectEvent: { "zh-Hant": "選擇活動...", "zh-Hans": "选择活动...", en: "Select event..." },
 		copySuccess: { "zh-Hant": "已成功複製表單！", "zh-Hans": "已成功复制表单！", en: "Form copied successfully!" },
-		formInfo: { "zh-Hant": "此表單適用於本活動的所有票種", "zh-Hans": "此表单适用于本活动的所有票种", en: "This form applies to all tickets in this event" }
+		formInfo: { "zh-Hant": "此表單適用於本活動的所有票種", "zh-Hans": "此表单适用于本活动的所有票种", en: "This form applies to all tickets in this event" },
+		typeText: { "zh-Hant": "文字輸入", "zh-Hans": "文字输入", en: "Text Input" },
+		typeTextarea: { "zh-Hant": "多行文字", "zh-Hans": "多行文字", en: "Textarea" },
+		typeSelect: { "zh-Hant": "下拉選單", "zh-Hans": "下拉选单", en: "Dropdown" },
+		typeRadio: { "zh-Hant": "單選按鈕", "zh-Hans": "单选按钮", en: "Radio Buttons" },
+		typeCheckbox: { "zh-Hant": "勾選框", "zh-Hans": "勾选框", en: "Checkbox" },
+		validator: { "zh-Hant": "驗證正規表達式", "zh-Hans": "验证正则表达式", en: "Validation Regex" },
+		validatorPlaceholder: { "zh-Hant": "例如: ^[A-Z0-9]+$ (選填)", "zh-Hans": "例如: ^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" }
 	});
+
+	const fieldTypes = [
+		{ value: "text", label: t.typeText },
+		{ value: "textarea", label: t.typeTextarea },
+		{ value: "select", label: t.typeSelect },
+		{ value: "radio", label: t.typeRadio },
+		{ value: "checkbox", label: t.typeCheckbox }
+	];
 
 	const loadEvent = useCallback(async () => {
 		if (!currentEventId) {
@@ -144,6 +163,7 @@ export default function FormsPage() {
 						type: field.type,
 						required: field.required || false,
 						description: field.description || "",
+						validater: field.validater || "",
 						options
 					};
 				});
@@ -217,6 +237,7 @@ export default function FormsPage() {
 						type: field.type,
 						required: field.required || false,
 						description: field.description || "",
+						validater: field.validater || "",
 						options
 					};
 				});
@@ -248,6 +269,7 @@ export default function FormsPage() {
 				description: q.description,
 				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 				required: q.required,
+				validater: q.validater || "",
 				values: q.options,
 				order: index
 			}));
@@ -269,7 +291,7 @@ export default function FormsPage() {
 					description: fieldData.description,
 					placeholder: "",
 					required: fieldData.required,
-					validater: "",
+					validater: fieldData.validater || "",
 					values: fieldData.values
 				};
 
@@ -319,7 +341,7 @@ export default function FormsPage() {
 		setDraggedIndex(index);
 	};
 
-	function handleDragEnd(e: React.DragEvent<HTMLDivElement>) {
+	function handleDragEnd() {
 		setDraggedIndex(null);
 		setDragOverIndex(null);
 	};
@@ -369,6 +391,60 @@ export default function FormsPage() {
 				await loadFormFields();
 			}
 		}
+	};
+
+	function handleOptionDragStart(e: React.DragEvent<HTMLSpanElement>, questionId: string, optionIndex: number) {
+		e.stopPropagation();
+		e.dataTransfer.effectAllowed = "move";
+		e.dataTransfer.setData("optionIndex", optionIndex.toString());
+		setDraggedOptionIndex(optionIndex);
+		setDraggedQuestionId(questionId);
+	};
+
+	function handleOptionDragEnd(e: React.DragEvent<HTMLDivElement>) {
+		e.stopPropagation();
+		setDraggedOptionIndex(null);
+		setDragOverOptionIndex(null);
+		setDraggedQuestionId(null);
+	};
+
+	function handleOptionDragOver(e: React.DragEvent<HTMLDivElement>, optionIndex: number) {
+		e.preventDefault();
+		e.stopPropagation();
+		e.dataTransfer.dropEffect = "move";
+
+		if (draggedOptionIndex !== null && draggedOptionIndex !== optionIndex) {
+			setDragOverOptionIndex(optionIndex);
+		}
+	};
+
+	function handleOptionDragLeave(e: React.DragEvent<HTMLDivElement>) {
+		e.preventDefault();
+		e.stopPropagation();
+		setDragOverOptionIndex(null);
+	};
+
+	function handleOptionDrop(e: React.DragEvent<HTMLDivElement>, questionId: string, dropIndex: number) {
+		e.preventDefault();
+		e.stopPropagation();
+		const dragIndex = parseInt(e.dataTransfer.getData("optionIndex"));
+
+		setDraggedOptionIndex(null);
+		setDragOverOptionIndex(null);
+		setDraggedQuestionId(null);
+
+		if (dragIndex === dropIndex) return;
+
+		const question = questions.find(q => q.id === questionId);
+		if (!question || !question.options) return;
+
+		const newOptions = [...question.options];
+		const draggedOption = newOptions[dragIndex];
+
+		newOptions.splice(dragIndex, 1);
+		newOptions.splice(dropIndex, 0, draggedOption);
+
+		updateQuestion(questionId, { options: newOptions });
 	};
 
 	useEffect(() => {
@@ -424,17 +500,55 @@ export default function FormsPage() {
 	return (
 		<>
 			<AdminNav />
-			<main>
+			<main style={{ minHeight: "100vh", padding: "1.5rem 1rem" }}>
 				<div
 					id="form-editor"
 					style={{
-						maxWidth: "960px",
-						margin: "1rem auto 4rem"
+						maxWidth: "900px",
+						margin: "0 auto"
 					}}
 				>
+					{/* Header Section */}
+					<div style={{
+						marginBottom: "1.5rem",
+						paddingBottom: "1rem",
+						borderBottom: "1px solid var(--color-gray-700)"
+					}}>
+						<h1 style={{
+							fontSize: "1.5rem",
+							fontWeight: "600",
+							marginBottom: "0.25rem",
+							color: "var(--color-gray-100)"
+						}}>
+							{t.title}
+						</h1>
+						<p style={{
+							fontSize: "0.875rem",
+							color: "var(--color-gray-400)",
+							margin: 0
+						}}>
+							{t.formInfo}
+						</p>
+					</div>
+
+					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div className="admin-form-group" style={{ marginBottom: "1.5rem" }}>
-							<label className="admin-form-label">{t.copyFrom}</label>
+						<div style={{
+							background: "var(--color-gray-800)",
+							border: "1px solid var(--color-gray-700)",
+							borderRadius: "8px",
+							padding: "1rem",
+							marginBottom: "1.5rem"
+						}}>
+							<label style={{
+								display: "block",
+								fontSize: "0.9rem",
+								fontWeight: "600",
+								color: "var(--color-gray-300)",
+								marginBottom: "0.75rem"
+							}}>
+								{t.copyFrom}
+							</label>
 							<select
 								value={copyFromEventId}
 								onChange={e => {
@@ -446,6 +560,10 @@ export default function FormsPage() {
 									}
 								}}
 								className="admin-select"
+								style={{
+									width: "100%",
+									maxWidth: "400px"
+								}}
 							>
 								<option value="">{t.selectEvent}</option>
 								{allEvents.map(event => (
@@ -456,28 +574,73 @@ export default function FormsPage() {
 							</select>
 						</div>
 					)}
-					<div
-						id="questions"
-						style={{
+					{/* Questions List */}
+					<div style={{ marginBottom: "1.5rem" }}>
+						<div style={{
 							display: "flex",
-							flexDirection: "column",
-							gap: "12px",
-							margin: "1rem 0"
-						}}
-					>
-						{questions.length === 0 && (
-							<div
-								className="admin-empty"
-								style={{
-									fontStyle: "italic",
-									padding: "2rem",
-									border: "1px dashed var(--color-gray-600)",
-									borderRadius: "8px"
-								}}
-							>
-								尚無問題
-							</div>
-						)}
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "1rem"
+						}}>
+							<h2 style={{
+								fontSize: "1rem",
+								fontWeight: "600",
+								color: "var(--color-gray-200)",
+								margin: 0
+							}}>
+								表單欄位
+							</h2>
+							<span style={{
+								fontSize: "0.8rem",
+								color: "var(--color-gray-400)",
+								background: "var(--color-gray-800)",
+								padding: "0.25rem 0.6rem",
+								borderRadius: "4px",
+								border: "1px solid var(--color-gray-700)"
+							}}>
+								{questions.length} 個欄位
+							</span>
+						</div>
+
+						<div
+							id="questions"
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								gap: "12px"
+							}}
+						>
+							{questions.length === 0 && (
+								<div
+									style={{
+										textAlign: "center",
+										padding: "2rem 1.5rem",
+										border: "1px dashed var(--color-gray-700)",
+										borderRadius: "8px",
+										background: "var(--color-gray-800)"
+									}}
+								>
+									<div style={{
+										fontSize: "2rem",
+										marginBottom: "0.5rem",
+										opacity: 0.4
+									}}>📝</div>
+									<p style={{
+										fontSize: "0.9rem",
+										color: "var(--color-gray-400)",
+										margin: "0 0 0.5rem 0"
+									}}>
+										目前沒有任何表單欄位
+									</p>
+									<p style={{
+										fontSize: "0.8rem",
+										color: "var(--color-gray-500)",
+										margin: 0
+									}}>
+										點擊下方「新增問題」按鈕開始建立表單
+									</p>
+								</div>
+							)}
 						{questions.map((q, index) => {
 							const isDragging = draggedIndex === index;
 							const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
@@ -490,26 +653,25 @@ export default function FormsPage() {
 									onDragLeave={handleDragLeave}
 									onDrop={e => handleDrop(e, index)}
 									style={{
-										background: isDragging ? "var(--color-gray-900)" : "var(--color-gray-800)",
+										background: isDragging ? "var(--color-gray-800)" : "var(--color-gray-800)",
 										border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-										borderRadius: "12px",
-										padding: "1rem 1.25rem",
-										display: "grid",
-										gridTemplateColumns: "32px 1fr auto",
-										gap: "12px",
-										alignItems: "start",
+										borderRadius: "8px",
+										padding: "1rem",
+										display: "flex",
+										gap: "0.75rem",
 										position: "relative",
-										transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+										transition: "all 0.2s ease",
 										boxShadow: isDragging
-											? "0 8px 16px rgba(0, 0, 0, 0.4)"
+											? "0 4px 12px rgba(0, 0, 0, 0.3)"
 											: isDropTarget
 											? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)"
-											: "0 2px 4px rgba(0, 0, 0, 0.2)",
+											: "none",
 										opacity: isDragging ? 0.6 : 1,
-										transform: isDragging ? "scale(1.02) rotate(1deg)" : isDropTarget ? "scale(1.01)" : "scale(1)",
+										transform: isDragging ? "scale(1.01)" : "scale(1)",
 										cursor: "default"
 									}}
 								>
+									{/* Drag Handle */}
 									<div
 										draggable
 										onDragStart={e => handleDragStart(e, index)}
@@ -518,14 +680,15 @@ export default function FormsPage() {
 											cursor: "grab",
 											userSelect: "none",
 											display: "flex",
-											alignItems: "center",
+											alignItems: "flex-start",
 											justifyContent: "center",
-											color: isDragging ? "var(--color-primary)" : "#999",
+											color: isDragging ? "var(--color-primary)" : "var(--color-gray-600)",
 											transition: "color 0.2s ease",
-											padding: "0.25rem",
-											touchAction: "none"
+											padding: "0.5rem 0.25rem",
+											touchAction: "none",
+											flexShrink: 0
 										}}
-										title="Drag to reorder"
+										title="拖曳以重新排序"
 										onMouseDown={(e) => {
 											e.currentTarget.style.cursor = "grabbing";
 										}}
@@ -535,249 +698,428 @@ export default function FormsPage() {
 									>
 										<GripVertical size={20} />
 									</div>
+
+									{/* Field Number Badge */}
+									<div style={{
+										position: "absolute",
+										top: "0.75rem",
+										right: "0.75rem",
+										background: "var(--color-gray-700)",
+										color: "var(--color-gray-400)",
+										fontSize: "0.7rem",
+										fontWeight: "600",
+										padding: "0.2rem 0.5rem",
+										borderRadius: "4px"
+									}}>
+										#{index + 1}
+									</div>
+								{/* Main Content Area */}
 								<div
 									style={{
 										display: "flex",
 										flexDirection: "column",
-										gap: "6px"
+										gap: "1rem",
+										flex: 1,
+										paddingRight: "3rem"
 									}}
 								>
-									<div
-										style={{
-											display: "flex",
-											gap: "8px",
-											flexWrap: "wrap",
-											alignItems: "center"
-										}}
-									>
-										<label
+									{/* Field Names Section */}
+									<div>
+										<div style={{
+											fontSize: "0.75rem",
+											fontWeight: "600",
+											color: "var(--color-gray-500)",
+											marginBottom: "0.5rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em"
+										}}>
+											欄位名稱
+										</div>
+										<div
 											style={{
-												fontSize: "0.7rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em",
-												color: "var(--color-gray-400)",
-												fontWeight: 500
+												display: "grid",
+												gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+												gap: "0.6rem"
 											}}
 										>
-											EN
-										</label>
-										<input
-											type="text"
-											value={q.labelEn || ""}
-											placeholder="English Label"
-											onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-											className="admin-input"
-											style={{
-												fontSize: "0.85rem",
-												minWidth: "120px",
-												padding: "0.5rem 0.7rem"
-											}}
-										/>
-										<label
-											style={{
-												fontSize: "0.7rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em",
-												color: "var(--color-gray-400)",
-												fontWeight: 500
-											}}
-										>
-											繁
-										</label>
-										<input
-											type="text"
-											value={q.labelZhHant || ""}
-											placeholder="繁體中文"
-											onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-											className="admin-input"
-											style={{
-												fontSize: "0.85rem",
-												minWidth: "100px",
-												padding: "0.5rem 0.7rem"
-											}}
-										/>
-										<label
-											style={{
-												fontSize: "0.7rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em",
-												color: "var(--color-gray-400)",
-												fontWeight: 500
-											}}
-										>
-											簡
-										</label>
-										<input
-											type="text"
-											value={q.labelZhHans || ""}
-											placeholder="简体中文"
-											onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-											className="admin-input"
-											style={{
-												fontSize: "0.85rem",
-												minWidth: "100px",
-												padding: "0.5rem 0.7rem"
-											}}
-										/>
-										<label
-											style={{
-												fontSize: "0.7rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em",
-												color: "var(--color-gray-400)",
-												fontWeight: 500
-											}}
-										>
-											種類
-										</label>
-										<select
-											value={q.type}
-											onChange={e => updateQuestion(q.id, { type: e.target.value })}
-											className="admin-select"
-											style={{
-												width: "140px",
-												fontSize: "0.85rem",
-												padding: "0.5rem 0.7rem"
-											}}
-										>
-											{["text", "textarea", "select", "radio", "checkbox"].map(t => (
-												<option key={t} value={t}>
-													{t}
-												</option>
-											))}
-										</select>
-										<button
-											type="button"
-											onClick={() => updateQuestion(q.id, { required: !q.required })}
-											className="admin-button small"
-											style={{
-												background: q.required ? "var(--color-gray-600)" : "var(--color-gray-800)",
-												border: `1px solid ${q.required ? "var(--color-gray-500)" : "var(--color-gray-700)"}`,
-												fontSize: "0.7rem",
-												padding: "0.35rem 0.7rem"
-											}}
-										>
-											{q.required ? "必填" : "選填"}
-										</button>
-										<button
-											type="button"
-											onClick={() => deleteQuestion(q.id)}
-											className="admin-button small danger"
-											style={{
-												fontSize: "0.7rem",
-												padding: "0.35rem 0.7rem"
-											}}
-										>
-											✕
-										</button>
+											<div>
+												<label style={{
+													display: "block",
+													fontSize: "0.7rem",
+													color: "var(--color-gray-500)",
+													marginBottom: "0.3rem",
+													fontWeight: "500"
+												}}>
+													EN
+												</label>
+												<input
+													type="text"
+													value={q.labelEn || ""}
+													placeholder="English Label"
+													onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
+													className="admin-input"
+													style={{
+														width: "100%",
+														fontSize: "0.875rem",
+														padding: "0.5rem 0.65rem"
+													}}
+												/>
+											</div>
+											<div>
+												<label style={{
+													display: "block",
+													fontSize: "0.7rem",
+													color: "var(--color-gray-500)",
+													marginBottom: "0.3rem",
+													fontWeight: "500"
+												}}>
+													繁體中文
+												</label>
+												<input
+													type="text"
+													value={q.labelZhHant || ""}
+													placeholder="繁體中文標籤"
+													onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
+													className="admin-input"
+													style={{
+														width: "100%",
+														fontSize: "0.875rem",
+														padding: "0.5rem 0.65rem"
+													}}
+												/>
+											</div>
+											<div>
+												<label style={{
+													display: "block",
+													fontSize: "0.7rem",
+													color: "var(--color-gray-500)",
+													marginBottom: "0.3rem",
+													fontWeight: "500"
+												}}>
+													简体中文
+												</label>
+												<input
+													type="text"
+													value={q.labelZhHans || ""}
+													placeholder="简体中文标签"
+													onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
+													className="admin-input"
+													style={{
+														width: "100%",
+														fontSize: "0.875rem",
+														padding: "0.5rem 0.65rem"
+													}}
+												/>
+											</div>
+										</div>
 									</div>
-									<div
-										style={{
+
+									{/* Field Configuration Section */}
+									<div>
+										<div style={{
+											fontSize: "0.75rem",
+											fontWeight: "600",
+											color: "var(--color-gray-500)",
+											marginBottom: "0.5rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em"
+										}}>
+											欄位設定
+										</div>
+										<div style={{
 											display: "flex",
-											gap: "8px",
+											gap: "0.6rem",
 											flexWrap: "wrap",
-											alignItems: "center"
-										}}
-									>
-										<label
-											style={{
-												fontSize: "0.7rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em",
-												color: "var(--color-gray-400)",
-												fontWeight: 500
-											}}
-										>
-											說明
-										</label>
-										<input
-											type="text"
-											value={q.description || ""}
-											placeholder="說明文字 (選填)"
-											onChange={e => updateQuestion(q.id, { description: e.target.value })}
-											className="admin-input"
-											style={{
-												fontSize: "0.85rem",
-												minWidth: "160px",
-												padding: "0.5rem 0.7rem"
-											}}
-										/>
+											alignItems: "flex-end"
+										}}>
+											<div>
+												<label style={{
+													display: "block",
+													fontSize: "0.7rem",
+													color: "var(--color-gray-500)",
+													marginBottom: "0.3rem",
+													fontWeight: "500"
+												}}>
+													欄位類型
+												</label>
+												<select
+													value={q.type}
+													onChange={e => updateQuestion(q.id, { type: e.target.value })}
+													className="admin-select"
+													style={{
+														minWidth: "140px",
+														fontSize: "0.875rem",
+														padding: "0.5rem 0.65rem"
+													}}
+												>
+													{fieldTypes.map(ft => (
+														<option key={ft.value} value={ft.value}>
+															{ft.label}
+														</option>
+													))}
+												</select>
+											</div>
+
+											<div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
+												<button
+													type="button"
+													onClick={() => updateQuestion(q.id, { required: !q.required })}
+													className="admin-button"
+													style={{
+														background: q.required ? "var(--color-primary)" : "var(--color-gray-700)",
+														border: `1px solid ${q.required ? "var(--color-primary)" : "var(--color-gray-600)"}`,
+														color: q.required ? "white" : "var(--color-gray-300)",
+														fontSize: "0.8rem",
+														padding: "0.5rem 0.75rem",
+														fontWeight: q.required ? "600" : "500",
+														transition: "all 0.2s ease"
+													}}
+												>
+													{q.required ? "✓ 必填" : "選填"}
+												</button>
+												<button
+													type="button"
+													onClick={() => deleteQuestion(q.id)}
+													className="admin-button danger"
+													style={{
+														fontSize: "0.8rem",
+														padding: "0.5rem 0.75rem",
+														background: "var(--color-gray-700)",
+														border: "1px solid var(--color-gray-600)",
+														color: "var(--color-red-400)"
+													}}
+													title="刪除此欄位"
+												>
+													刪除
+												</button>
+											</div>
+										</div>
+									</div>
+
+									{/* Additional Settings Section */}
+									<div>
+										<div style={{
+											fontSize: "0.75rem",
+											fontWeight: "600",
+											color: "var(--color-gray-500)",
+											marginBottom: "0.5rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em"
+										}}>
+											額外設定
+										</div>
+										<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+											<div>
+												<label style={{
+													display: "block",
+													fontSize: "0.7rem",
+													color: "var(--color-gray-500)",
+													marginBottom: "0.3rem",
+													fontWeight: "500"
+												}}>
+													說明文字（選填）
+												</label>
+												<input
+													type="text"
+													value={q.description || ""}
+													placeholder="向使用者說明此欄位的用途..."
+													onChange={e => updateQuestion(q.id, { description: e.target.value })}
+													className="admin-input"
+													style={{
+														width: "100%",
+														fontSize: "0.875rem",
+														padding: "0.5rem 0.65rem"
+													}}
+												/>
+											</div>
+
+											{(q.type === "text" || q.type === "textarea") && (
+												<div>
+													<label style={{
+														display: "block",
+														fontSize: "0.7rem",
+														color: "var(--color-gray-500)",
+														marginBottom: "0.3rem",
+														fontWeight: "500"
+													}}>
+														{t.validator}
+													</label>
+													<input
+														type="text"
+														value={q.validater || ""}
+														placeholder={t.validatorPlaceholder}
+														onChange={e => updateQuestion(q.id, { validater: e.target.value })}
+														className="admin-input"
+														style={{
+															width: "100%",
+															fontSize: "0.8rem",
+															padding: "0.5rem 0.65rem",
+															fontFamily: "monospace",
+															background: "var(--color-gray-900)",
+															border: "1px solid var(--color-gray-700)"
+														}}
+													/>
+													<p style={{
+														fontSize: "0.7rem",
+														color: "var(--color-gray-500)",
+														marginTop: "0.3rem",
+														marginBottom: 0
+													}}>
+														使用正規表達式驗證使用者輸入
+													</p>
+												</div>
+											)}
+										</div>
 									</div>
 									{["select", "radio", "checkbox"].includes(q.type) && (
 										<div>
+											<div style={{
+												fontSize: "0.75rem",
+												fontWeight: "600",
+												color: "var(--color-gray-500)",
+												marginBottom: "0.5rem",
+												textTransform: "uppercase",
+												letterSpacing: "0.05em"
+											}}>
+												選項設定
+											</div>
 											<div
 												style={{
-													marginTop: "0.5rem",
 													padding: "0.75rem",
-													border: "1px dashed var(--color-gray-600)",
+													border: "1px solid var(--color-gray-700)",
 													borderRadius: "8px",
 													background: "var(--color-gray-900)",
 													display: "flex",
 													flexDirection: "column",
-													gap: "0.5rem"
+													gap: "0.6rem"
 												}}
 											>
-												{(q.options || []).map((opt, i) => (
+												{(q.options || []).map((opt, i) => {
+													const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
+													const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
+
+													return (
 													<div
 														key={i}
+														onDragOver={e => handleOptionDragOver(e, i)}
+														onDragLeave={handleOptionDragLeave}
+														onDrop={e => handleOptionDrop(e, q.id, i)}
 														style={{
 															display: "flex",
 															gap: "0.5rem",
-															alignItems: "center",
-															flexWrap: "wrap"
+															alignItems: "stretch",
+															padding: "0.5rem",
+															borderRadius: "6px",
+															background: isOptionDragging ? "var(--color-gray-800)" : isOptionDropTarget ? "var(--color-gray-750)" : "var(--color-gray-800)",
+															border: isOptionDropTarget ? "1px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
+															opacity: isOptionDragging ? 0.6 : 1,
+															transition: "all 0.2s ease",
+															boxShadow: isOptionDropTarget ? "0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.1)" : "none"
 														}}
 													>
-														<span style={{ cursor: "grab", color: "var(--color-gray-500)" }} title="Drag option">
-															⋮⋮
-														</span>
-														<input
-															type="text"
-															value={typeof opt === "object" ? opt.en || "" : opt}
-															placeholder="EN"
-															onChange={e => {
-																const newOptions = [...(q.options || [])];
-																if (typeof newOptions[i] === "object") {
-																	newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
-																} else {
-																	newOptions[i] = { en: e.target.value };
-																}
-																updateQuestion(q.id, { options: newOptions });
-															}}
-															className="admin-input"
-															style={{ minWidth: "120px", fontSize: "0.85rem", padding: "0.4rem 0.6rem" }}
-														/>
-														<input
-															type="text"
-															value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
-															placeholder="繁"
-															onChange={e => {
-																const newOptions = [...(q.options || [])];
-																if (typeof newOptions[i] === "object") {
-																	newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
-																} else {
-																	newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
-																}
-																updateQuestion(q.id, { options: newOptions });
-															}}
-															className="admin-input"
-															style={{ minWidth: "100px", fontSize: "0.85rem", padding: "0.4rem 0.6rem" }}
-														/>
-														<input
-															type="text"
-															value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
-															placeholder="簡"
-															onChange={e => {
-																const newOptions = [...(q.options || [])];
-																if (typeof newOptions[i] === "object") {
-																	newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
-																} else {
-																	newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
-																}
-																updateQuestion(q.id, { options: newOptions });
-															}}
-															className="admin-input"
-															style={{ minWidth: "100px", fontSize: "0.85rem", padding: "0.4rem 0.6rem" }}
-														/>
+														<div style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "0.5rem"
+														}}>
+															<span
+																draggable
+																onDragStart={e => handleOptionDragStart(e, q.id, i)}
+																onDragEnd={handleOptionDragEnd}
+																style={{
+																	cursor: "grab",
+																	color: isOptionDragging ? "var(--color-primary)" : "var(--color-gray-600)",
+																	userSelect: "none",
+																	padding: "0.25rem",
+																	display: "flex",
+																	alignItems: "center"
+																}}
+																title="拖曳以重新排序選項"
+																onMouseDown={(e) => {
+																	e.currentTarget.style.cursor = "grabbing";
+																}}
+																onMouseUp={(e) => {
+																	e.currentTarget.style.cursor = "grab";
+																}}
+															>
+																⋮⋮
+															</span>
+															<span style={{
+																fontSize: "0.75rem",
+																color: "var(--color-gray-500)",
+																fontWeight: "600",
+																minWidth: "1.5rem"
+															}}>
+																{i + 1}
+															</span>
+														</div>
+														<div style={{
+															display: "grid",
+															gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+															gap: "0.5rem",
+															flex: 1
+														}}>
+															<input
+																type="text"
+																value={typeof opt === "object" ? opt.en || "" : opt}
+																placeholder="English"
+																onChange={e => {
+																	const newOptions = [...(q.options || [])];
+																	if (typeof newOptions[i] === "object") {
+																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
+																	} else {
+																		newOptions[i] = { en: e.target.value };
+																	}
+																	updateQuestion(q.id, { options: newOptions });
+																}}
+																className="admin-input"
+																style={{
+																	fontSize: "0.8rem",
+																	padding: "0.45rem 0.6rem",
+																	background: "var(--color-gray-950)"
+																}}
+															/>
+															<input
+																type="text"
+																value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
+																placeholder="繁體中文"
+																onChange={e => {
+																	const newOptions = [...(q.options || [])];
+																	if (typeof newOptions[i] === "object") {
+																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
+																	} else {
+																		newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
+																	}
+																	updateQuestion(q.id, { options: newOptions });
+																}}
+																className="admin-input"
+																style={{
+																	fontSize: "0.8rem",
+																	padding: "0.45rem 0.6rem",
+																	background: "var(--color-gray-950)"
+																}}
+															/>
+															<input
+																type="text"
+																value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
+																placeholder="简体中文"
+																onChange={e => {
+																	const newOptions = [...(q.options || [])];
+																	if (typeof newOptions[i] === "object") {
+																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
+																	} else {
+																		newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
+																	}
+																	updateQuestion(q.id, { options: newOptions });
+																}}
+																className="admin-input"
+																style={{
+																	fontSize: "0.8rem",
+																	padding: "0.45rem 0.6rem",
+																	background: "var(--color-gray-950)"
+																}}
+															/>
+														</div>
 														<button
 															type="button"
 															onClick={() => {
@@ -785,27 +1127,43 @@ export default function FormsPage() {
 																newOptions.splice(i, 1);
 																updateQuestion(q.id, { options: newOptions });
 															}}
-															className="admin-button small secondary"
-															style={{ fontSize: "0.7rem", padding: "0.3rem 0.6rem" }}
+															className="admin-button"
+															style={{
+																fontSize: "0.75rem",
+																padding: "0.45rem 0.65rem",
+																background: "var(--color-gray-950)",
+																border: "1px solid var(--color-gray-800)",
+																color: "var(--color-red-400)",
+																flexShrink: 0
+															}}
+															title="刪除此選項"
 														>
-															刪除
+															✕
 														</button>
 													</div>
-												))}
+													);
+												})}
 												<button
 													type="button"
 													onClick={() => {
 														const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
 														updateQuestion(q.id, { options: newOptions });
 													}}
-													className="admin-button small secondary"
+													className="admin-button"
 													style={{
-														fontSize: "0.7rem",
-														padding: "0.4rem 0.7rem",
-														alignSelf: "flex-start"
+														fontSize: "0.8rem",
+														padding: "0.5rem 0.75rem",
+														background: "var(--color-gray-800)",
+														border: "1px dashed var(--color-gray-700)",
+														color: "var(--color-gray-400)",
+														width: "100%",
+														justifyContent: "center",
+														display: "flex",
+														alignItems: "center",
+														gap: "0.4rem"
 													}}
 												>
-													+ 新增選項
+													<span style={{ fontSize: "1rem" }}>+</span> 新增選項
 												</button>
 											</div>
 										</div>
@@ -814,19 +1172,58 @@ export default function FormsPage() {
 							</div>
 						);
 						})}
+						</div>
 					</div>
-					<div
-						style={{
-							display: "flex",
-							gap: "0.75rem",
-							marginTop: "1rem"
-						}}
-					>
-						<button id="add-question" type="button" onClick={addQuestion} className="admin-button secondary">
-							<Plus /> {t.addQuestion}
+
+					{/* Action Buttons */}
+					<div style={{
+						position: "sticky",
+						bottom: 0,
+						background: "var(--color-gray-900)",
+						padding: "1rem 0",
+						marginTop: "1.5rem",
+						display: "flex",
+						gap: "0.75rem",
+						justifyContent: "center",
+						borderTop: "1px solid var(--color-gray-700)"
+					}}>
+						<button
+							id="add-question"
+							type="button"
+							onClick={addQuestion}
+							className="admin-button"
+							style={{
+								fontSize: "0.9rem",
+								padding: "0.65rem 1.25rem",
+								background: "var(--color-gray-700)",
+								border: "1px solid var(--color-gray-600)",
+								color: "var(--color-gray-200)",
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								fontWeight: "500"
+							}}
+						>
+							<Plus size={18} /> {t.addQuestion}
 						</button>
-						<button id="save-form" type="button" onClick={saveForm} className="admin-button success">
-							<Save /> {t.save}
+						<button
+							id="save-form"
+							type="button"
+							onClick={saveForm}
+							className="admin-button"
+							style={{
+								fontSize: "0.9rem",
+								padding: "0.65rem 1.25rem",
+								border: "1px solid var(--color-primary)",
+								color: "white",
+								display: "flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								fontWeight: "600",
+								boxShadow: "0 2px 8px rgba(var(--color-primary-rgb, 99, 102, 241), 0.25)"
+							}}
+						>
+							<Save size={18} /> {t.save}
 						</button>
 					</div>
 				</div>
