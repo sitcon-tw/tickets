@@ -5,7 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event, EventFormField } from "@/lib/types/api";
-import { Save, Plus, GripVertical } from "lucide-react";
+import { Save, Plus, GripVertical, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -65,7 +65,22 @@ export default function FormsPage() {
 		typeRadio: { "zh-Hant": "單選按鈕", "zh-Hans": "单选按钮", en: "Radio Buttons" },
 		typeCheckbox: { "zh-Hant": "勾選框", "zh-Hans": "勾选框", en: "Checkbox" },
 		validator: { "zh-Hant": "驗證正規表達式", "zh-Hans": "验证正则表达式", en: "Validation Regex" },
-		validatorPlaceholder: { "zh-Hant": "例如: ^[A-Z0-9]+$ (選填)", "zh-Hans": "例如: ^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" }
+		validatorPlaceholder: { "zh-Hant": "例如: ^[A-Z0-9]+$ (選填)", "zh-Hans": "例如: ^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" },
+		useValidator: { "zh-Hant": "使用此正規表達式驗證輸入內容", "zh-Hans": "使用此正则表达式验证输入内容", en: "Use this regex to validate input" },
+		formFields: { "zh-Hant": "表單欄位", "zh-Hans": "表单栏位", en: "Form Fields" },
+		fieldName: { "zh-Hant": "欄位名稱", "zh-Hans": "栏位名称", en: "Field Name" },
+		fieldSettings: { "zh-Hant": "欄位設定", "zh-Hans": "栏位设定", en: "Field Settings" },
+		fieldType: { "zh-Hant": "欄位類型", "zh-Hans": "栏位类型", en: "Field Type" },
+		fieldRequired: { "zh-Hant": "必填", "zh-Hans": "必填", en: "Required" },
+		fieldOptional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
+		deleteField: { "zh-Hant": "刪除欄位", "zh-Hans": "删除栏位", en: "Delete Field" },
+		additionalSettings: { "zh-Hant": "其他設定", "zh-Hans": "其他设定", en: "Additional Settings" },
+		fieldDescription: { "zh-Hant": "說明文字（選填）", "zh-Hans": "说明文字（选填）", en: "Description (optional)" },
+		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
+		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
+		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
+		currentlyNoFormFields: { "zh-Hant": "目前尚無表單欄位", "zh-Hans": "目前尚无表单栏位", en: "There are currently no form fields" },
+		clickNewToAdd: { "zh-Hant": "點擊下方「新增問題」按鈕開始建立表單", "zh-Hans": "点击下方「新增问题」按钮开始建立表单", en: "Click the button below to add a new question" }
 	});
 
 	const fieldTypes = [
@@ -588,7 +603,7 @@ export default function FormsPage() {
 								color: "var(--color-gray-200)",
 								margin: 0
 							}}>
-								表單欄位
+								{t.formFields}
 							</h2>
 							<span style={{
 								fontSize: "0.8rem",
@@ -598,7 +613,7 @@ export default function FormsPage() {
 								borderRadius: "4px",
 								border: "1px solid var(--color-gray-700)"
 							}}>
-								{questions.length} 個欄位
+								{questions.length} {t.howManyFields}
 							</span>
 						</div>
 
@@ -620,24 +635,19 @@ export default function FormsPage() {
 										background: "var(--color-gray-800)"
 									}}
 								>
-									<div style={{
-										fontSize: "2rem",
-										marginBottom: "0.5rem",
-										opacity: 0.4
-									}}>📝</div>
 									<p style={{
 										fontSize: "0.9rem",
 										color: "var(--color-gray-400)",
 										margin: "0 0 0.5rem 0"
 									}}>
-										目前沒有任何表單欄位
+										{t.currentlyNoFormFields}
 									</p>
 									<p style={{
 										fontSize: "0.8rem",
 										color: "var(--color-gray-500)",
 										margin: 0
 									}}>
-										點擊下方「新增問題」按鈕開始建立表單
+										{t.clickNewToAdd}
 									</p>
 								</div>
 							)}
@@ -733,7 +743,7 @@ export default function FormsPage() {
 											textTransform: "uppercase",
 											letterSpacing: "0.05em"
 										}}>
-											欄位名稱
+											{t.fieldName}
 										</div>
 										<div
 											style={{
@@ -824,7 +834,7 @@ export default function FormsPage() {
 											textTransform: "uppercase",
 											letterSpacing: "0.05em"
 										}}>
-											欄位設定
+											{t.fieldSettings}
 										</div>
 										<div style={{
 											display: "flex",
@@ -840,7 +850,7 @@ export default function FormsPage() {
 													marginBottom: "0.3rem",
 													fontWeight: "500"
 												}}>
-													欄位類型
+													{t.fieldType}
 												</label>
 												<select
 													value={q.type}
@@ -875,7 +885,7 @@ export default function FormsPage() {
 														transition: "all 0.2s ease"
 													}}
 												>
-													{q.required ? "✓ 必填" : "選填"}
+													{q.required ? t.fieldRequired : t.fieldOptional}
 												</button>
 												<button
 													type="button"
@@ -888,9 +898,9 @@ export default function FormsPage() {
 														border: "1px solid var(--color-gray-600)",
 														color: "var(--color-red-400)"
 													}}
-													title="刪除此欄位"
+													title={t.deleteField}
 												>
-													刪除
+													{t.deleteField}
 												</button>
 											</div>
 										</div>
@@ -906,7 +916,7 @@ export default function FormsPage() {
 											textTransform: "uppercase",
 											letterSpacing: "0.05em"
 										}}>
-											額外設定
+											{t.additionalSettings}
 										</div>
 										<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
 											<div>
@@ -917,7 +927,7 @@ export default function FormsPage() {
 													marginBottom: "0.3rem",
 													fontWeight: "500"
 												}}>
-													說明文字（選填）
+													{t.description}
 												</label>
 												<input
 													type="text"
@@ -965,7 +975,7 @@ export default function FormsPage() {
 														marginTop: "0.3rem",
 														marginBottom: 0
 													}}>
-														使用正規表達式驗證使用者輸入
+														{t.useValidator}
 													</p>
 												</div>
 											)}
@@ -981,7 +991,7 @@ export default function FormsPage() {
 												textTransform: "uppercase",
 												letterSpacing: "0.05em"
 											}}>
-												選項設定
+												{t.optionSettings}
 											</div>
 											<div
 												style={{
@@ -1138,7 +1148,7 @@ export default function FormsPage() {
 															}}
 															title="刪除此選項"
 														>
-															✕
+															<X />
 														</button>
 													</div>
 													);
@@ -1163,7 +1173,7 @@ export default function FormsPage() {
 														gap: "0.4rem"
 													}}
 												>
-													<span style={{ fontSize: "1rem" }}>+</span> 新增選項
+													<span style={{ fontSize: "1rem" }}><Plus /></span> {t.newOption}
 												</button>
 											</div>
 										</div>
