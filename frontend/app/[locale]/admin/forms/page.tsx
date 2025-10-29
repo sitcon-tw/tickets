@@ -6,7 +6,6 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Event, EventFormField, Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 type ShowIf = {
@@ -33,10 +32,10 @@ type Question = {
 
 export default function FormsPage() {
 	const locale = useLocale();
-	const searchParams = useSearchParams();
 	const { showAlert } = useAlert();
 
 	const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [allEvents, setAllEvents] = useState<Event[]>([]);
 	const [copyFromEventId, setCopyFromEventId] = useState<string>("");
@@ -56,22 +55,20 @@ export default function FormsPage() {
 	});
 
 	const loadEvent = useCallback(async () => {
-		const eventId = searchParams.get("event");
-
-		if (!eventId) {
-			console.error("No event ID provided");
+		if (!currentEventId) {
+			console.error("No event ID available");
 			return;
 		}
 
 		try {
-			const response = await adminEventsAPI.getById(eventId);
+			const response = await adminEventsAPI.getById(currentEventId);
 			if (response.success && response.data) {
 				setCurrentEvent(response.data);
 			}
 		} catch (error) {
 			console.error("Failed to load event:", error);
 		}
-	}, [searchParams]);
+	}, [currentEventId]);
 
 	const loadAllEvents = useCallback(async () => {
 		try {
@@ -358,18 +355,38 @@ export default function FormsPage() {
 			}
 		}
 	};
+
+	useEffect(() => {
+		const handleEventChange = (e: CustomEvent) => {
+			setCurrentEventId(e.detail.eventId);
+		};
+
+		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
+
+		const savedEventId = localStorage.getItem("selectedEventId");
+		if (savedEventId) {
+			setCurrentEventId(savedEventId);
+		}
+
+		return () => {
+			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
+		};
+	}, []);
 	
 	useEffect(() => {
-		loadEvent();
+		if (currentEventId) {
+			loadEvent();
+		}
+	}, [currentEventId, loadEvent]);
 
+	useEffect(() => {
 		if (currentEvent?.id) {
 			loadFormFields();
 			loadAllEvents();
 		}
+	}, [currentEvent?.id, loadFormFields, loadAllEvents]);
 
-	}, [currentEvent?.id, loadFormFields, loadAllEvents, loadEvent]);
-
-	if (!searchParams.get("event")) {
+	if (!currentEventId) {
 		return (
 			<>
 				<AdminNav />
@@ -393,22 +410,6 @@ export default function FormsPage() {
 		<>
 			<AdminNav />
 			<main>
-				<div style={{ marginBottom: "1.5rem" }}>
-					<button className="admin-button secondary" onClick={() => (window.location.href = `/${locale}/admin/events`)} style={{ marginBottom: "1rem" }}>
-						← {t.backToTickets}
-					</button>
-					<h1 className="text-3xl font-bold">{t.title}</h1>
-					<div className="h-8" />
-					{currentEvent && (
-						<div className="admin-stat-card" style={{ marginTop: "1rem" }}>
-							<div className="admin-stat-label">{t.ticketLabel}</div>
-							<div className="admin-stat-value" style={{ fontSize: "1.5rem" }}>
-								{typeof currentEvent.name === "object" ? currentEvent.name["en"] || Object.values(currentEvent.name)[0] : currentEvent.name}
-							</div>
-							{currentEvent.description && <div style={{ marginTop: "0.5rem", opacity: 0.7, fontSize: "0.9rem" }}>{typeof currentEvent.description === "object" ? currentEvent.description["en"] || Object.values(currentEvent.description)[0] : currentEvent.description}</div>}
-						</div>
-					)}
-				</div>
 				<div
 					id="form-editor"
 					style={{
