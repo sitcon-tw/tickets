@@ -487,9 +487,6 @@ export default function FormsPage() {
 								<div
 									key={q.id}
 									data-id={q.id}
-									draggable
-									onDragStart={e => handleDragStart(e, index)}
-									onDragEnd={handleDragEnd}
 									onDragOver={e => handleDragOver(e, index)}
 									onDragLeave={handleDragLeave}
 									onDrop={e => handleDrop(e, index)}
@@ -511,10 +508,13 @@ export default function FormsPage() {
 											: "0 2px 4px rgba(0, 0, 0, 0.2)",
 										opacity: isDragging ? 0.6 : 1,
 										transform: isDragging ? "scale(1.02) rotate(1deg)" : isDropTarget ? "scale(1.01)" : "scale(1)",
-										cursor: isDragging ? "grabbing" : "default"
+										cursor: "default"
 									}}
 								>
 									<div
+										draggable
+										onDragStart={e => handleDragStart(e, index)}
+										onDragEnd={handleDragEnd}
 										style={{
 											cursor: "grab",
 											userSelect: "none",
@@ -523,7 +523,8 @@ export default function FormsPage() {
 											justifyContent: "center",
 											color: isDragging ? "var(--color-primary)" : "#999",
 											transition: "color 0.2s ease",
-											padding: "0.25rem"
+											padding: "0.25rem",
+											touchAction: "none"
 										}}
 										title="Drag to reorder"
 										onMouseDown={(e) => {
