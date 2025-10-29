@@ -100,6 +100,7 @@ model Event {
   registrations Registration[]
   referrals     Referral[]
   referralUsage ReferralUsage[]
+  formFields    EventFormFields[]
 
   @@map("event")
 }
@@ -125,15 +126,14 @@ model Ticket {
   event         Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations Registration[]
   invitationCodes InvitationCode[]
-  fromFields    TicketFromFields[]
 
   @@map("ticket")
 }
 
 
-model TicketFromFields {
+model EventFormFields {
   id          String   @id @default(cuid())
-  ticketId    String
+  eventId     String
   order       Int      // order of the field in the form
   type        String   // text, textarea, select, checkbox, radio
   validater   String?  // regex pattern for validation
@@ -143,7 +143,9 @@ model TicketFromFields {
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]
 
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_form_fields")
 }
 
 

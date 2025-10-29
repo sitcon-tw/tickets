@@ -97,8 +97,7 @@ export default async function adminEventsRoutes(fastify, options) {
 						},
 						_count: {
 							select: {
-								registrations: true,
-								invitationCodes: true
+								registrations: true
 							}
 						}
 					}

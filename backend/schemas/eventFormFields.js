@@ -1,17 +1,17 @@
 /**
- * @fileoverview TicketFromFields-related schema definitions
+ * @fileoverview EventFormFields-related schema definitions
  */
 
 import { errorResponse, idParam, successResponse } from "./common.js";
 
-export const ticketFormFieldProperties = {
+export const eventFormFieldProperties = {
 	id: {
 		type: "string",
 		description: "表單欄位 ID"
 	},
-	ticketId: {
+	eventId: {
 		type: "string",
-		description: "票券 ID"
+		description: "活動 ID"
 	},
 	order: {
 		type: "integer",
@@ -54,12 +54,12 @@ export const ticketFormFieldProperties = {
 	}
 };
 
-export const ticketFormFieldCreateBody = {
+export const eventFormFieldCreateBody = {
 	type: "object",
 	properties: {
-		ticketId: {
+		eventId: {
 			type: "string",
-			description: "票券 ID"
+			description: "活動 ID"
 		},
 		order: {
 			type: "integer",
@@ -103,10 +103,10 @@ export const ticketFormFieldCreateBody = {
 			description: "選項值（localized array of objects，用於 select、radio 類型）"
 		}
 	},
-	required: ["ticketId", "order", "type", "name"]
+	required: ["eventId", "order", "type", "name"]
 };
 
-export const ticketFormFieldUpdateBody = {
+export const eventFormFieldUpdateBody = {
 	type: "object",
 	properties: {
 		order: {
@@ -152,20 +152,20 @@ export const ticketFormFieldUpdateBody = {
 	}
 };
 
-export const ticketFormFieldResponse = {
+export const eventFormFieldResponse = {
 	type: "object",
 	properties: {
 		...successResponse.properties,
 		data: {
 			type: "object",
-			properties: ticketFormFieldProperties,
-			required: ["id", "ticketId", "order", "type", "name"]
+			properties: eventFormFieldProperties,
+			required: ["id", "eventId", "order", "type", "name"]
 		}
 	},
 	required: ["success", "message", "data"]
 };
 
-export const ticketFormFieldsListResponse = {
+export const eventFormFieldsListResponse = {
 	type: "object",
 	properties: {
 		...successResponse.properties,
@@ -173,22 +173,22 @@ export const ticketFormFieldsListResponse = {
 			type: "array",
 			items: {
 				type: "object",
-				properties: ticketFormFieldProperties
+				properties: eventFormFieldProperties
 			}
 		}
 	},
 	required: ["success", "message", "data"]
 };
 
-export const ticketFormFieldSchemas = {
-	createTicketFormField: {
-		description: "創建票券表單欄位",
-		tags: ["admin/tickets"],
-		body: ticketFormFieldCreateBody,
+export const eventFormFieldSchemas = {
+	createEventFormField: {
+		description: "創建活動表單欄位",
+		tags: ["admin/events"],
+		body: eventFormFieldCreateBody,
 		params: undefined,
 		querystring: undefined,
 		response: {
-			201: ticketFormFieldResponse,
+			201: eventFormFieldResponse,
 			400: {
 				oneOf: [
 					errorResponse,
@@ -211,26 +211,26 @@ export const ticketFormFieldSchemas = {
 		}
 	},
 
-	getTicketFormField: {
-		description: "取得票券表單欄位詳情",
-		tags: ["admin/tickets"],
+	getEventFormField: {
+		description: "取得活動表單欄位詳情",
+		tags: ["admin/events"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
 		response: {
-			200: ticketFormFieldResponse,
+			200: eventFormFieldResponse,
 			404: errorResponse
 		}
 	},
 
-	updateTicketFormField: {
-		description: "更新票券表單欄位",
-		tags: ["admin/tickets"],
-		body: ticketFormFieldUpdateBody,
+	updateEventFormField: {
+		description: "更新活動表單欄位",
+		tags: ["admin/events"],
+		body: eventFormFieldUpdateBody,
 		params: idParam,
 		querystring: undefined,
 		response: {
-			200: ticketFormFieldResponse,
+			200: eventFormFieldResponse,
 			400: errorResponse,
 			401: errorResponse,
 			403: errorResponse,
@@ -238,9 +238,9 @@ export const ticketFormFieldSchemas = {
 		}
 	},
 
-	deleteTicketFormField: {
-		description: "刪除票券表單欄位",
-		tags: ["admin/tickets"],
+	deleteEventFormField: {
+		description: "刪除活動表單欄位",
+		tags: ["admin/events"],
 		body: undefined,
 		params: idParam,
 		querystring: undefined,
@@ -252,22 +252,22 @@ export const ticketFormFieldSchemas = {
 		}
 	},
 
-	listTicketFormFields: {
-		description: "取得票券表單欄位列表",
-		tags: ["admin/tickets"],
+	listEventFormFields: {
+		description: "取得活動表單欄位列表",
+		tags: ["admin/events"],
 		body: undefined,
 		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {
-				ticketId: {
+				eventId: {
 					type: "string",
-					description: "篩選票券 ID"
+					description: "篩選活動 ID"
 				}
 			}
 		},
 		response: {
-			200: ticketFormFieldsListResponse
+			200: eventFormFieldsListResponse
 		}
 	}
 };

@@ -129,9 +129,9 @@ export interface Ticket {
 	requireSmsVerification?: boolean;
 }
 
-export interface TicketFormField {
+export interface EventFormField {
 	id: string;
-	ticketId: string;
+	eventId: string;
 	order: number;
 	type: "text" | "email" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
@@ -144,12 +144,16 @@ export interface TicketFormField {
 	helpText?: string;
 }
 
-export interface TicketFormFieldReorder {
+export interface EventFormFieldReorder {
 	fieldOrders: Array<{
 		id: string;
 		order: number;
 	}>;
 }
+
+// Backward compatibility alias
+export type TicketFormField = EventFormField;
+export type TicketFormFieldReorder = EventFormFieldReorder;
 
 export interface TicketAnalytics {
 	totalsoldCount: number;
