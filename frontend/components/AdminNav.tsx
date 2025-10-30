@@ -14,6 +14,7 @@ const activityLinks = [
 	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
 	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
 	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
+	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null }, // Always show
 	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null }, // Always show
 	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null }, // Always show
 	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },

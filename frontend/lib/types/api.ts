@@ -129,11 +129,28 @@ export interface Ticket {
 	requireSmsVerification?: boolean;
 }
 
-export interface TicketFormField {
+export interface FilterCondition {
+	type: "ticket" | "field" | "time";
+	ticketId?: string;
+	fieldId?: string;
+	operator?: "equals" | "filled" | "notFilled";
+	value?: string;
+	startTime?: string;
+	endTime?: string;
+}
+
+export interface FieldFilter {
+	enabled: boolean;
+	action: "display" | "hide";
+	operator: "and" | "or";
+	conditions: FilterCondition[];
+}
+
+export interface EventFormField {
 	id: string;
-	ticketId: string;
+	eventId: string;
 	order: number;
-	type: "text" | "email" | "textarea" | "select" | "checkbox" | "radio";
+	type: "text" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
 	name: LocalizedText;
 	description?: string;
@@ -141,15 +158,19 @@ export interface TicketFormField {
 	required: boolean;
 	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
 	options?: LocalizedText[]; // Parsed options for frontend use
-	helpText?: string;
+	filters?: FieldFilter; // Display conditions filter
 }
 
-export interface TicketFormFieldReorder {
+export interface EventFormFieldReorder {
 	fieldOrders: Array<{
 		id: string;
 		order: number;
 	}>;
 }
+
+// Backward compatibility alias
+export type TicketFormField = EventFormField;
+export type TicketFormFieldReorder = EventFormFieldReorder;
 
 export interface TicketAnalytics {
 	totalsoldCount: number;

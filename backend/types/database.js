@@ -116,9 +116,9 @@
  */
 
 /**
- * @typedef {Object} TicketFromFields
+ * @typedef {Object} EventFormFields
  * @property {string} id - Form field unique identifier
- * @property {string} ticketId - Associated ticket ID
+ * @property {string} eventId - Associated event ID
  * @property {number} order - Field order in the form
  * @property {'text'|'textarea'|'select'|'checkbox'|'radio'} type - Field type
  * @property {string|null} validater - Validation regex pattern
@@ -127,6 +127,11 @@
  * @property {string|null} placeholder - Field placeholder text
  * @property {boolean} required - Whether field is required
  * @property {string|null} values - JSON array for select/radio options
+ */
+
+/**
+ * @typedef {EventFormFields} TicketFromFields
+ * @deprecated Use EventFormFields instead
  */
 
 export {};

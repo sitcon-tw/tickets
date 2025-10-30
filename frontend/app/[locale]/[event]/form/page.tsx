@@ -11,10 +11,11 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -248,11 +249,22 @@ export default function FormPage() {
 						return { en: String(opt) };
 					});
 
+					// Parse filters if they're a string
+					let filters = (field as any).filters;
+					if (typeof filters === "string") {
+						try {
+							filters = JSON.parse(filters);
+						} catch {
+							filters = undefined;
+						}
+					}
+
 					return {
 						...field,
 						name,
 						description,
-						options
+						options,
+						filters
 					};
 				});
 
@@ -267,6 +279,38 @@ export default function FormPage() {
 
 		initForm();
 	}, [router, showAlert, t.noTicketAlert]);
+
+	// Filter visible fields based on conditions
+	const visibleFields = useMemo(() => {
+		if (!ticketId) return formFields;
+
+		const filtered = formFields.filter(field => {
+			const shouldDisplay = shouldDisplayField(
+				field,
+				{
+					selectedTicketId: ticketId,
+					formData: formData,
+					currentTime: new Date()
+				},
+				formFields // Pass all fields for field-based condition evaluation
+			);
+
+			// Debug logging
+			if (field.filters?.enabled) {
+				console.log('Field filter evaluation:', {
+					fieldName: typeof field.name === 'object' ? field.name.en : field.name,
+					filters: field.filters,
+					shouldDisplay,
+					ticketId,
+					formData
+				});
+			}
+
+			return shouldDisplay;
+		});
+
+		return filtered;
+	}, [formFields, ticketId, formData]);
 
 	return (
 		<>
@@ -334,8 +378,8 @@ export default function FormPage() {
 							{/* Invitation code field - shown if ticket requires it */}
 							{requiresInviteCode && <Text label={`${t.invitationCode} *`} id="invitationCode" value={invitationCode} onChange={e => setInvitationCode(e.target.value)} required={requiresInviteCode} placeholder={t.invitationCode} />}
 
-							{/* Dynamic form fields from API */}
-							{formFields.map((field, index) => {
+							{/* Dynamic form fields from API - filtered by display conditions */}
+							{visibleFields.map((field, index) => {
 								const fieldName = getLocalizedText(field.name, locale);
 								return <FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
 							})}

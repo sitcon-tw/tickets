@@ -32,8 +32,8 @@ const auto = {
 			stale: 1 // Minimal stale period for ticket availability
 		},
 		{
-			model: "TicketFromFields",
-			ttl: 10, // Cache ticket form fields for 10 seconds (static data)
+			model: "EventFormFields",
+			ttl: 10, // Cache event form fields for 10 seconds (static data)
 			stale: 5
 		}
 	],

@@ -7,7 +7,7 @@ import invitationCodesRoutes from "./admin/invitationCodes.js";
 import referralsRoutes from "./admin/referrals.js";
 import registrationsRoutes from "./admin/registrations.js";
 import smsVerificationLogsRoutes from "./admin/smsVerificationLogs.js";
-import ticketFormFieldsRoutes from "./admin/ticketFormFields.js";
+import eventFormFieldsRoutes from "./admin/eventFormFields.js";
 import ticketsRoutes from "./admin/tickets.js";
 import usersRoutes from "./admin/users.js";
 
@@ -18,7 +18,7 @@ export default async function adminRoutes(fastify) {
 	await fastify.register(usersRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);
-	await fastify.register(ticketFormFieldsRoutes);
+	await fastify.register(eventFormFieldsRoutes);
 	await fastify.register(registrationsRoutes);
 	await fastify.register(invitationCodesRoutes);
 	await fastify.register(referralsRoutes);

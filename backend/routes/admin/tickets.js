@@ -117,9 +117,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 								endDate: true
 							}
 						},
-						fromFields: {
-							orderBy: { order: "asc" }
-						},
 						_count: {
 							select: {
 								registrations: true
@@ -317,9 +314,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 								startDate: true,
 								endDate: true
 							}
-						},
-						fromFields: {
-							orderBy: { order: "asc" }
 						},
 						_count: {
 							select: {
