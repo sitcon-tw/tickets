@@ -24,7 +24,8 @@ const fastify = Fastify({
 	logger: true,
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
-	trustProxy: process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production"
+	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
+	trustProxy: true
 });
 
 // Register OpenTelemetry plugin for automatic HTTP request tracing
@@ -60,7 +61,7 @@ await fastify.register(cors, getCorsConfig());
 
 // Swagger UI
 await fastify.register(fastifySwagger, {
-	swagger: {
+	openapi: {
 		info: {
 			title: "SITCON 報名系統 API",
 			version: "1.0.0"
