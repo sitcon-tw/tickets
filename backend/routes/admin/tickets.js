@@ -78,6 +78,10 @@ export default async function adminTicketsRoutes(fastify, options) {
 						isActive: true,
 						requireInviteCode,
 						hidden: hidden ?? false
+					},
+					uncache: {
+						uncacheKeys: ["prisma:event:*"],
+						hasPattern: true
 					}
 				});
 
