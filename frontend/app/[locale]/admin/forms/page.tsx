@@ -970,7 +970,7 @@ export default function FormsPage() {
 													marginBottom: "0.3rem",
 													fontWeight: "500"
 												}}>
-													{t.description}
+													{t.fieldDescription}
 												</label>
 												<input
 													type="text"
