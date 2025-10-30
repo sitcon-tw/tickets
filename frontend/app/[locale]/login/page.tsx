@@ -207,6 +207,16 @@ export default function Login() {
 			"zh-Hant": "連結已過期，請重新請求登入連結",
 			"zh-Hans": "链接已过期，请重新请求登录链接",
 			en: "Link has expired. Please request a new login link"
+		},
+		acceptTermsAsLoggedIn: {
+			"zh-Hant": "登入即代表您同意我們的服務條款與隱私政策。",
+			"zh-Hans": "登录即代表您同意我们的服务条款与隐私政策。",
+			en: "By logging in, you agree to our Terms of Service and Privacy Policy."
+		},
+		termsLink: {
+			"zh-Hant": "服務條款與隱私政策連結",
+			"zh-Hans": "服务条款与隐私政策链接",
+			en: "Terms of Service and Privacy Policy Link"
 		}
 	});
 
@@ -284,6 +294,12 @@ export default function Login() {
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
+						<p style={{ fontSize: "0.9rem", marginTop: "5rem", color: "var(--color-gray-700)" }}>
+							{t.acceptTermsAsLoggedIn}{" "}
+							<a href="/terms" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
+								{t.termsLink}
+							</a>
+						</p>
 					</Container>
 
 					<Container isActive={viewState === "sent"}>
