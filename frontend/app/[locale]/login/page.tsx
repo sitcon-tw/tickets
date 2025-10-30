@@ -145,6 +145,7 @@ export default function Login() {
 	const errorParam = searchParams.get("error");
 	const [viewState, setViewState] = useState<"login" | "sent">("login");
 	const [isLoading, setIsLoading] = useState(false);
+	const [email, setEmail] = useState("");
 
 	const t = getTranslations(locale, {
 		login: {
@@ -158,9 +159,9 @@ export default function Login() {
 			en: "Send Magic Link"
 		},
 		sent: {
-			"zh-Hant": "已發送 Magic Link",
-			"zh-Hans": "已发送 Magic Link",
-			en: "Magic Link Sent"
+			"zh-Hant": "已發送 Magic Link 至 ",
+			"zh-Hans": "已发送 Magic Link 至 ",
+			en: "Magic Link Sent to "
 		},
 		message: {
 			"zh-Hant": "請檢查您的電子郵件收件匣，並點擊連結以登入。若在垃圾郵件請記得回報為非垃圾郵件，以免錯過後續重要信件。",
@@ -238,9 +239,6 @@ export default function Login() {
 	};
 
 	const login = async () => {
-		const emailInput = document.getElementById("email") as HTMLInputElement;
-		const email = emailInput?.value?.trim();
-
 		if (!email || isLoading) return;
 
 		if (!validateEmail(email)) {
@@ -282,7 +280,7 @@ export default function Login() {
 					<Container isActive={viewState === "login"}>
 						<Title>{t.login}</Title>
 						<Label htmlFor="email">Email</Label>
-						<EmailInput type="email" name="email" id="email" />
+						<EmailInput type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
@@ -290,7 +288,7 @@ export default function Login() {
 
 					<Container isActive={viewState === "sent"}>
 						<MessageContainer>
-							<h2>{t.sent}</h2>
+							<h2>{t.sent}{email}</h2>
 							<p>{t.message}</p>
 						</MessageContainer>
 					</Container>
