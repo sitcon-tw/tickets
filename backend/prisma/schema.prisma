@@ -142,6 +142,7 @@ model EventFormFields {
   placeholder String?
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]
+  filters     Json?    // Display conditions filter: {enabled: true, action: "display", operator: "and", conditions: [...]}
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 

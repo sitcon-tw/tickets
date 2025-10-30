@@ -3,8 +3,8 @@
 import AdminNav from "@/components/AdminNav";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminEventFormFieldsAPI, adminEventsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField } from "@/lib/types/api";
+import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import type { Event, EventFormField, FilterCondition, FieldFilter } from "@/lib/types/api";
 import { Save, Plus, GripVertical, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -30,6 +30,7 @@ type Question = {
 		"zh-Hans"?: string;
 	}>;
 	showIf?: ShowIf;
+	filters?: FieldFilter;
 };
 
 export default function FormsPage() {
@@ -47,6 +48,7 @@ export default function FormsPage() {
 	const [draggedOptionIndex, setDraggedOptionIndex] = useState<number | null>(null);
 	const [dragOverOptionIndex, setDragOverOptionIndex] = useState<number | null>(null);
 	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
+	const [eventTickets, setEventTickets] = useState<any[]>([]);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -80,7 +82,30 @@ export default function FormsPage() {
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
 		currentlyNoFormFields: { "zh-Hant": "目前尚無表單欄位", "zh-Hans": "目前尚无表单栏位", en: "There are currently no form fields" },
-		clickNewToAdd: { "zh-Hant": "點擊下方「新增問題」按鈕開始建立表單", "zh-Hans": "点击下方「新增问题」按钮开始建立表单", en: "Click the button below to add a new question" }
+		clickNewToAdd: { "zh-Hant": "點擊下方「新增問題」按鈕開始建立表單", "zh-Hans": "点击下方「新增问题」按钮开始建立表单", en: "Click the button below to add a new question" },
+		displayFilters: { "zh-Hant": "顯示條件", "zh-Hans": "显示条件", en: "Display Conditions" },
+		enableFilters: { "zh-Hant": "啟用條件過濾", "zh-Hans": "启用条件过滤", en: "Enable Conditional Display" },
+		filterAction: { "zh-Hant": "符合條件時", "zh-Hans": "符合条件时", en: "When conditions match" },
+		actionDisplay: { "zh-Hant": "顯示此欄位", "zh-Hans": "显示此栏位", en: "Display field" },
+		actionHide: { "zh-Hant": "隱藏此欄位", "zh-Hans": "隐藏此栏位", en: "Hide field" },
+		filterOperator: { "zh-Hant": "條件連接", "zh-Hans": "条件连接", en: "Logic Operator" },
+		operatorAnd: { "zh-Hant": "全部符合 (AND)", "zh-Hans": "全部符合 (AND)", en: "All match (AND)" },
+		operatorOr: { "zh-Hant": "任一符合 (OR)", "zh-Hans": "任一符合 (OR)", en: "Any match (OR)" },
+		addCondition: { "zh-Hant": "新增條件", "zh-Hans": "新增条件", en: "Add Condition" },
+		conditionType: { "zh-Hant": "條件類型", "zh-Hans": "条件类型", en: "Condition Type" },
+		typeTicket: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket" },
+		typeField: { "zh-Hant": "欄位值", "zh-Hans": "栏位值", en: "Field Value" },
+		typeTime: { "zh-Hant": "時間", "zh-Hans": "时间", en: "Time" },
+		selectTicket: { "zh-Hant": "選擇票種", "zh-Hans": "选择票种", en: "Select Ticket" },
+		selectField: { "zh-Hant": "選擇欄位", "zh-Hans": "选择栏位", en: "Select Field" },
+		fieldOperator: { "zh-Hant": "條件", "zh-Hans": "条件", en: "Condition" },
+		operatorEquals: { "zh-Hant": "等於", "zh-Hans": "等于", en: "Equals" },
+		operatorFilled: { "zh-Hant": "已填寫", "zh-Hans": "已填写", en: "Filled" },
+		operatorNotFilled: { "zh-Hant": "未填寫", "zh-Hans": "未填写", en: "Not Filled" },
+		fieldValue: { "zh-Hant": "欄位值", "zh-Hans": "栏位值", en: "Field Value" },
+		startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start Time" },
+		endTime: { "zh-Hant": "結束時間", "zh-Hans": "结束时间", en: "End Time" },
+		deleteCondition: { "zh-Hant": "刪除條件", "zh-Hans": "删除条件", en: "Delete Condition" }
 	});
 
 	const fieldTypes = [
@@ -115,6 +140,19 @@ export default function FormsPage() {
 			}
 		} catch (error) {
 			console.error("Failed to load events:", error);
+		}
+	}, [currentEvent?.id]);
+
+	const loadEventTickets = useCallback(async () => {
+		if (!currentEvent?.id) return;
+
+		try {
+			const response = await adminTicketsAPI.getAll({ eventId: currentEvent.id });
+			if (response.success) {
+				setEventTickets(response.data || []);
+			}
+		} catch (error) {
+			console.error("Failed to load tickets:", error);
 		}
 	}, [currentEvent?.id]);
 
@@ -179,7 +217,8 @@ export default function FormsPage() {
 						required: field.required || false,
 						description: field.description || "",
 						validater: field.validater || "",
-						options
+						options,
+						filters: (field as any).filters || undefined
 					};
 				});
 
@@ -253,6 +292,7 @@ export default function FormsPage() {
 						required: field.required || false,
 						description: field.description || "",
 						validater: field.validater || "",
+						filters: (field as any).filters || undefined,
 						options
 					};
 				});
@@ -286,6 +326,7 @@ export default function FormsPage() {
 				required: q.required,
 				validater: q.validater || "",
 				values: q.options,
+				filters: q.filters || null,
 				order: index
 			}));
 
@@ -307,7 +348,8 @@ export default function FormsPage() {
 					placeholder: "",
 					required: fieldData.required,
 					validater: fieldData.validater || "",
-					values: fieldData.values
+					values: fieldData.values,
+					filters: fieldData.filters || undefined,
 				};
 
 				if (fieldData.id) {
@@ -489,8 +531,9 @@ export default function FormsPage() {
 		if (currentEvent?.id) {
 			loadFormFields();
 			loadAllEvents();
+			loadEventTickets();
 		}
-	}, [currentEvent?.id, loadFormFields, loadAllEvents]);
+	}, [currentEvent?.id, loadFormFields, loadAllEvents, loadEventTickets]);
 
 	if (!currentEventId) {
 		return (
@@ -1178,6 +1221,503 @@ export default function FormsPage() {
 											</div>
 										</div>
 									)}
+
+									{/* Display Filters Section */}
+									<div>
+										<div style={{
+											fontSize: "0.75rem",
+											fontWeight: "600",
+											color: "var(--color-gray-500)",
+											marginBottom: "0.5rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em"
+										}}>
+											{t.displayFilters}
+										</div>
+										<div style={{
+											padding: "0.75rem",
+											border: "1px solid var(--color-gray-700)",
+											borderRadius: "8px",
+											background: "var(--color-gray-900)",
+											display: "flex",
+											flexDirection: "column",
+											gap: "0.75rem"
+										}}>
+											{/* Enable filters toggle */}
+											<label style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "0.5rem",
+												cursor: "pointer",
+												userSelect: "none"
+											}}>
+												<input
+													type="checkbox"
+													checked={q.filters?.enabled || false}
+													onChange={(e) => {
+														updateQuestion(q.id, {
+															filters: {
+																enabled: e.target.checked,
+																action: q.filters?.action || "display",
+																operator: q.filters?.operator || "and",
+																conditions: q.filters?.conditions || []
+															}
+														});
+													}}
+													style={{
+														width: "1rem",
+														height: "1rem",
+														cursor: "pointer"
+													}}
+												/>
+												<span style={{
+													fontSize: "0.85rem",
+													fontWeight: "500",
+													color: "var(--color-gray-300)"
+												}}>
+													{t.enableFilters}
+												</span>
+											</label>
+
+											{q.filters?.enabled && (
+												<>
+													{/* Filter action and operator */}
+													<div style={{
+														display: "flex",
+														gap: "0.6rem",
+														flexWrap: "wrap"
+													}}>
+														<div style={{ flex: "1", minWidth: "200px" }}>
+															<label style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}>
+																{t.filterAction}
+															</label>
+															<select
+																value={q.filters.action}
+																onChange={(e) => {
+																	updateQuestion(q.id, {
+																		filters: {
+																			...q.filters!,
+																			action: e.target.value as "display" | "hide"
+																		}
+																	});
+																}}
+																className="admin-select"
+																style={{
+																	width: "100%",
+																	fontSize: "0.875rem",
+																	padding: "0.5rem 0.65rem"
+																}}
+															>
+																<option value="display">{t.actionDisplay}</option>
+																<option value="hide">{t.actionHide}</option>
+															</select>
+														</div>
+
+														<div style={{ flex: "1", minWidth: "200px" }}>
+															<label style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}>
+																{t.filterOperator}
+															</label>
+															<select
+																value={q.filters.operator}
+																onChange={(e) => {
+																	updateQuestion(q.id, {
+																		filters: {
+																			...q.filters!,
+																			operator: e.target.value as "and" | "or"
+																		}
+																	});
+																}}
+																className="admin-select"
+																style={{
+																	width: "100%",
+																	fontSize: "0.875rem",
+																	padding: "0.5rem 0.65rem"
+																}}
+															>
+																<option value="and">{t.operatorAnd}</option>
+																<option value="or">{t.operatorOr}</option>
+															</select>
+														</div>
+													</div>
+
+													{/* Conditions list */}
+													<div style={{
+														display: "flex",
+														flexDirection: "column",
+														gap: "0.6rem"
+													}}>
+														{(q.filters.conditions || []).map((condition, condIndex) => (
+															<div key={condIndex} style={{
+																padding: "0.6rem",
+																background: "var(--color-gray-800)",
+																border: "1px solid var(--color-gray-700)",
+																borderRadius: "6px",
+																display: "flex",
+																flexDirection: "column",
+																gap: "0.5rem"
+															}}>
+																{/* Condition type selector */}
+																<div style={{
+																	display: "flex",
+																	gap: "0.5rem",
+																	alignItems: "flex-start"
+																}}>
+																	<div style={{ flex: 1 }}>
+																		<label style={{
+																			display: "block",
+																			fontSize: "0.7rem",
+																			color: "var(--color-gray-500)",
+																			marginBottom: "0.3rem",
+																			fontWeight: "500"
+																		}}>
+																			{t.conditionType}
+																		</label>
+																		<select
+																			value={condition.type}
+																			onChange={(e) => {
+																				const newConditions = [...(q.filters!.conditions || [])];
+																				newConditions[condIndex] = {
+																					type: e.target.value as "ticket" | "field" | "time"
+																				};
+																				updateQuestion(q.id, {
+																					filters: {
+																						...q.filters!,
+																						conditions: newConditions
+																					}
+																				});
+																			}}
+																			className="admin-select"
+																			style={{
+																				width: "100%",
+																				fontSize: "0.8rem",
+																				padding: "0.45rem 0.6rem"
+																			}}
+																		>
+																			<option value="ticket">{t.typeTicket}</option>
+																			<option value="field">{t.typeField}</option>
+																			<option value="time">{t.typeTime}</option>
+																		</select>
+																	</div>
+
+																	<button
+																		type="button"
+																		onClick={() => {
+																			const newConditions = [...(q.filters!.conditions || [])];
+																			newConditions.splice(condIndex, 1);
+																			updateQuestion(q.id, {
+																				filters: {
+																					...q.filters!,
+																					conditions: newConditions
+																				}
+																			});
+																		}}
+																		className="admin-button"
+																		style={{
+																			fontSize: "0.75rem",
+																			padding: "0.45rem 0.65rem",
+																			background: "var(--color-gray-950)",
+																			border: "1px solid var(--color-gray-800)",
+																			color: "var(--color-red-400)",
+																			flexShrink: 0,
+																			marginTop: "1.4rem"
+																		}}
+																		title={t.deleteCondition}
+																	>
+																		<X size={14} />
+																	</button>
+																</div>
+
+																{/* Condition-specific fields */}
+																{condition.type === "ticket" && (
+																	<div>
+																		<label style={{
+																			display: "block",
+																			fontSize: "0.7rem",
+																			color: "var(--color-gray-500)",
+																			marginBottom: "0.3rem",
+																			fontWeight: "500"
+																		}}>
+																			{t.selectTicket}
+																		</label>
+																		<select
+																			value={condition.ticketId || ""}
+																			onChange={(e) => {
+																				const newConditions = [...(q.filters!.conditions || [])];
+																				newConditions[condIndex] = {
+																					...condition,
+																					ticketId: e.target.value
+																				};
+																				updateQuestion(q.id, {
+																					filters: {
+																						...q.filters!,
+																						conditions: newConditions
+																					}
+																				});
+																			}}
+																			className="admin-select"
+																			style={{
+																				width: "100%",
+																				fontSize: "0.8rem",
+																				padding: "0.45rem 0.6rem"
+																			}}
+																		>
+																			<option value="">{t.selectTicket}...</option>
+																			{eventTickets.map((ticket) => (
+																				<option key={ticket.id} value={ticket.id}>
+																					{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																				</option>
+																			))}
+																		</select>
+																	</div>
+																)}
+
+																{condition.type === "field" && (
+																	<>
+																		<div>
+																			<label style={{
+																				display: "block",
+																				fontSize: "0.7rem",
+																				color: "var(--color-gray-500)",
+																				marginBottom: "0.3rem",
+																				fontWeight: "500"
+																			}}>
+																				{t.selectField}
+																			</label>
+																			<select
+																				value={condition.fieldId || ""}
+																				onChange={(e) => {
+																					const newConditions = [...(q.filters!.conditions || [])];
+																					newConditions[condIndex] = {
+																						...condition,
+																						fieldId: e.target.value
+																					};
+																					updateQuestion(q.id, {
+																						filters: {
+																							...q.filters!,
+																							conditions: newConditions
+																						}
+																					});
+																				}}
+																				className="admin-select"
+																				style={{
+																					width: "100%",
+																					fontSize: "0.8rem",
+																					padding: "0.45rem 0.6rem"
+																				}}
+																			>
+																				<option value="">{t.selectField}...</option>
+																				{questions.filter(field => field.id !== q.id).map((field) => (
+																					<option key={field.id} value={field.id}>
+																						{field.labelEn || field.label}
+																					</option>
+																				))}
+																			</select>
+																		</div>
+
+																		<div style={{
+																			display: "flex",
+																			gap: "0.5rem"
+																		}}>
+																			<div style={{ flex: 1 }}>
+																				<label style={{
+																					display: "block",
+																					fontSize: "0.7rem",
+																					color: "var(--color-gray-500)",
+																					marginBottom: "0.3rem",
+																					fontWeight: "500"
+																				}}>
+																					{t.fieldOperator}
+																				</label>
+																				<select
+																					value={condition.operator || "equals"}
+																					onChange={(e) => {
+																						const newConditions = [...(q.filters!.conditions || [])];
+																						newConditions[condIndex] = {
+																							...condition,
+																							operator: e.target.value as "equals" | "filled" | "notFilled"
+																						};
+																						updateQuestion(q.id, {
+																							filters: {
+																								...q.filters!,
+																								conditions: newConditions
+																							}
+																						});
+																					}}
+																					className="admin-select"
+																					style={{
+																						width: "100%",
+																						fontSize: "0.8rem",
+																						padding: "0.45rem 0.6rem"
+																					}}
+																				>
+																					<option value="equals">{t.operatorEquals}</option>
+																					<option value="filled">{t.operatorFilled}</option>
+																					<option value="notFilled">{t.operatorNotFilled}</option>
+																				</select>
+																			</div>
+
+																			{condition.operator === "equals" && (
+																				<div style={{ flex: 1 }}>
+																					<label style={{
+																						display: "block",
+																						fontSize: "0.7rem",
+																						color: "var(--color-gray-500)",
+																						marginBottom: "0.3rem",
+																						fontWeight: "500"
+																					}}>
+																						{t.fieldValue}
+																					</label>
+																					<input
+																						type="text"
+																						value={condition.value || ""}
+																						placeholder={t.fieldValue}
+																						onChange={(e) => {
+																							const newConditions = [...(q.filters!.conditions || [])];
+																							newConditions[condIndex] = {
+																								...condition,
+																								value: e.target.value
+																							};
+																							updateQuestion(q.id, {
+																								filters: {
+																									...q.filters!,
+																									conditions: newConditions
+																								}
+																							});
+																						}}
+																						className="admin-input"
+																						style={{
+																							width: "100%",
+																							fontSize: "0.8rem",
+																							padding: "0.45rem 0.6rem"
+																						}}
+																					/>
+																				</div>
+																			)}
+																		</div>
+																	</>
+																)}
+
+																{condition.type === "time" && (
+																	<>
+																		<div>
+																			<label style={{
+																				display: "block",
+																				fontSize: "0.7rem",
+																				color: "var(--color-gray-500)",
+																				marginBottom: "0.3rem",
+																				fontWeight: "500"
+																			}}>
+																				{t.startTime}
+																			</label>
+																			<input
+																				type="datetime-local"
+																				value={condition.startTime || ""}
+																				onChange={(e) => {
+																					const newConditions = [...(q.filters!.conditions || [])];
+																					newConditions[condIndex] = {
+																						...condition,
+																						startTime: e.target.value
+																					};
+																					updateQuestion(q.id, {
+																						filters: {
+																							...q.filters!,
+																							conditions: newConditions
+																						}
+																					});
+																				}}
+																				className="admin-input"
+																				style={{
+																					width: "100%",
+																					fontSize: "0.8rem",
+																					padding: "0.45rem 0.6rem"
+																				}}
+																			/>
+																		</div>
+
+																		<div>
+																			<label style={{
+																				display: "block",
+																				fontSize: "0.7rem",
+																				color: "var(--color-gray-500)",
+																				marginBottom: "0.3rem",
+																				fontWeight: "500"
+																			}}>
+																				{t.endTime}
+																			</label>
+																			<input
+																				type="datetime-local"
+																				value={condition.endTime || ""}
+																				onChange={(e) => {
+																					const newConditions = [...(q.filters!.conditions || [])];
+																					newConditions[condIndex] = {
+																						...condition,
+																						endTime: e.target.value
+																					};
+																					updateQuestion(q.id, {
+																						filters: {
+																							...q.filters!,
+																							conditions: newConditions
+																						}
+																					});
+																				}}
+																				className="admin-input"
+																				style={{
+																					width: "100%",
+																					fontSize: "0.8rem",
+																					padding: "0.45rem 0.6rem"
+																				}}
+																			/>
+																		</div>
+																	</>
+																)}
+															</div>
+														))}
+
+														{/* Add condition button */}
+														<button
+															type="button"
+															onClick={() => {
+																const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
+																updateQuestion(q.id, {
+																	filters: {
+																		...q.filters!,
+																		conditions: newConditions
+																	}
+																});
+															}}
+															className="admin-button"
+															style={{
+																fontSize: "0.8rem",
+																padding: "0.5rem 0.75rem",
+																background: "var(--color-gray-800)",
+																border: "1px dashed var(--color-gray-700)",
+																color: "var(--color-gray-400)",
+																width: "100%",
+																justifyContent: "center",
+																display: "flex",
+																alignItems: "center",
+																gap: "0.4rem"
+															}}
+														>
+															<span style={{ fontSize: "1rem" }}><Plus /></span> {t.addCondition}
+														</button>
+													</div>
+												</>
+											)}
+										</div>
+									</div>
 								</div>
 							</div>
 						);

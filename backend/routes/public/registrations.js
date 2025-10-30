@@ -244,7 +244,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields);
+				// Pass ticketId to enable filter-aware validation (skip hidden fields)
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -568,7 +569,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields);
+				// Pass ticketId to enable filter-aware validation (skip hidden fields)
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);

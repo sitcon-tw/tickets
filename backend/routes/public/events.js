@@ -408,7 +408,8 @@ export default async function publicEventsRoutes(fastify, options) {
 										options: { type: "array" },
 										validater: { type: "string" },
 										placeholder: { type: "string" },
-										order: { type: "integer" }
+										order: { type: "integer" },
+										filters: { type: "object", additionalProperties: true }
 									}
 								}
 							}
@@ -446,7 +447,6 @@ export default async function publicEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get form fields for the event (all tickets in same event share the same form)
 				const formFields = await prisma.eventFormFields.findMany({
 					where: {
 						eventId: ticket.eventId
@@ -460,12 +460,12 @@ export default async function publicEventsRoutes(fastify, options) {
 						validater: true,
 						placeholder: true,
 						values: true,
-						order: true
+						order: true,
+						filters: true,
 					},
 					orderBy: { order: "asc" }
 				});
 
-				// Transform the data to match the expected format
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
 					name: field.name,
@@ -474,8 +474,9 @@ export default async function publicEventsRoutes(fastify, options) {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [], // values is already JSON
-					order: field.order
+					options: field.values || [],
+					order: field.order,
+					filters: field.filters || {}
 				}));
 
 				return reply.send(successResponse(transformedFields));

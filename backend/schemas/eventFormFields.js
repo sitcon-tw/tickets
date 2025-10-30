@@ -51,6 +51,11 @@ export const eventFormFieldProperties = {
 			additionalProperties: true
 		},
 		description: "選項值（localized array of objects，用於 select、radio 類型）"
+	},
+	filters: {
+		type: "object",
+		additionalProperties: true,
+		description: "顯示條件過濾器 (JSON object with filters configuration)"
 	}
 };
 
@@ -101,6 +106,11 @@ export const eventFormFieldCreateBody = {
 				additionalProperties: true
 			},
 			description: "選項值（localized array of objects，用於 select、radio 類型）"
+		},
+		filters: {
+			type: "object",
+			additionalProperties: true,
+			description: "顯示條件過濾器 (JSON object with filters configuration)"
 		}
 	},
 	required: ["eventId", "order", "type", "name"]
@@ -148,6 +158,11 @@ export const eventFormFieldUpdateBody = {
 				additionalProperties: true
 			},
 			description: "選項值（localized array of objects，用於 select、radio 類型）"
+		},
+		filters: {
+			type: "object",
+			additionalProperties: true,
+			description: "顯示條件過濾器 (JSON object with filters configuration)"
 		}
 	}
 };

@@ -32,7 +32,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 		async (request, reply) => {
 			try {
 				/** @type {EventFormFieldCreateRequest} */
-				const { eventId, order, type, validater, name, description, placeholder, required, values } = request.body;
+				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
 
 				// Verify event exists
 				const event = await prisma.event.findUnique({
@@ -68,7 +68,8 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 						description: description || null,
 						placeholder: placeholder || null,
 						required: required || false,
-						values: values || null
+						values: values || null,
+						filters: filters || null
 					}
 				});
 
@@ -191,6 +192,14 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 						data.values = null;
 					} else if (Array.isArray(updateData.values)) {
 						data.values = JSON.parse(JSON.stringify(updateData.values));
+					}
+				}
+
+				if ("filters" in updateData) {
+					if (updateData.filters === "" || updateData.filters === null) {
+						data.filters = null;
+					} else if (typeof updateData.filters === "object") {
+						data.filters = JSON.parse(JSON.stringify(updateData.filters));
 					}
 				}
 

@@ -135,16 +135,90 @@ const getFieldNameKey = (fieldName, formData) => {
 };
 
 /**
+ * Evaluates if a field should be displayed based on its filters
+ * @param {Object} field - Form field with potential filters
+ * @param {string} ticketId - Selected ticket ID
+ * @param {Object} formData - Current form data
+ * @param {Array} allFields - All form fields for field-based conditions
+ * @returns {boolean} - True if field should be displayed
+ */
+const shouldDisplayField = (field, ticketId, formData, allFields) => {
+	// If no filters or not enabled, always display
+	if (!field.filters || !field.filters.enabled) {
+		return true;
+	}
+
+	const filter = field.filters;
+	const now = new Date();
+
+	// Evaluate each condition
+	const results = filter.conditions.map(condition => {
+		switch (condition.type) {
+			case "ticket":
+				return condition.ticketId ? ticketId === condition.ticketId : true;
+
+			case "field": {
+				if (!condition.fieldId) return true;
+				const referencedField = allFields.find(f => f.id === condition.fieldId);
+				if (!referencedField) return true;
+
+				const fieldNameKey = getFieldNameKey(referencedField.name, formData);
+				const fieldValue = formData[fieldNameKey || condition.fieldId];
+				const operator = condition.operator || "equals";
+
+				switch (operator) {
+					case "filled":
+						return fieldValue !== undefined && fieldValue !== null && fieldValue !== "" &&
+							   !(Array.isArray(fieldValue) && fieldValue.length === 0);
+					case "notFilled":
+						return fieldValue === undefined || fieldValue === null || fieldValue === "" ||
+							   (Array.isArray(fieldValue) && fieldValue.length === 0);
+					case "equals":
+						return String(fieldValue) === String(condition.value);
+					default:
+						return true;
+				}
+			}
+
+			case "time": {
+				const nowTime = now.getTime();
+				const startTime = condition.startTime ? new Date(condition.startTime).getTime() : -Infinity;
+				const endTime = condition.endTime ? new Date(condition.endTime).getTime() : Infinity;
+				return nowTime >= startTime && nowTime <= endTime;
+			}
+
+			default:
+				return true;
+		}
+	});
+
+	// Apply logical operator (AND/OR)
+	const conditionsMet = filter.operator === "and"
+		? results.every(r => r)
+		: results.some(r => r);
+
+	// Apply action (display/hide)
+	return filter.action === "display" ? conditionsMet : !conditionsMet;
+};
+
+/**
  * Dynamic validation for registration form data based on ticket form fields
  * @param {Object} formData - Form data to validate
  * @param {Array} formFields - Array of form field definitions from database
+ * @param {string} ticketId - Selected ticket ID (for filter evaluation)
  * @returns {Object|null} - Validation errors or null if valid
  */
-export const validateRegistrationFormData = (formData, formFields) => {
+export const validateRegistrationFormData = (formData, formFields, ticketId = null) => {
 	const errors = {};
 
 	// Validate each field
 	for (const field of formFields) {
+		// Check if field should be displayed based on filters
+		if (ticketId && !shouldDisplayField(field, ticketId, formData, formFields)) {
+			// Skip validation for hidden fields
+			continue;
+		}
+
 		// Get the actual field name key that exists in formData
 		const fieldNameKey = getFieldNameKey(field.name, formData);
 
@@ -156,7 +230,7 @@ export const validateRegistrationFormData = (formData, formFields) => {
 		const value = formData[fieldNameKey];
 		const fieldErrors = [];
 
-		// Check required fields
+		// Check required fields (only for visible fields)
 		if (field.required && (value === undefined || value === null || value === "")) {
 			fieldErrors.push(`${field.description}為必填欄位`);
 			errors[fieldNameKey] = fieldErrors;

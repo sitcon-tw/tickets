@@ -129,6 +129,23 @@ export interface Ticket {
 	requireSmsVerification?: boolean;
 }
 
+export interface FilterCondition {
+	type: "ticket" | "field" | "time";
+	ticketId?: string;
+	fieldId?: string;
+	operator?: "equals" | "filled" | "notFilled";
+	value?: string;
+	startTime?: string;
+	endTime?: string;
+}
+
+export interface FieldFilter {
+	enabled: boolean;
+	action: "display" | "hide";
+	operator: "and" | "or";
+	conditions: FilterCondition[];
+}
+
 export interface EventFormField {
 	id: string;
 	eventId: string;
@@ -141,6 +158,7 @@ export interface EventFormField {
 	required: boolean;
 	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
 	options?: LocalizedText[]; // Parsed options for frontend use
+	filters?: FieldFilter; // Display conditions filter
 }
 
 export interface EventFormFieldReorder {
