@@ -175,8 +175,8 @@
  */
 
 /**
- * @typedef {Object} TicketFormFieldCreateRequest
- * @property {string} ticketId - Associated ticket ID
+ * @typedef {Object} EventFormFieldCreateRequest
+ * @property {string} eventId - Associated event ID
  * @property {number} order - Field order in the form
  * @property {'text'|'textarea'|'select'|'checkbox'|'radio'} type - Field type
  * @property {string} [validater] - Validation regex pattern
@@ -188,7 +188,7 @@
  */
 
 /**
- * @typedef {Object} TicketFormFieldUpdateRequest
+ * @typedef {Object} EventFormFieldUpdateRequest
  * @property {number} [order] - Field order in the form
  * @property {'text'|'textarea'|'select'|'checkbox'|'radio'} [type] - Field type
  * @property {string} [validater] - Validation regex pattern

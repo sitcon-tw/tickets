@@ -40,7 +40,7 @@ export default function EventsPage() {
 		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
 		ogImage: { "zh-Hant": "OG 圖片網址", "zh-Hans": "OG 图片网址", en: "OG Image URL" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
-		startDate: { "zh-Hant": "開始日期", "zh-Hans": "开始日期", en: "Start Date" },
+		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },
@@ -50,7 +50,7 @@ export default function EventsPage() {
 		edit: { "zh-Hant": "編輯", "zh-Hans": "编辑", en: "Edit" },
 		empty: { "zh-Hant": "沒有活動", "zh-Hans": "没有活动", en: "No events" },
 		active: { "zh-Hant": "進行中", "zh-Hans": "进行中", en: "Active" },
-		upcoming: { "zh-Hant": "即將開始", "zh-Hans": "即将开始", en: "Upcoming" },
+		upcoming: { "zh-Hant": "尚未開始", "zh-Hans": "尚未开始", en: "Upcoming" },
 		ended: { "zh-Hant": "已結束", "zh-Hans": "已结束", en: "Ended" },
 		createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" }
 	});

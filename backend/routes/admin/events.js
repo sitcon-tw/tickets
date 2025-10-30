@@ -97,8 +97,7 @@ export default async function adminEventsRoutes(fastify, options) {
 						},
 						_count: {
 							select: {
-								registrations: true,
-								invitationCodes: true
+								registrations: true
 							}
 						}
 					}
@@ -174,7 +173,11 @@ export default async function adminEventsRoutes(fastify, options) {
 				/** @type {Event} */
 				const event = await prisma.event.update({
 					where: { id },
-					data: updatePayload
+					data: updatePayload,
+					uncache: {
+						uncacheKeys: ["prisma:event:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(event, "活動更新成功"));
@@ -221,7 +224,11 @@ export default async function adminEventsRoutes(fastify, options) {
 				}
 
 				await prisma.event.delete({
-					where: { id }
+					where: { id },
+					uncache: {
+						uncacheKeys: ["prisma:event:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(null, "活動刪除成功"));

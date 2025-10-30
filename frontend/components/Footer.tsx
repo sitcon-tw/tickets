@@ -20,6 +20,8 @@ export default function Footer() {
 		router.replace(pathname, { locale: newLocale });
 	};
 
+	if (pathname.includes("/admin") || pathname.includes("/magic-link")) { return null; }
+
 	return (
 		<footer className="text-center" style={{ padding: "0rem", marginTop: "2rem" }}>
 			<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>

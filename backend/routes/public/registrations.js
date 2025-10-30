@@ -75,7 +75,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 
 				// Verify event and ticket, and get form fields
 				addSpanEvent("fetching_event_and_ticket");
-				const [event, ticket] = await Promise.all([
+				const [event, ticket, formFields] = await Promise.all([
 					tracePrismaOperation(
 						"Event",
 						"findUnique",
@@ -99,18 +99,23 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 									eventId,
 									isActive: true,
 									hidden: false
-								},
-								include: {
-									fromFields: {
-										orderBy: { order: "asc" }
-									}
 								}
 							});
 						},
-						{ 
-							where: { id: ticketId, eventId, isActive: true, hidden: false },
-							include: { fromFields: true }
+						{
+							where: { id: ticketId, eventId, isActive: true, hidden: false }
 						}
+					),
+					tracePrismaOperation(
+						"EventFormFields",
+						"findMany",
+						async () => {
+							return prisma.eventFormFields.findMany({
+								where: { eventId },
+								orderBy: { order: "asc" }
+							});
+						},
+						{ where: { eventId }, orderBy: { order: "asc" } }
 					)
 				]);
 
@@ -239,7 +244,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(sanitizedFormData, ticket.fromFields);
+				// Pass ticketId to enable filter-aware validation (skip hidden fields)
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -512,24 +518,34 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const sanitizedFormData = sanitizeObject(formData, false);
 
 				// Check if registration exists and belongs to user
-				const registration = await prisma.registration.findFirst({
-					where: {
-						id,
-						userId
-					},
-					include: {
-						ticket: {
-							include: {
-								fromFields: true
-							}
+				const [registration, formFields] = await Promise.all([
+					prisma.registration.findFirst({
+						where: {
+							id,
+							userId
 						},
-						event: {
-							select: {
-								startDate: true
+						include: {
+							ticket: true,
+							event: {
+								select: {
+									id: true,
+									startDate: true
+								}
 							}
 						}
-					}
-				});
+					}),
+					// Fetch form fields separately based on the registration's eventId
+					prisma.registration.findFirst({
+						where: { id, userId },
+						select: { eventId: true }
+					}).then(reg => {
+						if (!reg) return [];
+						return prisma.eventFormFields.findMany({
+							where: { eventId: reg.eventId },
+							orderBy: { order: "asc" }
+						});
+					})
+				]);
 
 				if (!registration) {
 					const { response, statusCode } = notFoundResponse("報名記錄不存在");
@@ -553,7 +569,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate form data with dynamic fields from database
-				const formErrors = validateRegistrationFormData(sanitizedFormData, registration.ticket.fromFields);
+				// Pass ticketId to enable filter-aware validation (skip hidden fields)
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);

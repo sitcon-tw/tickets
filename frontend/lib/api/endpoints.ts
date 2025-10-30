@@ -1,4 +1,4 @@
-import type { ApiResponse, DashboardData, EmailCampaign, Event, EventInfo, EventListItem, EventStats, ExportData, HealthStatus, InvitationCodeInfo, InvitationCodeVerification, LocalizedText, PermissionsResponse, ReferralLink, ReferralValidation, Registration, RegistrationStats, RegistrationTrend, SessionResponse, Ticket, TicketAnalytics, TicketFormField, TicketFormFieldReorder, User } from "@/lib/types/api";
+import type { ApiResponse, DashboardData, EmailCampaign, Event, EventFormField, EventFormFieldReorder, EventInfo, EventListItem, EventStats, ExportData, HealthStatus, InvitationCodeInfo, InvitationCodeVerification, LocalizedText, PermissionsResponse, ReferralLink, ReferralValidation, Registration, RegistrationStats, RegistrationTrend, SessionResponse, Ticket, TicketAnalytics, TicketFormField, TicketFormFieldReorder, User } from "@/lib/types/api";
 import { apiClient } from "./client";
 
 // System
@@ -114,19 +114,19 @@ export const adminTicketsAPI = {
 	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`)
 };
 
-// Admin - Ticket Form Fields
-export const adminTicketFormFieldsAPI = {
-	getAll: (params?: { ticketId?: string }) => apiClient.get<ApiResponse<TicketFormField[]>>("/api/admin/ticket-form-fields", params),
+// Admin - Event Form Fields
+export const adminEventFormFieldsAPI = {
+	getAll: (params?: { eventId?: string }) => apiClient.get<ApiResponse<EventFormField[]>>("/api/admin/event-form-fields", params),
 
-	getById: (id: string) => apiClient.get<ApiResponse<TicketFormField>>(`/api/admin/ticket-form-fields/${id}`),
+	getById: (id: string) => apiClient.get<ApiResponse<EventFormField>>(`/api/admin/event-form-fields/${id}`),
 
-	create: (data: { ticketId: string; order: number; type: "text" | "textarea" | "select" | "checkbox" | "radio"; name: LocalizedText; description?: string; placeholder?: string; required?: boolean; validater?: string; values?: LocalizedText[] }) => apiClient.post<ApiResponse<TicketFormField>>("/api/admin/ticket-form-fields", data),
+	create: (data: { eventId: string; order: number; type: "text" | "textarea" | "select" | "checkbox" | "radio"; name: LocalizedText; description?: string; placeholder?: string; required?: boolean; validater?: string; values?: LocalizedText[] }) => apiClient.post<ApiResponse<EventFormField>>("/api/admin/event-form-fields", data),
 
-	update: (id: string, data: Partial<TicketFormField>) => apiClient.put<ApiResponse<TicketFormField>>(`/api/admin/ticket-form-fields/${id}`, data),
+	update: (id: string, data: Partial<EventFormField>) => apiClient.put<ApiResponse<EventFormField>>(`/api/admin/event-form-fields/${id}`, data),
 
-	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/ticket-form-fields/${id}`),
+	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/event-form-fields/${id}`),
 
-	reorder: (ticketId: string, data: TicketFormFieldReorder) => apiClient.put<ApiResponse<null>>(`/api/admin/tickets/${ticketId}/form-fields/reorder`, data)
+	reorder: (eventId: string, data: EventFormFieldReorder) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
 };
 
 // Admin - Registrations

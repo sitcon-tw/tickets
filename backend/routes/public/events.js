@@ -115,24 +115,42 @@ export default async function publicEventsRoutes(fastify, options) {
 						saleStart: true,
 						saleEnd: true,
 						requireInviteCode: true,
-						requireSmsVerification: true,
-						fromFields: {
-							select: {
-								id: true,
-								name: true,
-								description: true,
-								type: true,
-								required: true,
-								validater: true,
-								placeholder: true,
-								values: true,
-								order: true
-							},
-							orderBy: { order: "asc" }
-						}
+						requireSmsVerification: true
 					},
 					orderBy: { createdAt: "asc" }
 				});
+
+				// Get form fields for the event (all tickets in the event share the same form)
+				const formFieldsRaw = await prisma.eventFormFields.findMany({
+					where: {
+						eventId: id
+					},
+					select: {
+						id: true,
+						name: true,
+						description: true,
+						type: true,
+						required: true,
+						validater: true,
+						placeholder: true,
+						values: true,
+						order: true
+					},
+					orderBy: { order: "asc" }
+				});
+
+				// Transform form fields once for the event
+				const formFields = formFieldsRaw.map(field => ({
+					id: field.id,
+					name: field.name,
+					description: field.description,
+					type: field.type,
+					required: field.required,
+					validater: field.validater,
+					placeholder: field.placeholder,
+					options: field.values || [], // values is already JSON
+					order: field.order
+				}));
 
 				// Add availability and sale status to each ticket
 				const now = new Date();
@@ -140,19 +158,6 @@ export default async function publicEventsRoutes(fastify, options) {
 					const available = ticket.quantity - ticket.soldCount;
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd) && ticket.isActive;
 					const isSoldOut = available <= 0;
-
-					// Transform form fields
-					const formFields = ticket.fromFields.map(field => ({
-						id: field.id,
-						name: field.name,
-						description: field.description,
-						type: field.type,
-						required: field.required,
-						validater: field.validater,
-						placeholder: field.placeholder,
-						options: field.values || [], // values is already JSON
-						order: field.order
-					}));
 
 					return {
 						id: ticket.id,
@@ -168,7 +173,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						saleEnd: ticket.saleEnd,
 						requireInviteCode: ticket.requireInviteCode,
 						requireSmsVerification: ticket.requireSmsVerification,
-						formFields
+						formFields // All tickets share the same event form fields
 					};
 				});
 
@@ -367,12 +372,12 @@ export default async function publicEventsRoutes(fastify, options) {
 		}
 	);
 
-	// Get form fields for a ticket
+	// Get form fields for an event (via ticket ID for backward compatibility)
 	fastify.get(
 		"/tickets/:id/form-fields",
 		{
 			schema: {
-				description: "獲取票券報名表單欄位",
+				description: "獲取活動報名表單欄位（透過票券 ID）",
 				tags: ["events"],
 				params: {
 					type: "object",
@@ -380,6 +385,122 @@ export default async function publicEventsRoutes(fastify, options) {
 						id: {
 							type: "string",
 							description: "票券 ID"
+						}
+					},
+					required: ["id"]
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "array",
+								items: {
+									type: "object",
+									properties: {
+										id: { type: "string" },
+										name: { type: "object", additionalProperties: true },
+										description: { type: "string" },
+										type: { type: "string" },
+										required: { type: "boolean" },
+										options: { type: "array" },
+										validater: { type: "string" },
+										placeholder: { type: "string" },
+										order: { type: "integer" },
+										filters: { type: "object", additionalProperties: true }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				// Verify ticket exists and is active, get its eventId
+				const ticket = await prisma.ticket.findUnique({
+					where: {
+						id,
+						isActive: true
+					},
+					select: {
+						eventId: true,
+						event: {
+							select: {
+								isActive: true
+							}
+						}
+					}
+				});
+
+				if (!ticket || !ticket.event.isActive) {
+					const { response, statusCode } = notFoundResponse("票券不存在或已關閉");
+					return reply.code(statusCode).send(response);
+				}
+
+				const formFields = await prisma.eventFormFields.findMany({
+					where: {
+						eventId: ticket.eventId
+					},
+					select: {
+						id: true,
+						name: true,
+						description: true,
+						type: true,
+						required: true,
+						validater: true,
+						placeholder: true,
+						values: true,
+						order: true,
+						filters: true,
+					},
+					orderBy: { order: "asc" }
+				});
+
+				const transformedFields = formFields.map(field => ({
+					id: field.id,
+					name: field.name,
+					description: field.description,
+					type: field.type,
+					required: field.required,
+					validater: field.validater,
+					placeholder: field.placeholder,
+					options: field.values || [],
+					order: field.order,
+					filters: field.filters || {}
+				}));
+
+				return reply.send(successResponse(transformedFields));
+			} catch (error) {
+				console.error("Get event form fields error:", error);
+				const { response, statusCode } = serverErrorResponse("取得表單欄位失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get form fields for an event directly
+	fastify.get(
+		"/events/:id/form-fields",
+		{
+			schema: {
+				description: "獲取活動報名表單欄位",
+				tags: ["events"],
+				params: {
+					type: "object",
+					properties: {
+						id: {
+							type: "string",
+							description: "活動 ID"
 						}
 					},
 					required: ["id"]
@@ -420,30 +541,23 @@ export default async function publicEventsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Verify ticket exists and is active
-				const ticket = await prisma.ticket.findUnique({
+				// Verify event exists and is active
+				const event = await prisma.event.findUnique({
 					where: {
 						id,
 						isActive: true
-					},
-					include: {
-						event: {
-							select: {
-								isActive: true
-							}
-						}
 					}
 				});
 
-				if (!ticket || !ticket.event.isActive) {
-					const { response, statusCode } = notFoundResponse("票券不存在或已關閉");
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get form fields for this ticket
-				const formFields = await prisma.ticketFromFields.findMany({
+				// Get form fields for this event
+				const formFields = await prisma.eventFormFields.findMany({
 					where: {
-						ticketId: id
+						eventId: id
 					},
 					select: {
 						id: true,
@@ -474,7 +588,7 @@ export default async function publicEventsRoutes(fastify, options) {
 
 				return reply.send(successResponse(transformedFields));
 			} catch (error) {
-				console.error("Get ticket form fields error:", error);
+				console.error("Get event form fields error:", error);
 				const { response, statusCode } = serverErrorResponse("取得表單欄位失敗");
 				return reply.code(statusCode).send(response);
 			}

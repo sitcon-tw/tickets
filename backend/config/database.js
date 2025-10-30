@@ -23,17 +23,17 @@ const auto = {
 	models: [
 		{
 			model: "Event",
-			ttl: 10, // Cache events for 10 seconds (basic info, rarely changes during registration rush)
+			ttl: 100, // Cache events for 10 seconds (basic info, rarely changes during registration rush)
 			stale: 5 // Allow using stale data for 5 seconds after expiration
 		},
 		{
 			model: "Ticket",
-			ttl: 3, // Cache tickets for 3 seconds (availability needs to be relatively fresh)
+			ttl: 300, // Cache tickets for 3 seconds (availability needs to be relatively fresh)
 			stale: 1 // Minimal stale period for ticket availability
 		},
 		{
-			model: "TicketFromFields",
-			ttl: 10, // Cache ticket form fields for 10 seconds (static data)
+			model: "EventFormFields",
+			ttl: 100, // Cache event form fields for 10 seconds (static data)
 			stale: 5
 		}
 	],

@@ -14,6 +14,7 @@ const activityLinks = [
 	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
 	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
 	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
+	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null }, // Always show
 	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null }, // Always show
 	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null }, // Always show
 	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },
@@ -145,14 +146,12 @@ export default function AdminNav() {
 			if (response.success && response.data && response.data.length > 0) {
 				setEvents(response.data);
 
-				// Check localStorage for saved event selection
 				const savedEventId = localStorage.getItem("selectedEventId");
 				const eventExists = response.data.find(e => e.id === savedEventId);
 
 				if (savedEventId && eventExists) {
 					setCurrentEventId(savedEventId);
 				} else {
-					// Default to first event
 					setCurrentEventId(response.data[0].id);
 					localStorage.setItem("selectedEventId", response.data[0].id);
 				}
@@ -165,7 +164,6 @@ export default function AdminNav() {
 	const handleEventChange = (eventId: string) => {
 		setCurrentEventId(eventId);
 		localStorage.setItem("selectedEventId", eventId);
-		// Dispatch custom event to notify other components
 		window.dispatchEvent(new CustomEvent("selectedEventChanged", { detail: { eventId } }));
 	};
 
@@ -174,22 +172,18 @@ export default function AdminNav() {
 		loadEvents();
 	}, [loadPermissions, loadEvents]);
 
-	// Handle mobile detection and window resize
 	useEffect(() => {
 		const checkMobile = () => {
 			setIsMobile(window.innerWidth <= 768);
 		};
 
-		// Initial check
 		checkMobile();
 
-		// Listen to window resize
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
 	useEffect(() => {
-		// Inject global styles for main element
 		const styleId = "admin-nav-global-styles";
 		if (!document.getElementById(styleId)) {
 			const style = document.createElement("style");
@@ -219,13 +213,11 @@ export default function AdminNav() {
 		};
 	}, []);
 
-	// Close mobile menu when clicking a link
 	const handleNavClick = (href: string) => {
 		router.push(href);
 		setMobileMenuOpen(false);
 	};
 
-	// Close mobile menu on escape key
 	useEffect(() => {
 		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && mobileMenuOpen) {
@@ -373,27 +365,36 @@ export default function AdminNav() {
 					<ul style={styles.navList}>
 						{activityLinks
 							.filter(({ requireCapability }) => {
-								// If no capability required, always show
 								if (!requireCapability) return true;
-								// If capabilities not loaded yet, hide it to prevent flashing
 								if (!capabilities) return false;
-								// Check if user has the required capability
 								return capabilities[requireCapability as keyof UserCapabilities];
 							})
 							.map(({ href, i18nKey }) => (
-								<li key={href} style={styles.navItem}>
-									<a
-										onClick={() => handleNavClick(href)}
-										onMouseEnter={() => setHoveredLink(href)}
-										onMouseLeave={() => setHoveredLink(null)}
-										style={{
-											textDecoration: hoveredLink === href ? "underline" : "none"
-										}}
-										className="cursor-pointer"
-									>
-										{t[i18nKey]}
-									</a>
-								</li>
+								<>
+									<li key={href} style={styles.navItem}>
+										<a
+											onClick={() => handleNavClick(href)}
+											onMouseEnter={() => setHoveredLink(href)}
+											onMouseLeave={() => setHoveredLink(null)}
+											style={{
+												textDecoration: hoveredLink === href ? "underline" : "none"
+											}}
+											className="cursor-pointer"
+										>
+											{t[i18nKey]}
+										</a>
+									</li>
+									{i18nKey === "registrations" && (
+										<hr
+											key={`${href}-divider`}
+											style={{
+												border: "none",
+												borderTop: "1px solid var(--color-gray-700)",
+												margin: "1rem 0"
+											}}
+										/>
+									)}
+								</>
 							))}
 					</ul>
 				</nav>

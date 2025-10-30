@@ -117,9 +117,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 								endDate: true
 							}
 						},
-						fromFields: {
-							orderBy: { order: "asc" }
-						},
 						_count: {
 							select: {
 								registrations: true
@@ -225,7 +222,11 @@ export default async function adminTicketsRoutes(fastify, options) {
 				/** @type {Ticket} */
 				const ticket = await prisma.ticket.update({
 					where: { id },
-					data: updatePayload
+					data: updatePayload,
+					uncache: {
+						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(ticket, "票券更新成功"));
@@ -274,7 +275,11 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 
 				await prisma.ticket.delete({
-					where: { id }
+					where: { id },
+					uncache: {
+						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(null, "票券刪除成功"));
@@ -318,9 +323,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 								endDate: true
 							}
 						},
-						fromFields: {
-							orderBy: { order: "asc" }
-						},
 						_count: {
 							select: {
 								registrations: true
@@ -358,7 +360,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 	fastify.get(
 		"/tickets/:id/analytics",
 		{
-			preHandler: requireEventAccessViaTicketId,
 			schema: {
 				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],

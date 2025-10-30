@@ -145,6 +145,7 @@ export default function Login() {
 	const errorParam = searchParams.get("error");
 	const [viewState, setViewState] = useState<"login" | "sent">("login");
 	const [isLoading, setIsLoading] = useState(false);
+	const [email, setEmail] = useState("");
 
 	const t = getTranslations(locale, {
 		login: {
@@ -158,9 +159,9 @@ export default function Login() {
 			en: "Send Magic Link"
 		},
 		sent: {
-			"zh-Hant": "已發送 Magic Link",
-			"zh-Hans": "已发送 Magic Link",
-			en: "Magic Link Sent"
+			"zh-Hant": "已發送 Magic Link 至 ",
+			"zh-Hans": "已发送 Magic Link 至 ",
+			en: "Magic Link Sent to "
 		},
 		message: {
 			"zh-Hant": "請檢查您的電子郵件收件匣，並點擊連結以登入。若在垃圾郵件請記得回報為非垃圾郵件，以免錯過後續重要信件。",
@@ -206,6 +207,16 @@ export default function Login() {
 			"zh-Hant": "連結已過期，請重新請求登入連結",
 			"zh-Hans": "链接已过期，请重新请求登录链接",
 			en: "Link has expired. Please request a new login link"
+		},
+		acceptTermsAsLoggedIn: {
+			"zh-Hant": "登入即代表您同意我們的服務條款與隱私政策。",
+			"zh-Hans": "登录即代表您同意我们的服务条款与隐私政策。",
+			en: "By logging in, you agree to our Terms of Service and Privacy Policy."
+		},
+		termsLink: {
+			"zh-Hant": "服務條款與隱私政策連結",
+			"zh-Hans": "服务条款与隐私政策链接",
+			en: "Terms of Service and Privacy Policy Link"
 		}
 	});
 
@@ -230,7 +241,7 @@ export default function Login() {
 			}
 			showAlert(errorMessage, "error");
 		}
-	}, [errorParam]);
+	}, [errorParam, showAlert, t.error, t.invalidToken, t.serverError, t.tokenExpired, t.verificationFailed]);
 
 	const validateEmail = (email: string): boolean => {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -238,9 +249,6 @@ export default function Login() {
 	};
 
 	const login = async () => {
-		const emailInput = document.getElementById("email") as HTMLInputElement;
-		const email = emailInput?.value?.trim();
-
 		if (!email || isLoading) return;
 
 		if (!validateEmail(email)) {
@@ -282,15 +290,21 @@ export default function Login() {
 					<Container isActive={viewState === "login"}>
 						<Title>{t.login}</Title>
 						<Label htmlFor="email">Email</Label>
-						<EmailInput type="email" name="email" id="email" />
+						<EmailInput type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
+						<p style={{ fontSize: "0.9rem", marginTop: "5rem", color: "var(--color-gray-700)" }}>
+							{t.acceptTermsAsLoggedIn}{" "}
+							<a href="/terms" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
+								{t.termsLink}
+							</a>
+						</p>
 					</Container>
 
 					<Container isActive={viewState === "sent"}>
 						<MessageContainer>
-							<h2>{t.sent}</h2>
+							<h2>{t.sent}{email}</h2>
 							<p>{t.message}</p>
 						</MessageContainer>
 					</Container>

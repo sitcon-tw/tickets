@@ -81,7 +81,7 @@ export default function MagicLinkVerify() {
 		}
 
 		return () => clearTimeout(verificationTimeout);
-	}, [searchParams, router, locale]);
+	}, [searchParams, router, locale, t.errorInvalidLink, t.success, showAlert]);
 
 	return (
 		<>

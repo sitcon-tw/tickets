@@ -6,7 +6,7 @@
  */
 
 import prisma from "#config/database.js";
-import { requireEventAccessViaTicketBody, requireEventAccessViaCodeId, requireEventAccessViaTicketQuery } from "#middleware/auth.js";
+import { requireEventAccessViaTicketBody, requireEventAccessViaCodeId, requireEventAccessViaTicketQuery, requireEventListAccess } from "#middleware/auth.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
@@ -295,7 +295,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	fastify.get(
 		"/invitation-codes",
 		{
-			preHandler: requireEventAccessViaTicketQuery,
+			preHandler: requireEventListAccess,
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
 		/**
@@ -310,6 +310,19 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				const where = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
+
+				// For eventAdmins, filter by their accessible events
+				if (request.userEventPermissions) {
+					// Get tickets from events the user has access to
+					const accessibleTickets = await prisma.ticket.findMany({
+						where: { eventId: { in: request.userEventPermissions } },
+						select: { id: true }
+					});
+					const accessibleTicketIds = accessibleTickets.map(t => t.id);
+					where.ticketId = ticketId
+						? (accessibleTicketIds.includes(ticketId) ? ticketId : 'none')
+						: { in: accessibleTicketIds };
+				}
 
 				/** @type {InvitationCode[]} */
 				const invitationCodes = await prisma.invitationCode.findMany({

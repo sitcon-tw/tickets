@@ -100,7 +100,7 @@ export const requireEventAccess = async (request, reply) => {
 	}
 
 	if (userRole === "eventAdmin") {
-		const eventId = request.query.eventId || request.params.id;
+		const eventId = request.query.eventId || request.params.id || request.body.eventId;
 
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
@@ -207,12 +207,12 @@ export const requireEventAccessViaTicketQuery = async (request, reply) => {
 export const requireEventAccessViaFieldId = async (request, reply) => {
 	const { id } = request.params;
 	if (id) {
-		const field = await prisma.ticketFromFields.findUnique({
+		const field = await prisma.eventFormFields.findUnique({
 			where: { id },
-			include: { ticket: { select: { eventId: true } } }
+			select: { eventId: true }
 		});
-		if (field?.ticket) {
-			request.query = { ...request.query, eventId: field.ticket.eventId };
+		if (field) {
+			request.query = { ...request.query, eventId: field.eventId };
 		}
 	}
 	await requireEventAccess(request, reply);
