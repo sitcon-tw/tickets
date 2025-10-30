@@ -70,6 +70,10 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 						required: required || false,
 						values: values || null,
 						filters: filters || null
+					},
+					uncache: {
+						uncacheKeys: ["prisma:event:*"],
+						hasPattern: true
 					}
 				});
 
