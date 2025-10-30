@@ -206,7 +206,11 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 				/** @type {EventFormFields} */
 				const formField = await prisma.eventFormFields.update({
 					where: { id },
-					data
+					data,
+					uncache: {
+						uncacheKeys: ["prisma:event_form_fields:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(formField, "表單欄位更新成功"));
@@ -244,7 +248,11 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 				}
 
 				await prisma.eventFormFields.delete({
-					where: { id }
+					where: { id },
+					uncache: {
+						uncacheKeys: ["prisma:event_form_fields:*"],
+						hasPattern: true
+					}
 				});
 
 				return reply.send(successResponse(null, "表單欄位刪除成功"));
@@ -424,7 +432,11 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 					for (const { id, order } of fieldOrders) {
 						await prisma.eventFormFields.update({
 							where: { id },
-							data: { order }
+							data: { order },
+							uncache: {
+								uncacheKeys: ["prisma:event_form_fields:*"],
+								hasPattern: true
+							}
 						});
 					}
 				});
