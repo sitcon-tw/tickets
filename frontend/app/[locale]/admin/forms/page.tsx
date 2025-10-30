@@ -77,7 +77,7 @@ export default function FormsPage() {
 		fieldOptional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
 		deleteField: { "zh-Hant": "刪除欄位", "zh-Hans": "删除栏位", en: "Delete Field" },
 		additionalSettings: { "zh-Hant": "其他設定", "zh-Hans": "其他设定", en: "Additional Settings" },
-		fieldDescription: { "zh-Hant": "說明文字（選填）", "zh-Hans": "说明文字（选填）", en: "Description (optional)" },
+		fieldDescription: { "zh-Hant": "說明文字（僅管理員可見）", "zh-Hans": "说明文字（仅管理员可见）", en: "Description (Admin Only)" },
 		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
@@ -970,12 +970,12 @@ export default function FormsPage() {
 													marginBottom: "0.3rem",
 													fontWeight: "500"
 												}}>
-													{t.description}
+													{t.fieldDescription}
 												</label>
 												<input
 													type="text"
 													value={q.description || ""}
-													placeholder="向使用者說明此欄位的用途..."
+													placeholder="給自己或其他管理員加上註記..."
 													onChange={e => updateQuestion(q.id, { description: e.target.value })}
 													className="admin-input"
 													style={{

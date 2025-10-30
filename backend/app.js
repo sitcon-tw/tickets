@@ -24,7 +24,8 @@ const fastify = Fastify({
 	logger: true,
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
-	trustProxy: process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production"
+	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
+	trustProxy: true
 });
 
 // Register OpenTelemetry plugin for automatic HTTP request tracing
@@ -60,7 +61,7 @@ await fastify.register(cors, getCorsConfig());
 
 // Swagger UI
 await fastify.register(fastifySwagger, {
-	swagger: {
+	openapi: {
 		info: {
 			title: "SITCON 報名系統 API",
 			version: "1.0.0"
@@ -185,7 +186,13 @@ fastify.all(
 		} catch (error) {
 			fastify.log.error("Auth handler error:", error);
 			reply.code(500);
-			return { error: "Internal server error" };
+			return {
+				success: false,
+				error: {
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Internal server error"
+				}
+			};
 		}
 	}
 );
@@ -265,6 +272,58 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		});
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
+});
+
+// Global error handler to format errors according to API response structure
+fastify.setErrorHandler((error, request, reply) => {
+	const { log } = fastify;
+
+	// Handle Fastify validation errors (FST_ERR_VALIDATION)
+	if (error.validation) {
+		const validationDetails = error.validation.map(err => ({
+			field: err.instancePath.replace(/^\//, ''), // Remove leading slash
+			message: err.message,
+			keyword: err.keyword
+		}));
+
+		const errorResponse = {
+			success: false,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: error.message || "請求驗證失敗",
+				details: validationDetails
+			}
+		};
+
+		log.warn({ validationError: error.validation, url: request.url }, "Validation error");
+		return reply.code(error.statusCode || 400).send(errorResponse);
+	}
+
+	// Handle custom application errors (with statusCode)
+	if (error.statusCode) {
+		const errorResponse = {
+			success: false,
+			error: {
+				code: error.code || "ERROR",
+				message: error.message || "發生錯誤"
+			}
+		};
+
+		log.error({ error: error.message, statusCode: error.statusCode, url: request.url }, "Application error");
+		return reply.code(error.statusCode).send(errorResponse);
+	}
+
+	// Handle unexpected errors (500)
+	log.error({ error: error.stack, url: request.url }, "Internal server error");
+	const errorResponse = {
+		success: false,
+		error: {
+			code: "INTERNAL_SERVER_ERROR",
+			message: process.env.NODE_ENV === "production" ? "內部伺服器錯誤" : error.message
+		}
+	};
+
+	return reply.code(500).send(errorResponse);
 });
 
 // 剩下的 routes

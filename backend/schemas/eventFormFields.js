@@ -87,7 +87,6 @@ export const eventFormFieldCreateBody = {
 		},
 		description: {
 			type: "string",
-			minLength: 1,
 			description: "欄位標籤"
 		},
 		placeholder: {
@@ -140,7 +139,6 @@ export const eventFormFieldUpdateBody = {
 		},
 		description: {
 			type: "string",
-			minLength: 1,
 			description: "欄位標籤"
 		},
 		placeholder: {
