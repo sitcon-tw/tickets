@@ -1,4 +1,5 @@
-import type { EventFormField, FieldFilter, FilterCondition } from "@/lib/types/api";
+import type { EventFormField, FilterCondition } from "@/lib/types/api";
+import type { FormDataType } from "@/lib/types/data";
 
 /**
  * Evaluates whether a form field should be displayed based on its filter conditions
@@ -12,7 +13,7 @@ export function shouldDisplayField(
 	field: EventFormField,
 	context: {
 		selectedTicketId: string;
-		formData: Record<string, any>;
+		formData: FormDataType;
 		currentTime?: Date;
 	},
 	allFields?: EventFormField[]
@@ -48,7 +49,7 @@ function evaluateCondition(
 	condition: FilterCondition,
 	context: {
 		selectedTicketId: string;
-		formData: Record<string, any>;
+		formData: FormDataType;
 	},
 	currentTime: Date,
 	allFields?: EventFormField[]
@@ -102,7 +103,7 @@ function getFieldNameKey(field: EventFormField, locale: string = "en"): string {
  */
 function evaluateFieldCondition(
 	condition: FilterCondition,
-	context: { formData: Record<string, any> },
+	context: { formData: FormDataType },
 	allFields?: EventFormField[]
 ): boolean {
 	if (!condition.fieldId || !allFields) {
@@ -132,7 +133,7 @@ function evaluateFieldCondition(
 	}
 
 	// Try to find the value using any of the possible keys
-	let fieldValue: any = undefined;
+	let fieldValue: unknown = undefined;
 	let foundKey: string | undefined;
 	for (const key of possibleKeys) {
 		if (key in context.formData) {
@@ -175,7 +176,7 @@ function evaluateFieldCondition(
 /**
  * Checks if a field value is considered "filled"
  */
-function isFilled(value: any): boolean {
+function isFilled(value: unknown): boolean {
 	if (value === undefined || value === null || value === "") {
 		return false;
 	}
@@ -226,7 +227,7 @@ export function filterVisibleFields(
 	fields: EventFormField[],
 	context: {
 		selectedTicketId: string;
-		formData: Record<string, any>;
+		formData: FormDataType;
 		currentTime?: Date;
 	}
 ): EventFormField[] {

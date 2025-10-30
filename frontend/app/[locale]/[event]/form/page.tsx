@@ -16,10 +16,7 @@ import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-
-type FormDataType = {
-	[key: string]: string | boolean | string[];
-};
+import type { FormDataType } from "@/lib/types/data";
 
 export default function FormPage() {
 	const router = useRouter();
@@ -250,7 +247,7 @@ export default function FormPage() {
 					});
 
 					// Parse filters if they're a string
-					let filters = (field as any).filters;
+					let filters = field.filters;
 					if (typeof filters === "string") {
 						try {
 							filters = JSON.parse(filters);

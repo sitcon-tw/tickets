@@ -4,7 +4,7 @@ import AdminNav from "@/components/AdminNav";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, FilterCondition, FieldFilter } from "@/lib/types/api";
+import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
 import { Save, Plus, GripVertical, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -48,7 +48,7 @@ export default function FormsPage() {
 	const [draggedOptionIndex, setDraggedOptionIndex] = useState<number | null>(null);
 	const [dragOverOptionIndex, setDragOverOptionIndex] = useState<number | null>(null);
 	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
-	const [eventTickets, setEventTickets] = useState<any[]>([]);
+	const [eventTickets, setEventTickets] = useState<Ticket[]>([]);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -218,7 +218,7 @@ export default function FormsPage() {
 						description: field.description || "",
 						validater: field.validater || "",
 						options,
-						filters: (field as any).filters || undefined
+						filters: field.filters || undefined
 					};
 				});
 
@@ -292,7 +292,7 @@ export default function FormsPage() {
 						required: field.required || false,
 						description: field.description || "",
 						validater: field.validater || "",
-						filters: (field as any).filters || undefined,
+						filters: field.filters || undefined,
 						options
 					};
 				});
