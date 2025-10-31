@@ -14,17 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "SITCON 報名系統",
+	title: "SITCONTIX",
 	description: "趕快來報名 SITCON 的活動吧！",
 	openGraph: {
-		title: "SITCON 報名系統",
+		title: "SITCONTIX",
 		description: "趕快來報名 SITCON 的活動吧！",
-		siteName: "SITCON 報名系統",
+		siteName: "SITCONTIX",
 		type: "website"
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "SITCON 報名系統",
+		title: "SITCONTIX",
 		description: "趕快來報名 SITCON 的活動吧！"
 	}
 };

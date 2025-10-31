@@ -2,7 +2,9 @@
 
 <img src="https://sitcon.org/branding/assets/logos/logo.svg" alt="Fastro Logo" width="50">
 
-# SITCON 2026 票券系統
+# SITCONTIX
+
+SITCON 報名系統
 
 </div>
 

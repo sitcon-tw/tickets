@@ -55,7 +55,7 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 
 # 
 
-# SITCON 報名系統服務條款
+# SITCONTIX服務條款
 
 ## 壹、總則
 

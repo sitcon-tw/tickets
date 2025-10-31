@@ -63,7 +63,7 @@ await fastify.register(cors, getCorsConfig());
 await fastify.register(fastifySwagger, {
 	openapi: {
 		info: {
-			title: "SITCON 報名系統 API",
+			title: "SITCONTIX API",
 			version: "1.0.0"
 		},
 		tags: [
@@ -104,7 +104,7 @@ await fastify.register(fastifySwaggerUi, {
 	},
 	transformSpecificationClone: true,
 	theme: {
-		title: "SITCON 報名系統 API",
+		title: "SITCONTIX API",
 		js: [
 			{
 				filename: "special.js",

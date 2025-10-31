@@ -5,7 +5,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	const site = process.env.SITE || "https://ticket.sitcon.org";
 
 	const siteNameMap: Record<string, string> = {
-		"zh-Hant": "SITCON 報名系統",
+		"zh-Hant": "SITCONTIX",
 		"zh-Hans": "SITCON 报名系统",
 		en: "SITCON Registration System"
 	};
