@@ -59,6 +59,34 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 	const rot = new THREE.Vector3();
 	const dir = new THREE.Vector3();
 
+	const getFontSize = (text: string | undefined): number => {
+		if (!text) return 0.2;
+		const maxWidth = 0.7;
+		const baseFontSize = 0.2;
+		const maxLines = 3;
+
+		let estimatedWidth = 0;
+		for (let i = 0; i < text.length; i++) {
+			const char = text[i];
+			const isCJK = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(char);
+			const charWidth = isCJK ? baseFontSize * 1.0 : baseFontSize * 0.5;
+			estimatedWidth += charWidth;
+		}
+
+		const estimatedLines = Math.ceil(estimatedWidth / maxWidth);
+
+		if (estimatedLines > maxLines) {
+			const scaleFactor = maxLines / estimatedLines;
+			return Math.max(0.1, baseFontSize * scaleFactor);
+		}
+
+		if (estimatedWidth > maxWidth) {
+			return Math.max(0.1, baseFontSize * (maxWidth / estimatedWidth) * 0.95);
+		}
+
+		return baseFontSize;
+	};
+
 	const segmentProps: Partial<RigidBodyProps> = {
 		type: "dynamic" as RigidBodyProps["type"],
 		canSleep: true,
@@ -181,14 +209,18 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 				       {name && (
 					       <Text
 						       position={[0, 0.5, 0.01]}
-						       fontSize={0.2}
+						       fontSize={getFontSize(name)}
 						       color="#fff"
 						       anchorX="center"
 						       anchorY="middle"
 						       outlineColor="#222"
 						       outlineWidth={0.005}
-						       maxWidth={1.5}
+						       maxWidth={0.7}
 						       textAlign="center"
+						       font="/fonts/NotoSansTC-Regular.ttf"
+						       overflowWrap="break-word"
+						       whiteSpace="normal"
+						       lineHeight={1.2}
 					       >
 						       {name}
 					       </Text>
