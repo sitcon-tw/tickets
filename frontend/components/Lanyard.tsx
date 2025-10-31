@@ -21,7 +21,7 @@ interface LanyardProps {
 	name?: string;
 }
 
-export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name }: LanyardProps) {
+export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name = "一般票" }: LanyardProps) {
        return (
 	       <div className="absolute inset-0 w-full h-full flex justify-center items-center transform scale-100 origin-center">
 		       <Canvas camera={{ position, fov }} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
@@ -180,13 +180,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 				       <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
 				       {name && (
 					       <Text
-						       position={[0, 0, 0.07]}
-						       fontSize={0.3}
-						       color="#222"
+						       position={[0, 0.5, 0.01]}
+						       fontSize={0.2}
+						       color="#fff"
 						       anchorX="center"
 						       anchorY="middle"
-						       outlineColor="#fff"
-						       outlineWidth={0.01}
+						       outlineColor="#222"
+						       outlineWidth={0.005}
 						       maxWidth={1.5}
 						       textAlign="center"
 					       >

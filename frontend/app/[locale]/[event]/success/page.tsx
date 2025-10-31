@@ -5,6 +5,7 @@ import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
+import { getLocalizedText } from "@/lib/utils/localization";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
@@ -25,8 +26,8 @@ export default function Success() {
 	const [viewRefLoading, setViewRefLoading] = useState(false);
 	const [viewRegLoading, setViewRegLoading] = useState(false);
 	const [registrationId, setRegistrationId] = useState<string | null>(null);
+	const [registerationTicketName, setRegistrationTicketName] = useState<string | null>(null);
 	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
-	const [userName, setUserName] = useState<string | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -130,12 +131,7 @@ export default function Success() {
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
 						setRegistrationTime(eventRegistration.createdAt);
-						// Try to get the user's name from formData (commonly 'name' or '姓名')
-						let name = null;
-						if (eventRegistration.formData) {
-							 name = eventRegistration.formData.name || eventRegistration.formData["姓名"] || null;
-						}
-						setUserName(typeof name === "string" ? name : null);
+						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
 						const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
 						setReferralCode(code);
 					} else {
@@ -152,7 +148,7 @@ export default function Success() {
 			}
 		};
 		loadSuccessInfo();
-	}, [eventSlug, t.loadFailed]);
+	}, [eventSlug, locale, t.loadFailed]);
 
 	return (
 		<>
@@ -184,9 +180,18 @@ export default function Success() {
 						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
 							{referralCode === t.loading ? (
 								<Spinner />
-							) : (
+							) : 
+							referralCode === t.loadFailed ? (
+								<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
+							) :
+							(
 								<div className="flex items-center gap-2">
-									<span className="font-mono text-lg">{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}</span>
+									<span className="font-mono text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
+										{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
+											? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
+											: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`
+										}
+									</span>
 									{referralCode !== t.loadFailed && (
 										<span className="cursor-pointer" title={t.copyInvite}>
 											{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
@@ -204,7 +209,7 @@ export default function Success() {
 							</button>
 						)}
 						<div className="border-t-2 border-gray-700" />
-						<div className="flex gap-4 flex-wrap" style={{ marginTop: "0.5rem" }}>
+						<div className={`gap-4 ${locale.includes("zh") && "flex flex-wrap"}`} style={{ marginTop: "0.5rem" }}>
 							{registrationId && (
 								<button
 									onClick={() => {
@@ -212,6 +217,7 @@ export default function Success() {
 										router.push(`/my-registration/${registrationId}`);
 									}}
 									className="button"
+									style={ locale.includes("zh") ? {} : { marginBottom: "1rem" } }
 								>
 									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
 								</button>
@@ -232,7 +238,7 @@ export default function Success() {
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">
-					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={userName ?? undefined} />
+					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
 				</div>
 			</div>
 			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}
