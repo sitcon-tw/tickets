@@ -334,6 +334,17 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
+				// If error is a known validation error, return 400/422
+				if (error.code === "P2002" && error.meta && error.meta.target && error.meta.target.includes("email")) {
+					// Prisma unique constraint violation (e.g. duplicate email)
+					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
+					return reply.code(statusCode).send(response);
+				}
+				if (error.name === "ValidationError" || error.message?.includes("必填") || error.message?.includes("驗證失敗") || error.message?.includes("required")) {
+					const { response, statusCode } = validationErrorResponse(error.message || "表單驗證失敗");
+					return reply.code(statusCode).send(response);
+				}
+
 				const { response, statusCode } = serverErrorResponse("報名失敗");
 				return reply.code(statusCode).send(response);
 			}

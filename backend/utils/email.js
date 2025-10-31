@@ -14,7 +14,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 		};
 
 		const recipients = [
@@ -52,7 +52,7 @@ export const sendEditLink = async (email, editToken, event) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 		};
 
 		const recipients = [
@@ -98,7 +98,7 @@ export const sendMagicLink = async (email, magicLink) => {
 		}
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 		};
 		const recipients = [
 			{
@@ -112,7 +112,7 @@ export const sendMagicLink = async (email, magicLink) => {
 		await client.send({
 			from: sender,
 			to: recipients,
-			subject: `【SITCON 2026】登入連結 Login Link`,
+			subject: `【SITCONTIX】登入連結 Login Link`,
 			html
 		});
 		// Log successful email send
@@ -265,7 +265,7 @@ export const sendCampaignEmail = async (campaign, recipients) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 		};
 
 		let sentCount = 0;
@@ -323,7 +323,7 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 	try {
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCON 2026"
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 		};
 
 		const recipients = [
@@ -337,7 +337,7 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 		await client.send({
 			from: sender,
 			to: recipients,
-			subject: `【SITCON 2026】邀請碼 Invitation Codes${groupName ? ` - ${groupName}` : ""}`,
+			subject: `【SITCONTIX】邀請碼 Invitation Codes${groupName ? ` - ${groupName}` : ""}`,
 			html: `
 				<!DOCTYPE html>
 				<html>
@@ -348,7 +348,7 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
 				</head>
 				<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
 					<div style="text-align: center; margin-bottom: 30px;">
-						<h1 style="color: #2c3e50;">SITCON 2026 邀請碼</h1>
+						<h1 style="color: #2c3e50;">SITCONTIX 邀請碼</h1>
 						<h2 style="color: #2c3e50;">Invitation Codes</h2>
 					</div>
 					
