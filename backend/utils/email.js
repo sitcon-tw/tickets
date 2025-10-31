@@ -1,7 +1,6 @@
-
 import prisma from "#config/database.js";
-import { MailtrapClient } from "mailtrap";
 import fs from "fs/promises";
+import { MailtrapClient } from "mailtrap";
 import path from "path";
 
 const client = new MailtrapClient({
@@ -21,17 +20,17 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 			}
 		];
 
-	       // Load and render template using JS string replacement
-	       const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/registration-confirmation.html");
-	       let template = await fs.readFile(templatePath, "utf-8");
-	       let html = template
-		       .replace(/\{\{eventName\}\}/g, event.name)
-		       .replace(/\{\{eventStartDate\}\}/g, new Date(event.startDate).toLocaleDateString("zh-TW"))
-		       .replace(/\{\{eventEndDate\}\}/g, new Date(event.endDate).toLocaleDateString("zh-TW"))
-		       .replace(/\{\{eventLocation\}\}/g, event.location || "待公布 TBA")
-		       .replace(/\{\{registrationId\}\}/g, registration.id)
-		       .replace(/\{\{referralCode\}\}/g, registration.referralCode || "")
-		       .replace(/\{\{qrCodeUrl\}\}/g, qrCodeUrl || "");
+		// Load and render template using JS string replacement
+		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/registration-confirmation.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template
+			.replace(/\{\{eventName\}\}/g, event.name)
+			.replace(/\{\{eventStartDate\}\}/g, new Date(event.startDate).toLocaleDateString("zh-TW"))
+			.replace(/\{\{eventEndDate\}\}/g, new Date(event.endDate).toLocaleDateString("zh-TW"))
+			.replace(/\{\{eventLocation\}\}/g, event.location || "待公布 TBA")
+			.replace(/\{\{registrationId\}\}/g, registration.id)
+			.replace(/\{\{referralCode\}\}/g, registration.referralCode || "")
+			.replace(/\{\{qrCodeUrl\}\}/g, qrCodeUrl || "");
 
 		await client.send({
 			from: sender,
@@ -61,12 +60,10 @@ export const sendEditLink = async (email, editToken, event) => {
 
 		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
 
-	       // Load and render template using JS string replacement
-	       const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/edit-link.html");
-	       let template = await fs.readFile(templatePath, "utf-8");
-	       let html = template
-		       .replace(/\{\{eventName\}\}/g, event.name)
-		       .replace(/\{\{editUrl\}\}/g, editUrl);
+		// Load and render template using JS string replacement
+		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/edit-link.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template.replace(/\{\{eventName\}\}/g, event.name).replace(/\{\{editUrl\}\}/g, editUrl);
 
 		await client.send({
 			from: sender,
@@ -105,12 +102,10 @@ export const sendMagicLink = async (email, magicLink) => {
 				email: email
 			}
 		];
-	       // Load and render template using JS string replacement
-	       const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/magic-link.html");
-	       let template = await fs.readFile(templatePath, "utf-8");
-	       let html = template
-		       .replace(/\{\{magicLink\}\}/g, magicLink)
-		       .replace(/\{\{email\}\}/g, email);
+		// Load and render template using JS string replacement
+		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/magic-link.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
 		await client.send({
 			from: sender,
 			to: recipients,
