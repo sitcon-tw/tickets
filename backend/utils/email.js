@@ -3,7 +3,8 @@ import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 
 import path from "path";
-const __filename = new URL(import.meta.url).pathname;
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const client = new MailtrapClient({
