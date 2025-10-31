@@ -71,7 +71,11 @@ export default function EmailCampaignsPage() {
 		confirmSend: { "zh-Hant": "確認發送", "zh-Hans": "确认发送", en: "Confirm Send" },
 		hasReferrals: { "zh-Hant": "有推薦人", "zh-Hans": "有推荐人", en: "Has Referrals" },
 		isReferrer: { "zh-Hant": "是推薦人", "zh-Hans": "是推荐人", en: "Is Referrer" },
-		templateVars: { "zh-Hant": "可用變數：{{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}", "zh-Hans": "可用变数：{{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}", en: "Available variables: {{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}" }
+		templateVars: {
+			"zh-Hant": "可用變數：{{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}",
+			"zh-Hans": "可用变数：{{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}",
+			en: "Available variables: {{email}}, {{name}}, {{eventName}}, {{ticketName}}, {{registrationId}}"
+		}
 	});
 
 	const loadCampaigns = useCallback(async () => {
@@ -345,7 +349,13 @@ export default function EmailCampaignsPage() {
 
 							<div>
 								<label className="admin-stat-label">{t.content}</label>
-								<textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} className="admin-input" style={{ width: "100%", minHeight: "200px", fontFamily: "monospace" }} placeholder="<h1>Hello {{name}}!</h1>" />
+								<textarea
+									value={formData.content}
+									onChange={e => setFormData({ ...formData, content: e.target.value })}
+									className="admin-input"
+									style={{ width: "100%", minHeight: "200px", fontFamily: "monospace" }}
+									placeholder="<h1>Hello {{name}}!</h1>"
+								/>
 								<small style={{ fontSize: "0.75rem", opacity: 0.7 }}>{t.templateVars}</small>
 							</div>
 

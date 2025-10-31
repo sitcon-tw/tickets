@@ -6,7 +6,7 @@
  */
 
 import prisma from "#config/database.js";
-import { requireEventAccessViaTicketBody, requireEventAccessViaCodeId, requireEventAccessViaTicketQuery, requireEventListAccess } from "#middleware/auth.js";
+import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
@@ -319,9 +319,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 						select: { id: true }
 					});
 					const accessibleTicketIds = accessibleTickets.map(t => t.id);
-					where.ticketId = ticketId
-						? (accessibleTicketIds.includes(ticketId) ? ticketId : 'none')
-						: { in: accessibleTicketIds };
+					where.ticketId = ticketId ? (accessibleTicketIds.includes(ticketId) ? ticketId : "none") : { in: accessibleTicketIds };
 				}
 
 				/** @type {InvitationCode[]} */

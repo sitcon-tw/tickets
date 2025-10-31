@@ -65,7 +65,6 @@ export default async function adminEventsRoutes(fastify, options) {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-					
 				});
 
 				return reply.code(201).send(successResponse(event, "活動創建成功"));

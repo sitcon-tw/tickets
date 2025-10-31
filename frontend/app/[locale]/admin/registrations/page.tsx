@@ -53,8 +53,16 @@ export default function RegistrationsPage() {
 		exportSelected: { "zh-Hant": "匯出選取", "zh-Hans": "导出选取", en: "Export Selected" },
 		viewDetails: { "zh-Hant": "檢視詳情", "zh-Hans": "查看详情", en: "View Details" },
 		deleteData: { "zh-Hant": "刪除個人資料", "zh-Hans": "删除个人资料", en: "Delete Personal Data" },
-		deleteConfirm: { "zh-Hant": "確定要刪除此報名記錄的個人資料嗎？\n\n此操作無法復原，將會永久刪除該筆記錄及相關資料，並通知活動主辦方。", "zh-Hans": "确定要删除此报名记录的个人资料吗？\n\n此操作无法复原，将会永久删除该笔记录及相关资料，并通知活动主办方。", en: "Are you sure you want to delete this registration's personal data?\n\nThis action cannot be undone and will permanently delete the record and related data, and notify the event organizers." },
-		deleteSuccess: { "zh-Hant": "個人資料已成功刪除，通知信已發送給活動主辦方", "zh-Hans": "个人资料已成功删除，通知信已发送给活动主办方", en: "Personal data deleted successfully. Notification email sent to organizers." },
+		deleteConfirm: {
+			"zh-Hant": "確定要刪除此報名記錄的個人資料嗎？\n\n此操作無法復原，將會永久刪除該筆記錄及相關資料，並通知活動主辦方。",
+			"zh-Hans": "确定要删除此报名记录的个人资料吗？\n\n此操作无法复原，将会永久删除该笔记录及相关资料，并通知活动主办方。",
+			en: "Are you sure you want to delete this registration's personal data?\n\nThis action cannot be undone and will permanently delete the record and related data, and notify the event organizers."
+		},
+		deleteSuccess: {
+			"zh-Hant": "個人資料已成功刪除，通知信已發送給活動主辦方",
+			"zh-Hans": "个人资料已成功删除，通知信已发送给活动主办方",
+			en: "Personal data deleted successfully. Notification email sent to organizers."
+		},
 		deleteError: { "zh-Hant": "刪除失敗", "zh-Hans": "删除失败", en: "Delete failed" },
 		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
 		registrationDetails: { "zh-Hant": "報名詳情", "zh-Hans": "报名详情", en: "Registration Details" },
@@ -177,7 +185,7 @@ export default function RegistrationsPage() {
 			setSortField(field);
 			setSortDirection("asc");
 		}
-	};
+	}
 
 	function toggleSelectAll() {
 		if (selectedRegistrations.size === paginatedData.length) {
@@ -185,7 +193,7 @@ export default function RegistrationsPage() {
 		} else {
 			setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
 		}
-	};
+	}
 
 	function toggleSelect(id: string) {
 		const newSet = new Set(selectedRegistrations);
@@ -195,17 +203,17 @@ export default function RegistrationsPage() {
 			newSet.add(id);
 		}
 		setSelectedRegistrations(newSet);
-	};
+	}
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
 		setShowDetailModal(true);
-	};
+	}
 
 	function closeDetailModal() {
 		setSelectedRegistration(null);
 		setShowDetailModal(false);
-	};
+	}
 
 	async function syncToSheets() {
 		try {
@@ -226,7 +234,7 @@ export default function RegistrationsPage() {
 		} catch (error) {
 			showAlert("Export failed: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function exportSelected() {
 		if (selectedRegistrations.size === 0) {
@@ -234,7 +242,7 @@ export default function RegistrationsPage() {
 			return;
 		}
 		showAlert(`Exporting ${selectedRegistrations.size} selected registrations`, "info");
-	};
+	}
 
 	const deleteRegistration = async (registration: Registration) => {
 		if (!confirm(t.deleteConfirm)) {
@@ -531,7 +539,9 @@ export default function RegistrationsPage() {
 
 							<div>
 								<div className="admin-stat-label">Status</div>
-								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>{selectedRegistration.status}</span>
+								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
+									{selectedRegistration.status}
+								</span>
 							</div>
 
 							{selectedRegistration.event && (
@@ -588,7 +598,8 @@ export default function RegistrationsPage() {
 									>
 										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
 											<div key={key} style={{ marginBottom: "0.5rem" }}>
-												<span style={{ color: "#a78bfa", fontWeight: 600 }}>{key}:</span> <span style={{ color: "var(--color-gray-100)" }}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+												<span style={{ color: "#a78bfa", fontWeight: 600 }}>{key}:</span>{" "}
+												<span style={{ color: "var(--color-gray-100)" }}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
 											</div>
 										))}
 									</div>
@@ -600,7 +611,14 @@ export default function RegistrationsPage() {
 								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger" style={{ width: "100%" }}>
 									🗑️ {t.deleteData}
 								</button>
-								<p style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem", textAlign: "center" }}>⚠️ {locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合个人资料保护法" : "This action is irreversible and complies with privacy law"}</p>
+								<p style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem", textAlign: "center" }}>
+									⚠️{" "}
+									{locale === "zh-Hant"
+										? "此操作無法復原，符合個人資料保護法"
+										: locale === "zh-Hans"
+											? "此操作无法复原，符合个人资料保护法"
+											: "This action is irreversible and complies with privacy law"}
+								</p>
 							</div>
 						</div>
 					</div>

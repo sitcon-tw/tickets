@@ -189,27 +189,48 @@ export default function DecryptedText({
 
 	return (
 		<motion.span className={parentClassName} ref={containerRef} style={styles.wrapper} {...hoverProps} {...props}>
-			<span style={{
-				position: "absolute",
-				width: "1px",
-				height: "1px",
-				padding: 0,
-				margin: "-1px",
-				overflow: "hidden",
-				clip: "rect(0,0,0,0)",
-				border: 0
-			}}>{displayText}</span>
+			<span
+				style={{
+					position: "absolute",
+					width: "1px",
+					height: "1px",
+					padding: 0,
+					margin: "-1px",
+					overflow: "hidden",
+					clip: "rect(0,0,0,0)",
+					border: 0
+				}}
+			>
+				{displayText}
+			</span>
 
 			<span aria-hidden="true">
-				{displayText.split("").map((char: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<unknown>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<unknown>> | Iterable<ReactNode> | null | undefined> | null | undefined, index: unknown) => {
-					const isRevealedOrDone = revealedIndices.has(index) || !isScrambling || !isHovering;
+				{displayText
+					.split("")
+					.map(
+						(
+							char:
+								| string
+								| number
+								| bigint
+								| boolean
+								| ReactElement<unknown, string | JSXElementConstructor<unknown>>
+								| Iterable<ReactNode>
+								| ReactPortal
+								| Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<unknown>> | Iterable<ReactNode> | null | undefined>
+								| null
+								| undefined,
+							index: unknown
+						) => {
+							const isRevealedOrDone = revealedIndices.has(index) || !isScrambling || !isHovering;
 
-					return (
-						<span key={index as React.Key} className={isRevealedOrDone ? className : encryptedClassName}>
-							{char}
-						</span>
-					);
-				})}
+							return (
+								<span key={index as React.Key} className={isRevealedOrDone ? className : encryptedClassName}>
+									{char}
+								</span>
+							);
+						}
+					)}
 			</span>
 		</motion.span>
 	);

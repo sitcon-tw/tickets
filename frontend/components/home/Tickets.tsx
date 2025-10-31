@@ -87,11 +87,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
 		if (!saleEndDate) return false;
 		return saleEndDate < new Date();
-	};
+	}
 
 	function isTicketSoldOut(ticket: Ticket): boolean {
 		return ticket.available !== undefined && ticket.available <= 0;
-	};
+	}
 
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		if (isTicketExpired(ticket)) {

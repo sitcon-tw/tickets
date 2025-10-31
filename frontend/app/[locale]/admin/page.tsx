@@ -57,7 +57,11 @@ export default function AdminDashboard() {
 	// Initialize dashboard
 	const initializeDashboard = useCallback(async () => {
 		try {
-			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([adminAnalyticsAPI.getDashboard(), adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }), adminTicketsAPI.getAll()]);
+			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([
+				adminAnalyticsAPI.getDashboard(),
+				adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }),
+				adminTicketsAPI.getAll()
+			]);
 
 			if (dashboardResponse.success && dashboardResponse.data) {
 				setDashboardData(dashboardResponse.data);

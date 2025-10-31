@@ -1,11 +1,11 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { useAlert } from "@/contexts/AlertContext";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useAlert } from "@/contexts/AlertContext";
 
 export default function LocaleRedirect() {
 	const router = useRouter();

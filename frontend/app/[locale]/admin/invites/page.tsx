@@ -96,7 +96,11 @@ export default function InvitesPage() {
 		bulkImportDescription: { "zh-Hant": "每行一個邀請碼，或上傳文字檔", "zh-Hans": "每行一个邀请码，或上传文本文件", en: "One code per line, or upload a text file" },
 		uploadFile: { "zh-Hant": "上傳檔案", "zh-Hans": "上传文件", en: "Upload File" },
 		pasteOrType: { "zh-Hant": "貼上或輸入邀請碼", "zh-Hans": "粘贴或输入邀请码", en: "Paste or type invitation codes" },
-		codesPlaceholder: { "zh-Hant": "每行一個邀請碼\n例如：\nVIP2026A\nVIP2026B\nVIP2026C", "zh-Hans": "每行一个邀请码\n例如：\nVIP2026A\nVIP2026B\nVIP2026C", en: "One code per line\nExample:\nVIP2026A\nVIP2026B\nVIP2026C" },
+		codesPlaceholder: {
+			"zh-Hant": "每行一個邀請碼\n例如：\nVIP2026A\nVIP2026B\nVIP2026C",
+			"zh-Hans": "每行一个邀请码\n例如：\nVIP2026A\nVIP2026B\nVIP2026C",
+			en: "One code per line\nExample:\nVIP2026A\nVIP2026B\nVIP2026C"
+		},
 		import: { "zh-Hant": "匯入", "zh-Hans": "导入", en: "Import" },
 		importSuccess: { "zh-Hant": "成功匯入 {count} 個邀請碼！", "zh-Hans": "成功导入 {count} 个邀请码！", en: "Successfully imported {count} invitation codes!" },
 		invalidFormat: { "zh-Hant": "格式錯誤：請確保每行一個邀請碼", "zh-Hans": "格式错误：请确保每行一个邀请码", en: "Invalid format: Please ensure one code per line" },
@@ -200,7 +204,7 @@ export default function InvitesPage() {
 		} catch (error) {
 			showAlert("創建失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function deleteInvitationCode(codeId: string) {
 		if (!confirm(t.confirmDelete)) return;
@@ -213,7 +217,7 @@ export default function InvitesPage() {
 		} catch (error) {
 			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function bulkDeleteInvitationCodes() {
 		if (selectedCodes.size === 0) {
@@ -250,7 +254,7 @@ export default function InvitesPage() {
 		} catch (error) {
 			showAlert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	function downloadSelectedCodesAsTxt() {
 		if (selectedCodes.size === 0) {
@@ -274,8 +278,7 @@ export default function InvitesPage() {
 		URL.revokeObjectURL(url);
 
 		showAlert(t.downloadSuccess, "success");
-	};
-
+	}
 
 	async function handleBulkImport(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -360,7 +363,7 @@ export default function InvitesPage() {
 		} finally {
 			setIsImporting(false);
 		}
-	};
+	}
 
 	function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
@@ -372,7 +375,7 @@ export default function InvitesPage() {
 			setBulkImportCodes(text);
 		};
 		reader.readAsText(file);
-	};
+	}
 
 	async function sendCodesViaEmail() {
 		if (selectedCodes.size === 0) {
@@ -417,7 +420,7 @@ export default function InvitesPage() {
 		} finally {
 			setIsSendingEmail(false);
 		}
-	};
+	}
 
 	function toggleCodeSelection(codeId: string) {
 		const newSelection = new Set(selectedCodes);
@@ -427,7 +430,7 @@ export default function InvitesPage() {
 			newSelection.add(codeId);
 		}
 		setSelectedCodes(newSelection);
-	};
+	}
 
 	function toggleSelectAll() {
 		if (!currentType) return;
@@ -438,13 +441,13 @@ export default function InvitesPage() {
 		} else {
 			setSelectedCodes(new Set(allCodeIds));
 		}
-	};
+	}
 
 	function openCodesModal(typeId: string) {
 		setViewingCodesOf(typeId);
 		setSelectedCodes(new Set());
 		setShowCodesModal(true);
-	};
+	}
 
 	const currentType = inviteTypes.find(t => t.id === viewingCodesOf);
 
@@ -649,7 +652,14 @@ export default function InvitesPage() {
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="admin-input" style={{ fontFamily: "monospace", resize: "vertical" }} />
+										<textarea
+											value={bulkImportCodes}
+											onChange={e => setBulkImportCodes(e.target.value)}
+											placeholder={t.codesPlaceholder}
+											rows={10}
+											className="admin-input"
+											style={{ fontFamily: "monospace", resize: "vertical" }}
+										/>
 									</div>
 
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>

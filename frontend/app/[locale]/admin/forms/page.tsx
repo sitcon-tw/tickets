@@ -5,7 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
-import { Save, Plus, GripVertical, X } from "lucide-react";
+import { GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -305,7 +305,7 @@ export default function FormsPage() {
 			console.error("Failed to copy form:", error);
 			showAlert("複製失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function saveForm() {
 		if (!currentEvent?.id) {
@@ -349,7 +349,7 @@ export default function FormsPage() {
 					required: fieldData.required,
 					validater: fieldData.validater || "",
 					values: fieldData.values,
-					filters: fieldData.filters || undefined,
+					filters: fieldData.filters || undefined
 				};
 
 				if (fieldData.id) {
@@ -366,7 +366,7 @@ export default function FormsPage() {
 			console.error("Failed to save form:", error);
 			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	function addQuestion() {
 		setQuestions([
@@ -381,27 +381,27 @@ export default function FormsPage() {
 				required: false
 			}
 		]);
-	};
+	}
 
 	function updateQuestion(id: string, updates: Partial<Question>) {
 		setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q)));
-	};
+	}
 
 	function deleteQuestion(id: string) {
 		setQuestions(questions.filter(q => q.id !== id));
-	};
+	}
 
 	function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
 		e.dataTransfer.setData("dragIndex", index.toString());
 		setDraggedIndex(index);
-	};
+	}
 
 	function handleDragEnd() {
 		setDraggedIndex(null);
 		setDragOverIndex(null);
-	};
+	}
 
 	function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
 		e.preventDefault();
@@ -410,12 +410,12 @@ export default function FormsPage() {
 		if (draggedIndex !== null && draggedIndex !== index) {
 			setDragOverIndex(index);
 		}
-	};
+	}
 
 	function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
 		e.preventDefault();
 		setDragOverIndex(null);
-	};
+	}
 
 	async function handleDrop(e: React.DragEvent<HTMLDivElement>, dropIndex: number) {
 		e.preventDefault();
@@ -448,7 +448,7 @@ export default function FormsPage() {
 				await loadFormFields();
 			}
 		}
-	};
+	}
 
 	function handleOptionDragStart(e: React.DragEvent<HTMLSpanElement>, questionId: string, optionIndex: number) {
 		e.stopPropagation();
@@ -456,14 +456,14 @@ export default function FormsPage() {
 		e.dataTransfer.setData("optionIndex", optionIndex.toString());
 		setDraggedOptionIndex(optionIndex);
 		setDraggedQuestionId(questionId);
-	};
+	}
 
 	function handleOptionDragEnd(e: React.DragEvent<HTMLDivElement>) {
 		e.stopPropagation();
 		setDraggedOptionIndex(null);
 		setDragOverOptionIndex(null);
 		setDraggedQuestionId(null);
-	};
+	}
 
 	function handleOptionDragOver(e: React.DragEvent<HTMLDivElement>, optionIndex: number) {
 		e.preventDefault();
@@ -473,13 +473,13 @@ export default function FormsPage() {
 		if (draggedOptionIndex !== null && draggedOptionIndex !== optionIndex) {
 			setDragOverOptionIndex(optionIndex);
 		}
-	};
+	}
 
 	function handleOptionDragLeave(e: React.DragEvent<HTMLDivElement>) {
 		e.preventDefault();
 		e.stopPropagation();
 		setDragOverOptionIndex(null);
-	};
+	}
 
 	function handleOptionDrop(e: React.DragEvent<HTMLDivElement>, questionId: string, dropIndex: number) {
 		e.preventDefault();
@@ -502,7 +502,7 @@ export default function FormsPage() {
 		newOptions.splice(dropIndex, 0, draggedOption);
 
 		updateQuestion(questionId, { options: newOptions });
-	};
+	}
 
 	useEffect(() => {
 		const handleEventChange = (e: CustomEvent) => {
@@ -520,7 +520,7 @@ export default function FormsPage() {
 			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
 		};
 	}, []);
-	
+
 	useEffect(() => {
 		if (currentEventId) {
 			loadEvent();
@@ -567,44 +567,54 @@ export default function FormsPage() {
 					}}
 				>
 					{/* Header Section */}
-					<div style={{
-						marginBottom: "1.5rem",
-						paddingBottom: "1rem",
-						borderBottom: "1px solid var(--color-gray-700)"
-					}}>
-						<h1 style={{
-							fontSize: "1.5rem",
-							fontWeight: "600",
-							marginBottom: "0.25rem",
-							color: "var(--color-gray-100)"
-						}}>
+					<div
+						style={{
+							marginBottom: "1.5rem",
+							paddingBottom: "1rem",
+							borderBottom: "1px solid var(--color-gray-700)"
+						}}
+					>
+						<h1
+							style={{
+								fontSize: "1.5rem",
+								fontWeight: "600",
+								marginBottom: "0.25rem",
+								color: "var(--color-gray-100)"
+							}}
+						>
 							{t.title}
 						</h1>
-						<p style={{
-							fontSize: "0.875rem",
-							color: "var(--color-gray-400)",
-							margin: 0
-						}}>
+						<p
+							style={{
+								fontSize: "0.875rem",
+								color: "var(--color-gray-400)",
+								margin: 0
+							}}
+						>
 							{t.formInfo}
 						</p>
 					</div>
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div style={{
-							background: "var(--color-gray-800)",
-							border: "1px solid var(--color-gray-700)",
-							borderRadius: "8px",
-							padding: "1rem",
-							marginBottom: "1.5rem"
-						}}>
-							<label style={{
-								display: "block",
-								fontSize: "0.9rem",
-								fontWeight: "600",
-								color: "var(--color-gray-300)",
-								marginBottom: "0.75rem"
-							}}>
+						<div
+							style={{
+								background: "var(--color-gray-800)",
+								border: "1px solid var(--color-gray-700)",
+								borderRadius: "8px",
+								padding: "1rem",
+								marginBottom: "1.5rem"
+							}}
+						>
+							<label
+								style={{
+									display: "block",
+									fontSize: "0.9rem",
+									fontWeight: "600",
+									color: "var(--color-gray-300)",
+									marginBottom: "0.75rem"
+								}}
+							>
 								{t.copyFrom}
 							</label>
 							<select
@@ -634,28 +644,34 @@ export default function FormsPage() {
 					)}
 					{/* Questions List */}
 					<div style={{ marginBottom: "1.5rem" }}>
-						<div style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							marginBottom: "1rem"
-						}}>
-							<h2 style={{
-								fontSize: "1rem",
-								fontWeight: "600",
-								color: "var(--color-gray-200)",
-								margin: 0
-							}}>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								marginBottom: "1rem"
+							}}
+						>
+							<h2
+								style={{
+									fontSize: "1rem",
+									fontWeight: "600",
+									color: "var(--color-gray-200)",
+									margin: 0
+								}}
+							>
 								{t.formFields}
 							</h2>
-							<span style={{
-								fontSize: "0.8rem",
-								color: "var(--color-gray-400)",
-								background: "var(--color-gray-800)",
-								padding: "0.25rem 0.6rem",
-								borderRadius: "4px",
-								border: "1px solid var(--color-gray-700)"
-							}}>
+							<span
+								style={{
+									fontSize: "0.8rem",
+									color: "var(--color-gray-400)",
+									background: "var(--color-gray-800)",
+									padding: "0.25rem 0.6rem",
+									borderRadius: "4px",
+									border: "1px solid var(--color-gray-700)"
+								}}
+							>
 								{questions.length} {t.howManyFields}
 							</span>
 						</div>
@@ -678,750 +694,539 @@ export default function FormsPage() {
 										background: "var(--color-gray-800)"
 									}}
 								>
-									<p style={{
-										fontSize: "0.9rem",
-										color: "var(--color-gray-400)",
-										margin: "0 0 0.5rem 0"
-									}}>
+									<p
+										style={{
+											fontSize: "0.9rem",
+											color: "var(--color-gray-400)",
+											margin: "0 0 0.5rem 0"
+										}}
+									>
 										{t.currentlyNoFormFields}
 									</p>
-									<p style={{
-										fontSize: "0.8rem",
-										color: "var(--color-gray-500)",
-										margin: 0
-									}}>
+									<p
+										style={{
+											fontSize: "0.8rem",
+											color: "var(--color-gray-500)",
+											margin: 0
+										}}
+									>
 										{t.clickNewToAdd}
 									</p>
 								</div>
 							)}
-						{questions.map((q, index) => {
-							const isDragging = draggedIndex === index;
-							const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
+							{questions.map((q, index) => {
+								const isDragging = draggedIndex === index;
+								const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
 
-							return (
-								<div
-									key={q.id}
-									data-id={q.id}
-									onDragOver={e => handleDragOver(e, index)}
-									onDragLeave={handleDragLeave}
-									onDrop={e => handleDrop(e, index)}
-									style={{
-										background: isDragging ? "var(--color-gray-800)" : "var(--color-gray-800)",
-										border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-										borderRadius: "8px",
-										padding: "1rem",
-										display: "flex",
-										gap: "0.75rem",
-										position: "relative",
-										transition: "all 0.2s ease",
-										boxShadow: isDragging
-											? "0 4px 12px rgba(0, 0, 0, 0.3)"
-											: isDropTarget
-											? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)"
-											: "none",
-										opacity: isDragging ? 0.6 : 1,
-										transform: isDragging ? "scale(1.01)" : "scale(1)",
-										cursor: "default"
-									}}
-								>
-									{/* Drag Handle */}
+								return (
 									<div
-										draggable
-										onDragStart={e => handleDragStart(e, index)}
-										onDragEnd={handleDragEnd}
+										key={q.id}
+										data-id={q.id}
+										onDragOver={e => handleDragOver(e, index)}
+										onDragLeave={handleDragLeave}
+										onDrop={e => handleDrop(e, index)}
 										style={{
-											cursor: "grab",
-											userSelect: "none",
+											background: isDragging ? "var(--color-gray-800)" : "var(--color-gray-800)",
+											border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
+											borderRadius: "8px",
+											padding: "1rem",
 											display: "flex",
-											alignItems: "flex-start",
-											justifyContent: "center",
-											color: isDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-											transition: "color 0.2s ease",
-											padding: "0.5rem 0.25rem",
-											touchAction: "none",
-											flexShrink: 0
-										}}
-										title="拖曳以重新排序"
-										onMouseDown={(e) => {
-											e.currentTarget.style.cursor = "grabbing";
-										}}
-										onMouseUp={(e) => {
-											e.currentTarget.style.cursor = "grab";
+											gap: "0.75rem",
+											position: "relative",
+											transition: "all 0.2s ease",
+											boxShadow: isDragging ? "0 4px 12px rgba(0, 0, 0, 0.3)" : isDropTarget ? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)" : "none",
+											opacity: isDragging ? 0.6 : 1,
+											transform: isDragging ? "scale(1.01)" : "scale(1)",
+											cursor: "default"
 										}}
 									>
-										<GripVertical size={20} />
-									</div>
-
-									{/* Field Number Badge */}
-									<div style={{
-										position: "absolute",
-										top: "0.75rem",
-										right: "0.75rem",
-										background: "var(--color-gray-700)",
-										color: "var(--color-gray-400)",
-										fontSize: "0.7rem",
-										fontWeight: "600",
-										padding: "0.2rem 0.5rem",
-										borderRadius: "4px"
-									}}>
-										#{index + 1}
-									</div>
-								{/* Main Content Area */}
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "1rem",
-										flex: 1,
-										paddingRight: "3rem"
-									}}
-								>
-									{/* Field Names Section */}
-									<div>
-										<div style={{
-											fontSize: "0.75rem",
-											fontWeight: "600",
-											color: "var(--color-gray-500)",
-											marginBottom: "0.5rem",
-											textTransform: "uppercase",
-											letterSpacing: "0.05em"
-										}}>
-											{t.fieldName}
-										</div>
+										{/* Drag Handle */}
 										<div
+											draggable
+											onDragStart={e => handleDragStart(e, index)}
+											onDragEnd={handleDragEnd}
 											style={{
-												display: "grid",
-												gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-												gap: "0.6rem"
+												cursor: "grab",
+												userSelect: "none",
+												display: "flex",
+												alignItems: "flex-start",
+												justifyContent: "center",
+												color: isDragging ? "var(--color-primary)" : "var(--color-gray-600)",
+												transition: "color 0.2s ease",
+												padding: "0.5rem 0.25rem",
+												touchAction: "none",
+												flexShrink: 0
+											}}
+											title="拖曳以重新排序"
+											onMouseDown={e => {
+												e.currentTarget.style.cursor = "grabbing";
+											}}
+											onMouseUp={e => {
+												e.currentTarget.style.cursor = "grab";
 											}}
 										>
-											<div>
-												<label style={{
-													display: "block",
-													fontSize: "0.7rem",
-													color: "var(--color-gray-500)",
-													marginBottom: "0.3rem",
-													fontWeight: "500"
-												}}>
-													EN
-												</label>
-												<input
-													type="text"
-													value={q.labelEn || ""}
-													placeholder="English Label"
-													onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-													className="admin-input"
-													style={{
-														width: "100%",
-														fontSize: "0.875rem",
-														padding: "0.5rem 0.65rem"
-													}}
-												/>
-											</div>
-											<div>
-												<label style={{
-													display: "block",
-													fontSize: "0.7rem",
-													color: "var(--color-gray-500)",
-													marginBottom: "0.3rem",
-													fontWeight: "500"
-												}}>
-													繁體中文
-												</label>
-												<input
-													type="text"
-													value={q.labelZhHant || ""}
-													placeholder="繁體中文標籤"
-													onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-													className="admin-input"
-													style={{
-														width: "100%",
-														fontSize: "0.875rem",
-														padding: "0.5rem 0.65rem"
-													}}
-												/>
-											</div>
-											<div>
-												<label style={{
-													display: "block",
-													fontSize: "0.7rem",
-													color: "var(--color-gray-500)",
-													marginBottom: "0.3rem",
-													fontWeight: "500"
-												}}>
-													简体中文
-												</label>
-												<input
-													type="text"
-													value={q.labelZhHans || ""}
-													placeholder="简体中文标签"
-													onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-													className="admin-input"
-													style={{
-														width: "100%",
-														fontSize: "0.875rem",
-														padding: "0.5rem 0.65rem"
-													}}
-												/>
-											</div>
+											<GripVertical size={20} />
 										</div>
-									</div>
 
-									{/* Field Configuration Section */}
-									<div>
-										<div style={{
-											fontSize: "0.75rem",
-											fontWeight: "600",
-											color: "var(--color-gray-500)",
-											marginBottom: "0.5rem",
-											textTransform: "uppercase",
-											letterSpacing: "0.05em"
-										}}>
-											{t.fieldSettings}
-										</div>
-										<div style={{
-											display: "flex",
-											gap: "0.6rem",
-											flexWrap: "wrap",
-											alignItems: "flex-end"
-										}}>
-											<div>
-												<label style={{
-													display: "block",
-													fontSize: "0.7rem",
-													color: "var(--color-gray-500)",
-													marginBottom: "0.3rem",
-													fontWeight: "500"
-												}}>
-													{t.fieldType}
-												</label>
-												<select
-													value={q.type}
-													onChange={e => updateQuestion(q.id, { type: e.target.value })}
-													className="admin-select"
-													style={{
-														minWidth: "140px",
-														fontSize: "0.875rem",
-														padding: "0.5rem 0.65rem"
-													}}
-												>
-													{fieldTypes.map(ft => (
-														<option key={ft.value} value={ft.value}>
-															{ft.label}
-														</option>
-													))}
-												</select>
-											</div>
-
-											<div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
-												<button
-													type="button"
-													onClick={() => updateQuestion(q.id, { required: !q.required })}
-													className="admin-button"
-													style={{
-														background: q.required ? "var(--color-primary)" : "var(--color-gray-700)",
-														border: `1px solid ${q.required ? "var(--color-primary)" : "var(--color-gray-600)"}`,
-														color: q.required ? "white" : "var(--color-gray-300)",
-														fontSize: "0.8rem",
-														padding: "0.5rem 0.75rem",
-														fontWeight: q.required ? "600" : "500",
-														transition: "all 0.2s ease"
-													}}
-												>
-													{q.required ? t.fieldRequired : t.fieldOptional}
-												</button>
-												<button
-													type="button"
-													onClick={() => deleteQuestion(q.id)}
-													className="admin-button danger"
-													style={{
-														fontSize: "0.8rem",
-														padding: "0.5rem 0.75rem",
-														background: "var(--color-gray-700)",
-														border: "1px solid var(--color-gray-600)",
-														color: "var(--color-red-400)"
-													}}
-													title={t.deleteField}
-												>
-													{t.deleteField}
-												</button>
-											</div>
-										</div>
-									</div>
-
-									{/* Additional Settings Section */}
-									<div>
-										<div style={{
-											fontSize: "0.75rem",
-											fontWeight: "600",
-											color: "var(--color-gray-500)",
-											marginBottom: "0.5rem",
-											textTransform: "uppercase",
-											letterSpacing: "0.05em"
-										}}>
-											{t.additionalSettings}
-										</div>
-										<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-											<div>
-												<label style={{
-													display: "block",
-													fontSize: "0.7rem",
-													color: "var(--color-gray-500)",
-													marginBottom: "0.3rem",
-													fontWeight: "500"
-												}}>
-													{t.fieldDescription}
-												</label>
-												<input
-													type="text"
-													value={q.description || ""}
-													placeholder="給自己或其他管理員加上註記..."
-													onChange={e => updateQuestion(q.id, { description: e.target.value })}
-													className="admin-input"
-													style={{
-														width: "100%",
-														fontSize: "0.875rem",
-														padding: "0.5rem 0.65rem"
-													}}
-												/>
-											</div>
-
-											{(q.type === "text" || q.type === "textarea") && (
-												<div>
-													<label style={{
-														display: "block",
-														fontSize: "0.7rem",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.3rem",
-														fontWeight: "500"
-													}}>
-														{t.validator}
-													</label>
-													<input
-														type="text"
-														value={q.validater || ""}
-														placeholder={t.validatorPlaceholder}
-														onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-														className="admin-input"
-														style={{
-															width: "100%",
-															fontSize: "0.8rem",
-															padding: "0.5rem 0.65rem",
-															fontFamily: "monospace",
-															background: "var(--color-gray-900)",
-															border: "1px solid var(--color-gray-700)"
-														}}
-													/>
-													<p style={{
-														fontSize: "0.7rem",
-														color: "var(--color-gray-500)",
-														marginTop: "0.3rem",
-														marginBottom: 0
-													}}>
-														{t.useValidator}
-													</p>
-												</div>
-											)}
-										</div>
-									</div>
-									{["select", "radio", "checkbox"].includes(q.type) && (
-										<div>
-											<div style={{
-												fontSize: "0.75rem",
+										{/* Field Number Badge */}
+										<div
+											style={{
+												position: "absolute",
+												top: "0.75rem",
+												right: "0.75rem",
+												background: "var(--color-gray-700)",
+												color: "var(--color-gray-400)",
+												fontSize: "0.7rem",
 												fontWeight: "600",
-												color: "var(--color-gray-500)",
-												marginBottom: "0.5rem",
-												textTransform: "uppercase",
-												letterSpacing: "0.05em"
-											}}>
-												{t.optionSettings}
-											</div>
-											<div
-												style={{
-													padding: "0.75rem",
-													border: "1px solid var(--color-gray-700)",
-													borderRadius: "8px",
-													background: "var(--color-gray-900)",
-													display: "flex",
-													flexDirection: "column",
-													gap: "0.6rem"
-												}}
-											>
-												{(q.options || []).map((opt, i) => {
-													const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
-													const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
-
-													return (
-													<div
-														key={i}
-														onDragOver={e => handleOptionDragOver(e, i)}
-														onDragLeave={handleOptionDragLeave}
-														onDrop={e => handleOptionDrop(e, q.id, i)}
-														style={{
-															display: "flex",
-															gap: "0.5rem",
-															alignItems: "stretch",
-															padding: "0.5rem",
-															borderRadius: "6px",
-															background: isOptionDragging ? "var(--color-gray-800)" : isOptionDropTarget ? "var(--color-gray-750)" : "var(--color-gray-800)",
-															border: isOptionDropTarget ? "1px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-															opacity: isOptionDragging ? 0.6 : 1,
-															transition: "all 0.2s ease",
-															boxShadow: isOptionDropTarget ? "0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.1)" : "none"
-														}}
-													>
-														<div style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "0.5rem"
-														}}>
-															<span
-																draggable
-																onDragStart={e => handleOptionDragStart(e, q.id, i)}
-																onDragEnd={handleOptionDragEnd}
-																style={{
-																	cursor: "grab",
-																	color: isOptionDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-																	userSelect: "none",
-																	padding: "0.25rem",
-																	display: "flex",
-																	alignItems: "center"
-																}}
-																title="拖曳以重新排序選項"
-																onMouseDown={(e) => {
-																	e.currentTarget.style.cursor = "grabbing";
-																}}
-																onMouseUp={(e) => {
-																	e.currentTarget.style.cursor = "grab";
-																}}
-															>
-																⋮⋮
-															</span>
-															<span style={{
-																fontSize: "0.75rem",
-																color: "var(--color-gray-500)",
-																fontWeight: "600",
-																minWidth: "1.5rem"
-															}}>
-																{i + 1}
-															</span>
-														</div>
-														<div style={{
-															display: "grid",
-															gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-															gap: "0.5rem",
-															flex: 1
-														}}>
-															<input
-																type="text"
-																value={typeof opt === "object" ? opt.en || "" : opt}
-																placeholder="English"
-																onChange={e => {
-																	const newOptions = [...(q.options || [])];
-																	if (typeof newOptions[i] === "object") {
-																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
-																	} else {
-																		newOptions[i] = { en: e.target.value };
-																	}
-																	updateQuestion(q.id, { options: newOptions });
-																}}
-																className="admin-input"
-																style={{
-																	fontSize: "0.8rem",
-																	padding: "0.45rem 0.6rem",
-																	background: "var(--color-gray-950)"
-																}}
-															/>
-															<input
-																type="text"
-																value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
-																placeholder="繁體中文"
-																onChange={e => {
-																	const newOptions = [...(q.options || [])];
-																	if (typeof newOptions[i] === "object") {
-																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
-																	} else {
-																		newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
-																	}
-																	updateQuestion(q.id, { options: newOptions });
-																}}
-																className="admin-input"
-																style={{
-																	fontSize: "0.8rem",
-																	padding: "0.45rem 0.6rem",
-																	background: "var(--color-gray-950)"
-																}}
-															/>
-															<input
-																type="text"
-																value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
-																placeholder="简体中文"
-																onChange={e => {
-																	const newOptions = [...(q.options || [])];
-																	if (typeof newOptions[i] === "object") {
-																		newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
-																	} else {
-																		newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
-																	}
-																	updateQuestion(q.id, { options: newOptions });
-																}}
-																className="admin-input"
-																style={{
-																	fontSize: "0.8rem",
-																	padding: "0.45rem 0.6rem",
-																	background: "var(--color-gray-950)"
-																}}
-															/>
-														</div>
-														<button
-															type="button"
-															onClick={() => {
-																const newOptions = [...(q.options || [])];
-																newOptions.splice(i, 1);
-																updateQuestion(q.id, { options: newOptions });
-															}}
-															className="admin-button"
-															style={{
-																fontSize: "0.75rem",
-																padding: "0.45rem 0.65rem",
-																background: "var(--color-gray-950)",
-																border: "1px solid var(--color-gray-800)",
-																color: "var(--color-red-400)",
-																flexShrink: 0
-															}}
-															title="刪除此選項"
-														>
-															<X />
-														</button>
-													</div>
-													);
-												})}
-												<button
-													type="button"
-													onClick={() => {
-														const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
-														updateQuestion(q.id, { options: newOptions });
-													}}
-													className="admin-button"
+												padding: "0.2rem 0.5rem",
+												borderRadius: "4px"
+											}}
+										>
+											#{index + 1}
+										</div>
+										{/* Main Content Area */}
+										<div
+											style={{
+												display: "flex",
+												flexDirection: "column",
+												gap: "1rem",
+												flex: 1,
+												paddingRight: "3rem"
+											}}
+										>
+											{/* Field Names Section */}
+											<div>
+												<div
 													style={{
-														fontSize: "0.8rem",
-														padding: "0.5rem 0.75rem",
-														background: "var(--color-gray-800)",
-														border: "1px dashed var(--color-gray-700)",
-														color: "var(--color-gray-400)",
-														width: "100%",
-														justifyContent: "center",
-														display: "flex",
-														alignItems: "center",
-														gap: "0.4rem"
+														fontSize: "0.75rem",
+														fontWeight: "600",
+														color: "var(--color-gray-500)",
+														marginBottom: "0.5rem",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em"
 													}}
 												>
-													<span style={{ fontSize: "1rem" }}><Plus /></span> {t.newOption}
-												</button>
-											</div>
-										</div>
-									)}
-
-									{/* Display Filters Section */}
-									<div>
-										<div style={{
-											fontSize: "0.75rem",
-											fontWeight: "600",
-											color: "var(--color-gray-500)",
-											marginBottom: "0.5rem",
-											textTransform: "uppercase",
-											letterSpacing: "0.05em"
-										}}>
-											{t.displayFilters}
-										</div>
-										<div style={{
-											padding: "0.75rem",
-											border: "1px solid var(--color-gray-700)",
-											borderRadius: "8px",
-											background: "var(--color-gray-900)",
-											display: "flex",
-											flexDirection: "column",
-											gap: "0.75rem"
-										}}>
-											{/* Enable filters toggle */}
-											<label style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "0.5rem",
-												cursor: "pointer",
-												userSelect: "none"
-											}}>
-												<input
-													type="checkbox"
-													checked={q.filters?.enabled || false}
-													onChange={(e) => {
-														updateQuestion(q.id, {
-															filters: {
-																enabled: e.target.checked,
-																action: q.filters?.action || "display",
-																operator: q.filters?.operator || "and",
-																conditions: q.filters?.conditions || []
-															}
-														});
-													}}
+													{t.fieldName}
+												</div>
+												<div
 													style={{
-														width: "1rem",
-														height: "1rem",
-														cursor: "pointer"
+														display: "grid",
+														gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+														gap: "0.6rem"
 													}}
-												/>
-												<span style={{
-													fontSize: "0.85rem",
-													fontWeight: "500",
-													color: "var(--color-gray-300)"
-												}}>
-													{t.enableFilters}
-												</span>
-											</label>
+												>
+													<div>
+														<label
+															style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}
+														>
+															EN
+														</label>
+														<input
+															type="text"
+															value={q.labelEn || ""}
+															placeholder="English Label"
+															onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
+															className="admin-input"
+															style={{
+																width: "100%",
+																fontSize: "0.875rem",
+																padding: "0.5rem 0.65rem"
+															}}
+														/>
+													</div>
+													<div>
+														<label
+															style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}
+														>
+															繁體中文
+														</label>
+														<input
+															type="text"
+															value={q.labelZhHant || ""}
+															placeholder="繁體中文標籤"
+															onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
+															className="admin-input"
+															style={{
+																width: "100%",
+																fontSize: "0.875rem",
+																padding: "0.5rem 0.65rem"
+															}}
+														/>
+													</div>
+													<div>
+														<label
+															style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}
+														>
+															简体中文
+														</label>
+														<input
+															type="text"
+															value={q.labelZhHans || ""}
+															placeholder="简体中文标签"
+															onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
+															className="admin-input"
+															style={{
+																width: "100%",
+																fontSize: "0.875rem",
+																padding: "0.5rem 0.65rem"
+															}}
+														/>
+													</div>
+												</div>
+											</div>
 
-											{q.filters?.enabled && (
-												<>
-													{/* Filter action and operator */}
-													<div style={{
+											{/* Field Configuration Section */}
+											<div>
+												<div
+													style={{
+														fontSize: "0.75rem",
+														fontWeight: "600",
+														color: "var(--color-gray-500)",
+														marginBottom: "0.5rem",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em"
+													}}
+												>
+													{t.fieldSettings}
+												</div>
+												<div
+													style={{
 														display: "flex",
 														gap: "0.6rem",
-														flexWrap: "wrap"
-													}}>
-														<div style={{ flex: "1", minWidth: "200px" }}>
-															<label style={{
+														flexWrap: "wrap",
+														alignItems: "flex-end"
+													}}
+												>
+													<div>
+														<label
+															style={{
 																display: "block",
 																fontSize: "0.7rem",
 																color: "var(--color-gray-500)",
 																marginBottom: "0.3rem",
 																fontWeight: "500"
-															}}>
-																{t.filterAction}
-															</label>
-															<select
-																value={q.filters.action}
-																onChange={(e) => {
-																	updateQuestion(q.id, {
-																		filters: {
-																			...q.filters!,
-																			action: e.target.value as "display" | "hide"
-																		}
-																	});
-																}}
-																className="admin-select"
-																style={{
-																	width: "100%",
-																	fontSize: "0.875rem",
-																	padding: "0.5rem 0.65rem"
-																}}
-															>
-																<option value="display">{t.actionDisplay}</option>
-																<option value="hide">{t.actionHide}</option>
-															</select>
-														</div>
-
-														<div style={{ flex: "1", minWidth: "200px" }}>
-															<label style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}>
-																{t.filterOperator}
-															</label>
-															<select
-																value={q.filters.operator}
-																onChange={(e) => {
-																	updateQuestion(q.id, {
-																		filters: {
-																			...q.filters!,
-																			operator: e.target.value as "and" | "or"
-																		}
-																	});
-																}}
-																className="admin-select"
-																style={{
-																	width: "100%",
-																	fontSize: "0.875rem",
-																	padding: "0.5rem 0.65rem"
-																}}
-															>
-																<option value="and">{t.operatorAnd}</option>
-																<option value="or">{t.operatorOr}</option>
-															</select>
-														</div>
+															}}
+														>
+															{t.fieldType}
+														</label>
+														<select
+															value={q.type}
+															onChange={e => updateQuestion(q.id, { type: e.target.value })}
+															className="admin-select"
+															style={{
+																minWidth: "140px",
+																fontSize: "0.875rem",
+																padding: "0.5rem 0.65rem"
+															}}
+														>
+															{fieldTypes.map(ft => (
+																<option key={ft.value} value={ft.value}>
+																	{ft.label}
+																</option>
+															))}
+														</select>
 													</div>
 
-													{/* Conditions list */}
-													<div style={{
-														display: "flex",
-														flexDirection: "column",
-														gap: "0.6rem"
-													}}>
-														{(q.filters.conditions || []).map((condition, condIndex) => (
-															<div key={condIndex} style={{
-																padding: "0.6rem",
-																background: "var(--color-gray-800)",
-																border: "1px solid var(--color-gray-700)",
-																borderRadius: "6px",
-																display: "flex",
-																flexDirection: "column",
-																gap: "0.5rem"
-															}}>
-																{/* Condition type selector */}
-																<div style={{
-																	display: "flex",
-																	gap: "0.5rem",
-																	alignItems: "flex-start"
-																}}>
-																	<div style={{ flex: 1 }}>
-																		<label style={{
-																			display: "block",
-																			fontSize: "0.7rem",
-																			color: "var(--color-gray-500)",
-																			marginBottom: "0.3rem",
-																			fontWeight: "500"
-																		}}>
-																			{t.conditionType}
-																		</label>
-																		<select
-																			value={condition.type}
-																			onChange={(e) => {
-																				const newConditions = [...(q.filters!.conditions || [])];
-																				newConditions[condIndex] = {
-																					type: e.target.value as "ticket" | "field" | "time"
-																				};
-																				updateQuestion(q.id, {
-																					filters: {
-																						...q.filters!,
-																						conditions: newConditions
-																					}
-																				});
-																			}}
-																			className="admin-select"
+													<div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
+														<button
+															type="button"
+															onClick={() => updateQuestion(q.id, { required: !q.required })}
+															className="admin-button"
+															style={{
+																background: q.required ? "var(--color-primary)" : "var(--color-gray-700)",
+																border: `1px solid ${q.required ? "var(--color-primary)" : "var(--color-gray-600)"}`,
+																color: q.required ? "white" : "var(--color-gray-300)",
+																fontSize: "0.8rem",
+																padding: "0.5rem 0.75rem",
+																fontWeight: q.required ? "600" : "500",
+																transition: "all 0.2s ease"
+															}}
+														>
+															{q.required ? t.fieldRequired : t.fieldOptional}
+														</button>
+														<button
+															type="button"
+															onClick={() => deleteQuestion(q.id)}
+															className="admin-button danger"
+															style={{
+																fontSize: "0.8rem",
+																padding: "0.5rem 0.75rem",
+																background: "var(--color-gray-700)",
+																border: "1px solid var(--color-gray-600)",
+																color: "var(--color-red-400)"
+															}}
+															title={t.deleteField}
+														>
+															{t.deleteField}
+														</button>
+													</div>
+												</div>
+											</div>
+
+											{/* Additional Settings Section */}
+											<div>
+												<div
+													style={{
+														fontSize: "0.75rem",
+														fontWeight: "600",
+														color: "var(--color-gray-500)",
+														marginBottom: "0.5rem",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em"
+													}}
+												>
+													{t.additionalSettings}
+												</div>
+												<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+													<div>
+														<label
+															style={{
+																display: "block",
+																fontSize: "0.7rem",
+																color: "var(--color-gray-500)",
+																marginBottom: "0.3rem",
+																fontWeight: "500"
+															}}
+														>
+															{t.fieldDescription}
+														</label>
+														<input
+															type="text"
+															value={q.description || ""}
+															placeholder="給自己或其他管理員加上註記..."
+															onChange={e => updateQuestion(q.id, { description: e.target.value })}
+															className="admin-input"
+															style={{
+																width: "100%",
+																fontSize: "0.875rem",
+																padding: "0.5rem 0.65rem"
+															}}
+														/>
+													</div>
+
+													{(q.type === "text" || q.type === "textarea") && (
+														<div>
+															<label
+																style={{
+																	display: "block",
+																	fontSize: "0.7rem",
+																	color: "var(--color-gray-500)",
+																	marginBottom: "0.3rem",
+																	fontWeight: "500"
+																}}
+															>
+																{t.validator}
+															</label>
+															<input
+																type="text"
+																value={q.validater || ""}
+																placeholder={t.validatorPlaceholder}
+																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
+																className="admin-input"
+																style={{
+																	width: "100%",
+																	fontSize: "0.8rem",
+																	padding: "0.5rem 0.65rem",
+																	fontFamily: "monospace",
+																	background: "var(--color-gray-900)",
+																	border: "1px solid var(--color-gray-700)"
+																}}
+															/>
+															<p
+																style={{
+																	fontSize: "0.7rem",
+																	color: "var(--color-gray-500)",
+																	marginTop: "0.3rem",
+																	marginBottom: 0
+																}}
+															>
+																{t.useValidator}
+															</p>
+														</div>
+													)}
+												</div>
+											</div>
+											{["select", "radio", "checkbox"].includes(q.type) && (
+												<div>
+													<div
+														style={{
+															fontSize: "0.75rem",
+															fontWeight: "600",
+															color: "var(--color-gray-500)",
+															marginBottom: "0.5rem",
+															textTransform: "uppercase",
+															letterSpacing: "0.05em"
+														}}
+													>
+														{t.optionSettings}
+													</div>
+													<div
+														style={{
+															padding: "0.75rem",
+															border: "1px solid var(--color-gray-700)",
+															borderRadius: "8px",
+															background: "var(--color-gray-900)",
+															display: "flex",
+															flexDirection: "column",
+															gap: "0.6rem"
+														}}
+													>
+														{(q.options || []).map((opt, i) => {
+															const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
+															const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
+
+															return (
+																<div
+																	key={i}
+																	onDragOver={e => handleOptionDragOver(e, i)}
+																	onDragLeave={handleOptionDragLeave}
+																	onDrop={e => handleOptionDrop(e, q.id, i)}
+																	style={{
+																		display: "flex",
+																		gap: "0.5rem",
+																		alignItems: "stretch",
+																		padding: "0.5rem",
+																		borderRadius: "6px",
+																		background: isOptionDragging ? "var(--color-gray-800)" : isOptionDropTarget ? "var(--color-gray-750)" : "var(--color-gray-800)",
+																		border: isOptionDropTarget ? "1px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
+																		opacity: isOptionDragging ? 0.6 : 1,
+																		transition: "all 0.2s ease",
+																		boxShadow: isOptionDropTarget ? "0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.1)" : "none"
+																	}}
+																>
+																	<div
+																		style={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: "0.5rem"
+																		}}
+																	>
+																		<span
+																			draggable
+																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
+																			onDragEnd={handleOptionDragEnd}
 																			style={{
-																				width: "100%",
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem"
+																				cursor: "grab",
+																				color: isOptionDragging ? "var(--color-primary)" : "var(--color-gray-600)",
+																				userSelect: "none",
+																				padding: "0.25rem",
+																				display: "flex",
+																				alignItems: "center"
+																			}}
+																			title="拖曳以重新排序選項"
+																			onMouseDown={e => {
+																				e.currentTarget.style.cursor = "grabbing";
+																			}}
+																			onMouseUp={e => {
+																				e.currentTarget.style.cursor = "grab";
 																			}}
 																		>
-																			<option value="ticket">{t.typeTicket}</option>
-																			<option value="field">{t.typeField}</option>
-																			<option value="time">{t.typeTime}</option>
-																		</select>
+																			⋮⋮
+																		</span>
+																		<span
+																			style={{
+																				fontSize: "0.75rem",
+																				color: "var(--color-gray-500)",
+																				fontWeight: "600",
+																				minWidth: "1.5rem"
+																			}}
+																		>
+																			{i + 1}
+																		</span>
 																	</div>
-
+																	<div
+																		style={{
+																			display: "grid",
+																			gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+																			gap: "0.5rem",
+																			flex: 1
+																		}}
+																	>
+																		<input
+																			type="text"
+																			value={typeof opt === "object" ? opt.en || "" : opt}
+																			placeholder="English"
+																			onChange={e => {
+																				const newOptions = [...(q.options || [])];
+																				if (typeof newOptions[i] === "object") {
+																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
+																				} else {
+																					newOptions[i] = { en: e.target.value };
+																				}
+																				updateQuestion(q.id, { options: newOptions });
+																			}}
+																			className="admin-input"
+																			style={{
+																				fontSize: "0.8rem",
+																				padding: "0.45rem 0.6rem",
+																				background: "var(--color-gray-950)"
+																			}}
+																		/>
+																		<input
+																			type="text"
+																			value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
+																			placeholder="繁體中文"
+																			onChange={e => {
+																				const newOptions = [...(q.options || [])];
+																				if (typeof newOptions[i] === "object") {
+																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
+																				} else {
+																					newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
+																				}
+																				updateQuestion(q.id, { options: newOptions });
+																			}}
+																			className="admin-input"
+																			style={{
+																				fontSize: "0.8rem",
+																				padding: "0.45rem 0.6rem",
+																				background: "var(--color-gray-950)"
+																			}}
+																		/>
+																		<input
+																			type="text"
+																			value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
+																			placeholder="简体中文"
+																			onChange={e => {
+																				const newOptions = [...(q.options || [])];
+																				if (typeof newOptions[i] === "object") {
+																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
+																				} else {
+																					newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
+																				}
+																				updateQuestion(q.id, { options: newOptions });
+																			}}
+																			className="admin-input"
+																			style={{
+																				fontSize: "0.8rem",
+																				padding: "0.45rem 0.6rem",
+																				background: "var(--color-gray-950)"
+																			}}
+																		/>
+																	</div>
 																	<button
 																		type="button"
 																		onClick={() => {
-																			const newConditions = [...(q.filters!.conditions || [])];
-																			newConditions.splice(condIndex, 1);
-																			updateQuestion(q.id, {
-																				filters: {
-																					...q.filters!,
-																					conditions: newConditions
-																				}
-																			});
+																			const newOptions = [...(q.options || [])];
+																			newOptions.splice(i, 1);
+																			updateQuestion(q.id, { options: newOptions });
 																		}}
 																		className="admin-button"
 																		style={{
@@ -1430,123 +1235,235 @@ export default function FormsPage() {
 																			background: "var(--color-gray-950)",
 																			border: "1px solid var(--color-gray-800)",
 																			color: "var(--color-red-400)",
-																			flexShrink: 0,
-																			marginTop: "1.4rem"
+																			flexShrink: 0
 																		}}
-																		title={t.deleteCondition}
+																		title="刪除此選項"
 																	>
-																		<X size={14} />
+																		<X />
 																	</button>
 																</div>
+															);
+														})}
+														<button
+															type="button"
+															onClick={() => {
+																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
+																updateQuestion(q.id, { options: newOptions });
+															}}
+															className="admin-button"
+															style={{
+																fontSize: "0.8rem",
+																padding: "0.5rem 0.75rem",
+																background: "var(--color-gray-800)",
+																border: "1px dashed var(--color-gray-700)",
+																color: "var(--color-gray-400)",
+																width: "100%",
+																justifyContent: "center",
+																display: "flex",
+																alignItems: "center",
+																gap: "0.4rem"
+															}}
+														>
+															<span style={{ fontSize: "1rem" }}>
+																<Plus />
+															</span>{" "}
+															{t.newOption}
+														</button>
+													</div>
+												</div>
+											)}
 
-																{/* Condition-specific fields */}
-																{condition.type === "ticket" && (
-																	<div>
-																		<label style={{
+											{/* Display Filters Section */}
+											<div>
+												<div
+													style={{
+														fontSize: "0.75rem",
+														fontWeight: "600",
+														color: "var(--color-gray-500)",
+														marginBottom: "0.5rem",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em"
+													}}
+												>
+													{t.displayFilters}
+												</div>
+												<div
+													style={{
+														padding: "0.75rem",
+														border: "1px solid var(--color-gray-700)",
+														borderRadius: "8px",
+														background: "var(--color-gray-900)",
+														display: "flex",
+														flexDirection: "column",
+														gap: "0.75rem"
+													}}
+												>
+													{/* Enable filters toggle */}
+													<label
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "0.5rem",
+															cursor: "pointer",
+															userSelect: "none"
+														}}
+													>
+														<input
+															type="checkbox"
+															checked={q.filters?.enabled || false}
+															onChange={e => {
+																updateQuestion(q.id, {
+																	filters: {
+																		enabled: e.target.checked,
+																		action: q.filters?.action || "display",
+																		operator: q.filters?.operator || "and",
+																		conditions: q.filters?.conditions || []
+																	}
+																});
+															}}
+															style={{
+																width: "1rem",
+																height: "1rem",
+																cursor: "pointer"
+															}}
+														/>
+														<span
+															style={{
+																fontSize: "0.85rem",
+																fontWeight: "500",
+																color: "var(--color-gray-300)"
+															}}
+														>
+															{t.enableFilters}
+														</span>
+													</label>
+
+													{q.filters?.enabled && (
+														<>
+															{/* Filter action and operator */}
+															<div
+																style={{
+																	display: "flex",
+																	gap: "0.6rem",
+																	flexWrap: "wrap"
+																}}
+															>
+																<div style={{ flex: "1", minWidth: "200px" }}>
+																	<label
+																		style={{
 																			display: "block",
 																			fontSize: "0.7rem",
 																			color: "var(--color-gray-500)",
 																			marginBottom: "0.3rem",
 																			fontWeight: "500"
-																		}}>
-																			{t.selectTicket}
-																		</label>
-																		<select
-																			value={condition.ticketId || ""}
-																			onChange={(e) => {
-																				const newConditions = [...(q.filters!.conditions || [])];
-																				newConditions[condIndex] = {
-																					...condition,
-																					ticketId: e.target.value
-																				};
-																				updateQuestion(q.id, {
-																					filters: {
-																						...q.filters!,
-																						conditions: newConditions
-																					}
-																				});
-																			}}
-																			className="admin-select"
+																		}}
+																	>
+																		{t.filterAction}
+																	</label>
+																	<select
+																		value={q.filters.action}
+																		onChange={e => {
+																			updateQuestion(q.id, {
+																				filters: {
+																					...q.filters!,
+																					action: e.target.value as "display" | "hide"
+																				}
+																			});
+																		}}
+																		className="admin-select"
+																		style={{
+																			width: "100%",
+																			fontSize: "0.875rem",
+																			padding: "0.5rem 0.65rem"
+																		}}
+																	>
+																		<option value="display">{t.actionDisplay}</option>
+																		<option value="hide">{t.actionHide}</option>
+																	</select>
+																</div>
+
+																<div style={{ flex: "1", minWidth: "200px" }}>
+																	<label
+																		style={{
+																			display: "block",
+																			fontSize: "0.7rem",
+																			color: "var(--color-gray-500)",
+																			marginBottom: "0.3rem",
+																			fontWeight: "500"
+																		}}
+																	>
+																		{t.filterOperator}
+																	</label>
+																	<select
+																		value={q.filters.operator}
+																		onChange={e => {
+																			updateQuestion(q.id, {
+																				filters: {
+																					...q.filters!,
+																					operator: e.target.value as "and" | "or"
+																				}
+																			});
+																		}}
+																		className="admin-select"
+																		style={{
+																			width: "100%",
+																			fontSize: "0.875rem",
+																			padding: "0.5rem 0.65rem"
+																		}}
+																	>
+																		<option value="and">{t.operatorAnd}</option>
+																		<option value="or">{t.operatorOr}</option>
+																	</select>
+																</div>
+															</div>
+
+															{/* Conditions list */}
+															<div
+																style={{
+																	display: "flex",
+																	flexDirection: "column",
+																	gap: "0.6rem"
+																}}
+															>
+																{(q.filters.conditions || []).map((condition, condIndex) => (
+																	<div
+																		key={condIndex}
+																		style={{
+																			padding: "0.6rem",
+																			background: "var(--color-gray-800)",
+																			border: "1px solid var(--color-gray-700)",
+																			borderRadius: "6px",
+																			display: "flex",
+																			flexDirection: "column",
+																			gap: "0.5rem"
+																		}}
+																	>
+																		{/* Condition type selector */}
+																		<div
 																			style={{
-																				width: "100%",
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem"
+																				display: "flex",
+																				gap: "0.5rem",
+																				alignItems: "flex-start"
 																			}}
 																		>
-																			<option value="">{t.selectTicket}...</option>
-																			{eventTickets.map((ticket) => (
-																				<option key={ticket.id} value={ticket.id}>
-																					{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-																				</option>
-																			))}
-																		</select>
-																	</div>
-																)}
-
-																{condition.type === "field" && (
-																	<>
-																		<div>
-																			<label style={{
-																				display: "block",
-																				fontSize: "0.7rem",
-																				color: "var(--color-gray-500)",
-																				marginBottom: "0.3rem",
-																				fontWeight: "500"
-																			}}>
-																				{t.selectField}
-																			</label>
-																			<select
-																				value={condition.fieldId || ""}
-																				onChange={(e) => {
-																					const newConditions = [...(q.filters!.conditions || [])];
-																					newConditions[condIndex] = {
-																						...condition,
-																						fieldId: e.target.value
-																					};
-																					updateQuestion(q.id, {
-																						filters: {
-																							...q.filters!,
-																							conditions: newConditions
-																						}
-																					});
-																				}}
-																				className="admin-select"
-																				style={{
-																					width: "100%",
-																					fontSize: "0.8rem",
-																					padding: "0.45rem 0.6rem"
-																				}}
-																			>
-																				<option value="">{t.selectField}...</option>
-																				{questions.filter(field => field.id !== q.id).map((field) => (
-																					<option key={field.id} value={field.id}>
-																						{field.labelEn || field.label}
-																					</option>
-																				))}
-																			</select>
-																		</div>
-
-																		<div style={{
-																			display: "flex",
-																			gap: "0.5rem"
-																		}}>
 																			<div style={{ flex: 1 }}>
-																				<label style={{
-																					display: "block",
-																					fontSize: "0.7rem",
-																					color: "var(--color-gray-500)",
-																					marginBottom: "0.3rem",
-																					fontWeight: "500"
-																				}}>
-																					{t.fieldOperator}
+																				<label
+																					style={{
+																						display: "block",
+																						fontSize: "0.7rem",
+																						color: "var(--color-gray-500)",
+																						marginBottom: "0.3rem",
+																						fontWeight: "500"
+																					}}
+																				>
+																					{t.conditionType}
 																				</label>
 																				<select
-																					value={condition.operator || "equals"}
-																					onChange={(e) => {
+																					value={condition.type}
+																					onChange={e => {
 																						const newConditions = [...(q.filters!.conditions || [])];
 																						newConditions[condIndex] = {
-																							...condition,
-																							operator: e.target.value as "equals" | "filled" | "notFilled"
+																							type: e.target.value as "ticket" | "field" | "time"
 																						};
 																						updateQuestion(q.id, {
 																							filters: {
@@ -1562,32 +1479,244 @@ export default function FormsPage() {
 																						padding: "0.45rem 0.6rem"
 																					}}
 																				>
-																					<option value="equals">{t.operatorEquals}</option>
-																					<option value="filled">{t.operatorFilled}</option>
-																					<option value="notFilled">{t.operatorNotFilled}</option>
+																					<option value="ticket">{t.typeTicket}</option>
+																					<option value="field">{t.typeField}</option>
+																					<option value="time">{t.typeTime}</option>
 																				</select>
 																			</div>
 
-																			{condition.operator === "equals" && (
-																				<div style={{ flex: 1 }}>
-																					<label style={{
+																			<button
+																				type="button"
+																				onClick={() => {
+																					const newConditions = [...(q.filters!.conditions || [])];
+																					newConditions.splice(condIndex, 1);
+																					updateQuestion(q.id, {
+																						filters: {
+																							...q.filters!,
+																							conditions: newConditions
+																						}
+																					});
+																				}}
+																				className="admin-button"
+																				style={{
+																					fontSize: "0.75rem",
+																					padding: "0.45rem 0.65rem",
+																					background: "var(--color-gray-950)",
+																					border: "1px solid var(--color-gray-800)",
+																					color: "var(--color-red-400)",
+																					flexShrink: 0,
+																					marginTop: "1.4rem"
+																				}}
+																				title={t.deleteCondition}
+																			>
+																				<X size={14} />
+																			</button>
+																		</div>
+
+																		{/* Condition-specific fields */}
+																		{condition.type === "ticket" && (
+																			<div>
+																				<label
+																					style={{
 																						display: "block",
 																						fontSize: "0.7rem",
 																						color: "var(--color-gray-500)",
 																						marginBottom: "0.3rem",
 																						fontWeight: "500"
-																					}}>
-																						{t.fieldValue}
+																					}}
+																				>
+																					{t.selectTicket}
+																				</label>
+																				<select
+																					value={condition.ticketId || ""}
+																					onChange={e => {
+																						const newConditions = [...(q.filters!.conditions || [])];
+																						newConditions[condIndex] = {
+																							...condition,
+																							ticketId: e.target.value
+																						};
+																						updateQuestion(q.id, {
+																							filters: {
+																								...q.filters!,
+																								conditions: newConditions
+																							}
+																						});
+																					}}
+																					className="admin-select"
+																					style={{
+																						width: "100%",
+																						fontSize: "0.8rem",
+																						padding: "0.45rem 0.6rem"
+																					}}
+																				>
+																					<option value="">{t.selectTicket}...</option>
+																					{eventTickets.map(ticket => (
+																						<option key={ticket.id} value={ticket.id}>
+																							{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																						</option>
+																					))}
+																				</select>
+																			</div>
+																		)}
+
+																		{condition.type === "field" && (
+																			<>
+																				<div>
+																					<label
+																						style={{
+																							display: "block",
+																							fontSize: "0.7rem",
+																							color: "var(--color-gray-500)",
+																							marginBottom: "0.3rem",
+																							fontWeight: "500"
+																						}}
+																					>
+																						{t.selectField}
 																					</label>
-																					<input
-																						type="text"
-																						value={condition.value || ""}
-																						placeholder={t.fieldValue}
-																						onChange={(e) => {
+																					<select
+																						value={condition.fieldId || ""}
+																						onChange={e => {
 																							const newConditions = [...(q.filters!.conditions || [])];
 																							newConditions[condIndex] = {
 																								...condition,
-																								value: e.target.value
+																								fieldId: e.target.value
+																							};
+																							updateQuestion(q.id, {
+																								filters: {
+																									...q.filters!,
+																									conditions: newConditions
+																								}
+																							});
+																						}}
+																						className="admin-select"
+																						style={{
+																							width: "100%",
+																							fontSize: "0.8rem",
+																							padding: "0.45rem 0.6rem"
+																						}}
+																					>
+																						<option value="">{t.selectField}...</option>
+																						{questions
+																							.filter(field => field.id !== q.id)
+																							.map(field => (
+																								<option key={field.id} value={field.id}>
+																									{field.labelEn || field.label}
+																								</option>
+																							))}
+																					</select>
+																				</div>
+
+																				<div
+																					style={{
+																						display: "flex",
+																						gap: "0.5rem"
+																					}}
+																				>
+																					<div style={{ flex: 1 }}>
+																						<label
+																							style={{
+																								display: "block",
+																								fontSize: "0.7rem",
+																								color: "var(--color-gray-500)",
+																								marginBottom: "0.3rem",
+																								fontWeight: "500"
+																							}}
+																						>
+																							{t.fieldOperator}
+																						</label>
+																						<select
+																							value={condition.operator || "equals"}
+																							onChange={e => {
+																								const newConditions = [...(q.filters!.conditions || [])];
+																								newConditions[condIndex] = {
+																									...condition,
+																									operator: e.target.value as "equals" | "filled" | "notFilled"
+																								};
+																								updateQuestion(q.id, {
+																									filters: {
+																										...q.filters!,
+																										conditions: newConditions
+																									}
+																								});
+																							}}
+																							className="admin-select"
+																							style={{
+																								width: "100%",
+																								fontSize: "0.8rem",
+																								padding: "0.45rem 0.6rem"
+																							}}
+																						>
+																							<option value="equals">{t.operatorEquals}</option>
+																							<option value="filled">{t.operatorFilled}</option>
+																							<option value="notFilled">{t.operatorNotFilled}</option>
+																						</select>
+																					</div>
+
+																					{condition.operator === "equals" && (
+																						<div style={{ flex: 1 }}>
+																							<label
+																								style={{
+																									display: "block",
+																									fontSize: "0.7rem",
+																									color: "var(--color-gray-500)",
+																									marginBottom: "0.3rem",
+																									fontWeight: "500"
+																								}}
+																							>
+																								{t.fieldValue}
+																							</label>
+																							<input
+																								type="text"
+																								value={condition.value || ""}
+																								placeholder={t.fieldValue}
+																								onChange={e => {
+																									const newConditions = [...(q.filters!.conditions || [])];
+																									newConditions[condIndex] = {
+																										...condition,
+																										value: e.target.value
+																									};
+																									updateQuestion(q.id, {
+																										filters: {
+																											...q.filters!,
+																											conditions: newConditions
+																										}
+																									});
+																								}}
+																								className="admin-input"
+																								style={{
+																									width: "100%",
+																									fontSize: "0.8rem",
+																									padding: "0.45rem 0.6rem"
+																								}}
+																							/>
+																						</div>
+																					)}
+																				</div>
+																			</>
+																		)}
+
+																		{condition.type === "time" && (
+																			<>
+																				<div>
+																					<label
+																						style={{
+																							display: "block",
+																							fontSize: "0.7rem",
+																							color: "var(--color-gray-500)",
+																							marginBottom: "0.3rem",
+																							fontWeight: "500"
+																						}}
+																					>
+																						{t.startTime}
+																					</label>
+																					<input
+																						type="datetime-local"
+																						value={condition.startTime || ""}
+																						onChange={e => {
+																							const newConditions = [...(q.filters!.conditions || [])];
+																							newConditions[condIndex] = {
+																								...condition,
+																								startTime: e.target.value
 																							};
 																							updateQuestion(q.id, {
 																								filters: {
@@ -1604,139 +1733,105 @@ export default function FormsPage() {
 																						}}
 																					/>
 																				</div>
-																			)}
-																		</div>
-																	</>
-																)}
 
-																{condition.type === "time" && (
-																	<>
-																		<div>
-																			<label style={{
-																				display: "block",
-																				fontSize: "0.7rem",
-																				color: "var(--color-gray-500)",
-																				marginBottom: "0.3rem",
-																				fontWeight: "500"
-																			}}>
-																				{t.startTime}
-																			</label>
-																			<input
-																				type="datetime-local"
-																				value={condition.startTime || ""}
-																				onChange={(e) => {
-																					const newConditions = [...(q.filters!.conditions || [])];
-																					newConditions[condIndex] = {
-																						...condition,
-																						startTime: e.target.value
-																					};
-																					updateQuestion(q.id, {
-																						filters: {
-																							...q.filters!,
-																							conditions: newConditions
-																						}
-																					});
-																				}}
-																				className="admin-input"
-																				style={{
-																					width: "100%",
-																					fontSize: "0.8rem",
-																					padding: "0.45rem 0.6rem"
-																				}}
-																			/>
-																		</div>
+																				<div>
+																					<label
+																						style={{
+																							display: "block",
+																							fontSize: "0.7rem",
+																							color: "var(--color-gray-500)",
+																							marginBottom: "0.3rem",
+																							fontWeight: "500"
+																						}}
+																					>
+																						{t.endTime}
+																					</label>
+																					<input
+																						type="datetime-local"
+																						value={condition.endTime || ""}
+																						onChange={e => {
+																							const newConditions = [...(q.filters!.conditions || [])];
+																							newConditions[condIndex] = {
+																								...condition,
+																								endTime: e.target.value
+																							};
+																							updateQuestion(q.id, {
+																								filters: {
+																									...q.filters!,
+																									conditions: newConditions
+																								}
+																							});
+																						}}
+																						className="admin-input"
+																						style={{
+																							width: "100%",
+																							fontSize: "0.8rem",
+																							padding: "0.45rem 0.6rem"
+																						}}
+																					/>
+																				</div>
+																			</>
+																		)}
+																	</div>
+																))}
 
-																		<div>
-																			<label style={{
-																				display: "block",
-																				fontSize: "0.7rem",
-																				color: "var(--color-gray-500)",
-																				marginBottom: "0.3rem",
-																				fontWeight: "500"
-																			}}>
-																				{t.endTime}
-																			</label>
-																			<input
-																				type="datetime-local"
-																				value={condition.endTime || ""}
-																				onChange={(e) => {
-																					const newConditions = [...(q.filters!.conditions || [])];
-																					newConditions[condIndex] = {
-																						...condition,
-																						endTime: e.target.value
-																					};
-																					updateQuestion(q.id, {
-																						filters: {
-																							...q.filters!,
-																							conditions: newConditions
-																						}
-																					});
-																				}}
-																				className="admin-input"
-																				style={{
-																					width: "100%",
-																					fontSize: "0.8rem",
-																					padding: "0.45rem 0.6rem"
-																				}}
-																			/>
-																		</div>
-																	</>
-																)}
+																{/* Add condition button */}
+																<button
+																	type="button"
+																	onClick={() => {
+																		const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
+																		updateQuestion(q.id, {
+																			filters: {
+																				...q.filters!,
+																				conditions: newConditions
+																			}
+																		});
+																	}}
+																	className="admin-button"
+																	style={{
+																		fontSize: "0.8rem",
+																		padding: "0.5rem 0.75rem",
+																		background: "var(--color-gray-800)",
+																		border: "1px dashed var(--color-gray-700)",
+																		color: "var(--color-gray-400)",
+																		width: "100%",
+																		justifyContent: "center",
+																		display: "flex",
+																		alignItems: "center",
+																		gap: "0.4rem"
+																	}}
+																>
+																	<span style={{ fontSize: "1rem" }}>
+																		<Plus />
+																	</span>{" "}
+																	{t.addCondition}
+																</button>
 															</div>
-														))}
-
-														{/* Add condition button */}
-														<button
-															type="button"
-															onClick={() => {
-																const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
-																updateQuestion(q.id, {
-																	filters: {
-																		...q.filters!,
-																		conditions: newConditions
-																	}
-																});
-															}}
-															className="admin-button"
-															style={{
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																background: "var(--color-gray-800)",
-																border: "1px dashed var(--color-gray-700)",
-																color: "var(--color-gray-400)",
-																width: "100%",
-																justifyContent: "center",
-																display: "flex",
-																alignItems: "center",
-																gap: "0.4rem"
-															}}
-														>
-															<span style={{ fontSize: "1rem" }}><Plus /></span> {t.addCondition}
-														</button>
-													</div>
-												</>
-											)}
+														</>
+													)}
+												</div>
+											</div>
 										</div>
 									</div>
-								</div>
-							</div>
-						);
-						})}
+								);
+							})}
 						</div>
 					</div>
 
 					{/* Action Buttons */}
-					<div style={{
-						position: "sticky",
-						bottom: 0,
-						background: "var(--color-gray-900)",
-						padding: "1rem 0",
-						marginTop: "1.5rem",
-						display: "flex",
-						gap: "0.75rem",
-						justifyContent: "center",
-						borderTop: "1px solid var(--color-gray-700)"
-					}}>
+					<div
+						style={{
+							position: "sticky",
+							bottom: 0,
+							background: "var(--color-gray-900)",
+							padding: "1rem 0",
+							marginTop: "1.5rem",
+							display: "flex",
+							gap: "0.75rem",
+							justifyContent: "center",
+							borderTop: "1px solid var(--color-gray-700)"
+						}}
+					>
 						<button
 							id="add-question"
 							type="button"

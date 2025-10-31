@@ -222,7 +222,9 @@ export default function ReferralStatus() {
 													<td className={`font-semibold ${getStatusColor(referral.status)}`} style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
 														{getStatusText(referral.status)}
 													</td>
-													<td style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>{new Date(referral.registeredAt).toLocaleDateString(locale)}</td>
+													<td style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
+														{new Date(referral.registeredAt).toLocaleDateString(locale)}
+													</td>
 												</tr>
 											))}
 										</tbody>

@@ -4,8 +4,8 @@ packages:
   - backend
 
 onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
+  - "@prisma/client"
+  - "@prisma/engines"
   - better-sqlite3
   - esbuild
   - prisma

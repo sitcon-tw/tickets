@@ -1,4 +1,30 @@
-import type { ApiResponse, DashboardData, EmailCampaign, Event, EventFormField, EventFormFieldReorder, EventInfo, EventListItem, EventStats, ExportData, HealthStatus, InvitationCodeInfo, InvitationCodeVerification, LocalizedText, PermissionsResponse, ReferralLink, ReferralValidation, Registration, RegistrationStats, RegistrationTrend, SessionResponse, Ticket, TicketAnalytics, TicketFormField, TicketFormFieldReorder, User } from "@/lib/types/api";
+import type {
+	ApiResponse,
+	DashboardData,
+	EmailCampaign,
+	Event,
+	EventFormField,
+	EventFormFieldReorder,
+	EventInfo,
+	EventListItem,
+	EventStats,
+	ExportData,
+	HealthStatus,
+	InvitationCodeInfo,
+	InvitationCodeVerification,
+	LocalizedText,
+	PermissionsResponse,
+	ReferralLink,
+	ReferralValidation,
+	Registration,
+	RegistrationStats,
+	RegistrationTrend,
+	SessionResponse,
+	Ticket,
+	TicketAnalytics,
+	TicketFormField,
+	User
+} from "@/lib/types/api";
 import { apiClient } from "./client";
 
 // System
@@ -41,7 +67,8 @@ export const ticketsAPI = {
 
 // Registrations - Requires Auth
 export const registrationsAPI = {
-	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) => apiClient.post<ApiResponse<Registration>>("/api/registrations", data),
+	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) =>
+		apiClient.post<ApiResponse<Registration>>("/api/registrations", data),
 
 	getAll: () => apiClient.get<ApiResponse<Registration[]>>("/api/registrations"),
 
@@ -105,7 +132,8 @@ export const adminTicketsAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`),
 
-	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: string; saleEnd?: string; requireInviteCode?: boolean }) => apiClient.post<ApiResponse<Ticket>>("/api/admin/tickets", data),
+	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: string; saleEnd?: string; requireInviteCode?: boolean }) =>
+		apiClient.post<ApiResponse<Ticket>>("/api/admin/tickets", data),
 
 	update: (id: string, data: Partial<Ticket>) => apiClient.put<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`, data),
 
@@ -120,7 +148,17 @@ export const adminEventFormFieldsAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<EventFormField>>(`/api/admin/event-form-fields/${id}`),
 
-	create: (data: { eventId: string; order: number; type: "text" | "textarea" | "select" | "checkbox" | "radio"; name: LocalizedText; description?: string; placeholder?: string; required?: boolean; validater?: string; values?: LocalizedText[] }) => apiClient.post<ApiResponse<EventFormField>>("/api/admin/event-form-fields", data),
+	create: (data: {
+		eventId: string;
+		order: number;
+		type: "text" | "textarea" | "select" | "checkbox" | "radio";
+		name: LocalizedText;
+		description?: string;
+		placeholder?: string;
+		required?: boolean;
+		validater?: string;
+		values?: LocalizedText[];
+	}) => apiClient.post<ApiResponse<EventFormField>>("/api/admin/event-form-fields", data),
 
 	update: (id: string, data: Partial<EventFormField>) => apiClient.put<ApiResponse<EventFormField>>(`/api/admin/event-form-fields/${id}`, data),
 
@@ -131,7 +169,8 @@ export const adminEventFormFieldsAPI = {
 
 // Admin - Registrations
 export const adminRegistrationsAPI = {
-	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: "pending" | "confirmed" | "cancelled"; userId?: string }) => apiClient.get<ApiResponse<Registration[]>>("/api/admin/registrations", params),
+	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: "pending" | "confirmed" | "cancelled"; userId?: string }) =>
+		apiClient.get<ApiResponse<Registration[]>>("/api/admin/registrations", params),
 
 	getById: (id: string) => apiClient.get<ApiResponse<Registration>>(`/api/admin/registrations/${id}`),
 
@@ -155,13 +194,15 @@ export const adminInvitationCodesAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`),
 
-	create: (data: { ticketId: string; code: string; name?: string; usageLimit?: number; validFrom?: string; validUntil?: string }) => apiClient.post<ApiResponse<InvitationCodeInfo>>("/api/admin/invitation-codes", data),
+	create: (data: { ticketId: string; code: string; name?: string; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
+		apiClient.post<ApiResponse<InvitationCodeInfo>>("/api/admin/invitation-codes", data),
 
 	update: (id: string, data: Partial<InvitationCodeInfo>) => apiClient.put<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`, data),
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/invitation-codes/${id}`),
 
-	bulkCreate: (data: { ticketId: string; prefix: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) => apiClient.post<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes/bulk", data)
+	bulkCreate: (data: { ticketId: string; prefix: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
+		apiClient.post<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes/bulk", data)
 };
 
 // Admin - Referrals
@@ -207,7 +248,8 @@ export const adminEmailCampaignsAPI = {
 
 	preview: (campaignId: string) => apiClient.post<ApiResponse<{ previewHtml: string }>>(`/api/admin/email-campaigns/${campaignId}/preview`),
 
-	calculateRecipients: (campaignId: string) => apiClient.post<ApiResponse<{ recipientCount: number; recipients: Array<{ email: string }> }>>(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`),
+	calculateRecipients: (campaignId: string) =>
+		apiClient.post<ApiResponse<{ recipientCount: number; recipients: Array<{ email: string }> }>>(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`),
 
 	send: (campaignId: string, sendNow: boolean = true) => apiClient.post<ApiResponse<EmailCampaign>>(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }),
 

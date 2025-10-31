@@ -102,7 +102,7 @@ export default function TicketsPage() {
 		}
 
 		setShowModal(true);
-	};
+	}
 
 	function closeModal() {
 		setShowModal(false);
@@ -180,7 +180,7 @@ export default function TicketsPage() {
 		} catch (error) {
 			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function deleteTicket(ticketId: string) {
 		if (!confirm("確定要刪除這個票種嗎？")) return;
@@ -191,7 +191,7 @@ export default function TicketsPage() {
 		} catch (error) {
 			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	function computeStatus(ticket: Ticket) {
 		const now = new Date();
@@ -202,7 +202,7 @@ export default function TicketsPage() {
 			return { label: t.ended, class: "ended" };
 		}
 		return { label: t.selling, class: "active" };
-	};
+	}
 
 	function formatDateTime(dt?: string) {
 		if (!dt) return "";
@@ -212,14 +212,14 @@ export default function TicketsPage() {
 		} catch {
 			return dt;
 		}
-	};
+	}
 
 	function openLinkBuilder(ticket: Ticket) {
 		setSelectedTicketForLink(ticket);
 		setInviteCode("");
 		setRefCode("");
 		setShowLinkModal(true);
-	};
+	}
 
 	function generateDirectLink() {
 		if (!selectedTicketForLink || !currentEventId) return "";
@@ -240,7 +240,7 @@ export default function TicketsPage() {
 		}
 
 		return `${window.location.origin}${link}`;
-	};
+	}
 
 	async function copyToClipboard() {
 		const link = generateDirectLink();
@@ -251,8 +251,8 @@ export default function TicketsPage() {
 			console.error("Failed to copy:", err);
 			showAlert("Failed to copy link", "error");
 		}
-	};
-	
+	}
+
 	useEffect(() => {
 		if (currentEventId) {
 			loadTickets();
@@ -407,7 +407,13 @@ export default function TicketsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (English)</label>
-												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="admin-textarea" rows={4} placeholder="Plain text description without markdown formatting" />
+												<textarea
+													value={plainDescEn}
+													onChange={e => setPlainDescEn(e.target.value)}
+													className="admin-textarea"
+													rows={4}
+													placeholder="Plain text description without markdown formatting"
+												/>
 											</div>
 										</>
 									)}
@@ -472,7 +478,12 @@ export default function TicketsPage() {
 									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.startTime}</label>
-											<input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} className="admin-input" />
+											<input
+												name="saleStart"
+												type="datetime-local"
+												defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""}
+												className="admin-input"
+											/>
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.endTime}</label>

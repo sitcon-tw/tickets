@@ -25,7 +25,6 @@ export default function VerifyPage() {
 	const [countdown, setCountdown] = useState(0);
 	const [isVerified, setIsVerified] = useState(false);
 
-
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "簡訊驗證",
@@ -154,19 +153,19 @@ export default function VerifyPage() {
 		}
 
 		return value;
-	};
+	}
 
 	function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const input = e.target.value;
 		const formatted = formatPhoneNumber(input);
 		setPhoneNumber(formatted);
 		setError("");
-	};
+	}
 
 	function isValidPhone(phone: string) {
 		const digits = phone.replace(/\D/g, "");
 		return (digits.startsWith("09") && digits.length === 10) || (digits.startsWith("886") && digits.length === 12);
-	};
+	}
 
 	async function handleSendCode() {
 		setError("");
@@ -197,7 +196,7 @@ export default function VerifyPage() {
 		} finally {
 			setSendingCode(false);
 		}
-	};
+	}
 
 	function handleCodeChange(index: number, value: string) {
 		if (!/^\d*$/.test(value)) return;
@@ -214,7 +213,7 @@ export default function VerifyPage() {
 		if (newCode.every(digit => digit !== "") && newCode.join("").length === 6) {
 			verifyCode(newCode.join(""));
 		}
-	};
+	}
 
 	function handleCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
 		if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
@@ -222,7 +221,7 @@ export default function VerifyPage() {
 		} else if (e.key === "Enter" && verificationCode.every(digit => digit !== "")) {
 			verifyCode(verificationCode.join(""));
 		}
-	};
+	}
 
 	function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
 		e.preventDefault();
@@ -242,7 +241,7 @@ export default function VerifyPage() {
 			codeInputRefs.current[5]?.focus();
 			verifyCode(newCode.join(""));
 		}
-	};
+	}
 
 	async function verifyCode(codeStr: string) {
 		setLoading(true);
@@ -278,7 +277,7 @@ export default function VerifyPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}
 
 	async function handleResend() {
 		setSendingCode(true);
@@ -304,13 +303,13 @@ export default function VerifyPage() {
 		} finally {
 			setSendingCode(false);
 		}
-	};
+	}
 
 	function handleBack() {
 		setStep("phone");
 		setVerificationCode(["", "", "", "", "", ""]);
 		setError("");
-	};
+	}
 
 	const handleContinue = () => {
 		router.push(redirectUrl);
@@ -391,7 +390,10 @@ export default function VerifyPage() {
 													) : (
 														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24}>
 															<path fill="none" d="M0 0h24v24H0z" />
-															<path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z" />
+															<path
+																fill="currentColor"
+																d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+															/>
 														</svg>
 													)}
 												</div>
@@ -471,7 +473,11 @@ export default function VerifyPage() {
 											</span>
 										</p>
 									) : (
-										<button onClick={handleResend} disabled={sendingCode} className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors underline cursor-pointer disabled:opacity-50">
+										<button
+											onClick={handleResend}
+											disabled={sendingCode}
+											className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors underline cursor-pointer disabled:opacity-50"
+										>
 											{sendingCode ? "Sending..." : t.resendCode}
 										</button>
 									)}
@@ -495,7 +501,11 @@ export default function VerifyPage() {
 								<p className="text-gray-400 text-sm" style={{ marginBottom: "1.5rem" }}>
 									{t.verificationSuccess}
 								</p>
-								<button onClick={handleContinue} className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center" style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}>
+								<button
+									onClick={handleContinue}
+									className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center"
+									style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}
+								>
 									{t.continue}
 									<ArrowRight className="w-5 h-5" />
 								</button>

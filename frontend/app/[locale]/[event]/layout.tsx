@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 		const eventsData = await response.json();
 
 		if (eventsData?.success && Array.isArray(eventsData.data)) {
-			const foundEvent = eventsData.data.find((e: { id: string; }) => e.id.slice(-6) === eventSlug);
+			const foundEvent = eventsData.data.find((e: { id: string }) => e.id.slice(-6) === eventSlug);
 
 			if (foundEvent) {
 				const getLocalizedText = (text: Record<string, string> | string | undefined, fallback: string): string => {
@@ -43,10 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 				};
 
 				const eventName = getLocalizedText(foundEvent.name, "SITCON Event");
-				const eventDescription = getLocalizedText(
-					foundEvent.plainDescription || foundEvent.description,
-					`Register for ${eventName}`
-				);
+				const eventDescription = getLocalizedText(foundEvent.plainDescription || foundEvent.description, `Register for ${eventName}`);
 				const ogImageUrl = foundEvent.ogImage;
 
 				return {
@@ -62,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 						...(ogImageUrl && {
 							images: [
 								{
-									url: ogImageUrl,
+									url: ogImageUrl
 								}
 							]
 						})

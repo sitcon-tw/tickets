@@ -27,14 +27,10 @@ export function shouldDisplayField(
 	const currentTime = context.currentTime || new Date();
 
 	// Evaluate each condition
-	const results = filter.conditions.map(condition =>
-		evaluateCondition(condition, context, currentTime, allFields)
-	);
+	const results = filter.conditions.map(condition => evaluateCondition(condition, context, currentTime, allFields));
 
 	// Apply logical operator (AND/OR)
-	const conditionsMet = filter.operator === "and"
-		? results.every(r => r)
-		: results.some(r => r);
+	const conditionsMet = filter.operator === "and" ? results.every(r => r) : results.some(r => r);
 
 	// Apply action (display/hide)
 	// If action is "display": show when conditions met
@@ -72,10 +68,7 @@ function evaluateCondition(
 /**
  * Evaluates a ticket-based condition
  */
-function evaluateTicketCondition(
-	condition: FilterCondition,
-	context: { selectedTicketId: string }
-): boolean {
+function evaluateTicketCondition(condition: FilterCondition, context: { selectedTicketId: string }): boolean {
 	if (!condition.ticketId) {
 		return true;
 	}
@@ -101,11 +94,7 @@ function getFieldNameKey(field: EventFormField, locale: string = "en"): string {
 /**
  * Evaluates a field-based condition
  */
-function evaluateFieldCondition(
-	condition: FilterCondition,
-	context: { formData: FormDataType },
-	allFields?: EventFormField[]
-): boolean {
+function evaluateFieldCondition(condition: FilterCondition, context: { formData: FormDataType }, allFields?: EventFormField[]): boolean {
 	if (!condition.fieldId || !allFields) {
 		return true;
 	}
@@ -118,10 +107,7 @@ function evaluateFieldCondition(
 
 	// The formData is keyed by localized field names, not IDs
 	// We need to get all possible keys for this field
-	const possibleKeys = [
-		condition.fieldId,
-		referencedField.id
-	];
+	const possibleKeys = [condition.fieldId, referencedField.id];
 
 	// Add localized names as possible keys
 	if (typeof referencedField.name === "object" && referencedField.name !== null) {
@@ -146,8 +132,8 @@ function evaluateFieldCondition(
 	const operator = condition.operator || "equals";
 
 	// Debug logging
-	console.log('Field condition evaluation:', {
-		referencedFieldName: typeof referencedField.name === 'object' ? referencedField.name.en : referencedField.name,
+	console.log("Field condition evaluation:", {
+		referencedFieldName: typeof referencedField.name === "object" ? referencedField.name.en : referencedField.name,
 		possibleKeys,
 		foundKey,
 		fieldValue,
@@ -165,7 +151,7 @@ function evaluateFieldCondition(
 
 		case "equals":
 			const result = String(fieldValue) === String(condition.value);
-			console.log('Equals comparison:', { fieldValue, expectedValue: condition.value, result });
+			console.log("Equals comparison:", { fieldValue, expectedValue: condition.value, result });
 			return result;
 
 		default:
@@ -197,20 +183,13 @@ function isFilled(value: unknown): boolean {
 /**
  * Evaluates a time-based condition
  */
-function evaluateTimeCondition(
-	condition: FilterCondition,
-	currentTime: Date
-): boolean {
+function evaluateTimeCondition(condition: FilterCondition, currentTime: Date): boolean {
 	const now = currentTime.getTime();
 
 	// Parse start and end times
-	const startTime = condition.startTime
-		? new Date(condition.startTime).getTime()
-		: -Infinity;
+	const startTime = condition.startTime ? new Date(condition.startTime).getTime() : -Infinity;
 
-	const endTime = condition.endTime
-		? new Date(condition.endTime).getTime()
-		: Infinity;
+	const endTime = condition.endTime ? new Date(condition.endTime).getTime() : Infinity;
 
 	// Check if current time is within the range
 	return now >= startTime && now <= endTime;

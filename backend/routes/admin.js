@@ -2,12 +2,12 @@ import { requireAdminOrEventAdmin } from "#middleware/auth.js";
 
 import analyticsRoutes from "./admin/analytics.js";
 import emailCampaignsRoutes from "./admin/emailCampaigns.js";
+import eventFormFieldsRoutes from "./admin/eventFormFields.js";
 import eventsRoutes from "./admin/events.js";
 import invitationCodesRoutes from "./admin/invitationCodes.js";
 import referralsRoutes from "./admin/referrals.js";
 import registrationsRoutes from "./admin/registrations.js";
 import smsVerificationLogsRoutes from "./admin/smsVerificationLogs.js";
-import eventFormFieldsRoutes from "./admin/eventFormFields.js";
 import ticketsRoutes from "./admin/tickets.js";
 import usersRoutes from "./admin/users.js";
 

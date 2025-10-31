@@ -304,7 +304,10 @@ export default function Login() {
 
 					<Container isActive={viewState === "sent"}>
 						<MessageContainer>
-							<h2>{t.sent}{email}</h2>
+							<h2>
+								{t.sent}
+								{email}
+							</h2>
 							<p>{t.message}</p>
 						</MessageContainer>
 					</Container>

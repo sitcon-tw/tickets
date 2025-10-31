@@ -20,13 +20,20 @@ export default function Footer() {
 		router.replace(pathname, { locale: newLocale });
 	};
 
-	if (pathname.includes("/admin") || pathname.includes("/magic-link")) { return null; }
+	if (pathname.includes("/admin") || pathname.includes("/magic-link")) {
+		return null;
+	}
 
 	return (
 		<footer className="text-center" style={{ padding: "0rem", marginTop: "2rem" }}>
 			<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
 				<Globe size={16} className="text-gray-500" />
-				<select value={locale} onChange={e => handleLocaleChange(e.target.value)} className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400" style={{ padding: "0.25rem 0.5rem" }}>
+				<select
+					value={locale}
+					onChange={e => handleLocaleChange(e.target.value)}
+					className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
+					style={{ padding: "0.25rem 0.5rem" }}
+				>
 					{routing.locales.map(loc => (
 						<option key={loc} value={loc}>
 							{localeNames[loc]}

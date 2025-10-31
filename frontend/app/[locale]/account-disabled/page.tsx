@@ -18,7 +18,16 @@ export default function AccountDisabled() {
 	return (
 		<>
 			<div className="max-w-6xl h-screen" style={{ margin: "2rem auto", marginTop: "16rem", marginBottom: "-16rem", padding: "0 1rem", textAlign: "center" }}>
-				<FallingText text={t.message} highlightWords={["停用", "停用", "disabled"]} trigger="click" backgroundColor="transparent" wireframes={false} gravity={0.4} fontSize="4rem" mouseConstraintStiffness={0.9} />
+				<FallingText
+					text={t.message}
+					highlightWords={["停用", "停用", "disabled"]}
+					trigger="click"
+					backgroundColor="transparent"
+					wireframes={false}
+					gravity={0.4}
+					fontSize="4rem"
+					mouseConstraintStiffness={0.9}
+				/>
 			</div>
 		</>
 	);

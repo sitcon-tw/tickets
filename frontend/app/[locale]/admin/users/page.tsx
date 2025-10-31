@@ -81,14 +81,14 @@ export default function UsersPage() {
 		setSelectedRole(user.role);
 		setSelectedEventIds(user.permissions || []);
 		setShowEditModal(true);
-	};
+	}
 
 	function closeEditModal() {
 		setEditingUser(null);
 		setSelectedEventIds([]);
 		setSelectedRole("viewer");
 		setShowEditModal(false);
-	};
+	}
 
 	async function handleUpdateUser(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -110,7 +110,7 @@ export default function UsersPage() {
 		} catch (error) {
 			showAlert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	function toggleEventSelection(eventId: string) {
 		setSelectedEventIds(prev => {
@@ -119,7 +119,7 @@ export default function UsersPage() {
 			}
 			return [...prev, eventId];
 		});
-	};
+	}
 
 	function getRoleLabel(role: string) {
 		switch (role) {
@@ -132,7 +132,7 @@ export default function UsersPage() {
 			default:
 				return role;
 		}
-	};
+	}
 
 	useEffect(() => {
 		loadUsers();

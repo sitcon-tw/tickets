@@ -10,13 +10,13 @@ import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { TicketFormField } from "@/lib/types/api";
-import { getLocalizedText } from "@/lib/utils/localization";
+import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
+import { getLocalizedText } from "@/lib/utils/localization";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import type { FormDataType } from "@/lib/types/data";
 
 export default function FormPage() {
 	const router = useRouter();
@@ -237,7 +237,10 @@ export default function FormPage() {
 					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
 						if (typeof opt === "object" && opt !== null && "label" in opt) {
 							const optWithLabel = opt as { label: unknown };
-							const labelValue = typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label ? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0] : optWithLabel.label;
+							const labelValue =
+								typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
+									? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
+									: optWithLabel.label;
 							return { en: String(labelValue) };
 						}
 						if (typeof opt === "object" && opt !== null) {
@@ -294,8 +297,8 @@ export default function FormPage() {
 
 			// Debug logging
 			if (field.filters?.enabled) {
-				console.log('Field filter evaluation:', {
-					fieldName: typeof field.name === 'object' ? field.name.en : field.name,
+				console.log("Field filter evaluation:", {
+					fieldName: typeof field.name === "object" ? field.name.en : field.name,
 					filters: field.filters,
 					shouldDisplay,
 					ticketId,
@@ -373,12 +376,23 @@ export default function FormPage() {
 							}}
 						>
 							{/* Invitation code field - shown if ticket requires it */}
-							{requiresInviteCode && <Text label={`${t.invitationCode} *`} id="invitationCode" value={invitationCode} onChange={e => setInvitationCode(e.target.value)} required={requiresInviteCode} placeholder={t.invitationCode} />}
+							{requiresInviteCode && (
+								<Text
+									label={`${t.invitationCode} *`}
+									id="invitationCode"
+									value={invitationCode}
+									onChange={e => setInvitationCode(e.target.value)}
+									required={requiresInviteCode}
+									placeholder={t.invitationCode}
+								/>
+							)}
 
 							{/* Dynamic form fields from API - filtered by display conditions */}
 							{visibleFields.map((field, index) => {
 								const fieldName = getLocalizedText(field.name, locale);
-								return <FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
+								return (
+									<FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+								);
 							})}
 
 							{/* Referral code field - always shown and editable */}
@@ -386,7 +400,15 @@ export default function FormPage() {
 
 							{/* Terms and conditions checkbox */}
 							<div>
-								<Checkbox label={t.agreeToTerms} question={t.agreeToTermsQuestion} value={agreeToTerms} required id="agreeToTerms" checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} />
+								<Checkbox
+									label={t.agreeToTerms}
+									question={t.agreeToTermsQuestion}
+									value={agreeToTerms}
+									required
+									id="agreeToTerms"
+									checked={agreeToTerms}
+									onChange={e => setAgreeToTerms(e.target.checked)}
+								/>
 								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>
 									{t.termsLink}
 								</a>

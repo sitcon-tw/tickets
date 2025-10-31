@@ -157,7 +157,7 @@ export default function EventsPage() {
 		} catch (error) {
 			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	async function deleteEvent(eventId: string) {
 		if (!confirm("確定要刪除這個活動嗎？")) return;
@@ -168,7 +168,7 @@ export default function EventsPage() {
 		} catch (error) {
 			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
 		}
-	};
+	}
 
 	function computeStatus(event: Event) {
 		const now = new Date();
@@ -179,7 +179,7 @@ export default function EventsPage() {
 			return { label: t.ended, class: "ended" };
 		}
 		return { label: t.active, class: "active" };
-	};
+	}
 
 	function formatDateTime(dt?: string) {
 		if (!dt) return "";
@@ -189,7 +189,7 @@ export default function EventsPage() {
 		} catch {
 			return dt;
 		}
-	};
+	}
 
 	useEffect(() => {
 		loadEvents();
@@ -317,7 +317,13 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (English)</label>
-												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="admin-textarea" rows={4} placeholder="Plain text description without markdown formatting" />
+												<textarea
+													value={plainDescEn}
+													onChange={e => setPlainDescEn(e.target.value)}
+													className="admin-textarea"
+													rows={4}
+													placeholder="Plain text description without markdown formatting"
+												/>
 											</div>
 										</>
 									)}

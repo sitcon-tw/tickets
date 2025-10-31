@@ -156,7 +156,11 @@ export default function Success() {
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
 						<p>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
-						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
+						<div
+							onClick={handleCopyRefCode}
+							className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4"
+							style={{ padding: "0.1rem 0.5rem" }}
+						>
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : (

@@ -36,13 +36,42 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 			return <Text label={label} id={getLocalizedText(field.name, locale)} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
 
 		case "textarea":
-			return <Textarea label={label} id={getLocalizedText(field.name, locale)} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
+			return (
+				<Textarea
+					label={label}
+					id={getLocalizedText(field.name, locale)}
+					rows={3}
+					placeholder={field.placeholder || ""}
+					required={field.required}
+					value={(value as string) || ""}
+					onChange={onTextChange}
+				/>
+			);
 
 		case "select":
-			return <Select label={label} id={getLocalizedText(field.name, locale)} options={localizedOptions as SelectOption[]} required={field.required} value={(value as string) || ""} onChange={onTextChange} pleaseSelectText={pleaseSelectText} />;
+			return (
+				<Select
+					label={label}
+					id={getLocalizedText(field.name, locale)}
+					options={localizedOptions as SelectOption[]}
+					required={field.required}
+					value={(value as string) || ""}
+					onChange={onTextChange}
+					pleaseSelectText={pleaseSelectText}
+				/>
+			);
 
 		case "radio":
-			return <Radio label={fieldLabel} name={getLocalizedText(field.name, locale)} options={localizedOptions as RadioOption[]} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
+			return (
+				<Radio
+					label={fieldLabel}
+					name={getLocalizedText(field.name, locale)}
+					options={localizedOptions as RadioOption[]}
+					required={field.required}
+					value={(value as string) || ""}
+					onChange={onTextChange}
+				/>
+			);
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {

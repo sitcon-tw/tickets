@@ -20,7 +20,8 @@ const nextConfig: NextConfig = {
 				destination: `${backendUrl}/api/:path*`
 			}
 		];
-	}
+	},
+	outputFileTracingRoot: process.cwd()
 };
 
 export default withNextIntl(nextConfig);

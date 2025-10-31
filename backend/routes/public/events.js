@@ -461,7 +461,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						placeholder: true,
 						values: true,
 						order: true,
-						filters: true,
+						filters: true
 					},
 					orderBy: { order: "asc" }
 				});

@@ -7,13 +7,13 @@
 
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
+import { addSpanEvent } from "#lib/tracing.js";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
+import { tracePrismaOperation } from "#utils/trace-db.js";
 import { validateRegistrationFormData } from "#utils/validation.js";
-import { tracePrismaOperation, traceBusinessOperation, traceValidation } from "#utils/trace-db.js";
-import { addSpanEvent } from "#lib/tracing.js";
 
 /**
  * Public registrations routes with modular schemas and types
@@ -535,16 +535,18 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						}
 					}),
 					// Fetch form fields separately based on the registration's eventId
-					prisma.registration.findFirst({
-						where: { id, userId },
-						select: { eventId: true }
-					}).then(reg => {
-						if (!reg) return [];
-						return prisma.eventFormFields.findMany({
-							where: { eventId: reg.eventId },
-							orderBy: { order: "asc" }
-						});
-					})
+					prisma.registration
+						.findFirst({
+							where: { id, userId },
+							select: { eventId: true }
+						})
+						.then(reg => {
+							if (!reg) return [];
+							return prisma.eventFormFields.findMany({
+								where: { eventId: reg.eventId },
+								orderBy: { order: "asc" }
+							});
+						})
 				]);
 
 				if (!registration) {

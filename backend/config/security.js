@@ -77,18 +77,7 @@ export const getCorsConfig = () => {
 		origin: allowedOrigins,
 		credentials: true,
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-		allowedHeaders: [
-			"Content-Type",
-			"Authorization",
-			"Cookie",
-			"CF-Connecting-IP",
-			"CF-Ray",
-			"CF-IPCountry",
-			"CF-Visitor",
-			"X-Forwarded-For",
-			"X-Forwarded-Proto",
-			"X-Real-IP"
-		],
+		allowedHeaders: ["Content-Type", "Authorization", "Cookie", "CF-Connecting-IP", "CF-Ray", "CF-IPCountry", "CF-Visitor", "X-Forwarded-For", "X-Forwarded-Proto", "X-Real-IP"],
 		exposedHeaders: ["set-cookie"],
 		maxAge: 86400
 	};

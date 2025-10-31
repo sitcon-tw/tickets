@@ -40,10 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 		if (ticketData?.success && ticketData.data) {
 			const ticket = ticketData.data;
 			const ticketName = getLocalizedText(ticket.name, "Ticket");
-			const ticketDescription = getLocalizedText(
-				ticket.plainDescription || ticket.description,
-				`Register for ${ticketName}`
-			);
+			const ticketDescription = getLocalizedText(ticket.plainDescription || ticket.description, `Register for ${ticketName}`);
 
 			return {
 				title: `${ticketName} - ${siteName}`,
@@ -54,12 +51,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 					url: `${site}/${locale}/${eventSlug}/ticket/${ticketId}`,
 					siteName: siteName,
 					locale: locale,
-					type: "website",
+					type: "website"
 				},
 				twitter: {
 					card: "summary_large_image",
 					title: ticketName,
-					description: ticketDescription,
+					description: ticketDescription
 				}
 			};
 		}

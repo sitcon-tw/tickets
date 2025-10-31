@@ -25,7 +25,11 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 		or: { "zh-Hant": "或", "zh-Hans": "或", en: "or" },
 		useQrCode: { "zh-Hant": "使用此 QR Code 進行報到", "zh-Hans": "使用此 QR Code 进行报到", en: "Use this QR Code for check-in" },
 		scanInfo: { "zh-Hant": "向工作人員出示此 QR Code 以進行驗證", "zh-Hans": "向工作人员出示此 QR Code 以进行验证", en: "Show this QR code to the staff for verification" },
-		qrAlert: { "zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷你資料。", "zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷你资料。", en: "Please do not share this QR code with others or they will steal your data." }
+		qrAlert: {
+			"zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷你資料。",
+			"zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷你资料。",
+			en: "Please do not share this QR code with others or they will steal your data."
+		}
 	});
 
 	useEffect(() => {

@@ -3,9 +3,9 @@
 import Spinner from "@/components/Spinner";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
-import { usePathname } from "next/navigation";
 import { useLocale } from "next-intl";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
 type NavProps = {
@@ -49,7 +49,7 @@ export default function Nav({ children }: NavProps) {
 				window.location.reload();
 			}
 		}
-	};
+	}
 
 	const hasAdminAccess = useMemo(() => {
 		if (session.status !== "authenticated" || !session.user.role) return false;
@@ -57,7 +57,8 @@ export default function Nav({ children }: NavProps) {
 		return roles.some(role => role === "admin");
 	}, [session]);
 
-	const userDisplayName = session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
+	const userDisplayName =
+		session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
 
 	useEffect(() => {
 		function handleScroll() {
@@ -98,7 +99,9 @@ export default function Nav({ children }: NavProps) {
 		};
 	}, []);
 
-	if (pathname.includes("/admin")) { return null; }
+	if (pathname.includes("/admin")) {
+		return null;
+	}
 
 	return (
 		<nav

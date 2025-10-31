@@ -126,7 +126,8 @@ await fastify.register(fastifySwaggerUi, {
 		css: [
 			{
 				filename: "theme.css",
-				content: ".topbar{display:none}body,.swagger-ui .scheme-container{background:#F8F6F5}.swagger-ui{color:#F4F6F6}.swagger-ui .opblock-body pre.microlight{font-family: monospace;}*{font-family:'LINESeedTW'!important;.title span{display:none;}}"
+				content:
+					".topbar{display:none}body,.swagger-ui .scheme-container{background:#F8F6F5}.swagger-ui{color:#F4F6F6}.swagger-ui .opblock-body pre.microlight{font-family: monospace;}*{font-family:'LINESeedTW'!important;.title span{display:none;}}"
 			}
 		]
 	}
@@ -243,7 +244,9 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		if (response.ok) {
 			// Redirect to frontend success page with returnUrl if available
-			const successUrl = returnUrl ? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}` : `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
+			const successUrl = returnUrl
+				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
+				: `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
 
 			fastify.log.info(`Magic link verification successful for token: ${token.substring(0, 10)}...`);
 			return reply.redirect(successUrl);
@@ -281,7 +284,7 @@ fastify.setErrorHandler((error, request, reply) => {
 	// Handle Fastify validation errors (FST_ERR_VALIDATION)
 	if (error.validation) {
 		const validationDetails = error.validation.map(err => ({
-			field: err.instancePath.replace(/^\//, ''), // Remove leading slash
+			field: err.instancePath.replace(/^\//, ""), // Remove leading slash
 			message: err.message,
 			keyword: err.keyword
 		}));

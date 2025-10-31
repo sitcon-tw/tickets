@@ -1,5 +1,5 @@
+import { CacheCase, PrismaExtensionRedis } from "prisma-extension-redis";
 import { PrismaClient } from "../generated/prisma/index.js";
-import { PrismaExtensionRedis, CacheCase } from "prisma-extension-redis";
 import { getRedisClient } from "./redis.js";
 
 let basePrisma;

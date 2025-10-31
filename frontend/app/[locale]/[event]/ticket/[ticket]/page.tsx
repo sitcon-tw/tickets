@@ -45,21 +45,21 @@ export default function SetTicket() {
 			"zh-Hans": "找不到活动",
 			en: "Event not found"
 		},
-    failedToLoadEvents: {
-      "zh-Hant": "載入活動失敗",
-      "zh-Hans": "载入活动失败",
-      en: "Failed to load events"
-    },
-    loadFailed: {
-      "zh-Hant": "載入失敗",
-      "zh-Hans": "载入失败",
-      en: "Load failed"
-    },
-    ticketNotFound: {
-      "zh-Hant": "找不到票券",
-      "zh-Hans": "找不到票券",
-      en: "Ticket not found"
-    }
+		failedToLoadEvents: {
+			"zh-Hant": "載入活動失敗",
+			"zh-Hans": "载入活动失败",
+			en: "Failed to load events"
+		},
+		loadFailed: {
+			"zh-Hant": "載入失敗",
+			"zh-Hans": "载入失败",
+			en: "Load failed"
+		},
+		ticketNotFound: {
+			"zh-Hant": "找不到票券",
+			"zh-Hans": "找不到票券",
+			en: "Ticket not found"
+		}
 	});
 
 	const isTicketExpired = (ticket: Ticket): boolean => {
@@ -85,16 +85,16 @@ export default function SetTicket() {
 					return foundEvent.id;
 				} else {
 					showAlert(t.eventNotFound, "error");
-          setHasError(true);
+					setHasError(true);
 				}
 			} else {
 				showAlert(t.loadFailed, "error");
-        setHasError(true);
+				setHasError(true);
 			}
 		} catch (err) {
 			console.error("Failed to load event:", err);
 			showAlert(t.loadFailed, "error");
-      setHasError(true);
+			setHasError(true);
 		}
 	}, [params.event, showAlert, t.eventNotFound, t.loadFailed]);
 
@@ -110,47 +110,50 @@ export default function SetTicket() {
 					return foundTicket;
 				} else {
 					showAlert(t.ticketNotFound, "error");
-          setHasError(true);
+					setHasError(true);
 				}
 			} else {
 				showAlert(t.loadFailed, "error");
-        setHasError(true);
+				setHasError(true);
 			}
 		} catch (err) {
 			console.error("Failed to load ticket:", err);
 			showAlert(t.loadFailed, "error");
-      setHasError(true);
+			setHasError(true);
 		} finally {
 			setLoading(false);
 		}
 	}, [params.ticket, showAlert, t.loadFailed, t.ticketNotFound]);
 
-	const handleTicketSelect = useCallback((ticket: Ticket, eventId: string) => {
-		if (isTicketExpired(ticket)) {
-			showAlert(t.ticketSaleEnded, "warning");
-			return;
-		}
+	const handleTicketSelect = useCallback(
+		(ticket: Ticket, eventId: string) => {
+			if (isTicketExpired(ticket)) {
+				showAlert(t.ticketSaleEnded, "warning");
+				return;
+			}
 
-		if (isTicketSoldOut(ticket)) {
-			showAlert(t.ticketSoldOut, "warning");
-			return;
-		}
+			if (isTicketSoldOut(ticket)) {
+				showAlert(t.ticketSoldOut, "warning");
+				return;
+			}
 
-		const referralCode = new URLSearchParams(window.location.search).get("ref");
-		const invitationCode = new URLSearchParams(window.location.search).get("inv");
+			const referralCode = new URLSearchParams(window.location.search).get("ref");
+			const invitationCode = new URLSearchParams(window.location.search).get("inv");
 
-		try {
-			const formData = {
-				ticketId: ticket.id,
-				eventId: eventId,
-				referralCode: referralCode || localStorage.getItem("referralCode") || undefined,
-				invitationCode: invitationCode || localStorage.getItem("invitationCode") || undefined
-			};
-			localStorage.setItem("formData", JSON.stringify(formData));
-		} catch (error) {
-			console.warn("Unable to access localStorage", error);
-		}
-	}, [t.ticketSaleEnded, t.ticketSoldOut, showAlert]);
+			try {
+				const formData = {
+					ticketId: ticket.id,
+					eventId: eventId,
+					referralCode: referralCode || localStorage.getItem("referralCode") || undefined,
+					invitationCode: invitationCode || localStorage.getItem("invitationCode") || undefined
+				};
+				localStorage.setItem("formData", JSON.stringify(formData));
+			} catch (error) {
+				console.warn("Unable to access localStorage", error);
+			}
+		},
+		[t.ticketSaleEnded, t.ticketSoldOut, showAlert]
+	);
 
 	useEffect(() => {
 		const event = fetchEvent();

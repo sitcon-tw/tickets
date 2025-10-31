@@ -217,14 +217,14 @@ export default function MyRegistrationPage() {
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}
 
 	function handleCancelEdit() {
 		if (registration) {
 			setFormData(registration.formData as FormDataType);
 		}
 		setIsEditing(false);
-	};
+	}
 
 	function formatDate(dateString: string) {
 		const date = new Date(dateString);
@@ -235,7 +235,7 @@ export default function MyRegistrationPage() {
 			hour: "2-digit",
 			minute: "2-digit"
 		});
-	};
+	}
 
 	useEffect(() => {
 		async function loadRegistration() {
@@ -281,14 +281,16 @@ export default function MyRegistrationPage() {
 								try {
 									const parsed = JSON.parse(description);
 									description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-								} catch {
-								}
+								} catch {}
 							}
 
 							const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
 								if (typeof opt === "object" && opt !== null && "label" in opt) {
 									const optWithLabel = opt as { label: unknown };
-									const labelValue = typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label ? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0] : optWithLabel.label;
+									const labelValue =
+										typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
+											? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
+											: optWithLabel.label;
 									return { en: String(labelValue) };
 								}
 								if (typeof opt === "object" && opt !== null) {
@@ -435,7 +437,13 @@ export default function MyRegistrationPage() {
 												color: registration.status === "confirmed" ? "green" : registration.status === "cancelled" ? "red" : "orange"
 											}}
 										>
-											{registration.status === "confirmed" ? t.statusConfirmed : registration.status === "cancelled" ? t.statusCancelled : registration.status === "pending" ? t.statusPending : registration.status}
+											{registration.status === "confirmed"
+												? t.statusConfirmed
+												: registration.status === "cancelled"
+													? t.statusCancelled
+													: registration.status === "pending"
+														? t.statusPending
+														: registration.status}
 										</span>
 									</div>
 									<div>
@@ -474,7 +482,16 @@ export default function MyRegistrationPage() {
 										const fieldName = getLocalizedText(field.name, locale);
 
 										if (isEditing) {
-											return <FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
+											return (
+												<FormField
+													key={index}
+													field={field}
+													value={formData[fieldName] || ""}
+													onTextChange={handleTextChange}
+													onCheckboxChange={handleCheckboxChange}
+													pleaseSelectText={t.pleaseSelect}
+												/>
+											);
 										} else {
 											// Display as read-only
 											const value = formData[fieldName];

@@ -168,11 +168,9 @@ const shouldDisplayField = (field, ticketId, formData, allFields) => {
 
 				switch (operator) {
 					case "filled":
-						return fieldValue !== undefined && fieldValue !== null && fieldValue !== "" &&
-							   !(Array.isArray(fieldValue) && fieldValue.length === 0);
+						return fieldValue !== undefined && fieldValue !== null && fieldValue !== "" && !(Array.isArray(fieldValue) && fieldValue.length === 0);
 					case "notFilled":
-						return fieldValue === undefined || fieldValue === null || fieldValue === "" ||
-							   (Array.isArray(fieldValue) && fieldValue.length === 0);
+						return fieldValue === undefined || fieldValue === null || fieldValue === "" || (Array.isArray(fieldValue) && fieldValue.length === 0);
 					case "equals":
 						return String(fieldValue) === String(condition.value);
 					default:
@@ -193,9 +191,7 @@ const shouldDisplayField = (field, ticketId, formData, allFields) => {
 	});
 
 	// Apply logical operator (AND/OR)
-	const conditionsMet = filter.operator === "and"
-		? results.every(r => r)
-		: results.some(r => r);
+	const conditionsMet = filter.operator === "and" ? results.every(r => r) : results.some(r => r);
 
 	// Apply action (display/hide)
 	return filter.action === "display" ? conditionsMet : !conditionsMet;

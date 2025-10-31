@@ -102,7 +102,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		const ua = navigator.userAgent;
 		const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
 		setIsSafari(isSafariBrowser);
-		
+
 		let cancelled = false;
 
 		async function handleWelcome() {

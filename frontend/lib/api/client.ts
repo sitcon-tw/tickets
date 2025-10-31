@@ -145,8 +145,7 @@ class APIClient {
 					} else if (errorData.detail) {
 						if (typeof errorData.detail === "string") {
 							errorMessage = errorData.detail;
-						}
-						else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+						} else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
 							errorMessage = errorData.detail.map(d => d.msg).join(", ");
 						} else {
 							errorMessage = `HTTP ${response.status}: ${response.statusText}`;

@@ -5,10 +5,10 @@ import Info from "@/components/home/Info";
 import Tickets from "@/components/home/Tickets";
 import Welcome from "@/components/home/Welcome";
 import PageSpinner from "@/components/PageSpinner";
-import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { EventListItem } from "@/lib/types/api";
+import { useLocale } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

@@ -12,7 +12,16 @@ interface FallingTextProps {
 	fontSize?: string;
 }
 
-const FallingText: React.FC<FallingTextProps> = ({ text = "", highlightWords = [], trigger = "auto", backgroundColor = "transparent", wireframes = false, gravity = 1, mouseConstraintStiffness = 0.2, fontSize = "1rem" }) => {
+const FallingText: React.FC<FallingTextProps> = ({
+	text = "",
+	highlightWords = [],
+	trigger = "auto",
+	backgroundColor = "transparent",
+	wireframes = false,
+	gravity = 1,
+	mouseConstraintStiffness = 0.2,
+	fontSize = "1rem"
+}) => {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const textRef = useRef<HTMLDivElement | null>(null);
 	const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -169,7 +178,12 @@ const FallingText: React.FC<FallingTextProps> = ({ text = "", highlightWords = [
 	};
 
 	return (
-		<div ref={containerRef} className="relative z-[1] w-full h-full cursor-pointer text-center pt-8 overflow-hidden" onClick={trigger === "click" ? handleTrigger : undefined} onMouseEnter={trigger === "hover" ? handleTrigger : undefined}>
+		<div
+			ref={containerRef}
+			className="relative z-[1] w-full h-full cursor-pointer text-center pt-8 overflow-hidden"
+			onClick={trigger === "click" ? handleTrigger : undefined}
+			onMouseEnter={trigger === "hover" ? handleTrigger : undefined}
+		>
 			<div
 				ref={textRef}
 				className="inline-block"

@@ -58,7 +58,7 @@ export default function MagicLinkVerify() {
 				setErrorMessage(t.errorInvalidLink);
 				showAlert(t.errorInvalidLink, "error");
 			}
-		}, 10000); 
+		}, 10000);
 
 		if (status === "success") {
 			clearTimeout(verificationTimeout);

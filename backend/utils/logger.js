@@ -6,7 +6,23 @@
 /**
  * Sensitive fields that should be redacted from logs
  */
-const SENSITIVE_FIELDS = ["password", "token", "secret", "apiKey", "api_key", "authorization", "cookie", "session", "accessToken", "refreshToken", "idToken", "BETTER_AUTH_SECRET", "MAILTRAP_TOKEN", "DATABASE_URL", "POSTGRES_URI"];
+const SENSITIVE_FIELDS = [
+	"password",
+	"token",
+	"secret",
+	"apiKey",
+	"api_key",
+	"authorization",
+	"cookie",
+	"session",
+	"accessToken",
+	"refreshToken",
+	"idToken",
+	"BETTER_AUTH_SECRET",
+	"MAILTRAP_TOKEN",
+	"DATABASE_URL",
+	"POSTGRES_URI"
+];
 
 /**
  * Redact sensitive information from an object

@@ -3,7 +3,7 @@
  * Provides manual tracing for Prisma database operations
  */
 
-import { withSpan, addSpanEvent } from "#lib/tracing.js";
+import { addSpanEvent, withSpan } from "#lib/tracing.js";
 
 /**
  * Trace a Prisma database operation
@@ -15,15 +15,15 @@ import { withSpan, addSpanEvent } from "#lib/tracing.js";
  */
 export async function tracePrismaOperation(model, operation, fn, queryParams = {}) {
 	const spanName = `prisma.${model}.${operation}`;
-	
+
 	return withSpan(
 		spanName,
-		async (span) => {
+		async span => {
 			// Add database-specific attributes
 			span.setAttribute("db.system", "postgresql");
 			span.setAttribute("db.operation", operation);
 			span.setAttribute("db.prisma.model", model);
-			
+
 			// Add query parameters as attributes (be careful with sensitive data)
 			if (queryParams.where) {
 				span.setAttribute("db.where", JSON.stringify(queryParams.where));
@@ -46,7 +46,7 @@ export async function tracePrismaOperation(model, operation, fn, queryParams = {
 			// Record completion
 			addSpanEvent("db.query.complete", {
 				"db.query.duration_ms": duration,
-				"db.result.count": Array.isArray(result) ? result.length : (result ? 1 : 0)
+				"db.result.count": Array.isArray(result) ? result.length : result ? 1 : 0
 			});
 
 			span.setAttribute("db.query.duration_ms", duration);
@@ -70,24 +70,21 @@ export async function tracePrismaOperation(model, operation, fn, queryParams = {
  */
 export async function traceRedisOperation(operation, key, fn) {
 	const spanName = `redis.${operation}`;
-	
-	return withSpan(
-		spanName,
-		async (span) => {
-			span.setAttribute("db.system", "redis");
-			span.setAttribute("db.operation", operation);
-			span.setAttribute("db.redis.key", key);
 
-			const startTime = Date.now();
-			const result = await fn();
-			const duration = Date.now() - startTime;
+	return withSpan(spanName, async span => {
+		span.setAttribute("db.system", "redis");
+		span.setAttribute("db.operation", operation);
+		span.setAttribute("db.redis.key", key);
 
-			span.setAttribute("db.query.duration_ms", duration);
-			span.setAttribute("cache.hit", result !== null && result !== undefined);
+		const startTime = Date.now();
+		const result = await fn();
+		const duration = Date.now() - startTime;
 
-			return result;
-		}
-	);
+		span.setAttribute("db.query.duration_ms", duration);
+		span.setAttribute("cache.hit", result !== null && result !== undefined);
+
+		return result;
+	});
 }
 
 /**
@@ -100,13 +97,13 @@ export async function traceRedisOperation(operation, key, fn) {
 export async function traceBusinessOperation(operationName, fn, attributes = {}) {
 	return withSpan(
 		operationName,
-		async (span) => {
+		async span => {
 			const startTime = Date.now();
 			const result = await fn(span);
 			const duration = Date.now() - startTime;
 
 			span.setAttribute("operation.duration_ms", duration);
-			
+
 			return result;
 		},
 		{
@@ -126,7 +123,7 @@ export async function traceBusinessOperation(operationName, fn, attributes = {})
 export async function traceEmailOperation(recipient, subject, fn) {
 	return withSpan(
 		"email.send",
-		async (span) => {
+		async span => {
 			span.setAttribute("email.recipient", recipient);
 			span.setAttribute("email.subject", subject);
 
@@ -150,20 +147,17 @@ export async function traceEmailOperation(recipient, subject, fn) {
  * @returns {Promise<any>}
  */
 export async function traceSMSOperation(phoneNumber, fn) {
-	return withSpan(
-		"sms.send",
-		async (span) => {
-			// Mask phone number for privacy (show only last 4 digits)
-			const maskedPhone = phoneNumber.slice(0, -4).replace(/\d/g, '*') + phoneNumber.slice(-4);
-			span.setAttribute("sms.phone_number", maskedPhone);
+	return withSpan("sms.send", async span => {
+		// Mask phone number for privacy (show only last 4 digits)
+		const maskedPhone = phoneNumber.slice(0, -4).replace(/\d/g, "*") + phoneNumber.slice(-4);
+		span.setAttribute("sms.phone_number", maskedPhone);
 
-			const result = await fn();
+		const result = await fn();
 
-			span.setAttribute("sms.sent", true);
+		span.setAttribute("sms.sent", true);
 
-			return result;
-		}
-	);
+		return result;
+	});
 }
 
 /**
@@ -176,11 +170,11 @@ export async function traceSMSOperation(phoneNumber, fn) {
 export async function traceValidation(validationType, fn, attributes = {}) {
 	return withSpan(
 		`validation.${validationType}`,
-		async (span) => {
+		async span => {
 			const result = await fn();
-			
+
 			span.setAttribute("validation.passed", !!result);
-			
+
 			return result;
 		},
 		{
