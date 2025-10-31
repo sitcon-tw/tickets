@@ -26,6 +26,7 @@ export default function Success() {
 	const [viewRegLoading, setViewRegLoading] = useState(false);
 	const [registrationId, setRegistrationId] = useState<string | null>(null);
 	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
+	const [userName, setUserName] = useState<string | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -126,10 +127,15 @@ export default function Success() {
 
 					const registrations = await registrationsAPI.getAll();
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
-					console.log(eventRegistration);
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
 						setRegistrationTime(eventRegistration.createdAt);
+						// Try to get the user's name from formData (commonly 'name' or '姓名')
+						let name = null;
+						if (eventRegistration.formData) {
+							 name = eventRegistration.formData.name || eventRegistration.formData["姓名"] || null;
+						}
+						setUserName(typeof name === "string" ? name : null);
 						const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
 						setReferralCode(code);
 					} else {
@@ -226,7 +232,7 @@ export default function Success() {
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">
-					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={userName ?? undefined} />
 				</div>
 			</div>
 			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}

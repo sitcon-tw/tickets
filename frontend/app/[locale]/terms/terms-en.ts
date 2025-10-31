@@ -41,7 +41,7 @@ You may exercise the following rights regarding your personal data:
 * Request cessation of collection, processing, or use
 * Request deletion
 
-**How to Apply:** Log into the system and submit your request through the personal information page, or email us at contact@sitcon.org.
+**How to Apply:** Log into the system and submit your request through the personal information page, or email us at ticket@sitcon.org.
  For security purposes, we may require identity verification. Requests may be denied or postponed if required by law, for the protection of rights, or for significant public interest.
 
 ## **6\\. Protection of Minors**
@@ -58,7 +58,7 @@ This policy may be updated in response to changes in laws, services, or security
 
 ## **9\\. Contact Information**
 
-For questions regarding this policy or to exercise your data rights, please contact the SITCON organizing team at contact@sitcon.org.
+For questions regarding this policy or to exercise your data rights, please contact the SITCON organizing team at ticket@sitcon.org.
 
 **Effective Date:** October 11, 2025
 
@@ -114,7 +114,7 @@ These terms are governed by the laws of the Republic of China (Taiwan). In case 
 
 ## **9\\. Contact Information**
 
-For any questions regarding these terms or related services, please contact the SITCON organizing team at contact@sitcon.org.
+For any questions regarding these terms or related services, please contact the SITCON organizing team at ticket@sitcon.org.
 
 **Effective Date:** October 11, 2025
 `;

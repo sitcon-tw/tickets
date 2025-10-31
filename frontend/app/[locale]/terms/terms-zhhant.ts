@@ -33,7 +33,7 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 ## 五、當事人權利（個資法第 3 條）
 
 您得就您的個人資料行使：查詢或請求閱覽、請求製給複本、請求補充或更正、請求停止蒐集/處理/利用、請求刪除。  
-申請方式：請登入系統於個人資料相關頁面提出，或來信 [contact@sitcon.org](mailto:contact@sitcon.org)。為保護權益，得請您提供必要識別資訊。依法定義務、權利主張或維護重大公共利益之情形，得依法拒絕或延後處理。
+申請方式：請登入系統於個人資料相關頁面提出，或來信 [ticket@sitcon.org](mailto:ticket@sitcon.org)。為保護權益，得請您提供必要識別資訊。依法定義務、權利主張或維護重大公共利益之情形，得依法拒絕或延後處理。
 
 ## 六、未成年人保護
 
@@ -49,7 +49,7 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 
 ## 九、聯絡方式
 
-如對本政策或個資行使權利有疑問，請來信 [contact@sitcon.org](mailto:contact@sitcon.org) 與 SITCON 籌備團隊聯繫。
+如對本政策或個資行使權利有疑問，請來信 [ticket@sitcon.org](mailto:ticket@sitcon.org) 與 SITCON 籌備團隊聯繫。
 
 生效日：2025-10-11
 
@@ -98,6 +98,6 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 
 ## 玖、聯絡方式
 
-如對本條款或服務有疑問，請來信 [contact@sitcon.org](mailto:contact@sitcon.org) 與 SITCON 籌備團隊聯繫。
+如對本條款或服務有疑問，請來信 [ticket@sitcon.org](mailto:ticket@sitcon.org) 與 SITCON 籌備團隊聯繫。
 
 生效日：2025-10-11  `;

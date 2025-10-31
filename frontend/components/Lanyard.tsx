@@ -11,38 +11,42 @@ const lanyard = "/assets/lanyard.png";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
+import { Text } from "@react-three/drei";
+
 interface LanyardProps {
 	position?: [number, number, number];
 	gravity?: [number, number, number];
 	fov?: number;
 	transparent?: boolean;
+	name?: string;
 }
 
-export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true }: LanyardProps) {
-	return (
-		<div className="absolute inset-0 w-full h-full flex justify-center items-center transform scale-100 origin-center">
-			<Canvas camera={{ position, fov }} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
-				<ambientLight intensity={Math.PI} />
-				<Physics gravity={gravity} timeStep={1 / 60}>
-					<Band />
-				</Physics>
-				<Environment blur={0.75}>
-					<Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-					<Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-					<Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
-					<Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
-				</Environment>
-			</Canvas>
-		</div>
-	);
+export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name }: LanyardProps) {
+       return (
+	       <div className="absolute inset-0 w-full h-full flex justify-center items-center transform scale-100 origin-center">
+		       <Canvas camera={{ position, fov }} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
+			       <ambientLight intensity={Math.PI} />
+			       <Physics gravity={gravity} timeStep={1 / 60}>
+				       <Band name={name} />
+			       </Physics>
+			       <Environment blur={0.75}>
+				       <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+				       <Lightformer intensity={3} color="white" position={[-1, -1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+				       <Lightformer intensity={3} color="white" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
+				       <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
+			       </Environment>
+		       </Canvas>
+	       </div>
+       );
 }
 
 interface BandProps {
 	maxSpeed?: number;
 	minSpeed?: number;
+	name?: string;
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
+function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 	const band = useRef<THREE.Mesh & { geometry: MeshLineGeometry }>(null);
 	const fixed = useRef<RapierRigidBody>(null!);
 	const j1 = useRef<RapierRigidBody>(null!);
@@ -155,26 +159,41 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
 				</RigidBody>
 				<RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? ("kinematicPosition" as RigidBodyProps["type"]) : ("dynamic" as RigidBodyProps["type"])}>
 					<CuboidCollider args={[0.8, 1.125, 0.01]} />
-					<group
-						scale={2.25}
-						position={[0, -1.2, -0.05]}
-						onPointerOver={() => hover(true)}
-						onPointerOut={() => hover(false)}
-						onPointerUp={(e: React.PointerEvent<THREE.Group>) => {
-							(e.target as Element).releasePointerCapture(e.pointerId);
-							drag(false);
-						}}
-						onPointerDown={(e: React.PointerEvent<THREE.Group> & { point: THREE.Vector3 }) => {
-							(e.target as Element).setPointerCapture(e.pointerId);
-							drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current!.translation())));
-						}}
-					>
-						<mesh geometry={nodes.card.geometry}>
-							<meshPhysicalMaterial map={materials.base.map} map-anisotropy={16} clearcoat={1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
-						</mesh>
-						<mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
-						<mesh geometry={nodes.clamp.geometry} material={materials.metal} />
-					</group>
+			       <group
+				       scale={2.25}
+				       position={[0, -1.2, -0.05]}
+				       onPointerOver={() => hover(true)}
+				       onPointerOut={() => hover(false)}
+				       onPointerUp={(e: React.PointerEvent<THREE.Group>) => {
+					       (e.target as Element).releasePointerCapture(e.pointerId);
+					       drag(false);
+				       }}
+				       onPointerDown={(e: React.PointerEvent<THREE.Group> & { point: THREE.Vector3 }) => {
+					       (e.target as Element).setPointerCapture(e.pointerId);
+					       drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current!.translation())));
+				       }}
+			       >
+				       <mesh geometry={nodes.card.geometry}>
+					       <meshPhysicalMaterial map={materials.base.map} map-anisotropy={16} clearcoat={1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
+				       </mesh>
+				       <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
+				       <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
+				       {name && (
+					       <Text
+						       position={[0, 0, 0.07]}
+						       fontSize={0.3}
+						       color="#222"
+						       anchorX="center"
+						       anchorY="middle"
+						       outlineColor="#fff"
+						       outlineWidth={0.01}
+						       maxWidth={1.5}
+						       textAlign="center"
+					       >
+						       {name}
+					       </Text>
+				       )}
+			       </group>
 				</RigidBody>
 			</group>
 			<mesh ref={band}>
