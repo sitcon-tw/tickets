@@ -16,11 +16,7 @@ export const auth = betterAuth({
 	trustedOrigins: [
 		process.env.FRONTEND_URI || "http://localhost:4321",
 		process.env.BACKEND_URI || "http://localhost:3000",
-		...(process.env.NODE_ENV !== "production" ? [
-			"http://127.0.0.1:4322",
-			"http://127.0.2.2:4322",
-			"http://localhost:4322"
-		] : [])
+		...(process.env.NODE_ENV !== "production" ? ["http://127.0.0.1:4322", "http://127.0.2.2:4322", "http://localhost:4322"] : [])
 	],
 	session: {
 		cookieCache: {

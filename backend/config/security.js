@@ -71,7 +71,7 @@ export const getCorsConfig = () => {
 	if (process.env.NODE_ENV !== "production") {
 		allowedOrigins.push(/^http:\/\/localhost:\d+$/);
 		allowedOrigins.push(/^http:\/\/127\.0\.0\.1:\d+$/);
-        allowedOrigins.push(/^http:\/\/127\.0\.2\.2:\d+$/);
+		allowedOrigins.push(/^http:\/\/127\.0\.2\.2:\d+$/);
 	}
 
 	return {

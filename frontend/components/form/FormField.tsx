@@ -78,7 +78,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 				const currentValues = Array.isArray(value) ? value : [];
 				return <MultiCheckbox label={label} name={getLocalizedText(field.name, locale)} options={localizedOptions as CheckboxOption[]} values={currentValues} onChange={onCheckboxChange} />;
 			} else {
-				   return <Checkbox label={label} id={getLocalizedText(field.name, locale)} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
+				return <Checkbox label={label} id={getLocalizedText(field.name, locale)} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
 			}
 
 		default:

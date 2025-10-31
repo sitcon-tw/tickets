@@ -24,7 +24,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 		];
 
 		// Load and render template using JS string replacement
-	const templatePath = path.join(__dirname, "../email-templates/registration-confirmation.html");
+		const templatePath = path.join(__dirname, "../email-templates/registration-confirmation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template
 			.replace(/\{\{eventName\}\}/g, event.name)
@@ -64,7 +64,7 @@ export const sendEditLink = async (email, editToken, event) => {
 		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
 
 		// Load and render template using JS string replacement
-	const templatePath = path.join(__dirname, "../email-templates/edit-link.html");
+		const templatePath = path.join(__dirname, "../email-templates/edit-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{eventName\}\}/g, event.name).replace(/\{\{editUrl\}\}/g, editUrl);
 
@@ -106,7 +106,7 @@ export const sendMagicLink = async (email, magicLink) => {
 			}
 		];
 		// Load and render template using JS string replacement
-	const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
+		const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
 		await client.send({
