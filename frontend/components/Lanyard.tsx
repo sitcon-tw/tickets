@@ -77,11 +77,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 
 		if (estimatedLines > maxLines) {
 			const scaleFactor = maxLines / estimatedLines;
-			return Math.max(0.1, baseFontSize * scaleFactor);
-		}
-
-		if (estimatedWidth > maxWidth) {
-			return Math.max(0.1, baseFontSize * (maxWidth / estimatedWidth) * 0.95);
+			return Math.max(0.08, baseFontSize * scaleFactor);
 		}
 
 		return baseFontSize;
@@ -213,8 +209,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 						       color="#fff"
 						       anchorX="center"
 						       anchorY="middle"
-						       outlineColor="#222"
-						       outlineWidth={0.005}
 						       maxWidth={0.7}
 						       textAlign="center"
 						       font="/fonts/NotoSansTC-Regular.ttf"
