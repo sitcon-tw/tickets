@@ -11,7 +11,7 @@ export const rateLimitConfig = {
 		timeWindow: process.env.RATE_LIMIT_WINDOW || "10 minutes",
 		cache: 10000,
 		allowList: req => {
-			return process.env.NODE_ENV !== "production" && (req.ip === "127.0.0.1" || req.ip === "::1");
+			return process.env.NODE_ENV !== "production" && (req.ip.startsWith("127.0.") || req.ip === "::1");
 		},
 		skipOnError: false
 	},
@@ -71,6 +71,7 @@ export const getCorsConfig = () => {
 	if (process.env.NODE_ENV !== "production") {
 		allowedOrigins.push(/^http:\/\/localhost:\d+$/);
 		allowedOrigins.push(/^http:\/\/127\.0\.0\.1:\d+$/);
+        allowedOrigins.push(/^http:\/\/127\.0\.2\.2:\d+$/);
 	}
 
 	return {

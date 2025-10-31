@@ -1,7 +1,10 @@
 import prisma from "#config/database.js";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
+
 import path from "path";
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
 
 const client = new MailtrapClient({
 	token: process.env.MAILTRAP_TOKEN
@@ -21,7 +24,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 		];
 
 		// Load and render template using JS string replacement
-		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/registration-confirmation.html");
+	const templatePath = path.join(__dirname, "../email-templates/registration-confirmation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template
 			.replace(/\{\{eventName\}\}/g, event.name)
@@ -61,7 +64,7 @@ export const sendEditLink = async (email, editToken, event) => {
 		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
 
 		// Load and render template using JS string replacement
-		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/edit-link.html");
+	const templatePath = path.join(__dirname, "../email-templates/edit-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{eventName\}\}/g, event.name).replace(/\{\{editUrl\}\}/g, editUrl);
 
@@ -103,7 +106,7 @@ export const sendMagicLink = async (email, magicLink) => {
 			}
 		];
 		// Load and render template using JS string replacement
-		const templatePath = path.join(__dirname || path.dirname(new URL(import.meta.url).pathname), "../email-templates/magic-link.html");
+	const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
 		await client.send({

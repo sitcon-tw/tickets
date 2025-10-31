@@ -25,7 +25,10 @@ const fastify = Fastify({
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
-	trustProxy: true
+	trustProxy: true,
+	logger: {
+		level: "error"
+	}
 });
 
 // Register OpenTelemetry plugin for automatic HTTP request tracing

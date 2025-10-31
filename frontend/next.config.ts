@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
 			test: /\.(glb|gltf)$/,
 			type: "asset/resource"
 		});
+
 		return config;
 	},
 	async rewrites() {

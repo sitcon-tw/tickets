@@ -13,7 +13,15 @@ export const auth = betterAuth({
 	}),
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
-	trustedOrigins: [process.env.FRONTEND_URI || "http://localhost:4321", process.env.BACKEND_URI || "http://localhost:3000"],
+	trustedOrigins: [
+		process.env.FRONTEND_URI || "http://localhost:4321",
+		process.env.BACKEND_URI || "http://localhost:3000",
+		...(process.env.NODE_ENV !== "production" ? [
+			"http://127.0.0.1:4322",
+			"http://127.0.2.2:4322",
+			"http://localhost:4322"
+		] : [])
+	],
 	session: {
 		cookieCache: {
 			enabled: true,
