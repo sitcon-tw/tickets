@@ -47,8 +47,8 @@ export default function FormPage() {
 			en: "Form data incomplete, please select ticket again"
 		},
 		registrationFailedAlert: {
-			"zh-Hant": "報名失敗: ",
-			"zh-Hans": "报名失败: ",
+			"zh-Hant": "報名失敗：",
+			"zh-Hans": "报名失败：",
 			en: "Registration failed: "
 		},
 		pleaseSelect: {
@@ -72,8 +72,8 @@ export default function FormPage() {
 			en: "Loading form..."
 		},
 		loadFormFailed: {
-			"zh-Hant": "載入表單失敗: ",
-			"zh-Hans": "载入表单失败: ",
+			"zh-Hant": "載入表單失敗：",
+			"zh-Hans": "载入表单失败：",
 			en: "Failed to load form: "
 		},
 		backToHome: {

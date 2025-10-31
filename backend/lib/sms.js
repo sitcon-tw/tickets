@@ -118,8 +118,8 @@ export function generateVerificationCode() {
  */
 export async function sendVerificationCode(phoneNumber, code, locale = "zh-Hant") {
 	const messages = {
-		"zh-Hant": `[SITCON] 您的驗證碼是：${code}\n此驗證碼將在10分鐘後過期。(twsms)`,
-		"zh-Hans": `[SITCON] 您的验证码是：${code}\n此验证码将在10分钟后过期。(twsms)`,
+		"zh-Hant": `[SITCON] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(twsms)`,
+		"zh-Hans": `[SITCON] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(twsms)`,
 		en: `[SITCON] Your verification code is: ${code}\nThis code will expire in 10 minutes. (twsms)`
 	};
 

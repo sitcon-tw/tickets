@@ -202,7 +202,7 @@ export default function InvitesPage() {
 			setShowModal(false);
 			showAlert(t.createSuccess.replace("{count}", count.toString()), "success");
 		} catch (error) {
-			showAlert("創建失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -215,7 +215,7 @@ export default function InvitesPage() {
 			await loadInvitationCodes();
 			showAlert(t.deleteSuccess, "success");
 		} catch (error) {
-			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -252,7 +252,7 @@ export default function InvitesPage() {
 				showAlert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()), "success");
 			}
 		} catch (error) {
-			showAlert("批次刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("批次刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -359,7 +359,7 @@ export default function InvitesPage() {
 				showAlert(t.importSuccess.replace("{count}", successCount.toString()), "success");
 			}
 		} catch (error) {
-			showAlert("匯入失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("匯入失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsImporting(false);
 		}

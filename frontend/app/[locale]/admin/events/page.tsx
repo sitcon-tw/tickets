@@ -155,7 +155,7 @@ export default function EventsPage() {
 			await loadEvents();
 			closeModal();
 		} catch (error) {
-			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -166,7 +166,7 @@ export default function EventsPage() {
 			await adminEventsAPI.delete(eventId);
 			await loadEvents();
 		} catch (error) {
-			showAlert("刪除失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -336,7 +336,7 @@ export default function EventsPage() {
 												<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="admin-input" />
 											</div>
 											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (繁體中文, Markdown)</label>
+												<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
 												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-textarea" rows={6} />
 												{descZhHant && (
 													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
@@ -360,7 +360,7 @@ export default function EventsPage() {
 												<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="admin-input" />
 											</div>
 											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (简体中文, Markdown)</label>
+												<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
 												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-textarea" rows={6} />
 												{descZhHans && (
 													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>

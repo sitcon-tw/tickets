@@ -283,7 +283,7 @@ export const validateRegistrationFormData = (formData, formFields, ticketId = nu
 							.flat();
 
 						if (!validValues.includes(value)) {
-							fieldErrors.push(`${field.description}選項無效，可選值: ${validValues.join(", ")}`);
+							fieldErrors.push(`${field.description}選項無效，可選值：${validValues.join(", ")}`);
 						}
 					} catch (e) {
 						fieldErrors.push(`${field.description}選項配置錯誤`);
@@ -321,7 +321,7 @@ export const validateRegistrationFormData = (formData, formFields, ticketId = nu
 						// Check each selected value is valid
 						const invalidValues = value.filter(v => !validValues.includes(v));
 						if (invalidValues.length > 0) {
-							fieldErrors.push(`${field.description}包含無效選項: ${invalidValues.join(", ")}`);
+							fieldErrors.push(`${field.description}包含無效選項：${invalidValues.join(", ")}`);
 						}
 					} catch (e) {
 						fieldErrors.push(`${field.description}選項配置錯誤`);

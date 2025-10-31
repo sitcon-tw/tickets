@@ -152,7 +152,7 @@ export default function EmailCampaignsPage() {
 				showAlert("郵件發送任務已建立", "success");
 			}
 		} catch (error) {
-			showAlert("建立失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("建立失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -165,7 +165,7 @@ export default function EmailCampaignsPage() {
 				setShowPreviewModal(true);
 			}
 		} catch (error) {
-			showAlert("預覽失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("預覽失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -195,7 +195,7 @@ export default function EmailCampaignsPage() {
 				}
 			}
 		} catch (error) {
-			showAlert("計算失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("計算失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -211,7 +211,7 @@ export default function EmailCampaignsPage() {
 				loadCampaigns();
 			}
 		} catch (error) {
-			showAlert("發送失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("發送失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 
@@ -225,7 +225,7 @@ export default function EmailCampaignsPage() {
 			showAlert("已取消", "success");
 			loadCampaigns();
 		} catch (error) {
-			showAlert("取消失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("取消失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	};
 

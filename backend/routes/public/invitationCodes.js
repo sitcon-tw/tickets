@@ -59,7 +59,7 @@ export default async function invitationCodesRoutes(fastify, options) {
 				const { code, ticketId } = request.body;
 
 				if (!code || !ticketId) {
-					const { response, statusCode } = validationErrorResponse("邀請碼和票券ID為必填");
+					const { response, statusCode } = validationErrorResponse("邀請碼和票券 ID 為必填");
 					return reply.code(statusCode).send(response);
 				}
 

@@ -9,8 +9,8 @@ export default function AccountDisabled() {
 
 	const t = getTranslations(locale, {
 		message: {
-			"zh-Hant": "您的 帳號 已 被 停用 ， 目前 無法 存取 系 統 功 能 。",
-			"zh-Hans": "您的 账号 已 被 停用 ， 目前 无法 访问 系 统 功 能 。",
+			"zh-Hant": "您的 帳號 已 被 停用，目前 無法 存取 系 統 功 能。",
+			"zh-Hans": "您的 账号 已 被 停用，目前 无法 访问 系 统 功 能。",
 			en: "Your account has been disabled and you cannot access the system at this time."
 		}
 	});

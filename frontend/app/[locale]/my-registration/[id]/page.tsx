@@ -46,8 +46,8 @@ export default function MyRegistrationPage() {
 			en: "Loading..."
 		},
 		loadFailed: {
-			"zh-Hant": "載入失敗: ",
-			"zh-Hans": "载入失败: ",
+			"zh-Hant": "載入失敗：",
+			"zh-Hans": "载入失败：",
 			en: "Failed to load: "
 		},
 		backToRegistrations: {
@@ -141,8 +141,8 @@ export default function MyRegistrationPage() {
 			en: "Saved successfully!"
 		},
 		saveFailed: {
-			"zh-Hant": "儲存失敗: ",
-			"zh-Hans": "保存失败: ",
+			"zh-Hant": "儲存失敗：",
+			"zh-Hans": "保存失败：",
 			en: "Failed to save: "
 		},
 		cannotEdit: {

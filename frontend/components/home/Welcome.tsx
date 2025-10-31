@@ -27,8 +27,8 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 	const t = getTranslations(locale, {
 		description: {
-			"zh-Hant": "毛哥EM的網站起始模板，使用Astro和Fastify構建。",
-			"zh-Hans": "毛哥EM的网站起始模板，使用Astro和Fastify构建。",
+			"zh-Hant": "毛哥 EM 的網站起始模板，使用 Astro 和 Fastify 構建。",
+			"zh-Hans": "毛哥 EM 的网站起始模板，使用 Astro 和 Fastify 构建。",
 			en: "Elvis Mao's Website starter template using Astro and Fastify."
 		},
 		loggedInWelcome: {
@@ -82,8 +82,8 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			en: "Load failed"
 		},
 		promotionalText: {
-			"zh-Hant": "最後一個註冊的是gay",
-			"zh-Hans": "最後一個註冊的是gay",
+			"zh-Hant": "最後一個註冊的是 gay",
+			"zh-Hans": "最後一個註冊的是 gay",
 			en: "The last one who registered is gay!"
 		},
 		friend: {

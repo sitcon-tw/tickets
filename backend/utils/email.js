@@ -437,7 +437,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 					<h2 style="color: #2c3e50;">報名資料異動</h2>
 					<p>Dear Sir,</p>
 					
-					<p>您舉辦的活動中報名人(詳見下列)要求刪除在 SITCON 存放的個人資料。根據台灣政府的個人資料保護法規定，我們必須刪除該筆記錄，也應告知您不可以繼續保存或持有該筆個人資料。在 SITCON 上的所有帳務相關資料仍將依法保存。</p>
+					<p>您舉辦的活動中報名人 (詳見下列) 要求刪除在 SITCON 存放的個人資料。根據台灣政府的個人資料保護法規定，我們必須刪除該筆記錄，也應告知您不可以繼續保存或持有該筆個人資料。在 SITCON 上的所有帳務相關資料仍將依法保存。</p>
 					
 					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
 						<h3 style="color: #2c3e50; margin-top: 0;">刪除資料明細 Deletion Details</h3>

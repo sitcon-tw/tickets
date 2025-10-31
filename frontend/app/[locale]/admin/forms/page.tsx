@@ -67,7 +67,7 @@ export default function FormsPage() {
 		typeRadio: { "zh-Hant": "單選按鈕", "zh-Hans": "单选按钮", en: "Radio Buttons" },
 		typeCheckbox: { "zh-Hant": "勾選框", "zh-Hans": "勾选框", en: "Checkbox" },
 		validator: { "zh-Hant": "驗證正規表達式", "zh-Hans": "验证正则表达式", en: "Validation Regex" },
-		validatorPlaceholder: { "zh-Hant": "例如: ^[A-Z0-9]+$ (選填)", "zh-Hans": "例如: ^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" },
+		validatorPlaceholder: { "zh-Hant": "例如：^[A-Z0-9]+$ (選填)", "zh-Hans": "例如：^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" },
 		useValidator: { "zh-Hant": "使用此正規表達式驗證輸入內容", "zh-Hans": "使用此正则表达式验证输入内容", en: "Use this regex to validate input" },
 		formFields: { "zh-Hant": "表單欄位", "zh-Hans": "表单栏位", en: "Form Fields" },
 		fieldName: { "zh-Hant": "欄位名稱", "zh-Hans": "栏位名称", en: "Field Name" },
@@ -303,7 +303,7 @@ export default function FormsPage() {
 			}
 		} catch (error) {
 			console.error("Failed to copy form:", error);
-			showAlert("複製失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("複製失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -364,7 +364,7 @@ export default function FormsPage() {
 			showAlert("表單已保存！", "success");
 		} catch (error) {
 			console.error("Failed to save form:", error);
-			showAlert("保存失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
 	}
 
@@ -444,7 +444,7 @@ export default function FormsPage() {
 				await adminEventFormFieldsAPI.reorder(currentEvent.id, { fieldOrders });
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
-				showAlert("重新排序失敗: " + (error instanceof Error ? error.message : String(error)), "error");
+				showAlert("重新排序失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 				await loadFormFields();
 			}
 		}

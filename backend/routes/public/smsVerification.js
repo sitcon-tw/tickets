@@ -123,7 +123,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 				});
 
 				if (todaySmsCount >= 3) {
-					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3次），請明天再試");
+					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
 					return reply.code(statusCode).send(response);
 				}
 
