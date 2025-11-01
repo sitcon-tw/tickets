@@ -371,33 +371,46 @@ function AdminNav() {
 								if (!capabilities) return false;
 								return capabilities[requireCapability as keyof UserCapabilities];
 							})
-							.map(({ href, i18nKey }) => (
-								<>
-									<li key={href} style={styles.navItem}>
-										<a
-											onClick={() => handleNavClick(href)}
-											onMouseEnter={() => setHoveredLink(href)}
-											onMouseLeave={() => setHoveredLink(null)}
-											style={{
-												textDecoration: hoveredLink === href ? "underline" : "none"
-											}}
-											className="cursor-pointer"
-										>
-											{t[i18nKey]}
-										</a>
-									</li>
-									{i18nKey === "registrations" && (
-										<hr
-											key={`${href}-divider`}
-											style={{
-												border: "none",
-												borderTop: "1px solid var(--color-gray-700)",
-												margin: "1rem 0"
-											}}
-										/>
-									)}
-								</>
-							))}
+							.map(({ href, i18nKey }) => {
+								// Remove locale prefix and normalize trailing slashes for comparison
+								const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+								const normalizedPath = pathWithoutLocale.endsWith("/") ? pathWithoutLocale : pathWithoutLocale + "/";
+								const normalizedHref = href.endsWith("/") ? href : href + "/";
+								const isActive = normalizedPath === normalizedHref || (normalizedHref !== "/admin/" && normalizedPath.startsWith(normalizedHref));
+								return (
+									<div key={href}>
+										<li style={styles.navItem}>
+											<a
+												onClick={() => handleNavClick(href)}
+												onMouseEnter={() => setHoveredLink(href)}
+												onMouseLeave={() => setHoveredLink(null)}
+												style={{
+													textDecoration: hoveredLink === href ? "underline" : "none",
+													fontWeight: isActive ? 700 : 400,
+													color: isActive ? "#3b82f6" : "inherit",
+													borderLeft: isActive ? "3px solid #3b82f6" : "3px solid transparent",
+													paddingLeft: "0.5rem",
+													marginLeft: "-0.5rem",
+													display: "block",
+													transition: "all 0.2s ease"
+												}}
+												className="cursor-pointer"
+											>
+												{t[i18nKey]}
+											</a>
+										</li>
+										{i18nKey === "registrations" && (
+											<hr
+												style={{
+													border: "none",
+													borderTop: "1px solid var(--color-gray-700)",
+													margin: "1rem 0"
+												}}
+											/>
+										)}
+									</div>
+								);
+							})}
 					</ul>
 				</nav>
 				<div style={styles.links}>
