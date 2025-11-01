@@ -1,6 +1,5 @@
 "use client";
 
-import AdminNav from "@/components/AdminNav";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -538,7 +537,6 @@ export default function FormsPage() {
 	if (!currentEventId) {
 		return (
 			<>
-				<AdminNav />
 				<main>
 					<h1 className="text-3xl font-bold">{t.title}</h1>
 					<div className="h-8" />
@@ -557,7 +555,6 @@ export default function FormsPage() {
 
 	return (
 		<>
-			<AdminNav />
 			<main style={{ minHeight: "100vh", padding: "1.5rem 1rem" }}>
 				<div
 					id="form-editor"

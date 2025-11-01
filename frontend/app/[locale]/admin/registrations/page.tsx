@@ -1,6 +1,5 @@
 "use client";
 
-import AdminNav from "@/components/AdminNav";
 import PageSpinner from "@/components/PageSpinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -290,7 +289,6 @@ export default function RegistrationsPage() {
 
 	return (
 		<>
-			<AdminNav />
 			<main>
 				<h1 className="text-3xl font-bold">{t.title}</h1>
 				<div className="h-8" />

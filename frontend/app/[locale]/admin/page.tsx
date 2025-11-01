@@ -1,6 +1,5 @@
 "use client";
 
-import AdminNav from "@/components/AdminNav";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
@@ -333,20 +332,15 @@ export default function AdminDashboard() {
 
 	if (loading) {
 		return (
-			<>
-				<AdminNav />
-				<main>
-					<h1>{t.overview}</h1>
-					<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
-				</main>
-			</>
+			<main>
+				<h1>{t.overview}</h1>
+				<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+			</main>
 		);
 	}
 
 	return (
-		<>
-			<AdminNav />
-			<main>
+		<main>
 				<h1>{t.overview}</h1>
 				<div
 					style={{
@@ -671,6 +665,5 @@ export default function AdminDashboard() {
 					</div>
 				</div>
 			</main>
-		</>
 	);
 }

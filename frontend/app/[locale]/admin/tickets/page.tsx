@@ -1,6 +1,5 @@
 "use client";
 
-import AdminNav from "@/components/AdminNav";
 import MarkdownContent from "@/components/MarkdownContent";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -274,9 +273,7 @@ export default function TicketsPage() {
 	}, [currentEventId, loadTickets]);
 
 	return (
-		<>
-			<AdminNav />
-			<main>
+		<main>
 				<h1 className="text-3xl font-bold">{t.title}</h1>
 				<div className="h-8" />
 
@@ -563,6 +560,5 @@ export default function TicketsPage() {
 					</div>
 				)}
 			</main>
-		</>
 	);
 }

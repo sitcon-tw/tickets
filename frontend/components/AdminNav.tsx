@@ -8,7 +8,7 @@ import type { Event, UserCapabilities } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 const activityLinks = [
 	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
@@ -107,7 +107,7 @@ const styles = {
 	}
 };
 
-export default function AdminNav() {
+function AdminNav() {
 	const locale = useLocale();
 	const router = useRouter();
 	const pathname = usePathname();
@@ -118,6 +118,9 @@ export default function AdminNav() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
 	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
+
+	// Track if data has been loaded to prevent re-fetching
+	const dataLoadedRef = useRef(false);
 
 	const handleLocaleChange = (newLocale: string) => {
 		router.replace(pathname, { locale: newLocale });
@@ -167,9 +170,13 @@ export default function AdminNav() {
 		window.dispatchEvent(new CustomEvent("selectedEventChanged", { detail: { eventId } }));
 	};
 
+	// Load data only once
 	useEffect(() => {
-		loadPermissions();
-		loadEvents();
+		if (!dataLoadedRef.current) {
+			loadPermissions();
+			loadEvents();
+			dataLoadedRef.current = true;
+		}
 	}, [loadPermissions, loadEvents]);
 
 	useEffect(() => {
@@ -183,6 +190,7 @@ export default function AdminNav() {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
+	// Inject styles only once and don't remove them on unmount
 	useEffect(() => {
 		const styleId = "admin-nav-global-styles";
 		if (!document.getElementById(styleId)) {
@@ -204,13 +212,7 @@ export default function AdminNav() {
       `;
 			document.head.appendChild(style);
 		}
-
-		return () => {
-			const style = document.getElementById(styleId);
-			if (style) {
-				style.remove();
-			}
-		};
+		// Don't remove styles on unmount to prevent layout shift
 	}, []);
 
 	const handleNavClick = (href: string) => {
@@ -460,3 +462,6 @@ export default function AdminNav() {
 		</>
 	);
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(AdminNav);
