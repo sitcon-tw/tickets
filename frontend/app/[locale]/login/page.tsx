@@ -5,7 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -139,6 +139,7 @@ const MessageContainer = styled.div`
 
 export default function Login() {
 	const locale = useLocale();
+	const router = useRouter();
 	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const returnUrl = searchParams.get("returnUrl");
@@ -146,6 +147,7 @@ export default function Login() {
 	const [viewState, setViewState] = useState<"login" | "sent">("login");
 	const [isLoading, setIsLoading] = useState(false);
 	const [email, setEmail] = useState("");
+	const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
 	const t = getTranslations(locale, {
 		login: {
@@ -220,6 +222,26 @@ export default function Login() {
 		}
 	});
 
+	// Check if user is already logged in and redirect to home
+	useEffect(() => {
+		const checkAuthAndRedirect = async () => {
+			try {
+				const session = await authAPI.getSession();
+				if (session && session.user) {
+					// User is already logged in, redirect to home
+					router.push(`/${locale}`);
+				}
+			} catch (error) {
+				// User is not logged in, stay on login page
+				console.log("User not logged in");
+			} finally {
+				setIsCheckingAuth(false);
+			}
+		};
+
+		checkAuthAndRedirect();
+	}, [locale, router]);
+
 	useEffect(() => {
 		if (errorParam) {
 			let errorMessage = t.error;
@@ -282,6 +304,19 @@ export default function Login() {
 			setIsLoading(false);
 		}
 	};
+
+	// Show loading spinner while checking auth
+	if (isCheckingAuth) {
+		return (
+			<StyledMain>
+				<section>
+					<Container isActive={true} style={{ textAlign: "center" }}>
+						<Spinner />
+					</Container>
+				</section>
+			</StyledMain>
+		);
+	}
 
 	return (
 		<>
