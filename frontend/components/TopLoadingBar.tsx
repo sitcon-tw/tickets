@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname } from "@/i18n/navigation";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
+import { useEffect } from "react";
 
 NProgress.configure({ showSpinner: false, trickleSpeed: 200, minimum: 0.1 });
 

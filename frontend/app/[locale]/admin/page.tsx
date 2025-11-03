@@ -341,329 +341,329 @@ export default function AdminDashboard() {
 
 	return (
 		<main>
-				<h1>{t.overview}</h1>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-						gap: "1.5rem",
-						marginBottom: "3rem"
-					}}
-				>
-					<div style={statCardStyle}>
-						<h3
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-300)",
-								fontSize: "0.9rem",
-								fontWeight: 500
-							}}
-						>
-							{t.totalTickets}
-						</h3>
-						<div
-							style={{
-								fontSize: "2.5rem",
-								fontWeight: "bold",
-								color: "var(--color-gray-100)",
-								marginBottom: "0.5rem"
-							}}
-						>
-							{totalTicketQuantity}
-						</div>
-						<div
-							style={{
-								color: "var(--color-gray-100)",
-								fontSize: "0.8rem"
-							}}
-						>
-							{t.tickets}
-						</div>
+			<h1>{t.overview}</h1>
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+					gap: "1.5rem",
+					marginBottom: "3rem"
+				}}
+			>
+				<div style={statCardStyle}>
+					<h3
+						style={{
+							margin: "0 0 1rem 0",
+							color: "var(--color-gray-300)",
+							fontSize: "0.9rem",
+							fontWeight: 500
+						}}
+					>
+						{t.totalTickets}
+					</h3>
+					<div
+						style={{
+							fontSize: "2.5rem",
+							fontWeight: "bold",
+							color: "var(--color-gray-100)",
+							marginBottom: "0.5rem"
+						}}
+					>
+						{totalTicketQuantity}
 					</div>
-					<div style={statCardStyle}>
-						<h3
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-300)",
-								fontSize: "0.9rem",
-								fontWeight: 500
-							}}
-						>
-							{t.sold}
-						</h3>
-						<div
-							style={{
-								fontSize: "2.5rem",
-								fontWeight: "bold",
-								color: "var(--color-gray-100)",
-								marginBottom: "0.5rem"
-							}}
-						>
-							{totalSold}
-						</div>
-						<div
-							style={{
-								color: "var(--color-gray-100)",
-								fontSize: "0.8rem"
-							}}
-						>
-							{t.tickets}
-						</div>
-					</div>
-					<div style={statCardStyle}>
-						<h3
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-300)",
-								fontSize: "0.9rem",
-								fontWeight: 500
-							}}
-						>
-							{t.remaining}
-						</h3>
-						<div
-							style={{
-								fontSize: "2.5rem",
-								fontWeight: "bold",
-								color: "var(--color-gray-100)",
-								marginBottom: "0.5rem"
-							}}
-						>
-							{remainingTickets}
-						</div>
-						<div
-							style={{
-								color: "var(--color-gray-100)",
-								fontSize: "0.8rem"
-							}}
-						>
-							{t.tickets}
-						</div>
-					</div>
-					<div style={statCardStyle}>
-						<h3
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-300)",
-								fontSize: "0.9rem",
-								fontWeight: 500
-							}}
-						>
-							{t.salesRate}
-						</h3>
-						<div
-							style={{
-								fontSize: "2.5rem",
-								fontWeight: "bold",
-								color: "var(--color-gray-100)",
-								marginBottom: "0.5rem"
-							}}
-						>
-							{salesRate}%
-						</div>
-						<div
-							style={{
-								color: "var(--color-gray-100)",
-								fontSize: "0.8rem"
-							}}
-						>
-							{t.completion}
-						</div>
+					<div
+						style={{
+							color: "var(--color-gray-100)",
+							fontSize: "0.8rem"
+						}}
+					>
+						{t.tickets}
 					</div>
 				</div>
-
-				<div
-					style={{
-						display: "flex",
-						gap: "2rem",
-						marginBottom: "3rem",
-						flexWrap: "wrap"
-					}}
-				>
-					<div style={{ ...chartContainerStyle, flex: "2" }}>
-						<h2
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-100)",
-								fontSize: "1.2rem"
-							}}
-						>
-							{t.salesTrend}
-						</h2>
-						<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
+				<div style={statCardStyle}>
+					<h3
+						style={{
+							margin: "0 0 1rem 0",
+							color: "var(--color-gray-300)",
+							fontSize: "0.9rem",
+							fontWeight: 500
+						}}
+					>
+						{t.sold}
+					</h3>
+					<div
+						style={{
+							fontSize: "2.5rem",
+							fontWeight: "bold",
+							color: "var(--color-gray-100)",
+							marginBottom: "0.5rem"
+						}}
+					>
+						{totalSold}
 					</div>
-
-					<div style={chartContainerStyle}>
-						<h2
-							style={{
-								margin: "0 0 1rem 0",
-								color: "var(--color-gray-100)",
-								fontSize: "1.2rem"
-							}}
-						>
-							{t.ticketDistribution}
-						</h2>
-						<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
+					<div
+						style={{
+							color: "var(--color-gray-100)",
+							fontSize: "0.8rem"
+						}}
+					>
+						{t.tickets}
 					</div>
 				</div>
+				<div style={statCardStyle}>
+					<h3
+						style={{
+							margin: "0 0 1rem 0",
+							color: "var(--color-gray-300)",
+							fontSize: "0.9rem",
+							fontWeight: 500
+						}}
+					>
+						{t.remaining}
+					</h3>
+					<div
+						style={{
+							fontSize: "2.5rem",
+							fontWeight: "bold",
+							color: "var(--color-gray-100)",
+							marginBottom: "0.5rem"
+						}}
+					>
+						{remainingTickets}
+					</div>
+					<div
+						style={{
+							color: "var(--color-gray-100)",
+							fontSize: "0.8rem"
+						}}
+					>
+						{t.tickets}
+					</div>
+				</div>
+				<div style={statCardStyle}>
+					<h3
+						style={{
+							margin: "0 0 1rem 0",
+							color: "var(--color-gray-300)",
+							fontSize: "0.9rem",
+							fontWeight: 500
+						}}
+					>
+						{t.salesRate}
+					</h3>
+					<div
+						style={{
+							fontSize: "2.5rem",
+							fontWeight: "bold",
+							color: "var(--color-gray-100)",
+							marginBottom: "0.5rem"
+						}}
+					>
+						{salesRate}%
+					</div>
+					<div
+						style={{
+							color: "var(--color-gray-100)",
+							fontSize: "0.8rem"
+						}}
+					>
+						{t.completion}
+					</div>
+				</div>
+			</div>
 
-				<div
-					style={{
-						background: "var(--color-gray-800)",
-						padding: "1.5rem",
-						borderRadius: "8px",
-						boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
-					}}
-				>
+			<div
+				style={{
+					display: "flex",
+					gap: "2rem",
+					marginBottom: "3rem",
+					flexWrap: "wrap"
+				}}
+			>
+				<div style={{ ...chartContainerStyle, flex: "2" }}>
 					<h2
 						style={{
-							margin: "0 0 1.5rem 0",
+							margin: "0 0 1rem 0",
 							color: "var(--color-gray-100)",
 							fontSize: "1.2rem"
 						}}
 					>
-						{t.progressTitle}
+						{t.salesTrend}
 					</h2>
-					<div
+					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
+				</div>
+
+				<div style={chartContainerStyle}>
+					<h2
 						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-							gap: "1.5rem"
+							margin: "0 0 1rem 0",
+							color: "var(--color-gray-100)",
+							fontSize: "1.2rem"
 						}}
 					>
-						{tickets.slice(0, 5).map((ticket, idx) => {
-							const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
-							const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
-							const soldCount = ticket.soldCount || 0;
-							const total = ticket.quantity || 0;
-							const remaining = total - soldCount;
+						{t.ticketDistribution}
+					</h2>
+					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
+				</div>
+			</div>
 
-							return (
-								<div
-									key={idx}
+			<div
+				style={{
+					background: "var(--color-gray-800)",
+					padding: "1.5rem",
+					borderRadius: "8px",
+					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
+				}}
+			>
+				<h2
+					style={{
+						margin: "0 0 1.5rem 0",
+						color: "var(--color-gray-100)",
+						fontSize: "1.2rem"
+					}}
+				>
+					{t.progressTitle}
+				</h2>
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+						gap: "1.5rem"
+					}}
+				>
+					{tickets.slice(0, 5).map((ticket, idx) => {
+						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
+						const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
+						const soldCount = ticket.soldCount || 0;
+						const total = ticket.quantity || 0;
+						const remaining = total - soldCount;
+
+						return (
+							<div
+								key={idx}
+								style={{
+									background: "var(--color-gray-700)",
+									padding: "1.5rem",
+									borderRadius: "12px",
+									boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+									textAlign: "center",
+									maxWidth: "100%"
+								}}
+							>
+								<h3
 									style={{
-										background: "var(--color-gray-700)",
-										padding: "1.5rem",
-										borderRadius: "12px",
-										boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-										textAlign: "center",
-										maxWidth: "100%"
+										margin: "0 0 1.5rem 0",
+										color: "var(--color-gray-200)",
+										fontSize: "1.1rem",
+										fontWeight: 600
 									}}
 								>
-									<h3
-										style={{
-											margin: "0 0 1.5rem 0",
-											color: "var(--color-gray-200)",
-											fontSize: "1.1rem",
-											fontWeight: 600
-										}}
-									>
-										{ticketName}
-									</h3>
+									{ticketName}
+								</h3>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "center",
+										marginBottom: "1rem"
+									}}
+								>
+									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
+								</div>
+								<div
+									style={{
+										marginBottom: "1.5rem",
+										padding: "1rem",
+										background: "var(--color-gray-600)",
+										borderRadius: "8px"
+									}}
+								>
 									<div
 										style={{
-											display: "flex",
-											justifyContent: "center",
-											marginBottom: "1rem"
+											fontSize: "2.5rem",
+											fontWeight: "bold",
+											color: "var(--color-gray-100)",
+											lineHeight: "1"
 										}}
 									>
-										<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
+										{remaining}
 									</div>
 									<div
 										style={{
-											marginBottom: "1.5rem",
-											padding: "1rem",
-											background: "var(--color-gray-600)",
-											borderRadius: "8px"
+											fontSize: "0.9rem",
+											color: "var(--color-gray-300)",
+											marginTop: "0.25rem"
 										}}
 									>
-										<div
-											style={{
-												fontSize: "2.5rem",
-												fontWeight: "bold",
-												color: "var(--color-gray-100)",
-												lineHeight: "1"
-											}}
-										>
-											{remaining}
-										</div>
-										<div
-											style={{
-												fontSize: "0.9rem",
-												color: "var(--color-gray-300)",
-												marginTop: "0.25rem"
-											}}
-										>
-											{t.remainingLabel}
-										</div>
-									</div>
-									<div
-										style={{
-											display: "flex",
-											justifyContent: "space-around",
-											gap: "1rem"
-										}}
-									>
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												alignItems: "center",
-												gap: "0.25rem"
-											}}
-										>
-											<span
-												style={{
-													color: "var(--color-gray-300)",
-													fontSize: "0.85rem",
-													fontWeight: 500
-												}}
-											>
-												{t.total}
-											</span>
-											<span
-												style={{
-													fontWeight: 600,
-													color: "var(--color-gray-200)",
-													fontSize: "1.1rem"
-												}}
-											>
-												{total}
-											</span>
-										</div>
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												alignItems: "center",
-												gap: "0.25rem"
-											}}
-										>
-											<span
-												style={{
-													color: "var(--color-gray-300)",
-													fontSize: "0.85rem",
-													fontWeight: 500
-												}}
-											>
-												{t.soldLabel}
-											</span>
-											<span
-												style={{
-													fontWeight: 600,
-													color: "var(--color-gray-200)",
-													fontSize: "1.1rem"
-												}}
-											>
-												{soldCount}
-											</span>
-										</div>
+										{t.remainingLabel}
 									</div>
 								</div>
-							);
-						})}
-					</div>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-around",
+										gap: "1rem"
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											gap: "0.25rem"
+										}}
+									>
+										<span
+											style={{
+												color: "var(--color-gray-300)",
+												fontSize: "0.85rem",
+												fontWeight: 500
+											}}
+										>
+											{t.total}
+										</span>
+										<span
+											style={{
+												fontWeight: 600,
+												color: "var(--color-gray-200)",
+												fontSize: "1.1rem"
+											}}
+										>
+											{total}
+										</span>
+									</div>
+									<div
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											gap: "0.25rem"
+										}}
+									>
+										<span
+											style={{
+												color: "var(--color-gray-300)",
+												fontSize: "0.85rem",
+												fontWeight: 500
+											}}
+										>
+											{t.soldLabel}
+										</span>
+										<span
+											style={{
+												fontWeight: 600,
+												color: "var(--color-gray-200)",
+												fontSize: "1.1rem"
+											}}
+										>
+											{soldCount}
+										</span>
+									</div>
+								</div>
+							</div>
+						);
+					})}
 				</div>
-			</main>
+			</div>
+		</main>
 	);
 }

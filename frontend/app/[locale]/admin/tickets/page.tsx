@@ -274,291 +274,286 @@ export default function TicketsPage() {
 
 	return (
 		<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
+			<h1 className="text-3xl font-bold">{t.title}</h1>
+			<div className="h-8" />
 
-				<section>
-					<div className="admin-table-container">
-						<table className="admin-table">
-							<thead>
-								<tr>
-									<th>{t.ticketTypes}</th>
-									<th>{t.startTime}</th>
-									<th>{t.endTime}</th>
-									<th>{t.status}</th>
-									<th>{t.quantity}</th>
-									<th>{t.actions}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{tickets.map(ticket => {
-									const status = computeStatus(ticket);
-									return (
-										<tr key={ticket.id}>
-											<td>
-												{typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-												{ticket.hidden && (
-													<span
-														style={{
-															marginLeft: "0.5rem",
-															padding: "0.125rem 0.5rem",
-															fontSize: "0.75rem",
-															fontWeight: "bold",
-															color: "var(--color-gray-100)",
-															backgroundColor: "var(--color-gray-600)",
-															borderRadius: "4px",
-															border: "1px solid var(--color-gray-500)"
-														}}
-													>
-														{t.hidden}
-													</span>
-												)}
-											</td>
-											<td>{formatDateTime(ticket.saleStart)}</td>
-											<td>{formatDateTime(ticket.saleEnd)}</td>
-											<td>
-												<span className={`status-badge ${status.class}`}>{status.label}</span>
-											</td>
-											<td>{ticket.quantity}</td>
-											<td>
-												<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-													<button className="admin-button small secondary" onClick={() => openModal(ticket)}>
-														{t.editTicket}
-													</button>
-													<button className="admin-button small success" onClick={() => openLinkBuilder(ticket)}>
-														{t.directLink}
-													</button>
-													<button className="admin-button small danger" onClick={() => deleteTicket(ticket.id)}>
-														{t.delete}
-													</button>
+			<section>
+				<div className="admin-table-container">
+					<table className="admin-table">
+						<thead>
+							<tr>
+								<th>{t.ticketTypes}</th>
+								<th>{t.startTime}</th>
+								<th>{t.endTime}</th>
+								<th>{t.status}</th>
+								<th>{t.quantity}</th>
+								<th>{t.actions}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{tickets.map(ticket => {
+								const status = computeStatus(ticket);
+								return (
+									<tr key={ticket.id}>
+										<td>
+											{typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+											{ticket.hidden && (
+												<span
+													style={{
+														marginLeft: "0.5rem",
+														padding: "0.125rem 0.5rem",
+														fontSize: "0.75rem",
+														fontWeight: "bold",
+														color: "var(--color-gray-100)",
+														backgroundColor: "var(--color-gray-600)",
+														borderRadius: "4px",
+														border: "1px solid var(--color-gray-500)"
+													}}
+												>
+													{t.hidden}
+												</span>
+											)}
+										</td>
+										<td>{formatDateTime(ticket.saleStart)}</td>
+										<td>{formatDateTime(ticket.saleEnd)}</td>
+										<td>
+											<span className={`status-badge ${status.class}`}>{status.label}</span>
+										</td>
+										<td>{ticket.quantity}</td>
+										<td>
+											<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+												<button className="admin-button small secondary" onClick={() => openModal(ticket)}>
+													{t.editTicket}
+												</button>
+												<button className="admin-button small success" onClick={() => openLinkBuilder(ticket)}>
+													{t.directLink}
+												</button>
+												<button className="admin-button small danger" onClick={() => deleteTicket(ticket.id)}>
+													{t.delete}
+												</button>
+											</div>
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<section style={{ marginTop: "2rem", textAlign: "center" }}>
+				<button className="admin-button primary" onClick={() => openModal()}>
+					+ {t.addTicket}
+				</button>
+			</section>
+
+			{showModal && (
+				<div className="admin-modal-overlay" onClick={closeModal}>
+					<div className="admin-modal" onClick={e => e.stopPropagation()}>
+						<div className="admin-modal-header">
+							<h2 className="admin-modal-title">{editingTicket ? t.editTicket : t.addTicket}</h2>
+							<button className="admin-modal-close" onClick={closeModal}>
+								✕
+							</button>
+						</div>
+						<form onSubmit={saveTicket}>
+							<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+								{/* Language Tabs */}
+								<div style={{ display: "flex", gap: "0.5rem", borderBottom: "2px solid var(--color-gray-700)", marginBottom: "1rem" }}>
+									{[
+										{ key: "en" as const, label: "English" },
+										{ key: "zh-Hant" as const, label: "繁體中文" },
+										{ key: "zh-Hans" as const, label: "简体中文" }
+									].map(tab => (
+										<button
+											key={tab.key}
+											type="button"
+											onClick={() => setActiveTab(tab.key)}
+											style={{
+												padding: "0.5rem 1rem",
+												background: activeTab === tab.key ? "var(--color-gray-600)" : "transparent",
+												border: "none",
+												borderBottom: activeTab === tab.key ? "2px solid var(--color-blue-500)" : "none",
+												color: activeTab === tab.key ? "var(--color-gray-100)" : "var(--color-gray-400)",
+												cursor: "pointer",
+												fontWeight: activeTab === tab.key ? "bold" : "normal",
+												transition: "all 0.2s"
+											}}
+										>
+											{tab.label}
+										</button>
+									))}
+								</div>
+
+								{/* English Fields */}
+								{activeTab === "en" && (
+									<>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.ticketName} (English) *</label>
+											<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="admin-input" />
+										</div>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.description} (English, Markdown)</label>
+											<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-textarea" rows={6} />
+											{descEn && (
+												<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
+													<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<MarkdownContent content={descEn} />
 												</div>
-											</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</table>
-					</div>
-				</section>
-
-				<section style={{ marginTop: "2rem", textAlign: "center" }}>
-					<button className="admin-button primary" onClick={() => openModal()}>
-						+ {t.addTicket}
-					</button>
-				</section>
-
-				{showModal && (
-					<div className="admin-modal-overlay" onClick={closeModal}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{editingTicket ? t.editTicket : t.addTicket}</h2>
-								<button className="admin-modal-close" onClick={closeModal}>
-									✕
-								</button>
-							</div>
-							<form onSubmit={saveTicket}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-									{/* Language Tabs */}
-									<div style={{ display: "flex", gap: "0.5rem", borderBottom: "2px solid var(--color-gray-700)", marginBottom: "1rem" }}>
-										{[
-											{ key: "en" as const, label: "English" },
-											{ key: "zh-Hant" as const, label: "繁體中文" },
-											{ key: "zh-Hans" as const, label: "简体中文" }
-										].map(tab => (
-											<button
-												key={tab.key}
-												type="button"
-												onClick={() => setActiveTab(tab.key)}
-												style={{
-													padding: "0.5rem 1rem",
-													background: activeTab === tab.key ? "var(--color-gray-600)" : "transparent",
-													border: "none",
-													borderBottom: activeTab === tab.key ? "2px solid var(--color-blue-500)" : "none",
-													color: activeTab === tab.key ? "var(--color-gray-100)" : "var(--color-gray-400)",
-													cursor: "pointer",
-													fontWeight: activeTab === tab.key ? "bold" : "normal",
-													transition: "all 0.2s"
-												}}
-											>
-												{tab.label}
-											</button>
-										))}
-									</div>
-
-									{/* English Fields */}
-									{activeTab === "en" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.ticketName} (English) *</label>
-												<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="admin-input" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (English, Markdown)</label>
-												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-textarea" rows={6} />
-												{descEn && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
-														<MarkdownContent content={descEn} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (English)</label>
-												<textarea
-													value={plainDescEn}
-													onChange={e => setPlainDescEn(e.target.value)}
-													className="admin-textarea"
-													rows={4}
-													placeholder="Plain text description without markdown formatting"
-												/>
-											</div>
-										</>
-									)}
-
-									{/* Traditional Chinese Fields */}
-									{activeTab === "zh-Hant" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.ticketName} (繁體中文)</label>
-												<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="admin-input" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
-												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-textarea" rows={6} />
-												{descZhHant && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
-														<MarkdownContent content={descZhHant} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
-												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
-											</div>
-										</>
-									)}
-
-									{/* Simplified Chinese Fields */}
-									{activeTab === "zh-Hans" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.ticketName} (简体中文)</label>
-												<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="admin-input" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
-												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-textarea" rows={6} />
-												{descZhHans && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
-														<MarkdownContent content={descZhHans} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
-												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
-											</div>
-										</>
-									)}
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.price}</label>
-											<input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="admin-input" />
+											)}
 										</div>
 										<div className="admin-form-group">
-											<label className="admin-form-label">{t.quantity}</label>
-											<input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="admin-input" />
-										</div>
-									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.startTime}</label>
-											<input
-												name="saleStart"
-												type="datetime-local"
-												defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""}
-												className="admin-input"
+											<label className="admin-form-label">{t.plainDescription} (English)</label>
+											<textarea
+												value={plainDescEn}
+												onChange={e => setPlainDescEn(e.target.value)}
+												className="admin-textarea"
+												rows={4}
+												placeholder="Plain text description without markdown formatting"
 											/>
 										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.endTime}</label>
-											<input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} className="admin-input" />
-										</div>
-									</div>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<input name="requireInviteCode" type="checkbox" defaultChecked={editingTicket?.requireInviteCode || false} style={{ width: "18px", height: "18px" }} />
-										<span className="admin-form-label" style={{ marginBottom: 0 }}>
-											{t.requireInviteCode}
-										</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<input name="requireSmsVerification" type="checkbox" defaultChecked={editingTicket?.requireSmsVerification || false} style={{ width: "18px", height: "18px" }} />
-										<span className="admin-form-label" style={{ marginBottom: 0 }}>
-											{t.requireSmsVerification}
-										</span>
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<input name="hidden" type="checkbox" defaultChecked={editingTicket?.hidden || false} style={{ width: "18px", height: "18px" }} />
-										<span className="admin-form-label" style={{ marginBottom: 0 }}>
-											{t.hideTicket}
-										</span>
-									</label>
-								</div>
-								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button warning">
-										{t.save}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={closeModal}>
-										{t.cancel}
-									</button>
-								</div>
-							</form>
-						</div>
-					</div>
-				)}
+									</>
+								)}
 
-				{showLinkModal && selectedTicketForLink && (
-					<div className="admin-modal-overlay" onClick={() => setShowLinkModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.linkBuilder}</h2>
-								<button className="admin-modal-close" onClick={() => setShowLinkModal(false)}>
-									✕
-								</button>
-							</div>
-							<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-								<div className="admin-form-group">
-									<label className="admin-form-label">
-										{t.inviteCode} ({t.optional})
-									</label>
-									<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="admin-input" />
-								</div>
-								<div className="admin-form-group">
-									<label className="admin-form-label">
-										{t.referralCode} ({t.optional})
-									</label>
-									<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="admin-input" />
-								</div>
-								<div className="admin-form-group">
-									<label className="admin-form-label">{t.generatedLink}</label>
-									<div style={{ display: "flex", gap: "0.5rem" }}>
-										<input type="text" value={generateDirectLink()} readOnly className="admin-input" style={{ flex: 1, fontFamily: "monospace", fontSize: "0.9rem" }} />
-										<button className="admin-button primary" onClick={copyToClipboard}>
-											{t.copyLink}
-										</button>
+								{/* Traditional Chinese Fields */}
+								{activeTab === "zh-Hant" && (
+									<>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.ticketName} (繁體中文)</label>
+											<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="admin-input" />
+										</div>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
+											<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-textarea" rows={6} />
+											{descZhHant && (
+												<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
+													<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<MarkdownContent content={descZhHant} />
+												</div>
+											)}
+										</div>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
+											<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
+										</div>
+									</>
+								)}
+
+								{/* Simplified Chinese Fields */}
+								{activeTab === "zh-Hans" && (
+									<>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.ticketName} (简体中文)</label>
+											<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="admin-input" />
+										</div>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
+											<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-textarea" rows={6} />
+											{descZhHans && (
+												<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
+													<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<MarkdownContent content={descZhHans} />
+												</div>
+											)}
+										</div>
+										<div className="admin-form-group">
+											<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
+											<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
+										</div>
+									</>
+								)}
+								<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.price}</label>
+										<input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="admin-input" />
+									</div>
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.quantity}</label>
+										<input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="admin-input" />
 									</div>
 								</div>
+								<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.startTime}</label>
+										<input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} className="admin-input" />
+									</div>
+									<div className="admin-form-group">
+										<label className="admin-form-label">{t.endTime}</label>
+										<input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} className="admin-input" />
+									</div>
+								</div>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+									<input name="requireInviteCode" type="checkbox" defaultChecked={editingTicket?.requireInviteCode || false} style={{ width: "18px", height: "18px" }} />
+									<span className="admin-form-label" style={{ marginBottom: 0 }}>
+										{t.requireInviteCode}
+									</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+									<input name="requireSmsVerification" type="checkbox" defaultChecked={editingTicket?.requireSmsVerification || false} style={{ width: "18px", height: "18px" }} />
+									<span className="admin-form-label" style={{ marginBottom: 0 }}>
+										{t.requireSmsVerification}
+									</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+									<input name="hidden" type="checkbox" defaultChecked={editingTicket?.hidden || false} style={{ width: "18px", height: "18px" }} />
+									<span className="admin-form-label" style={{ marginBottom: 0 }}>
+										{t.hideTicket}
+									</span>
+								</label>
 							</div>
 							<div className="admin-modal-actions">
-								<button type="button" className="admin-button secondary" onClick={() => setShowLinkModal(false)}>
-									{t.close}
+								<button type="submit" className="admin-button warning">
+									{t.save}
+								</button>
+								<button type="button" className="admin-button secondary" onClick={closeModal}>
+									{t.cancel}
 								</button>
 							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{showLinkModal && selectedTicketForLink && (
+				<div className="admin-modal-overlay" onClick={() => setShowLinkModal(false)}>
+					<div className="admin-modal" onClick={e => e.stopPropagation()}>
+						<div className="admin-modal-header">
+							<h2 className="admin-modal-title">{t.linkBuilder}</h2>
+							<button className="admin-modal-close" onClick={() => setShowLinkModal(false)}>
+								✕
+							</button>
+						</div>
+						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+							<div className="admin-form-group">
+								<label className="admin-form-label">
+									{t.inviteCode} ({t.optional})
+								</label>
+								<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="admin-input" />
+							</div>
+							<div className="admin-form-group">
+								<label className="admin-form-label">
+									{t.referralCode} ({t.optional})
+								</label>
+								<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="admin-input" />
+							</div>
+							<div className="admin-form-group">
+								<label className="admin-form-label">{t.generatedLink}</label>
+								<div style={{ display: "flex", gap: "0.5rem" }}>
+									<input type="text" value={generateDirectLink()} readOnly className="admin-input" style={{ flex: 1, fontFamily: "monospace", fontSize: "0.9rem" }} />
+									<button className="admin-button primary" onClick={copyToClipboard}>
+										{t.copyLink}
+									</button>
+								</div>
+							</div>
+						</div>
+						<div className="admin-modal-actions">
+							<button type="button" className="admin-button secondary" onClick={() => setShowLinkModal(false)}>
+								{t.close}
+							</button>
 						</div>
 					</div>
-				)}
-			</main>
+				</div>
+			)}
+		</main>
 	);
 }

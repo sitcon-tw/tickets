@@ -5,9 +5,9 @@ import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { getLocalizedText } from "@/lib/utils/localization";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { getLocalizedText } from "@/lib/utils/localization";
 import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
@@ -180,17 +180,14 @@ export default function Success() {
 						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
 							{referralCode === t.loading ? (
 								<Spinner />
-							) : 
-							referralCode === t.loadFailed ? (
+							) : referralCode === t.loadFailed ? (
 								<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
-							) :
-							(
+							) : (
 								<div className="flex items-center gap-2">
 									<span className="font-mono text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
 										{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
 											? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
-											: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`
-										}
+											: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}
 									</span>
 									{referralCode !== t.loadFailed && (
 										<span className="cursor-pointer" title={t.copyInvite}>
@@ -217,7 +214,7 @@ export default function Success() {
 										router.push(`/my-registration/${registrationId}`);
 									}}
 									className="button"
-									style={ locale.includes("zh") ? {} : { marginBottom: "1rem" } }
+									style={locale.includes("zh") ? {} : { marginBottom: "1rem" }}
 								>
 									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
 								</button>
