@@ -1,7 +1,7 @@
+import { Label } from "@/components/ui/label";
+import { SelectContent, SelectItem, SelectTrigger, Select as SelectUI, SelectValue } from "@/components/ui/select";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
-import { Label } from "@/components/ui/label";
-import { Select as SelectUI, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type SelectOption = string | { value: string; label: string };
 
@@ -30,14 +30,8 @@ export default function Select({ label, id, options, required = true, value, onC
 
 	return (
 		<div className="space-y-2">
-			<Label htmlFor={id}>
-				{label}
-			</Label>
-			<SelectUI 
-				value={value} 
-				onValueChange={onChange}
-				required={required}
-			>
+			<Label htmlFor={id}>{label}</Label>
+			<SelectUI value={value} onValueChange={onChange} required={required}>
 				<SelectTrigger id={id} className="max-w-[15rem]" aria-label={label}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>

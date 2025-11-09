@@ -24,15 +24,15 @@ description: Fastify 服務、相依套件與主要流程說明
 
 ## 專案重要目錄
 
-| 目錄 | 用途 |
-| --- | --- |
-| `config/` | 資料庫、Redis、資安（CORS、Helmet、rate limit）設定 |
-| `middleware/` | `auth`、`sanitize` 中介層，供路由註冊時使用 |
-| `routes/` | Fastify Route 模組，依公開/後台/系統分類 |
-| `schemas/` | Fastify schema 定義，維持 API 文件與驗證一致 |
-| `utils/` | 通用工具（Email、Logger、Response、Token...）|
-| `scripts/db-init.js` | 啟動時初始化資料或同步作業 |
-| `types/` | JSDoc 類型定義，供編輯器自動完成 |
+| 目錄                 | 用途                                                |
+| -------------------- | --------------------------------------------------- |
+| `config/`            | 資料庫、Redis、資安（CORS、Helmet、rate limit）設定 |
+| `middleware/`        | `auth`、`sanitize` 中介層，供路由註冊時使用         |
+| `routes/`            | Fastify Route 模組，依公開/後台/系統分類            |
+| `schemas/`           | Fastify schema 定義，維持 API 文件與驗證一致        |
+| `utils/`             | 通用工具（Email、Logger、Response、Token...）       |
+| `scripts/db-init.js` | 啟動時初始化資料或同步作業                          |
+| `types/`             | JSDoc 類型定義，供編輯器自動完成                    |
 
 ## 開發建議
 

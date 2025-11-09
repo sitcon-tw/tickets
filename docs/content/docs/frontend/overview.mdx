@@ -10,22 +10,22 @@ description: Next.js App Router 架構與主要功能模組
 - **next-intl 4**：語系處理 (`frontend/i18n/*`)
 - **Tailwind CSS 4**：透過 `globals.css` 搭配 `tw-animate-css`
 - **styled-components** 與 `class-variance-authority` 協助樣式組合
-- **Chart.js`, `@react-three/*`** 等 UI 套件支援動畫、3D 與統計
+- **Chart.js`, `@react-three/\*`** 等 UI 套件支援動畫、3D 與統計
 
 ## 目錄結構
 
-| 位置 | 說明 |
-| --- | --- |
-| `app/` | Next.js App Router 頁面與 API Route，含 `globals.css`, `layout.tsx`, `not-found.tsx` |
-| `app/[locale]/` | 依語系拆分：公開頁面、報名流程、後台管理皆在此層 |
-| `components/` | 公用 UI 元件（Navigation、Loading、表單、QRCode 等）|
-| `components/form/` | 報名表單組件，配合 `EventFormFields` 動態顯示 |
-| `contexts/` | React Context，如 `AlertContext` 負責全域提示訊息 |
-| `lib/` | 工具與 API 呼叫封裝，`lib/utils.ts` 提供 `cn()` 合併 className |
-| `lib/api/` | 封裝後端 API 呼叫與型別定義 |
-| `lib/types/` | 共用 TypeScript 型別，盡量與後端 schema 對齊 |
-| `middleware.ts` | next-intl Middleware，強制語系前綴並略過 API/static |
-| `public/` | 靜態資產、字體、`robots.txt` |
+| 位置               | 說明                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `app/`             | Next.js App Router 頁面與 API Route，含 `globals.css`, `layout.tsx`, `not-found.tsx` |
+| `app/[locale]/`    | 依語系拆分：公開頁面、報名流程、後台管理皆在此層                                     |
+| `components/`      | 公用 UI 元件（Navigation、Loading、表單、QRCode 等）                                 |
+| `components/form/` | 報名表單組件，配合 `EventFormFields` 動態顯示                                        |
+| `contexts/`        | React Context，如 `AlertContext` 負責全域提示訊息                                    |
+| `lib/`             | 工具與 API 呼叫封裝，`lib/utils.ts` 提供 `cn()` 合併 className                       |
+| `lib/api/`         | 封裝後端 API 呼叫與型別定義                                                          |
+| `lib/types/`       | 共用 TypeScript 型別，盡量與後端 schema 對齊                                         |
+| `middleware.ts`    | next-intl Middleware，強制語系前綴並略過 API/static                                  |
+| `public/`          | 靜態資產、字體、`robots.txt`                                                         |
 
 ## Layout 與 Metadata
 

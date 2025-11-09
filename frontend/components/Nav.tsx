@@ -106,26 +106,15 @@ export default function Nav({ children }: NavProps) {
 
 	return (
 		<nav
-			className={cn(
-				"fixed top-0 left-0 z-[1000] w-full transition-all duration-300 ease-in-out",
-				isScrolled ? "bg-gray-900 border-b border-gray-500" : "bg-transparent border-b border-transparent"
-			)}
+			className={cn("fixed top-0 left-0 z-[1000] w-full transition-all duration-300 ease-in-out", isScrolled ? "bg-gray-900 border-b border-gray-500" : "bg-transparent border-b border-transparent")}
 		>
-			<div
-				className={cn(
-					"flex items-center justify-between w-full transition-all duration-300 ease-in-out",
-					isScrolled ? "p-4" : "p-6"
-				)}
-			>
+			<div className={cn("flex items-center justify-between w-full transition-all duration-300 ease-in-out", isScrolled ? "p-4" : "p-6")}>
 				<a
 					href={linkBuilder("/")}
 					aria-label="SITCON Home"
 					onMouseEnter={() => setHoveredLink("logo")}
 					onMouseLeave={() => setHoveredLink(null)}
-					className={cn(
-						"font-bold tracking-wider border-none bg-transparent cursor-pointer",
-						hoveredLink === "logo" && "underline"
-					)}
+					className={cn("font-bold tracking-wider border-none bg-transparent cursor-pointer", hoveredLink === "logo" && "underline")}
 				>
 					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" />
 				</a>
@@ -138,10 +127,7 @@ export default function Nav({ children }: NavProps) {
 									href={linkBuilder("/admin/")}
 									onMouseEnter={() => setHoveredLink("admin")}
 									onMouseLeave={() => setHoveredLink(null)}
-									className={cn(
-										"border-none bg-transparent cursor-pointer transition-all",
-										hoveredLink === "admin" && "underline"
-									)}
+									className={cn("border-none bg-transparent cursor-pointer transition-all", hoveredLink === "admin" && "underline")}
 								>
 									{t.adminPage}
 								</a>
@@ -167,10 +153,7 @@ export default function Nav({ children }: NavProps) {
 							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
 							onMouseEnter={() => setHoveredLink("login")}
 							onMouseLeave={() => setHoveredLink(null)}
-							className={cn(
-								"border-none bg-transparent cursor-pointer transition-all",
-								hoveredLink === "login" && "underline"
-							)}
+							className={cn("border-none bg-transparent cursor-pointer transition-all", hoveredLink === "login" && "underline")}
 						>
 							{t.login}
 						</a>

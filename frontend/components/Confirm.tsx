@@ -13,12 +13,9 @@ type ConfirmProps = {
 
 export default function Confirm({ isOpen, onClose, children, isConfirming = false }: ConfirmProps) {
 	return (
-		<Dialog open={isOpen && isConfirming} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={isOpen && isConfirming} onOpenChange={open => !open && onClose()}>
 			<DialogOverlay className="backdrop-blur-lg" />
-			<DialogContent 
-				className="max-w-[800px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0"
-				onPointerDownOutside={onClose}
-			>
+			<DialogContent className="max-w-[800px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0" onPointerDownOutside={onClose}>
 				<button
 					type="button"
 					aria-label="close"
@@ -27,9 +24,7 @@ export default function Confirm({ isOpen, onClose, children, isConfirming = fals
 				>
 					<X className="h-6 w-6" />
 				</button>
-				<div className={isConfirming ? "confirming" : ""}>
-					{children}
-				</div>
+				<div className={isConfirming ? "confirming" : ""}>{children}</div>
 			</DialogContent>
 		</Dialog>
 	);

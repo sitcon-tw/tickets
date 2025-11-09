@@ -1,6 +1,6 @@
-import { ChangeEvent, forwardRef } from "react";
 import { Checkbox as CheckboxUI } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ChangeEvent, forwardRef } from "react";
 
 type CheckboxProps = {
 	label: string;
@@ -24,7 +24,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, quest
 					aria-label={label}
 					required={required}
 					checked={checked}
-					onCheckedChange={(checkedState) => {
+					onCheckedChange={checkedState => {
 						if (onChange) {
 							// Create a synthetic event to maintain compatibility
 							const syntheticEvent = {
@@ -40,10 +40,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, quest
 						}
 					}}
 				/>
-				<Label 
-					htmlFor={id}
-					className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-				>
+				<Label htmlFor={id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
 					{label}
 				</Label>
 			</div>

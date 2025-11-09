@@ -12,15 +12,5 @@ export default function Spinner({ size = "md", className }: SpinnerProps) {
 		lg: "w-8 h-8 border-3"
 	};
 
-	return (
-		<div
-			className={cn(
-				"inline-block rounded-full border-transparent border-t-current animate-spin",
-				sizeClasses[size],
-				className
-			)}
-			role="status"
-			aria-label="Loading"
-		/>
-	);
+	return <div className={cn("inline-block rounded-full border-transparent border-t-current animate-spin", sizeClasses[size], className)} role="status" aria-label="Loading" />;
 }

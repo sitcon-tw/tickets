@@ -15,7 +15,7 @@ function AlertItem({ alert }: { alert: AlertType }) {
 					id: alert.id,
 					duration: 5000,
 					onDismiss: () => hideAlert(alert.id),
-					onAutoClose: () => hideAlert(alert.id),
+					onAutoClose: () => hideAlert(alert.id)
 				});
 				break;
 			case "error":
@@ -23,7 +23,7 @@ function AlertItem({ alert }: { alert: AlertType }) {
 					id: alert.id,
 					duration: 7000,
 					onDismiss: () => hideAlert(alert.id),
-					onAutoClose: () => hideAlert(alert.id),
+					onAutoClose: () => hideAlert(alert.id)
 				});
 				break;
 			case "warning":
@@ -31,7 +31,7 @@ function AlertItem({ alert }: { alert: AlertType }) {
 					id: alert.id,
 					duration: 5000,
 					onDismiss: () => hideAlert(alert.id),
-					onAutoClose: () => hideAlert(alert.id),
+					onAutoClose: () => hideAlert(alert.id)
 				});
 				break;
 			case "info":
@@ -39,7 +39,7 @@ function AlertItem({ alert }: { alert: AlertType }) {
 					id: alert.id,
 					duration: 5000,
 					onDismiss: () => hideAlert(alert.id),
-					onAutoClose: () => hideAlert(alert.id),
+					onAutoClose: () => hideAlert(alert.id)
 				});
 				break;
 		}

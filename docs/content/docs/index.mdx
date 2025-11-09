@@ -6,16 +6,11 @@ description: SITCON 報名與票券服務的介紹、使用、部署與程式規
 import { Cards, Card } from "fumadocs-ui/components/card";
 import { Callout } from "fumadocs-ui/components/callout";
 
-<Callout type="info">
-這裡的文檔都是 AI 生的，還沒有整理完，僅供參考。
-</Callout>
-
+<Callout type="info">這裡的文檔都是 AI 生的，還沒有整理完，僅供參考。</Callout>
 
 ## 專案介紹
 
 SITCONTIX 是 SITCON 2026 報名與票券系統，採用 pnpm 工作區管理前後端與文件。後端服務使用 Fastify、Prisma、PostgreSQL 與 Redis，搭配 BetterAuth 的魔術連結登入；前端則以 Next.js App Router、`next-intl` 以及 Tailwind CSS 4 提供多語系的報名與管理體驗。系統同時整合 OpenTelemetry 與 Prometheus 指標，方便在 Grafana 等平台進行監控。
-
-
 
 ## 系統架構概覽
 
@@ -47,16 +42,16 @@ SITCONTIX 是 SITCON 2026 報名與票券系統，採用 pnpm 工作區管理前
 
 在 `backend/.env` 與 `frontend/.env` 內設定必要變數，常用鍵值如下：
 
-| 變數 | 用途 |
-| --- | --- |
-| `POSTGRES_URI` | Prisma 連線字串，格式 `postgresql://user:pass@host:5432/db` |
-| `REDIS_URI` | Redis 連線字串，用於快取與 rate limit（缺省則以直連 Prisma） |
-| `FRONTEND_URI` | 前端站點的 Base URL，魔術連結與郵件模板會引用 |
-| `BACKEND_URI` | 後端 API Base URL，BetterAuth 驗證流程使用 |
-| `BETTER_AUTH_SECRET` | BetterAuth 的簽章金鑰，至少 32 字元 |
-| `MAILTRAP_TOKEN` / `MAILTRAP_SENDER_EMAIL` | Mailtrap API 與寄件人設定 |
-| `MAIL_FROM_NAME` | 郵件顯示名稱 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP Trace 匯出端點，預設 `http://tempo:4318/v1/traces` |
+| 變數                                       | 用途                                                         |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| `POSTGRES_URI`                             | Prisma 連線字串，格式 `postgresql://user:pass@host:5432/db`  |
+| `REDIS_URI`                                | Redis 連線字串，用於快取與 rate limit（缺省則以直連 Prisma） |
+| `FRONTEND_URI`                             | 前端站點的 Base URL，魔術連結與郵件模板會引用                |
+| `BACKEND_URI`                              | 後端 API Base URL，BetterAuth 驗證流程使用                   |
+| `BETTER_AUTH_SECRET`                       | BetterAuth 的簽章金鑰，至少 32 字元                          |
+| `MAILTRAP_TOKEN` / `MAILTRAP_SENDER_EMAIL` | Mailtrap API 與寄件人設定                                    |
+| `MAIL_FROM_NAME`                           | 郵件顯示名稱                                                 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`              | OTLP Trace 匯出端點，預設 `http://tempo:4318/v1/traces`      |
 
 > 提醒：前後端各自載入 `.env`，若要共用值可在根目錄透過 shell script 同步。
 
@@ -117,8 +112,8 @@ pnpm dev:backend
 外部參考：
 
 <Cards>
-  <Card title="GitHub Repository" href="https://github.com/sitcon-tw/2026-tickets" />
-  <Card title="Fastify Docs" href="https://www.fastify.io/docs/latest/" />
-  <Card title="Next.js Docs" href="https://nextjs.org/docs" />
-  <Card title="Fumadocs" href="https://fumadocs.dev" />
+	<Card title="GitHub Repository" href="https://github.com/sitcon-tw/2026-tickets" />
+	<Card title="Fastify Docs" href="https://www.fastify.io/docs/latest/" />
+	<Card title="Next.js Docs" href="https://nextjs.org/docs" />
+	<Card title="Fumadocs" href="https://fumadocs.dev" />
 </Cards>

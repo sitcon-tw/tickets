@@ -14,7 +14,7 @@ type MultiCheckboxProps = {
 export default function MultiCheckbox({ label, name, options, values = [], onValueChange }: MultiCheckboxProps) {
 	const handleCheckedChange = (optionValue: string, checked: boolean) => {
 		if (!onValueChange) return;
-		
+
 		if (checked) {
 			onValueChange([...values, optionValue]);
 		} else {
@@ -34,16 +34,8 @@ export default function MultiCheckbox({ label, name, options, values = [], onVal
 
 					return (
 						<div key={optionId} className="flex items-center space-x-2">
-							<Checkbox
-								id={optionId}
-								name={name}
-								checked={isChecked}
-								onCheckedChange={(checked) => handleCheckedChange(optionValue, checked === true)}
-							/>
-							<Label
-								htmlFor={optionId}
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-							>
+							<Checkbox id={optionId} name={name} checked={isChecked} onCheckedChange={checked => handleCheckedChange(optionValue, checked === true)} />
+							<Label htmlFor={optionId} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
 								{optionLabel}
 							</Label>
 						</div>
