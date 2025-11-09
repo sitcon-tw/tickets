@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
@@ -26,10 +27,8 @@ export default function Nav({ children }: NavProps) {
 	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 	const pathname = usePathname();
 
-	const [isScrolled, setIsScrolled] = useState(false);
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
-	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
@@ -62,19 +61,6 @@ export default function Nav({ children }: NavProps) {
 		session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
 
 	useEffect(() => {
-		function handleScroll() {
-			setIsScrolled(window.scrollY > 5);
-		}
-
-		handleScroll();
-		window.addEventListener("scroll", handleScroll);
-
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
-		};
-	}, []);
-
-	useEffect(() => {
 		let cancelled = false;
 
 		const checkAuthStatus = async () => {
@@ -105,59 +91,36 @@ export default function Nav({ children }: NavProps) {
 	}
 
 	return (
-		<nav
-			className={cn("fixed top-0 left-0 z-[1000] w-full transition-all duration-300 ease-in-out", isScrolled ? "bg-gray-900 border-b border-gray-500" : "bg-transparent border-b border-transparent")}
-		>
-			<div className={cn("flex items-center justify-between w-full transition-all duration-300 ease-in-out", isScrolled ? "p-4" : "p-6")}>
-				<a
-					href={linkBuilder("/")}
-					aria-label="SITCON Home"
-					onMouseEnter={() => setHoveredLink("logo")}
-					onMouseLeave={() => setHoveredLink(null)}
-					className={cn("font-bold tracking-wider border-none bg-transparent cursor-pointer", hoveredLink === "logo" && "underline")}
-				>
-					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" />
+		<nav className="fixed top-0 left-0 z-[1000] w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors">
+			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-3">
+				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity">
+					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" className="dark:invert" />
 				</a>
-				<div className="flex items-center gap-6">
+				<div className="flex items-center gap-4">
 					{session.status === "authenticated" ? (
-						<div className="flex items-center gap-4">
-							<span className="text-blue-400">{userDisplayName}</span>
+						<>
+							<span className="text-sm text-gray-700 dark:text-gray-300">{userDisplayName}</span>
 							{hasAdminAccess && (
-								<a
-									href={linkBuilder("/admin/")}
-									onMouseEnter={() => setHoveredLink("admin")}
-									onMouseLeave={() => setHoveredLink(null)}
-									className={cn("border-none bg-transparent cursor-pointer transition-all", hoveredLink === "admin" && "underline")}
-								>
+								<a href={linkBuilder("/admin/")} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 									{t.adminPage}
 								</a>
 							)}
 							<button
 								type="button"
 								onClick={handleLogout}
-								onMouseEnter={() => setHoveredLink("logout")}
-								onMouseLeave={() => setHoveredLink(null)}
 								disabled={isLoggingOut}
-								className={cn(
-									"border-none bg-transparent p-0 inline-flex items-center gap-2 transition-opacity",
-									hoveredLink === "logout" && "underline",
-									isLoggingOut ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-								)}
+								className={cn("text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2", isLoggingOut && "opacity-50 cursor-not-allowed")}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
 							</button>
-						</div>
+						</>
 					) : (
-						<a
-							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							onMouseEnter={() => setHoveredLink("login")}
-							onMouseLeave={() => setHoveredLink(null)}
-							className={cn("border-none bg-transparent cursor-pointer transition-all", hoveredLink === "login" && "underline")}
-						>
+						<a href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 							{t.login}
 						</a>
 					)}
+					<ThemeToggle />
 				</div>
 			</div>
 			{children}

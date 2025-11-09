@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from "@next/third-parties/google";
 import type { Metadata } from "next";
@@ -36,17 +37,18 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html>
+		<html lang="en" suppressHydrationWarning className="h-full">
 			<head>
 				<meta charSet="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 				<meta name="generator" content="Next.js" />
-				<meta name="theme-color" content="#000" />
 			</head>
 
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				{children}
-				<Toaster richColors position="bottom-center" />
+			<body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`} suppressHydrationWarning>
+				<ThemeProvider>
+					{children}
+					<Toaster richColors position="bottom-center" />
+				</ThemeProvider>
 			</body>
 
 			{/* Google Tag Manager */}
