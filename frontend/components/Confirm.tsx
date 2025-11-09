@@ -1,5 +1,7 @@
 "use client";
 
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { ReactNode } from "react";
 
 type ConfirmProps = {
@@ -11,61 +13,24 @@ type ConfirmProps = {
 
 export default function Confirm({ isOpen, onClose, children, isConfirming = false }: ConfirmProps) {
 	return (
-		<div
-			className={isConfirming ? "confirm confirming" : "confirm"}
-			role="dialog"
-			aria-modal="true"
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				width: "100%",
-				height: "100%",
-				backgroundColor: "#00000029",
-				backdropFilter: "blur(20px)",
-				WebkitBackdropFilter: "blur(20px)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: "2rem",
-				opacity: isOpen && isConfirming ? 1 : 0,
-				pointerEvents: isOpen && isConfirming ? "all" : "none",
-				transition: "opacity 0.3s ease-in-out",
-				zIndex: 1001,
-				overflowY: "auto"
-			}}
-		>
-			<div
-				style={{
-					maxWidth: "800px",
-					width: "100%",
-					maxHeight: "90vh",
-					display: "flex",
-					flexDirection: "column",
-					position: "relative"
-				}}
+		<Dialog open={isOpen && isConfirming} onOpenChange={(open) => !open && onClose()}>
+			<DialogOverlay className="backdrop-blur-lg" />
+			<DialogContent 
+				className="max-w-[800px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0"
+				onPointerDownOutside={onClose}
 			>
 				<button
 					type="button"
 					aria-label="close"
 					onClick={onClose}
-					style={{
-						position: "absolute",
-						right: "0.5rem",
-						top: "0.5rem",
-						cursor: "pointer",
-						fontSize: "2rem",
-						background: "transparent",
-						border: "none",
-						color: "inherit",
-						lineHeight: 1,
-						zIndex: 10
-					}}
+					className="absolute right-2 top-2 z-10 cursor-pointer text-4xl bg-transparent border-none text-foreground leading-none hover:opacity-70 transition-opacity"
 				>
-					×
+					<X className="h-6 w-6" />
 				</button>
-				{children}
-			</div>
-		</div>
+				<div className={isConfirming ? "confirming" : ""}>
+					{children}
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

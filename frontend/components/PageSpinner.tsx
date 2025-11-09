@@ -1,15 +1,15 @@
 import { getTranslations } from "@/i18n/helpers";
+import { cn } from "@/lib/utils";
 import { useLocale } from "next-intl";
 import Image from "next/image";
-import { CSSProperties } from "react";
 import DecryptedText from "./DecryptedText";
 
 interface PageSpinnerProps {
 	size?: number;
-	style?: CSSProperties;
+	className?: string;
 }
 
-export default function PageSpinner({ size = 48, style }: PageSpinnerProps) {
+export default function PageSpinner({ size = 48, className }: PageSpinnerProps) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
 		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Now Loading..." }
@@ -18,13 +18,8 @@ export default function PageSpinner({ size = 48, style }: PageSpinnerProps) {
 	return (
 		<>
 			<div
-				style={{
-					display: "inline-block",
-					width: size,
-					height: size,
-					animation: "spin 0.8s linear infinite",
-					...style
-				}}
+				className={cn("inline-block animate-spin", className)}
+				style={{ width: size, height: size }}
 				role="status"
 				aria-label="Loading"
 			>
@@ -33,17 +28,8 @@ export default function PageSpinner({ size = 48, style }: PageSpinnerProps) {
 					alt="Loading"
 					width={size}
 					height={size}
-					style={{
-						display: "block"
-					}}
+					className="block"
 				/>
-				<style jsx>{`
-					@keyframes spin {
-						to {
-							transform: rotate(360deg);
-						}
-					}
-				`}</style>
 			</div>
 			<DecryptedText text={t.loading} animateOn="view" />
 		</>

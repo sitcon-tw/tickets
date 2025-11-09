@@ -1,40 +1,26 @@
-import { CSSProperties } from "react";
+import { cn } from "@/lib/utils";
 
 interface SpinnerProps {
 	size?: "sm" | "md" | "lg";
-	color?: string;
-	style?: CSSProperties;
+	className?: string;
 }
 
-export default function Spinner({ size = "md", color = "currentColor", style }: SpinnerProps) {
-	const sizes = {
-		sm: "16px",
-		md: "24px",
-		lg: "32px"
+export default function Spinner({ size = "md", className }: SpinnerProps) {
+	const sizeClasses = {
+		sm: "w-4 h-4 border-2",
+		md: "w-6 h-6 border-2",
+		lg: "w-8 h-8 border-3"
 	};
 
 	return (
 		<div
-			style={{
-				display: "inline-block",
-				width: sizes[size],
-				height: sizes[size],
-				border: `2px solid transparent`,
-				borderTopColor: color,
-				borderRadius: "50%",
-				animation: "spin 0.8s linear infinite",
-				...style
-			}}
+			className={cn(
+				"inline-block rounded-full border-transparent border-t-current animate-spin",
+				sizeClasses[size],
+				className
+			)}
 			role="status"
 			aria-label="Loading"
-		>
-			<style jsx>{`
-				@keyframes spin {
-					to {
-						transform: rotate(360deg);
-					}
-				}
-			`}</style>
-		</div>
+		/>
 	);
 }

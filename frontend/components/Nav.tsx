@@ -3,6 +3,7 @@
 import Spinner from "@/components/Spinner";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
+import { cn } from "@/lib/utils";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -105,74 +106,42 @@ export default function Nav({ children }: NavProps) {
 
 	return (
 		<nav
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				zIndex: 1000,
-				backgroundColor: isScrolled ? "var(--color-gray-900)" : "transparent",
-				width: "100%",
-				transition: "border-color 0.3s ease-in-out",
-				borderBottom: `${isScrolled ? "var(--color-gray-500)" : "transparent"} solid 1px`
-			}}
+			className={cn(
+				"fixed top-0 left-0 z-[1000] w-full transition-all duration-300 ease-in-out",
+				isScrolled ? "bg-gray-900 border-b border-gray-500" : "bg-transparent border-b border-transparent"
+			)}
 		>
 			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					width: "100%",
-					padding: isScrolled ? "1rem" : "1.5rem",
-					transition: "padding 0.3s ease-in-out"
-				}}
+				className={cn(
+					"flex items-center justify-between w-full transition-all duration-300 ease-in-out",
+					isScrolled ? "p-4" : "p-6"
+				)}
 			>
 				<a
 					href={linkBuilder("/")}
 					aria-label="SITCON Home"
 					onMouseEnter={() => setHoveredLink("logo")}
 					onMouseLeave={() => setHoveredLink(null)}
-					style={{
-						fontWeight: 700,
-						letterSpacing: "0.2em",
-						textDecoration: hoveredLink === "logo" ? "underline" : "none",
-						border: "none",
-						background: "none",
-						color: "inherit",
-						font: "inherit",
-						cursor: "pointer"
-					}}
+					className={cn(
+						"font-bold tracking-wider border-none bg-transparent cursor-pointer",
+						hoveredLink === "logo" && "underline"
+					)}
 				>
 					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" />
 				</a>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "1.5rem"
-					}}
-				>
+				<div className="flex items-center gap-6">
 					{session.status === "authenticated" ? (
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "1rem"
-							}}
-						>
+						<div className="flex items-center gap-4">
 							<span className="text-blue-400">{userDisplayName}</span>
 							{hasAdminAccess && (
 								<a
 									href={linkBuilder("/admin/")}
 									onMouseEnter={() => setHoveredLink("admin")}
 									onMouseLeave={() => setHoveredLink(null)}
-									style={{
-										textDecoration: hoveredLink === "admin" ? "underline" : "none",
-										border: "none",
-										background: "none",
-										color: "inherit",
-										font: "inherit",
-										cursor: "pointer"
-									}}
+									className={cn(
+										"border-none bg-transparent cursor-pointer transition-all",
+										hoveredLink === "admin" && "underline"
+									)}
 								>
 									{t.adminPage}
 								</a>
@@ -183,20 +152,11 @@ export default function Nav({ children }: NavProps) {
 								onMouseEnter={() => setHoveredLink("logout")}
 								onMouseLeave={() => setHoveredLink(null)}
 								disabled={isLoggingOut}
-								style={{
-									textDecoration: hoveredLink === "logout" ? "underline" : "none",
-									border: "none",
-									background: "none",
-									color: "inherit",
-									font: "inherit",
-									cursor: isLoggingOut ? "not-allowed" : "pointer",
-									padding: 0,
-									opacity: isLoggingOut ? 0.7 : 1,
-									transition: "opacity 0.2s",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "0.5rem"
-								}}
+								className={cn(
+									"border-none bg-transparent p-0 inline-flex items-center gap-2 transition-opacity",
+									hoveredLink === "logout" && "underline",
+									isLoggingOut ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
@@ -207,14 +167,10 @@ export default function Nav({ children }: NavProps) {
 							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
 							onMouseEnter={() => setHoveredLink("login")}
 							onMouseLeave={() => setHoveredLink(null)}
-							style={{
-								textDecoration: hoveredLink === "login" ? "underline" : "none",
-								border: "none",
-								background: "none",
-								color: "inherit",
-								font: "inherit",
-								cursor: "pointer"
-							}}
+							className={cn(
+								"border-none bg-transparent cursor-pointer transition-all",
+								hoveredLink === "login" && "underline"
+							)}
 						>
 							{t.login}
 						</a>
