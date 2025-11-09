@@ -310,7 +310,7 @@ export default function Login() {
 		return (
 			<StyledMain>
 				<section>
-					<Container isActive={true} style={{ textAlign: "center" }}>
+					<Container isActive={true} className="text-center">
 						<Spinner />
 					</Container>
 				</section>
@@ -329,9 +329,9 @@ export default function Login() {
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
-						<p style={{ fontSize: "0.9rem", marginTop: "5rem", color: "var(--color-gray-700)" }}>
+						<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
 							{t.acceptTermsAsLoggedIn}{" "}
-							<a href="/terms" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
+							<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
 								{t.termsLink}
 							</a>
 						</p>

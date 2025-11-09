@@ -183,7 +183,7 @@ export default function UsersPage() {
 											<td>{user.name}</td>
 											<td>
 												{user.email}
-												{user.emailVerified && <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", opacity: 0.7 }}>✓ {t.emailVerified}</span>}
+												{user.emailVerified && <span className="ml-2 text-xs opacity-70">✓ {t.emailVerified}</span>}
 											</td>
 											<td>
 												<span className={`status-badge ${roleClass}`}>{getRoleLabel(user.role)}</span>
@@ -216,11 +216,11 @@ export default function UsersPage() {
 							</button>
 						</div>
 						<form onSubmit={handleUpdateUser}>
-							<div style={{ marginBottom: "1.5rem" }}>
-								<p style={{ margin: "0 0 0.5rem 0", fontSize: "0.9rem", opacity: 0.7 }}>
+							<div className="mb-6">
+								<p className="m-0 mb-2 text-sm opacity-70">
 									{t.name}: <strong>{editingUser.name}</strong>
 								</p>
-								<p style={{ margin: "0 0 0.5rem 0", fontSize: "0.9rem", opacity: 0.7 }}>
+								<p className="m-0 mb-2 text-sm opacity-70">
 									{t.email}: <strong>{editingUser.email}</strong>
 								</p>
 							</div>
@@ -244,7 +244,7 @@ export default function UsersPage() {
 									<option value="eventAdmin">{t.eventAdmin}</option>
 								</select>
 							</div>
-							<div className="admin-form-group" style={{ marginTop: "1rem" }}>
+							<div className="admin-form-group mt-4">
 								<label className="admin-form-label">{t.status}</label>
 								<select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"} className="admin-select">
 									<option value="true">{t.active}</option>
@@ -253,38 +253,21 @@ export default function UsersPage() {
 							</div>
 							{/* Event selection for eventAdmin role */}
 							{selectedRole === "eventAdmin" && (
-								<div className="admin-form-group" style={{ marginTop: "1rem" }}>
+								<div className="admin-form-group mt-4">
 									<label className="admin-form-label">{t.manageableEvents}</label>
-									<div
-										style={{
-											maxHeight: "200px",
-											overflowY: "auto",
-											border: "1px solid #ddd",
-											borderRadius: "4px",
-											padding: "0.5rem"
-										}}
-									>
+									<div className="max-h-[200px] overflow-y-auto border border-gray-300 rounded p-2">
 										{events.length === 0 ? (
-											<p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.7 }}>{t.noEventsSelected}</p>
+											<p className="m-0 text-sm opacity-70">{t.noEventsSelected}</p>
 										) : (
 											events.map(event => (
-												<label
-													key={event.id}
-													style={{
-														display: "flex",
-														alignItems: "center",
-														padding: "0.5rem",
-														cursor: "pointer",
-														borderBottom: "1px solid #eee"
-													}}
-												>
-													<input type="checkbox" checked={selectedEventIds.includes(event.id)} onChange={() => toggleEventSelection(event.id)} style={{ marginRight: "0.5rem" }} />
+												<label key={event.id} className="flex items-center p-2 cursor-pointer border-b border-gray-200">
+													<input type="checkbox" checked={selectedEventIds.includes(event.id)} onChange={() => toggleEventSelection(event.id)} className="mr-2" />
 													<span>{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
 												</label>
 											))
 										)}
 									</div>
-									<p style={{ fontSize: "0.75rem", marginTop: "0.5rem", opacity: 0.7 }}>
+									<p className="text-xs mt-2 opacity-70">
 										{selectedEventIds.length} {t.selectEvents}
 									</p>
 								</div>

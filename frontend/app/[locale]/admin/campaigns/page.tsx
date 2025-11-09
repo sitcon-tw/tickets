@@ -251,7 +251,7 @@ export default function EmailCampaignsPage() {
 				<h1 className="text-3xl font-bold">{t.title}</h1>
 				<div className="h-8" />
 
-				<section className="admin-controls" style={{ margin: "1rem 0" }}>
+				<section className="admin-controls my-4">
 					<button onClick={() => setShowCreateModal(true)} className="admin-button primary">
 						✉️ {t.createNew}
 					</button>
@@ -278,7 +278,7 @@ export default function EmailCampaignsPage() {
 										<th>{t.status}</th>
 										<th>{t.recipients}</th>
 										<th>{t.createdAt}</th>
-										<th style={{ width: "200px" }}>{t.actions}</th>
+										<th className="w-48">{t.actions}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -298,7 +298,7 @@ export default function EmailCampaignsPage() {
 											</td>
 											<td>{new Date(campaign.createdAt).toLocaleString()}</td>
 											<td>
-												<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+												<div className="flex gap-2 flex-wrap">
 													<button onClick={() => handlePreview(campaign)} className="admin-button small secondary" disabled={campaign.status === "cancelled"}>
 														👁 {t.preview}
 													</button>
@@ -326,7 +326,7 @@ export default function EmailCampaignsPage() {
 			{/* Create Modal */}
 			{showCreateModal && (
 				<div className="admin-modal-overlay" onClick={() => setShowCreateModal(false)}>
-					<div className="admin-modal" style={{ maxWidth: "800px" }} onClick={e => e.stopPropagation()}>
+					<div className="admin-modal max-w-3xl" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{t.createNew}</h2>
 							<button className="admin-modal-close" onClick={() => setShowCreateModal(false)}>
@@ -334,15 +334,15 @@ export default function EmailCampaignsPage() {
 							</button>
 						</div>
 
-						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+						<div className="flex flex-col gap-4 p-6">
 							<div>
 								<label className="admin-stat-label">{t.name}</label>
-								<input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="admin-input" style={{ width: "100%" }} />
+								<input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="admin-input w-full" />
 							</div>
 
 							<div>
 								<label className="admin-stat-label">{t.subject}</label>
-								<input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="admin-input" style={{ width: "100%" }} />
+								<input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="admin-input w-full" />
 							</div>
 
 							<div>
@@ -350,18 +350,17 @@ export default function EmailCampaignsPage() {
 								<textarea
 									value={formData.content}
 									onChange={e => setFormData({ ...formData, content: e.target.value })}
-									className="admin-input"
-									style={{ width: "100%", minHeight: "200px", fontFamily: "monospace" }}
+									className="admin-input w-full min-h-[200px] font-mono"
 									placeholder="<h1>Hello {{name}}!</h1>"
 								/>
-								<small style={{ fontSize: "0.75rem", opacity: 0.7 }}>{t.templateVars}</small>
+								<small className="text-xs opacity-70">{t.templateVars}</small>
 							</div>
 
 							<div>
 								<label className="admin-stat-label">{t.targetAudience}</label>
 
-								<div style={{ marginTop: "0.5rem" }}>
-									<label style={{ fontSize: "0.85rem" }}>{t.selectEvents}</label>
+								<div className="mt-2">
+									<label className="text-sm">{t.selectEvents}</label>
 									<select
 										multiple
 										value={formData.targetAudience.eventIds}
@@ -372,8 +371,7 @@ export default function EmailCampaignsPage() {
 												targetAudience: { ...formData.targetAudience, eventIds: selected }
 											});
 										}}
-										className="admin-select"
-										style={{ width: "100%", minHeight: "80px" }}
+										className="admin-select w-full min-h-[80px]"
 									>
 										{events.map(event => (
 											<option key={event.id} value={event.id}>
@@ -383,8 +381,8 @@ export default function EmailCampaignsPage() {
 									</select>
 								</div>
 
-								<div style={{ marginTop: "0.5rem" }}>
-									<label style={{ fontSize: "0.85rem" }}>{t.selectTickets}</label>
+								<div className="mt-2">
+									<label className="text-sm">{t.selectTickets}</label>
 									<select
 										multiple
 										value={formData.targetAudience.ticketIds}
@@ -395,8 +393,7 @@ export default function EmailCampaignsPage() {
 												targetAudience: { ...formData.targetAudience, ticketIds: selected }
 											});
 										}}
-										className="admin-select"
-										style={{ width: "100%", minHeight: "80px" }}
+										className="admin-select w-full min-h-[80px]"
 									>
 										{tickets.map(ticket => (
 											<option key={ticket.id} value={ticket.id}>
@@ -406,8 +403,8 @@ export default function EmailCampaignsPage() {
 									</select>
 								</div>
 
-								<div style={{ marginTop: "0.5rem", display: "flex", gap: "1rem" }}>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<div className="mt-2 flex gap-4">
+									<label className="flex items-center gap-2">
 										<input
 											type="checkbox"
 											checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
@@ -428,7 +425,7 @@ export default function EmailCampaignsPage() {
 										/>
 										{t.confirmed}
 									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+									<label className="flex items-center gap-2">
 										<input
 											type="checkbox"
 											checked={formData.targetAudience.registrationStatuses.includes("pending")}
@@ -453,19 +450,12 @@ export default function EmailCampaignsPage() {
 							</div>
 
 							{recipientCount !== null && (
-								<div
-									style={{
-										padding: "1rem",
-										background: "var(--color-gray-800)",
-										borderRadius: "8px",
-										border: "2px solid var(--color-gray-600)"
-									}}
-								>
+								<div className="p-4 bg-gray-800 dark:bg-gray-900 rounded-lg border-2 border-gray-600 dark:border-gray-700">
 									<strong>{t.recipientCountLabel}:</strong> {recipientCount}
 								</div>
 							)}
 
-							<div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+							<div className="flex gap-2 justify-end">
 								<button onClick={handleCalculateRecipients} className="admin-button secondary">
 									🔢 {t.calculateRecipients}
 								</button>
@@ -484,7 +474,7 @@ export default function EmailCampaignsPage() {
 			{/* Preview Modal */}
 			{showPreviewModal && selectedCampaign && (
 				<div className="admin-modal-overlay" onClick={() => setShowPreviewModal(false)}>
-					<div className="admin-modal" style={{ maxWidth: "900px" }} onClick={e => e.stopPropagation()}>
+					<div className="admin-modal max-w-4xl" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">
 								{t.preview}: {selectedCampaign.subject}
@@ -494,20 +484,11 @@ export default function EmailCampaignsPage() {
 							</button>
 						</div>
 
-						<div
-							style={{
-								padding: "1rem",
-								background: "white",
-								color: "black",
-								borderRadius: "8px",
-								maxHeight: "70vh",
-								overflow: "auto"
-							}}
-						>
+						<div className="p-4 bg-white text-black rounded-lg max-h-[70vh] overflow-auto">
 							<div dangerouslySetInnerHTML={{ __html: previewHtml }} />
 						</div>
 
-						<div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem" }}>
+						<div className="flex gap-2 justify-end mt-4 px-6 pb-6">
 							<button onClick={() => setShowPreviewModal(false)} className="admin-button secondary">
 								{t.close}
 							</button>

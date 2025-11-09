@@ -153,23 +153,8 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	}, [referralParam, eventId, t.loadFailed]);
 
 	const registeredContent = (
-		<section
-			style={{
-				padding: "2rem",
-				margin: "1rem",
-				textAlign: "center",
-				animation: "fadeInUp 0.5s ease-out",
-				...(isSafari ? { backgroundColor: "var(--color-gray-800)", border: "5px solid #5A738F" } : {})
-			}}
-		>
-			<h2
-				style={{
-					fontSize: "1.5rem",
-					marginBottom: "0.5rem"
-				}}
-			>
-				{t.registeredWelcome}
-			</h2>
+		<section className={`p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out] bg-gray-100 dark:bg-gray-800 ${isSafari ? "border-[5px] border-[#5A738F]" : ""}`}>
+			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 			<div className="items-center justify-center flex">
 				<button
 					className="button"
@@ -202,45 +187,17 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			) : null}
 
 			{welcomeState === "referral" ? (
-				<section
-					style={{
-						backgroundColor: "var(--color-gray-800)",
-						padding: "2rem",
-						margin: "1rem",
-						textAlign: "center",
-						animation: "fadeInUp 0.5s ease-out"
-					}}
-				>
-					<h2
-						style={{
-							fontSize: "1.5rem",
-							marginBottom: "0.5rem"
-						}}
-					>
+				<section className="bg-gray-100 dark:bg-gray-800 p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out]">
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
-					<p>{t.promotionalText}</p>
+					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
 				</section>
 			) : null}
 
 			{welcomeState === "default" ? (
-				<section
-					style={{
-						backgroundColor: "var(--color-gray-800)",
-						padding: "2rem",
-						margin: "1rem",
-						textAlign: "center",
-						animation: "fadeInUp 0.5s ease-out"
-					}}
-				>
-					<h2
-						style={{
-							fontSize: "1.5rem",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{t.loggedInWelcome}
-					</h2>
+				<section className="bg-gray-100 dark:bg-gray-800 p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out]">
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.loggedInWelcome}</h2>
 					{!isSmsVerified && (
 						<div className="text-yellow-200 items-center justify-center flex flex-col gap-2">
 							<div>
@@ -260,18 +217,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				</section>
 			) : null}
 
-			<h2
-				style={{
-					fontSize: "1rem",
-					marginBlock: "2rem",
-					textAlign: "center",
-					fontWeight: "normal",
-					animation: "blink 1s infinite linear alternate",
-					opacity: 0.8
-				}}
-			>
-				{t.selectTicket}
-			</h2>
+			<h2 className="text-base my-8 text-center font-normal animate-[blink_1s_infinite_linear_alternate] opacity-80 text-gray-900 dark:text-gray-100">{t.selectTicket}</h2>
 		</section>
 	);
 }

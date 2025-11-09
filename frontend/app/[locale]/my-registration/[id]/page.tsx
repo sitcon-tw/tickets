@@ -327,52 +327,26 @@ export default function MyRegistrationPage() {
 	return (
 		<>
 			<main>
-				<section
-					style={{
-						marginTop: "6rem",
-						maxWidth: "900px",
-						marginLeft: "auto",
-						marginRight: "auto",
-						padding: "0 1rem",
-						marginBottom: "4rem"
-					}}
-				>
-					<button onClick={() => router.back()} className="button" style={{ marginBottom: "2rem" }}>
+				<section className="mt-24 max-w-[900px] mx-auto px-4 mb-16">
+					<button onClick={() => router.back()} className="button mb-8">
 						<div className="flex items-center">
 							<ChevronLeft />
 							<p>{t.backToRegistrations}</p>
 						</div>
 					</button>
 
-					<h1
-						style={{
-							marginBlock: "1rem",
-							fontSize: "2.5rem"
-						}}
-					>
-						{t.myRegistration}
-					</h1>
+					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>
 
 					{loading && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "1rem",
-								padding: "3rem",
-								opacity: 0.7
-							}}
-						>
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
 							<PageSpinner size={48} />
 							<p>{t.loading}</p>
 						</div>
 					)}
 
 					{error && (
-						<div style={{ textAlign: "center", padding: "2rem" }}>
-							<p style={{ color: "red" }}>
+						<div className="text-center p-8">
+							<p className="text-red-500">
 								{t.loadFailed}
 								{error}
 							</p>
@@ -381,24 +355,11 @@ export default function MyRegistrationPage() {
 					)}
 
 					{!loading && !error && registration && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "2rem"
-							}}
-						>
+						<div className="flex flex-col gap-8">
 							{/* Event Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.eventInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div className="p-6 border border-[var(--border-color)] rounded-lg bg-[var(--background-secondary)]">
+								<h2 className="mb-4 text-2xl">{t.eventInfo}</h2>
+								<div className="flex flex-col gap-3">
 									<div>
 										<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
 									</div>
@@ -414,16 +375,9 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Ticket Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.ticketInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div className="p-6 border border-[var(--border-color)] rounded-lg bg-[var(--background-secondary)]">
+								<h2 className="mb-4 text-2xl">{t.ticketInfo}</h2>
+								<div className="flex flex-col gap-3">
 									<div>
 										<strong>{t.ticketType}:</strong> {getLocalizedText(registration.ticket?.name || {}, locale)}
 									</div>
@@ -432,11 +386,7 @@ export default function MyRegistrationPage() {
 									</div>
 									<div>
 										<strong>{t.registrationStatus}:</strong>{" "}
-										<span
-											style={{
-												color: registration.status === "confirmed" ? "green" : registration.status === "cancelled" ? "red" : "orange"
-											}}
-										>
+										<span className={registration.status === "confirmed" ? "text-green-500" : registration.status === "cancelled" ? "text-red-500" : "text-orange-500"}>
 											{registration.status === "confirmed"
 												? t.statusConfirmed
 												: registration.status === "cancelled"
@@ -453,31 +403,19 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Registration Form Data - Editable */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px"
-								}}
-							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-									<h2 style={{ fontSize: "1.5rem" }}>{t.registrationInfo}</h2>
+							<div className="p-6 border border-[var(--border-color)] rounded-lg">
+								<div className="flex justify-between items-center mb-4">
+									<h2 className="text-2xl">{t.registrationInfo}</h2>
 									{!isEditing && registration.canEdit && (
-										<button onClick={() => setIsEditing(true)} className="button" style={{ padding: "0.5rem 1rem" }}>
+										<button onClick={() => setIsEditing(true)} className="button py-2 px-4">
 											{t.edit}
 										</button>
 									)}
 								</div>
 
-								{!registration.canEdit && <p style={{ color: "var(--text-secondary)", marginBottom: "1rem", fontSize: "0.9rem" }}>{t.cannotEdit}</p>}
+								{!registration.canEdit && <p className="text-[var(--text-secondary)] mb-4 text-sm">{t.cannotEdit}</p>}
 
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "1.5rem"
-									}}
-								>
+								<div className="flex flex-col gap-6">
 									{formFields.map((field, index) => {
 										const fieldName = getLocalizedText(field.name, locale);
 
@@ -507,19 +445,8 @@ export default function MyRegistrationPage() {
 
 											return (
 												<div key={index}>
-													<div style={{ fontWeight: "bold", marginBottom: "0.25rem" }}>{fieldName}</div>
-													<div
-														style={{
-															padding: "0.5rem",
-															backgroundColor: "var(--background-secondary)",
-															borderRadius: "4px",
-															minHeight: "2.5rem",
-															display: "flex",
-															alignItems: "center"
-														}}
-													>
-														{displayValue}
-													</div>
+													<div className="font-bold mb-1">{fieldName}</div>
+													<div className="p-2 bg-[var(--background-secondary)] rounded min-h-10 flex items-center">{displayValue}</div>
 												</div>
 											);
 										}
@@ -527,41 +454,12 @@ export default function MyRegistrationPage() {
 								</div>
 
 								{isEditing && (
-									<div
-										style={{
-											display: "flex",
-											gap: "1rem",
-											marginTop: "2rem",
-											justifyContent: "center"
-										}}
-									>
-										<button
-											onClick={handleSave}
-											disabled={isSaving}
-											className="button"
-											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
-												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
-											}}
-										>
+									<div className="flex gap-4 mt-8 justify-center">
+										<button onClick={handleSave} disabled={isSaving} className={`button inline-flex items-center gap-2 ${isSaving ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}>
 											{isSaving ? <Spinner size="sm" /> : <Save size={18} />}
 											{isSaving ? t.saving : t.save}
 										</button>
-										<button
-											onClick={handleCancelEdit}
-											disabled={isSaving}
-											className="button"
-											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
-												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
-											}}
-										>
+										<button onClick={handleCancelEdit} disabled={isSaving} className={`button inline-flex items-center gap-2 ${isSaving ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}>
 											<X size={18} />
 											{t.cancel}
 										</button>

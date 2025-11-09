@@ -251,18 +251,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		<>
 			<div className="tickets-container">
 				{isLoading && tickets.length === 0 ? (
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "1rem",
-							padding: "3rem",
-							opacity: 0.7,
-							height: "500px"
-						}}
-					>
+					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
 						<PageSpinner size={48} />
 					</div>
 				) : null}
@@ -274,7 +263,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					return (
 						<div
 							key={ticket.id}
-							className="ticket"
+							className={`ticket ${isUnavailable ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer"}`}
 							role="button"
 							tabIndex={0}
 							onClick={e => handleTicketSelect(ticket, e.currentTarget)}
@@ -284,11 +273,6 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									handleTicketSelect(ticket, event.currentTarget);
 								}
 							}}
-							style={{
-								opacity: isUnavailable ? 0.5 : 1,
-								cursor: isUnavailable ? "not-allowed" : "pointer",
-								filter: isUnavailable ? "grayscale(1)" : "none"
-							}}
 						>
 							<h3>{getLocalizedText(ticket.name, locale)}</h3>
 							<p>
@@ -297,8 +281,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							</p>
 							<p className="remain">
 								{t.remaining} {ticket.available} / {ticket.quantity}
-								{isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.registrationEnded})</span>}
-								{isSoldOut && !isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.soldOut})</span>}
+								{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
+								{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
 							</p>
 						</div>
 					);
@@ -326,19 +310,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					</div>
 				) : null}
 				<button
-					className="button"
+					className={`button inline-flex items-center gap-2 transition-opacity duration-200 ${
+						isSubmitting ? "opacity-70" : ""
+					} ${!canRegister || isSubmitting ? "cursor-not-allowed pointer-events-none" : "cursor-pointer"}`}
 					onClick={() => handleConfirmRegistration()}
-					style={{
-						opacity: isSubmitting ? 0.7 : 1,
-						cursor: !canRegister || isSubmitting ? "not-allowed" : "pointer",
-						pointerEvents: isSubmitting ? "none" : "auto",
-						transition: "opacity 0.2s",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.5rem"
-					}}
 				>
-					{isSubmitting && <Spinner size="sm" color="currentColor" />}
+					{isSubmitting && <Spinner size="sm" />}
 					{canRegister ? t.confirm : t.cannotRegister}
 				</button>
 			</Confirm>

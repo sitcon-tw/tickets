@@ -294,35 +294,29 @@ export default function RegistrationsPage() {
 				<div className="h-8" />
 
 				{/* Statistics Section */}
-				<section style={{ margin: "1.5rem 0" }}>
-					<h3 style={{ marginBottom: "0.75rem", fontSize: "0.9rem", opacity: 0.8 }}>{t.stats}</h3>
+				<section className="my-6">
+					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
 					<div className="admin-stats-grid">
 						<div className="admin-stat-card">
 							<div className="admin-stat-label">{t.total}</div>
 							<div className="admin-stat-value">{stats.total}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#22c55e" }}>
+						<div className="admin-stat-card border-green-500">
 							<div className="admin-stat-label">{t.confirmed}</div>
-							<div className="admin-stat-value" style={{ color: "#22c55e" }}>
-								{stats.confirmed}
-							</div>
+							<div className="admin-stat-value text-green-500">{stats.confirmed}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#f59e0b" }}>
+						<div className="admin-stat-card border-amber-500">
 							<div className="admin-stat-label">{t.pending}</div>
-							<div className="admin-stat-value" style={{ color: "#f59e0b" }}>
-								{stats.pending}
-							</div>
+							<div className="admin-stat-value text-amber-500">{stats.pending}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#ef4444" }}>
+						<div className="admin-stat-card border-red-500">
 							<div className="admin-stat-label">{t.cancelled}</div>
-							<div className="admin-stat-value" style={{ color: "#ef4444" }}>
-								{stats.cancelled}
-							</div>
+							<div className="admin-stat-value text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>
 
-				<section className="admin-controls" style={{ margin: "1rem 0" }}>
+				<section className="admin-controls my-4">
 					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
 					<select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select">
 						<option value="">{t.allStatus}</option>
@@ -348,9 +342,9 @@ export default function RegistrationsPage() {
 					)}
 				</section>
 
-				<section className="admin-controls" style={{ marginBottom: "1rem" }}>
-					<label style={{ fontSize: "0.9rem", fontWeight: 500 }}>{t.columns}</label>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+				<section className="admin-controls mb-4">
+					<label className="text-sm font-medium">{t.columns}</label>
+					<div className="flex flex-wrap gap-2">
 						{columnDefs.map(col => (
 							<button
 								key={col.id}
@@ -361,14 +355,7 @@ export default function RegistrationsPage() {
 									else newCols.add(col.id);
 									setActiveColumns(newCols);
 								}}
-								className="admin-button small"
-								style={{
-									background: activeColumns.has(col.id) ? "var(--color-gray-600)" : "var(--color-gray-800)",
-									borderRadius: "999px",
-									opacity: activeColumns.has(col.id) ? 1 : 0.5,
-									fontSize: "0.7rem",
-									padding: "0.3rem 0.7rem"
-								}}
+								className={`admin-button small rounded-full text-xs py-1 px-3 ${activeColumns.has(col.id) ? "bg-gray-600 dark:bg-gray-700 opacity-100" : "bg-gray-800 dark:bg-gray-900 opacity-50"}`}
 							>
 								{col.label}
 							</button>
@@ -389,38 +376,26 @@ export default function RegistrationsPage() {
 							<table className="admin-table">
 								<thead>
 									<tr>
-										<th style={{ width: "40px", textAlign: "center" }}>
-											<input type="checkbox" checked={selectedRegistrations.size === paginatedData.length && paginatedData.length > 0} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
+										<th className="w-10 text-center">
+											<input type="checkbox" checked={selectedRegistrations.size === paginatedData.length && paginatedData.length > 0} onChange={toggleSelectAll} className="cursor-pointer" />
 										</th>
 										{[...activeColumns].map(cid => {
 											const col = columnDefs.find(c => c.id === cid);
 											return col ? (
-												<th
-													key={cid}
-													onClick={() => col.sortable && handleSort(cid as SortField)}
-													style={{
-														cursor: col.sortable ? "pointer" : "default",
-														userSelect: "none"
-													}}
-												>
+												<th key={cid} onClick={() => col.sortable && handleSort(cid as SortField)} className={col.sortable ? "cursor-pointer select-none" : ""}>
 													{col.label}
-													{col.sortable && sortField === cid && <span style={{ marginLeft: "0.25rem" }}>{sortDirection === "asc" ? "↑" : "↓"}</span>}
+													{col.sortable && sortField === cid && <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>}
 												</th>
 											) : null;
 										})}
-										<th style={{ width: "100px", textAlign: "center" }}>Actions</th>
+										<th className="w-24 text-center">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
 									{paginatedData.map(r => (
-										<tr
-											key={r.id}
-											style={{
-												backgroundColor: selectedRegistrations.has(r.id) ? "var(--color-gray-750)" : "transparent"
-											}}
-										>
-											<td style={{ textAlign: "center" }}>
-												<input type="checkbox" checked={selectedRegistrations.has(r.id)} onChange={() => toggleSelect(r.id)} style={{ cursor: "pointer" }} />
+										<tr key={r.id} className={selectedRegistrations.has(r.id) ? "bg-gray-800 dark:bg-gray-900" : ""}>
+											<td className="text-center">
+												<input type="checkbox" checked={selectedRegistrations.has(r.id)} onChange={() => toggleSelect(r.id)} className="cursor-pointer" />
 											</td>
 											{[...activeColumns].map(cid => {
 												const col = columnDefs.find(c => c.id === cid);
@@ -429,7 +404,7 @@ export default function RegistrationsPage() {
 												const statusClass = r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : "";
 												return <td key={cid}>{cid === "status" ? <span className={`status-badge ${statusClass}`}>{val}</span> : <div className="admin-truncate">{val}</div>}</td>;
 											})}
-											<td style={{ textAlign: "center" }}>
+											<td className="text-center">
 												<button onClick={() => openDetailModal(r)} className="admin-button small primary">
 													👁 {t.viewDetails}
 												</button>
@@ -444,44 +419,19 @@ export default function RegistrationsPage() {
 
 				{/* Pagination Section */}
 				<section>
-					<div
-						style={{
-							margin: "1rem 0",
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "0.75rem"
-						}}
-					>
-						<div style={{ fontSize: "0.85rem", opacity: "0.75" }}>
+					<div className="my-4 flex justify-between items-center flex-wrap gap-3">
+						<div className="text-sm opacity-75">
 							{sortedAndFiltered.length} {t.total} {selectedRegistrations.size > 0 && `• ${selectedRegistrations.size} ${t.selected}`}
 						</div>
 						{totalPages > 1 && (
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-								<button
-									onClick={() => setPage(Math.max(1, page - 1))}
-									disabled={page === 1}
-									className="admin-button small secondary"
-									style={{
-										opacity: page === 1 ? 0.5 : 1,
-										cursor: page === 1 ? "not-allowed" : "pointer"
-									}}
-								>
+							<div className="flex items-center gap-2">
+								<button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="admin-button small secondary disabled:opacity-50 disabled:cursor-not-allowed">
 									←
 								</button>
-								<span style={{ fontSize: "0.85rem" }}>
+								<span className="text-sm">
 									{t.page} {page} {t.of} {totalPages}
 								</span>
-								<button
-									onClick={() => setPage(Math.min(totalPages, page + 1))}
-									disabled={page === totalPages}
-									className="admin-button small secondary"
-									style={{
-										opacity: page === totalPages ? 0.5 : 1,
-										cursor: page === totalPages ? "not-allowed" : "pointer"
-									}}
-								>
+								<button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="admin-button small secondary disabled:opacity-50 disabled:cursor-not-allowed">
 									→
 								</button>
 								<select
@@ -490,12 +440,7 @@ export default function RegistrationsPage() {
 										setPageSize(Number(e.target.value));
 										setPage(1);
 									}}
-									className="admin-select"
-									style={{
-										padding: "0.35rem 0.7rem",
-										fontSize: "0.75rem",
-										marginLeft: "0.5rem"
-									}}
+									className="admin-select py-1 px-2 text-xs ml-2"
 								>
 									<option value="25">25 {t.perPage}</option>
 									<option value="50">50 {t.perPage}</option>
@@ -519,102 +464,81 @@ export default function RegistrationsPage() {
 							</button>
 						</div>
 
-						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+						<div className="flex flex-col gap-4">
 							<div>
 								<div className="admin-stat-label">Ticket ID</div>
-								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{ticketHashes[selectedRegistration.id]}</div>
+								<div className="font-mono text-sm">{ticketHashes[selectedRegistration.id]}</div>
 							</div>
-
 							<div>
 								<div className="admin-stat-label">ID</div>
-								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{selectedRegistration.id}</div>
+								<div className="font-mono text-sm">{selectedRegistration.id}</div>
 							</div>
-
 							<div>
 								<div className="admin-stat-label">Email</div>
-								<div style={{ fontSize: "0.95rem" }}>{selectedRegistration.email}</div>
+								<div className="text-[0.95rem]">{selectedRegistration.email}</div>
 							</div>
-
 							<div>
 								<div className="admin-stat-label">Status</div>
 								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
 									{selectedRegistration.status}
 								</span>
 							</div>
-
 							{selectedRegistration.event && (
 								<div>
 									<div className="admin-stat-label">Event</div>
-									<div style={{ fontSize: "0.95rem" }}>{getLocalizedText(selectedRegistration.event.name, locale)}</div>
+									<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
 									{selectedRegistration.event.startDate && (
-										<div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: "0.25rem" }}>
+										<div className="text-[0.85rem] opacity-70 mt-1">
 											{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
 										</div>
 									)}
 								</div>
 							)}
-
 							{selectedRegistration.ticket && (
 								<div>
 									<div className="admin-stat-label">Ticket</div>
-									<div style={{ fontSize: "0.95rem" }}>{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
-									{selectedRegistration.ticket.price !== undefined && <div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: "0.25rem" }}>Price: ${selectedRegistration.ticket.price}</div>}
+									<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
+									{selectedRegistration.ticket.price !== undefined && <div className="text-[0.85rem] opacity-70 mt-1">Price: ${selectedRegistration.ticket.price}</div>}
 								</div>
 							)}
-
 							{selectedRegistration.referredBy && (
 								<div>
 									<div className="admin-stat-label">{t.referredBy}</div>
-									<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{selectedRegistration.referredBy}</div>
+									<div className="font-mono text-[0.9rem]">{selectedRegistration.referredBy}</div>
 								</div>
 							)}
-
 							<div>
 								<div className="admin-stat-label">Created At</div>
-								<div style={{ fontSize: "0.95rem" }}>{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+								<div className="text-[0.95rem]">{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
 							</div>
-
 							<div>
 								<div className="admin-stat-label">Updated At</div>
-								<div style={{ fontSize: "0.95rem" }}>{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
-							</div>
-
+								<div className="text-[0.95rem]">{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+							</div>{" "}
 							{selectedRegistration.formData && Object.keys(selectedRegistration.formData).length > 0 && (
 								<div>
-									<div className="admin-stat-label" style={{ marginBottom: "0.5rem" }}>
-										{t.formData}
-									</div>
-									<div
-										style={{
-											backgroundColor: "var(--color-gray-900)",
-											border: "2px solid var(--color-gray-700)",
-											borderRadius: "8px",
-											padding: "0.75rem",
-											fontFamily: "monospace",
-											fontSize: "0.85rem"
-										}}
-									>
+									<div className="admin-stat-label mb-2">{t.formData}</div>
+									<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
 										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
-											<div key={key} style={{ marginBottom: "0.5rem" }}>
-												<span style={{ color: "#a78bfa", fontWeight: 600 }}>{key}:</span>{" "}
-												<span style={{ color: "var(--color-gray-100)" }}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+											<div key={key} className="mb-2">
+												<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
+												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
 											</div>
 										))}
 									</div>
 								</div>
 							)}
-
 							{/* Delete Personal Data Button */}
-							<div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "2px solid var(--color-gray-700)" }}>
-								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger" style={{ width: "100%" }}>
+							<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
+								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger w-full">
 									🗑️ {t.deleteData}
 								</button>
-								<p style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem", textAlign: "center" }}>
+								<p className="text-xs opacity-60 mt-2 text-center">
 									⚠️{" "}
 									{locale === "zh-Hant"
 										? "此操作無法復原，符合個人資料保護法"
 										: locale === "zh-Hans"
-											? "此操作无法复原，符合个人资料保护法"
+											? "此操作无法复原，符合個人資料保護法"
 											: "This action is irreversible and complies with privacy law"}
 								</p>
 							</div>

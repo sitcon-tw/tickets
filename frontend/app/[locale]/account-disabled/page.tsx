@@ -17,7 +17,7 @@ export default function AccountDisabled() {
 
 	return (
 		<>
-			<div className="max-w-6xl h-screen" style={{ margin: "2rem auto", marginTop: "16rem", marginBottom: "-16rem", padding: "0 1rem", textAlign: "center" }}>
+			<div className="max-w-6xl h-screen mx-auto mt-64 -mb-64 px-4 text-center">
 				<FallingText
 					text={t.message}
 					highlightWords={["停用", "停用", "disabled"]}

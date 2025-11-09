@@ -340,44 +340,35 @@ export default function VerifyPage() {
 
 	return (
 		<>
-			<div className="min-h-screen flex items-center justify-center" style={{ padding: "1rem" }}>
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<div className="w-full max-w-md">
-					<div style={{ padding: "2rem" }}>
+					<div className="p-8">
 						{step === "phone" && !isVerified && (
 							<>
-								<div className="text-center" style={{ marginBottom: "2rem" }}>
-									<div className="inline-flex items-center justify-center" style={{ marginBottom: "1.5rem" }}>
+								<div className="text-center mb-8">
+									<div className="inline-flex items-center justify-center mb-6">
 										<MessageSquare size={32} />
 									</div>
-									<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>
-										{t.title}
-									</h2>
+									<h2 className="text-2xl font-bold text-white mb-2">{t.title}</h2>
 									<p className="text-gray-400 text-sm">{t.description}</p>
 								</div>
 
-								<div style={{ marginBottom: "1.5rem" }}>
-									<label className="block text-gray-300 text-sm font-medium" style={{ marginBottom: "0.5rem" }}>
-										{t.phoneNumberLabel}
-									</label>
+								<div className="mb-6">
+									<label className="block text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
 									<input
 										type="tel"
 										value={phoneNumber}
 										onChange={handlePhoneChange}
 										placeholder="09XX-XXX-XXX"
-										className={`w-full bg-gray-700/50 border-2 rounded-md text-white text-lg
+										className={`w-full bg-gray-700/50 border-2 rounded-md text-white text-lg p-3
 											transition-all duration-200 outline-none
 											${error ? "border-red-500" : "border-gray-600"}
 											focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
 											placeholder-gray-500`}
-										style={{ padding: "0.75rem 1rem" }}
 										autoFocus
 										onKeyDown={e => e.key === "Enter" && handleSendCode()}
 									/>
-									{error && (
-										<p className="text-red-400 text-sm" style={{ marginTop: "0.5rem" }}>
-											{error}
-										</p>
-									)}
+									{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 								</div>
 
 								<div className="flex justify-center">
@@ -407,20 +398,18 @@ export default function VerifyPage() {
 
 						{step === "verify" && !isVerified && (
 							<>
-								<div className="text-center" style={{ marginBottom: "2rem" }}>
-									<div className="inline-flex items-center justify-center" style={{ marginBottom: "1.5rem" }}>
+								<div className="text-center mb-8">
+									<div className="inline-flex items-center justify-center mb-6">
 										<MessageSquareMore size={32} />
 									</div>
-									<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>
-										{t.codeLabel}
-									</h2>
+									<h2 className="text-2xl font-bold text-white mb-2">{t.codeLabel}</h2>
 									<p className="text-gray-400 text-sm">
 										{t.codeSent} <span className="text-white font-medium">{phoneNumber}</span>
 									</p>
 								</div>
 
-								<div style={{ marginBottom: "1.5rem" }}>
-									<div className="flex justify-center" style={{ gap: "0.75rem", marginBottom: "0.5rem" }}>
+								<div className="mb-6">
+									<div className="flex justify-center gap-3 mb-2">
 										{verificationCode.map((digit, index) => (
 											<input
 												key={index}
@@ -446,24 +435,18 @@ export default function VerifyPage() {
 										))}
 									</div>
 
-									{error && (
-										<p className="text-red-400 text-sm text-center" style={{ marginTop: "0.75rem" }}>
-											{error}
-										</p>
-									)}
+									{error && <p className="text-red-400 text-sm text-center mt-3">{error}</p>}
 
 									{loading && (
-										<div className="flex items-center justify-center" style={{ gap: "0.5rem", marginTop: "1rem" }}>
-											<Spinner size="sm" style={{ marginRight: "4px" }} />
+										<div className="flex items-center justify-center gap-2 mt-4">
+											<Spinner size="sm" className="mr-1" />
 											<span className="text-gray-400 text-sm">{t.verifying}</span>
 										</div>
 									)}
 								</div>
 
-								<div className="text-center" style={{ marginBottom: "1rem" }}>
-									<p className="text-gray-400 text-sm" style={{ marginBottom: "0.5rem" }}>
-										{t.didntReceiveCode}
-									</p>
+								<div className="text-center mb-4">
+									<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
 									{countdown > 0 ? (
 										<p className="text-gray-500 text-sm">
 											{t.resendIn}{" "}
@@ -484,28 +467,20 @@ export default function VerifyPage() {
 								</div>
 
 								<button onClick={handleBack} className="w-full text-gray-400 hover:text-white text-sm transition-colors flex items-center justify-center cursor-pointer">
-									<ArrowLeft size={16} style={{ marginRight: "0.5rem" }} />
+									<ArrowLeft size={16} className="mr-2" />
 									{t.changePhoneNumber}
 								</button>
 							</>
 						)}
 
 						{isVerified && (
-							<div className="text-center" style={{ padding: "1rem 0" }}>
-								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale" style={{ marginBottom: "1rem" }}>
+							<div className="text-center py-4">
+								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
 									<Check className="w-10 h-10 text-green-400" />
 								</div>
-								<h2 className="text-2xl font-bold text-white" style={{ marginBottom: "0.5rem" }}>
-									{t.verified}
-								</h2>
-								<p className="text-gray-400 text-sm" style={{ marginBottom: "1.5rem" }}>
-									{t.verificationSuccess}
-								</p>
-								<button
-									onClick={handleContinue}
-									className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center"
-									style={{ padding: "0.75rem 1.5rem", gap: "0.5rem" }}
-								>
+								<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
+								<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
+								<button onClick={handleContinue} className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center py-3 px-6 gap-2">
 									{t.continue}
 									<ArrowRight className="w-5 h-5" />
 								</button>

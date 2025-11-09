@@ -59,43 +59,13 @@ export default function Header({ eventId }: HeaderProps) {
 	}, [eventId, locale]);
 
 	return (
-		<section
-			style={{
-				paddingTop: "5rem",
-				textAlign: "center"
-			}}
-		>
-			<h1
-				style={{
-					fontSize: "2.5rem",
-					marginBottom: "1rem",
-					fontWeight: "bold"
-				}}
-			>
-				{loading ? <PageSpinner size={32} /> : eventName}{" "}
-				<span
-					style={{
-						display: "block",
-						fontSize: "0.8em"
-					}}
-				>
-					{t.description}
-				</span>
+		<section className="pt-20 text-center">
+			<h1 className="text-4xl mb-4 font-bold text-gray-900 dark:text-gray-100">
+				{loading ? <PageSpinner size={32} /> : eventName} <span className="block text-[0.8em] text-gray-700 dark:text-gray-300">{t.description}</span>
 			</h1>
-			<p
-				style={{
-					fontSize: "1.2rem"
-				}}
-			>
+			<p className="text-xl text-gray-800 dark:text-gray-200">
 				{t.signFront}
-				<span
-					style={{
-						fontWeight: "bold",
-						fontSize: "1.5em"
-					}}
-				>
-					{loading ? "..." : registrationCount}
-				</span>
+				<span className="font-bold text-[1.5em]">{loading ? "..." : registrationCount}</span>
 				{t.signBack}
 			</p>
 		</section>

@@ -87,84 +87,31 @@ export default function MagicLinkVerify() {
 		<>
 			<main>
 				<section>
-					<div
-						style={{
-							position: "absolute",
-							top: "50%",
-							left: "50%",
-							transform: "translate(-50%, -50%)",
-							textAlign: "center",
-							maxWidth: "500px",
-							padding: "2rem"
-						}}
-					>
+					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-[500px] p-8">
 						{status === "verifying" && (
 							<>
-								<div style={{ marginBottom: "1.5rem" }}>
+								<div className="mb-6">
 									<Spinner size="lg" />
 								</div>
-								<h1 style={{ marginBottom: "0.5rem" }}>{t.verifying}</h1>
-								<p style={{ color: "var(--color-gray-700)" }}>{t.redirecting}</p>
+								<h1 className="mb-2">{t.verifying}</h1>
+								<p className="text-[var(--color-gray-700)]">{t.redirecting}</p>
 							</>
 						)}
 
 						{status === "success" && (
 							<>
-								<div
-									style={{
-										fontSize: "3rem",
-										marginBottom: "1rem",
-										color: "var(--color-primary)"
-									}}
-								>
-									✓
-								</div>
-								<h1
-									style={{
-										marginBottom: "0.5rem",
-										color: "var(--color-primary)"
-									}}
-								>
-									{t.success}
-								</h1>
-								<p style={{ color: "var(--color-gray-700)" }}>{t.redirecting}</p>
+								<div className="text-5xl mb-4 text-[var(--color-primary)]">✓</div>
+								<h1 className="mb-2 text-[var(--color-primary)]">{t.success}</h1>
+								<p className="text-[var(--color-gray-700)]">{t.redirecting}</p>
 							</>
 						)}
 
 						{status === "error" && (
 							<>
-								<div
-									style={{
-										fontSize: "3rem",
-										marginBottom: "1rem",
-										color: "var(--color-error, #dc2626)"
-									}}
-								>
-									✗
-								</div>
-								<h1
-									style={{
-										marginBottom: "1rem",
-										color: "var(--color-error, #dc2626)"
-									}}
-								>
-									{t.error}
-								</h1>
-								<p
-									style={{
-										marginBottom: "2rem",
-										color: "var(--color-gray-700)"
-									}}
-								>
-									{errorMessage}
-								</p>
-								<button
-									className="button"
-									onClick={() => router.push(`/${locale}/login`)}
-									style={{
-										margin: "0 auto"
-									}}
-								>
+								<div className="text-5xl mb-4 text-[var(--color-error,#dc2626)]">✗</div>
+								<h1 className="mb-4 text-[var(--color-error,#dc2626)]">{t.error}</h1>
+								<p className="mb-8 text-[var(--color-gray-700)]">{errorMessage}</p>
+								<button className="button mx-auto" onClick={() => router.push(`/${locale}/login`)}>
 									{t.backToLogin}
 								</button>
 							</>

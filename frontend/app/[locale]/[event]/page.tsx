@@ -84,14 +84,7 @@ export default function Main() {
 		return (
 			<>
 				<main>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							height: "100vh"
-						}}
-					>
+					<div className="flex items-center justify-center h-screen">
 						<PageSpinner size={48} />
 					</div>
 				</main>
@@ -103,18 +96,9 @@ export default function Main() {
 		return (
 			<>
 				<main>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
-							height: "100vh",
-							gap: "1rem"
-						}}
-					>
-						<h1>{t.eventNotFound}</h1>
-						<p>{error}</p>
+					<div className="flex flex-col items-center justify-center h-screen gap-4">
+						<h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t.eventNotFound}</h1>
+						<p className="text-gray-700 dark:text-gray-300">{error}</p>
 					</div>
 				</main>
 			</>

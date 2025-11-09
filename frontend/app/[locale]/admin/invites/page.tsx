@@ -557,7 +557,7 @@ export default function InvitesPage() {
 								</button>
 							</div>
 							<form onSubmit={createInvitationCodes}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+								<div className="flex flex-col gap-4">
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.ticketType}</label>
 										<select name="ticketId" required className="admin-select">
@@ -573,7 +573,7 @@ export default function InvitesPage() {
 										<label className="admin-form-label">{t.name}</label>
 										<input name="name" type="text" required placeholder="e.g. VIP Media" className="admin-input" />
 									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="grid grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.amount}</label>
 											<input name="amount" type="number" min="1" max="1000" defaultValue="10" required className="admin-input" />
@@ -583,7 +583,7 @@ export default function InvitesPage() {
 											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
 										</div>
 									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="grid grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">
 												{t.validFrom} ({t.optional})
@@ -621,8 +621,8 @@ export default function InvitesPage() {
 								</button>
 							</div>
 							<form onSubmit={handleBulkImport}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-									<p style={{ fontSize: "0.9rem", opacity: 0.8 }}>{t.bulkImportDescription}</p>
+								<div className="flex flex-col gap-4">
+									<p className="text-sm opacity-80">{t.bulkImportDescription}</p>
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.ticketType}</label>
@@ -650,22 +650,15 @@ export default function InvitesPage() {
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea
-											value={bulkImportCodes}
-											onChange={e => setBulkImportCodes(e.target.value)}
-											placeholder={t.codesPlaceholder}
-											rows={10}
-											className="admin-input"
-											style={{ fontFamily: "monospace", resize: "vertical" }}
-										/>
+										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="admin-input font-mono resize-y" />
 									</div>
 
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="grid grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.usageLimit}</label>
 											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
 										</div>
-										<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+										<div className="flex flex-col gap-2">
 											<div className="admin-form-group">
 												<label className="admin-form-label">
 													{t.validFrom} ({t.optional})
@@ -697,11 +690,11 @@ export default function InvitesPage() {
 
 				{showCodesModal && currentType && (
 					<div className="admin-modal-overlay" onClick={() => setShowCodesModal(false)}>
-						<div className="admin-modal" style={{ maxWidth: "900px" }} onClick={e => e.stopPropagation()}>
+						<div className="admin-modal max-w-[900px]" onClick={e => e.stopPropagation()}>
 							<div className="admin-modal-header">
 								<h2 className="admin-modal-title">
 									{t.codes} - {currentType.name}
-									{selectedCodes.size > 0 && <span style={{ fontSize: "0.85rem", opacity: 0.7, marginLeft: "0.5rem" }}>({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
+									{selectedCodes.size > 0 && <span className="text-[0.85rem] opacity-70 ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
 								</h2>
 								<button className="admin-modal-close" onClick={() => setShowCodesModal(false)}>
 									✕
@@ -729,8 +722,8 @@ export default function InvitesPage() {
 								<table className="admin-table">
 									<thead>
 										<tr>
-											<th style={{ width: "50px", textAlign: "center" }}>
-												<input type="checkbox" checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
+											<th className="w-[50px] text-center">
+												<input type="checkbox" checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} onChange={toggleSelectAll} className="cursor-pointer" />
 											</th>
 											<th>{t.code}</th>
 											<th>{t.usage}</th>
@@ -745,8 +738,8 @@ export default function InvitesPage() {
 											const statusClass = status === "active" ? "active" : "ended";
 											return (
 												<tr key={code.id}>
-													<td style={{ textAlign: "center" }}>
-														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} style={{ cursor: "pointer" }} />
+													<td className="text-center">
+														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
 													</td>
 													<td>{code.code}</td>
 													<td>{code.usedCount}</td>
@@ -778,7 +771,7 @@ export default function InvitesPage() {
 									✕
 								</button>
 							</div>
-							<div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
+							<div className="flex flex-col gap-4 p-4">
 								<p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
 								<div className="admin-form-group">
 									<label className="admin-form-label">{t.emailAddress}</label>

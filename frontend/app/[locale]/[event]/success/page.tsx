@@ -158,11 +158,7 @@ export default function Success() {
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
 						<p>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
-						<div
-							onClick={handleCopyRefCode}
-							className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4"
-							style={{ padding: "0.1rem 0.5rem" }}
-						>
+						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : (
@@ -177,7 +173,7 @@ export default function Success() {
 							)}
 						</div>
 						<p>{t.copyInviteLink}</p>
-						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-4" style={{ padding: "0.1rem 0.5rem" }}>
+						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : referralCode === t.loadFailed ? (
@@ -197,24 +193,21 @@ export default function Success() {
 								</div>
 							)}
 						</div>
-						<h3 className="text-xl font-semibold" style={{ marginTop: "0.5rem" }}>
-							{t.qrDesc}
-						</h3>
+						<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
 						{registrationId && registrationTime && (
-							<button onClick={() => setShowQRCode(true)} className="button" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+							<button onClick={() => setShowQRCode(true)} className="button flex items-center gap-2 mb-2">
 								<CheckCheck size={24} /> {t.viewQRCode}
 							</button>
 						)}
 						<div className="border-t-2 border-gray-700" />
-						<div className={`gap-4 ${locale.includes("zh") && "flex flex-wrap"}`} style={{ marginTop: "0.5rem" }}>
+						<div className={`gap-4 mt-2 ${locale.includes("zh") && "flex flex-wrap"}`}>
 							{registrationId && (
 								<button
 									onClick={() => {
 										setViewRegLoading(true);
 										router.push(`/my-registration/${registrationId}`);
 									}}
-									className="button"
-									style={locale.includes("zh") ? {} : { marginBottom: "1rem" }}
+									className={`button ${!locale.includes("zh") && "mb-4"}`}
 								>
 									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
 								</button>

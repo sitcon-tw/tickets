@@ -5,7 +5,7 @@ import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Register Chart.js components
 if (typeof window !== "undefined") {
@@ -313,28 +313,11 @@ export default function AdminDashboard() {
 	const remainingTickets = totalTicketQuantity - totalSold;
 	const salesRate = totalTicketQuantity > 0 ? ((totalSold / totalTicketQuantity) * 100).toFixed(1) : "0";
 
-	const statCardStyle: React.CSSProperties = {
-		background: "var(--color-gray-800)",
-		padding: "1.5rem",
-		borderRadius: "8px",
-		boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-		textAlign: "center"
-	};
-
-	const chartContainerStyle: React.CSSProperties = {
-		background: "var(--color-gray-800)",
-		padding: "1.5rem",
-		borderRadius: "8px",
-		boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-		flex: "1",
-		maxWidth: "100%"
-	};
-
 	if (loading) {
 		return (
 			<main>
 				<h1>{t.overview}</h1>
-				<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+				<div className="text-center p-12 text-[var(--color-gray-300)]">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 			</main>
 		);
 	}
@@ -342,195 +325,44 @@ export default function AdminDashboard() {
 	return (
 		<main>
 			<h1>{t.overview}</h1>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-					gap: "1.5rem",
-					marginBottom: "3rem"
-				}}
-			>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.totalTickets}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{totalTicketQuantity}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.totalTickets}</h3>
+					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{totalTicketQuantity}</div>
+					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.sold}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{totalSold}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.sold}</h3>
+					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{totalSold}</div>
+					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.remaining}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{remainingTickets}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.remaining}</h3>
+					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{remainingTickets}</div>
+					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.salesRate}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{salesRate}%
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.completion}
-					</div>
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.salesRate}</h3>
+					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{salesRate}%</div>
+					<div className="text-[var(--color-gray-100)] text-xs">{t.completion}</div>
 				</div>
 			</div>
 
-			<div
-				style={{
-					display: "flex",
-					gap: "2rem",
-					marginBottom: "3rem",
-					flexWrap: "wrap"
-				}}
-			>
-				<div style={{ ...chartContainerStyle, flex: "2" }}>
-					<h2
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-100)",
-							fontSize: "1.2rem"
-						}}
-					>
-						{t.salesTrend}
-					</h2>
+			<div className="flex gap-8 mb-12 flex-wrap">
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md flex-[2] max-w-full">
+					<h2 className="m-0 mb-4 text-[var(--color-gray-100)] text-xl">{t.salesTrend}</h2>
 					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
 				</div>
 
-				<div style={chartContainerStyle}>
-					<h2
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-100)",
-							fontSize: "1.2rem"
-						}}
-					>
-						{t.ticketDistribution}
-					</h2>
+				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md flex-1 max-w-full">
+					<h2 className="m-0 mb-4 text-[var(--color-gray-100)] text-xl">{t.ticketDistribution}</h2>
 					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
 				</div>
 			</div>
 
-			<div
-				style={{
-					background: "var(--color-gray-800)",
-					padding: "1.5rem",
-					borderRadius: "8px",
-					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
-				}}
-			>
-				<h2
-					style={{
-						margin: "0 0 1.5rem 0",
-						color: "var(--color-gray-100)",
-						fontSize: "1.2rem"
-					}}
-				>
-					{t.progressTitle}
-				</h2>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-						gap: "1.5rem"
-					}}
-				>
+			<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md">
+				<h2 className="m-0 mb-6 text-[var(--color-gray-100)] text-xl">{t.progressTitle}</h2>
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
 					{tickets.slice(0, 5).map((ticket, idx) => {
 						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
 						const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
@@ -539,124 +371,23 @@ export default function AdminDashboard() {
 						const remaining = total - soldCount;
 
 						return (
-							<div
-								key={idx}
-								style={{
-									background: "var(--color-gray-700)",
-									padding: "1.5rem",
-									borderRadius: "12px",
-									boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-									textAlign: "center",
-									maxWidth: "100%"
-								}}
-							>
-								<h3
-									style={{
-										margin: "0 0 1.5rem 0",
-										color: "var(--color-gray-200)",
-										fontSize: "1.1rem",
-										fontWeight: 600
-									}}
-								>
-									{ticketName}
-								</h3>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "center",
-										marginBottom: "1rem"
-									}}
-								>
+							<div key={idx} className="bg-[var(--color-gray-700)] p-6 rounded-xl shadow-md text-center max-w-full">
+								<h3 className="m-0 mb-6 text-[var(--color-gray-200)] text-lg font-semibold">{ticketName}</h3>
+								<div className="flex justify-center mb-4">
 									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
 								</div>
-								<div
-									style={{
-										marginBottom: "1.5rem",
-										padding: "1rem",
-										background: "var(--color-gray-600)",
-										borderRadius: "8px"
-									}}
-								>
-									<div
-										style={{
-											fontSize: "2.5rem",
-											fontWeight: "bold",
-											color: "var(--color-gray-100)",
-											lineHeight: "1"
-										}}
-									>
-										{remaining}
-									</div>
-									<div
-										style={{
-											fontSize: "0.9rem",
-											color: "var(--color-gray-300)",
-											marginTop: "0.25rem"
-										}}
-									>
-										{t.remainingLabel}
-									</div>
+								<div className="mb-6 p-4 bg-[var(--color-gray-600)] rounded-lg">
+									<div className="text-4xl font-bold text-[var(--color-gray-100)] leading-none">{remaining}</div>
+									<div className="text-sm text-[var(--color-gray-300)] mt-1">{t.remainingLabel}</div>
 								</div>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "space-around",
-										gap: "1rem"
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
-										}}
-									>
-										<span
-											style={{
-												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
-											}}
-										>
-											{t.total}
-										</span>
-										<span
-											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
-											}}
-										>
-											{total}
-										</span>
+								<div className="flex justify-around gap-4">
+									<div className="flex flex-col items-center gap-1">
+										<span className="text-[var(--color-gray-300)] text-sm font-medium">{t.total}</span>
+										<span className="font-semibold text-[var(--color-gray-200)] text-lg">{total}</span>
 									</div>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
-										}}
-									>
-										<span
-											style={{
-												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
-											}}
-										>
-											{t.soldLabel}
-										</span>
-										<span
-											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
-											}}
-										>
-											{soldCount}
-										</span>
+									<div className="flex flex-col items-center gap-1">
+										<span className="text-[var(--color-gray-300)] text-sm font-medium">{t.soldLabel}</span>
+										<span className="font-semibold text-[var(--color-gray-200)] text-lg">{soldCount}</span>
 									</div>
 								</div>
 							</div>

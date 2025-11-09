@@ -174,30 +174,13 @@ export default function SetTicket() {
 		<>
 			{isLoading ? (
 				<main>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							height: "100vh"
-						}}
-					>
+					<div className="flex items-center justify-center h-screen">
 						<PageSpinner size={48} />
 					</div>
 				</main>
 			) : (
 				<main>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
-							height: "100vh",
-							padding: "1rem",
-							textAlign: "center"
-						}}
-					>
+					<div className="flex flex-col items-center justify-center h-screen p-4 text-center">
 						<h1 className="text-3xl font-bold mb-4">{hasError ? t.error : t.redirecting}</h1>
 					</div>
 				</main>

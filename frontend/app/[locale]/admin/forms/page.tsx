@@ -540,10 +540,8 @@ export default function FormsPage() {
 				<main>
 					<h1 className="text-3xl font-bold">{t.title}</h1>
 					<div className="h-8" />
-					<div className="admin-empty" style={{ padding: "4rem 2rem" }}>
-						{t.noTicket}
-					</div>
-					<div style={{ textAlign: "center", marginTop: "1rem" }}>
+					<div className="admin-empty p-16">{t.noTicket}</div>
+					<div className="text-center mt-4">
 						<button className="admin-button primary" onClick={() => (window.location.href = `/${locale}/admin/events`)}>
 							{t.backToTickets}
 						</button>
@@ -555,65 +553,18 @@ export default function FormsPage() {
 
 	return (
 		<>
-			<main style={{ minHeight: "100vh", padding: "1.5rem 1rem" }}>
-				<div
-					id="form-editor"
-					style={{
-						maxWidth: "900px",
-						margin: "0 auto"
-					}}
-				>
+			<main className="min-h-screen p-6 md:p-4">
+				<div id="form-editor" className="max-w-[900px] mx-auto">
 					{/* Header Section */}
-					<div
-						style={{
-							marginBottom: "1.5rem",
-							paddingBottom: "1rem",
-							borderBottom: "1px solid var(--color-gray-700)"
-						}}
-					>
-						<h1
-							style={{
-								fontSize: "1.5rem",
-								fontWeight: "600",
-								marginBottom: "0.25rem",
-								color: "var(--color-gray-100)"
-							}}
-						>
-							{t.title}
-						</h1>
-						<p
-							style={{
-								fontSize: "0.875rem",
-								color: "var(--color-gray-400)",
-								margin: 0
-							}}
-						>
-							{t.formInfo}
-						</p>
+					<div className="mb-6 pb-4 border-b border-[var(--color-gray-700)]">
+						<h1 className="text-2xl font-semibold mb-1 text-[var(--color-gray-100)]">{t.title}</h1>
+						<p className="text-sm text-[var(--color-gray-400)] m-0">{t.formInfo}</p>
 					</div>
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div
-							style={{
-								background: "var(--color-gray-800)",
-								border: "1px solid var(--color-gray-700)",
-								borderRadius: "8px",
-								padding: "1rem",
-								marginBottom: "1.5rem"
-							}}
-						>
-							<label
-								style={{
-									display: "block",
-									fontSize: "0.9rem",
-									fontWeight: "600",
-									color: "var(--color-gray-300)",
-									marginBottom: "0.75rem"
-								}}
-							>
-								{t.copyFrom}
-							</label>
+						<div className="bg-[var(--color-gray-800)] border border-[var(--color-gray-700)] rounded-lg p-4 mb-6">
+							<label className="block text-sm font-semibold text-[var(--color-gray-300)] mb-3">{t.copyFrom}</label>
 							<select
 								value={copyFromEventId}
 								onChange={e => {
@@ -624,11 +575,7 @@ export default function FormsPage() {
 										setCopyFromEventId("");
 									}
 								}}
-								className="admin-select"
-								style={{
-									width: "100%",
-									maxWidth: "400px"
-								}}
+								className="admin-select w-full max-w-[400px]"
 							>
 								<option value="">{t.selectEvent}</option>
 								{allEvents.map(event => (
@@ -640,75 +587,19 @@ export default function FormsPage() {
 						</div>
 					)}
 					{/* Questions List */}
-					<div style={{ marginBottom: "1.5rem" }}>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginBottom: "1rem"
-							}}
-						>
-							<h2
-								style={{
-									fontSize: "1rem",
-									fontWeight: "600",
-									color: "var(--color-gray-200)",
-									margin: 0
-								}}
-							>
-								{t.formFields}
-							</h2>
-							<span
-								style={{
-									fontSize: "0.8rem",
-									color: "var(--color-gray-400)",
-									background: "var(--color-gray-800)",
-									padding: "0.25rem 0.6rem",
-									borderRadius: "4px",
-									border: "1px solid var(--color-gray-700)"
-								}}
-							>
+					<div className="mb-6">
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-base font-semibold text-[var(--color-gray-200)] m-0">{t.formFields}</h2>
+							<span className="text-xs text-[var(--color-gray-400)] bg-[var(--color-gray-800)] py-1 px-2.5 rounded border border-[var(--color-gray-700)]">
 								{questions.length} {t.howManyFields}
 							</span>
 						</div>
 
-						<div
-							id="questions"
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "12px"
-							}}
-						>
+						<div id="questions" className="flex flex-col gap-3">
 							{questions.length === 0 && (
-								<div
-									style={{
-										textAlign: "center",
-										padding: "2rem 1.5rem",
-										border: "1px dashed var(--color-gray-700)",
-										borderRadius: "8px",
-										background: "var(--color-gray-800)"
-									}}
-								>
-									<p
-										style={{
-											fontSize: "0.9rem",
-											color: "var(--color-gray-400)",
-											margin: "0 0 0.5rem 0"
-										}}
-									>
-										{t.currentlyNoFormFields}
-									</p>
-									<p
-										style={{
-											fontSize: "0.8rem",
-											color: "var(--color-gray-500)",
-											margin: 0
-										}}
-									>
-										{t.clickNewToAdd}
-									</p>
+								<div className="text-center py-8 px-6 border border-dashed border-[var(--color-gray-700)] rounded-lg bg-[var(--color-gray-800)]">
+									<p className="text-sm text-[var(--color-gray-400)] m-0 mb-2">{t.currentlyNoFormFields}</p>
+									<p className="text-xs text-[var(--color-gray-500)] m-0">{t.clickNewToAdd}</p>
 								</div>
 							)}
 							{questions.map((q, index) => {
@@ -722,38 +613,18 @@ export default function FormsPage() {
 										onDragOver={e => handleDragOver(e, index)}
 										onDragLeave={handleDragLeave}
 										onDrop={e => handleDrop(e, index)}
-										style={{
-											background: isDragging ? "var(--color-gray-800)" : "var(--color-gray-800)",
-											border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-											borderRadius: "8px",
-											padding: "1rem",
-											display: "flex",
-											gap: "0.75rem",
-											position: "relative",
-											transition: "all 0.2s ease",
-											boxShadow: isDragging ? "0 4px 12px rgba(0, 0, 0, 0.3)" : isDropTarget ? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)" : "none",
-											opacity: isDragging ? 0.6 : 1,
-											transform: isDragging ? "scale(1.01)" : "scale(1)",
-											cursor: "default"
-										}}
+										className={`bg-[var(--color-gray-800)] border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
+										} ${isDropTarget ? "border-[var(--color-primary)] border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-[var(--color-gray-700)]"}`}
 									>
 										{/* Drag Handle */}
 										<div
 											draggable
 											onDragStart={e => handleDragStart(e, index)}
 											onDragEnd={handleDragEnd}
-											style={{
-												cursor: "grab",
-												userSelect: "none",
-												display: "flex",
-												alignItems: "flex-start",
-												justifyContent: "center",
-												color: isDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-												transition: "color 0.2s ease",
-												padding: "0.5rem 0.25rem",
-												touchAction: "none",
-												flexShrink: 0
-											}}
+											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none flex-shrink-0 ${
+												isDragging ? "text-[var(--color-primary)]" : "text-[var(--color-gray-600)]"
+											}`}
 											title="拖曳以重新排序"
 											onMouseDown={e => {
 												e.currentTarget.style.cursor = "grabbing";
@@ -766,125 +637,41 @@ export default function FormsPage() {
 										</div>
 
 										{/* Field Number Badge */}
-										<div
-											style={{
-												position: "absolute",
-												top: "0.75rem",
-												right: "0.75rem",
-												background: "var(--color-gray-700)",
-												color: "var(--color-gray-400)",
-												fontSize: "0.7rem",
-												fontWeight: "600",
-												padding: "0.2rem 0.5rem",
-												borderRadius: "4px"
-											}}
-										>
-											#{index + 1}
-										</div>
+										<div className="absolute top-3 right-3 bg-[var(--color-gray-700)] text-[var(--color-gray-400)] text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Main Content Area */}
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												gap: "1rem",
-												flex: 1,
-												paddingRight: "3rem"
-											}}
-										>
+										<div className="flex flex-col gap-4 flex-1 pr-12">
 											{/* Field Names Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.fieldName}
-												</div>
-												<div
-													style={{
-														display: "grid",
-														gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-														gap: "0.6rem"
-													}}
-												>
+												<div className="text-xs font-semibold text-[var(--color-gray-500)] mb-2 uppercase tracking-wider">{t.fieldName}</div>
+												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															EN
-														</label>
+														<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">EN</label>
 														<input
 															type="text"
 															value={q.labelEn || ""}
 															placeholder="English Label"
 															onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="admin-input w-full text-sm py-2 px-2.5"
 														/>
 													</div>
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															繁體中文
-														</label>
+														<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">繁體中文</label>
 														<input
 															type="text"
 															value={q.labelZhHant || ""}
 															placeholder="繁體中文標籤"
 															onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="admin-input w-full text-sm py-2 px-2.5"
 														/>
 													</div>
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															简体中文
-														</label>
+														<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">简体中文</label>
 														<input
 															type="text"
 															value={q.labelZhHans || ""}
 															placeholder="简体中文标签"
 															onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="admin-input w-full text-sm py-2 px-2.5"
 														/>
 													</div>
 												</div>
@@ -892,48 +679,11 @@ export default function FormsPage() {
 
 											{/* Field Configuration Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.fieldSettings}
-												</div>
-												<div
-													style={{
-														display: "flex",
-														gap: "0.6rem",
-														flexWrap: "wrap",
-														alignItems: "flex-end"
-													}}
-												>
+												<div className="text-xs font-semibold text-[var(--color-gray-500)] mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
+												<div className="flex gap-2.5 flex-wrap items-end">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															{t.fieldType}
-														</label>
-														<select
-															value={q.type}
-															onChange={e => updateQuestion(q.id, { type: e.target.value })}
-															className="admin-select"
-															style={{
-																minWidth: "140px",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
-														>
+														<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.fieldType}</label>
+														<select value={q.type} onChange={e => updateQuestion(q.id, { type: e.target.value })} className="admin-select min-w-[140px] text-sm py-2 px-2.5">
 															{fieldTypes.map(ft => (
 																<option key={ft.value} value={ft.value}>
 																	{ft.label}
@@ -942,34 +692,22 @@ export default function FormsPage() {
 														</select>
 													</div>
 
-													<div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
+													<div className="flex gap-1.5 items-end">
 														<button
 															type="button"
 															onClick={() => updateQuestion(q.id, { required: !q.required })}
-															className="admin-button"
-															style={{
-																background: q.required ? "var(--color-primary)" : "var(--color-gray-700)",
-																border: `1px solid ${q.required ? "var(--color-primary)" : "var(--color-gray-600)"}`,
-																color: q.required ? "white" : "var(--color-gray-300)",
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																fontWeight: q.required ? "600" : "500",
-																transition: "all 0.2s ease"
-															}}
+															className={`admin-button text-xs py-2 px-3 transition-all ${
+																q.required
+																	? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white font-semibold"
+																	: "bg-[var(--color-gray-700)] border-[var(--color-gray-600)] text-[var(--color-gray-300)] font-medium"
+															}`}
 														>
 															{q.required ? t.fieldRequired : t.fieldOptional}
 														</button>
 														<button
 															type="button"
 															onClick={() => deleteQuestion(q.id)}
-															className="admin-button danger"
-															style={{
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																background: "var(--color-gray-700)",
-																border: "1px solid var(--color-gray-600)",
-																color: "var(--color-red-400)"
-															}}
+															className="admin-button danger text-xs py-2 px-3 bg-[var(--color-gray-700)] border border-[var(--color-gray-600)] text-[var(--color-red-400)]"
 															title={t.deleteField}
 														>
 															{t.deleteField}
@@ -980,112 +718,38 @@ export default function FormsPage() {
 
 											{/* Additional Settings Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.additionalSettings}
-												</div>
-												<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+												<div className="text-xs font-semibold text-[var(--color-gray-500)] mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
+												<div className="flex flex-col gap-2.5">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															{t.fieldDescription}
-														</label>
+														<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.fieldDescription}</label>
 														<input
 															type="text"
 															value={q.description || ""}
 															placeholder="給自己或其他管理員加上註記..."
 															onChange={e => updateQuestion(q.id, { description: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="admin-input w-full text-sm py-2 px-2.5"
 														/>
 													</div>
 
 													{(q.type === "text" || q.type === "textarea") && (
 														<div>
-															<label
-																style={{
-																	display: "block",
-																	fontSize: "0.7rem",
-																	color: "var(--color-gray-500)",
-																	marginBottom: "0.3rem",
-																	fontWeight: "500"
-																}}
-															>
-																{t.validator}
-															</label>
+															<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.validator}</label>
 															<input
 																type="text"
 																value={q.validater || ""}
 																placeholder={t.validatorPlaceholder}
 																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-																className="admin-input"
-																style={{
-																	width: "100%",
-																	fontSize: "0.8rem",
-																	padding: "0.5rem 0.65rem",
-																	fontFamily: "monospace",
-																	background: "var(--color-gray-900)",
-																	border: "1px solid var(--color-gray-700)"
-																}}
+																className="admin-input w-full text-xs py-2 px-2.5 font-mono bg-[var(--color-gray-900)] border border-[var(--color-gray-700)]"
 															/>
-															<p
-																style={{
-																	fontSize: "0.7rem",
-																	color: "var(--color-gray-500)",
-																	marginTop: "0.3rem",
-																	marginBottom: 0
-																}}
-															>
-																{t.useValidator}
-															</p>
+															<p className="text-[0.7rem] text-[var(--color-gray-500)] mt-1.5 mb-0">{t.useValidator}</p>
 														</div>
 													)}
 												</div>
 											</div>
 											{["select", "radio", "checkbox"].includes(q.type) && (
 												<div>
-													<div
-														style={{
-															fontSize: "0.75rem",
-															fontWeight: "600",
-															color: "var(--color-gray-500)",
-															marginBottom: "0.5rem",
-															textTransform: "uppercase",
-															letterSpacing: "0.05em"
-														}}
-													>
-														{t.optionSettings}
-													</div>
-													<div
-														style={{
-															padding: "0.75rem",
-															border: "1px solid var(--color-gray-700)",
-															borderRadius: "8px",
-															background: "var(--color-gray-900)",
-															display: "flex",
-															flexDirection: "column",
-															gap: "0.6rem"
-														}}
-													>
+													<div className="text-xs font-semibold text-[var(--color-gray-500)] mb-2 uppercase tracking-wider">{t.optionSettings}</div>
+													<div className="p-3 border border-[var(--color-gray-700)] rounded-lg bg-[var(--color-gray-900)] flex flex-col gap-2.5">
 														{(q.options || []).map((opt, i) => {
 															const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
 															const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
@@ -1096,38 +760,20 @@ export default function FormsPage() {
 																	onDragOver={e => handleOptionDragOver(e, i)}
 																	onDragLeave={handleOptionDragLeave}
 																	onDrop={e => handleOptionDrop(e, q.id, i)}
-																	style={{
-																		display: "flex",
-																		gap: "0.5rem",
-																		alignItems: "stretch",
-																		padding: "0.5rem",
-																		borderRadius: "6px",
-																		background: isOptionDragging ? "var(--color-gray-800)" : isOptionDropTarget ? "var(--color-gray-750)" : "var(--color-gray-800)",
-																		border: isOptionDropTarget ? "1px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-																		opacity: isOptionDragging ? 0.6 : 1,
-																		transition: "all 0.2s ease",
-																		boxShadow: isOptionDropTarget ? "0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.1)" : "none"
-																	}}
+																	className={`flex gap-2 items-stretch p-2 rounded-md transition-all ${
+																		isOptionDragging
+																			? "bg-[var(--color-gray-800)] opacity-60"
+																			: isOptionDropTarget
+																				? "bg-[var(--color-gray-750)] border border-[var(--color-primary)] shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
+																				: "bg-[var(--color-gray-800)] border border-[var(--color-gray-700)]"
+																	}`}
 																>
-																	<div
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "0.5rem"
-																		}}
-																	>
+																	<div className="flex items-center gap-2">
 																		<span
 																			draggable
 																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
 																			onDragEnd={handleOptionDragEnd}
-																			style={{
-																				cursor: "grab",
-																				color: isOptionDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-																				userSelect: "none",
-																				padding: "0.25rem",
-																				display: "flex",
-																				alignItems: "center"
-																			}}
+																			className={`cursor-grab ${isOptionDragging ? "text-[var(--color-primary)]" : "text-[var(--color-gray-600)]"} select-none p-1 flex items-center`}
 																			title="拖曳以重新排序選項"
 																			onMouseDown={e => {
 																				e.currentTarget.style.cursor = "grabbing";
@@ -1138,25 +784,9 @@ export default function FormsPage() {
 																		>
 																			⋮⋮
 																		</span>
-																		<span
-																			style={{
-																				fontSize: "0.75rem",
-																				color: "var(--color-gray-500)",
-																				fontWeight: "600",
-																				minWidth: "1.5rem"
-																			}}
-																		>
-																			{i + 1}
-																		</span>
+																		<span className="text-xs text-[var(--color-gray-500)] font-semibold min-w-[1.5rem]">{i + 1}</span>
 																	</div>
-																	<div
-																		style={{
-																			display: "grid",
-																			gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-																			gap: "0.5rem",
-																			flex: 1
-																		}}
-																	>
+																	<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
 																		<input
 																			type="text"
 																			value={typeof opt === "object" ? opt.en || "" : opt}
@@ -1170,12 +800,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-[var(--color-gray-950)]"
 																		/>
 																		<input
 																			type="text"
@@ -1190,12 +815,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-[var(--color-gray-950)]"
 																		/>
 																		<input
 																			type="text"
@@ -1210,12 +830,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-[var(--color-gray-950)]"
 																		/>
 																	</div>
 																	<button
@@ -1225,15 +840,7 @@ export default function FormsPage() {
 																			newOptions.splice(i, 1);
 																			updateQuestion(q.id, { options: newOptions });
 																		}}
-																		className="admin-button"
-																		style={{
-																			fontSize: "0.75rem",
-																			padding: "0.45rem 0.65rem",
-																			background: "var(--color-gray-950)",
-																			border: "1px solid var(--color-gray-800)",
-																			color: "var(--color-red-400)",
-																			flexShrink: 0
-																		}}
+																		className="admin-button text-xs py-[0.45rem] px-2.5 bg-[var(--color-gray-950)] border border-[var(--color-gray-800)] text-[var(--color-red-400)] flex-shrink-0"
 																		title="刪除此選項"
 																	>
 																		<X />
@@ -1247,21 +854,9 @@ export default function FormsPage() {
 																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
 																updateQuestion(q.id, { options: newOptions });
 															}}
-															className="admin-button"
-															style={{
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																background: "var(--color-gray-800)",
-																border: "1px dashed var(--color-gray-700)",
-																color: "var(--color-gray-400)",
-																width: "100%",
-																justifyContent: "center",
-																display: "flex",
-																alignItems: "center",
-																gap: "0.4rem"
-															}}
+															className="admin-button text-xs py-2 px-3 bg-[var(--color-gray-800)] border border-dashed border-[var(--color-gray-700)] text-[var(--color-gray-400)] w-full flex justify-center items-center gap-1.5"
 														>
-															<span style={{ fontSize: "1rem" }}>
+															<span className="text-base">
 																<Plus />
 															</span>{" "}
 															{t.newOption}
@@ -1272,39 +867,10 @@ export default function FormsPage() {
 
 											{/* Display Filters Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.displayFilters}
-												</div>
-												<div
-													style={{
-														padding: "0.75rem",
-														border: "1px solid var(--color-gray-700)",
-														borderRadius: "8px",
-														background: "var(--color-gray-900)",
-														display: "flex",
-														flexDirection: "column",
-														gap: "0.75rem"
-													}}
-												>
+												<div className="text-xs font-semibold text-[var(--color-gray-500)] mb-2 uppercase tracking-wider">{t.displayFilters}</div>
+												<div className="p-3 border border-[var(--color-gray-700)] rounded-lg bg-[var(--color-gray-900)] flex flex-col gap-3">
 													{/* Enable filters toggle */}
-													<label
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "0.5rem",
-															cursor: "pointer",
-															userSelect: "none"
-														}}
-													>
+													<label className="flex items-center gap-2 cursor-pointer select-none">
 														<input
 															type="checkbox"
 															checked={q.filters?.enabled || false}
@@ -1318,45 +884,17 @@ export default function FormsPage() {
 																	}
 																});
 															}}
-															style={{
-																width: "1rem",
-																height: "1rem",
-																cursor: "pointer"
-															}}
+															className="w-4 h-4 cursor-pointer"
 														/>
-														<span
-															style={{
-																fontSize: "0.85rem",
-																fontWeight: "500",
-																color: "var(--color-gray-300)"
-															}}
-														>
-															{t.enableFilters}
-														</span>
+														<span className="text-[0.85rem] font-medium text-[var(--color-gray-300)]">{t.enableFilters}</span>
 													</label>
 
 													{q.filters?.enabled && (
 														<>
 															{/* Filter action and operator */}
-															<div
-																style={{
-																	display: "flex",
-																	gap: "0.6rem",
-																	flexWrap: "wrap"
-																}}
-															>
-																<div style={{ flex: "1", minWidth: "200px" }}>
-																	<label
-																		style={{
-																			display: "block",
-																			fontSize: "0.7rem",
-																			color: "var(--color-gray-500)",
-																			marginBottom: "0.3rem",
-																			fontWeight: "500"
-																		}}
-																	>
-																		{t.filterAction}
-																	</label>
+															<div className="flex gap-2.5 flex-wrap">
+																<div className="flex-1 min-w-[200px]">
+																	<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.filterAction}</label>
 																	<select
 																		value={q.filters.action}
 																		onChange={e => {
@@ -1367,30 +905,15 @@ export default function FormsPage() {
 																				}
 																			});
 																		}}
-																		className="admin-select"
-																		style={{
-																			width: "100%",
-																			fontSize: "0.875rem",
-																			padding: "0.5rem 0.65rem"
-																		}}
+																		className="admin-select w-full text-sm py-2 px-2.5"
 																	>
 																		<option value="display">{t.actionDisplay}</option>
 																		<option value="hide">{t.actionHide}</option>
 																	</select>
 																</div>
 
-																<div style={{ flex: "1", minWidth: "200px" }}>
-																	<label
-																		style={{
-																			display: "block",
-																			fontSize: "0.7rem",
-																			color: "var(--color-gray-500)",
-																			marginBottom: "0.3rem",
-																			fontWeight: "500"
-																		}}
-																	>
-																		{t.filterOperator}
-																	</label>
+																<div className="flex-1 min-w-[200px]">
+																	<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.filterOperator}</label>
 																	<select
 																		value={q.filters.operator}
 																		onChange={e => {
@@ -1401,12 +924,7 @@ export default function FormsPage() {
 																				}
 																			});
 																		}}
-																		className="admin-select"
-																		style={{
-																			width: "100%",
-																			fontSize: "0.875rem",
-																			padding: "0.5rem 0.65rem"
-																		}}
+																		className="admin-select w-full text-sm py-2 px-2.5"
 																	>
 																		<option value="and">{t.operatorAnd}</option>
 																		<option value="or">{t.operatorOr}</option>
@@ -1415,46 +933,13 @@ export default function FormsPage() {
 															</div>
 
 															{/* Conditions list */}
-															<div
-																style={{
-																	display: "flex",
-																	flexDirection: "column",
-																	gap: "0.6rem"
-																}}
-															>
+															<div className="flex flex-col gap-2.5">
 																{(q.filters.conditions || []).map((condition, condIndex) => (
-																	<div
-																		key={condIndex}
-																		style={{
-																			padding: "0.6rem",
-																			background: "var(--color-gray-800)",
-																			border: "1px solid var(--color-gray-700)",
-																			borderRadius: "6px",
-																			display: "flex",
-																			flexDirection: "column",
-																			gap: "0.5rem"
-																		}}
-																	>
+																	<div key={condIndex} className="p-2.5 bg-[var(--color-gray-800)] border border-[var(--color-gray-700)] rounded-md flex flex-col gap-2">
 																		{/* Condition type selector */}
-																		<div
-																			style={{
-																				display: "flex",
-																				gap: "0.5rem",
-																				alignItems: "flex-start"
-																			}}
-																		>
-																			<div style={{ flex: 1 }}>
-																				<label
-																					style={{
-																						display: "block",
-																						fontSize: "0.7rem",
-																						color: "var(--color-gray-500)",
-																						marginBottom: "0.3rem",
-																						fontWeight: "500"
-																					}}
-																				>
-																					{t.conditionType}
-																				</label>
+																		<div className="flex gap-2 items-start">
+																			<div className="flex-1">
+																				<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.conditionType}</label>
 																				<select
 																					value={condition.type}
 																					onChange={e => {
@@ -1469,12 +954,7 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select"
-																					style={{
-																						width: "100%",
-																						fontSize: "0.8rem",
-																						padding: "0.45rem 0.6rem"
-																					}}
+																					className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																				>
 																					<option value="ticket">{t.typeTicket}</option>
 																					<option value="field">{t.typeField}</option>
@@ -1494,16 +974,7 @@ export default function FormsPage() {
 																						}
 																					});
 																				}}
-																				className="admin-button"
-																				style={{
-																					fontSize: "0.75rem",
-																					padding: "0.45rem 0.65rem",
-																					background: "var(--color-gray-950)",
-																					border: "1px solid var(--color-gray-800)",
-																					color: "var(--color-red-400)",
-																					flexShrink: 0,
-																					marginTop: "1.4rem"
-																				}}
+																				className="admin-button text-xs py-[0.45rem] px-2.5 bg-[var(--color-gray-950)] border border-[var(--color-gray-800)] text-[var(--color-red-400)] flex-shrink-0 mt-[1.4rem]"
 																				title={t.deleteCondition}
 																			>
 																				<X size={14} />
@@ -1513,17 +984,7 @@ export default function FormsPage() {
 																		{/* Condition-specific fields */}
 																		{condition.type === "ticket" && (
 																			<div>
-																				<label
-																					style={{
-																						display: "block",
-																						fontSize: "0.7rem",
-																						color: "var(--color-gray-500)",
-																						marginBottom: "0.3rem",
-																						fontWeight: "500"
-																					}}
-																				>
-																					{t.selectTicket}
-																				</label>
+																				<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.selectTicket}</label>
 																				<select
 																					value={condition.ticketId || ""}
 																					onChange={e => {
@@ -1539,12 +1000,7 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select"
-																					style={{
-																						width: "100%",
-																						fontSize: "0.8rem",
-																						padding: "0.45rem 0.6rem"
-																					}}
+																					className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																				>
 																					<option value="">{t.selectTicket}...</option>
 																					{eventTickets.map(ticket => (
@@ -1559,17 +1015,7 @@ export default function FormsPage() {
 																		{condition.type === "field" && (
 																			<>
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.selectField}
-																					</label>
+																					<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.selectField}</label>
 																					<select
 																						value={condition.fieldId || ""}
 																						onChange={e => {
@@ -1585,12 +1031,7 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-select"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
+																						className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																					>
 																						<option value="">{t.selectField}...</option>
 																						{questions
@@ -1603,24 +1044,9 @@ export default function FormsPage() {
 																					</select>
 																				</div>
 
-																				<div
-																					style={{
-																						display: "flex",
-																						gap: "0.5rem"
-																					}}
-																				>
-																					<div style={{ flex: 1 }}>
-																						<label
-																							style={{
-																								display: "block",
-																								fontSize: "0.7rem",
-																								color: "var(--color-gray-500)",
-																								marginBottom: "0.3rem",
-																								fontWeight: "500"
-																							}}
-																						>
-																							{t.fieldOperator}
-																						</label>
+																				<div className="flex gap-2">
+																					<div className="flex-1">
+																						<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.fieldOperator}</label>
 																						<select
 																							value={condition.operator || "equals"}
 																							onChange={e => {
@@ -1636,12 +1062,7 @@ export default function FormsPage() {
 																									}
 																								});
 																							}}
-																							className="admin-select"
-																							style={{
-																								width: "100%",
-																								fontSize: "0.8rem",
-																								padding: "0.45rem 0.6rem"
-																							}}
+																							className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																						>
 																							<option value="equals">{t.operatorEquals}</option>
 																							<option value="filled">{t.operatorFilled}</option>
@@ -1650,18 +1071,8 @@ export default function FormsPage() {
 																					</div>
 
 																					{condition.operator === "equals" && (
-																						<div style={{ flex: 1 }}>
-																							<label
-																								style={{
-																									display: "block",
-																									fontSize: "0.7rem",
-																									color: "var(--color-gray-500)",
-																									marginBottom: "0.3rem",
-																									fontWeight: "500"
-																								}}
-																							>
-																								{t.fieldValue}
-																							</label>
+																						<div className="flex-1">
+																							<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.fieldValue}</label>
 																							<input
 																								type="text"
 																								value={condition.value || ""}
@@ -1679,12 +1090,7 @@ export default function FormsPage() {
 																										}
 																									});
 																								}}
-																								className="admin-input"
-																								style={{
-																									width: "100%",
-																									fontSize: "0.8rem",
-																									padding: "0.45rem 0.6rem"
-																								}}
+																								className="admin-input w-full text-xs py-[0.45rem] px-2.5"
 																							/>
 																						</div>
 																					)}
@@ -1695,17 +1101,7 @@ export default function FormsPage() {
 																		{condition.type === "time" && (
 																			<>
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.startTime}
-																					</label>
+																					<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.startTime}</label>
 																					<input
 																						type="datetime-local"
 																						value={condition.startTime || ""}
@@ -1722,27 +1118,12 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
+																						className="admin-input w-full text-xs py-[0.45rem] px-2.5"
 																					/>
 																				</div>
 
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.endTime}
-																					</label>
+																					<label className="block text-[0.7rem] text-[var(--color-gray-500)] mb-1.5 font-medium">{t.endTime}</label>
 																					<input
 																						type="datetime-local"
 																						value={condition.endTime || ""}
@@ -1759,12 +1140,7 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
+																						className="admin-input w-full text-xs py-[0.45rem] px-2.5"
 																					/>
 																				</div>
 																			</>
@@ -1784,21 +1160,9 @@ export default function FormsPage() {
 																			}
 																		});
 																	}}
-																	className="admin-button"
-																	style={{
-																		fontSize: "0.8rem",
-																		padding: "0.5rem 0.75rem",
-																		background: "var(--color-gray-800)",
-																		border: "1px dashed var(--color-gray-700)",
-																		color: "var(--color-gray-400)",
-																		width: "100%",
-																		justifyContent: "center",
-																		display: "flex",
-																		alignItems: "center",
-																		gap: "0.4rem"
-																	}}
+																	className="admin-button text-xs py-2 px-3 bg-[var(--color-gray-800)] border border-dashed border-[var(--color-gray-700)] text-[var(--color-gray-400)] w-full flex justify-center items-center gap-1.5"
 																>
-																	<span style={{ fontSize: "1rem" }}>
+																	<span className="text-base">
 																		<Plus />
 																	</span>{" "}
 																	{t.addCondition}
@@ -1816,35 +1180,12 @@ export default function FormsPage() {
 					</div>
 
 					{/* Action Buttons */}
-					<div
-						style={{
-							position: "sticky",
-							bottom: 0,
-							background: "var(--color-gray-900)",
-							padding: "1rem 0",
-							marginTop: "1.5rem",
-							display: "flex",
-							gap: "0.75rem",
-							justifyContent: "center",
-							borderTop: "1px solid var(--color-gray-700)"
-						}}
-					>
+					<div className="sticky bottom-0 bg-[var(--color-gray-900)] py-4 mt-6 flex gap-3 justify-center border-t border-[var(--color-gray-700)]">
 						<button
 							id="add-question"
 							type="button"
 							onClick={addQuestion}
-							className="admin-button"
-							style={{
-								fontSize: "0.9rem",
-								padding: "0.65rem 1.25rem",
-								background: "var(--color-gray-700)",
-								border: "1px solid var(--color-gray-600)",
-								color: "var(--color-gray-200)",
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								fontWeight: "500"
-							}}
+							className="admin-button text-[0.9rem] py-2.5 px-5 bg-[var(--color-gray-700)] border border-[var(--color-gray-600)] text-[var(--color-gray-200)] flex items-center gap-2 font-medium"
 						>
 							<Plus size={18} /> {t.addQuestion}
 						</button>
@@ -1852,18 +1193,7 @@ export default function FormsPage() {
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="admin-button"
-							style={{
-								fontSize: "0.9rem",
-								padding: "0.65rem 1.25rem",
-								border: "1px solid var(--color-primary)",
-								color: "white",
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								fontWeight: "600",
-								boxShadow: "0 2px 8px rgba(var(--color-primary-rgb, 99, 102, 241), 0.25)"
-							}}
+							className="admin-button text-[0.9rem] py-2.5 px-5 border border-[var(--color-primary)] text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
 						</button>

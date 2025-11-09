@@ -315,50 +315,25 @@ export default function FormPage() {
 	return (
 		<>
 			<main>
-				<section
-					style={{
-						marginTop: "6rem",
-						maxWidth: "800px",
-						marginLeft: "auto",
-						marginRight: "auto",
-						padding: "0 1rem"
-					}}
-				>
-					<button onClick={() => router.back()} className="button" style={{ marginBottom: "2rem" }}>
+				<section className="mt-24 max-w-3xl mx-auto px-4">
+					<button onClick={() => router.back()} className="button mb-8">
 						<div className="flex items-center">
 							<ChevronLeft />
 							<p>{t.reselectTicket}</p>
 						</div>
 					</button>
-					<h1
-						style={{
-							marginBlock: "1rem",
-							fontSize: "2.5rem"
-						}}
-					>
-						{t.fillForm}
-					</h1>
+					<h1 className="my-4 text-4xl">{t.fillForm}</h1>
 
 					{loading && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "1rem",
-								padding: "3rem",
-								opacity: 0.7
-							}}
-						>
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
 							<PageSpinner size={48} />
 							<p>{t.loadingForm}</p>
 						</div>
 					)}
 
 					{error && (
-						<div style={{ textAlign: "center", padding: "2rem" }}>
-							<p style={{ color: "red" }}>
+						<div className="text-center p-8">
+							<p className="text-red-600">
 								{t.loadFormFailed}
 								{error}
 							</p>
@@ -367,14 +342,7 @@ export default function FormPage() {
 					)}
 
 					{!loading && !error && (
-						<form
-							onSubmit={handleSubmit}
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "1.5rem"
-							}}
-						>
+						<form onSubmit={handleSubmit} className="flex flex-col gap-6">
 							{/* Invitation code field - shown if ticket requires it */}
 							{requiresInviteCode && (
 								<Text
@@ -409,26 +377,15 @@ export default function FormPage() {
 									checked={agreeToTerms}
 									onChange={e => setAgreeToTerms(e.target.checked)}
 								/>
-								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>
+								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline mt-2 ml-8">
 									{t.termsLink}
 								</a>
 							</div>
 
 							<button
 								type="submit"
-								className="button"
+								className="button cursor-pointer mt-8 self-center inline-flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:pointer-events-none"
 								disabled={isSubmitting}
-								style={{
-									cursor: isSubmitting ? "not-allowed" : "pointer",
-									marginTop: "2rem",
-									alignSelf: "center",
-									opacity: isSubmitting ? 0.7 : 1,
-									transition: "opacity 0.2s",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "0.5rem",
-									pointerEvents: isSubmitting ? "none" : "auto"
-								}}
 							>
 								{isSubmitting && <Spinner size="sm" />}
 								{t.submitRegistration}

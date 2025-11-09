@@ -234,7 +234,7 @@ export default function EventsPage() {
 													<span className={`status-badge ${status.class}`}>{status.label}</span>
 												</td>
 												<td>
-													<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+													<div className="flex gap-2 flex-wrap">
 														<button className="admin-button small secondary" onClick={() => openModal(event)}>
 															{t.edit}
 														</button>
@@ -252,7 +252,7 @@ export default function EventsPage() {
 					</div>
 				</section>
 
-				<section style={{ marginTop: "2rem", textAlign: "center" }}>
+				<section className="mt-8 text-center">
 					<button className="admin-button primary" onClick={() => openModal()}>
 						+ {t.addEvent}
 					</button>
@@ -268,9 +268,9 @@ export default function EventsPage() {
 								</button>
 							</div>
 							<form onSubmit={saveEvent}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+								<div className="flex flex-col gap-4 p-6">
 									{/* Language Tabs */}
-									<div style={{ display: "flex", gap: "0.5rem", borderBottom: "2px solid var(--color-gray-700)", marginBottom: "1rem" }}>
+									<div className="flex gap-2 border-b-2 border-gray-700 dark:border-gray-800 mb-4">
 										{[
 											{ key: "en" as const, label: "English" },
 											{ key: "zh-Hant" as const, label: "繁體中文" },
@@ -280,16 +280,11 @@ export default function EventsPage() {
 												key={tab.key}
 												type="button"
 												onClick={() => setActiveTab(tab.key)}
-												style={{
-													padding: "0.5rem 1rem",
-													background: activeTab === tab.key ? "var(--color-gray-600)" : "transparent",
-													border: "none",
-													borderBottom: activeTab === tab.key ? "2px solid var(--color-blue-500)" : "none",
-													color: activeTab === tab.key ? "var(--color-gray-100)" : "var(--color-gray-400)",
-													cursor: "pointer",
-													fontWeight: activeTab === tab.key ? "bold" : "normal",
-													transition: "all 0.2s"
-												}}
+												className={`px-4 py-2 border-none transition-all duration-200 cursor-pointer ${
+													activeTab === tab.key
+														? "bg-gray-600 dark:bg-gray-700 border-b-2 border-blue-500 dark:border-blue-400 text-gray-100 dark:text-gray-200 font-bold"
+														: "bg-transparent text-gray-400 dark:text-gray-500 font-normal"
+												}`}
 											>
 												{tab.label}
 											</button>
@@ -305,10 +300,10 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (English, Markdown)</label>
-												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-textarea" rows={6} />
+												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-input" rows={6} />
 												{descEn && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
+														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
 														<MarkdownContent content={descEn} />
 													</div>
 												)}
@@ -318,7 +313,7 @@ export default function EventsPage() {
 												<textarea
 													value={plainDescEn}
 													onChange={e => setPlainDescEn(e.target.value)}
-													className="admin-textarea"
+													className="admin-input"
 													rows={4}
 													placeholder="Plain text description without markdown formatting"
 												/>
@@ -335,17 +330,17 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
-												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-textarea" rows={6} />
+												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-input" rows={6} />
 												{descZhHant && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
+														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
 														<MarkdownContent content={descZhHant} />
 													</div>
 												)}
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
-												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
+												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-input" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
@@ -359,17 +354,17 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
-												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-textarea" rows={6} />
+												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-input" rows={6} />
 												{descZhHans && (
-													<div style={{ marginTop: "0.5rem", padding: "0.75rem", border: "1px solid var(--color-gray-600)", borderRadius: "4px", backgroundColor: "var(--color-gray-750)" }}>
-														<div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", color: "var(--color-gray-300)" }}>Preview:</div>
+													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
+														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
 														<MarkdownContent content={descZhHans} />
 													</div>
 												)}
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
-												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
+												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-input" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
@@ -381,7 +376,7 @@ export default function EventsPage() {
 										<label className="admin-form-label">{t.location}</label>
 										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="admin-input" />
 									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.startDate}</label>
 											<input name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} className="admin-input" />

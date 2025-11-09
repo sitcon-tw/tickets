@@ -17,7 +17,7 @@ export default function PageSpinner({ size = 48, className }: PageSpinnerProps) 
 
 	return (
 		<>
-			<div className={cn("inline-block animate-spin", className)} style={{ width: size, height: size }} role="status" aria-label="Loading">
+			<div className={cn("inline-block animate-spin", className)} style={{ width: `${size}px`, height: `${size}px` }} role="status" aria-label="Loading">
 				<Image src="/assets/small-stone.png" alt="Loading" width={size} height={size} className="block" />
 			</div>
 			<DecryptedText text={t.loading} animateOn="view" />
