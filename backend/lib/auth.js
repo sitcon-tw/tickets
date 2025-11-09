@@ -35,7 +35,7 @@ export const auth = betterAuth({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
 				const normalizedEmail = email.toLowerCase();
-				
+
 				// Rate limiting: Check for recent magic link attempts (30 seconds)
 				const recentAttempt = await prisma.magicLinkAttempt.findFirst({
 					where: {

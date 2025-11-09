@@ -248,9 +248,12 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		if (response.ok) {
 			// Mark the most recent magic link attempt as successful
 			try {
-				const responseData = await response.clone().json().catch(() => null);
+				const responseData = await response
+					.clone()
+					.json()
+					.catch(() => null);
 				const userEmail = responseData?.user?.email;
-				
+
 				if (userEmail) {
 					await prisma.magicLinkAttempt.updateMany({
 						where: {

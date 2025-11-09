@@ -38,26 +38,19 @@ async function initDatabase() {
 	if (isProduction) {
 		// Production: Use migrations only (safe, no data loss)
 		console.log("\n⚠️  Production mode: Using safe migration strategy");
-		
-		const migrateSuccess = await runCommand(
-			"npx prisma migrate deploy",
-			"Applying pending migrations"
-		);
-		
+
+		const migrateSuccess = await runCommand("npx prisma migrate deploy", "Applying pending migrations");
+
 		if (!migrateSuccess) {
 			console.error("\n❌ Migration failed! Please check your database connection and migrations.");
 			process.exit(1);
 		}
-		
 	} else {
 		// Development: Use db push for rapid iteration
 		console.log("\n🛠️  Development mode: Using db push for rapid iteration");
-		
-		const pushSuccess = await runCommand(
-			"npx prisma db push --skip-generate",
-			"Syncing database schema"
-		);
-		
+
+		const pushSuccess = await runCommand("npx prisma db push --skip-generate", "Syncing database schema");
+
 		if (!pushSuccess) {
 			console.error("\n❌ Database sync failed! Please check your database connection.");
 			process.exit(1);
@@ -65,11 +58,8 @@ async function initDatabase() {
 	}
 
 	// Always generate Prisma Client
-	const generateSuccess = await runCommand(
-		"npx prisma generate",
-		"Generating Prisma Client"
-	);
-	
+	const generateSuccess = await runCommand("npx prisma generate", "Generating Prisma Client");
+
 	if (!generateSuccess) {
 		console.error("\n❌ Prisma Client generation failed!");
 		process.exit(1);
