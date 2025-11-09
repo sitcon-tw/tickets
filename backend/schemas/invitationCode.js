@@ -171,8 +171,6 @@ export const invitationCodeSchemas = {
 		description: "創建新邀請碼",
 		tags: ["admin/invitation-codes"],
 		body: invitationCodeCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: invitationCodeResponse,
 			400: errorResponse,
@@ -185,9 +183,7 @@ export const invitationCodeSchemas = {
 	getInvitationCode: {
 		description: "取得邀請碼詳情",
 		tags: ["admin/invitation-codes"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: invitationCodeResponse,
 			404: errorResponse
@@ -199,7 +195,6 @@ export const invitationCodeSchemas = {
 		tags: ["admin/invitation-codes"],
 		body: invitationCodeUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: invitationCodeResponse,
 			400: errorResponse,
@@ -212,9 +207,7 @@ export const invitationCodeSchemas = {
 	deleteInvitationCode: {
 		description: "刪除邀請碼",
 		tags: ["admin/invitation-codes"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -226,8 +219,6 @@ export const invitationCodeSchemas = {
 	listInvitationCodes: {
 		description: "取得邀請碼列表",
 		tags: ["admin/invitation-codes"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {
@@ -250,8 +241,6 @@ export const invitationCodeSchemas = {
 		description: "驗證邀請碼",
 		tags: ["public"],
 		body: invitationCodeValidateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			200: {
 				type: "object",

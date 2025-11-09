@@ -220,8 +220,6 @@ export const ticketSchemas = {
 		description: "創建新票券",
 		tags: ["admin/tickets"],
 		body: ticketCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: ticketResponse,
 			400: errorResponse,
@@ -233,9 +231,7 @@ export const ticketSchemas = {
 	getTicket: {
 		description: "取得票券詳情",
 		tags: ["admin/tickets"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: ticketResponse,
 			404: errorResponse
@@ -247,7 +243,6 @@ export const ticketSchemas = {
 		tags: ["admin/tickets"],
 		body: ticketUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: ticketResponse,
 			400: errorResponse,
@@ -260,9 +255,7 @@ export const ticketSchemas = {
 	deleteTicket: {
 		description: "刪除票券",
 		tags: ["admin/tickets"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -274,8 +267,6 @@ export const ticketSchemas = {
 	listTickets: {
 		description: "取得票券列表",
 		tags: ["admin/tickets"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {

@@ -300,8 +300,6 @@ export const emailCampaignSchemas = {
 		description: "創建新郵件活動",
 		tags: ["admin/email-campaigns"],
 		body: emailCampaignCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: emailCampaignResponse,
 			400: errorResponse,
@@ -313,9 +311,7 @@ export const emailCampaignSchemas = {
 	getEmailCampaign: {
 		description: "取得郵件活動詳情",
 		tags: ["admin/email-campaigns"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: emailCampaignResponse,
 			401: errorResponse,
@@ -329,7 +325,6 @@ export const emailCampaignSchemas = {
 		tags: ["admin/email-campaigns"],
 		body: emailCampaignUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: emailCampaignResponse,
 			400: errorResponse,
@@ -342,9 +337,7 @@ export const emailCampaignSchemas = {
 	deleteEmailCampaign: {
 		description: "刪除郵件活動",
 		tags: ["admin/email-campaigns"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -356,8 +349,6 @@ export const emailCampaignSchemas = {
 	listEmailCampaigns: {
 		description: "取得郵件活動列表",
 		tags: ["admin/email-campaigns"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {
@@ -383,7 +374,6 @@ export const emailCampaignSchemas = {
 		tags: ["admin/email-campaigns"],
 		body: emailCampaignSendBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: emailCampaignResponse,
 			400: errorResponse,

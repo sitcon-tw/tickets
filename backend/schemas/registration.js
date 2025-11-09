@@ -145,8 +145,6 @@ export const registrationSchemas = {
 		description: "創建新報名",
 		tags: ["registrations"],
 		body: registrationCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: registrationResponse,
 			400: errorResponse,
@@ -158,9 +156,7 @@ export const registrationSchemas = {
 	getRegistration: {
 		description: "取得報名詳情",
 		tags: ["registrations"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: registrationResponse,
 			401: errorResponse,
@@ -174,7 +170,6 @@ export const registrationSchemas = {
 		tags: ["registrations"],
 		body: registrationUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: registrationResponse,
 			400: errorResponse,
@@ -187,8 +182,6 @@ export const registrationSchemas = {
 	listRegistrations: {
 		description: "取得報名列表",
 		tags: ["admin/registrations"],
-		body: undefined,
-		params: undefined,
 		querystring: registrationQuery,
 		response: {
 			200: registrationsListResponse,

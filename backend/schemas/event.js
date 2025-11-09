@@ -170,8 +170,6 @@ export const eventSchemas = {
 		description: "創建新活動",
 		tags: ["admin/events"],
 		body: eventCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: eventResponse,
 			400: errorResponse,
@@ -183,9 +181,7 @@ export const eventSchemas = {
 	getEvent: {
 		description: "取得活動詳情",
 		tags: ["events"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: eventResponse,
 			404: errorResponse
@@ -197,7 +193,6 @@ export const eventSchemas = {
 		tags: ["admin/events"],
 		body: eventUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: eventResponse,
 			400: errorResponse,
@@ -210,9 +205,7 @@ export const eventSchemas = {
 	deleteEvent: {
 		description: "刪除活動",
 		tags: ["admin/events"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -224,8 +217,6 @@ export const eventSchemas = {
 	listEvents: {
 		description: "取得活動列表",
 		tags: ["events"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {

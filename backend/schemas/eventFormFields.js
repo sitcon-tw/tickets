@@ -198,8 +198,6 @@ export const eventFormFieldSchemas = {
 		description: "創建活動表單欄位",
 		tags: ["admin/events"],
 		body: eventFormFieldCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: eventFormFieldResponse,
 			400: {
@@ -227,9 +225,7 @@ export const eventFormFieldSchemas = {
 	getEventFormField: {
 		description: "取得活動表單欄位詳情",
 		tags: ["admin/events"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: eventFormFieldResponse,
 			404: errorResponse
@@ -241,7 +237,6 @@ export const eventFormFieldSchemas = {
 		tags: ["admin/events"],
 		body: eventFormFieldUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: eventFormFieldResponse,
 			400: errorResponse,
@@ -254,9 +249,7 @@ export const eventFormFieldSchemas = {
 	deleteEventFormField: {
 		description: "刪除活動表單欄位",
 		tags: ["admin/events"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -268,8 +261,6 @@ export const eventFormFieldSchemas = {
 	listEventFormFields: {
 		description: "取得活動表單欄位列表",
 		tags: ["admin/events"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {

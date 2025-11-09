@@ -207,8 +207,6 @@ export const referralSchemas = {
 		description: "創建新推薦碼",
 		tags: ["referrals"],
 		body: referralCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: referralResponse,
 			400: errorResponse,
@@ -220,9 +218,7 @@ export const referralSchemas = {
 	getReferral: {
 		description: "取得推薦碼詳情",
 		tags: ["referrals"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: referralResponse,
 			401: errorResponse,
@@ -236,7 +232,6 @@ export const referralSchemas = {
 		tags: ["referrals"],
 		body: referralUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: referralResponse,
 			400: errorResponse,
@@ -249,9 +244,7 @@ export const referralSchemas = {
 	deleteReferral: {
 		description: "刪除推薦碼",
 		tags: ["referrals"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			401: errorResponse,
@@ -263,8 +256,6 @@ export const referralSchemas = {
 	listReferrals: {
 		description: "取得推薦碼列表",
 		tags: ["referrals"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {
@@ -288,8 +279,6 @@ export const referralSchemas = {
 		description: "驗證推薦碼",
 		tags: ["public"],
 		body: referralValidateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			200: {
 				type: "object",
@@ -322,9 +311,7 @@ export const referralSchemas = {
 	getReferralUsage: {
 		description: "取得推薦碼使用記錄",
 		tags: ["admin/referrals"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: referralUsageListResponse,
 			401: errorResponse,

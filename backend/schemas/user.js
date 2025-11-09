@@ -168,8 +168,6 @@ export const userSchemas = {
 		description: "創建新用戶",
 		tags: ["admin/users"],
 		body: userCreateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			201: userResponse,
 			400: errorResponse,
@@ -182,9 +180,7 @@ export const userSchemas = {
 	getUser: {
 		description: "取得用戶詳情",
 		tags: ["admin/users"],
-		body: undefined,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: userResponse,
 			401: errorResponse,
@@ -198,7 +194,6 @@ export const userSchemas = {
 		tags: ["admin/users"],
 		body: userUpdateBody,
 		params: idParam,
-		querystring: undefined,
 		response: {
 			200: userResponse,
 			400: errorResponse,
@@ -212,8 +207,6 @@ export const userSchemas = {
 		description: "更新個人資料",
 		tags: ["auth"],
 		body: profileUpdateBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			200: userResponse,
 			400: errorResponse,
@@ -225,8 +218,6 @@ export const userSchemas = {
 		description: "變更密碼",
 		tags: ["auth"],
 		body: changePasswordBody,
-		params: undefined,
-		querystring: undefined,
 		response: {
 			200: successResponse,
 			400: errorResponse,
@@ -237,8 +228,6 @@ export const userSchemas = {
 	listUsers: {
 		description: "取得用戶列表",
 		tags: ["admin/users"],
-		body: undefined,
-		params: undefined,
 		querystring: {
 			type: "object",
 			properties: {
