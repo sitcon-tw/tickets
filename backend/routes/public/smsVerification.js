@@ -85,27 +85,25 @@ export default async function smsVerificationRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for existing non-expired verification code (rate limiting)
-				const existingCode = await prisma.smsVerification.findFirst({
+				// Check for existing verification code sent within last 30 seconds (rate limiting by phone number)
+				const recentCode = await prisma.smsVerification.findFirst({
 					where: {
-						userId,
 						phoneNumber: sanitizedPhoneNumber,
-						verified: false,
-						expiresAt: {
-							gt: new Date()
-						},
 						createdAt: {
 							gt: new Date(Date.now() - 60000) // Within last 1 minute
 						}
+					},
+					orderBy: {
+						createdAt: "desc"
 					}
 				});
 
-				if (existingCode) {
-					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼已發送");
+				if (recentCode) {
+					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼發送間隔需 30 秒");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check daily rate limit (3 SMS per user per day)
+				// Check daily rate limit by phone number (3 SMS per phone per day)
 				const todayStart = new Date();
 				todayStart.setHours(0, 0, 0, 0);
 
@@ -114,7 +112,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 
 				const todaySmsCount = await prisma.smsVerification.count({
 					where: {
-						userId,
+						phoneNumber: sanitizedPhoneNumber,
 						createdAt: {
 							gte: todayStart,
 							lte: todayEnd
@@ -123,7 +121,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 				});
 
 				if (todaySmsCount >= 3) {
-					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
+					const { response, statusCode } = validationErrorResponse("此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
 					return reply.code(statusCode).send(response);
 				}
 

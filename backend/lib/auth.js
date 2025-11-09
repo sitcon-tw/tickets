@@ -34,6 +34,74 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
+				// Rate limiting: Check for recent magic link attempts by email (30 seconds)
+				const recentAttempt = await prisma.magicLinkAttempt.findFirst({
+					where: {
+						email: email.toLowerCase(),
+						createdAt: {
+							gt: new Date(Date.now() - 30000) // Within last 30 seconds
+						}
+					},
+					orderBy: {
+						createdAt: "desc"
+					}
+				});
+
+				if (recentAttempt) {
+					throw new Error("請稍後再試，登入信發送間隔需 30 秒");
+				}
+
+				// Rate limiting: Check daily limit by email (3 per day)
+				const todayStart = new Date();
+				todayStart.setHours(0, 0, 0, 0);
+
+				const todayEnd = new Date();
+				todayEnd.setHours(23, 59, 59, 999);
+
+				const todayAttempts = await prisma.magicLinkAttempt.count({
+					where: {
+						email: email.toLowerCase(),
+						createdAt: {
+							gte: todayStart,
+							lte: todayEnd
+						}
+					}
+				});
+
+				if (todayAttempts >= 3) {
+					throw new Error("此信箱今日已達到發送登入信的次數上限（3 次），請明天再試");
+				}
+
+				// Rate limiting: Check by IP address if available (10 per day to prevent abuse)
+				let ipAddress = null;
+				if (request?.headers) {
+					ipAddress = request.headers["x-forwarded-for"]?.split(",")[0]?.trim() || request.headers["x-real-ip"] || request.ip;
+				}
+
+				if (ipAddress) {
+					const ipAttempts = await prisma.magicLinkAttempt.count({
+						where: {
+							ipAddress,
+							createdAt: {
+								gte: todayStart,
+								lte: todayEnd
+							}
+						}
+					});
+
+					if (ipAttempts >= 10) {
+						throw new Error("您今日已達到發送登入信的次數上限，請明天再試");
+					}
+				}
+
+				// Record this attempt
+				await prisma.magicLinkAttempt.create({
+					data: {
+						email: email.toLowerCase(),
+						ipAddress
+					}
+				});
+
 				let locale = "zh-Hant";
 				let returnUrl = null;
 				try {
