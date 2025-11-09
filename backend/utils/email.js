@@ -451,7 +451,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 						<p><strong>刪除時間 Deletion Time:</strong> ${new Date().toLocaleString("zh-TW")}</p>
 					</div>
 					
-					<p>若有任何疑問或建議，歡迎寄信到 <a href="mailto:contact@sitcon.org">contact@sitcon.org</a> 洽詢。</p>
+					<p>若有任何疑問或建議，歡迎寄信到 <a href="mailto:ticket@sitcon.org">ticket@sitcon.org</a> 洽詢。</p>
 					
 					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 					
@@ -459,7 +459,7 @@ export const sendDataDeletionNotification = async (registration, event) => {
 					
 					<p>According to Taiwan's Personal Information Protection Act, we have to remove the data from our service, and need to ask you to delete the related personal information that you might have been download from the service before. Also according to the law, we will still keep the information that related to transactions, include but now limited to the payments information of tickets.</p>
 					
-					<p>Should you have any question, please feel free to contact <a href="mailto:contact@sitcon.org">contact@sitcon.org</a>.</p>
+					<p>Should you have any question, please feel free to contact <a href="mailto:ticket@sitcon.org">ticket@sitcon.org</a>.</p>
 					
 					<p>Sincerely,</p>
 					<p><strong>SITCON Team</strong></p>
