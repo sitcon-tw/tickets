@@ -34,10 +34,12 @@ export const auth = betterAuth({
 		magicLink({
 			expiresIn: 600,
 			sendMagicLink: async ({ email, token, url }, request) => {
-				// Rate limiting: Check for recent magic link attempts by email (30 seconds)
+				const normalizedEmail = email.toLowerCase();
+				
+				// Rate limiting: Check for recent magic link attempts (30 seconds)
 				const recentAttempt = await prisma.magicLinkAttempt.findFirst({
 					where: {
-						email: email.toLowerCase(),
+						email: normalizedEmail,
 						createdAt: {
 							gt: new Date(Date.now() - 30000) // Within last 30 seconds
 						}
@@ -51,16 +53,44 @@ export const auth = betterAuth({
 					throw new Error("請稍後再試，登入信發送間隔需 30 秒");
 				}
 
-				// Rate limiting: Check daily limit by email (3 per day)
 				const todayStart = new Date();
 				todayStart.setHours(0, 0, 0, 0);
 
 				const todayEnd = new Date();
 				todayEnd.setHours(23, 59, 59, 999);
 
-				const todayAttempts = await prisma.magicLinkAttempt.count({
+				// Rule 1: Check unsuccessful login attempts since last success (max 3)
+				// Find the most recent successful login
+				const lastSuccessfulLogin = await prisma.magicLinkAttempt.findFirst({
 					where: {
-						email: email.toLowerCase(),
+						email: normalizedEmail,
+						success: true
+					},
+					orderBy: {
+						createdAt: "desc"
+					}
+				});
+
+				// Count failed attempts since last success
+				const failedAttemptsSinceSuccess = await prisma.magicLinkAttempt.count({
+					where: {
+						email: normalizedEmail,
+						success: false,
+						createdAt: {
+							gt: lastSuccessfulLogin?.createdAt || new Date(0) // Since last success or all time
+						}
+					}
+				});
+
+				if (failedAttemptsSinceSuccess >= 3) {
+					throw new Error("登入嘗試次數已達上限（3 次），請稍後再試或聯繫客服");
+				}
+
+				// Rule 2: Check daily successful login limit (max 20 per day)
+				const successfulLoginsToday = await prisma.magicLinkAttempt.count({
+					where: {
+						email: normalizedEmail,
+						success: true,
 						createdAt: {
 							gte: todayStart,
 							lte: todayEnd
@@ -68,11 +98,11 @@ export const auth = betterAuth({
 					}
 				});
 
-				if (todayAttempts >= 3) {
-					throw new Error("此信箱今日已達到發送登入信的次數上限（3 次），請明天再試");
+				if (successfulLoginsToday >= 20) {
+					throw new Error("今日登入次數已達上限（20 次），請明天再試");
 				}
 
-				// Rate limiting: Check by IP address if available (10 per day to prevent abuse)
+				// IP-based rate limiting (50 per day to prevent abuse)
 				let ipAddress = null;
 				if (request?.headers) {
 					ipAddress = request.headers["x-forwarded-for"]?.split(",")[0]?.trim() || request.headers["x-real-ip"] || request.ip;
@@ -89,16 +119,17 @@ export const auth = betterAuth({
 						}
 					});
 
-					if (ipAttempts >= 10) {
+					if (ipAttempts >= 50) {
 						throw new Error("您今日已達到發送登入信的次數上限，請明天再試");
 					}
 				}
 
-				// Record this attempt
+				// Record this attempt (success will be updated when user verifies)
 				await prisma.magicLinkAttempt.create({
 					data: {
-						email: email.toLowerCase(),
-						ipAddress
+						email: normalizedEmail,
+						ipAddress,
+						success: false // Will be updated to true when login succeeds
 					}
 				});
 

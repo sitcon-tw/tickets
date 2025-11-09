@@ -260,12 +260,15 @@ model SmsVerification {
 }
 
 model MagicLinkAttempt {
-  id        String   @id @default(cuid())
-  email     String
-  ipAddress String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  email       String
+  ipAddress   String?
+  success     Boolean  @default(false) // Track if login was successful
+  sessionId   String?  // Link to session for tracking login attempts
+  createdAt   DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([email, success, createdAt])
   @@index([ipAddress, createdAt])
   @@map("magic_link_attempt")
 }

@@ -246,6 +246,30 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		});
 
 		if (response.ok) {
+			// Mark the most recent magic link attempt as successful
+			try {
+				const responseData = await response.clone().json().catch(() => null);
+				const userEmail = responseData?.user?.email;
+				
+				if (userEmail) {
+					await prisma.magicLinkAttempt.updateMany({
+						where: {
+							email: userEmail.toLowerCase(),
+							success: false,
+							createdAt: {
+								gte: new Date(Date.now() - 600000) // Within last 10 minutes (magic link expiry)
+							}
+						},
+						data: {
+							success: true
+						}
+					});
+				}
+			} catch (updateError) {
+				fastify.log.warn("Failed to update magic link attempt status:", updateError);
+				// Don't fail the login if we can't update the attempt
+			}
+
 			// Redirect to frontend success page with returnUrl if available
 			const successUrl = returnUrl
 				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
