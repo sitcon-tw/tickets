@@ -26,11 +26,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const [isSafari, setIsSafari] = useState(false);
 
 	const t = getTranslations(locale, {
-		description: {
-			"zh-Hant": "毛哥 EM 的網站起始模板，使用 Astro 和 Fastify 構建。",
-			"zh-Hans": "毛哥 EM 的网站起始模板，使用 Astro 和 Fastify 构建。",
-			en: "Elvis Mao's Website starter template using Astro and Fastify."
-		},
 		loggedInWelcome: {
 			"zh-Hant": "歡迎回來！趕緊開始報名吧！",
 			"zh-Hans": "欢迎回来！赶紧开始报名吧！",

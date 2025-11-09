@@ -24,11 +24,6 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const { showAlert } = useAlert();
 
 	const t = getTranslations(locale, {
-		description: {
-			"zh-Hant": "毛哥 EM 的網站起始模板，使用 Astro 和 Fastify 構建。",
-			"zh-Hans": "毛哥 EM 的网站起始模板，使用 Astro 和 Fastify 构建。",
-			en: "Elvis Mao's Website starter template using Astro and Fastify."
-		},
 		time: {
 			"zh-Hant": "報名時間：",
 			"zh-Hans": "报名时间：",
