@@ -17,10 +17,10 @@ interface AlertContextType {
 
 /**
  * useAlert Hook - Wrapper around shadcn/sonner toast
- * 
+ *
  * All alerts now use shadcn's toast component directly via sonner.
  * This hook maintains backward compatibility with the previous AlertContext API.
- * 
+ *
  * Usage:
  * ```tsx
  * const { showAlert } = useAlert();
@@ -29,7 +29,7 @@ interface AlertContextType {
  * showAlert("Warning message", "warning");
  * showAlert("Info message", "info");
  * ```
- * 
+ *
  * Or use toast directly from sonner:
  * ```tsx
  * import { toast } from "sonner";

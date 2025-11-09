@@ -5,14 +5,7 @@ import { type ReactNode } from "react";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
 	return (
-		<NextThemesProvider
-			attribute="class"
-			defaultTheme="system"
-			enableSystem
-			enableColorScheme
-			storageKey="sitcontix-theme"
-			disableTransitionOnChange={false}
-		>
+		<NextThemesProvider attribute="class" defaultTheme="system" enableSystem enableColorScheme storageKey="sitcontix-theme" disableTransitionOnChange={false}>
 			{children}
 		</NextThemesProvider>
 	);

@@ -20,12 +20,7 @@ export function ThemeToggle() {
 
 	if (!mounted) {
 		return (
-			<button
-				type="button"
-				className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 transition-colors"
-				aria-label="Toggle theme"
-				disabled
-			>
+			<button type="button" className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 transition-colors" aria-label="Toggle theme" disabled>
 				<div className="w-5 h-5" />
 			</button>
 		);
@@ -37,7 +32,7 @@ export function ThemeToggle() {
 		const newTheme = isDark ? "light" : "dark";
 		console.log("Toggling theme from", resolvedTheme, "to", newTheme);
 		setTheme(newTheme);
-		
+
 		// Force update the document class for immediate visual feedback
 		if (typeof document !== "undefined") {
 			document.documentElement.classList.remove("light", "dark");

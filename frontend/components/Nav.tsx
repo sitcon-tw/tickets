@@ -109,14 +109,20 @@ export default function Nav({ children }: NavProps) {
 								type="button"
 								onClick={handleLogout}
 								disabled={isLoggingOut}
-								className={cn("text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2", isLoggingOut && "opacity-50 cursor-not-allowed")}
+								className={cn(
+									"text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
+									isLoggingOut && "opacity-50 cursor-not-allowed"
+								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
 							</button>
 						</>
 					) : (
-						<a href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+						<a
+							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+							className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+						>
 							{t.login}
 						</a>
 					)}
