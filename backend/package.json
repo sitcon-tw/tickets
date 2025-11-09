@@ -7,8 +7,10 @@
 		"#*": "./*"
 	},
 	"scripts": {
-		"start": "prisma db push --accept-data-loss && node app.js",
-		"dev": "nodemon app.js",
+		"start": "node scripts/db-init.js && node app.js",
+		"dev": "node scripts/db-init.js && nodemon app.js",
+		"db:sync": "prisma db push",
+		"db:migrate": "prisma migrate dev",
 		"postinstall": "prisma generate"
 	},
 	"license": "Apache-2.0",

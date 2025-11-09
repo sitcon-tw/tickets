@@ -269,14 +269,3 @@ model MagicLinkAttempt {
   @@index([ipAddress, createdAt])
   @@map("magic_link_attempt")
 }
-
-model MagicLinkAttempt {
-  id        String   @id @default(cuid())
-  email     String
-  ipAddress String?
-  createdAt DateTime @default(now())
-
-  @@index([email, createdAt])
-  @@index([ipAddress, createdAt])
-  @@map("magic_link_attempt")
-}
