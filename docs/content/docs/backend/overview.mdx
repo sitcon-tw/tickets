@@ -1,0 +1,42 @@
+---
+title: 後端概覽
+description: Fastify 服務、相依套件與主要流程說明
+---
+
+## 技術棧
+
+- **Fastify 5**：HTTP 伺服器，`backend/app.js` 為進入點
+- **Prisma 6**：ORM 連線 PostgreSQL，Client 產生在 `generated/prisma`
+- **BetterAuth**：魔術連結登入流程，設定於 `lib/auth.js`
+- **Redis**：快取 Prisma 查詢與速率限制
+- **OpenTelemetry / Prometheus**：`lib/tracing.js` 啟用自動追蹤，`fastify-metrics` 暴露 `/metrics`
+- **Mailtrap**：由 `utils/email.js` 寄送通知信
+
+## 啟動流程
+
+1. 於 `app.js` 第 1 行載入 `./lib/tracing.js`，確保啟動 OTel SDK。
+2. 建立 Fastify 實例並套用安全設定 (`helmet`、`rate-limit`、`cors`)。
+3. 註冊 OpenTelemetry、Prometheus 指標與 Swagger UI (`/docs`)。
+4. 轉發 `/api/auth/*` 請求到 BetterAuth handler，負責魔術連結與 session。
+5. 設定全域錯誤處理器，統一回傳 `{ success, error }` 結構。
+6. 透過 `routes/index.js` 載入 `public`, `admin`, `system` 三組路由模組。
+7. 監聽 `0.0.0.0:${PORT}`（預設 3000），並綁定 SIGINT/SIGTERM 進行優雅關閉。
+
+## 專案重要目錄
+
+| 目錄 | 用途 |
+| --- | --- |
+| `config/` | 資料庫、Redis、資安（CORS、Helmet、rate limit）設定 |
+| `middleware/` | `auth`、`sanitize` 中介層，供路由註冊時使用 |
+| `routes/` | Fastify Route 模組，依公開/後台/系統分類 |
+| `schemas/` | Fastify schema 定義，維持 API 文件與驗證一致 |
+| `utils/` | 通用工具（Email、Logger、Response、Token...）|
+| `scripts/db-init.js` | 啟動時初始化資料或同步作業 |
+| `types/` | JSDoc 類型定義，供編輯器自動完成 |
+
+## 開發建議
+
+- 新增路由時先於 `schemas/` 定義 schema，再在對應路由引用，確保 Swagger 自動更新。
+- 使用 `withSpan` (`lib/tracing.js`) 為關鍵流程加上自訂 Span，方便調試。
+- 若新增 Redis 快取模型，記得更新 `config/database.js` 內的 `auto.models`。
+- 維護 Rate Limit 時同步更新 `config/security.js` 與環境變數預設值。
