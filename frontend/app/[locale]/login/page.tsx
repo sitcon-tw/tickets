@@ -7,135 +7,51 @@ import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
-
-const StyledMain = styled.main`
-	section {
-		position: relative;
-		height: 100vh;
-	}
-`;
-
-const Container = styled.div<{ isActive: boolean }>`
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	max-width: 100%;
-	padding: 1rem;
-	opacity: ${props => (props.isActive ? 1 : 0)};
-	pointer-events: ${props => (props.isActive ? "all" : "none")};
-	transition: opacity 0.3s ease-in-out;
-`;
-
-const Title = styled.h1`
-	margin-block: 1rem;
-	text-align: center;
-`;
-
-const Label = styled.label`
-	display: block;
-	margin-bottom: 0.5rem;
-	font-weight: bold;
-`;
-
-const EmailInput = styled.input`
-	border: 2px solid var(--color-gray-900);
-	width: 20rem;
-	padding: 0.5rem;
-	max-width: 100%;
-	border-radius: 8px;
-`;
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
-		<StyledButton disabled={disabled}>
-			<button onClick={onClick} disabled={disabled}>
+		<div className="my-4 mx-auto">
+			<button
+				onClick={onClick}
+				disabled={disabled}
+				className={`
+					group relative font-inherit text-lg bg-gray-800 text-white px-4 py-2.5 
+					flex items-center border-2 border-gray-600 rounded-lg overflow-hidden 
+					transition-all duration-200
+					${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:scale-95 active:scale-95"}
+				`}
+			>
 				<div className="svg-wrapper-1">
-					<div className="svg-wrapper">
+					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 						{isLoading ? (
 							<Spinner size="sm" />
 						) : (
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24}>
+							<svg 
+								xmlns="http://www.w3.org/2000/svg" 
+								viewBox="0 0 24 24" 
+								width={24} 
+								height={24}
+								className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110"
+							>
 								<path fill="none" d="M0 0h24v24H0z" />
 								<path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z" />
 							</svg>
 						)}
 					</div>
 				</div>
-				<span>{children}</span>
+				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">
+					{children}
+				</span>
 			</button>
-		</StyledButton>
+			<style jsx>{`
+				@keyframes fly-1 {
+					from { transform: translateY(0.1em); }
+					to { transform: translateY(-0.1em); }
+				}
+			`}</style>
+		</div>
 	);
 };
-
-const StyledButton = styled.div<{ disabled: boolean }>`
-	button {
-		font-family: inherit;
-		font-size: 18px;
-		background: var(--color-gray-800);
-		color: white;
-		padding: 0.6em 1em;
-		display: flex;
-		align-items: center;
-		border: var(--color-gray-600) 2px solid;
-		border-radius: 8px;
-		overflow: hidden;
-		transition: all 0.2s;
-		cursor: ${props => (props.disabled ? "not-allowed" : "pointer")};
-		margin: 1rem auto;
-		opacity: ${props => (props.disabled ? 0.7 : 1)};
-
-		span {
-			display: block;
-			margin-left: 0.3em;
-			transition: all 0.3s ease-in-out;
-		}
-
-		svg {
-			display: block;
-			transform-origin: center center;
-			transition: transform 0.3s ease-in-out;
-		}
-
-		&:hover:not(:disabled) {
-			.svg-wrapper {
-				animation: fly-1 0.8s ease-in-out infinite alternate;
-			}
-
-			svg {
-				transform: translateX(3.5em) rotate(45deg) scale(1.1);
-			}
-
-			span {
-				transform: translateX(9em);
-			}
-		}
-
-		&:active:not(:disabled) {
-			transform: scale(0.95);
-		}
-	}
-
-	@keyframes fly-1 {
-		from {
-			transform: translateY(0.1em);
-		}
-		to {
-			transform: translateY(-0.1em);
-		}
-	}
-`;
-
-const MessageContainer = styled.div`
-	h2 {
-		margin-bottom: 1rem;
-	}
-
-	p {
-		line-height: 1.6;
-	}
-`;
 
 export default function Login() {
 	const locale = useLocale();
@@ -308,24 +224,38 @@ export default function Login() {
 	// Show loading spinner while checking auth
 	if (isCheckingAuth) {
 		return (
-			<StyledMain>
-				<section>
-					<Container isActive={true} className="text-center">
+			<main>
+				<section className="relative h-screen">
+					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full p-4 text-center">
 						<Spinner />
-					</Container>
+					</div>
 				</section>
-			</StyledMain>
+			</main>
 		);
 	}
 
 	return (
 		<>
-			<StyledMain>
-				<section>
-					<Container isActive={viewState === "login"}>
-						<Title>{t.login}</Title>
-						<Label htmlFor="email">Email</Label>
-						<EmailInput type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
+			<main>
+				<section className="relative h-screen">
+					<div 
+						className={`
+							absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+							max-w-full p-4 transition-opacity duration-300 ease-in-out
+							${viewState === "login" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+						`}
+					>
+						<h1 className="my-4 text-center">{t.login}</h1>
+						<label htmlFor="email" className="block mb-2 font-bold">
+							Email
+						</label>
+						<input 
+							type="email" 
+							name="email" 
+							id="email" 
+							onChange={(e) => setEmail(e.target.value)}
+							className="border-2 border-gray-900 w-80 p-2 max-w-full rounded-lg"
+						/>
 						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 							{t.continue}
 						</SendButton>
@@ -335,19 +265,25 @@ export default function Login() {
 								{t.termsLink}
 							</a>
 						</p>
-					</Container>
+					</div>
 
-					<Container isActive={viewState === "sent"}>
-						<MessageContainer>
-							<h2>
+					<div 
+						className={`
+							absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+							max-w-full p-4 transition-opacity duration-300 ease-in-out
+							${viewState === "sent" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+						`}
+					>
+						<div>
+							<h2 className="mb-4">
 								{t.sent}
 								{email}
 							</h2>
-							<p>{t.message}</p>
-						</MessageContainer>
-					</Container>
+							<p className="leading-relaxed">{t.message}</p>
+						</div>
+					</div>
 				</section>
-			</StyledMain>
+			</main>
 		</>
 	);
 }
