@@ -322,25 +322,24 @@ export default function MyRegistrationPage() {
 			}
 		}
 
-	loadRegistration();
-}, [registrationId, router, t.notFound]);
+		loadRegistration();
+	}, [registrationId, router, t.notFound]);
 
-return (
-	<>
-		<main>
-			<section className="mt-24 max-w-[900px] mx-auto px-4 mb-16">
-				<Button variant="outline" onClick={() => router.back()} className="mb-8">
-					<ChevronLeft />
-					<p>{t.backToRegistrations}</p>
-				</Button>
-
-				<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>					{loading && (
+	return (
+		<>
+			<main>
+				<section className="mt-24 max-w-[900px] mx-auto px-4 mb-16">
+					<Button variant="outline" onClick={() => router.back()} className="mb-8">
+						<ChevronLeft />
+						<p>{t.backToRegistrations}</p>
+					</Button>
+					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>{" "}
+					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
 							<PageSpinner />
 							<p>{t.loading}</p>
 						</div>
 					)}
-
 					{error && (
 						<div className="text-center p-8">
 							<p className="text-red-500">
@@ -350,7 +349,6 @@ return (
 							<Link href="/">{t.backToRegistrations}</Link>
 						</div>
 					)}
-
 					{!loading && !error && registration && (
 						<div className="flex flex-col gap-8">
 							{/* Event Information - Read Only */}
@@ -402,17 +400,17 @@ return (
 							{/* Registration Form Data - Editable */}
 							<div className="p-6 border border-(--border-color) rounded-lg">
 								<div className="flex justify-between items-center mb-4">
-								<h2 className="text-2xl">{t.registrationInfo}</h2>
-								{!isEditing && registration.canEdit && (
-									<Button onClick={() => setIsEditing(true)} size="sm">
-										{t.edit}
-									</Button>
-								)}
-							</div>
+									<h2 className="text-2xl">{t.registrationInfo}</h2>
+									{!isEditing && registration.canEdit && (
+										<Button onClick={() => setIsEditing(true)} size="sm">
+											{t.edit}
+										</Button>
+									)}
+								</div>
 
-							{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
+								{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
 
-							<div className="flex flex-col gap-6">
+								<div className="flex flex-col gap-6">
 									{formFields.map((field, index) => {
 										const fieldName = getLocalizedText(field.name, locale);
 
@@ -442,31 +440,31 @@ return (
 
 											return (
 												<div key={index}>
-												<div className="font-bold mb-1">{fieldName}</div>
-												<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
-											</div>
-										);
-									}
-								})}
-							</div>
-
-							{isEditing && (
-								<div className="flex gap-4 mt-8 justify-center">
-									<Button onClick={handleSave} disabled={isSaving}>
-										{isSaving ? <Spinner size="sm" /> : <Save size={18} />}
-										{isSaving ? t.saving : t.save}
-									</Button>
-									<Button variant="secondary" onClick={handleCancelEdit} disabled={isSaving}>
-										<X size={18} />
-										{t.cancel}
-									</Button>
+													<div className="font-bold mb-1">{fieldName}</div>
+													<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
+												</div>
+											);
+										}
+									})}
 								</div>
-							)}
+
+								{isEditing && (
+									<div className="flex gap-4 mt-8 justify-center">
+										<Button onClick={handleSave} disabled={isSaving}>
+											{isSaving ? <Spinner size="sm" /> : <Save size={18} />}
+											{isSaving ? t.saving : t.save}
+										</Button>
+										<Button variant="secondary" onClick={handleCancelEdit} disabled={isSaving}>
+											<X size={18} />
+											{t.cancel}
+										</Button>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
-				)}
-			</section>
-		</main>
-	</>
-);
+					)}
+				</section>
+			</main>
+		</>
+	);
 }

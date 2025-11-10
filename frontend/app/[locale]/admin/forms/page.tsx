@@ -547,9 +547,7 @@ export default function FormsPage() {
 					<AdminHeader title={t.title} />
 					<div className="admin-empty p-16">{t.noTicket}</div>
 					<div className="text-center mt-4">
-						<Button onClick={() => (window.location.href = `/${locale}/admin/events`)}>
-							{t.backToTickets}
-						</Button>
+						<Button onClick={() => (window.location.href = `/${locale}/admin/events`)}>{t.backToTickets}</Button>
 					</div>
 				</main>
 			</>
@@ -715,7 +713,8 @@ export default function FormsPage() {
 														<Button
 															type="button"
 															onClick={() => deleteQuestion(q.id)}
-															className="text-xs py-2 px-3 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400" variant="destructive"
+															className="text-xs py-2 px-3 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400"
+															variant="destructive"
 															title={t.deleteField}
 														>
 															{t.deleteField}

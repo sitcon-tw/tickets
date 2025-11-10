@@ -1,6 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -9,7 +10,6 @@ import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/data-table";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
 
 export default function TicketsPage() {
@@ -222,29 +222,28 @@ export default function TicketsPage() {
 			const status = computeStatus(ticket);
 			return {
 				...ticket,
-				displayName: typeof ticket.name === "object" 
-					? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] 
-					: ticket.name,
+				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
 				formattedSaleStart: formatDateTime(ticket.saleStart),
 				formattedSaleEnd: formatDateTime(ticket.saleEnd),
 				statusLabel: status.label,
-				statusClass: status.class,
+				statusClass: status.class
 			};
 		});
 	}, [tickets, locale, t.notStarted, t.ended, t.selling]);
 
 	const columns = useMemo(
-		() => createTicketsColumns({
-			onEdit: openModal,
-			onDelete: deleteTicket,
-			onLinkBuilder: openLinkBuilder,
-			t: { 
-				editTicket: t.editTicket, 
-				delete: t.delete, 
-				directLink: t.directLink,
-				hidden: t.hidden 
-			}
-		}),
+		() =>
+			createTicketsColumns({
+				onEdit: openModal,
+				onDelete: deleteTicket,
+				onLinkBuilder: openLinkBuilder,
+				t: {
+					editTicket: t.editTicket,
+					delete: t.delete,
+					directLink: t.directLink,
+					hidden: t.hidden
+				}
+			}),
 		[t.editTicket, t.delete, t.directLink, t.hidden]
 	);
 
@@ -316,9 +315,7 @@ export default function TicketsPage() {
 			</section>
 
 			<section className="mt-8 text-center">
-				<Button onClick={() => openModal()}>
-					+ {t.addTicket}
-				</Button>
+				<Button onClick={() => openModal()}>+ {t.addTicket}</Button>
 			</section>
 
 			{showModal && (
@@ -502,9 +499,7 @@ export default function TicketsPage() {
 								<label className="admin-form-label">{t.generatedLink}</label>
 								<div className="flex gap-2">
 									<input type="text" value={generateDirectLink()} readOnly className="flex-1 font-mono text-[0.9rem]" />
-									<Button onClick={copyToClipboard}>
-										{t.copyLink}
-									</Button>
+									<Button onClick={copyToClipboard}>{t.copyLink}</Button>
 								</div>
 							</div>
 						</div>

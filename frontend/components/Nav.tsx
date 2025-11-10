@@ -21,13 +21,13 @@ type SessionState = { status: "loading" } | { status: "anonymous" } | { status: 
 
 export default function Nav() {
 	const pathname = usePathname();
-	
+
 	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
-	
+
 	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
@@ -124,7 +124,9 @@ export default function Nav() {
 									{t.adminPage}
 								</a>
 							)}
-							<Button variant="ghost" size="sm"
+							<Button
+								variant="ghost"
+								size="sm"
 								onClick={handleLogout}
 								disabled={isLoggingOut}
 								className={cn(
@@ -137,10 +139,7 @@ export default function Nav() {
 							</Button>
 						</>
 					) : (
-						<a
-							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-						>
+						<a href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 							{t.login}
 						</a>
 					)}

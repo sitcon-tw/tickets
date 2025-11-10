@@ -1,6 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -9,7 +10,6 @@ import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
 import type { Event, User } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/data-table";
 import { createUsersColumns, type UserDisplay } from "./columns";
 
 export default function UsersPage() {
@@ -158,20 +158,21 @@ export default function UsersPage() {
 			roleClass: user.role === "admin" ? "primary" : user.role === "eventAdmin" ? "warning" : "secondary",
 			statusLabel: user.isActive ? t.active : t.inactive,
 			statusClass: user.isActive ? "active" : "ended",
-			formattedCreatedAt: new Date(user.createdAt).toLocaleString(),
+			formattedCreatedAt: new Date(user.createdAt).toLocaleString()
 		}));
 	}, [filteredUsers, t.active, t.inactive, t.admin, t.viewer, t.eventAdmin]);
 
 	const columns = useMemo(
-		() => createUsersColumns({
-			onEdit: openEditModal,
-			t: { 
-				edit: t.edit, 
-				active: t.active, 
-				inactive: t.inactive,
-				emailVerified: t.emailVerified
-			}
-		}),
+		() =>
+			createUsersColumns({
+				onEdit: openEditModal,
+				t: {
+					edit: t.edit,
+					active: t.active,
+					inactive: t.inactive,
+					emailVerified: t.emailVerified
+				}
+			}),
 		[t.edit, t.active, t.inactive, t.emailVerified]
 	);
 
@@ -259,9 +260,7 @@ export default function UsersPage() {
 								</div>
 							)}
 							<div className="admin-modal-actions">
-								<Button type="submit">
-									{t.save}
-								</Button>
+								<Button type="submit">{t.save}</Button>
 								<Button type="button" variant="secondary" onClick={closeEditModal}>
 									{t.cancel}
 								</Button>

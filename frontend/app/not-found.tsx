@@ -40,9 +40,7 @@ export default function NotFound() {
 			<h1 className="text-2xl font-bold my-4 text-gray-900 dark:text-gray-100">{t.title}</h1>
 			<p className="text-gray-700 dark:text-gray-300">{t.description}</p>
 			<Button asChild className="my-4 mx-auto">
-				<Link href={`/${locale}/`}>
-					{t.backHome}
-				</Link>
+				<Link href={`/${locale}/`}>{t.backHome}</Link>
 			</Button>
 		</section>
 	);

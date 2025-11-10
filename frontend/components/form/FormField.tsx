@@ -56,7 +56,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 					options={localizedOptions as SelectOption[]}
 					required={field.required}
 					value={(value as string) || ""}
-					onChange={(newValue) => {
+					onChange={newValue => {
 						// Create a synthetic event to match onTextChange signature
 						const syntheticEvent = {
 							target: { value: newValue }
@@ -75,7 +75,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 					options={localizedOptions as RadioOption[]}
 					required={field.required}
 					value={(value as string) || ""}
-					onValueChange={(newValue) => {
+					onValueChange={newValue => {
 						// Create a synthetic event to match onTextChange signature
 						const syntheticEvent = {
 							target: { value: newValue }
@@ -94,7 +94,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 						name={getLocalizedText(field.name, locale)}
 						options={localizedOptions as CheckboxOption[]}
 						values={currentValues}
-						onValueChange={(newValues) => {
+						onValueChange={newValues => {
 							// Create a synthetic event with comma-separated values
 							const syntheticEvent = {
 								target: { value: newValues.join(",") }

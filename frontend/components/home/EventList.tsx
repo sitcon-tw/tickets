@@ -106,7 +106,13 @@ export default function EventList() {
 						return (
 							<Link key={event.id} href={`/${eventSlug}`} className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
 								<div className="relative w-full h-48 bg-muted overflow-hidden">
-									<Image src={event.ogImage} alt={eventName} width={800} height={400} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-300 text-transparent" />
+									<Image
+										src={event.ogImage}
+										alt={eventName}
+										width={800}
+										height={400}
+										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-300 text-transparent"
+									/>
 								</div>
 
 								<div className="p-6">

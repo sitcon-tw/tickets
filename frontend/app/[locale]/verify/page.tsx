@@ -373,18 +373,19 @@ export default function VerifyPage() {
 								</div>
 
 								<div className="flex justify-center">
-									<Button
-										onClick={handleSendCode}
-										disabled={sendingCode || !phoneNumber}
-										size="lg"
-										className="group relative overflow-hidden"
-									>
+									<Button onClick={handleSendCode} disabled={sendingCode || !phoneNumber} size="lg" className="group relative overflow-hidden">
 										<div className="svg-wrapper-1">
 											<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 												{sendingCode ? (
 													<Spinner size="sm" />
 												) : (
-													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110">
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 24 24"
+														width={24}
+														height={24}
+														className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110"
+													>
 														<path fill="none" d="M0 0h24v24H0z" />
 														<path
 															fill="currentColor"
@@ -394,20 +395,21 @@ export default function VerifyPage() {
 												)}
 											</div>
 										</div>
-										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">
-											{sendingCode ? t.sendingCode : t.sendCode}
-										</span>
+										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{sendingCode ? t.sendingCode : t.sendCode}</span>
 									</Button>
 								</div>
 								<style jsx>{`
 									@keyframes fly-1 {
-										from { transform: translateY(0.1em); }
-										to { transform: translateY(-0.1em); }
+										from {
+											transform: translateY(0.1em);
+										}
+										to {
+											transform: translateY(-0.1em);
+										}
 									}
 								`}</style>
 							</>
 						)}
-
 						{step === "verify" && !isVerified && (
 							<>
 								<div className="text-center mb-8">
@@ -457,49 +459,41 @@ export default function VerifyPage() {
 									)}
 								</div>
 
-							<div className="text-center mb-4">
-								<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
-								{countdown > 0 ? (
-									<p className="text-gray-500 text-sm">
-										{t.resendIn}{" "}
-										<span className="text-blue-400 font-medium">
-											{countdown}
-											{t.resendSeconds}
-										</span>
-									</p>
-								) : (
-									<Button
-										variant="link"
-										onClick={handleResend}
-										disabled={sendingCode}
-										className="text-blue-400 hover:text-blue-300 underline h-auto p-0"
-									>
-										{sendingCode ? "Sending..." : t.resendCode}
-									</Button>
-								)}
-							</div>
+								<div className="text-center mb-4">
+									<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
+									{countdown > 0 ? (
+										<p className="text-gray-500 text-sm">
+											{t.resendIn}{" "}
+											<span className="text-blue-400 font-medium">
+												{countdown}
+												{t.resendSeconds}
+											</span>
+										</p>
+									) : (
+										<Button variant="link" onClick={handleResend} disabled={sendingCode} className="text-blue-400 hover:text-blue-300 underline h-auto p-0">
+											{sendingCode ? "Sending..." : t.resendCode}
+										</Button>
+									)}
+								</div>
 
-							<Button
-								variant="ghost"
-								onClick={handleBack}
-								className="w-full text-gray-400 hover:text-white"
-							>
-								<ArrowLeft size={16} />
-								{t.changePhoneNumber}
-							</Button>
-						</>
-				)}						{isVerified && (
-						<div className="text-center py-4">
-							<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
-								<Check className="w-10 h-10 text-green-400" />
+								<Button variant="ghost" onClick={handleBack} className="w-full text-gray-400 hover:text-white">
+									<ArrowLeft size={16} />
+									{t.changePhoneNumber}
+								</Button>
+							</>
+						)}{" "}
+						{isVerified && (
+							<div className="text-center py-4">
+								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
+									<Check className="w-10 h-10 text-green-400" />
+								</div>
+								<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
+								<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
+								<Button onClick={handleContinue} className="w-full">
+									{t.continue}
+									<ArrowRight className="w-5 h-5" />
+								</Button>
 							</div>
-							<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
-							<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
-							<Button onClick={handleContinue} className="w-full">
-								{t.continue}
-								<ArrowRight className="w-5 h-5" />
-							</Button>
-						</div>
 						)}
 					</div>
 				</div>

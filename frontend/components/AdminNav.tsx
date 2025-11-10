@@ -237,24 +237,24 @@ function AdminNav() {
 						<X size={24} />
 					</Button>
 				)}
-			<div className="text-3xl mt-2">{t.systemTitle}</div>
-			<div className="mb-6 mt-4">
-				<Label className="flex flex-col gap-2">
-					<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
-					<Select value={currentEventId || ""} onValueChange={handleEventChange}>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{events.map(event => (
-								<SelectItem key={event.id} value={event.id}>
-									{getLocalizedText(event.name, locale)}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</Label>
-			</div>
+				<div className="text-3xl mt-2">{t.systemTitle}</div>
+				<div className="mb-6 mt-4">
+					<Label className="flex flex-col gap-2">
+						<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
+						<Select value={currentEventId || ""} onValueChange={handleEventChange}>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{events.map(event => (
+									<SelectItem key={event.id} value={event.id}>
+										{getLocalizedText(event.name, locale)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</Label>
+				</div>
 				<nav className="mt-8 flex-1 overflow-y-auto">
 					<ul className="pl-3 m-0">
 						{activityLinks

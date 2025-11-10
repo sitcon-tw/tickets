@@ -1,6 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/data-table";
 import { createEventsColumns, type EventWithStatus } from "./columns";
 
 export default function EventsPage() {
@@ -202,21 +202,20 @@ export default function EventsPage() {
 				...event,
 				statusLabel: status.label,
 				statusClass: status.class,
-				displayName: typeof event.name === "object" 
-					? event.name[locale] || event.name["en"] || Object.values(event.name)[0] 
-					: event.name,
+				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
 				formattedStartDate: formatDateTime(event.startDate),
-				formattedEndDate: formatDateTime(event.endDate),
+				formattedEndDate: formatDateTime(event.endDate)
 			};
 		});
 	}, [events, locale, t.active, t.ended, t.upcoming]);
 
 	const columns = useMemo(
-		() => createEventsColumns({
-			onEdit: openModal,
-			onDelete: deleteEvent,
-			t: { edit: t.edit, delete: t.delete }
-		}),
+		() =>
+			createEventsColumns({
+				onEdit: openModal,
+				onDelete: deleteEvent,
+				t: { edit: t.edit, delete: t.delete }
+			}),
 		[t.edit, t.delete]
 	);
 
@@ -241,21 +240,19 @@ export default function EventsPage() {
 				</section>
 
 				<section className="mt-8 text-center">
-					<Button onClick={() => openModal()}>
-						+ {t.addEvent}
-					</Button>
+					<Button onClick={() => openModal()}>+ {t.addEvent}</Button>
 				</section>
 
 				{showModal && (
 					<div className="admin-modal-overlay" onClick={closeModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
-							<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
-								✕
-							</Button>
-						</div>
-						<form onSubmit={saveEvent}>
+						<div className="admin-modal" onClick={e => e.stopPropagation()}>
+							<div className="admin-modal-header">
+								<h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
+								<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
+									✕
+								</Button>
+							</div>
+							<form onSubmit={saveEvent}>
 								<div className="flex flex-col gap-4 p-6">
 									{/* Language Tabs */}
 									<div className="flex gap-2 border-b-2 border-gray-700 dark:border-gray-800 mb-4">
@@ -299,13 +296,7 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (English)</label>
-												<textarea
-													value={plainDescEn}
-													onChange={e => setPlainDescEn(e.target.value)}
-													className=""
-													rows={4}
-													placeholder="Plain text description without markdown formatting"
-												/>
+												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="" rows={4} placeholder="Plain text description without markdown formatting" />
 											</div>
 										</>
 									)}
@@ -374,17 +365,17 @@ export default function EventsPage() {
 											<label className="admin-form-label">{t.endDate}</label>
 											<input name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} className="" />
 										</div>
+									</div>
 								</div>
-							</div>
-							<div className="admin-modal-actions">
-								<Button type="submit" variant="default">
-									{t.save}
-								</Button>
-								<Button type="button" variant="secondary" onClick={closeModal}>
-									{t.cancel}
-								</Button>
-							</div>
-						</form>
+								<div className="admin-modal-actions">
+									<Button type="submit" variant="default">
+										{t.save}
+									</Button>
+									<Button type="button" variant="secondary" onClick={closeModal}>
+										{t.cancel}
+									</Button>
+								</div>
+							</form>
 						</div>
 					</div>
 				)}

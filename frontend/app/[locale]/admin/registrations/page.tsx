@@ -1,6 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,6 @@ import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/data-table";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
 
 type SortField = "id" | "email" | "status" | "createdAt";
@@ -195,10 +195,11 @@ export default function RegistrationsPage() {
 	}, [sortedAndFiltered, locale]);
 
 	const columns = useMemo(
-		() => createRegistrationsColumns({
-			onViewDetails: openDetailModal,
-			t: { viewDetails: t.viewDetails }
-		}),
+		() =>
+			createRegistrationsColumns({
+				onViewDetails: openDetailModal,
+				t: { viewDetails: t.viewDetails }
+			}),
 		[t.viewDetails]
 	);
 
@@ -318,7 +319,6 @@ export default function RegistrationsPage() {
 		<>
 			<main>
 				<AdminHeader title={t.title} />
-
 				{/* Statistics Section */}
 				<section className="my-6">
 					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
@@ -339,39 +339,37 @@ export default function RegistrationsPage() {
 							<div className="admin-stat-label">{t.cancelled}</div>
 							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-red-500">{stats.cancelled}</div>
 						</div>
-			</div>
-		</section>
-
-		<section className="admin-controls my-4">
-			<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-			<Select value={statusFilter} onValueChange={setStatusFilter}>
-				<SelectTrigger className="w-[180px]">
-					<SelectValue placeholder={t.allStatus} />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="">{t.allStatus}</SelectItem>
-					<SelectItem value="confirmed">{t.confirmed}</SelectItem>
-					<SelectItem value="pending">{t.pending}</SelectItem>
-					<SelectItem value="cancelled">{t.cancelled}</SelectItem>
-				</SelectContent>
-			</Select>
-			<Button onClick={loadRegistrations} variant="secondary">
-				↻ {t.refresh}
-			</Button>
-				<Button onClick={syncToSheets}>
-					📥 {t.syncSheets}
-				</Button>
-				{selectedRegistrations.size > 0 && (
-					<>
-						<Button onClick={exportSelected} variant="default">
-							📤 {t.exportSelected} ({selectedRegistrations.size})
-						</Button>
-						<Button onClick={() => setSelectedRegistrations(new Set())} variant="destructive">
-							✕ {t.deselectAll}
-						</Button>
-					</>
-				)}
-			</section>				<section className="admin-controls mb-4">
+					</div>
+				</section>
+				<section className="admin-controls my-4">
+					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+					<Select value={statusFilter} onValueChange={setStatusFilter}>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue placeholder={t.allStatus} />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="">{t.allStatus}</SelectItem>
+							<SelectItem value="confirmed">{t.confirmed}</SelectItem>
+							<SelectItem value="pending">{t.pending}</SelectItem>
+							<SelectItem value="cancelled">{t.cancelled}</SelectItem>
+						</SelectContent>
+					</Select>
+					<Button onClick={loadRegistrations} variant="secondary">
+						↻ {t.refresh}
+					</Button>
+					<Button onClick={syncToSheets}>📥 {t.syncSheets}</Button>
+					{selectedRegistrations.size > 0 && (
+						<>
+							<Button onClick={exportSelected} variant="default">
+								📤 {t.exportSelected} ({selectedRegistrations.size})
+							</Button>
+							<Button onClick={() => setSelectedRegistrations(new Set())} variant="destructive">
+								✕ {t.deselectAll}
+							</Button>
+						</>
+					)}
+				</section>{" "}
+				<section className="admin-controls mb-4">
 					<label className="text-sm font-medium">{t.columns}</label>
 					<div className="flex flex-wrap gap-2">
 						{columnDefs.map(col => (
@@ -392,7 +390,6 @@ export default function RegistrationsPage() {
 						))}
 					</div>
 				</section>
-
 				<section>
 					{isLoading ? (
 						<div className="admin-loading">
@@ -403,22 +400,21 @@ export default function RegistrationsPage() {
 						<DataTable columns={columns} data={displayData} />
 					)}
 				</section>
-
 				{/* Pagination Section - Not needed anymore as DataTable has built-in pagination */}
 			</main>
 
 			{/* Detail Modal */}
 			{showDetailModal && selectedRegistration && (
-			<div className="admin-modal-overlay" onClick={closeDetailModal}>
-				<div className="admin-modal" onClick={e => e.stopPropagation()}>
-					<div className="admin-modal-header">
-						<h2 className="admin-modal-title">{t.registrationDetails}</h2>
-						<Button variant="ghost" size="icon" onClick={closeDetailModal} className="h-8 w-8">
-							✕
-						</Button>
-					</div>
+				<div className="admin-modal-overlay" onClick={closeDetailModal}>
+					<div className="admin-modal" onClick={e => e.stopPropagation()}>
+						<div className="admin-modal-header">
+							<h2 className="admin-modal-title">{t.registrationDetails}</h2>
+							<Button variant="ghost" size="icon" onClick={closeDetailModal} className="h-8 w-8">
+								✕
+							</Button>
+						</div>
 
-					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-4">
 							<div>
 								<div className="admin-stat-label">Ticket ID</div>
 								<div className="font-mono text-sm">{ticketHashes[selectedRegistration.id]}</div>
@@ -479,19 +475,19 @@ export default function RegistrationsPage() {
 												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
 											</div>
 										))}
+									</div>
 								</div>
-							</div>
-						)}
-						{/* Delete Personal Data Button */}
-						<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
-							<Button variant="destructive" onClick={() => deleteRegistration(selectedRegistration)} className="w-full">
-								🗑️ {t.deleteData}
-							</Button>
-							<p className="text-xs opacity-60 mt-2 text-center">
-								⚠️{" "}
-								{locale === "zh-Hant"
-									? "此操作無法復原，符合個人資料保護法"
-									: locale === "zh-Hans"
+							)}
+							{/* Delete Personal Data Button */}
+							<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
+								<Button variant="destructive" onClick={() => deleteRegistration(selectedRegistration)} className="w-full">
+									🗑️ {t.deleteData}
+								</Button>
+								<p className="text-xs opacity-60 mt-2 text-center">
+									⚠️{" "}
+									{locale === "zh-Hant"
+										? "此操作無法復原，符合個人資料保護法"
+										: locale === "zh-Hans"
 											? "此操作无法复原，符合個人資料保護法"
 											: "This action is irreversible and complies with privacy law"}
 								</p>

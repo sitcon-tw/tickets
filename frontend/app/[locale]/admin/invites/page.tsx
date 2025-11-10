@@ -495,9 +495,7 @@ export default function InvitesPage() {
 			<main>
 				<AdminHeader title={t.title} />
 				<section className="admin-controls">
-					<Button onClick={() => setShowModal(true)}>
-						➕ {t.add}
-					</Button>
+					<Button onClick={() => setShowModal(true)}>➕ {t.add}</Button>
 					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
 						📥 {t.bulkImport}
 					</Button>
@@ -600,9 +598,7 @@ export default function InvitesPage() {
 									</div>
 								</div>
 								<div className="admin-modal-actions">
-									<Button type="submit">
-										{t.save}
-									</Button>
+									<Button type="submit">{t.save}</Button>
 									<Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
 										{t.cancel}
 									</Button>

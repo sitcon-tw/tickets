@@ -1,11 +1,11 @@
 "use client";
 
-import PageSpinner from "@/components/PageSpinner";
-import Spinner from "@/components/Spinner";
-import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/form/FormField";
 import Checkbox from "@/components/input/Checkbox";
 import Text from "@/components/input/Text";
+import PageSpinner from "@/components/PageSpinner";
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
@@ -381,10 +381,7 @@ export default function FormPage() {
 								</a>
 							</div>
 
-							<Button
-								type="submit"
-								disabled={isSubmitting}
-							>
+							<Button type="submit" disabled={isSubmitting}>
 								{isSubmitting && <Spinner size="sm" />}
 								{t.submitRegistration}
 							</Button>

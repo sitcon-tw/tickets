@@ -6,8 +6,8 @@ import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Register Chart.js components
 if (typeof window !== "undefined") {
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 	// Get theme-aware colors
 	const getThemeColors = useCallback(() => {
 		const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && theme === "dark"));
-		
+
 		return {
 			chartColors: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
 			textColor: isDark ? "#f3f4f6" : "#1f2937",

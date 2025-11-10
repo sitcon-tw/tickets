@@ -148,9 +148,7 @@ export default function ReferralStatus() {
 				<div className="flex items-center justify-center">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
-						<Button onClick={() => router.push("/")}>
-							{t.backToSuccess}
-						</Button>
+						<Button onClick={() => router.push("/")}>{t.backToSuccess}</Button>
 					</div>
 				</div>
 			</>
@@ -207,20 +205,18 @@ export default function ReferralStatus() {
 												</tr>
 											))}
 										</tbody>
-								</table>
-							</div>
-						)}
-					</div>
+									</table>
+								</div>
+							)}
+						</div>
 
-					{/* Back Button */}
-					<div className="mt-8">
-						<Button onClick={() => router.back()}>
-							{t.backToSuccess}
-						</Button>
+						{/* Back Button */}
+						<div className="mt-8">
+							<Button onClick={() => router.back()}>{t.backToSuccess}</Button>
+						</div>
 					</div>
-				</div>
-			</main>
-		)}
-	</>
-);
+				</main>
+			)}
+		</>
+	);
 }

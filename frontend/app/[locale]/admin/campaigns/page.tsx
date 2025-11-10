@@ -1,12 +1,12 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -15,7 +15,6 @@ import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@/components/data-table/data-table";
 import { createCampaignsColumns, type CampaignDisplay } from "./columns";
 
 export default function EmailCampaignsPage() {
@@ -258,23 +257,24 @@ export default function EmailCampaignsPage() {
 		return campaigns.map(campaign => ({
 			...campaign,
 			statusClass: getStatusBadgeClass(campaign.status),
-			statusLabel: t[campaign.status as keyof typeof t] as string || campaign.status,
+			statusLabel: (t[campaign.status as keyof typeof t] as string) || campaign.status,
 			recipientsDisplay: `${campaign.sentCount || 0} / ${campaign.totalCount || 0}`,
-			formattedCreatedAt: new Date(campaign.createdAt).toLocaleString(),
+			formattedCreatedAt: new Date(campaign.createdAt).toLocaleString()
 		}));
 	}, [campaigns, t]);
 
 	const columns = useMemo(
-		() => createCampaignsColumns({
-			onPreview: handlePreview,
-			onSend: handleSend,
-			onCancel: handleCancel,
-			t: { 
-				preview: t.preview, 
-				send: t.send, 
-				cancel: t.cancel 
-			}
-		}),
+		() =>
+			createCampaignsColumns({
+				onPreview: handlePreview,
+				onSend: handleSend,
+				onCancel: handleCancel,
+				t: {
+					preview: t.preview,
+					send: t.send,
+					cancel: t.cancel
+				}
+			}),
 		[t.preview, t.send, t.cancel]
 	);
 
@@ -283,12 +283,10 @@ export default function EmailCampaignsPage() {
 			<AdminHeader title={t.title} />
 
 			<section className="admin-controls my-4">
-					<Button onClick={() => setShowCreateModal(true)}>
-						✉️ {t.createNew}
-					</Button>
-					<Button variant="secondary" onClick={loadCampaigns}>
-						↻ {t.refresh}
-					</Button>
+				<Button onClick={() => setShowCreateModal(true)}>✉️ {t.createNew}</Button>
+				<Button variant="secondary" onClick={loadCampaigns}>
+					↻ {t.refresh}
+				</Button>
 			</section>
 
 			<section>
@@ -313,130 +311,125 @@ export default function EmailCampaignsPage() {
 							</Button>
 						</div>
 
-					<div className="flex flex-col gap-4 p-6">
-						<div>
-							<Label className="admin-stat-label">{t.name}</Label>
-							<Input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full" />
-						</div>
-
-						<div>
-							<Label className="admin-stat-label">{t.subject}</Label>
-							<Input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full" />
-						</div>
-
-						<div>
-							<Label className="admin-stat-label">{t.content}</Label>
-							<Textarea
-								value={formData.content}
-								onChange={e => setFormData({ ...formData, content: e.target.value })}
-								className="w-full min-h-[200px] font-mono"
-								placeholder="<h1>Hello {{name}}!</h1>"
-							/>
-						<small className="text-xs opacity-70">{t.templateVars}</small>
-					</div>
-
-					<div>
-						<Label className="admin-stat-label">{t.targetAudience}</Label>
-
-						<div className="mt-2">
-							<Label className="text-sm">{t.selectEvents}</Label>
-							<select
-								multiple
-								value={formData.targetAudience.eventIds}
-								onChange={e => {
-									const selected = Array.from(e.target.selectedOptions, option => option.value);
-									setFormData({
-										...formData,
-										targetAudience: { ...formData.targetAudience, eventIds: selected }
-									});
-								}}
-								className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							>
-								{events.map(event => (
-									<option key={event.id} value={event.id}>
-										{getLocalizedText(event.name, locale)}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="mt-2">
-							<Label className="text-sm">{t.selectTickets}</Label>
-							<select
-								multiple
-								value={formData.targetAudience.ticketIds}
-								onChange={e => {
-									const selected = Array.from(e.target.selectedOptions, option => option.value);
-									setFormData({
-										...formData,
-										targetAudience: { ...formData.targetAudience, ticketIds: selected }
-									});
-								}}
-								className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							>
-								{tickets.map(ticket => (
-									<option key={ticket.id} value={ticket.id}>
-										{getLocalizedText(ticket.name, locale)}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="mt-2 flex gap-4">
-							<Label className="flex items-center gap-2">
-								<Checkbox
-									checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
-									onCheckedChange={checked => {
-										const statuses = formData.targetAudience.registrationStatuses;
-										if (checked) {
-											setFormData({
-												...formData,
-												targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
-											});
-										} else {
-											setFormData({
-												...formData,
-												targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
-											});
-										}
-									}}
+						<div className="flex flex-col gap-4 p-6">
+							<div>
+								<Label className="admin-stat-label">{t.name}</Label>
+								<Input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full" />
+							</div>
+							<div>
+								<Label className="admin-stat-label">{t.subject}</Label>
+								<Input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full" />
+							</div>
+							<div>
+								<Label className="admin-stat-label">{t.content}</Label>
+								<Textarea
+									value={formData.content}
+									onChange={e => setFormData({ ...formData, content: e.target.value })}
+									className="w-full min-h-[200px] font-mono"
+									placeholder="<h1>Hello {{name}}!</h1>"
 								/>
-								{t.confirmed}
-							</Label>
-							<Label className="flex items-center gap-2">
-								<Checkbox
-									checked={formData.targetAudience.registrationStatuses.includes("pending")}
-									onCheckedChange={checked => {
-										const statuses = formData.targetAudience.registrationStatuses;
-										if (checked) {
+								<small className="text-xs opacity-70">{t.templateVars}</small>
+							</div>
+							<div>
+								<Label className="admin-stat-label">{t.targetAudience}</Label>
+
+								<div className="mt-2">
+									<Label className="text-sm">{t.selectEvents}</Label>
+									<select
+										multiple
+										value={formData.targetAudience.eventIds}
+										onChange={e => {
+											const selected = Array.from(e.target.selectedOptions, option => option.value);
 											setFormData({
 												...formData,
-												targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
+												targetAudience: { ...formData.targetAudience, eventIds: selected }
 											});
-										} else {
+										}}
+										className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									>
+										{events.map(event => (
+											<option key={event.id} value={event.id}>
+												{getLocalizedText(event.name, locale)}
+											</option>
+										))}
+									</select>
+								</div>
+
+								<div className="mt-2">
+									<Label className="text-sm">{t.selectTickets}</Label>
+									<select
+										multiple
+										value={formData.targetAudience.ticketIds}
+										onChange={e => {
+											const selected = Array.from(e.target.selectedOptions, option => option.value);
 											setFormData({
 												...formData,
-												targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
+												targetAudience: { ...formData.targetAudience, ticketIds: selected }
 											});
-										}
-									}}
-								/>
-								{t.pending}
-							</Label>
-						</div>
-					</div>							{recipientCount !== null && (
+										}}
+										className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									>
+										{tickets.map(ticket => (
+											<option key={ticket.id} value={ticket.id}>
+												{getLocalizedText(ticket.name, locale)}
+											</option>
+										))}
+									</select>
+								</div>
+
+								<div className="mt-2 flex gap-4">
+									<Label className="flex items-center gap-2">
+										<Checkbox
+											checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
+											onCheckedChange={checked => {
+												const statuses = formData.targetAudience.registrationStatuses;
+												if (checked) {
+													setFormData({
+														...formData,
+														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
+													});
+												} else {
+													setFormData({
+														...formData,
+														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
+													});
+												}
+											}}
+										/>
+										{t.confirmed}
+									</Label>
+									<Label className="flex items-center gap-2">
+										<Checkbox
+											checked={formData.targetAudience.registrationStatuses.includes("pending")}
+											onCheckedChange={checked => {
+												const statuses = formData.targetAudience.registrationStatuses;
+												if (checked) {
+													setFormData({
+														...formData,
+														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
+													});
+												} else {
+													setFormData({
+														...formData,
+														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
+													});
+												}
+											}}
+										/>
+										{t.pending}
+									</Label>
+								</div>
+							</div>{" "}
+							{recipientCount !== null && (
 								<div className="p-4 bg-gray-800 dark:bg-gray-900 rounded-lg border-2 border-gray-600 dark:border-gray-700">
 									<strong>{t.recipientCountLabel}:</strong> {recipientCount}
 								</div>
 							)}
-
 							<div className="flex gap-2 justify-end">
 								<Button variant="secondary" onClick={handleCalculateRecipients}>
 									🔢 {t.calculateRecipients}
 								</Button>
-								<Button onClick={handleCreate}>
-									💾 {t.save}
-								</Button>
+								<Button onClick={handleCreate}>💾 {t.save}</Button>
 								<Button variant="destructive" onClick={() => setShowCreateModal(false)}>
 									{t.close}
 								</Button>
