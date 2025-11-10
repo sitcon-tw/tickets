@@ -1,15 +1,20 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { Globe, Heart } from "lucide-react";
-import { useLocale } from "next-intl";
+import { usePathname, useRouter as useNextRouter } from "next/navigation";
+import { useMemo } from "react";
 
 export default function Footer() {
-	const locale = useLocale();
 	const pathname = usePathname();
-	const router = useRouter();
+	const router = useNextRouter();
+	
+	// Detect locale from pathname since we're outside NextIntlClientProvider
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
 
 	const localeNames: Record<string, string> = {
 		en: "English",
@@ -18,15 +23,20 @@ export default function Footer() {
 	};
 
 	const handleLocaleChange = (newLocale: string) => {
-		router.replace(pathname, { locale: newLocale });
+		// Replace the locale part in the pathname
+		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 
-	if (pathname.includes("/admin") || pathname.includes("/magic-link")) {
+	const isAdminPage = pathname.includes("/admin");
+	const isMagicLinkPage = pathname.includes("/magic-link");
+
+	if (isMagicLinkPage) {
 		return null;
 	}
 
 	return (
-		<footer className="text-center p-0 mt-8">
+		<footer className={`text-center p-4 mt-8 ${isAdminPage ? "ml-0 md:ml-68" : ""}`}>
 			<div className="flex justify-center items-center gap-2 mb-3">
 				<Globe size={16} className="text-muted-foreground" />
 				<Select value={locale} onValueChange={handleLocaleChange}>

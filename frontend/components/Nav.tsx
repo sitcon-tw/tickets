@@ -4,16 +4,12 @@ import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
+import { routing } from "@/i18n/routing";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
-import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useMemo, useState } from "react";
-
-type NavProps = {
-	children?: ReactNode;
-};
+import { useEffect, useMemo, useState } from "react";
 
 type SessionUser = {
 	name?: string;
@@ -23,10 +19,16 @@ type SessionUser = {
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
 
-export default function Nav({ children }: NavProps) {
-	const locale = useLocale();
-	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
+export default function Nav() {
 	const pathname = usePathname();
+	
+	// Detect locale from pathname since we're outside NextIntlClientProvider
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
+	
+	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -125,7 +127,6 @@ export default function Nav({ children }: NavProps) {
 					<ThemeToggle />
 				</div>
 			</div>
-			{children}
 		</nav>
 	);
 }

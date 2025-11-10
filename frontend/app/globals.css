@@ -15,6 +15,17 @@
 }
 
 @layer components {
+	/* Main layout padding for fixed nav */
+	main {
+		@apply pt-20;
+	}
+
+	/* Layout structure for admin pages */
+	.admin-main-container {
+		@apply flex-1 flex flex-col;
+		@apply ml-0 md:ml-68;
+	}
+
 	/* Ticket card component */
 	.ticket {
 		@apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;

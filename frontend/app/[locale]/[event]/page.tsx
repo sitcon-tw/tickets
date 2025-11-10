@@ -80,14 +80,10 @@ export default function Main() {
 		}
 	}, [eventSlug, router, t.eventNotFound, t.failedToLoadEvents]);
 
-	if (loading) {
+	if (loading || 1) {
 		return (
 			<>
-				<main>
-					<div className="flex items-center justify-center h-screen">
-						<PageSpinner size={48} />
-					</div>
-				</main>
+					<PageSpinner size={48} />
 			</>
 		);
 	}
@@ -96,7 +92,7 @@ export default function Main() {
 		return (
 			<>
 				<main>
-					<div className="flex flex-col items-center justify-center h-screen gap-4">
+					<div className="flex flex-col items-center justify-center h-full gap-4">
 						<h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t.eventNotFound}</h1>
 						<p className="text-gray-700 dark:text-gray-300">{error}</p>
 					</div>

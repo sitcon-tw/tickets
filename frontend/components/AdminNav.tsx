@@ -2,14 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
-import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
 import type { Event, UserCapabilities } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
-import { useLocale } from "next-intl";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter as useNextRouter } from "next/navigation";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const activityLinks = [
 	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
@@ -23,9 +22,20 @@ const activityLinks = [
 ] as const;
 
 function AdminNav() {
-	const locale = useLocale();
-	const router = useRouter();
 	const pathname = usePathname();
+	const router = useNextRouter();
+	
+	// Detect locale from pathname since we're outside NextIntlClientProvider
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
+	
+	// Only show on admin pages
+	const isAdminPage = pathname.includes("/admin");
+	if (!isAdminPage) {
+		return null;
+	}
 
 	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
@@ -38,7 +48,9 @@ function AdminNav() {
 	const dataLoadedRef = useRef(false);
 
 	const handleLocaleChange = (newLocale: string) => {
-		router.replace(pathname, { locale: newLocale });
+		// Replace the locale part in the pathname
+		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 
 	const localeNames: Record<string, string> = {
@@ -105,33 +117,10 @@ function AdminNav() {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	// Inject styles only once and don't remove them on unmount
-	useEffect(() => {
-		const styleId = "admin-nav-global-styles";
-		if (!document.getElementById(styleId)) {
-			const style = document.createElement("style");
-			style.id = styleId;
-			style.textContent = `
-        main {
-          padding-top: 5rem;
-          max-width: unset;
-          margin-left: 17rem;
-        }
-
-        @media (max-width: 768px) {
-          main {
-            margin-left: 0 !important;
-            padding-top: 5rem !important;
-          }
-        }
-      `;
-			document.head.appendChild(style);
-		}
-		// Don't remove styles on unmount to prevent layout shift
-	}, []);
-
 	const handleNavClick = (href: string) => {
-		router.push(href);
+		// Add locale prefix to href
+		const localizedHref = `/${locale}${href}`;
+		router.push(localizedHref);
 		setMobileMenuOpen(false);
 	};
 
@@ -298,7 +287,7 @@ function AdminNav() {
 					<div className="flex gap-2">
 						<a
 							onClick={() => {
-								router.push("/logout");
+								router.push(`/${locale}/logout`);
 								setMobileMenuOpen(false);
 							}}
 							onMouseEnter={() => setHoveredLink("logout")}
@@ -310,7 +299,7 @@ function AdminNav() {
 						<span>・</span>
 						<a
 							onClick={() => {
-								router.push("/");
+								router.push(`/${locale}/`);
 								setMobileMenuOpen(false);
 							}}
 							onMouseEnter={() => setHoveredLink("home")}
