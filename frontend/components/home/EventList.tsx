@@ -90,7 +90,7 @@ export default function EventList() {
 	}
 
 	return (
-		<div className="container mx-auto px-4">
+		<div className="container mx-auto">
 			{events.length === 0 ? (
 				<div className="text-center text-muted-foreground py-12">
 					<p className="text-xl">{t.noEvents}</p>

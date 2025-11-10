@@ -320,22 +320,22 @@ export default function RegistrationsPage() {
 				{/* Statistics Section */}
 				<section className="my-6">
 					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
-					<div className="admin-stats-grid">
+					<div className="flex gap-4">
 						<div className="admin-stat-card">
 							<div className="admin-stat-label">{t.total}</div>
-							<div className="admin-stat-value">{stats.total}</div>
+							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</div>
 						</div>
 						<div className="admin-stat-card border-green-500">
 							<div className="admin-stat-label">{t.confirmed}</div>
-							<div className="admin-stat-value text-green-500">{stats.confirmed}</div>
+							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-green-500">{stats.confirmed}</div>
 						</div>
 						<div className="admin-stat-card border-amber-500">
 							<div className="admin-stat-label">{t.pending}</div>
-							<div className="admin-stat-value text-amber-500">{stats.pending}</div>
+							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-amber-500">{stats.pending}</div>
 						</div>
 						<div className="admin-stat-card border-red-500">
 							<div className="admin-stat-label">{t.cancelled}</div>
-							<div className="admin-stat-value text-red-500">{stats.cancelled}</div>
+							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>

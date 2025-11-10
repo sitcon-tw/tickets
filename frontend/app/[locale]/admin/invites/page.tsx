@@ -505,7 +505,7 @@ export default function InvitesPage() {
 				</section>
 
 				<section>
-					<div className="admin-table-container">
+					<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
 						{isLoading && (
 							<div className="admin-loading">
 								<PageSpinner />
@@ -719,7 +719,7 @@ export default function InvitesPage() {
 									</>
 								)}
 							</div>
-							<div className="admin-table-container">
+							<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
 								<table className="admin-table">
 									<thead>
 										<tr>

@@ -250,7 +250,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	return (
 		<>
-			<div className="tickets-container">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
 				{isLoading && tickets.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
 						<PageSpinner />
@@ -289,7 +289,6 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					);
 				})}
 			</div>
-
 			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
 				{selectedTicket ? (
 					<div className="about">
@@ -302,25 +301,24 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<p className="remain">
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 							</p>
+						</div>
+						<div className="content">
+							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
+							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
+							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
+						</div>
 					</div>
-					<div className="content">
-						<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
-						<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
-						{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
-					</div>
-				</div>
-			) : null}
-			<Button
-				className={`inline-flex items-center gap-2 transition-opacity duration-200 ${
-					isSubmitting ? "opacity-70" : ""
-				}`}
-				disabled={!canRegister || isSubmitting}
-				onClick={() => handleConfirmRegistration()}
-			>
-				{isSubmitting && <Spinner size="sm" />}
-				{canRegister ? t.confirm : t.cannotRegister}
-			</Button>
-		</Confirm>			{/* Animation ticket */}
+				) : null}
+				<Button
+					className={`inline-flex items-center gap-2 transition-opacity duration-200 ${isSubmitting ? "opacity-70" : ""}`}
+					disabled={!canRegister || isSubmitting}
+					onClick={() => handleConfirmRegistration()}
+				>
+					{isSubmitting && <Spinner size="sm" />}
+					{canRegister ? t.confirm : t.cannotRegister}
+				</Button>
+			</Confirm>{" "}
+			{/* Animation ticket */}
 			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
 				{selectedTicket ? (
 					<>

@@ -7,6 +7,7 @@ import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 // Register Chart.js components
 if (typeof window !== "undefined") {
@@ -15,11 +16,13 @@ if (typeof window !== "undefined") {
 
 export default function AdminDashboard() {
 	const locale = useLocale();
+	const { theme, resolvedTheme } = useTheme();
 
 	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 	const [registrationTrends, setRegistrationTrends] = useState<RegistrationTrend[]>([]);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [mounted, setMounted] = useState(false);
 
 	// Chart refs
 	const trendsChartRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,6 +34,26 @@ export default function AdminDashboard() {
 	const opensourceChartRef = useRef<HTMLCanvasElement | null>(null);
 
 	const chartsInstancesRef = useRef<Chart[]>([]);
+
+	// Track mounted state for theme
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Get theme-aware colors
+	const getThemeColors = useCallback(() => {
+		const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && theme === "dark"));
+		
+		return {
+			chartColors: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+			textColor: isDark ? "#f3f4f6" : "#1f2937",
+			gridColor: isDark ? "#4b5563" : "#e5e7eb",
+			tickColor: isDark ? "#d1d5db" : "#6b7280",
+			tooltipBg: isDark ? "#374151" : "#ffffff",
+			tooltipBorder: isDark ? "#6b7280" : "#d1d5db",
+			remainingColor: isDark ? "#E5E5E5" : "#e5e7eb"
+		};
+	}, [mounted, resolvedTheme, theme]);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "管理後台總覽", "zh-Hans": "管理后台总览", en: "Admin Dashboard" },
@@ -96,7 +119,8 @@ export default function AdminDashboard() {
 		chartsInstancesRef.current.forEach(chart => chart.destroy());
 		chartsInstancesRef.current = [];
 
-		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
+		const themeColors = getThemeColors();
+		const colors = themeColors.chartColors;
 
 		// Line Chart - Registration Trends
 		if (trendsChartRef.current) {
@@ -130,10 +154,11 @@ export default function AdminDashboard() {
 					},
 					options: {
 						responsive: true,
+						maintainAspectRatio: true,
 						plugins: {
 							legend: {
 								position: "bottom",
-								labels: { color: "#f3f4f6" }
+								labels: { color: themeColors.textColor }
 							}
 						},
 						scales: {
@@ -142,19 +167,19 @@ export default function AdminDashboard() {
 								title: {
 									display: true,
 									text: locale === "zh-Hant" ? "註冊數量" : locale === "zh-Hans" ? "注册数量" : "Registration Count",
-									color: "#f3f4f6"
+									color: themeColors.textColor
 								},
-								ticks: { color: "#d1d5db" },
-								grid: { color: "#4b5563" }
+								ticks: { color: themeColors.tickColor },
+								grid: { color: themeColors.gridColor }
 							},
 							x: {
 								title: {
 									display: true,
 									text: locale === "zh-Hant" ? "日期" : locale === "zh-Hans" ? "日期" : "Date",
-									color: "#f3f4f6"
+									color: themeColors.textColor
 								},
-								ticks: { color: "#d1d5db" },
-								grid: { color: "#4b5563" }
+								ticks: { color: themeColors.tickColor },
+								grid: { color: themeColors.gridColor }
 							}
 						}
 					}
@@ -180,22 +205,23 @@ export default function AdminDashboard() {
 								data: soldCounts,
 								backgroundColor: colors.slice(0, tickets.length),
 								borderWidth: 2,
-								borderColor: "#fff"
+								borderColor: themeColors.tooltipBg
 							}
 						]
 					},
 					options: {
 						responsive: true,
+						maintainAspectRatio: true,
 						plugins: {
 							legend: {
 								position: "bottom",
-								labels: { color: "#f3f4f6" }
+								labels: { color: themeColors.textColor }
 							},
 							tooltip: {
-								titleColor: "#f3f4f6",
-								bodyColor: "#f3f4f6",
-								backgroundColor: "#374151",
-								borderColor: "#6b7280",
+								titleColor: themeColors.textColor,
+								bodyColor: themeColors.textColor,
+								backgroundColor: themeColors.tooltipBg,
+								borderColor: themeColors.tooltipBorder,
 								borderWidth: 1,
 								callbacks: {
 									label: function (context: TooltipItem<"pie">) {
@@ -234,7 +260,7 @@ export default function AdminDashboard() {
 							datasets: [
 								{
 									data: [soldCount, remaining],
-									backgroundColor: [color, "#E5E5E5"],
+									backgroundColor: [color, themeColors.remainingColor],
 									borderWidth: 0
 								}
 							]
@@ -249,10 +275,10 @@ export default function AdminDashboard() {
 							plugins: {
 								legend: { display: false },
 								tooltip: {
-									titleColor: "#f3f4f6",
-									bodyColor: "#f3f4f6",
-									backgroundColor: "#374151",
-									borderColor: "#6b7280",
+									titleColor: themeColors.textColor,
+									bodyColor: themeColors.textColor,
+									backgroundColor: themeColors.tooltipBg,
+									borderColor: themeColors.tooltipBorder,
 									borderWidth: 1,
 									callbacks: {
 										label: function (context: TooltipItem<"doughnut">) {
@@ -291,14 +317,14 @@ export default function AdminDashboard() {
 				}
 			}
 		});
-	}, [registrationTrends, tickets, locale]);
+	}, [registrationTrends, tickets, locale, getThemeColors]);
 
 	useEffect(() => {
 		initializeDashboard();
 	}, [initializeDashboard]);
 
 	useEffect(() => {
-		if (!loading) {
+		if (!loading && mounted) {
 			initCharts();
 		}
 
@@ -306,7 +332,31 @@ export default function AdminDashboard() {
 			chartsInstancesRef.current.forEach(chart => chart.destroy());
 			chartsInstancesRef.current = [];
 		};
-	}, [loading, initCharts]);
+	}, [loading, initCharts, mounted]);
+
+	// Handle window resize
+	useEffect(() => {
+		if (!mounted || loading) return;
+
+		const handleResize = () => {
+			// Debounce the resize to avoid too many re-renders
+			const timeoutId = setTimeout(() => {
+				initCharts();
+			}, 250);
+
+			return () => clearTimeout(timeoutId);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, [initCharts, mounted, loading]);
+
+	// Re-initialize charts when theme changes
+	useEffect(() => {
+		if (!loading && mounted) {
+			initCharts();
+		}
+	}, [resolvedTheme, theme, loading, mounted, initCharts]);
 
 	// Calculate actual ticket stats from tickets data
 	const totalTicketQuantity = tickets.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0);
@@ -318,7 +368,7 @@ export default function AdminDashboard() {
 		return (
 			<main>
 				<h1>{t.overview}</h1>
-				<div className="text-center p-12 text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+				<div className="text-center p-12 text-gray-600 dark:text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 			</main>
 		);
 	}
@@ -327,42 +377,42 @@ export default function AdminDashboard() {
 		<main>
 			<AdminHeader title={t.overview} />
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.totalTickets}</h3>
-					<div className="text-4xl font-bold text-gray-100 mb-2">{totalTicketQuantity}</div>
-					<div className="text-gray-100 text-xs">{t.tickets}</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalTickets}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalTicketQuantity}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.sold}</h3>
-					<div className="text-4xl font-bold text-gray-100 mb-2">{totalSold}</div>
-					<div className="text-gray-100 text-xs">{t.tickets}</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.sold}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalSold}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.remaining}</h3>
-					<div className="text-4xl font-bold text-gray-100 mb-2">{remainingTickets}</div>
-					<div className="text-gray-100 text-xs">{t.tickets}</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.remaining}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{remainingTickets}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.salesRate}</h3>
-					<div className="text-4xl font-bold text-gray-100 mb-2">{salesRate}%</div>
-					<div className="text-gray-100 text-xs">{t.completion}</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.salesRate}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{salesRate}%</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.completion}</div>
 				</div>
 			</div>
 
 			<div className="flex gap-8 mb-12 flex-wrap">
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md flex-2 max-w-full">
-					<h2 className="m-0 mb-4 text-gray-100 text-xl">{t.salesTrend}</h2>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-2 max-w-full border border-gray-200 dark:border-gray-700">
+					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
 					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
 				</div>
 
-				<div className="bg-gray-800 p-6 rounded-lg shadow-md flex-1 max-w-full">
-					<h2 className="m-0 mb-4 text-gray-100 text-xl">{t.ticketDistribution}</h2>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-1 max-w-full border border-gray-200 dark:border-gray-700">
+					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDistribution}</h2>
 					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
 				</div>
 			</div>
 
-			<div className="bg-gray-800 p-6 rounded-lg shadow-md">
-				<h2 className="m-0 mb-6 text-gray-100 text-xl">{t.progressTitle}</h2>
+			<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+				<h2 className="m-0 mb-6 text-gray-900 dark:text-gray-100 text-xl">{t.progressTitle}</h2>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
 					{tickets.slice(0, 5).map((ticket, idx) => {
 						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
@@ -372,23 +422,23 @@ export default function AdminDashboard() {
 						const remaining = total - soldCount;
 
 						return (
-							<div key={idx} className="bg-gray-700 p-6 rounded-xl shadow-md text-center max-w-full">
-								<h3 className="m-0 mb-6 text-gray-200 text-lg font-semibold">{ticketName}</h3>
+							<div key={idx} className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-md text-center max-w-full border border-gray-200 dark:border-gray-600">
+								<h3 className="m-0 mb-6 text-gray-800 dark:text-gray-200 text-lg font-semibold">{ticketName}</h3>
 								<div className="flex justify-center mb-4">
 									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
 								</div>
-								<div className="mb-6 p-4 bg-gray-600 rounded-lg">
-									<div className="text-4xl font-bold text-gray-100 leading-none">{remaining}</div>
-									<div className="text-sm text-gray-300 mt-1">{t.remainingLabel}</div>
+								<div className="mb-6 p-4 bg-gray-100 dark:bg-gray-600 rounded-lg">
+									<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 leading-none">{remaining}</div>
+									<div className="text-sm text-gray-600 dark:text-gray-300 mt-1">{t.remainingLabel}</div>
 								</div>
 								<div className="flex justify-around gap-4">
 									<div className="flex flex-col items-center gap-1">
-										<span className="text-gray-300 text-sm font-medium">{t.total}</span>
-										<span className="font-semibold text-gray-200 text-lg">{total}</span>
+										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.total}</span>
+										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{total}</span>
 									</div>
 									<div className="flex flex-col items-center gap-1">
-										<span className="text-gray-300 text-sm font-medium">{t.soldLabel}</span>
-										<span className="font-semibold text-gray-200 text-lg">{soldCount}</span>
+										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.soldLabel}</span>
+										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{soldCount}</span>
 									</div>
 								</div>
 							</div>
