@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { toast } from "sonner";
 
 export type AlertType = "success" | "error" | "warning" | "info";
@@ -38,7 +39,7 @@ interface AlertContextType {
  * ```
  */
 export function useAlert(): AlertContextType {
-	const showAlert = (message: string, type: AlertType, duration: number = 5000) => {
+	const showAlert = useCallback((message: string, type: AlertType, duration: number = 5000) => {
 		switch (type) {
 			case "success":
 				toast.success(message, { duration });
@@ -53,7 +54,7 @@ export function useAlert(): AlertContextType {
 				toast.info(message, { duration });
 				break;
 		}
-	};
+	}, []);
 
 	return { showAlert };
 }
