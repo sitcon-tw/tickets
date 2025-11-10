@@ -56,7 +56,13 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 					options={localizedOptions as SelectOption[]}
 					required={field.required}
 					value={(value as string) || ""}
-					onChange={onTextChange}
+					onChange={(newValue) => {
+						// Create a synthetic event to match onTextChange signature
+						const syntheticEvent = {
+							target: { value: newValue }
+						} as React.ChangeEvent<HTMLSelectElement>;
+						onTextChange(syntheticEvent);
+					}}
 					pleaseSelectText={pleaseSelectText}
 				/>
 			);
@@ -69,14 +75,34 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 					options={localizedOptions as RadioOption[]}
 					required={field.required}
 					value={(value as string) || ""}
-					onChange={onTextChange}
+					onValueChange={(newValue) => {
+						// Create a synthetic event to match onTextChange signature
+						const syntheticEvent = {
+							target: { value: newValue }
+						} as React.ChangeEvent<HTMLInputElement>;
+						onTextChange(syntheticEvent);
+					}}
 				/>
 			);
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {
 				const currentValues = Array.isArray(value) ? value : [];
-				return <MultiCheckbox label={label} name={getLocalizedText(field.name, locale)} options={localizedOptions as CheckboxOption[]} values={currentValues} onChange={onCheckboxChange} />;
+				return (
+					<MultiCheckbox
+						label={label}
+						name={getLocalizedText(field.name, locale)}
+						options={localizedOptions as CheckboxOption[]}
+						values={currentValues}
+						onValueChange={(newValues) => {
+							// Create a synthetic event with comma-separated values
+							const syntheticEvent = {
+								target: { value: newValues.join(",") }
+							} as React.ChangeEvent<HTMLInputElement>;
+							onCheckboxChange(syntheticEvent);
+						}}
+					/>
+				);
 			} else {
 				return <Checkbox label={label} id={getLocalizedText(field.name, locale)} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
 			}

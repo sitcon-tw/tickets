@@ -158,3 +158,12 @@
 		@apply bg-red-500/20 text-red-700 dark:bg-red-500/10 dark:text-red-400;
 	}
 }
+
+@keyframes fly-1 {
+	from {
+		transform: translateY(0.1em);
+	}
+	to {
+		transform: translateY(-0.1em);
+	}
+}

@@ -33,12 +33,6 @@ function AdminNav() {
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
 
-	// Only show on admin pages
-	const isAdminPage = pathname.includes("/admin");
-	if (!isAdminPage) {
-		return null;
-	}
-
 	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
@@ -204,6 +198,12 @@ function AdminNav() {
 			en: "Select Event"
 		}
 	});
+
+	// Only show on admin pages - check after all hooks are called
+	const isAdminPage = pathname.includes("/admin");
+	if (!isAdminPage) {
+		return null;
+	}
 
 	return (
 		<>

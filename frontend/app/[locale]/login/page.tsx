@@ -34,16 +34,6 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 				</div>
 				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{children}</span>
 			</Button>
-			<style jsx>{`
-				@keyframes fly-1 {
-					from {
-						transform: translateY(0.1em);
-					}
-					to {
-						transform: translateY(-0.1em);
-					}
-				}
-			`}</style>
 		</div>
 	);
 };
