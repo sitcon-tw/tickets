@@ -7,7 +7,7 @@ import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
 import type { Event, UserCapabilities } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
-import { usePathname, useRouter as useNextRouter } from "next/navigation";
+import { useRouter as useNextRouter, usePathname } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const activityLinks = [
@@ -136,14 +136,9 @@ function AdminNav() {
 	}, [mobileMenuOpen]);
 
 	const t = getTranslations(locale, {
-		activityName: {
-			"zh-Hant": "SITCON",
-			"zh-Hans": "SITCON",
-			en: "SITCON"
-		},
 		systemTitle: {
-			"zh-Hant": "報名系統後台",
-			"zh-Hans": "报名系统后台",
+			"zh-Hant": "管理員介面",
+			"zh-Hans": "管理员界面",
 			en: "Admin Panel"
 		},
 		overview: {
@@ -216,7 +211,7 @@ function AdminNav() {
 					<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 						<Menu size={24} />
 					</Button>
-					<div className="text-xl font-semibold">{t.activityName}</div>
+					<div className="text-xl font-semibold">{t.systemTitle}</div>
 					<div className="w-10" /> {/* Spacer for centering */}
 				</div>
 			)}
@@ -240,8 +235,6 @@ function AdminNav() {
 						<X size={24} />
 					</Button>
 				)}
-
-				<div className="text-xl">{t.activityName}</div>
 				<div className="text-3xl mt-2">{t.systemTitle}</div>
 				<div className="mb-6 mt-4">
 					<label className="flex flex-col gap-2">
@@ -280,60 +273,60 @@ function AdminNav() {
 												onClick={() => handleNavClick(href)}
 												onMouseEnter={() => setHoveredLink(href)}
 												onMouseLeave={() => setHoveredLink(null)}
-											className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
-										>
-											{t[i18nKey]}
-										</a>
-									</li>
-									{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
-								</div>
-							);
-						})}
-				</ul>
-			</nav>
-			<div className="flex flex-col gap-3 mt-4">
-				<div className="font-semibold">{t.userPlaceholder}</div>
-				<div className="flex gap-2">
-					<a
-						onClick={() => {
-							router.push(`/${locale}/logout`);
-							setMobileMenuOpen(false);
-						}}
-						onMouseEnter={() => setHoveredLink("logout")}
-						onMouseLeave={() => setHoveredLink(null)}
-						className={`cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
-					>
-						{t.logout}
-					</a>
-					<span>・</span>
-					<a
-						onClick={() => {
-							router.push(`/${locale}/`);
-							setMobileMenuOpen(false);
-						}}
-						onMouseEnter={() => setHoveredLink("home")}
-						onMouseLeave={() => setHoveredLink(null)}
-						className={`cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
-					>
-						{t.backHome}
-					</a>
+												className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
+											>
+												{t[i18nKey]}
+											</a>
+										</li>
+										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
+									</div>
+								);
+							})}
+					</ul>
+				</nav>
+				<div className="flex flex-col gap-3 mt-4">
+					<div className="font-semibold">{t.userPlaceholder}</div>
+					<div className="flex gap-2">
+						<a
+							onClick={() => {
+								router.push(`/${locale}/logout`);
+								setMobileMenuOpen(false);
+							}}
+							onMouseEnter={() => setHoveredLink("logout")}
+							onMouseLeave={() => setHoveredLink(null)}
+							className={`cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
+						>
+							{t.logout}
+						</a>
+						<span>・</span>
+						<a
+							onClick={() => {
+								router.push(`/${locale}/`);
+								setMobileMenuOpen(false);
+							}}
+							onMouseEnter={() => setHoveredLink("home")}
+							onMouseLeave={() => setHoveredLink(null)}
+							className={`cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
+						>
+							{t.backHome}
+						</a>
+					</div>
+					<div className="flex justify-center items-center gap-2 mb-3">
+						<Globe size={16} className="text-gray-500" />
+						<select
+							value={locale}
+							onChange={e => handleLocaleChange(e.target.value)}
+							className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
+						>
+							{routing.locales.map(loc => (
+								<option key={loc} value={loc}>
+									{localeNames[loc]}
+								</option>
+							))}
+						</select>
+					</div>
 				</div>
-				<div className="flex justify-center items-center gap-2 mb-3">
-					<Globe size={16} className="text-gray-500" />
-					<select
-						value={locale}
-						onChange={e => handleLocaleChange(e.target.value)}
-						className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
-					>
-						{routing.locales.map(loc => (
-							<option key={loc} value={loc}>
-								{localeNames[loc]}
-							</option>
-						))}
-					</select>
-				</div>
-			</div>
-		</aside>
+			</aside>
 		</>
 	);
 }
