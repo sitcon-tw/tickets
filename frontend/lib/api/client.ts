@@ -107,9 +107,12 @@ class APIClient {
 					// Handle 401 Unauthorized - redirect to login
 					if (response.status === 401) {
 						if (typeof window !== "undefined") {
-							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-							window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
+							// Only redirect if not already on login page
+							if (!window.location.pathname.includes("/login")) {
+								const locale = window.location.pathname.split("/")[1] || "zh-Hant";
+								const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+								window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
+							}
 						}
 						throw new Error("Unauthorized - please login");
 					}
@@ -118,7 +121,10 @@ class APIClient {
 					if (response.status === 423) {
 						if (typeof window !== "undefined") {
 							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							window.location.href = `/${locale}/account-disabled`;
+							// Only redirect if not already on account-disabled page
+							if (!window.location.pathname.includes("/account-disabled")) {
+								window.location.href = `/${locale}/account-disabled`;
+							}
 						}
 						throw new Error("Account disabled");
 					}

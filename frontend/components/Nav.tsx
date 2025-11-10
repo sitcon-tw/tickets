@@ -3,14 +3,15 @@
 import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
+import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
+import crypto from "crypto";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -19,8 +20,15 @@ type SessionUser = {
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
 
+// Generate Gravatar URL from email
+function getGravatarUrl(email: string, size = 40): string {
+	const hash = crypto.createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+	return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
+}
+
 export default function Nav() {
 	const pathname = usePathname();
+	const router = useRouter();
 
 	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
@@ -28,18 +36,20 @@ export default function Nav() {
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
 
-	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
+	// Helper to build localized links
+	const localizedPath = (path: string) => `/${locale}${path}`;
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
+	const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
 
 	// Check if on admin page
 	const isAdminPage = pathname.includes("/admin");
 
 	const t = getTranslations(locale, {
-		user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
-		adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
+		adminPanel: { "zh-Hant": "管理員介面", "zh-Hans": "管理员介面", en: "Admin Panel" },
+		myTickets: { "zh-Hant": "我的票券", "zh-Hans": "我的票券", en: "My Tickets" },
 		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
 		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
 	});
@@ -49,12 +59,14 @@ export default function Nav() {
 		setIsLoggingOut(true);
 		try {
 			await authAPI.signOut();
+			// Refresh session state after logout
+			setSession({ status: "anonymous" });
+			// Navigate to home page
+			router.push(localizedPath("/"));
 		} catch (error) {
 			console.error("Logout failed", error);
 		} finally {
-			if (typeof window !== "undefined") {
-				window.location.reload();
-			}
+			setIsLoggingOut(false);
 		}
 	}
 
@@ -64,8 +76,14 @@ export default function Nav() {
 		return roles.some(role => role === "admin");
 	}, [session]);
 
-	const userDisplayName =
-		session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
+	// Generate Gravatar URL when user email changes
+	useEffect(() => {
+		if (session.status === "authenticated" && session.user.email) {
+			setGravatarUrl(getGravatarUrl(session.user.email));
+		} else {
+			setGravatarUrl(null);
+		}
+	}, [session]);
 
 	// Check for mobile viewport
 	useEffect(() => {
@@ -112,36 +130,41 @@ export default function Nav() {
 	return (
 		<nav className="fixed top-0 left-0 z-1000 w-full bg-gray-600 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-800 transition-colors text-gray-200 dark:text-gray-300">
 			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-4">
-				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
+				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
 					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
-				</a>
+				</Link>
 				<div className="flex items-center gap-4">
 					{session.status === "authenticated" ? (
 						<>
-							<span className="text-sm  dark:text-gray-300">{userDisplayName}</span>
 							{hasAdminAccess && (
-								<a href={linkBuilder("/admin/")} className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-									{t.adminPage}
-								</a>
+								<Link href={localizedPath("/admin/")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+									{t.adminPanel}
+								</Link>
 							)}
+							<Link href={localizedPath("/my-registration/")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								{t.myTickets}
+							</Link>
 							<Button
 								variant="ghost"
 								size="sm"
 								onClick={handleLogout}
 								disabled={isLoggingOut}
 								className={cn(
-									"text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
+									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
 									isLoggingOut && "opacity-50 cursor-not-allowed"
 								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
 							</Button>
+							{gravatarUrl && <img src={gravatarUrl} alt="User Avatar" className="w-8 h-8 rounded-full" />}
 						</>
+					) : session.status === "loading" ? (
+						<Spinner size="sm" />
 					) : (
-						<a href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+						<Link href={`${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 							{t.login}
-						</a>
+						</Link>
 					)}
 					<ThemeToggle />
 				</div>

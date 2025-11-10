@@ -31,7 +31,6 @@
 		"clsx": "^2.1.1",
 		"lucide-react": "^0.544.0",
 		"marked": "^16.3.0",
-		"matter-js": "^0.20.0",
 		"meshline": "^3.3.1",
 		"motion": "^12.23.22",
 		"next": "15.5.3",
@@ -50,6 +49,7 @@
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
 		"@tailwindcss/postcss": "^4.1.17",
+		"@types/md5": "^2.3.6",
 		"@types/node": "^20",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",

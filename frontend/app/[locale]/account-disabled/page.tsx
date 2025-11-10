@@ -1,6 +1,4 @@
 "use client";
-
-import FallingText from "@/components/FallingText";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
 
@@ -8,27 +6,22 @@ export default function AccountDisabled() {
 	const locale = useLocale();
 
 	const t = getTranslations(locale, {
+		title: {
+			"zh-Hant": "帳號已停用",
+			"zh-Hans": "账号已停用",
+			en: "Account Disabled"
+		},
 		message: {
-			"zh-Hant": "您的 帳號 已 被 停用，目前 無法 存取 系 統 功 能。",
-			"zh-Hans": "您的 账号 已 被 停用，目前 无法 访问 系 统 功 能。",
-			en: "Your account has been disabled and you cannot access the system at this time."
+			"zh-Hant": "沒有找到此帳號，請嘗試重新登入。",
+			"zh-Hans": "未找到此账号，请尝试重新登录。",
+			en: "Account not found, please try logging in again."
 		}
 	});
 
 	return (
-		<>
-			<div className="max-w-6xl h-screen mx-auto mt-64 -mb-64 px-4 text-center">
-				<FallingText
-					text={t.message}
-					highlightWords={["停用", "停用", "disabled"]}
-					trigger="click"
-					backgroundColor="transparent"
-					wireframes={false}
-					gravity={0.4}
-					fontSize="4rem"
-					mouseConstraintStiffness={0.9}
-				/>
-			</div>
-		</>
+		<div className="flex flex-col items-center justify-center h-full">
+			<h1 className="text-2xl font-bold mb-4">{t.title}</h1>
+			<p>{t.message}</p>
+		</div>
 	);
 }

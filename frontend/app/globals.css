@@ -10,7 +10,7 @@
 	--color-card-foreground: hsl(222.2 84% 4.9%);
 	--color-popover: hsl(0 0% 100%);
 	--color-popover-foreground: hsl(222.2 84% 4.9%);
-	--color-primary: hsl(221.2 83.2% 53.3%);
+	--color-primary: #4A5565;
 	--color-primary-foreground: hsl(210 40% 98%);
 	--color-secondary: hsl(210 40% 96.1%);
 	--color-secondary-foreground: hsl(222.2 47.4% 11.2%);
@@ -49,7 +49,7 @@
 
 @layer base {
 	* {
-		@apply border-gray-200 dark:border-gray-800;
+		border-color: var(--color-border);
 	}
 
 	body {
@@ -71,6 +71,16 @@
 			"Segoe UI Emoji",
 			"Segoe UI Symbol",
 			"Noto Color Emoji";
+	}
+
+	a[href],
+	button:not(:disabled) {
+		@apply cursor-pointer;
+	}
+
+	button:disabled,
+	a[aria-disabled="true"] {
+		@apply cursor-not-allowed opacity-50;
 	}
 }
 
