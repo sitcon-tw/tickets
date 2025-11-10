@@ -2,6 +2,10 @@
 
 import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -560,27 +564,29 @@ export default function FormsPage() {
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6">
-							<label className="block text-sm font-semibold text-gray-300 mb-3">{t.copyFrom}</label>
-							<select
+						<div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-6">
+							<Label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t.copyFrom}</Label>
+							<Select
 								value={copyFromEventId}
-								onChange={e => {
-									const eventId = e.target.value;
-									if (eventId && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
-										copyFormFromEvent(eventId);
+								onValueChange={value => {
+									if (value && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
+										copyFormFromEvent(value);
 									} else {
 										setCopyFromEventId("");
 									}
 								}}
-								className="admin-select w-full max-w-[400px]"
 							>
-								<option value="">{t.selectEvent}</option>
-								{allEvents.map(event => (
-									<option key={event.id} value={event.id}>
-										{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
-									</option>
-								))}
-							</select>
+								<SelectTrigger className="w-full max-w-[400px]">
+									<SelectValue placeholder={t.selectEvent} />
+								</SelectTrigger>
+								<SelectContent>
+									{allEvents.map(event => (
+										<SelectItem key={event.id} value={event.id}>
+											{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 					)}
 					{/* Questions List */}
@@ -594,9 +600,9 @@ export default function FormsPage() {
 
 						<div id="questions" className="flex flex-col gap-3">
 							{questions.length === 0 && (
-								<div className="text-center py-8 px-6 border border-dashed border-gray-700 rounded-lg bg-gray-800">
-									<p className="text-sm text-gray-400 m-0 mb-2">{t.currentlyNoFormFields}</p>
-									<p className="text-xs text-gray-500 m-0">{t.clickNewToAdd}</p>
+								<div className="text-center py-8 px-6 border border-dashed border-gray-400 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+									<p className="text-sm text-gray-600 dark:text-gray-400 m-0 mb-2">{t.currentlyNoFormFields}</p>
+									<p className="text-xs text-gray-500 dark:text-gray-500 m-0">{t.clickNewToAdd}</p>
 								</div>
 							)}
 							{questions.map((q, index) => {
@@ -642,33 +648,33 @@ export default function FormsPage() {
 												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
 												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 													<div>
-														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</Label>
+														<Input
 															type="text"
 															value={q.labelEn || ""}
 															placeholder="English Label"
 															onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-															className="admin-input w-full text-sm py-2 px-2.5"
+															className="w-full text-sm"
 														/>
 													</div>
 													<div>
-														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</Label>
+														<Input
 															type="text"
 															value={q.labelZhHant || ""}
 															placeholder="繁體中文標籤"
 															onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-															className="admin-input w-full text-sm py-2 px-2.5"
+															className="w-full text-sm"
 														/>
 													</div>
 													<div>
-														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</Label>
+														<Input
 															type="text"
 															value={q.labelZhHans || ""}
 															placeholder="简体中文标签"
 															onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-															className="admin-input w-full text-sm py-2 px-2.5"
+															className="w-full text-sm"
 														/>
 													</div>
 												</div>
@@ -679,14 +685,19 @@ export default function FormsPage() {
 												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
 												<div className="flex gap-2.5 flex-wrap items-end">
 													<div>
-														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</label>
-														<select value={q.type} onChange={e => updateQuestion(q.id, { type: e.target.value })} className="admin-select min-w-[140px] text-sm py-2 px-2.5">
-															{fieldTypes.map(ft => (
-																<option key={ft.value} value={ft.value}>
-																	{ft.label}
-																</option>
-															))}
-														</select>
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</Label>
+														<Select value={q.type} onValueChange={value => updateQuestion(q.id, { type: value })}>
+															<SelectTrigger className="min-w-[140px] text-sm">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent>
+																{fieldTypes.map(ft => (
+																	<SelectItem key={ft.value} value={ft.value}>
+																		{ft.label}
+																	</SelectItem>
+																))}
+															</SelectContent>
+														</Select>
 													</div>
 
 													<div className="flex gap-1.5 items-end">
@@ -718,25 +729,25 @@ export default function FormsPage() {
 												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
 												<div className="flex flex-col gap-2.5">
 													<div>
-														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</Label>
+														<Input
 															type="text"
 															value={q.description || ""}
 															placeholder="給自己或其他管理員加上註記..."
 															onChange={e => updateQuestion(q.id, { description: e.target.value })}
-															className="admin-input w-full text-sm py-2 px-2.5"
+															className="w-full text-sm"
 														/>
 													</div>
 
 													{(q.type === "text" || q.type === "textarea") && (
 														<div>
-															<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</label>
-															<input
+															<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</Label>
+															<Input
 																type="text"
 																value={q.validater || ""}
 																placeholder={t.validatorPlaceholder}
 																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-																className="admin-input w-full text-xs py-2 px-2.5 font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
+																className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
 															/>
 															<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
 														</div>
@@ -784,7 +795,7 @@ export default function FormsPage() {
 																		<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
 																	</div>
 																	<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
-																		<input
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt.en || "" : opt}
 																			placeholder="English"
@@ -797,9 +808,9 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
-																		<input
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
 																			placeholder="繁體中文"
@@ -812,9 +823,9 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
-																		<input
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
 																			placeholder="简体中文"
@@ -827,7 +838,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
 																	</div>
 																	<Button
@@ -868,20 +879,18 @@ export default function FormsPage() {
 												<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
 													{/* Enable filters toggle */}
 													<label className="flex items-center gap-2 cursor-pointer select-none">
-														<input
-															type="checkbox"
+														<Checkbox
 															checked={q.filters?.enabled || false}
-															onChange={e => {
+															onCheckedChange={checked => {
 																updateQuestion(q.id, {
 																	filters: {
-																		enabled: e.target.checked,
+																		enabled: checked === true,
 																		action: q.filters?.action || "display",
 																		operator: q.filters?.operator || "and",
 																		conditions: q.filters?.conditions || []
 																	}
 																});
 															}}
-															className="w-4 h-4 cursor-pointer"
 														/>
 														<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
 													</label>
@@ -891,41 +900,49 @@ export default function FormsPage() {
 															{/* Filter action and operator */}
 															<div className="flex gap-2.5 flex-wrap">
 																<div className="flex-1 min-w-[200px]">
-																	<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</label>
-																	<select
+																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</Label>
+																	<Select
 																		value={q.filters.action}
-																		onChange={e => {
+																		onValueChange={value => {
 																			updateQuestion(q.id, {
 																				filters: {
 																					...q.filters!,
-																					action: e.target.value as "display" | "hide"
+																					action: value as "display" | "hide"
 																				}
 																			});
 																		}}
-																		className="admin-select w-full text-sm py-2 px-2.5"
 																	>
-																		<option value="display">{t.actionDisplay}</option>
-																		<option value="hide">{t.actionHide}</option>
-																	</select>
+																		<SelectTrigger className="w-full text-sm">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="display">{t.actionDisplay}</SelectItem>
+																			<SelectItem value="hide">{t.actionHide}</SelectItem>
+																		</SelectContent>
+																	</Select>
 																</div>
 
 																<div className="flex-1 min-w-[200px]">
-																	<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</label>
-																	<select
+																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</Label>
+																	<Select
 																		value={q.filters.operator}
-																		onChange={e => {
+																		onValueChange={value => {
 																			updateQuestion(q.id, {
 																				filters: {
 																					...q.filters!,
-																					operator: e.target.value as "and" | "or"
+																					operator: value as "and" | "or"
 																				}
 																			});
 																		}}
-																		className="admin-select w-full text-sm py-2 px-2.5"
 																	>
-																		<option value="and">{t.operatorAnd}</option>
-																		<option value="or">{t.operatorOr}</option>
-																	</select>
+																		<SelectTrigger className="w-full text-sm">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="and">{t.operatorAnd}</SelectItem>
+																			<SelectItem value="or">{t.operatorOr}</SelectItem>
+																		</SelectContent>
+																	</Select>
 																</div>
 															</div>
 
@@ -936,13 +953,13 @@ export default function FormsPage() {
 																		{/* Condition type selector */}
 																		<div className="flex gap-2 items-start">
 																			<div className="flex-1">
-																				<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</label>
-																				<select
+																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</Label>
+																				<Select
 																					value={condition.type}
-																					onChange={e => {
+																					onValueChange={value => {
 																						const newConditions = [...(q.filters!.conditions || [])];
 																						newConditions[condIndex] = {
-																							type: e.target.value as "ticket" | "field" | "time"
+																							type: value as "ticket" | "field" | "time"
 																						};
 																						updateQuestion(q.id, {
 																							filters: {
@@ -951,12 +968,16 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																				>
-																					<option value="ticket">{t.typeTicket}</option>
-																					<option value="field">{t.typeField}</option>
-																					<option value="time">{t.typeTime}</option>
-																				</select>
+																					<SelectTrigger className="w-full text-xs">
+																						<SelectValue />
+																					</SelectTrigger>
+																					<SelectContent>
+																						<SelectItem value="ticket">{t.typeTicket}</SelectItem>
+																						<SelectItem value="field">{t.typeField}</SelectItem>
+																						<SelectItem value="time">{t.typeTime}</SelectItem>
+																					</SelectContent>
+																				</Select>
 																			</div>
 
 																			<Button
@@ -981,14 +1002,14 @@ export default function FormsPage() {
 																		{/* Condition-specific fields */}
 																		{condition.type === "ticket" && (
 																			<div>
-																				<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</label>
-																				<select
+																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</Label>
+																				<Select
 																					value={condition.ticketId || ""}
-																					onChange={e => {
+																					onValueChange={value => {
 																						const newConditions = [...(q.filters!.conditions || [])];
 																						newConditions[condIndex] = {
 																							...condition,
-																							ticketId: e.target.value
+																							ticketId: value
 																						};
 																						updateQuestion(q.id, {
 																							filters: {
@@ -997,29 +1018,32 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																				>
-																					<option value="">{t.selectTicket}...</option>
-																					{eventTickets.map(ticket => (
-																						<option key={ticket.id} value={ticket.id}>
-																							{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-																						</option>
-																					))}
-																				</select>
+																					<SelectTrigger className="w-full text-xs">
+																						<SelectValue placeholder={`${t.selectTicket}...`} />
+																					</SelectTrigger>
+																					<SelectContent>
+																						{eventTickets.map(ticket => (
+																							<SelectItem key={ticket.id} value={ticket.id}>
+																								{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																							</SelectItem>
+																						))}
+																					</SelectContent>
+																				</Select>
 																			</div>
 																		)}
 
 																		{condition.type === "field" && (
 																			<>
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</label>
-																					<select
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</Label>
+																					<Select
 																						value={condition.fieldId || ""}
-																						onChange={e => {
+																						onValueChange={value => {
 																							const newConditions = [...(q.filters!.conditions || [])];
 																							newConditions[condIndex] = {
 																								...condition,
-																								fieldId: e.target.value
+																								fieldId: value
 																							};
 																							updateQuestion(q.id, {
 																								filters: {
@@ -1028,29 +1052,32 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																					>
-																						<option value="">{t.selectField}...</option>
-																						{questions
-																							.filter(field => field.id !== q.id)
-																							.map(field => (
-																								<option key={field.id} value={field.id}>
-																									{field.labelEn || field.label}
-																								</option>
-																							))}
-																					</select>
+																						<SelectTrigger className="w-full text-xs">
+																							<SelectValue placeholder={`${t.selectField}...`} />
+																						</SelectTrigger>
+																						<SelectContent>
+																							{questions
+																								.filter(field => field.id !== q.id)
+																								.map(field => (
+																									<SelectItem key={field.id} value={field.id}>
+																										{field.labelEn || field.label}
+																									</SelectItem>
+																								))}
+																						</SelectContent>
+																					</Select>
 																				</div>
 
 																				<div className="flex gap-2">
 																					<div className="flex-1">
-																						<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</label>
-																						<select
+																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</Label>
+																						<Select
 																							value={condition.operator || "equals"}
-																							onChange={e => {
+																							onValueChange={value => {
 																								const newConditions = [...(q.filters!.conditions || [])];
 																								newConditions[condIndex] = {
 																									...condition,
-																									operator: e.target.value as "equals" | "filled" | "notFilled"
+																									operator: value as "equals" | "filled" | "notFilled"
 																								};
 																								updateQuestion(q.id, {
 																									filters: {
@@ -1059,18 +1086,22 @@ export default function FormsPage() {
 																									}
 																								});
 																							}}
-																							className="admin-select w-full text-xs py-[0.45rem] px-2.5"
 																						>
-																							<option value="equals">{t.operatorEquals}</option>
-																							<option value="filled">{t.operatorFilled}</option>
-																							<option value="notFilled">{t.operatorNotFilled}</option>
-																						</select>
+																							<SelectTrigger className="w-full text-xs">
+																								<SelectValue />
+																							</SelectTrigger>
+																							<SelectContent>
+																								<SelectItem value="equals">{t.operatorEquals}</SelectItem>
+																								<SelectItem value="filled">{t.operatorFilled}</SelectItem>
+																								<SelectItem value="notFilled">{t.operatorNotFilled}</SelectItem>
+																							</SelectContent>
+																						</Select>
 																					</div>
 
 																					{condition.operator === "equals" && (
 																						<div className="flex-1">
-																							<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</label>
-																							<input
+																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</Label>
+																							<Input
 																								type="text"
 																								value={condition.value || ""}
 																								placeholder={t.fieldValue}
@@ -1087,7 +1118,7 @@ export default function FormsPage() {
 																										}
 																									});
 																								}}
-																								className="admin-input w-full text-xs py-[0.45rem] px-2.5"
+																								className="w-full text-xs"
 																							/>
 																						</div>
 																					)}
