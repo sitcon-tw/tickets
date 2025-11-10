@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -526,38 +527,38 @@ export default function InvitesPage() {
 							</div>
 						)}
 						{!isLoading && (
-							<table className="w-full text-left border-collapse">
-								<thead>
-									<tr>
-										<th>{t.name}</th>
-										<th>{t.total}</th>
-										<th>{t.used}</th>
-										<th>{t.remaining}</th>
-										<th>{t.created}</th>
-										<th>{t.actions}</th>
-									</tr>
-								</thead>
-								<tbody>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t.name}</TableHead>
+										<TableHead>{t.total}</TableHead>
+										<TableHead>{t.used}</TableHead>
+										<TableHead>{t.remaining}</TableHead>
+										<TableHead>{t.created}</TableHead>
+										<TableHead>{t.actions}</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
 									{filteredTypes.map(type => {
 										const used = type.codes.filter(c => c.usedCount > 0).length;
 										const total = type.codes.length;
 										return (
-											<tr key={type.id}>
-												<td>{type.name}</td>
-												<td>{total}</td>
-												<td>{used}</td>
-												<td>{total - used}</td>
-												<td>{new Date(type.createdAt).toLocaleString()}</td>
-												<td>
+											<TableRow key={type.id}>
+												<TableCell>{type.name}</TableCell>
+												<TableCell>{total}</TableCell>
+												<TableCell>{used}</TableCell>
+												<TableCell>{total - used}</TableCell>
+												<TableCell>{new Date(type.createdAt).toLocaleString()}</TableCell>
+												<TableCell>
 													<Button variant="secondary" size="sm" onClick={() => openCodesModal(type.id)}>
 														檢視
 													</Button>
-												</td>
-											</tr>
+												</TableCell>
+											</TableRow>
 										);
 									})}
-								</tbody>
-							</table>
+								</TableBody>
+							</Table>
 						)}
 					</div>
 				</section>
@@ -775,54 +776,54 @@ export default function InvitesPage() {
 								)}
 							</div>
 							<div className="overflow-x-auto rounded-lg border">
-								<table className="w-full">
-									<thead>
-										<tr className="border-b bg-muted/50">
-											<th className="w-[50px] text-center p-2">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className="w-[50px] text-center">
 												<input 
 													type="checkbox" 
 													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} 
 													onChange={toggleSelectAll} 
 													className="cursor-pointer" 
 												/>
-											</th>
-											<th className="text-left p-2">{t.code}</th>
-											<th className="text-left p-2">{t.usage}</th>
-											<th className="text-left p-2">{t.limit}</th>
-											<th className="text-left p-2">{t.status}</th>
-											<th className="text-left p-2">{t.actions}</th>
-										</tr>
-									</thead>
-									<tbody>
+											</TableHead>
+											<TableHead>{t.code}</TableHead>
+											<TableHead>{t.usage}</TableHead>
+											<TableHead>{t.limit}</TableHead>
+											<TableHead>{t.status}</TableHead>
+											<TableHead>{t.actions}</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
 										{currentType?.codes.map(code => {
 											const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
 											const statusClass = status === "active" ? "active" : "ended";
 											return (
-												<tr key={code.id} className="border-b hover:bg-muted/50">
-													<td className="text-center p-2">
+												<TableRow key={code.id}>
+													<TableCell className="text-center">
 														<input 
 															type="checkbox" 
 															checked={selectedCodes.has(code.id)} 
 															onChange={() => toggleCodeSelection(code.id)} 
 															className="cursor-pointer" 
 														/>
-													</td>
-													<td className="p-2 font-mono text-sm">{code.code}</td>
-													<td className="p-2">{code.usedCount}</td>
-													<td className="p-2">{code.usageLimit}</td>
-													<td className="p-2">
+													</TableCell>
+													<TableCell className="font-mono text-sm">{code.code}</TableCell>
+													<TableCell>{code.usedCount}</TableCell>
+													<TableCell>{code.usageLimit}</TableCell>
+													<TableCell>
 														<span className={`status-badge ${statusClass}`}>{status}</span>
-													</td>
-													<td className="p-2">
+													</TableCell>
+													<TableCell>
 														<Button variant="destructive" size="sm" onClick={() => deleteInvitationCode(code.id)}>
 															{t.delete}
 														</Button>
-													</td>
-												</tr>
+													</TableCell>
+												</TableRow>
 											);
 										})}
-									</tbody>
-								</table>
+									</TableBody>
+								</Table>
 							</div>
 						</div>
 					</DialogContent>
