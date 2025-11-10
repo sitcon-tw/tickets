@@ -149,7 +149,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	}, [referralParam, eventId, t.loadFailed]);
 
 	const registeredContent = (
-		<>
+		<section className={`p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out] ${isSafari ? "border-[5px] border-[#5A738F]" : ""}`}>
 			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 			<div className="items-center justify-center flex">
 				<Button
