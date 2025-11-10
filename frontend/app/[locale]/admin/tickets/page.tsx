@@ -1,6 +1,7 @@
 "use client";
 
 import MarkdownContent from "@/components/MarkdownContent";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
@@ -311,15 +312,15 @@ export default function TicketsPage() {
 										<td>{ticket.quantity}</td>
 										<td>
 											<div className="flex gap-2 flex-wrap">
-												<button className="admin-button small secondary" onClick={() => openModal(ticket)}>
+												<Button variant="secondary" size="sm" onClick={() => openModal(ticket)}>
 													{t.editTicket}
-												</button>
-												<button className="admin-button small success" onClick={() => openLinkBuilder(ticket)}>
+												</Button>
+												<Button size="sm" onClick={() => openLinkBuilder(ticket)}>
 													{t.directLink}
-												</button>
-												<button className="admin-button small danger" onClick={() => deleteTicket(ticket.id)}>
+												</Button>
+												<Button variant="destructive" size="sm" onClick={() => deleteTicket(ticket.id)}>
 													{t.delete}
-												</button>
+												</Button>
 											</div>
 										</td>
 									</tr>
@@ -331,9 +332,9 @@ export default function TicketsPage() {
 			</section>
 
 			<section className="mt-8 text-center">
-				<button className="admin-button primary" onClick={() => openModal()}>
+				<Button onClick={() => openModal()}>
 					+ {t.addTicket}
-				</button>
+				</Button>
 			</section>
 
 			{showModal && (
@@ -341,9 +342,9 @@ export default function TicketsPage() {
 					<div className="admin-modal" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{editingTicket ? t.editTicket : t.addTicket}</h2>
-							<button className="admin-modal-close" onClick={closeModal}>
+							<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
 								✕
-							</button>
+							</Button>
 						</div>
 						<form onSubmit={saveTicket}>
 							<div className="flex flex-col gap-4">
@@ -354,7 +355,7 @@ export default function TicketsPage() {
 										{ key: "zh-Hant" as const, label: "繁體中文" },
 										{ key: "zh-Hans" as const, label: "简体中文" }
 									].map(tab => (
-										<button
+										<Button
 											key={tab.key}
 											type="button"
 											onClick={() => setActiveTab(tab.key)}
@@ -364,7 +365,7 @@ export default function TicketsPage() {
 											`}
 										>
 											{tab.label}
-										</button>
+										</Button>
 									))}
 								</div>
 
@@ -479,12 +480,12 @@ export default function TicketsPage() {
 								</label>
 							</div>
 							<div className="admin-modal-actions">
-								<button type="submit" className="admin-button warning">
+								<Button type="submit" variant="default">
 									{t.save}
-								</button>
-								<button type="button" className="admin-button secondary" onClick={closeModal}>
+								</Button>
+								<Button type="button" variant="secondary" onClick={closeModal}>
 									{t.cancel}
-								</button>
+								</Button>
 							</div>
 						</form>
 					</div>
@@ -496,9 +497,9 @@ export default function TicketsPage() {
 					<div className="admin-modal" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{t.linkBuilder}</h2>
-							<button className="admin-modal-close" onClick={() => setShowLinkModal(false)}>
+							<Button variant="ghost" size="icon" onClick={() => setShowLinkModal(false)} className="h-8 w-8">
 								✕
-							</button>
+							</Button>
 						</div>
 						<div className="flex flex-col gap-4">
 							<div className="admin-form-group">
@@ -517,16 +518,16 @@ export default function TicketsPage() {
 								<label className="admin-form-label">{t.generatedLink}</label>
 								<div className="flex gap-2">
 									<input type="text" value={generateDirectLink()} readOnly className="admin-input flex-1 font-mono text-[0.9rem]" />
-									<button className="admin-button primary" onClick={copyToClipboard}>
+									<Button onClick={copyToClipboard}>
 										{t.copyLink}
-									</button>
+									</Button>
 								</div>
 							</div>
 						</div>
 						<div className="admin-modal-actions">
-							<button type="button" className="admin-button secondary" onClick={() => setShowLinkModal(false)}>
+							<Button type="button" variant="secondary" onClick={() => setShowLinkModal(false)}>
 								{t.close}
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>

@@ -2,6 +2,7 @@
 
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
@@ -233,16 +234,16 @@ export default function EventsPage() {
 												<td>
 													<span className={`status-badge ${status.class}`}>{status.label}</span>
 												</td>
-												<td>
-													<div className="flex gap-2 flex-wrap">
-														<button className="admin-button small secondary" onClick={() => openModal(event)}>
-															{t.edit}
-														</button>
-														<button className="admin-button small danger" onClick={() => deleteEvent(event.id)}>
-															{t.delete}
-														</button>
-													</div>
-												</td>
+											<td>
+												<div className="flex gap-2 flex-wrap">
+													<Button variant="secondary" size="sm" onClick={() => openModal(event)}>
+														{t.edit}
+													</Button>
+													<Button variant="destructive" size="sm" onClick={() => deleteEvent(event.id)}>
+														{t.delete}
+													</Button>
+												</div>
+											</td>
 											</tr>
 										);
 									})}
@@ -253,21 +254,21 @@ export default function EventsPage() {
 				</section>
 
 				<section className="mt-8 text-center">
-					<button className="admin-button primary" onClick={() => openModal()}>
+					<Button onClick={() => openModal()}>
 						+ {t.addEvent}
-					</button>
+					</Button>
 				</section>
 
 				{showModal && (
 					<div className="admin-modal-overlay" onClick={closeModal}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
-								<button className="admin-modal-close" onClick={closeModal}>
-									✕
-								</button>
-							</div>
-							<form onSubmit={saveEvent}>
+					<div className="admin-modal" onClick={e => e.stopPropagation()}>
+						<div className="admin-modal-header">
+							<h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
+							<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
+								✕
+							</Button>
+						</div>
+						<form onSubmit={saveEvent}>
 								<div className="flex flex-col gap-4 p-6">
 									{/* Language Tabs */}
 									<div className="flex gap-2 border-b-2 border-gray-700 dark:border-gray-800 mb-4">
@@ -276,18 +277,19 @@ export default function EventsPage() {
 											{ key: "zh-Hant" as const, label: "繁體中文" },
 											{ key: "zh-Hans" as const, label: "简体中文" }
 										].map(tab => (
-											<button
+											<Button
 												key={tab.key}
 												type="button"
+												variant="ghost"
 												onClick={() => setActiveTab(tab.key)}
-												className={`px-4 py-2 border-none transition-all duration-200 cursor-pointer ${
+												className={`px-4 py-2 rounded-none transition-all duration-200 ${
 													activeTab === tab.key
 														? "bg-gray-600 dark:bg-gray-700 border-b-2 border-blue-500 dark:border-blue-400 text-gray-100 dark:text-gray-200 font-bold"
-														: "bg-transparent text-gray-400 dark:text-gray-500 font-normal"
+														: "text-gray-400 dark:text-gray-500 font-normal"
 												}`}
 											>
 												{tab.label}
-											</button>
+											</Button>
 										))}
 									</div>
 
@@ -385,17 +387,17 @@ export default function EventsPage() {
 											<label className="admin-form-label">{t.endDate}</label>
 											<input name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} className="admin-input" />
 										</div>
-									</div>
 								</div>
-								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button warning">
-										{t.save}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={closeModal}>
-										{t.cancel}
-									</button>
-								</div>
-							</form>
+							</div>
+							<div className="admin-modal-actions">
+								<Button type="submit" variant="default">
+									{t.save}
+								</Button>
+								<Button type="button" variant="secondary" onClick={closeModal}>
+									{t.cancel}
+								</Button>
+							</div>
+						</form>
 						</div>
 					</div>
 				)}

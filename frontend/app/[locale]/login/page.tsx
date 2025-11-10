@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
@@ -11,15 +12,11 @@ import React, { useEffect, useState } from "react";
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
 		<div className="my-4 mx-auto">
-			<button
+			<Button
 				onClick={onClick}
 				disabled={disabled}
-				className={`
-					group relative font-inherit text-lg bg-gray-800 text-white px-4 py-2.5 
-					flex items-center border-2 border-gray-600 rounded-lg overflow-hidden 
-					transition-all duration-200
-					${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:scale-95 active:scale-95"}
-				`}
+				size="lg"
+				className="group relative overflow-hidden"
 			>
 				<div className="svg-wrapper-1">
 					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
@@ -42,7 +39,7 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">
 					{children}
 				</span>
-			</button>
+			</Button>
 			<style jsx>{`
 				@keyframes fly-1 {
 					from { transform: translateY(0.1em); }

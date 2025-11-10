@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/types/api";
@@ -340,7 +341,7 @@ export default function VerifyPage() {
 
 	return (
 		<>
-			<div className="min-h-screen flex items-center justify-center p-4">
+			<div className="flex items-center justify-center p-4">
 				<div className="w-full max-w-md">
 					<div className="p-8">
 						{step === "phone" && !isVerified && (
@@ -372,27 +373,38 @@ export default function VerifyPage() {
 								</div>
 
 								<div className="flex justify-center">
-									<div className={`send-button-container ${sendingCode || !phoneNumber ? "disabled" : ""}`}>
-										<button onClick={handleSendCode} disabled={sendingCode || !phoneNumber}>
-											<div className="svg-wrapper-1">
-												<div className="svg-wrapper">
-													{sendingCode ? (
-														<Spinner size="sm" />
-													) : (
-														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24}>
-															<path fill="none" d="M0 0h24v24H0z" />
-															<path
-																fill="currentColor"
-																d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
-															/>
-														</svg>
-													)}
-												</div>
+									<Button
+										onClick={handleSendCode}
+										disabled={sendingCode || !phoneNumber}
+										size="lg"
+										className="group relative overflow-hidden"
+									>
+										<div className="svg-wrapper-1">
+											<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
+												{sendingCode ? (
+													<Spinner size="sm" />
+												) : (
+													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24} className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110">
+														<path fill="none" d="M0 0h24v24H0z" />
+														<path
+															fill="currentColor"
+															d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"
+														/>
+													</svg>
+												)}
 											</div>
-											<span>{sendingCode ? t.sendingCode : t.sendCode}</span>
-										</button>
-									</div>
+										</div>
+										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">
+											{sendingCode ? t.sendingCode : t.sendCode}
+										</span>
+									</Button>
 								</div>
+								<style jsx>{`
+									@keyframes fly-1 {
+										from { transform: translateY(0.1em); }
+										to { transform: translateY(-0.1em); }
+									}
+								`}</style>
 							</>
 						)}
 
@@ -445,46 +457,49 @@ export default function VerifyPage() {
 									)}
 								</div>
 
-								<div className="text-center mb-4">
-									<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
-									{countdown > 0 ? (
-										<p className="text-gray-500 text-sm">
-											{t.resendIn}{" "}
-											<span className="text-blue-400 font-medium">
-												{countdown}
-												{t.resendSeconds}
-											</span>
-										</p>
-									) : (
-										<button
-											onClick={handleResend}
-											disabled={sendingCode}
-											className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors underline cursor-pointer disabled:opacity-50"
-										>
-											{sendingCode ? "Sending..." : t.resendCode}
-										</button>
-									)}
-								</div>
-
-								<button onClick={handleBack} className="w-full text-gray-400 hover:text-white text-sm transition-colors flex items-center justify-center cursor-pointer">
-									<ArrowLeft size={16} className="mr-2" />
-									{t.changePhoneNumber}
-								</button>
-							</>
-						)}
-
-						{isVerified && (
-							<div className="text-center py-4">
-								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
-									<Check className="w-10 h-10 text-green-400" />
-								</div>
-								<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
-								<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
-								<button onClick={handleContinue} className="w-full text-white font-medium rounded-md transition-all duration-200 flex items-center justify-center py-3 px-6 gap-2">
-									{t.continue}
-									<ArrowRight className="w-5 h-5" />
-								</button>
+							<div className="text-center mb-4">
+								<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
+								{countdown > 0 ? (
+									<p className="text-gray-500 text-sm">
+										{t.resendIn}{" "}
+										<span className="text-blue-400 font-medium">
+											{countdown}
+											{t.resendSeconds}
+										</span>
+									</p>
+								) : (
+									<Button
+										variant="link"
+										onClick={handleResend}
+										disabled={sendingCode}
+										className="text-blue-400 hover:text-blue-300 underline h-auto p-0"
+									>
+										{sendingCode ? "Sending..." : t.resendCode}
+									</Button>
+								)}
 							</div>
+
+							<Button
+								variant="ghost"
+								onClick={handleBack}
+								className="w-full text-gray-400 hover:text-white"
+							>
+								<ArrowLeft size={16} />
+								{t.changePhoneNumber}
+							</Button>
+						</>
+				)}						{isVerified && (
+						<div className="text-center py-4">
+							<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
+								<Check className="w-10 h-10 text-green-400" />
+							</div>
+							<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
+							<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
+							<Button onClick={handleContinue} className="w-full">
+								{t.continue}
+								<ArrowRight className="w-5 h-5" />
+							</Button>
+						</div>
 						)}
 					</div>
 				</div>

@@ -2,6 +2,7 @@
 
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/form/FormField";
 import Checkbox from "@/components/input/Checkbox";
 import Text from "@/components/input/Text";
@@ -316,12 +317,10 @@ export default function FormPage() {
 		<>
 			<main>
 				<section className="mt-24 max-w-3xl mx-auto px-4">
-					<button onClick={() => router.back()} className="button mb-8">
-						<div className="flex items-center">
-							<ChevronLeft />
-							<p>{t.reselectTicket}</p>
-						</div>
-					</button>
+					<Button variant="outline" onClick={() => router.back()} className="mb-8">
+						<ChevronLeft />
+						<p>{t.reselectTicket}</p>
+					</Button>
 					<h1 className="my-4 text-4xl">{t.fillForm}</h1>
 
 					{loading && (
@@ -382,14 +381,13 @@ export default function FormPage() {
 								</a>
 							</div>
 
-							<button
+							<Button
 								type="submit"
-								className="button cursor-pointer mt-8 self-center inline-flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:pointer-events-none"
 								disabled={isSubmitting}
 							>
 								{isSubmitting && <Spinner size="sm" />}
 								{t.submitRegistration}
-							</button>
+							</Button>
 						</form>
 					)}
 				</section>

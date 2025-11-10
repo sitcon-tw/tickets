@@ -3,6 +3,7 @@
 import Lanyard from "@/components/Lanyard";
 import QRCodePopup from "@/components/QRCodePopup";
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
@@ -152,7 +153,7 @@ export default function Success() {
 
 	return (
 		<>
-			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] min-h-screen max-w-full overflow-hidden">
+			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] max-w-full overflow-hidden">
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
@@ -195,36 +196,34 @@ export default function Success() {
 						</div>
 						<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
 						{registrationId && registrationTime && (
-							<button onClick={() => setShowQRCode(true)} className="button flex items-center gap-2 mb-2">
+							<Button onClick={() => setShowQRCode(true)} className="flex items-center gap-2 mb-2">
 								<CheckCheck size={24} /> {t.viewQRCode}
-							</button>
+							</Button>
 						)}
 						<div className="border-t-2 border-gray-700" />
 						<div className={`gap-4 mt-2 ${locale.includes("zh") && "flex flex-wrap"}`}>
 							{registrationId && (
-								<button
+								<Button
 									onClick={() => {
 										setViewRegLoading(true);
 										router.push(`/my-registration/${registrationId}`);
 									}}
-									className={`button ${!locale.includes("zh") && "mb-4"}`}
 								>
 									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
-								</button>
+								</Button>
 							)}
-							<button
+							<Button
 								onClick={() => {
 									setViewRefLoading(true);
 									router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
 								}}
-								className="button"
 							>
 								{viewRefLoading && <Spinner size="sm" />} {t.viewReferralStatus}
-							</button>
+							</Button>
 						</div>
-						<button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)} className="button">
+						<Button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>
 							<ArrowLeft size={24} />
-						</button>
+						</Button>
 					</div>
 				</section>
 				<div className="relative overflow-hidden hidden sm:block">

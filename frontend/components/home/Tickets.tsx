@@ -4,6 +4,7 @@ import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
@@ -301,26 +302,25 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<p className="remain">
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 							</p>
-						</div>
-						<div className="content">
-							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
-							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
-							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
-						</div>
 					</div>
-				) : null}
-				<button
-					className={`button inline-flex items-center gap-2 transition-opacity duration-200 ${
-						isSubmitting ? "opacity-70" : ""
-					} ${!canRegister || isSubmitting ? "cursor-not-allowed pointer-events-none" : "cursor-pointer"}`}
-					onClick={() => handleConfirmRegistration()}
-				>
-					{isSubmitting && <Spinner size="sm" />}
-					{canRegister ? t.confirm : t.cannotRegister}
-				</button>
-			</Confirm>
-
-			{/* Animation ticket */}
+					<div className="content">
+						<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
+						<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
+						{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
+					</div>
+				</div>
+			) : null}
+			<Button
+				className={`inline-flex items-center gap-2 transition-opacity duration-200 ${
+					isSubmitting ? "opacity-70" : ""
+				}`}
+				disabled={!canRegister || isSubmitting}
+				onClick={() => handleConfirmRegistration()}
+			>
+				{isSubmitting && <Spinner size="sm" />}
+				{canRegister ? t.confirm : t.cannotRegister}
+			</Button>
+		</Confirm>			{/* Animation ticket */}
 			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
 				{selectedTicket ? (
 					<>

@@ -2,6 +2,7 @@
 
 import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
 import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
@@ -86,42 +87,37 @@ export default function Nav({ children }: NavProps) {
 		};
 	}, []);
 
-	if (pathname.includes("/admin")) {
-		return null;
-	}
-
 	return (
-		<nav className="fixed top-0 left-0 z-1000 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors">
-			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-3">
+		<nav className="fixed top-0 left-0 z-1000 w-full bg-gray-600 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-800 transition-colors text-gray-200 dark:text-gray-300">
+			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-4">
 				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity">
-					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" className="dark:invert" />
+					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
 				</a>
 				<div className="flex items-center gap-4">
 					{session.status === "authenticated" ? (
 						<>
-							<span className="text-sm text-gray-700 dark:text-gray-300">{userDisplayName}</span>
+							<span className="text-sm  dark:text-gray-300">{userDisplayName}</span>
 							{hasAdminAccess && (
-								<a href={linkBuilder("/admin/")} className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								<a href={linkBuilder("/admin/")} className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 									{t.adminPage}
 								</a>
 							)}
-							<button
-								type="button"
+							<Button variant="ghost" size="sm"
 								onClick={handleLogout}
 								disabled={isLoggingOut}
 								className={cn(
-									"text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
+									"text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
 									isLoggingOut && "opacity-50 cursor-not-allowed"
 								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
-							</button>
+							</Button>
 						</>
 					) : (
 						<a
 							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+							className="text-sm  dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 						>
 							{t.login}
 						</a>

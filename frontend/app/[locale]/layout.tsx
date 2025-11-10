@@ -1,5 +1,3 @@
-import Footer from "@/components/Footer";
-import Nav from "@/components/Nav";
 import { routing } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -20,9 +18,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 
 	return (
 		<NextIntlClientProvider messages={messages}>
-			<Nav />
 			{children}
-			<Footer />
 		</NextIntlClientProvider>
 	);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminRegistrationsAPI } from "@/lib/api/endpoints";
@@ -316,49 +317,48 @@ export default function RegistrationsPage() {
 					</div>
 				</section>
 
-				<section className="admin-controls my-4">
-					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
-					<select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select">
-						<option value="">{t.allStatus}</option>
-						<option value="confirmed">{t.confirmed}</option>
-						<option value="pending">{t.pending}</option>
-						<option value="cancelled">{t.cancelled}</option>
-					</select>
-					<button onClick={loadRegistrations} className="admin-button secondary">
-						↻ {t.refresh}
-					</button>
-					<button onClick={syncToSheets} className="admin-button primary">
-						📥 {t.syncSheets}
-					</button>
-					{selectedRegistrations.size > 0 && (
-						<>
-							<button onClick={exportSelected} className="admin-button success">
-								📤 {t.exportSelected} ({selectedRegistrations.size})
-							</button>
-							<button onClick={() => setSelectedRegistrations(new Set())} className="admin-button danger">
-								✕ {t.deselectAll}
-							</button>
-						</>
-					)}
-				</section>
-
-				<section className="admin-controls mb-4">
+			<section className="admin-controls my-4">
+				<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
+				<select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select">
+					<option value="">{t.allStatus}</option>
+					<option value="confirmed">{t.confirmed}</option>
+					<option value="pending">{t.pending}</option>
+					<option value="cancelled">{t.cancelled}</option>
+				</select>
+				<Button onClick={loadRegistrations} variant="secondary">
+					↻ {t.refresh}
+				</Button>
+				<Button onClick={syncToSheets}>
+					📥 {t.syncSheets}
+				</Button>
+				{selectedRegistrations.size > 0 && (
+					<>
+						<Button onClick={exportSelected} variant="default">
+							📤 {t.exportSelected} ({selectedRegistrations.size})
+						</Button>
+						<Button onClick={() => setSelectedRegistrations(new Set())} variant="destructive">
+							✕ {t.deselectAll}
+						</Button>
+					</>
+				)}
+			</section>				<section className="admin-controls mb-4">
 					<label className="text-sm font-medium">{t.columns}</label>
 					<div className="flex flex-wrap gap-2">
 						{columnDefs.map(col => (
-							<button
+							<Button
 								key={col.id}
-								data-on={activeColumns.has(col.id) ? "true" : "false"}
+								size="sm"
+								variant={activeColumns.has(col.id) ? "default" : "outline"}
 								onClick={() => {
 									const newCols = new Set(activeColumns);
 									if (newCols.has(col.id)) newCols.delete(col.id);
 									else newCols.add(col.id);
 									setActiveColumns(newCols);
 								}}
-								className={`admin-button small rounded-full text-xs py-1 px-3 ${activeColumns.has(col.id) ? "bg-gray-600 dark:bg-gray-700 opacity-100" : "bg-gray-800 dark:bg-gray-900 opacity-50"}`}
+								className={`rounded-full text-xs py-1 px-3 ${!activeColumns.has(col.id) && "opacity-50"}`}
 							>
 								{col.label}
-							</button>
+							</Button>
 						))}
 					</div>
 				</section>
@@ -402,15 +402,15 @@ export default function RegistrationsPage() {
 												if (!col) return null;
 												const val = col.accessor(r);
 												const statusClass = r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : "";
-												return <td key={cid}>{cid === "status" ? <span className={`status-badge ${statusClass}`}>{val}</span> : <div className="admin-truncate">{val}</div>}</td>;
-											})}
-											<td className="text-center">
-												<button onClick={() => openDetailModal(r)} className="admin-button small primary">
-													👁 {t.viewDetails}
-												</button>
-											</td>
-										</tr>
-									))}
+											return <td key={cid}>{cid === "status" ? <span className={`status-badge ${statusClass}`}>{val}</span> : <div className="admin-truncate">{val}</div>}</td>;
+										})}
+										<td className="text-center">
+											<Button size="sm" onClick={() => openDetailModal(r)}>
+												👁 {t.viewDetails}
+											</Button>
+										</td>
+									</tr>
+								))}
 								</tbody>
 							</table>
 						)}
@@ -422,22 +422,22 @@ export default function RegistrationsPage() {
 					<div className="my-4 flex justify-between items-center flex-wrap gap-3">
 						<div className="text-sm opacity-75">
 							{sortedAndFiltered.length} {t.total} {selectedRegistrations.size > 0 && `• ${selectedRegistrations.size} ${t.selected}`}
-						</div>
-						{totalPages > 1 && (
-							<div className="flex items-center gap-2">
-								<button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="admin-button small secondary disabled:opacity-50 disabled:cursor-not-allowed">
-									←
-								</button>
-								<span className="text-sm">
-									{t.page} {page} {t.of} {totalPages}
-								</span>
-								<button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="admin-button small secondary disabled:opacity-50 disabled:cursor-not-allowed">
-									→
-								</button>
-								<select
-									value={pageSize}
-									onChange={e => {
-										setPageSize(Number(e.target.value));
+					</div>
+					{totalPages > 1 && (
+						<div className="flex items-center gap-2">
+							<Button size="sm" variant="secondary" onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}>
+								←
+							</Button>
+							<span className="text-sm">
+								{t.page} {page} {t.of} {totalPages}
+							</span>
+							<Button size="sm" variant="secondary" onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}>
+								→
+							</Button>
+							<select
+								value={pageSize}
+								onChange={e => {
+									setPageSize(Number(e.target.value));
 										setPage(1);
 									}}
 									className="admin-select py-1 px-2 text-xs ml-2"
@@ -455,16 +455,16 @@ export default function RegistrationsPage() {
 
 			{/* Detail Modal */}
 			{showDetailModal && selectedRegistration && (
-				<div className="admin-modal-overlay" onClick={closeDetailModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.registrationDetails}</h2>
-							<button className="admin-modal-close" onClick={closeDetailModal}>
-								✕
-							</button>
-						</div>
+			<div className="admin-modal-overlay" onClick={closeDetailModal}>
+				<div className="admin-modal" onClick={e => e.stopPropagation()}>
+					<div className="admin-modal-header">
+						<h2 className="admin-modal-title">{t.registrationDetails}</h2>
+						<Button variant="ghost" size="icon" onClick={closeDetailModal} className="h-8 w-8">
+							✕
+						</Button>
+					</div>
 
-						<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-4">
 							<div>
 								<div className="admin-stat-label">Ticket ID</div>
 								<div className="font-mono text-sm">{ticketHashes[selectedRegistration.id]}</div>
@@ -525,19 +525,19 @@ export default function RegistrationsPage() {
 												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
 											</div>
 										))}
-									</div>
 								</div>
-							)}
-							{/* Delete Personal Data Button */}
-							<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
-								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger w-full">
-									🗑️ {t.deleteData}
-								</button>
-								<p className="text-xs opacity-60 mt-2 text-center">
-									⚠️{" "}
-									{locale === "zh-Hant"
-										? "此操作無法復原，符合個人資料保護法"
-										: locale === "zh-Hans"
+							</div>
+						)}
+						{/* Delete Personal Data Button */}
+						<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
+							<Button variant="destructive" onClick={() => deleteRegistration(selectedRegistration)} className="w-full">
+								🗑️ {t.deleteData}
+							</Button>
+							<p className="text-xs opacity-60 mt-2 text-center">
+								⚠️{" "}
+								{locale === "zh-Hant"
+									? "此操作無法復原，符合個人資料保護法"
+									: locale === "zh-Hans"
 											? "此操作无法复原，符合個人資料保護法"
 											: "This action is irreversible and complies with privacy law"}
 								</p>

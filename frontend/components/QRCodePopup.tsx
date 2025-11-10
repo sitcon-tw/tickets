@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import generateHash from "@/lib/utils/hash";
 import { ExternalLink, TriangleAlert, X } from "lucide-react";
@@ -45,9 +46,9 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
 			<div className="relative bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4" onClick={e => e.stopPropagation()}>
-				<button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors" aria-label="Close">
+				<Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4" aria-label="Close">
 					<X size={24} />
-				</button>
+				</Button>
 
 				<div className="flex flex-col items-center gap-4">
 					<h2 className="text-2xl font-bold">{t.title}</h2>

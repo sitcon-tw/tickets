@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -494,12 +495,12 @@ export default function InvitesPage() {
 				<h1 className="text-3xl font-bold">{t.title}</h1>
 				<div className="h-8" />
 				<section className="admin-controls">
-					<button onClick={() => setShowModal(true)} className="admin-button primary">
+					<Button onClick={() => setShowModal(true)}>
 						➕ {t.add}
-					</button>
-					<button onClick={() => setShowBulkImportModal(true)} className="admin-button secondary">
+					</Button>
+					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
 						📥 {t.bulkImport}
-					</button>
+					</Button>
 					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
 				</section>
 
@@ -534,9 +535,9 @@ export default function InvitesPage() {
 												<td>{total - used}</td>
 												<td>{new Date(type.createdAt).toLocaleString()}</td>
 												<td>
-													<button className="admin-button small secondary" onClick={() => openCodesModal(type.id)}>
+													<Button variant="secondary" size="sm" onClick={() => openCodesModal(type.id)}>
 														檢視
-													</button>
+													</Button>
 												</td>
 											</tr>
 										);
@@ -552,9 +553,9 @@ export default function InvitesPage() {
 						<div className="admin-modal" onClick={e => e.stopPropagation()}>
 							<div className="admin-modal-header">
 								<h2 className="admin-modal-title">{t.add}</h2>
-								<button className="admin-modal-close" onClick={() => setShowModal(false)}>
+								<Button variant="ghost" size="icon" onClick={() => setShowModal(false)} className="h-8 w-8">
 									✕
-								</button>
+								</Button>
 							</div>
 							<form onSubmit={createInvitationCodes}>
 								<div className="flex flex-col gap-4">
@@ -599,12 +600,12 @@ export default function InvitesPage() {
 									</div>
 								</div>
 								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button success">
+									<Button type="submit">
 										{t.save}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={() => setShowModal(false)}>
+									</Button>
+									<Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
 										{t.cancel}
-									</button>
+									</Button>
 								</div>
 							</form>
 						</div>
@@ -616,9 +617,9 @@ export default function InvitesPage() {
 						<div className="admin-modal" onClick={e => e.stopPropagation()}>
 							<div className="admin-modal-header">
 								<h2 className="admin-modal-title">{t.bulkImportTitle}</h2>
-								<button className="admin-modal-close" onClick={() => setShowBulkImportModal(false)}>
+								<Button variant="ghost" size="icon" onClick={() => setShowBulkImportModal(false)} className="h-8 w-8">
 									✕
-								</button>
+								</Button>
 							</div>
 							<form onSubmit={handleBulkImport}>
 								<div className="flex flex-col gap-4">
@@ -676,12 +677,12 @@ export default function InvitesPage() {
 									</div>
 								</div>
 								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button success" disabled={isImporting}>
+									<Button type="submit" disabled={isImporting}>
 										{isImporting ? "匯入中..." : t.import}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
+									</Button>
+									<Button type="button" variant="secondary" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
 										{t.cancel}
-									</button>
+									</Button>
 								</div>
 							</form>
 						</div>
@@ -696,25 +697,25 @@ export default function InvitesPage() {
 									{t.codes} - {currentType.name}
 									{selectedCodes.size > 0 && <span className="text-[0.85rem] opacity-70 ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
 								</h2>
-								<button className="admin-modal-close" onClick={() => setShowCodesModal(false)}>
+								<Button variant="ghost" size="icon" onClick={() => setShowCodesModal(false)} className="h-8 w-8">
 									✕
-								</button>
+								</Button>
 							</div>
 							<div className="admin-controls">
-								<button className="admin-button small secondary" onClick={toggleSelectAll}>
+								<Button variant="secondary" size="sm" onClick={toggleSelectAll}>
 									{selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
-								</button>
+								</Button>
 								{selectedCodes.size > 0 && (
 									<>
-										<button className="admin-button small primary" onClick={downloadSelectedCodesAsTxt}>
+										<Button size="sm" onClick={downloadSelectedCodesAsTxt}>
 											📥 {t.downloadTxt} ({selectedCodes.size})
-										</button>
-										<button className="admin-button small primary" onClick={() => setShowEmailModal(true)}>
+										</Button>
+										<Button size="sm" onClick={() => setShowEmailModal(true)}>
 											📧 {t.sendEmail} ({selectedCodes.size})
-										</button>
-										<button className="admin-button small danger" onClick={bulkDeleteInvitationCodes}>
+										</Button>
+										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
 											{t.bulkDelete} ({selectedCodes.size})
-										</button>
+										</Button>
 									</>
 								)}
 							</div>
@@ -748,9 +749,9 @@ export default function InvitesPage() {
 														<span className={`status-badge ${statusClass}`}>{status}</span>
 													</td>
 													<td>
-														<button className="admin-button small danger" onClick={() => deleteInvitationCode(code.id)}>
+														<Button variant="destructive" size="sm" onClick={() => deleteInvitationCode(code.id)}>
 															{t.delete}
-														</button>
+														</Button>
 													</td>
 												</tr>
 											);
@@ -767,9 +768,9 @@ export default function InvitesPage() {
 						<div className="admin-modal" onClick={e => e.stopPropagation()}>
 							<div className="admin-modal-header">
 								<h2 className="admin-modal-title">{t.sendEmail}</h2>
-								<button className="admin-modal-close" onClick={() => setShowEmailModal(false)}>
+								<Button variant="ghost" size="icon" onClick={() => setShowEmailModal(false)} className="h-8 w-8">
 									✕
-								</button>
+								</Button>
 							</div>
 							<div className="flex flex-col gap-4 p-4">
 								<p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
@@ -779,12 +780,12 @@ export default function InvitesPage() {
 								</div>
 							</div>
 							<div className="admin-modal-actions">
-								<button type="button" className="admin-button success" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
+								<Button type="button" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
 									{isSendingEmail ? "發送中..." : t.send}
-								</button>
-								<button type="button" className="admin-button secondary" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
+								</Button>
+								<Button type="button" variant="secondary" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
 									{t.cancel}
-								</button>
+								</Button>
 							</div>
 						</div>
 					</div>

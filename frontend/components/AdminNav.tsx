@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -222,9 +223,9 @@ function AdminNav() {
 		<>
 			{/* Mobile Header */}
 			<div className={`fixed top-0 left-0 right-0 bg-gray-950 p-4 z-999 items-center justify-between border-b border-gray-800 ${isMobile ? "flex" : "hidden"}`}>
-				<button className="bg-transparent border-none text-gray-100 cursor-pointer p-2" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+				<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 					<Menu size={24} />
-				</button>
+				</Button>
 				<div className="text-xl font-semibold">{t.activityName}</div>
 				<div className="w-10" /> {/* Spacer for centering */}
 			</div>
@@ -238,9 +239,9 @@ function AdminNav() {
 			>
 				{/* Close button for mobile */}
 				{isMobile && (
-					<button className="absolute top-4 right-4 bg-transparent border-none text-gray-100 cursor-pointer p-2" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={24} />
-					</button>
+					</Button>
 				)}
 				<div className="text-xl">{t.activityName}</div>
 				<div className="text-3xl mt-2">{t.systemTitle}</div>

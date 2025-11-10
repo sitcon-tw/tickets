@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
@@ -144,12 +145,12 @@ export default function ReferralStatus() {
 	if (error) {
 		return (
 			<>
-				<div className="min-h-screen flex items-center justify-center">
+				<div className="flex items-center justify-center">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
-						<button onClick={() => router.push("/")} className="button">
+						<Button onClick={() => router.push("/")}>
 							{t.backToSuccess}
-						</button>
+						</Button>
 					</div>
 				</div>
 			</>
@@ -159,11 +160,11 @@ export default function ReferralStatus() {
 	return (
 		<>
 			{loading ? (
-				<div className="min-h-screen flex items-center justify-center">
+				<div className="flex items-center justify-center">
 					<PageSpinner />
 				</div>
 			) : (
-				<main className="min-h-screen pt-20 pb-10 px-4 mt-32">
+				<main className="pt-20 pb-10 px-4 mt-32">
 					<div className="max-w-6xl mx-auto">
 						<h1 className="text-4xl font-bold mb-8">{t.title}</h1>
 
@@ -206,20 +207,20 @@ export default function ReferralStatus() {
 												</tr>
 											))}
 										</tbody>
-									</table>
-								</div>
-							)}
-						</div>
-
-						{/* Back Button */}
-						<div className="mt-8">
-							<button onClick={() => router.back()} className="button">
-								{t.backToSuccess}
-							</button>
-						</div>
+								</table>
+							</div>
+						)}
 					</div>
-				</main>
-			)}
-		</>
-	);
+
+					{/* Back Button */}
+					<div className="mt-8">
+						<Button onClick={() => router.back()}>
+							{t.backToSuccess}
+						</Button>
+					</div>
+				</div>
+			</main>
+		)}
+	</>
+);
 }

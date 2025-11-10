@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
@@ -193,9 +194,9 @@ export default function UsersPage() {
 											</td>
 											<td>{new Date(user.createdAt).toLocaleString()}</td>
 											<td>
-												<button className="admin-button small secondary" onClick={() => openEditModal(user)}>
+												<Button variant="secondary" size="sm" onClick={() => openEditModal(user)}>
 													{t.edit}
-												</button>
+												</Button>
 											</td>
 										</tr>
 									);
@@ -211,9 +212,9 @@ export default function UsersPage() {
 					<div className="admin-modal" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{t.editUser}</h2>
-							<button className="admin-modal-close" onClick={closeEditModal}>
+							<Button variant="ghost" size="icon" onClick={closeEditModal} className="h-8 w-8">
 								✕
-							</button>
+							</Button>
 						</div>
 						<form onSubmit={handleUpdateUser}>
 							<div className="mb-6">
@@ -273,12 +274,12 @@ export default function UsersPage() {
 								</div>
 							)}
 							<div className="admin-modal-actions">
-								<button type="submit" className="admin-button success">
+								<Button type="submit">
 									{t.save}
-								</button>
-								<button type="button" className="admin-button secondary" onClick={closeEditModal}>
+								</Button>
+								<Button type="button" variant="secondary" onClick={closeEditModal}>
 									{t.cancel}
-								</button>
+								</Button>
 							</div>
 						</form>
 					</div>

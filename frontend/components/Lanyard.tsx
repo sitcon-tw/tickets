@@ -211,7 +211,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 								anchorY="middle"
 								maxWidth={0.7}
 								textAlign="center"
-								font="/fonts/NotoSansTC-Regular.ttf"
 								overflowWrap="break-word"
 								whiteSpace="normal"
 								lineHeight={1.2}

@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
@@ -156,8 +157,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		<section className={`p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out] bg-gray-100 dark:bg-gray-800 ${isSafari ? "border-[5px] border-[#5A738F]" : ""}`}>
 			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 			<div className="items-center justify-center flex">
-				<button
-					className="button"
+				<Button
 					onClick={() => {
 						setLoading(true);
 						router.push(`/${eventSlug}/success`);
@@ -169,7 +169,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						</>
 					) : null}
 					{t.viewRegDetail}
-				</button>
+				</Button>
 			</div>
 		</section>
 	);
@@ -204,14 +204,14 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>
 							</div>
-							<button
-								className="button text-white"
+							<Button
+								className="text-white"
 								onClick={() => {
 									router.push(`/verify`);
 								}}
 							>
 								{t.verifyNow}
-							</button>
+							</Button>
 						</div>
 					)}
 				</section>

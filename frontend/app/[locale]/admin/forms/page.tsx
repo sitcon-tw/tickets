@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -542,9 +543,9 @@ export default function FormsPage() {
 					<div className="h-8" />
 					<div className="admin-empty p-16">{t.noTicket}</div>
 					<div className="text-center mt-4">
-						<button className="admin-button primary" onClick={() => (window.location.href = `/${locale}/admin/events`)}>
+						<Button onClick={() => (window.location.href = `/${locale}/admin/events`)}>
 							{t.backToTickets}
-						</button>
+						</Button>
 					</div>
 				</main>
 			</>
@@ -553,7 +554,7 @@ export default function FormsPage() {
 
 	return (
 		<>
-			<main className="min-h-screen p-6 md:p-4">
+			<main className="p-6 md:p-4">
 				<div id="form-editor" className="max-w-[900px] mx-auto">
 					{/* Header Section */}
 					<div className="mb-6 pb-4 border-b border-gray-700">
@@ -693,7 +694,7 @@ export default function FormsPage() {
 													</div>
 
 													<div className="flex gap-1.5 items-end">
-														<button
+														<Button
 															type="button"
 															onClick={() => updateQuestion(q.id, { required: !q.required })}
 															className={`admin-button text-xs py-2 px-3 transition-all ${
@@ -703,15 +704,15 @@ export default function FormsPage() {
 															}`}
 														>
 															{q.required ? t.fieldRequired : t.fieldOptional}
-														</button>
-														<button
+														</Button>
+														<Button
 															type="button"
 															onClick={() => deleteQuestion(q.id)}
-															className="admin-button danger text-xs py-2 px-3 bg-gray-700 border border-gray-600 text-red-400"
+															className="text-xs py-2 px-3 bg-gray-700 border border-gray-600 text-red-400" variant="destructive"
 															title={t.deleteField}
 														>
 															{t.deleteField}
-														</button>
+														</Button>
 													</div>
 												</div>
 											</div>
@@ -833,34 +834,34 @@ export default function FormsPage() {
 																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-950"
 																		/>
 																	</div>
-																	<button
+																	<Button
 																		type="button"
 																		onClick={() => {
 																			const newOptions = [...(q.options || [])];
 																			newOptions.splice(i, 1);
 																			updateQuestion(q.id, { options: newOptions });
 																		}}
-																		className="admin-button text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0"
+																		className="text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0"
 																		title="刪除此選項"
 																	>
 																		<X />
-																	</button>
+																	</Button>
 																</div>
 															);
 														})}
-														<button
+														<Button
 															type="button"
 															onClick={() => {
 																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
 																updateQuestion(q.id, { options: newOptions });
 															}}
-															className="admin-button text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
+															className="text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
 														>
 															<span className="text-base">
 																<Plus />
 															</span>{" "}
 															{t.newOption}
-														</button>
+														</Button>
 													</div>
 												</div>
 											)}
@@ -962,7 +963,7 @@ export default function FormsPage() {
 																				</select>
 																			</div>
 
-																			<button
+																			<Button
 																				type="button"
 																				onClick={() => {
 																					const newConditions = [...(q.filters!.conditions || [])];
@@ -974,11 +975,11 @@ export default function FormsPage() {
 																						}
 																					});
 																				}}
-																				className="admin-button text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0 mt-[1.4rem]"
+																				className="text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0 mt-[1.4rem]"
 																				title={t.deleteCondition}
 																			>
 																				<X size={14} />
-																			</button>
+																			</Button>
 																		</div>
 
 																		{/* Condition-specific fields */}
@@ -1149,7 +1150,7 @@ export default function FormsPage() {
 																))}
 
 																{/* Add condition button */}
-																<button
+																<Button
 																	type="button"
 																	onClick={() => {
 																		const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
@@ -1160,13 +1161,13 @@ export default function FormsPage() {
 																			}
 																		});
 																	}}
-																	className="admin-button text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
+																	className="text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
 																>
 																	<span className="text-base">
 																		<Plus />
 																	</span>{" "}
 																	{t.addCondition}
-																</button>
+																</Button>
 															</div>
 														</>
 													)}
@@ -1181,22 +1182,22 @@ export default function FormsPage() {
 
 					{/* Action Buttons */}
 					<div className="sticky bottom-0 bg-gray-900 py-4 mt-6 flex gap-3 justify-center border-t border-gray-700">
-						<button
+						<Button
 							id="add-question"
 							type="button"
 							onClick={addQuestion}
-							className="admin-button text-[0.9rem] py-2.5 px-5 bg-gray-700 border border-gray-600 text-gray-200 flex items-center gap-2 font-medium"
+							className="text-[0.9rem] py-2.5 px-5 bg-gray-700 border border-gray-600 text-gray-200 flex items-center gap-2 font-medium"
 						>
 							<Plus size={18} /> {t.addQuestion}
-						</button>
-						<button
+						</Button>
+						<Button
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="admin-button text-[0.9rem] py-2.5 px-5 border border-(--color-primary) text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							className="text-[0.9rem] py-2.5 px-5 border border-(--color-primary) text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
-						</button>
+						</Button>
 					</div>
 				</div>
 			</main>

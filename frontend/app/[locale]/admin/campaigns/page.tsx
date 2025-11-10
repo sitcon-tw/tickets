@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -252,12 +253,12 @@ export default function EmailCampaignsPage() {
 				<div className="h-8" />
 
 				<section className="admin-controls my-4">
-					<button onClick={() => setShowCreateModal(true)} className="admin-button primary">
+					<Button onClick={() => setShowCreateModal(true)}>
 						✉️ {t.createNew}
-					</button>
-					<button onClick={loadCampaigns} className="admin-button secondary">
+					</Button>
+					<Button variant="secondary" onClick={loadCampaigns}>
 						↻ {t.refresh}
-					</button>
+					</Button>
 				</section>
 
 				<section>
@@ -299,18 +300,18 @@ export default function EmailCampaignsPage() {
 											<td>{new Date(campaign.createdAt).toLocaleString()}</td>
 											<td>
 												<div className="flex gap-2 flex-wrap">
-													<button onClick={() => handlePreview(campaign)} className="admin-button small secondary" disabled={campaign.status === "cancelled"}>
+													<Button variant="secondary" size="sm" onClick={() => handlePreview(campaign)} disabled={campaign.status === "cancelled"}>
 														👁 {t.preview}
-													</button>
+													</Button>
 													{campaign.status === "draft" && (
-														<button onClick={() => handleSend(campaign)} className="admin-button small primary">
+														<Button size="sm" onClick={() => handleSend(campaign)}>
 															📤 {t.send}
-														</button>
+														</Button>
 													)}
 													{(campaign.status === "draft" || campaign.status === "scheduled") && (
-														<button onClick={() => handleCancel(campaign)} className="admin-button small danger">
+														<Button variant="destructive" size="sm" onClick={() => handleCancel(campaign)}>
 															✕ {t.cancel}
-														</button>
+														</Button>
 													)}
 												</div>
 											</td>
@@ -329,9 +330,9 @@ export default function EmailCampaignsPage() {
 					<div className="admin-modal max-w-3xl" onClick={e => e.stopPropagation()}>
 						<div className="admin-modal-header">
 							<h2 className="admin-modal-title">{t.createNew}</h2>
-							<button className="admin-modal-close" onClick={() => setShowCreateModal(false)}>
+							<Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)} className="h-8 w-8">
 								✕
-							</button>
+							</Button>
 						</div>
 
 						<div className="flex flex-col gap-4 p-6">
@@ -456,15 +457,15 @@ export default function EmailCampaignsPage() {
 							)}
 
 							<div className="flex gap-2 justify-end">
-								<button onClick={handleCalculateRecipients} className="admin-button secondary">
+								<Button variant="secondary" onClick={handleCalculateRecipients}>
 									🔢 {t.calculateRecipients}
-								</button>
-								<button onClick={handleCreate} className="admin-button primary">
+								</Button>
+								<Button onClick={handleCreate}>
 									💾 {t.save}
-								</button>
-								<button onClick={() => setShowCreateModal(false)} className="admin-button danger">
+								</Button>
+								<Button variant="destructive" onClick={() => setShowCreateModal(false)}>
 									{t.close}
-								</button>
+								</Button>
 							</div>
 						</div>
 					</div>
@@ -479,9 +480,9 @@ export default function EmailCampaignsPage() {
 							<h2 className="admin-modal-title">
 								{t.preview}: {selectedCampaign.subject}
 							</h2>
-							<button className="admin-modal-close" onClick={() => setShowPreviewModal(false)}>
+							<Button variant="ghost" size="icon" onClick={() => setShowPreviewModal(false)} className="h-8 w-8">
 								✕
-							</button>
+							</Button>
 						</div>
 
 						<div className="p-4 bg-white text-black rounded-lg max-h-[70vh] overflow-auto">
@@ -489,9 +490,9 @@ export default function EmailCampaignsPage() {
 						</div>
 
 						<div className="flex gap-2 justify-end mt-4 px-6 pb-6">
-							<button onClick={() => setShowPreviewModal(false)} className="admin-button secondary">
+							<Button variant="secondary" onClick={() => setShowPreviewModal(false)}>
 								{t.close}
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>

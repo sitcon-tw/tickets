@@ -7,7 +7,7 @@ export default function HomePage() {
 	return (
 		<>
 			<Nav />
-			<main className="min-h-screen">
+			<main>
 				<Hero />
 				<EventList />
 			</main>

@@ -1,5 +1,6 @@
 "use client";
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
@@ -111,9 +112,9 @@ export default function MagicLinkVerify() {
 								<div className="text-5xl mb-4 text-(--color-error,#dc2626)">✗</div>
 								<h1 className="mb-4 text-(--color-error,#dc2626)">{t.error}</h1>
 								<p className="mb-8 text-gray-700">{errorMessage}</p>
-								<button className="button mx-auto" onClick={() => router.push(`/${locale}/login`)}>
+								<Button className="mx-auto" onClick={() => router.push(`/${locale}/login`)}>
 									{t.backToLogin}
-								</button>
+								</Button>
 							</>
 						)}
 					</div>
