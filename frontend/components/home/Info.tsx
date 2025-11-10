@@ -41,7 +41,7 @@ export default function Info({ eventId }: InfoProps) {
 
 	return (
 		<section className="content flex flex-col gap-8">
-			{isLoading && <PageSpinner size={48} />}
+			{isLoading && <PageSpinner />}
 			{loadError && <p className="text-red-600 dark:text-red-400">Error: {loadError}</p>}
 			{eventDescription && <MarkdownContent content={eventDescription} />}
 		</section>

@@ -325,7 +325,7 @@ export default function FormPage() {
 
 					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
-							<PageSpinner size={48} />
+							<PageSpinner />
 							<p>{t.loadingForm}</p>
 						</div>
 					)}

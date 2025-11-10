@@ -160,7 +160,7 @@ export default function UsersPage() {
 				<div className="admin-table-container">
 					{isLoading && (
 						<div className="admin-loading">
-							<PageSpinner size={48} />
+							<PageSpinner />
 						</div>
 					)}
 					{!isLoading && (

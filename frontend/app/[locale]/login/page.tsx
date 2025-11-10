@@ -122,14 +122,14 @@ export default function Login() {
 			en: "Link has expired. Please request a new login link"
 		},
 		acceptTermsAsLoggedIn: {
-			"zh-Hant": "登入即代表您同意我們的服務條款與隱私政策。",
-			"zh-Hans": "登录即代表您同意我们的服务条款与隐私政策。",
-			en: "By logging in, you agree to our Terms of Service and Privacy Policy."
+			"zh-Hant": "登入即代表您同意我們的",
+			"zh-Hans": "登录即代表您同意我们的",
+			en: "By logging in, you agree to our "
 		},
 		termsLink: {
-			"zh-Hant": "服務條款與隱私政策連結",
-			"zh-Hans": "服务条款与隐私政策链接",
-			en: "Terms of Service and Privacy Policy Link"
+			"zh-Hant": "服務條款與隱私政策",
+			"zh-Hans": "服务条款与隐私政策",
+			en: "Terms of Service and Privacy Policy"
 		}
 	});
 
@@ -231,12 +231,12 @@ export default function Login() {
 			<label htmlFor="email" className="block mb-2 font-bold">
 				Email
 			</label>
-			<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
+			<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
 			<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
 				{t.continue}
 			</SendButton>
 			<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
-				{t.acceptTermsAsLoggedIn}{" "}
+				{t.acceptTermsAsLoggedIn}
 				<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
 					{t.termsLink}
 				</a>

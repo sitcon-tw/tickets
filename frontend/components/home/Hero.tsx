@@ -16,7 +16,7 @@ export default function Hero() {
 	});
 
 	return (
-		<div className="px-8 pt-32 pb-16 flex flex-col items-center">
+		<div className="px-8 pb-12 flex flex-col items-center pt-12 [@media(min-height:1200px)]:pt-32">
 			<h1 className="mb-8">
 				<Image src="/assets/SITCONTIX_gray.svg" alt="SITCONTIX" width={384} height={77} className="dark:hidden" priority />
 				<Image src="/assets/SITCONTIX.svg" alt="SITCONTIX" width={384} height={77} className="hidden dark:block" priority />

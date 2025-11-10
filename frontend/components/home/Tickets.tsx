@@ -253,7 +253,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			<div className="tickets-container">
 				{isLoading && tickets.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
-						<PageSpinner size={48} />
+						<PageSpinner />
 					</div>
 				) : null}
 				{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}

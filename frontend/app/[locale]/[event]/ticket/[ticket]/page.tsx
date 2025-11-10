@@ -175,7 +175,7 @@ export default function SetTicket() {
 			{isLoading ? (
 				<main>
 					<div className="flex items-center justify-center h-screen">
-						<PageSpinner size={48} />
+						<PageSpinner />
 					</div>
 				</main>
 			) : (

@@ -61,7 +61,7 @@ export default function Header({ eventId }: HeaderProps) {
 	return (
 		<section className="pt-20 text-center">
 			<h1 className="text-4xl mb-4 font-bold text-gray-900 dark:text-gray-100">
-				{loading ? <PageSpinner size={32} /> : eventName} <span className="block text-[0.8em] text-gray-700 dark:text-gray-300">{t.description}</span>
+				{loading ? <PageSpinner /> : eventName} <span className="block text-[0.8em] text-gray-700 dark:text-gray-300">{t.description}</span>
 			</h1>
 			<p className="text-xl text-gray-800 dark:text-gray-200">
 				{t.signFront}

@@ -24,13 +24,13 @@ const activityLinks = [
 function AdminNav() {
 	const pathname = usePathname();
 	const router = useNextRouter();
-	
+
 	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
-	
+
 	// Only show on admin pages
 	const isAdminPage = pathname.includes("/admin");
 	if (!isAdminPage) {
@@ -211,27 +211,36 @@ function AdminNav() {
 	return (
 		<>
 			{/* Mobile Header */}
-			<div className={`fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-999 items-center justify-between border-b border-gray-200 dark:border-gray-800 ${isMobile ? "flex" : "hidden"}`}>
-				<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
-					<Menu size={24} />
-				</Button>
-				<div className="text-xl font-semibold">{t.activityName}</div>
-				<div className="w-10" /> {/* Spacer for centering */}
-			</div>
+			{isMobile && (
+				<div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-50 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+					<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+						<Menu size={24} />
+					</Button>
+					<div className="text-xl font-semibold">{t.activityName}</div>
+					<div className="w-10" /> {/* Spacer for centering */}
+				</div>
+			)}
 
 			{/* Overlay for mobile */}
-			{mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-998" onClick={() => setMobileMenuOpen(false)} />}
+			{isMobile && mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMobileMenuOpen(false)} />}
 
 			{/* Sidebar */}
 			<aside
-				className={`bg-gray-50 dark:bg-gray-950 p-8 w-68 h-dvh fixed flex flex-col text-xl z-1000 transition-transform duration-300 ease-in-out border-r border-gray-200 dark:border-gray-800 ${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
+				className={`
+					bg-gray-50 dark:bg-gray-950 p-8 h-screen fixed top-0 left-0 z-45
+					border-r border-gray-200 dark:border-gray-800 flex flex-col w-64
+					transition-transform duration-300 ease-in-out pt-24
+					${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
+					md:sticky md:translate-x-0
+				`}
 			>
 				{/* Close button for mobile */}
 				{isMobile && (
-					<Button variant="ghost" size="icon" className="sticky top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={24} />
 					</Button>
 				)}
+
 				<div className="text-xl">{t.activityName}</div>
 				<div className="text-3xl mt-2">{t.systemTitle}</div>
 				<div className="mb-6 mt-4">
@@ -250,7 +259,7 @@ function AdminNav() {
 						</select>
 					</label>
 				</div>
-				<nav className="mt-8 flex-1">
+				<nav className="mt-8 flex-1 overflow-y-auto">
 					<ul className="pl-3 m-0">
 						{activityLinks
 							.filter(({ requireCapability }) => {
@@ -271,69 +280,60 @@ function AdminNav() {
 												onClick={() => handleNavClick(href)}
 												onMouseEnter={() => setHoveredLink(href)}
 												onMouseLeave={() => setHoveredLink(null)}
-												className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
-											>
-												{t[i18nKey]}
-											</a>
-										</li>
-										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
-									</div>
-								);
-							})}
-					</ul>
-				</nav>
-				<div className="flex flex-col gap-3">
-					<div className="font-semibold">{t.userPlaceholder}</div>
-					<div className="flex gap-2">
-						<a
-							onClick={() => {
-								router.push(`/${locale}/logout`);
-								setMobileMenuOpen(false);
-							}}
-							onMouseEnter={() => setHoveredLink("logout")}
-							onMouseLeave={() => setHoveredLink(null)}
-							className={`cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
-						>
-							{t.logout}
-						</a>
-						<span>・</span>
-						<a
-							onClick={() => {
-								router.push(`/${locale}/`);
-								setMobileMenuOpen(false);
-							}}
-							onMouseEnter={() => setHoveredLink("home")}
-							onMouseLeave={() => setHoveredLink(null)}
-							className={`cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
-						>
-							{t.backHome}
-						</a>
-					</div>
-					<div className="flex justify-center items-center gap-2 mb-3">
-						<Globe size={16} className="text-gray-500" />
-						<select
-							value={locale}
-							onChange={e => handleLocaleChange(e.target.value)}
-							className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
-						>
-							{routing.locales.map(loc => (
-								<option key={loc} value={loc}>
-									{localeNames[loc]}
-								</option>
-							))}
-						</select>
-					</div>
+											className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
+										>
+											{t[i18nKey]}
+										</a>
+									</li>
+									{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
+								</div>
+							);
+						})}
+				</ul>
+			</nav>
+			<div className="flex flex-col gap-3 mt-4">
+				<div className="font-semibold">{t.userPlaceholder}</div>
+				<div className="flex gap-2">
+					<a
+						onClick={() => {
+							router.push(`/${locale}/logout`);
+							setMobileMenuOpen(false);
+						}}
+						onMouseEnter={() => setHoveredLink("logout")}
+						onMouseLeave={() => setHoveredLink(null)}
+						className={`cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
+					>
+						{t.logout}
+					</a>
+					<span>・</span>
+					<a
+						onClick={() => {
+							router.push(`/${locale}/`);
+							setMobileMenuOpen(false);
+						}}
+						onMouseEnter={() => setHoveredLink("home")}
+						onMouseLeave={() => setHoveredLink(null)}
+						className={`cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
+					>
+						{t.backHome}
+					</a>
 				</div>
-			</aside>
-
-			{/* Inject mobile-specific CSS */}
-			<style jsx>{`
-				@media (max-width: 768px) {
-					aside {
-						transform: ${mobileMenuOpen ? "translateX(0)" : "translateX(-100%)"} !important;
-					}
-				}
-			`}</style>
+				<div className="flex justify-center items-center gap-2 mb-3">
+					<Globe size={16} className="text-gray-500" />
+					<select
+						value={locale}
+						onChange={e => handleLocaleChange(e.target.value)}
+						className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
+					>
+						{routing.locales.map(loc => (
+							<option key={loc} value={loc}>
+								{localeNames[loc]}
+							</option>
+						))}
+					</select>
+				</div>
+			</div>
+		</aside>
 		</>
 	);
 }

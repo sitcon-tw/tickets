@@ -205,7 +205,7 @@ export default function EventsPage() {
 					<div className="admin-table-container">
 						{isLoading && (
 							<div className="admin-loading">
-								<PageSpinner size={48} />
+								<PageSpinner />
 								<p>{t.loading}</p>
 							</div>
 						)}

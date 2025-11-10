@@ -32,6 +32,10 @@ export default function Nav() {
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
+
+	// Check if on admin page
+	const isAdminPage = pathname.includes("/admin");
 
 	const t = getTranslations(locale, {
 		user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
@@ -63,6 +67,17 @@ export default function Nav() {
 	const userDisplayName =
 		session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
 
+	// Check for mobile viewport
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
+		};
+
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
+	}, []);
+
 	useEffect(() => {
 		let cancelled = false;
 
@@ -88,6 +103,11 @@ export default function Nav() {
 			cancelled = true;
 		};
 	}, []);
+
+	// Hide nav if both mobile and admin page
+	if (isMobile && isAdminPage) {
+		return null;
+	}
 
 	return (
 		<nav className="fixed top-0 left-0 z-1000 w-full bg-gray-600 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-800 transition-colors text-gray-200 dark:text-gray-300">

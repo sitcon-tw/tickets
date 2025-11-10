@@ -336,7 +336,7 @@ return (
 
 				<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
-							<PageSpinner size={48} />
+							<PageSpinner />
 							<p>{t.loading}</p>
 						</div>
 					)}

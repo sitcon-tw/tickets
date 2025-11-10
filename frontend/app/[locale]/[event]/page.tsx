@@ -23,11 +23,6 @@ export default function Main() {
 	const [error, setError] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
-		loading: {
-			"zh-Hant": "載入中...",
-			"zh-Hans": "载入中...",
-			en: "Loading..."
-		},
 		eventNotFound: {
 			"zh-Hant": "找不到活動",
 			"zh-Hans": "找不到活动",
@@ -80,10 +75,10 @@ export default function Main() {
 		}
 	}, [eventSlug, router, t.eventNotFound, t.failedToLoadEvents]);
 
-	if (loading || 1) {
+	if (loading) {
 		return (
 			<>
-					<PageSpinner size={48} />
+				<PageSpinner />
 			</>
 		);
 	}
