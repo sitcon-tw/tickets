@@ -13,12 +13,6 @@ export function ThemeToggle() {
 		setMounted(true);
 	}, []);
 
-	useEffect(() => {
-		if (mounted) {
-			console.log("Theme state:", { theme, resolvedTheme, systemTheme });
-		}
-	}, [mounted, theme, resolvedTheme, systemTheme]);
-
 	if (!mounted) {
 		return (
 			<Button type="button" variant="ghost" size="icon" aria-label="Toggle theme" disabled>
@@ -49,6 +43,7 @@ export function ThemeToggle() {
 			onClick={handleToggle}
 			aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
 			title={`Current: ${resolvedTheme} | Click to switch to ${isDark ? "light" : "dark"}`}
+			className="hover:bg-transparent hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 		>
 			{isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
 		</Button>

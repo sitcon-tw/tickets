@@ -107,11 +107,14 @@ class APIClient {
 					// Handle 401 Unauthorized - redirect to login
 					if (response.status === 401) {
 						if (typeof window !== "undefined") {
+							const currentPath = window.location.pathname;
 							// Only redirect if not already on login page
-							if (!window.location.pathname.includes("/login")) {
-								const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-								const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-								window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
+							if (!currentPath.includes("/login")) {
+								const locale = currentPath.split("/")[1] || "zh-Hant";
+								// Don't include returnUrl if already on login-related pages
+								const shouldIncludeReturnUrl = !currentPath.includes("/login") && !currentPath.includes("/verify");
+								const returnUrl = shouldIncludeReturnUrl ? encodeURIComponent(currentPath + window.location.search) : "";
+								window.location.href = `/${locale}/login${returnUrl ? `?returnUrl=${returnUrl}` : ""}`;
 							}
 						}
 						throw new Error("Unauthorized - please login");
@@ -132,7 +135,14 @@ class APIClient {
 					// Handle 403 Forbidden - redirect to home
 					if (response.status === 403) {
 						if (typeof window !== "undefined") {
-							window.location.href = "/";
+							const currentPath = window.location.pathname;
+							const locale = currentPath.split("/")[1] || "zh-Hant";
+							const isOnHomePage = currentPath === `/${locale}` || currentPath === `/${locale}/` || currentPath === "/";
+							
+							// Only redirect if not already on home page
+							if (!isOnHomePage) {
+								window.location.href = `/${locale}/`;
+							}
 						}
 						throw new Error("Forbidden access");
 					}

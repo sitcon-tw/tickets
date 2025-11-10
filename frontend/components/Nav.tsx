@@ -73,7 +73,8 @@ export default function Nav() {
 	const hasAdminAccess = useMemo(() => {
 		if (session.status !== "authenticated" || !session.user.role) return false;
 		const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
-		return roles.some(role => role === "admin");
+		const hasAccess = roles.some(role => role === "admin" || role === "eventAdmin");
+		return hasAccess;
 	}, [session]);
 
 	// Generate Gravatar URL when user email changes
@@ -104,7 +105,23 @@ export default function Nav() {
 				const data = await authAPI.getSession();
 				if (!cancelled) {
 					if (data && data.user) {
-						setSession({ status: "authenticated", user: data.user });
+						try {
+							const permissionsData = await authAPI.getPermissions();
+							if (permissionsData?.data?.role) {
+								setSession({
+									status: "authenticated",
+									user: {
+										...data.user,
+										role: permissionsData.data.role
+									}
+								});
+							} else {
+								setSession({ status: "authenticated", user: data.user });
+							}
+						} catch (permError) {
+							console.error("Failed to fetch permissions:", permError);
+							setSession({ status: "authenticated", user: data.user });
+						}
 					} else {
 						setSession({ status: "anonymous" });
 					}
@@ -150,7 +167,7 @@ export default function Nav() {
 								onClick={handleLogout}
 								disabled={isLoggingOut}
 								className={cn(
-									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors inline-flex items-center gap-2",
+									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2",
 									isLoggingOut && "opacity-50 cursor-not-allowed"
 								)}
 							>
@@ -162,7 +179,10 @@ export default function Nav() {
 					) : session.status === "loading" ? (
 						<Spinner size="sm" />
 					) : (
-						<Link href={`${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+						<Link
+							href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+							className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+						>
 							{t.login}
 						</Link>
 					)}

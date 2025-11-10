@@ -66,7 +66,12 @@ export default function MagicLinkVerify() {
 			setStatus("success");
 			showAlert(t.success, "success");
 			setTimeout(() => {
-				const redirectTo = returnUrl || `/${locale}/`;
+				// Clean up returnUrl to prevent infinite loops
+				// If returnUrl contains /login, just redirect to home
+				let redirectTo = returnUrl || `/${locale}/`;
+				if (redirectTo && (redirectTo.includes("/login") || redirectTo.includes("/verify"))) {
+					redirectTo = `/${locale}/`;
+				}
 				router.push(redirectTo);
 			}, 1500);
 		} else if (status === "error") {
@@ -101,8 +106,8 @@ export default function MagicLinkVerify() {
 
 						{status === "success" && (
 							<>
-								<div className="text-5xl mb-4 text-(--color-primary)">✓</div>
-								<h1 className="mb-2 text-(--color-primary)">{t.success}</h1>
+								<div className="text-5xl mb-4 text-primary">✓</div>
+								<h1 className="mb-2 text-primary">{t.success}</h1>
 								<p className="text-gray-700">{t.redirecting}</p>
 							</>
 						)}

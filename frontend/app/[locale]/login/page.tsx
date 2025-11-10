@@ -120,6 +120,11 @@ export default function Login() {
 			"zh-Hant": "服務條款與隱私政策",
 			"zh-Hans": "服务条款与隐私政策",
 			en: "Terms of Service and Privacy Policy"
+		},
+		reenterEmail: {
+			"zh-Hant": "重新輸入電子郵件",
+			"zh-Hans": "重新输入电子邮件",
+			en: "Re-enter Email"
 		}
 	});
 
@@ -217,35 +222,44 @@ export default function Login() {
 
 	return (
 		<div className="flex flex-col items-center justify-center h-full">
-			<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
-			<label htmlFor="email" className="block mb-2 font-bold">
-				Email
-			</label>
-			<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
-			<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
-				{t.continue}
-			</SendButton>
-			<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
-				{t.acceptTermsAsLoggedIn}
-				<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
-					{t.termsLink}
-				</a>
-			</p>
-
-			<div
-				className={`
-					w-full max-w-md transition-opacity duration-300 ease-in-out
-					${viewState === "sent" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none absolute"}
-				`}
-			>
-				<div>
-					<h2 className="mb-4 text-xl font-semibold">
-						{t.sent}
-						{email}
-					</h2>
-					<p className="leading-relaxed">{t.message}</p>
+			{viewState === "login" ? (
+				<>
+					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
+					<label htmlFor="email" className="block mb-2 font-bold">
+						Email
+					</label>
+					<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
+					<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
+						{t.continue}
+					</SendButton>
+					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
+						{t.acceptTermsAsLoggedIn}
+						<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+							{t.termsLink}
+						</a>
+					</p>
+				</>
+			) : (
+				<div className="w-full max-w-md">
+					<div className="text-center">
+						<h2 className="mb-4 text-xl font-semibold">
+							{t.sent}
+							<span className="text-primary">{email}</span>
+						</h2>
+						<p className="leading-relaxed mb-6">{t.message}</p>
+						<Button
+							onClick={() => {
+								setViewState("login");
+								setEmail("");
+							}}
+							variant="outline"
+							size="lg"
+						>
+							{t.reenterEmail}
+						</Button>
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }
