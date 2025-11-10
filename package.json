@@ -9,7 +9,8 @@
 		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
 		"format": "prettier --write .",
 		"check-format": "prettier --check .",
-		"build:frontend": "pnpm --filter frontend build"
+		"build:frontend": "pnpm --filter frontend build",
+		"build:docs": "pnpm --filter docs build"
 	},
 	"devDependencies": {
 		"concurrently": "^9.2.0",
