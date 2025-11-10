@@ -9,7 +9,9 @@ import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/a
 import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import { createCampaignsColumns, type CampaignDisplay } from "./columns";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();
@@ -247,6 +249,30 @@ export default function EmailCampaignsPage() {
 		}
 	};
 
+	const displayCampaigns = useMemo((): CampaignDisplay[] => {
+		return campaigns.map(campaign => ({
+			...campaign,
+			statusClass: getStatusBadgeClass(campaign.status),
+			statusLabel: t[campaign.status as keyof typeof t] as string || campaign.status,
+			recipientsDisplay: `${campaign.sentCount || 0} / ${campaign.totalCount || 0}`,
+			formattedCreatedAt: new Date(campaign.createdAt).toLocaleString(),
+		}));
+	}, [campaigns, t]);
+
+	const columns = useMemo(
+		() => createCampaignsColumns({
+			onPreview: handlePreview,
+			onSend: handleSend,
+			onCancel: handleCancel,
+			t: { 
+				preview: t.preview, 
+				send: t.send, 
+				cancel: t.cancel 
+			}
+		}),
+		[t.preview, t.send, t.cancel]
+	);
+
 	return (
 		<main>
 			<AdminHeader title={t.title} />
@@ -258,70 +284,18 @@ export default function EmailCampaignsPage() {
 					<Button variant="secondary" onClick={loadCampaigns}>
 						↻ {t.refresh}
 					</Button>
-				</section>
+			</section>
 
-				<section>
-					<div className="admin-table-container">
-						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner />
-								<p>{t.loading}</p>
-							</div>
-						)}
-						{!isLoading && campaigns.length === 0 && <div className="admin-empty">{t.empty}</div>}
-						{!isLoading && campaigns.length > 0 && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th>{t.name}</th>
-										<th>{t.subject}</th>
-										<th>{t.status}</th>
-										<th>{t.recipients}</th>
-										<th>{t.createdAt}</th>
-										<th className="w-48">{t.actions}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{campaigns.map(campaign => (
-										<tr key={campaign.id}>
-											<td>
-												<div className="admin-truncate">{campaign.name}</div>
-											</td>
-											<td>
-												<div className="admin-truncate">{campaign.subject}</div>
-											</td>
-											<td>
-												<span className={`status-badge ${getStatusBadgeClass(campaign.status)}`}>{t[campaign.status as keyof typeof t] || campaign.status}</span>
-											</td>
-											<td>
-												{campaign.sentCount || 0} / {campaign.totalCount || 0}
-											</td>
-											<td>{new Date(campaign.createdAt).toLocaleString()}</td>
-											<td>
-												<div className="flex gap-2 flex-wrap">
-													<Button variant="secondary" size="sm" onClick={() => handlePreview(campaign)} disabled={campaign.status === "cancelled"}>
-														👁 {t.preview}
-													</Button>
-													{campaign.status === "draft" && (
-														<Button size="sm" onClick={() => handleSend(campaign)}>
-															📤 {t.send}
-														</Button>
-													)}
-													{(campaign.status === "draft" || campaign.status === "scheduled") && (
-														<Button variant="destructive" size="sm" onClick={() => handleCancel(campaign)}>
-															✕ {t.cancel}
-														</Button>
-													)}
-												</div>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						)}
+			<section>
+				{isLoading ? (
+					<div className="admin-loading">
+						<PageSpinner />
+						<p>{t.loading}</p>
 					</div>
-				</section>
-			</main>
+				) : (
+					<DataTable columns={columns} data={displayCampaigns} />
+				)}
+			</section>
 
 			{/* Modals */}
 			{showCreateModal && (
@@ -496,6 +470,6 @@ export default function EmailCampaignsPage() {
 					</div>
 				</div>
 			)}
-		</>
+		</main>
 	);
 }

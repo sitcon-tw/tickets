@@ -22,6 +22,7 @@
 		"@react-three/drei": "^10.7.6",
 		"@react-three/fiber": "^9.3.0",
 		"@react-three/rapier": "^2.1.0",
+		"@tanstack/react-table": "^8.21.3",
 		"@types/matter-js": "^0.20.2",
 		"@types/nprogress": "^0.2.3",
 		"chart.js": "^4.5.0",

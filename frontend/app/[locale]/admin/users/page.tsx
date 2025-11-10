@@ -8,7 +8,9 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
 import type { Event, User } from "@/lib/types/api";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import { createUsersColumns, type UserDisplay } from "./columns";
 
 export default function UsersPage() {
 	const locale = useLocale();
@@ -149,6 +151,30 @@ export default function UsersPage() {
 		setFilteredUsers(filtered);
 	}, [users, searchTerm]);
 
+	const displayUsers = useMemo((): UserDisplay[] => {
+		return filteredUsers.map(user => ({
+			...user,
+			roleLabel: getRoleLabel(user.role),
+			roleClass: user.role === "admin" ? "primary" : user.role === "eventAdmin" ? "warning" : "secondary",
+			statusLabel: user.isActive ? t.active : t.inactive,
+			statusClass: user.isActive ? "active" : "ended",
+			formattedCreatedAt: new Date(user.createdAt).toLocaleString(),
+		}));
+	}, [filteredUsers, t.active, t.inactive, t.admin, t.viewer, t.eventAdmin]);
+
+	const columns = useMemo(
+		() => createUsersColumns({
+			onEdit: openEditModal,
+			t: { 
+				edit: t.edit, 
+				active: t.active, 
+				inactive: t.inactive,
+				emailVerified: t.emailVerified
+			}
+		}),
+		[t.edit, t.active, t.inactive, t.emailVerified]
+	);
+
 	return (
 		<main>
 			<AdminHeader title={t.title} />
@@ -157,54 +183,13 @@ export default function UsersPage() {
 			</section>
 
 			<section>
-				<div className="admin-table-container">
-					{isLoading && (
-						<div className="admin-loading">
-							<PageSpinner />
-						</div>
-					)}
-					{!isLoading && (
-						<table className="admin-table">
-							<thead>
-								<tr>
-									<th>{t.name}</th>
-									<th>{t.email}</th>
-									<th>{t.role}</th>
-									<th>{t.status}</th>
-									<th>{t.createdAt}</th>
-									<th>{t.actions}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{filteredUsers.map(user => {
-									const roleClass = user.role === "admin" ? "primary" : user.role === "eventAdmin" ? "warning" : "secondary";
-
-									return (
-										<tr key={user.id}>
-											<td>{user.name}</td>
-											<td>
-												{user.email}
-												{user.emailVerified && <span className="ml-2 text-xs opacity-70">✓ {t.emailVerified}</span>}
-											</td>
-											<td>
-												<span className={`status-badge ${roleClass}`}>{getRoleLabel(user.role)}</span>
-											</td>
-											<td>
-												<span className={`status-badge ${user.isActive ? "active" : "ended"}`}>{user.isActive ? t.active : t.inactive}</span>
-											</td>
-											<td>{new Date(user.createdAt).toLocaleString()}</td>
-											<td>
-												<Button variant="secondary" size="sm" onClick={() => openEditModal(user)}>
-													{t.edit}
-												</Button>
-											</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</table>
-					)}
-				</div>
+				{isLoading ? (
+					<div className="admin-loading">
+						<PageSpinner />
+					</div>
+				) : (
+					<DataTable columns={columns} data={displayUsers} />
+				)}
 			</section>
 
 			{showEditModal && editingUser && (

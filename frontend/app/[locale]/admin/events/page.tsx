@@ -9,7 +9,9 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import { createEventsColumns, type EventWithStatus } from "./columns";
 
 export default function EventsPage() {
 	const locale = useLocale();
@@ -53,8 +55,30 @@ export default function EventsPage() {
 		active: { "zh-Hant": "進行中", "zh-Hans": "进行中", en: "Active" },
 		upcoming: { "zh-Hant": "尚未開始", "zh-Hans": "尚未开始", en: "Upcoming" },
 		ended: { "zh-Hant": "已結束", "zh-Hans": "已结束", en: "Ended" },
-		createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" }
+		createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" },
+		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Loading..." }
 	});
+
+	function computeStatus(event: Event) {
+		const now = new Date();
+		if (event.startDate && new Date(event.startDate) > now) {
+			return { label: t.upcoming, class: "pending" };
+		}
+		if (event.endDate && new Date(event.endDate) < now) {
+			return { label: t.ended, class: "ended" };
+		}
+		return { label: t.active, class: "active" };
+	}
+
+	function formatDateTime(dt?: string) {
+		if (!dt) return "";
+		try {
+			const d = new Date(dt);
+			return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+		} catch {
+			return dt;
+		}
+	}
 
 	const loadEvents = useCallback(async () => {
 		setIsLoading(true);
@@ -171,26 +195,30 @@ export default function EventsPage() {
 		}
 	}
 
-	function computeStatus(event: Event) {
-		const now = new Date();
-		if (event.startDate && new Date(event.startDate) > now) {
-			return { label: t.upcoming, class: "pending" };
-		}
-		if (event.endDate && new Date(event.endDate) < now) {
-			return { label: t.ended, class: "ended" };
-		}
-		return { label: t.active, class: "active" };
-	}
+	const eventsWithStatus = useMemo((): EventWithStatus[] => {
+		return events.map(event => {
+			const status = computeStatus(event);
+			return {
+				...event,
+				statusLabel: status.label,
+				statusClass: status.class,
+				displayName: typeof event.name === "object" 
+					? event.name[locale] || event.name["en"] || Object.values(event.name)[0] 
+					: event.name,
+				formattedStartDate: formatDateTime(event.startDate),
+				formattedEndDate: formatDateTime(event.endDate),
+			};
+		});
+	}, [events, locale, t.active, t.ended, t.upcoming]);
 
-	function formatDateTime(dt?: string) {
-		if (!dt) return "";
-		try {
-			const d = new Date(dt);
-			return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-		} catch {
-			return dt;
-		}
-	}
+	const columns = useMemo(
+		() => createEventsColumns({
+			onEdit: openModal,
+			onDelete: deleteEvent,
+			t: { edit: t.edit, delete: t.delete }
+		}),
+		[t.edit, t.delete]
+	);
 
 	useEffect(() => {
 		loadEvents();
@@ -202,55 +230,14 @@ export default function EventsPage() {
 				<AdminHeader title={t.title} />
 
 				<section>
-					<div className="admin-table-container">
-						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner />
-								<p>{t.loading}</p>
-							</div>
-						)}
-						{!isLoading && events.length === 0 && <div className="admin-empty">{t.empty}</div>}
-						{!isLoading && events.length > 0 && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th>{t.eventName}</th>
-										<th>{t.location}</th>
-										<th>{t.startDate}</th>
-										<th>{t.endDate}</th>
-										<th>{t.status}</th>
-										<th>{t.actions}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{events.map(event => {
-										const status = computeStatus(event);
-										return (
-											<tr key={event.id}>
-												<td>{typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name}</td>
-												<td>{event.location}</td>
-												<td>{formatDateTime(event.startDate)}</td>
-												<td>{formatDateTime(event.endDate)}</td>
-												<td>
-													<span className={`status-badge ${status.class}`}>{status.label}</span>
-												</td>
-											<td>
-												<div className="flex gap-2 flex-wrap">
-													<Button variant="secondary" size="sm" onClick={() => openModal(event)}>
-														{t.edit}
-													</Button>
-													<Button variant="destructive" size="sm" onClick={() => deleteEvent(event.id)}>
-														{t.delete}
-													</Button>
-												</div>
-											</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						)}
-					</div>
+					{isLoading ? (
+						<div className="admin-loading">
+							<PageSpinner />
+							<p>{t.loading}</p>
+						</div>
+					) : (
+						<DataTable columns={columns} data={eventsWithStatus} />
+					)}
 				</section>
 
 				<section className="mt-8 text-center">

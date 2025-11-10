@@ -8,7 +8,9 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import { createTicketsColumns, type TicketDisplay } from "./columns";
 
 export default function TicketsPage() {
 	const locale = useLocale();
@@ -215,6 +217,37 @@ export default function TicketsPage() {
 		}
 	}
 
+	const ticketsWithStatus = useMemo((): TicketDisplay[] => {
+		return tickets.map(ticket => {
+			const status = computeStatus(ticket);
+			return {
+				...ticket,
+				displayName: typeof ticket.name === "object" 
+					? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] 
+					: ticket.name,
+				formattedSaleStart: formatDateTime(ticket.saleStart),
+				formattedSaleEnd: formatDateTime(ticket.saleEnd),
+				statusLabel: status.label,
+				statusClass: status.class,
+			};
+		});
+	}, [tickets, locale, t.notStarted, t.ended, t.selling]);
+
+	const columns = useMemo(
+		() => createTicketsColumns({
+			onEdit: openModal,
+			onDelete: deleteTicket,
+			onLinkBuilder: openLinkBuilder,
+			t: { 
+				editTicket: t.editTicket, 
+				delete: t.delete, 
+				directLink: t.directLink,
+				hidden: t.hidden 
+			}
+		}),
+		[t.editTicket, t.delete, t.directLink, t.hidden]
+	);
+
 	function openLinkBuilder(ticket: Ticket) {
 		setSelectedTicketForLink(ticket);
 		setInviteCode("");
@@ -279,56 +312,7 @@ export default function TicketsPage() {
 			<AdminHeader title={t.title} />
 
 			<section>
-				<div className="admin-table-container">
-					<table className="admin-table">
-						<thead>
-							<tr>
-								<th>{t.ticketTypes}</th>
-								<th>{t.startTime}</th>
-								<th>{t.endTime}</th>
-								<th>{t.status}</th>
-								<th>{t.quantity}</th>
-								<th>{t.actions}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{tickets.map(ticket => {
-								const status = computeStatus(ticket);
-								return (
-									<tr key={ticket.id}>
-										<td>
-											{typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-											{ticket.hidden && (
-												<span className="ml-2 py-0.5 px-2 text-xs font-bold text-gray-100 dark:text-gray-200 bg-gray-600 dark:bg-gray-700 rounded border border-gray-500 dark:border-gray-600">
-													{t.hidden}
-												</span>
-											)}
-										</td>
-										<td>{formatDateTime(ticket.saleStart)}</td>
-										<td>{formatDateTime(ticket.saleEnd)}</td>
-										<td>
-											<span className={`status-badge ${status.class}`}>{status.label}</span>
-										</td>
-										<td>{ticket.quantity}</td>
-										<td>
-											<div className="flex gap-2 flex-wrap">
-												<Button variant="secondary" size="sm" onClick={() => openModal(ticket)}>
-													{t.editTicket}
-												</Button>
-												<Button size="sm" onClick={() => openLinkBuilder(ticket)}>
-													{t.directLink}
-												</Button>
-												<Button variant="destructive" size="sm" onClick={() => deleteTicket(ticket.id)}>
-													{t.delete}
-												</Button>
-											</div>
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
+				<DataTable columns={columns} data={ticketsWithStatus} />
 			</section>
 
 			<section className="mt-8 text-center">

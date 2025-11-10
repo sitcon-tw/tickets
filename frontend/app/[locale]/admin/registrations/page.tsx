@@ -11,6 +11,8 @@ import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable } from "@/components/data-table/data-table";
+import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -176,6 +178,27 @@ export default function RegistrationsPage() {
 		const end = start + pageSize;
 		return sortedAndFiltered.slice(start, end);
 	}, [sortedAndFiltered, page, pageSize]);
+
+	const displayData = useMemo((): RegistrationDisplay[] => {
+		return sortedAndFiltered.map(r => ({
+			...r,
+			displayId: r.id.slice(0, 8) + "...",
+			displayTicket: getLocalizedText(r.ticket?.name, locale) || r.ticketId || "",
+			displayEvent: getLocalizedText(r.event?.name, locale) || r.eventId || "",
+			displayReferredBy: r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-",
+			formattedCreatedAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : "",
+			formattedUpdatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "",
+			statusClass: r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : ""
+		}));
+	}, [sortedAndFiltered, locale]);
+
+	const columns = useMemo(
+		() => createRegistrationsColumns({
+			onViewDetails: openDetailModal,
+			t: { viewDetails: t.viewDetails }
+		}),
+		[t.viewDetails]
+	);
 
 	const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
 
@@ -364,93 +387,17 @@ export default function RegistrationsPage() {
 				</section>
 
 				<section>
-					<div className="admin-table-container">
-						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner />
-								<p>{t.loading}</p>
-							</div>
-						)}
-						{!isLoading && filtered.length === 0 && <div className="admin-empty">{t.empty}</div>}
-						{!isLoading && filtered.length > 0 && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th className="w-10 text-center">
-											<input type="checkbox" checked={selectedRegistrations.size === paginatedData.length && paginatedData.length > 0} onChange={toggleSelectAll} className="cursor-pointer" />
-										</th>
-										{[...activeColumns].map(cid => {
-											const col = columnDefs.find(c => c.id === cid);
-											return col ? (
-												<th key={cid} onClick={() => col.sortable && handleSort(cid as SortField)} className={col.sortable ? "cursor-pointer select-none" : ""}>
-													{col.label}
-													{col.sortable && sortField === cid && <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>}
-												</th>
-											) : null;
-										})}
-										<th className="w-24 text-center">Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{paginatedData.map(r => (
-										<tr key={r.id} className={selectedRegistrations.has(r.id) ? "bg-gray-800 dark:bg-gray-900" : ""}>
-											<td className="text-center">
-												<input type="checkbox" checked={selectedRegistrations.has(r.id)} onChange={() => toggleSelect(r.id)} className="cursor-pointer" />
-											</td>
-											{[...activeColumns].map(cid => {
-												const col = columnDefs.find(c => c.id === cid);
-												if (!col) return null;
-												const val = col.accessor(r);
-												const statusClass = r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : "";
-											return <td key={cid}>{cid === "status" ? <span className={`status-badge ${statusClass}`}>{val}</span> : <div className="admin-truncate">{val}</div>}</td>;
-										})}
-										<td className="text-center">
-											<Button size="sm" onClick={() => openDetailModal(r)}>
-												👁 {t.viewDetails}
-											</Button>
-										</td>
-									</tr>
-								))}
-								</tbody>
-							</table>
-						)}
-					</div>
+					{isLoading ? (
+						<div className="admin-loading">
+							<PageSpinner />
+							<p>{t.loading}</p>
+						</div>
+					) : (
+						<DataTable columns={columns} data={displayData} />
+					)}
 				</section>
 
-				{/* Pagination Section */}
-				<section>
-					<div className="my-4 flex justify-between items-center flex-wrap gap-3">
-						<div className="text-sm opacity-75">
-							{sortedAndFiltered.length} {t.total} {selectedRegistrations.size > 0 && `• ${selectedRegistrations.size} ${t.selected}`}
-					</div>
-					{totalPages > 1 && (
-						<div className="flex items-center gap-2">
-							<Button size="sm" variant="secondary" onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}>
-								←
-							</Button>
-							<span className="text-sm">
-								{t.page} {page} {t.of} {totalPages}
-							</span>
-							<Button size="sm" variant="secondary" onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}>
-								→
-							</Button>
-							<select
-								value={pageSize}
-								onChange={e => {
-									setPageSize(Number(e.target.value));
-										setPage(1);
-									}}
-									className="admin-select py-1 px-2 text-xs ml-2"
-								>
-									<option value="25">25 {t.perPage}</option>
-									<option value="50">50 {t.perPage}</option>
-									<option value="100">100 {t.perPage}</option>
-									<option value="200">200 {t.perPage}</option>
-								</select>
-							</div>
-						)}
-					</div>
-				</section>
+				{/* Pagination Section - Not needed anymore as DataTable has built-in pagination */}
 			</main>
 
 			{/* Detail Modal */}
