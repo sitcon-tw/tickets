@@ -610,9 +610,9 @@ export default function FormsPage() {
 										onDragOver={e => handleDragOver(e, index)}
 										onDragLeave={handleDragLeave}
 										onDrop={e => handleDrop(e, index)}
-										className={`bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+										className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
 											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
-										} ${isDropTarget ? "border-(--color-primary) border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-700"}`}
+										} ${isDropTarget ? "border-(--color-primary) border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
 									>
 										{/* Drag Handle */}
 										<div
@@ -620,7 +620,7 @@ export default function FormsPage() {
 											onDragStart={e => handleDragStart(e, index)}
 											onDragEnd={handleDragEnd}
 											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
-												isDragging ? "text-(--color-primary)" : "text-gray-600"
+												isDragging ? "text-(--color-primary)" : "text-gray-400 dark:text-gray-600"
 											}`}
 											title="拖曳以重新排序"
 											onMouseDown={e => {
@@ -634,15 +634,15 @@ export default function FormsPage() {
 										</div>
 
 										{/* Field Number Badge */}
-										<div className="absolute top-3 right-3 bg-gray-700 text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
+										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Main Content Area */}
 										<div className="flex flex-col gap-4 flex-1 pr-12">
 											{/* Field Names Section */}
 											<div>
-												<div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
 												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 													<div>
-														<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">EN</label>
+														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</label>
 														<input
 															type="text"
 															value={q.labelEn || ""}
@@ -652,7 +652,7 @@ export default function FormsPage() {
 														/>
 													</div>
 													<div>
-														<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">繁體中文</label>
+														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</label>
 														<input
 															type="text"
 															value={q.labelZhHant || ""}
@@ -662,7 +662,7 @@ export default function FormsPage() {
 														/>
 													</div>
 													<div>
-														<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">简体中文</label>
+														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</label>
 														<input
 															type="text"
 															value={q.labelZhHans || ""}
@@ -676,10 +676,10 @@ export default function FormsPage() {
 
 											{/* Field Configuration Section */}
 											<div>
-												<div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
 												<div className="flex gap-2.5 flex-wrap items-end">
 													<div>
-														<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.fieldType}</label>
+														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</label>
 														<select value={q.type} onChange={e => updateQuestion(q.id, { type: e.target.value })} className="admin-select min-w-[140px] text-sm py-2 px-2.5">
 															{fieldTypes.map(ft => (
 																<option key={ft.value} value={ft.value}>
@@ -696,7 +696,7 @@ export default function FormsPage() {
 															className={`admin-button text-xs py-2 px-3 transition-all ${
 																q.required
 																	? "bg-(--color-primary) border-(--color-primary) text-white font-semibold"
-																	: "bg-gray-700 border-gray-600 text-gray-300 font-medium"
+																	: "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium"
 															}`}
 														>
 															{q.required ? t.fieldRequired : t.fieldOptional}
@@ -704,7 +704,7 @@ export default function FormsPage() {
 														<Button
 															type="button"
 															onClick={() => deleteQuestion(q.id)}
-															className="text-xs py-2 px-3 bg-gray-700 border border-gray-600 text-red-400" variant="destructive"
+															className="text-xs py-2 px-3 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400" variant="destructive"
 															title={t.deleteField}
 														>
 															{t.deleteField}
@@ -715,10 +715,10 @@ export default function FormsPage() {
 
 											{/* Additional Settings Section */}
 											<div>
-												<div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
 												<div className="flex flex-col gap-2.5">
 													<div>
-														<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</label>
+														<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</label>
 														<input
 															type="text"
 															value={q.description || ""}
@@ -730,23 +730,23 @@ export default function FormsPage() {
 
 													{(q.type === "text" || q.type === "textarea") && (
 														<div>
-															<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.validator}</label>
+															<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</label>
 															<input
 																type="text"
 																value={q.validater || ""}
 																placeholder={t.validatorPlaceholder}
 																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-																className="admin-input w-full text-xs py-2 px-2.5 font-mono bg-gray-900 border border-gray-700"
+																className="admin-input w-full text-xs py-2 px-2.5 font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
 															/>
-															<p className="text-[0.7rem] text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
+															<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
 														</div>
 													)}
 												</div>
 											</div>
 											{["select", "radio", "checkbox"].includes(q.type) && (
 												<div>
-													<div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t.optionSettings}</div>
-													<div className="p-3 border border-gray-700 rounded-lg bg-gray-900 flex flex-col gap-2.5">
+													<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.optionSettings}</div>
+													<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-2.5">
 														{(q.options || []).map((opt, i) => {
 															const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
 															const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
@@ -759,10 +759,10 @@ export default function FormsPage() {
 																	onDrop={e => handleOptionDrop(e, q.id, i)}
 																	className={`flex gap-2 items-stretch p-2 rounded-md transition-all ${
 																		isOptionDragging
-																			? "bg-gray-800 opacity-60"
+																			? "bg-gray-200 dark:bg-gray-800 opacity-60"
 																			: isOptionDropTarget
-																				? "bg-(--color-gray-750) border border-(--color-primary) shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
-																				: "bg-gray-800 border border-gray-700"
+																				? "bg-gray-100 dark:bg-(--color-gray-750) border border-(--color-primary) shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
+																				: "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
 																	}`}
 																>
 																	<div className="flex items-center gap-2">
@@ -770,7 +770,7 @@ export default function FormsPage() {
 																			draggable
 																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
 																			onDragEnd={handleOptionDragEnd}
-																			className={`cursor-grab ${isOptionDragging ? "text-(--color-primary)" : "text-gray-600"} select-none p-1 flex items-center`}
+																			className={`cursor-grab ${isOptionDragging ? "text-(--color-primary)" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
 																			title="拖曳以重新排序選項"
 																			onMouseDown={e => {
 																				e.currentTarget.style.cursor = "grabbing";
@@ -781,7 +781,7 @@ export default function FormsPage() {
 																		>
 																			⋮⋮
 																		</span>
-																		<span className="text-xs text-gray-500 font-semibold min-w-6">{i + 1}</span>
+																		<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
 																	</div>
 																	<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
 																		<input
@@ -797,7 +797,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-950"
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
 																		/>
 																		<input
 																			type="text"
@@ -812,7 +812,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-950"
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
 																		/>
 																		<input
 																			type="text"
@@ -827,7 +827,7 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-950"
+																			className="admin-input text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950"
 																		/>
 																	</div>
 																	<Button
@@ -837,7 +837,7 @@ export default function FormsPage() {
 																			newOptions.splice(i, 1);
 																			updateQuestion(q.id, { options: newOptions });
 																		}}
-																		className="text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0"
+																		className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0"
 																		title="刪除此選項"
 																	>
 																		<X />
@@ -851,7 +851,7 @@ export default function FormsPage() {
 																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
 																updateQuestion(q.id, { options: newOptions });
 															}}
-															className="text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
+															className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
 														>
 															<span className="text-base">
 																<Plus />
@@ -864,8 +864,8 @@ export default function FormsPage() {
 
 											{/* Display Filters Section */}
 											<div>
-												<div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
-												<div className="p-3 border border-gray-700 rounded-lg bg-gray-900 flex flex-col gap-3">
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
+												<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
 													{/* Enable filters toggle */}
 													<label className="flex items-center gap-2 cursor-pointer select-none">
 														<input
@@ -883,7 +883,7 @@ export default function FormsPage() {
 															}}
 															className="w-4 h-4 cursor-pointer"
 														/>
-														<span className="text-[0.85rem] font-medium text-gray-300">{t.enableFilters}</span>
+														<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
 													</label>
 
 													{q.filters?.enabled && (
@@ -891,7 +891,7 @@ export default function FormsPage() {
 															{/* Filter action and operator */}
 															<div className="flex gap-2.5 flex-wrap">
 																<div className="flex-1 min-w-[200px]">
-																	<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.filterAction}</label>
+																	<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</label>
 																	<select
 																		value={q.filters.action}
 																		onChange={e => {
@@ -910,7 +910,7 @@ export default function FormsPage() {
 																</div>
 
 																<div className="flex-1 min-w-[200px]">
-																	<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.filterOperator}</label>
+																	<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</label>
 																	<select
 																		value={q.filters.operator}
 																		onChange={e => {
@@ -932,11 +932,11 @@ export default function FormsPage() {
 															{/* Conditions list */}
 															<div className="flex flex-col gap-2.5">
 																{(q.filters.conditions || []).map((condition, condIndex) => (
-																	<div key={condIndex} className="p-2.5 bg-gray-800 border border-gray-700 rounded-md flex flex-col gap-2">
+																	<div key={condIndex} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md flex flex-col gap-2">
 																		{/* Condition type selector */}
 																		<div className="flex gap-2 items-start">
 																			<div className="flex-1">
-																				<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.conditionType}</label>
+																				<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</label>
 																				<select
 																					value={condition.type}
 																					onChange={e => {
@@ -971,7 +971,7 @@ export default function FormsPage() {
 																						}
 																					});
 																				}}
-																				className="text-xs py-[0.45rem] px-2.5 bg-gray-950 border border-gray-800 text-red-400 shrink-0 mt-[1.4rem]"
+																				className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0 mt-[1.4rem]"
 																				title={t.deleteCondition}
 																			>
 																				<X size={14} />
@@ -981,7 +981,7 @@ export default function FormsPage() {
 																		{/* Condition-specific fields */}
 																		{condition.type === "ticket" && (
 																			<div>
-																				<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.selectTicket}</label>
+																				<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</label>
 																				<select
 																					value={condition.ticketId || ""}
 																					onChange={e => {
@@ -1012,7 +1012,7 @@ export default function FormsPage() {
 																		{condition.type === "field" && (
 																			<>
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.selectField}</label>
+																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</label>
 																					<select
 																						value={condition.fieldId || ""}
 																						onChange={e => {
@@ -1043,7 +1043,7 @@ export default function FormsPage() {
 
 																				<div className="flex gap-2">
 																					<div className="flex-1">
-																						<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</label>
+																						<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</label>
 																						<select
 																							value={condition.operator || "equals"}
 																							onChange={e => {
@@ -1069,7 +1069,7 @@ export default function FormsPage() {
 
 																					{condition.operator === "equals" && (
 																						<div className="flex-1">
-																							<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.fieldValue}</label>
+																							<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</label>
 																							<input
 																								type="text"
 																								value={condition.value || ""}
@@ -1098,7 +1098,7 @@ export default function FormsPage() {
 																		{condition.type === "time" && (
 																			<>
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.startTime}</label>
+																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</label>
 																					<input
 																						type="datetime-local"
 																						value={condition.startTime || ""}
@@ -1120,7 +1120,7 @@ export default function FormsPage() {
 																				</div>
 
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-500 mb-1.5 font-medium">{t.endTime}</label>
+																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</label>
 																					<input
 																						type="datetime-local"
 																						value={condition.endTime || ""}
@@ -1157,7 +1157,7 @@ export default function FormsPage() {
 																			}
 																		});
 																	}}
-																	className="text-xs py-2 px-3 bg-gray-800 border border-dashed border-gray-700 text-gray-400 w-full flex justify-center items-center gap-1.5"
+																	className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
 																>
 																	<span className="text-base">
 																		<Plus />
@@ -1177,12 +1177,12 @@ export default function FormsPage() {
 					</div>
 
 					{/* Action Buttons */}
-					<div className="sticky bottom-0 bg-gray-900 py-4 mt-6 flex gap-3 justify-center border-t border-gray-700">
+					<div className="sticky bottom-0 bg-white dark:bg-gray-900 py-4 mt-6 flex gap-3 justify-center border-t border-gray-300 dark:border-gray-700">
 						<Button
 							id="add-question"
 							type="button"
 							onClick={addQuestion}
-							className="text-[0.9rem] py-2.5 px-5 bg-gray-700 border border-gray-600 text-gray-200 flex items-center gap-2 font-medium"
+							className="text-[0.9rem] py-2.5 px-5 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 flex items-center gap-2 font-medium"
 						>
 							<Plus size={18} /> {t.addQuestion}
 						</Button>
