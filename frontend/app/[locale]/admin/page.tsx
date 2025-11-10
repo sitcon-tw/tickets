@@ -18,7 +18,7 @@ export default function AdminDashboard() {
 	const locale = useLocale();
 	const { theme, resolvedTheme } = useTheme();
 
-	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+	const [, setDashboardData] = useState<DashboardData | null>(null);
 	const [registrationTrends, setRegistrationTrends] = useState<RegistrationTrend[]>([]);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [loading, setLoading] = useState(true);

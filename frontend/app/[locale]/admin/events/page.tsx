@@ -207,24 +207,22 @@ export default function EventsPage() {
 				...event,
 				statusLabel: status.label,
 				statusClass: status.class,
-				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
-				formattedStartDate: formatDateTime(event.startDate),
-				formattedEndDate: formatDateTime(event.endDate)
-			};
-		});
-	}, [events, locale, t.active, t.ended, t.upcoming]);
+			displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
+			formattedStartDate: formatDateTime(event.startDate),
+			formattedEndDate: formatDateTime(event.endDate)
+		};
+	});
+}, [events, locale, computeStatus]);
 
-	const columns = useMemo(
-		() =>
-			createEventsColumns({
-				onEdit: openModal,
-				onDelete: deleteEvent,
-				t: { edit: t.edit, delete: t.delete }
-			}),
-		[t.edit, t.delete]
-	);
-
-	useEffect(() => {
+const columns = useMemo(
+	() =>
+		createEventsColumns({
+			onEdit: openModal,
+			onDelete: deleteEvent,
+			t: { edit: t.edit, delete: t.delete }
+		}),
+	[t.edit, t.delete, openModal, deleteEvent]
+);	useEffect(() => {
 		loadEvents();
 	}, [loadEvents]);
 

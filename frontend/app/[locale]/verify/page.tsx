@@ -316,7 +316,7 @@ export default function VerifyPage() {
 		router.push(redirectUrl);
 	};
 
-	const isCodeComplete = verificationCode.every(digit => digit !== "");
+	// const isCodeComplete = verificationCode.every(digit => digit !== "");
 
 	useEffect(() => {
 		smsVerificationAPI

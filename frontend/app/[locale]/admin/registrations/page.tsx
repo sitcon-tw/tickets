@@ -26,7 +26,7 @@ export default function RegistrationsPage() {
 	const { showAlert } = useAlert();
 
 	const [registrations, setRegistrations] = useState<Registration[]>([]);
-	const [filtered, setFiltered] = useState<Registration[]>([]);
+	const [, setFiltered] = useState<Registration[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
@@ -35,10 +35,10 @@ export default function RegistrationsPage() {
 	const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
 	const [showDetailModal, setShowDetailModal] = useState(false);
 	const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
-	const [sortField, setSortField] = useState<SortField>("createdAt");
-	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(50);
+	const [sortField] = useState<SortField>("createdAt");
+	const [sortDirection] = useState<SortDirection>("desc");
+	const [page] = useState(1);
+	const [pageSize] = useState(50);
 	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
 
 	const t = getTranslations(locale, {
@@ -177,11 +177,11 @@ export default function RegistrationsPage() {
 		return filtered;
 	}, [searchTerm, registrations, statusFilter, locale, sortField, sortDirection]);
 
-	const paginatedData = useMemo(() => {
-		const start = (page - 1) * pageSize;
-		const end = start + pageSize;
-		return sortedAndFiltered.slice(start, end);
-	}, [sortedAndFiltered, page, pageSize]);
+	// const paginatedData = useMemo(() => {
+	// 	const start = (page - 1) * pageSize;
+	// 	const end = start + pageSize;
+	// 	return sortedAndFiltered.slice(start, end);
+	// }, [sortedAndFiltered, page, pageSize]);
 
 	const displayData = useMemo((): RegistrationDisplay[] => {
 		return sortedAndFiltered.map(r => ({
@@ -205,34 +205,34 @@ export default function RegistrationsPage() {
 		[t.viewDetails]
 	);
 
-	const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
+	// const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
 
-	function handleSort(field: SortField) {
-		if (sortField === field) {
-			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-		} else {
-			setSortField(field);
-			setSortDirection("asc");
-		}
-	}
+	// function handleSort(field: SortField) {
+	// 	if (sortField === field) {
+	// 		setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+	// 	} else {
+	// 		setSortField(field);
+	// 		setSortDirection("asc");
+	// 	}
+	// }
 
-	function toggleSelectAll() {
-		if (selectedRegistrations.size === paginatedData.length) {
-			setSelectedRegistrations(new Set());
-		} else {
-			setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
-		}
-	}
+	// function toggleSelectAll() {
+	// 	if (selectedRegistrations.size === paginatedData.length) {
+	// 		setSelectedRegistrations(new Set());
+	// 	} else {
+	// 		setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
+	// 	}
+	// }
 
-	function toggleSelect(id: string) {
-		const newSet = new Set(selectedRegistrations);
-		if (newSet.has(id)) {
-			newSet.delete(id);
-		} else {
-			newSet.add(id);
-		}
-		setSelectedRegistrations(newSet);
-	}
+	// function toggleSelect(id: string) {
+	// 	const newSet = new Set(selectedRegistrations);
+	// 	if (newSet.has(id)) {
+	// 		newSet.delete(id);
+	// 	} else {
+	// 		newSet.add(id);
+	// 	}
+	// 	setSelectedRegistrations(newSet);
+	// }
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);

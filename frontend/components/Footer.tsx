@@ -28,7 +28,7 @@ export default function Footer() {
 		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 
-	const isAdminPage = pathname.includes("/admin");
+	// const isAdminPage = pathname.includes("/admin");
 	const isMagicLinkPage = pathname.includes("/magic-link");
 
 	if (isMagicLinkPage) {

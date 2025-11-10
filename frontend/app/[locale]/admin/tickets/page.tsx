@@ -242,31 +242,29 @@ export default function TicketsPage() {
 			return {
 				...ticket,
 				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
-				formattedSaleStart: formatDateTime(ticket.saleStart),
-				formattedSaleEnd: formatDateTime(ticket.saleEnd),
-				statusLabel: status.label,
-				statusClass: status.class
-			};
-		});
-	}, [tickets, locale, t.notStarted, t.ended, t.selling]);
+			formattedSaleStart: formatDateTime(ticket.saleStart),
+			formattedSaleEnd: formatDateTime(ticket.saleEnd),
+			statusLabel: status.label,
+			statusClass: status.class
+		};
+	});
+}, [tickets, locale, computeStatus]);
 
-	const columns = useMemo(
-		() =>
-			createTicketsColumns({
-				onEdit: openModal,
-				onDelete: deleteTicket,
-				onLinkBuilder: openLinkBuilder,
-				t: {
-					editTicket: t.editTicket,
-					delete: t.delete,
-					directLink: t.directLink,
-					hidden: t.hidden
-				}
-			}),
-		[t.editTicket, t.delete, t.directLink, t.hidden]
-	);
-
-	function openLinkBuilder(ticket: Ticket) {
+const columns = useMemo(
+	() =>
+		createTicketsColumns({
+			onEdit: openModal,
+			onDelete: deleteTicket,
+			onLinkBuilder: openLinkBuilder,
+			t: {
+				editTicket: t.editTicket,
+				delete: t.delete,
+				directLink: t.directLink,
+				hidden: t.hidden
+			}
+		}),
+	[t.editTicket, t.delete, t.directLink, t.hidden, openModal, deleteTicket, openLinkBuilder]
+);	function openLinkBuilder(ticket: Ticket) {
 		setSelectedTicketForLink(ticket);
 		setInviteCode("");
 		setRefCode("");

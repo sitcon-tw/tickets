@@ -267,19 +267,17 @@ export default function EmailCampaignsPage() {
 	const columns = useMemo(
 		() =>
 			createCampaignsColumns({
-				onPreview: handlePreview,
-				onSend: handleSend,
-				onCancel: handleCancel,
-				t: {
-					preview: t.preview,
-					send: t.send,
-					cancel: t.cancel
-				}
-			}),
-		[t.preview, t.send, t.cancel]
-	);
-
-	return (
+			onPreview: handlePreview,
+			onSend: handleSend,
+			onCancel: handleCancel,
+			t: {
+				preview: t.preview,
+				send: t.send,
+				cancel: t.cancel
+			}
+		}),
+		[t.preview, t.send, t.cancel, handlePreview, handleSend, handleCancel]
+	);	return (
 		<main>
 			<AdminHeader title={t.title} />
 

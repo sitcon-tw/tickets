@@ -62,7 +62,7 @@ export default function EventList() {
 
 					setEvents(sortedEvents);
 				}
-			} catch (error) {
+			} catch {
 				showAlert("Failed to fetch events.", "error");
 			} finally {
 				setLoading(false);

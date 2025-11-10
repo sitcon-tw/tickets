@@ -78,18 +78,18 @@ function evaluateTicketCondition(condition: FilterCondition, context: { selected
 /**
  * Gets the localized field name that's used as the key in formData
  */
-function getFieldNameKey(field: EventFormField, locale: string = "en"): string {
-	if (typeof field.name === "string") {
-		return field.name;
-	}
+// function getFieldNameKey(field: EventFormField, locale: string = "en"): string {
+// 	if (typeof field.name === "string") {
+// 		return field.name;
+// 	}
 
-	if (typeof field.name === "object" && field.name !== null) {
-		// Try the current locale first, then fallback to 'en', then any available locale
-		return field.name[locale] || field.name["en"] || Object.values(field.name)[0] || field.id;
-	}
+// 	if (typeof field.name === "object" && field.name !== null) {
+// 		// Try the current locale first, then fallback to 'en', then any available locale
+// 		return field.name[locale] || field.name["en"] || Object.values(field.name)[0] || field.id;
+// 	}
 
-	return field.id;
-}
+// 	return field.id;
+// }
 
 /**
  * Evaluates a field-based condition

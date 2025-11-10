@@ -137,7 +137,7 @@ export default function Login() {
 					// User is already logged in, redirect to home
 					router.push(`/${locale}`);
 				}
-			} catch (error) {
+			} catch {
 				// User is not logged in, stay on login page
 				console.log("User not logged in");
 			} finally {

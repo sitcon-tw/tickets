@@ -3,11 +3,6 @@ import { useLocale } from "next-intl";
 import Image from "next/image";
 import DecryptedText from "./DecryptedText";
 
-interface PageSpinnerProps {
-	size?: number;
-	className?: string;
-}
-
 export default function PageSpinner() {
 	const locale = useLocale();
 	const t = getTranslations(locale, {

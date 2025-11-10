@@ -174,7 +174,7 @@ export default function Nav() {
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
 							</Button>
-							{gravatarUrl && <img src={gravatarUrl} alt="User Avatar" className="w-8 h-8 rounded-full" />}
+							{gravatarUrl && <Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />}
 						</>
 					) : session.status === "loading" ? (
 						<Spinner size="sm" />

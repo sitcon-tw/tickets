@@ -165,7 +165,7 @@ export default function UsersPage() {
 			statusClass: user.isActive ? "active" : "ended",
 			formattedCreatedAt: new Date(user.createdAt).toLocaleString()
 		}));
-	}, [filteredUsers, t.active, t.inactive, t.admin, t.viewer, t.eventAdmin]);
+	}, [filteredUsers, t.active, t.inactive, getRoleLabel]);
 
 	const columns = useMemo(
 		() =>
