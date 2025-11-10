@@ -287,7 +287,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	return (
 		<>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+		<div className="max-w-4xl mx-auto w-full">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
 				{isLoading && tickets.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
 						<PageSpinner />
@@ -373,6 +374,22 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				</div>,
 				document.body
 			)}
+			{/* Animation ticket */}
+			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+				{selectedTicket ? (
+					<>
+						<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
+						<p>
+							{t.time}
+							{selectedTicket.saleStart} - {selectedTicket.saleEnd}
+						</p>
+						<p className="remain">
+							{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+						</p>
+					</>
+				) : null}
+			</div>
+		</div>
 		</>
 	);
 }
