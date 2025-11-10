@@ -112,7 +112,7 @@ export default function Nav() {
 	return (
 		<nav className="fixed top-0 left-0 z-1000 w-full bg-gray-600 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-800 transition-colors text-gray-200 dark:text-gray-300">
 			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-4">
-				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity">
+				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
 					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
 				</a>
 				<div className="flex items-center gap-4">
