@@ -5,6 +5,11 @@ import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
@@ -243,142 +248,119 @@ export default function EventsPage() {
 					<Button onClick={() => openModal()}>+ {t.addEvent}</Button>
 				</section>
 
-				{showModal && (
-					<div className="admin-modal-overlay" onClick={closeModal}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{editingEvent ? t.editEvent : t.addEvent}</h2>
-								<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
-									✕
-								</Button>
+				<Dialog open={showModal} onOpenChange={setShowModal}>
+					<DialogContent className="max-h-[85vh] overflow-y-auto max-w-2xl">
+						<DialogHeader>
+							<DialogTitle>{editingEvent ? t.editEvent : t.addEvent}</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={saveEvent} className="space-y-4">
+							<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
+								<TabsList className="grid w-full grid-cols-3">
+									<TabsTrigger value="en">English</TabsTrigger>
+									<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
+									<TabsTrigger value="zh-Hans">简体中文</TabsTrigger>
+								</TabsList>
+
+								<TabsContent value="en" className="space-y-4">
+									<div className="space-y-2">
+										<Label htmlFor="nameEn">{t.eventName} (English) *</Label>
+										<Input id="nameEn" type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="descEn">{t.description} (English, Markdown)</Label>
+										<Textarea id="descEn" value={descEn} onChange={e => setDescEn(e.target.value)} rows={6} />
+										{descEn && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+												<MarkdownContent content={descEn} />
+											</div>
+										)}
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
+										<Textarea
+											id="plainDescEn"
+											value={plainDescEn}
+											onChange={e => setPlainDescEn(e.target.value)}
+											rows={4}
+											placeholder="Plain text description without markdown formatting"
+										/>
+									</div>
+								</TabsContent>
+
+								<TabsContent value="zh-Hant" className="space-y-4">
+									<div className="space-y-2">
+										<Label htmlFor="nameZhHant">{t.eventName} (繁體中文)</Label>
+										<Input id="nameZhHant" type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="descZhHant">{t.description} (繁體中文，Markdown)</Label>
+										<Textarea id="descZhHant" value={descZhHant} onChange={e => setDescZhHant(e.target.value)} rows={6} />
+										{descZhHant && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+												<MarkdownContent content={descZhHant} />
+											</div>
+										)}
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="plainDescZhHant">{t.plainDescription} (繁體中文)</Label>
+										<Textarea id="plainDescZhHant" value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} rows={4} placeholder="純文字描述，不含 Markdown 格式" />
+									</div>
+								</TabsContent>
+
+								<TabsContent value="zh-Hans" className="space-y-4">
+									<div className="space-y-2">
+										<Label htmlFor="nameZhHans">{t.eventName} (简体中文)</Label>
+										<Input id="nameZhHans" type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="descZhHans">{t.description} (简体中文，Markdown)</Label>
+										<Textarea id="descZhHans" value={descZhHans} onChange={e => setDescZhHans(e.target.value)} rows={6} />
+										{descZhHans && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+												<MarkdownContent content={descZhHans} />
+											</div>
+										)}
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="plainDescZhHans">{t.plainDescription} (简体中文)</Label>
+										<Textarea id="plainDescZhHans" value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
+									</div>
+								</TabsContent>
+							</Tabs>
+
+							<div className="space-y-2">
+								<Label htmlFor="ogImage">{t.ogImage}</Label>
+								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://example.com/image.jpg" />
 							</div>
-							<form onSubmit={saveEvent}>
-								<div className="flex flex-col gap-4 p-6">
-									{/* Language Tabs */}
-									<div className="flex gap-2 border-b-2 border-gray-700 dark:border-gray-800 mb-4">
-										{[
-											{ key: "en" as const, label: "English" },
-											{ key: "zh-Hant" as const, label: "繁體中文" },
-											{ key: "zh-Hans" as const, label: "简体中文" }
-										].map(tab => (
-											<Button
-												key={tab.key}
-												type="button"
-												variant="ghost"
-												onClick={() => setActiveTab(tab.key)}
-												className={`px-4 py-2 rounded-none transition-all duration-200 ${
-													activeTab === tab.key
-														? "bg-gray-600 dark:bg-gray-700 border-b-2 border-blue-500 dark:border-blue-400 text-gray-100 dark:text-gray-200 font-bold"
-														: "text-gray-400 dark:text-gray-500 font-normal"
-												}`}
-											>
-												{tab.label}
-											</Button>
-										))}
-									</div>
-
-									{/* English Fields */}
-									{activeTab === "en" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.eventName} (English) *</label>
-												<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (English, Markdown)</label>
-												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="" rows={6} />
-												{descEn && (
-													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
-														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-														<MarkdownContent content={descEn} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (English)</label>
-												<textarea value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} className="" rows={4} placeholder="Plain text description without markdown formatting" />
-											</div>
-										</>
-									)}
-
-									{/* Traditional Chinese Fields */}
-									{activeTab === "zh-Hant" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.eventName} (繁體中文)</label>
-												<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
-												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="" rows={6} />
-												{descZhHant && (
-													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
-														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-														<MarkdownContent content={descZhHant} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
-												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
-											</div>
-										</>
-									)}
-
-									{/* Simplified Chinese Fields */}
-									{activeTab === "zh-Hans" && (
-										<>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.eventName} (简体中文)</label>
-												<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="" />
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
-												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="" rows={6} />
-												{descZhHans && (
-													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
-														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-														<MarkdownContent content={descZhHans} />
-													</div>
-												)}
-											</div>
-											<div className="admin-form-group">
-												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
-												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
-											</div>
-										</>
-									)}
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.ogImage}</label>
-										<input type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} className="" placeholder="https://example.com/image.jpg" />
-									</div>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.location}</label>
-										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="" />
-									</div>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.startDate}</label>
-											<input name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.endDate}</label>
-											<input name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} className="" />
-										</div>
-									</div>
+							<div className="space-y-2">
+								<Label htmlFor="location">{t.location}</Label>
+								<Input id="location" name="location" type="text" defaultValue={editingEvent?.location || ""} />
+							</div>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="startDate">{t.startDate}</Label>
+									<Input id="startDate" name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} />
 								</div>
-								<div className="admin-modal-actions">
-									<Button type="submit" variant="default">
-										{t.save}
-									</Button>
-									<Button type="button" variant="secondary" onClick={closeModal}>
-										{t.cancel}
-									</Button>
+								<div className="space-y-2">
+									<Label htmlFor="endDate">{t.endDate}</Label>
+									<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} />
 								</div>
-							</form>
-						</div>
-					</div>
-				)}
+							</div>
+
+							<DialogFooter>
+								<Button type="button" variant="outline" onClick={closeModal}>
+									{t.cancel}
+								</Button>
+								<Button type="submit" variant="default">
+									{t.save}
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
 			</main>
 		</>
 	);
