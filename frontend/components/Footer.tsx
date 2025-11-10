@@ -3,13 +3,13 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { routing } from "@/i18n/routing";
 import { Globe, Heart } from "lucide-react";
-import { usePathname, useRouter as useNextRouter } from "next/navigation";
+import { useRouter as useNextRouter, usePathname } from "next/navigation";
 import { useMemo } from "react";
 
 export default function Footer() {
 	const pathname = usePathname();
 	const router = useNextRouter();
-	
+
 	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
@@ -36,7 +36,7 @@ export default function Footer() {
 	}
 
 	return (
-		<footer className={`text-center p-4 mt-8 ${isAdminPage ? "ml-0 md:ml-68" : ""}`}>
+		<footer className="text-center p-6 mt-8">
 			<div className="flex justify-center items-center gap-2 mb-3">
 				<Globe size={16} className="text-muted-foreground" />
 				<Select value={locale} onValueChange={handleLocaleChange}>
@@ -55,7 +55,7 @@ export default function Footer() {
 			<div className="flex justify-center items-center gap-1">
 				<p className="text-muted-foreground">
 					Made by EM & Nelson from{" "}
-					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="underline hover:text-foreground transition-colors">
+					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="underline">
 						SITCON
 					</a>{" "}
 					with{" "}
@@ -64,7 +64,7 @@ export default function Footer() {
 			</div>
 			<p className="text-sm text-muted-foreground mt-1">
 				This project is open-sourced on{" "}
-				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="underline hover:text-foreground transition-colors">
+				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="underline">
 					GitHub
 				</a>
 				.

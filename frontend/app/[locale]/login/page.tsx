@@ -2,6 +2,7 @@
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
@@ -12,21 +13,16 @@ import React, { useEffect, useState } from "react";
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
 		<div className="my-4 mx-auto">
-			<Button
-				onClick={onClick}
-				disabled={disabled}
-				size="lg"
-				className="group relative overflow-hidden"
-			>
+			<Button onClick={onClick} disabled={disabled} size="lg" className="group relative overflow-hidden bg-primary hover:bg-primary/90 border-2 border-primary/50 dark:border-primary/30">
 				<div className="svg-wrapper-1">
 					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 						{isLoading ? (
 							<Spinner size="sm" />
 						) : (
-							<svg 
-								xmlns="http://www.w3.org/2000/svg" 
-								viewBox="0 0 24 24" 
-								width={24} 
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								width={24}
 								height={24}
 								className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110"
 							>
@@ -36,14 +32,16 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 						)}
 					</div>
 				</div>
-				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">
-					{children}
-				</span>
+				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{children}</span>
 			</Button>
 			<style jsx>{`
 				@keyframes fly-1 {
-					from { transform: translateY(0.1em); }
-					to { transform: translateY(-0.1em); }
+					from {
+						transform: translateY(0.1em);
+					}
+					to {
+						transform: translateY(-0.1em);
+					}
 				}
 			`}</style>
 		</div>
@@ -221,66 +219,43 @@ export default function Login() {
 	// Show loading spinner while checking auth
 	if (isCheckingAuth) {
 		return (
-			<main>
-				<section className="relative h-screen">
-					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full p-4 text-center">
-						<Spinner />
-					</div>
-				</section>
-			</main>
+			<div className="flex flex-col items-center justify-center h-full">
+				<Spinner />
+			</div>
 		);
 	}
 
 	return (
-		<>
-			<main>
-				<section className="relative h-screen">
-					<div 
-						className={`
-							absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-							max-w-full p-4 transition-opacity duration-300 ease-in-out
-							${viewState === "login" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-						`}
-					>
-						<h1 className="my-4 text-center">{t.login}</h1>
-						<label htmlFor="email" className="block mb-2 font-bold">
-							Email
-						</label>
-						<input 
-							type="email" 
-							name="email" 
-							id="email" 
-							onChange={(e) => setEmail(e.target.value)}
-							className="border-2 border-gray-900 w-80 p-2 max-w-full rounded-lg"
-						/>
-						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
-							{t.continue}
-						</SendButton>
-						<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
-							{t.acceptTermsAsLoggedIn}{" "}
-							<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
-								{t.termsLink}
-							</a>
-						</p>
-					</div>
+		<div className="flex flex-col items-center justify-center h-full">
+			<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
+			<label htmlFor="email" className="block mb-2 font-bold">
+				Email
+			</label>
+			<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
+			<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
+				{t.continue}
+			</SendButton>
+			<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
+				{t.acceptTermsAsLoggedIn}{" "}
+				<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+					{t.termsLink}
+				</a>
+			</p>
 
-					<div 
-						className={`
-							absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-							max-w-full p-4 transition-opacity duration-300 ease-in-out
-							${viewState === "sent" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-						`}
-					>
-						<div>
-							<h2 className="mb-4">
-								{t.sent}
-								{email}
-							</h2>
-							<p className="leading-relaxed">{t.message}</p>
-						</div>
-					</div>
-				</section>
-			</main>
-		</>
+			<div
+				className={`
+					w-full max-w-md transition-opacity duration-300 ease-in-out
+					${viewState === "sent" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none absolute"}
+				`}
+			>
+				<div>
+					<h2 className="mb-4 text-xl font-semibold">
+						{t.sent}
+						{email}
+					</h2>
+					<p className="leading-relaxed">{t.message}</p>
+				</div>
+			</div>
+		</div>
 	);
 }

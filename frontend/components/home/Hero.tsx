@@ -16,12 +16,12 @@ export default function Hero() {
 	});
 
 	return (
-		<div className="flex flex-col items-center justify-center py-16 px-4">
+		<div className="px-8 pt-32 pb-16 flex flex-col items-center">
 			<h1 className="mb-8">
-				<Image src="/assets/SITCONTIX_gray.svg" alt="SITCONTIX" width={200} height={200} className="dark:hidden" priority />
-				<Image src="/assets/SITCONTIX.svg" alt="SITCONTIX" width={200} height={200} className="hidden dark:block" priority />
+				<Image src="/assets/SITCONTIX_gray.svg" alt="SITCONTIX" width={384} height={77} className="dark:hidden" priority />
+				<Image src="/assets/SITCONTIX.svg" alt="SITCONTIX" width={384} height={77} className="hidden dark:block" priority />
 			</h1>
-			<p className="text-lg md:text-xl text-muted-foreground text-center max-w-2xl">{t.description}</p>
+			<p className="text-lg md:text-xl">{t.description}</p>
 		</div>
 	);
 }

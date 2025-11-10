@@ -8,90 +8,42 @@
 	}
 
 	body {
-		@apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+		@apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
 		@apply antialiased;
 		min-height: 100dvh;
 	}
 }
 
 @layer components {
-	/* Main layout padding for fixed nav */
-	main {
-		@apply pt-20;
-	}
-
-	/* Layout structure for admin pages */
-	.admin-main-container {
-		@apply flex-1 flex flex-col;
-		@apply ml-0 md:ml-68;
-	}
-
-	/* Ticket card component */
+	/* Ticket card */
 	.ticket {
-		@apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
-		@apply rounded-lg p-6 cursor-pointer transition-all duration-200;
-		@apply hover:border-blue-500 dark:hover:border-blue-400;
-		@apply hover:shadow-lg dark:hover:shadow-blue-500/20;
+		@apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 cursor-pointer transition-all duration-200;
+		@apply hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-lg dark:hover:shadow-blue-500/20;
 	}
-
-	.ticket h3 {
-		@apply text-xl font-bold mb-2 text-gray-900 dark:text-gray-100;
-	}
-
-	.ticket p {
-		@apply text-gray-700 dark:text-gray-300 mb-1;
-	}
-
-	.ticket .remain {
-		@apply text-gray-600 dark:text-gray-400 font-medium;
-	}
+	.ticket h3 { @apply text-xl font-bold mb-2 text-gray-900 dark:text-gray-100; }
+	.ticket p { @apply text-gray-700 dark:text-gray-300 mb-1; }
+	.ticket .remain { @apply text-gray-600 dark:text-gray-400 font-medium; }
 
 	/* Button component */
 	.button {
 		@apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
 		@apply bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600;
-		@apply text-white shadow-md hover:shadow-lg;
-		@apply disabled:opacity-50 disabled:cursor-not-allowed;
+		@apply text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
 	}
 
 	/* Tickets container */
-	.tickets-container {
-		@apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4;
-	}
+	.tickets-container { @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4; }
 
 	/* Content section */
-	.content {
-		@apply max-w-4xl mx-auto px-4 py-8;
-		@apply text-gray-900 dark:text-gray-100;
-	}
+	.content { @apply max-w-4xl mx-auto px-4 py-8 text-gray-900 dark:text-gray-100; }
+	.content h1, .content h2, .content h3 { @apply text-gray-900 dark:text-gray-100; }
+	.content p { @apply text-gray-700 dark:text-gray-300; }
+	.content a { @apply text-blue-600 dark:text-blue-400 hover:underline; }
 
-	.content h1,
-	.content h2,
-	.content h3 {
-		@apply text-gray-900 dark:text-gray-100;
-	}
-
-	.content p {
-		@apply text-gray-700 dark:text-gray-300;
-	}
-
-	.content a {
-		@apply text-blue-600 dark:text-blue-400 hover:underline;
-	}
-
-	/* About section in modal */
-	.about {
-		@apply text-gray-900 dark:text-gray-100;
-	}
-
-	.about .content h2 {
-		@apply text-gray-900 dark:text-gray-100 mb-4;
-	}
-
-	.about .content p,
-	.about .content li {
-		@apply text-gray-700 dark:text-gray-300;
-	}
+	/* About section */
+	.about { @apply text-gray-900 dark:text-gray-100; }
+	.about .content h2 { @apply text-gray-900 dark:text-gray-100 mb-4; }
+	.about .content p, .about .content li { @apply text-gray-700 dark:text-gray-300; }
 
 	/* Admin components */
 	.admin-button {
