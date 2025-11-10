@@ -199,7 +199,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				<section className="bg-gray-100 dark:bg-gray-800 p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out]">
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.loggedInWelcome}</h2>
 					{!isSmsVerified && (
-						<div className="text-yellow-200 items-center justify-center flex flex-col gap-2">
+						<div className="text-yellow-500 items-center justify-center flex flex-col gap-2">
 							<div>
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>

@@ -702,18 +702,15 @@ export default function FormsPage() {
 														<Button
 															type="button"
 															onClick={() => updateQuestion(q.id, { required: !q.required })}
-															className={`admin-button text-xs py-2 px-3 transition-all ${
-																q.required
-																	? "bg-(--color-primary) border-(--color-primary) text-white font-semibold"
-																	: "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium"
-															}`}
+															variant={q.required ? "default" : "secondary"}
+															className="text-xs py-2 px-3"
 														>
 															{q.required ? t.fieldRequired : t.fieldOptional}
 														</Button>
 														<Button
 															type="button"
 															onClick={() => deleteQuestion(q.id)}
-															className="text-xs py-2 px-3 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400"
+															className="text-xs py-2 px-3"
 															variant="destructive"
 															title={t.deleteField}
 														>

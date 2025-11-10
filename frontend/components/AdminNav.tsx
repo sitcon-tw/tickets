@@ -13,7 +13,7 @@ import { useRouter as useNextRouter, usePathname } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const activityLinks = [
-	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
+	{ href: "/admin/", i18nKey: "statistics", requireCapability: "canViewAnalytics" },
 	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
 	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
 	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null }, // Always show
@@ -137,10 +137,10 @@ function AdminNav() {
 			"zh-Hans": "管理员界面",
 			en: "Admin Panel"
 		},
-		overview: {
-			"zh-Hant": "總覽",
-			"zh-Hans": "总览",
-			en: "Overview"
+		statistics: {
+			"zh-Hant": "報名統計",
+			"zh-Hans": "报名统计",
+			en: "Statistics"
 		},
 		events: {
 			"zh-Hant": "活動管理",

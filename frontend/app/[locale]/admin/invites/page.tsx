@@ -3,6 +3,11 @@
 import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -47,6 +52,15 @@ export default function InvitesPage() {
 	const [isSendingEmail, setIsSendingEmail] = useState(false);
 	const [bulkImportCodes, setBulkImportCodes] = useState("");
 	const [isImporting, setIsImporting] = useState(false);
+	const [selectedTicketId, setSelectedTicketId] = useState("");
+	const [bulkTicketId, setBulkTicketId] = useState("");
+	const [formData, setFormData] = useState({
+		name: "",
+		amount: 10,
+		usageLimit: 1,
+		validFrom: "",
+		validUntil: ""
+	});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -163,17 +177,11 @@ export default function InvitesPage() {
 
 	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const ticketId = formData.get("ticketId") as string;
 
-		if (!ticketId) {
+		if (!selectedTicketId) {
 			showAlert(t.pleaseSelectTicket, "warning");
 			return;
 		}
-
-		const count = parseInt(formData.get("amount") as string);
-		const validFromStr = formData.get("validFrom") as string;
-		const validUntilStr = formData.get("validUntil") as string;
 
 		const data: {
 			ticketId: string;
@@ -183,17 +191,17 @@ export default function InvitesPage() {
 			validFrom?: string;
 			validUntil?: string;
 		} = {
-			ticketId,
-			prefix: formData.get("name") as string,
-			count,
-			usageLimit: parseInt(formData.get("usageLimit") as string) || 1
+			ticketId: selectedTicketId,
+			prefix: formData.name,
+			count: formData.amount,
+			usageLimit: formData.usageLimit
 		};
 
-		if (validFromStr) {
-			data.validFrom = new Date(validFromStr).toISOString();
+		if (formData.validFrom) {
+			data.validFrom = new Date(formData.validFrom).toISOString();
 		}
-		if (validUntilStr) {
-			data.validUntil = new Date(validUntilStr).toISOString();
+		if (formData.validUntil) {
+			data.validUntil = new Date(formData.validUntil).toISOString();
 		}
 
 		try {
@@ -201,7 +209,15 @@ export default function InvitesPage() {
 			await loadTickets();
 			await loadInvitationCodes();
 			setShowModal(false);
-			showAlert(t.createSuccess.replace("{count}", count.toString()), "success");
+			setSelectedTicketId("");
+			setFormData({
+				name: "",
+				amount: 10,
+				usageLimit: 1,
+				validFrom: "",
+				validUntil: ""
+			});
+			showAlert(t.createSuccess.replace("{count}", formData.amount.toString()), "success");
 		} catch (error) {
 			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
@@ -494,23 +510,23 @@ export default function InvitesPage() {
 		<>
 			<main>
 				<AdminHeader title={t.title} />
-				<section className="admin-controls">
+				<section className="flex gap-2 mb-4">
 					<Button onClick={() => setShowModal(true)}>➕ {t.add}</Button>
 					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
 						📥 {t.bulkImport}
 					</Button>
-					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="" />
+					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
 				</section>
 
 				<section>
 					<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
 						{isLoading && (
-							<div className="admin-loading">
+							<div className="flex justify-center py-8">
 								<PageSpinner />
 							</div>
 						)}
 						{!isLoading && (
-							<table className="admin-table">
+							<table className="w-full text-left border-collapse">
 								<thead>
 									<tr>
 										<th>{t.name}</th>
@@ -546,167 +562,210 @@ export default function InvitesPage() {
 					</div>
 				</section>
 
-				{showModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.add}</h2>
-								<Button variant="ghost" size="icon" onClick={() => setShowModal(false)} className="h-8 w-8">
-									✕
-								</Button>
+				<Dialog open={showModal} onOpenChange={setShowModal}>
+					<DialogContent className="max-w-2xl">
+						<DialogHeader>
+							<DialogTitle>{t.add}</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={createInvitationCodes} className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="ticketId">{t.ticketType}</Label>
+								<Select name="ticketId" value={selectedTicketId} onValueChange={setSelectedTicketId} required>
+									<SelectTrigger>
+										<SelectValue placeholder={t.pleaseSelectTicket} />
+									</SelectTrigger>
+									<SelectContent>
+										{tickets.map(ticket => (
+											<SelectItem key={ticket.id} value={ticket.id}>
+												{getLocalizedText(ticket.name, locale)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
-							<form onSubmit={createInvitationCodes}>
-								<div className="flex flex-col gap-4">
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="">
-											<option value="">{t.pleaseSelectTicket}</option>
-											{tickets.map(ticket => (
-												<option key={ticket.id} value={ticket.id}>
-													{getLocalizedText(ticket.name, locale)}
-												</option>
-											))}
-										</select>
-									</div>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.name}</label>
-										<input name="name" type="text" required placeholder="e.g. VIP Media" className="" />
-									</div>
-									<div className="grid grid-cols-2 gap-4">
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.amount}</label>
-											<input name="amount" type="number" min="1" max="1000" defaultValue="10" required className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="" />
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-4">
-										<div className="admin-form-group">
-											<label className="admin-form-label">
-												{t.validFrom} ({t.optional})
-											</label>
-											<input name="validFrom" type="datetime-local" className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">
-												{t.validUntil} ({t.optional})
-											</label>
-											<input name="validUntil" type="datetime-local" className="" />
-										</div>
-									</div>
-								</div>
-								<div className="admin-modal-actions">
-									<Button type="submit">{t.save}</Button>
-									<Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
-										{t.cancel}
-									</Button>
-								</div>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{showBulkImportModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowBulkImportModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.bulkImportTitle}</h2>
-								<Button variant="ghost" size="icon" onClick={() => setShowBulkImportModal(false)} className="h-8 w-8">
-									✕
-								</Button>
+							<div className="space-y-2">
+								<Label htmlFor="name">{t.name}</Label>
+								<Input 
+									id="name" 
+									name="name" 
+									type="text" 
+									required 
+									placeholder="e.g. VIP Media"
+									value={formData.name}
+									onChange={e => setFormData({...formData, name: e.target.value})}
+								/>
 							</div>
-							<form onSubmit={handleBulkImport}>
-								<div className="flex flex-col gap-4">
-									<p className="text-sm opacity-80">{t.bulkImportDescription}</p>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="">
-											<option value="">{t.pleaseSelectTicket}</option>
-											{tickets.map(ticket => (
-												<option key={ticket.id} value={ticket.id}>
-													{getLocalizedText(ticket.name, locale)}
-												</option>
-											))}
-										</select>
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">
-											{t.name} ({t.optional})
-										</label>
-										<input name="name" type="text" placeholder="e.g. VIP Media" className="" />
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.uploadFile}</label>
-										<input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="" />
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="font-mono resize-y" />
-									</div>
-
-									<div className="grid grid-cols-2 gap-4">
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="" />
-										</div>
-										<div className="flex flex-col gap-2">
-											<div className="admin-form-group">
-												<label className="admin-form-label">
-													{t.validFrom} ({t.optional})
-												</label>
-												<input name="validFrom" type="datetime-local" className="" />
-											</div>
-										</div>
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">
-											{t.validUntil} ({t.optional})
-										</label>
-										<input name="validUntil" type="datetime-local" className="" />
-									</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="amount">{t.amount}</Label>
+									<Input 
+										id="amount" 
+										name="amount" 
+										type="number" 
+										min="1" 
+										max="1000" 
+										required
+										value={formData.amount}
+										onChange={e => setFormData({...formData, amount: parseInt(e.target.value)})}
+									/>
 								</div>
-								<div className="admin-modal-actions">
-									<Button type="submit" disabled={isImporting}>
-										{isImporting ? "匯入中..." : t.import}
-									</Button>
-									<Button type="button" variant="secondary" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
-										{t.cancel}
-									</Button>
+								<div className="space-y-2">
+									<Label htmlFor="usageLimit">{t.usageLimit}</Label>
+									<Input 
+										id="usageLimit" 
+										name="usageLimit" 
+										type="number" 
+										min="1" 
+										max="100" 
+										required
+										value={formData.usageLimit}
+										onChange={e => setFormData({...formData, usageLimit: parseInt(e.target.value)})}
+									/>
 								</div>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{showCodesModal && currentType && (
-					<div className="admin-modal-overlay" onClick={() => setShowCodesModal(false)}>
-						<div className="admin-modal max-w-[900px]" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">
-									{t.codes} - {currentType.name}
-									{selectedCodes.size > 0 && <span className="text-[0.85rem] opacity-70 ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
-								</h2>
-								<Button variant="ghost" size="icon" onClick={() => setShowCodesModal(false)} className="h-8 w-8">
-									✕
-								</Button>
 							</div>
-							<div className="admin-controls">
-								<Button variant="secondary" size="sm" onClick={toggleSelectAll}>
-									{selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="validFrom">
+										{t.validFrom} ({t.optional})
+									</Label>
+									<Input 
+										id="validFrom" 
+										name="validFrom" 
+										type="datetime-local"
+										value={formData.validFrom}
+										onChange={e => setFormData({...formData, validFrom: e.target.value})}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="validUntil">
+										{t.validUntil} ({t.optional})
+									</Label>
+									<Input 
+										id="validUntil" 
+										name="validUntil" 
+										type="datetime-local"
+										value={formData.validUntil}
+										onChange={e => setFormData({...formData, validUntil: e.target.value})}
+									/>
+								</div>
+							</div>
+							<DialogFooter>
+								<Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+									{t.cancel}
+								</Button>
+								<Button type="submit">{t.save}</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={showBulkImportModal} onOpenChange={setShowBulkImportModal}>
+					<DialogContent className="max-w-2xl">
+						<DialogHeader>
+							<DialogTitle>{t.bulkImportTitle}</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={handleBulkImport} className="space-y-4">
+							<p className="text-sm text-muted-foreground">{t.bulkImportDescription}</p>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkTicketId">{t.ticketType}</Label>
+								<Select name="ticketId" value={bulkTicketId} onValueChange={setBulkTicketId} required>
+									<SelectTrigger>
+										<SelectValue placeholder={t.pleaseSelectTicket} />
+									</SelectTrigger>
+									<SelectContent>
+										{tickets.map(ticket => (
+											<SelectItem key={ticket.id} value={ticket.id}>
+												{getLocalizedText(ticket.name, locale)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkName">
+									{t.name} ({t.optional})
+								</Label>
+								<Input id="bulkName" name="name" type="text" placeholder="e.g. VIP Media" />
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkFile">{t.uploadFile}</Label>
+								<Input id="bulkFile" type="file" accept=".txt,.csv" onChange={handleFileUpload} />
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkCodes">{t.pasteOrType}</Label>
+								<Textarea 
+									id="bulkCodes"
+									value={bulkImportCodes} 
+									onChange={e => setBulkImportCodes(e.target.value)} 
+									placeholder={t.codesPlaceholder} 
+									rows={10} 
+									className="font-mono"
+								/>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="bulkUsageLimit">{t.usageLimit}</Label>
+									<Input id="bulkUsageLimit" name="usageLimit" type="number" min="1" max="100" defaultValue="1" required />
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="bulkValidFrom">
+										{t.validFrom} ({t.optional})
+									</Label>
+									<Input id="bulkValidFrom" name="validFrom" type="datetime-local" />
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkValidUntil">
+									{t.validUntil} ({t.optional})
+								</Label>
+								<Input id="bulkValidUntil" name="validUntil" type="datetime-local" />
+							</div>
+
+							<DialogFooter>
+								<Button type="button" variant="outline" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
+									{t.cancel}
+								</Button>
+								<Button type="submit" disabled={isImporting}>
+									{isImporting ? "匯入中..." : t.import}
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={showCodesModal} onOpenChange={setShowCodesModal}>
+					<DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>
+								{currentType && (
+									<>
+										{t.codes} - {currentType.name}
+										{selectedCodes.size > 0 && (
+											<span className="text-sm font-normal text-muted-foreground ml-2">
+												({t.selected.replace("{count}", selectedCodes.size.toString())})
+											</span>
+										)}
+									</>
+								)}
+							</DialogTitle>
+						</DialogHeader>
+						<div className="space-y-4">
+							<div className="flex flex-wrap gap-2">
+								<Button variant="outline" size="sm" onClick={toggleSelectAll}>
+									{currentType && selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
 								</Button>
 								{selectedCodes.size > 0 && (
 									<>
-										<Button size="sm" onClick={downloadSelectedCodesAsTxt}>
+										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsTxt}>
 											📥 {t.downloadTxt} ({selectedCodes.size})
 										</Button>
-										<Button size="sm" onClick={() => setShowEmailModal(true)}>
+										<Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
 											📧 {t.sendEmail} ({selectedCodes.size})
 										</Button>
 										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
@@ -715,36 +774,46 @@ export default function InvitesPage() {
 									</>
 								)}
 							</div>
-							<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
-								<table className="admin-table">
+							<div className="overflow-x-auto rounded-lg border">
+								<table className="w-full">
 									<thead>
-										<tr>
-											<th className="w-[50px] text-center">
-												<input type="checkbox" checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} onChange={toggleSelectAll} className="cursor-pointer" />
+										<tr className="border-b bg-muted/50">
+											<th className="w-[50px] text-center p-2">
+												<input 
+													type="checkbox" 
+													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} 
+													onChange={toggleSelectAll} 
+													className="cursor-pointer" 
+												/>
 											</th>
-											<th>{t.code}</th>
-											<th>{t.usage}</th>
-											<th>{t.limit}</th>
-											<th>{t.status}</th>
-											<th>{t.actions}</th>
+											<th className="text-left p-2">{t.code}</th>
+											<th className="text-left p-2">{t.usage}</th>
+											<th className="text-left p-2">{t.limit}</th>
+											<th className="text-left p-2">{t.status}</th>
+											<th className="text-left p-2">{t.actions}</th>
 										</tr>
 									</thead>
 									<tbody>
-										{currentType.codes.map(code => {
+										{currentType?.codes.map(code => {
 											const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
 											const statusClass = status === "active" ? "active" : "ended";
 											return (
-												<tr key={code.id}>
-													<td className="text-center">
-														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
+												<tr key={code.id} className="border-b hover:bg-muted/50">
+													<td className="text-center p-2">
+														<input 
+															type="checkbox" 
+															checked={selectedCodes.has(code.id)} 
+															onChange={() => toggleCodeSelection(code.id)} 
+															className="cursor-pointer" 
+														/>
 													</td>
-													<td>{code.code}</td>
-													<td>{code.usedCount}</td>
-													<td>{code.usageLimit}</td>
-													<td>
+													<td className="p-2 font-mono text-sm">{code.code}</td>
+													<td className="p-2">{code.usedCount}</td>
+													<td className="p-2">{code.usageLimit}</td>
+													<td className="p-2">
 														<span className={`status-badge ${statusClass}`}>{status}</span>
 													</td>
-													<td>
+													<td className="p-2">
 														<Button variant="destructive" size="sm" onClick={() => deleteInvitationCode(code.id)}>
 															{t.delete}
 														</Button>
@@ -756,36 +825,40 @@ export default function InvitesPage() {
 								</table>
 							</div>
 						</div>
-					</div>
-				)}
+					</DialogContent>
+				</Dialog>
 
-				{showEmailModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowEmailModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.sendEmail}</h2>
-								<Button variant="ghost" size="icon" onClick={() => setShowEmailModal(false)} className="h-8 w-8">
-									✕
-								</Button>
-							</div>
-							<div className="flex flex-col gap-4 p-4">
-								<p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
-								<div className="admin-form-group">
-									<label className="admin-form-label">{t.emailAddress}</label>
-									<input type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} className="" required />
-								</div>
-							</div>
-							<div className="admin-modal-actions">
-								<Button type="button" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
-									{isSendingEmail ? "發送中..." : t.send}
-								</Button>
-								<Button type="button" variant="secondary" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
-									{t.cancel}
-								</Button>
+				<Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+					<DialogContent className="max-w-md">
+						<DialogHeader>
+							<DialogTitle>{t.sendEmail}</DialogTitle>
+						</DialogHeader>
+						<div className="space-y-4">
+							<p className="text-sm text-muted-foreground">
+								將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址
+							</p>
+							<div className="space-y-2">
+								<Label htmlFor="emailAddress">{t.emailAddress}</Label>
+								<Input 
+									id="emailAddress"
+									type="email" 
+									value={emailAddress} 
+									onChange={e => setEmailAddress(e.target.value)} 
+									placeholder={t.emailPlaceholder}
+									required 
+								/>
 							</div>
 						</div>
-					</div>
-				)}
+						<DialogFooter>
+							<Button type="button" variant="outline" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
+								{t.cancel}
+							</Button>
+							<Button type="button" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
+								{isSendingEmail ? "發送中..." : t.send}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</main>
 		</>
 	);

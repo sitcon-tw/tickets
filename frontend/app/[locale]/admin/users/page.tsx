@@ -4,6 +4,11 @@ import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
@@ -179,13 +184,13 @@ export default function UsersPage() {
 	return (
 		<main>
 			<AdminHeader title={t.title} />
-			<section className="admin-controls">
-				<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="" />
+			<section className="flex gap-2 mb-4">
+				<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
 			</section>
 
 			<section>
 				{isLoading ? (
-					<div className="admin-loading">
+					<div className="flex justify-center py-8">
 						<PageSpinner />
 					</div>
 				) : (
@@ -193,82 +198,84 @@ export default function UsersPage() {
 				)}
 			</section>
 
-			{showEditModal && editingUser && (
-				<div className="admin-modal-overlay" onClick={closeEditModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.editUser}</h2>
-							<Button variant="ghost" size="icon" onClick={closeEditModal} className="h-8 w-8">
-								✕
-							</Button>
+			<Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t.editUser}</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={handleUpdateUser}>
+						<div className="mb-6">
+							<p className="m-0 mb-2 text-sm opacity-70">
+								{t.name}: <strong>{editingUser?.name}</strong>
+							</p>
+							<p className="m-0 mb-2 text-sm opacity-70">
+								{t.email}: <strong>{editingUser?.email}</strong>
+							</p>
 						</div>
-						<form onSubmit={handleUpdateUser}>
-							<div className="mb-6">
-								<p className="m-0 mb-2 text-sm opacity-70">
-									{t.name}: <strong>{editingUser.name}</strong>
-								</p>
-								<p className="m-0 mb-2 text-sm opacity-70">
-									{t.email}: <strong>{editingUser.email}</strong>
-								</p>
-							</div>
-							<div className="admin-form-group">
-								<label className="admin-form-label">{t.role}</label>
-								<select
-									name="role"
-									value={selectedRole}
-									className=""
-									onChange={e => {
-										const newRole = e.target.value as "admin" | "viewer" | "eventAdmin";
-										setSelectedRole(newRole);
-										// Clear event selections when switching away from eventAdmin
-										if (newRole !== "eventAdmin") {
-											setSelectedEventIds([]);
-										}
-									}}
-								>
-									<option value="admin">{t.admin}</option>
-									<option value="viewer">{t.viewer}</option>
-									<option value="eventAdmin">{t.eventAdmin}</option>
-								</select>
-							</div>
-							<div className="admin-form-group mt-4">
-								<label className="admin-form-label">{t.status}</label>
-								<select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"} className="">
-									<option value="true">{t.active}</option>
-									<option value="false">{t.inactive}</option>
-								</select>
-							</div>
-							{/* Event selection for eventAdmin role */}
-							{selectedRole === "eventAdmin" && (
-								<div className="admin-form-group mt-4">
-									<label className="admin-form-label">{t.manageableEvents}</label>
-									<div className="max-h-[200px] overflow-y-auto border border-gray-300 rounded p-2">
-										{events.length === 0 ? (
-											<p className="m-0 text-sm opacity-70">{t.noEventsSelected}</p>
-										) : (
-											events.map(event => (
-												<label key={event.id} className="flex items-center p-2 cursor-pointer border-b border-gray-200">
-													<input type="checkbox" checked={selectedEventIds.includes(event.id)} onChange={() => toggleEventSelection(event.id)} className="mr-2" />
-													<span>{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
-												</label>
-											))
-										)}
-									</div>
-									<p className="text-xs mt-2 opacity-70">
-										{selectedEventIds.length} {t.selectEvents}
-									</p>
+						<div className="mb-4">
+							<Label>{t.role}</Label>
+							<Select
+								name="role"
+								value={selectedRole}
+								onValueChange={value => {
+									const newRole = value as "admin" | "viewer" | "eventAdmin";
+									setSelectedRole(newRole);
+									if (newRole !== "eventAdmin") {
+										setSelectedEventIds([]);
+									}
+								}}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="admin">{t.admin}</SelectItem>
+									<SelectItem value="viewer">{t.viewer}</SelectItem>
+									<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="mb-4">
+							<Label>{t.status}</Label>
+							<Select name="isActive" defaultValue={editingUser?.isActive ? "true" : "false"}>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="true">{t.active}</SelectItem>
+									<SelectItem value="false">{t.inactive}</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						{selectedRole === "eventAdmin" && (
+							<div className="mb-4">
+								<Label>{t.manageableEvents}</Label>
+								<div className="max-h-[200px] overflow-y-auto border border-gray-300 dark:border-gray-700 rounded p-2">
+									{events.length === 0 ? (
+										<p className="m-0 text-sm opacity-70">{t.noEventsSelected}</p>
+									) : (
+										events.map(event => (
+											<Label key={event.id} className="flex items-center p-2 cursor-pointer border-b border-gray-200 dark:border-gray-700">
+												<Checkbox checked={selectedEventIds.includes(event.id)} onCheckedChange={() => toggleEventSelection(event.id)} className="mr-2" />
+												<span>{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
+											</Label>
+										))
+									)}
 								</div>
-							)}
-							<div className="admin-modal-actions">
-								<Button type="submit">{t.save}</Button>
-								<Button type="button" variant="secondary" onClick={closeEditModal}>
-									{t.cancel}
-								</Button>
+								<p className="text-xs mt-2 opacity-70">
+									{selectedEventIds.length} {t.selectEvents}
+								</p>
 							</div>
-						</form>
-					</div>
-				</div>
-			)}
+						)}
+						<DialogFooter>
+							<Button type="submit">{t.save}</Button>
+							<Button type="button" variant="secondary" onClick={closeEditModal}>
+								{t.cancel}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 		</main>
 	);
 }

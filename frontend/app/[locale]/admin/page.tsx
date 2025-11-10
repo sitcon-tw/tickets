@@ -57,7 +57,7 @@ export default function AdminDashboard() {
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "管理後台總覽", "zh-Hans": "管理后台总览", en: "Admin Dashboard" },
-		overview: { "zh-Hant": "總覽", "zh-Hans": "总览", en: "Overview" },
+		statistics: { "zh-Hant": "報名統計", "zh-Hans": "报名统计", en: "Statistics" },
 		totalTickets: { "zh-Hant": "總票券數", "zh-Hans": "总票券数", en: "Total Tickets" },
 		sold: { "zh-Hant": "已售出", "zh-Hans": "已售出", en: "Sold" },
 		remaining: { "zh-Hant": "剩餘票券", "zh-Hans": "剩余票券", en: "Remaining Tickets" },
@@ -367,7 +367,7 @@ export default function AdminDashboard() {
 	if (loading) {
 		return (
 			<main>
-				<h1>{t.overview}</h1>
+				<h1>{t.statistics}</h1>
 				<div className="text-center p-12 text-gray-600 dark:text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 			</main>
 		);
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
 
 	return (
 		<main>
-			<AdminHeader title={t.overview} />
+			<AdminHeader title={t.statistics} />
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
 				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
 					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalTickets}</h3>

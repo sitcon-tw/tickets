@@ -4,7 +4,9 @@ import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -322,26 +324,26 @@ export default function RegistrationsPage() {
 				{/* Statistics Section */}
 				<section className="my-6">
 					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
-					<div className="flex gap-4">
-						<div className="admin-stat-card">
-							<div className="admin-stat-label">{t.total}</div>
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.total}</div>
 							<div className="text-3xl font-bold">{stats.total}</div>
 						</div>
-						<div className="admin-stat-card border-green-500">
-							<div className="admin-stat-label">{t.confirmed}</div>
-							<div className="text-3xl font-bold text-green-500">{stats.confirmed}</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-green-500 bg-green-50 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.confirmed}</div>
+							<div className="text-3xl font-bold text-green-600 dark:text-green-500">{stats.confirmed}</div>
 						</div>
-						<div className="admin-stat-card border-amber-500">
-							<div className="admin-stat-label">{t.pending}</div>
-							<div className="text-3xl font-bold text-amber-500">{stats.pending}</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.pending}</div>
+							<div className="text-3xl font-bold text-amber-600 dark:text-amber-500">{stats.pending}</div>
 						</div>
-						<div className="admin-stat-card border-red-500">
-							<div className="admin-stat-label">{t.cancelled}</div>
-							<div className="text-3xl font-bold text-red-500">{stats.cancelled}</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.cancelled}</div>
+							<div className="text-3xl font-bold text-red-600 dark:text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>
-				<section className="admin-controls my-4">
+				<section className="flex gap-2 my-4">
 					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
 					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
 						<SelectTrigger className="w-[180px]">
@@ -368,8 +370,8 @@ export default function RegistrationsPage() {
 							</Button>
 						</>
 					)}
-				</section>{" "}
-				<section className="admin-controls mb-4">
+				</section>
+				<section className="flex flex-col gap-2 mb-4">
 					<label className="text-sm font-medium">{t.columns}</label>
 					<div className="flex flex-wrap gap-2">
 						{columnDefs.map(col => (
@@ -392,7 +394,7 @@ export default function RegistrationsPage() {
 				</section>
 				<section>
 					{isLoading ? (
-						<div className="admin-loading">
+						<div className="flex flex-col items-center justify-center py-8">
 							<PageSpinner />
 							<p>{t.loading}</p>
 						</div>
@@ -400,102 +402,104 @@ export default function RegistrationsPage() {
 						<DataTable columns={columns} data={displayData} />
 					)}
 				</section>
-				{/* Pagination Section - Not needed anymore as DataTable has built-in pagination */}
 			</main>
 
 			{/* Detail Modal */}
-			{showDetailModal && selectedRegistration && (
-				<div className="admin-modal-overlay" onClick={closeDetailModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.registrationDetails}</h2>
-							<Button variant="ghost" size="icon" onClick={closeDetailModal} className="h-8 w-8">
-								✕
-							</Button>
-						</div>
+			<Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+				<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>{t.registrationDetails}</DialogTitle>
+					</DialogHeader>
 
-						<div className="flex flex-col gap-4">
-							<div>
-								<div className="admin-stat-label">Ticket ID</div>
-								<div className="font-mono text-sm">{ticketHashes[selectedRegistration.id]}</div>
-							</div>
-							<div>
-								<div className="admin-stat-label">ID</div>
-								<div className="font-mono text-sm">{selectedRegistration.id}</div>
-							</div>
-							<div>
-								<div className="admin-stat-label">Email</div>
-								<div className="text-[0.95rem]">{selectedRegistration.email}</div>
-							</div>
-							<div>
-								<div className="admin-stat-label">Status</div>
-								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
+					<div className="flex flex-col gap-4">
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Ticket ID</Label>
+							<div className="font-mono text-sm">{selectedRegistration && ticketHashes[selectedRegistration.id]}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">ID</Label>
+							<div className="font-mono text-sm">{selectedRegistration?.id}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Email</Label>
+							<div className="text-[0.95rem]">{selectedRegistration?.email}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Status</Label>
+							{selectedRegistration && (
+								<span
+									className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}
+								>
 									{selectedRegistration.status}
 								</span>
-							</div>
-							{selectedRegistration.event && (
-								<div>
-									<div className="admin-stat-label">Event</div>
-									<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
-									{selectedRegistration.event.startDate && (
-										<div className="text-[0.85rem] opacity-70 mt-1">
-											{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
-										</div>
-									)}
-								</div>
 							)}
-							{selectedRegistration.ticket && (
-								<div>
-									<div className="admin-stat-label">Ticket</div>
-									<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
-									{selectedRegistration.ticket.price !== undefined && <div className="text-[0.85rem] opacity-70 mt-1">Price: ${selectedRegistration.ticket.price}</div>}
-								</div>
-							)}
-							{selectedRegistration.referredBy && (
-								<div>
-									<div className="admin-stat-label">{t.referredBy}</div>
-									<div className="font-mono text-[0.9rem]">{selectedRegistration.referredBy}</div>
-								</div>
-							)}
-							<div>
-								<div className="admin-stat-label">Created At</div>
-								<div className="text-[0.95rem]">{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
-							</div>
-							<div>
-								<div className="admin-stat-label">Updated At</div>
-								<div className="text-[0.95rem]">{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
-							</div>{" "}
-							{selectedRegistration.formData && Object.keys(selectedRegistration.formData).length > 0 && (
-								<div>
-									<div className="admin-stat-label mb-2">{t.formData}</div>
-									<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
-										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
-											<div key={key} className="mb-2">
-												<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
-												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
-											</div>
-										))}
-									</div>
-								</div>
-							)}
-							{/* Delete Personal Data Button */}
-							<div className="mt-6 pt-4 border-t-2 border-gray-700 dark:border-gray-800">
-								<Button variant="destructive" onClick={() => deleteRegistration(selectedRegistration)} className="w-full">
-									🗑️ {t.deleteData}
-								</Button>
-								<p className="text-xs opacity-60 mt-2 text-center">
-									⚠️{" "}
-									{locale === "zh-Hant"
-										? "此操作無法復原，符合個人資料保護法"
-										: locale === "zh-Hans"
-											? "此操作无法复原，符合個人資料保護法"
-											: "This action is irreversible and complies with privacy law"}
-								</p>
-							</div>
 						</div>
+						{selectedRegistration?.event && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">Event</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
+								{selectedRegistration.event.startDate && (
+									<div className="text-[0.85rem] opacity-70 mt-1">
+										{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
+									</div>
+								)}
+							</div>
+						)}
+						{selectedRegistration?.ticket && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">Ticket</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
+								{selectedRegistration.ticket.price !== undefined && <div className="text-[0.85rem] opacity-70 mt-1">Price: ${selectedRegistration.ticket.price}</div>}
+							</div>
+						)}
+						{selectedRegistration?.referredBy && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">{t.referredBy}</Label>
+								<div className="font-mono text-[0.9rem]">{selectedRegistration.referredBy}</div>
+							</div>
+						)}
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Created At</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Updated At</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+						</div>
+						{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70 mb-2">{t.formData}</Label>
+								<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
+									{Object.entries(selectedRegistration.formData).map(([key, value]) => (
+										<div key={key} className="mb-2">
+											<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
+											<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
-				</div>
-			)}
+
+					<DialogFooter className="flex flex-col gap-2">
+						<Button
+							variant="destructive"
+							onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)}
+							className="w-full"
+						>
+							🗑️ {t.deleteData}
+						</Button>
+						<p className="text-xs opacity-60 text-center">
+							⚠️{" "}
+							{locale === "zh-Hant"
+								? "此操作無法復原，符合個人資料保護法"
+								: locale === "zh-Hans"
+									? "此操作无法复原，符合個人資料保護法"
+									: "This action is irreversible and complies with privacy law"}
+						</p>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }
