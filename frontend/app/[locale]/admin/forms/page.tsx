@@ -1,5 +1,6 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -539,8 +540,7 @@ export default function FormsPage() {
 		return (
 			<>
 				<main>
-					<h1 className="text-3xl font-bold">{t.title}</h1>
-					<div className="h-8" />
+					<AdminHeader title={t.title} />
 					<div className="admin-empty p-16">{t.noTicket}</div>
 					<div className="text-center mt-4">
 						<Button onClick={() => (window.location.href = `/${locale}/admin/events`)}>
@@ -556,11 +556,7 @@ export default function FormsPage() {
 		<>
 			<main className="p-6 md:p-4">
 				<div id="form-editor" className="max-w-[900px] mx-auto">
-					{/* Header Section */}
-					<div className="mb-6 pb-4 border-b border-gray-700">
-						<h1 className="text-2xl font-semibold mb-1 text-gray-100">{t.title}</h1>
-						<p className="text-sm text-gray-400 m-0">{t.formInfo}</p>
-					</div>
+					<AdminHeader title={t.title} description={t.formInfo} />
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (

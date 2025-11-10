@@ -1,5 +1,6 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -291,8 +292,7 @@ export default function RegistrationsPage() {
 	return (
 		<>
 			<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
+				<AdminHeader title={t.title} />
 
 				{/* Statistics Section */}
 				<section className="my-6">

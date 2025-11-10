@@ -1,5 +1,6 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -275,8 +276,7 @@ export default function TicketsPage() {
 
 	return (
 		<main>
-			<h1 className="text-3xl font-bold">{t.title}</h1>
-			<div className="h-8" />
+			<AdminHeader title={t.title} />
 
 			<section>
 				<div className="admin-table-container">

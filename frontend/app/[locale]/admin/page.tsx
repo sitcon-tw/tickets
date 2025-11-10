@@ -1,5 +1,6 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
@@ -324,7 +325,7 @@ export default function AdminDashboard() {
 
 	return (
 		<main>
-			<h1>{t.overview}</h1>
+			<AdminHeader title={t.overview} />
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
 				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
 					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.totalTickets}</h3>

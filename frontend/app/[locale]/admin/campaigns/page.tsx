@@ -1,5 +1,6 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -247,12 +248,10 @@ export default function EmailCampaignsPage() {
 	};
 
 	return (
-		<>
-			<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
+		<main>
+			<AdminHeader title={t.title} />
 
-				<section className="admin-controls my-4">
+			<section className="admin-controls my-4">
 					<Button onClick={() => setShowCreateModal(true)}>
 						✉️ {t.createNew}
 					</Button>
@@ -324,7 +323,7 @@ export default function EmailCampaignsPage() {
 				</section>
 			</main>
 
-			{/* Create Modal */}
+			{/* Modals */}
 			{showCreateModal && (
 				<div className="admin-modal-overlay" onClick={() => setShowCreateModal(false)}>
 					<div className="admin-modal max-w-3xl" onClick={e => e.stopPropagation()}>
