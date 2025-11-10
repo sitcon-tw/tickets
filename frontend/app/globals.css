@@ -12,7 +12,8 @@
 		@apply antialiased;
 		min-height: 100dvh;
 		font-family:
-			"GenKiGothicTW",
+			/* "GenKiGothicTW", */
+			system-ui,
 			-apple-system,
 			BlinkMacSystemFont,
 			"Segoe UI",
