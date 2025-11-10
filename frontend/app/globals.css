@@ -87,7 +87,7 @@
 @layer components {
 	/* Ticket card */
 	.ticket {
-		@apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 cursor-pointer transition-all duration-200;
+		@apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 cursor-pointer;
 		@apply hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-lg dark:hover:shadow-blue-500/20;
 	}
 	.ticket h3 {
@@ -116,18 +116,6 @@
 		@apply text-blue-600 dark:text-blue-400 hover:underline;
 	}
 
-	/* About section */
-	.about {
-		@apply text-gray-900 dark:text-gray-100;
-	}
-	.about .content h2 {
-		@apply text-gray-900 dark:text-gray-100 mb-4;
-	}
-	.about .content p,
-	.about .content li {
-		@apply text-gray-700 dark:text-gray-300;
-	}
-
 	/* Status badges */
 	.status-badge {
 		@apply px-2 py-1 rounded text-xs font-medium;
@@ -143,6 +131,25 @@
 
 	.status-badge.ended {
 		@apply bg-red-500/20 text-red-700 dark:bg-red-500/10 dark:text-red-400;
+	}
+
+	/* Animation ticket */
+	#ticketAnimation {
+		@apply fixed pointer-events-none;
+		z-index: 9999;
+		display: none;
+		transition: all 0.3s linear;
+	}
+
+	.ticketConfirm {
+		@apply mb-6;
+		opacity: 0;
+		visibility: hidden;
+	}
+
+	.confirming .ticketConfirm {
+		opacity: 1;
+		visibility: visible;
 	}
 }
 

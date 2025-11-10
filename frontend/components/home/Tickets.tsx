@@ -113,41 +113,62 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			console.warn("Unable to access localStorage", error);
 		}
 
+		// Store reference to the original ticket element
 		hiddenTicketRef.current = element;
 
+		// Start animation after a frame to ensure refs are ready
 		requestAnimationFrame(() => {
 			const ticketAnimation = ticketAnimationRef.current;
 			const ticketConfirm = ticketConfirmRef.current;
 
-			if (!ticketAnimation || !ticketConfirm) return;
+			if (!ticketAnimation || !ticketConfirm) {
+				// If refs aren't ready, just show the popup
+				setIsConfirming(true);
+				return;
+			}
 
-			const { top, left } = element.getBoundingClientRect();
+			// Step 1-2: Clone styling and position to original position
+			const rect = element.getBoundingClientRect();
 			const transform = window.getComputedStyle(element).transform;
 
-			ticketAnimation.style.top = `${top}px`;
-			ticketAnimation.style.left = `${left}px`;
+			ticketAnimation.style.top = `${rect.top}px`;
+			ticketAnimation.style.left = `${rect.left}px`;
+			ticketAnimation.style.width = `${rect.width}px`;
+			ticketAnimation.style.height = `${rect.height}px`;
 			ticketAnimation.style.transform = transform;
 			ticketAnimation.style.display = "block";
 
+			// Step 3: Hide original, show animation clone
 			element.style.visibility = "hidden";
-			ticketConfirm.style.visibility = "hidden";
 
+			// Step 4: Show the confirm popup (but keep popup ticket hidden initially)
+			ticketConfirm.style.opacity = "0";
+			ticketConfirm.style.visibility = "hidden";
 			setIsConfirming(true);
 
+			// Step 5-6: Wait for popup to render, then animate to popup position
 			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
+				setTimeout(() => {
 					const confirmRect = ticketConfirm.getBoundingClientRect();
 					const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
 
+					// Animate the clone ticket to the popup position
 					ticketAnimation.style.top = `${confirmRect.top}px`;
 					ticketAnimation.style.left = `${confirmRect.left}px`;
+					ticketAnimation.style.width = `${confirmRect.width}px`;
+					ticketAnimation.style.height = `${confirmRect.height}px`;
 					ticketAnimation.style.transform = confirmTransform;
 
+					// After animation completes, hide clone and fade in popup ticket
 					setTimeout(() => {
 						ticketAnimation.style.display = "none";
 						ticketConfirm.style.visibility = "visible";
+						// Trigger fade-in via CSS transition
+						requestAnimationFrame(() => {
+							ticketConfirm.style.opacity = "1";
+						});
 					}, 300);
-				});
+				}, 100);
 			});
 		});
 	}
@@ -176,13 +197,21 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		setIsConfirming(false);
 		setSelectedTicket(null);
 
+		// Restore the original ticket visibility
 		if (hiddenTicketRef.current) {
 			hiddenTicketRef.current.style.visibility = "visible";
 			hiddenTicketRef.current = null;
 		}
 
+		// Hide the animation ticket
 		if (ticketAnimationRef.current) {
 			ticketAnimationRef.current.style.display = "none";
+		}
+
+		// Reset the popup ticket opacity and visibility
+		if (ticketConfirmRef.current) {
+			ticketConfirmRef.current.style.opacity = "0";
+			ticketConfirmRef.current.style.visibility = "hidden";
 		}
 	}
 
@@ -291,7 +320,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			</div>
 			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
 				{selectedTicket ? (
-					<div className="about">
+					<div className="p-8">
 						<div className="ticket ticketConfirm" ref={ticketConfirmRef}>
 							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
 							<p>
@@ -302,22 +331,22 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 							</p>
 						</div>
-						<div className="content">
+						<div className="mb-6 mt-4">
 							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
 							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
 							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
 						</div>
+						<Button
+							className={`inline-flex items-center gap-2 transition-opacity duration-200 ${isSubmitting ? "opacity-70" : ""}`}
+							disabled={!canRegister || isSubmitting}
+							onClick={() => handleConfirmRegistration()}
+						>
+							{isSubmitting && <Spinner size="sm" />}
+							{canRegister ? t.confirm : t.cannotRegister}
+						</Button>
 					</div>
 				) : null}
-				<Button
-					className={`inline-flex items-center gap-2 transition-opacity duration-200 ${isSubmitting ? "opacity-70" : ""}`}
-					disabled={!canRegister || isSubmitting}
-					onClick={() => handleConfirmRegistration()}
-				>
-					{isSubmitting && <Spinner size="sm" />}
-					{canRegister ? t.confirm : t.cannotRegister}
-				</Button>
-			</Confirm>{" "}
+			</Confirm>
 			{/* Animation ticket */}
 			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
 				{selectedTicket ? (
