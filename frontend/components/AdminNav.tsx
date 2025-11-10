@@ -211,7 +211,7 @@ function AdminNav() {
 	return (
 		<>
 			{/* Mobile Header */}
-			<div className={`fixed top-0 left-0 right-0 bg-gray-950 p-4 z-999 items-center justify-between border-b border-gray-800 ${isMobile ? "flex" : "hidden"}`}>
+			<div className={`fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-999 items-center justify-between border-b border-gray-200 dark:border-gray-800 ${isMobile ? "flex" : "hidden"}`}>
 				<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 					<Menu size={24} />
 				</Button>
@@ -224,11 +224,11 @@ function AdminNav() {
 
 			{/* Sidebar */}
 			<aside
-				className={`bg-gray-950 p-8 w-68 h-dvh fixed flex flex-col text-xl z-1000 transition-transform duration-300 ease-in-out ${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
+				className={`bg-gray-50 dark:bg-gray-950 p-8 w-68 h-dvh fixed flex flex-col text-xl z-1000 transition-transform duration-300 ease-in-out border-r border-gray-200 dark:border-gray-800 ${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
 			>
 				{/* Close button for mobile */}
 				{isMobile && (
-					<Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<Button variant="ghost" size="icon" className="sticky top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={24} />
 					</Button>
 				)}
@@ -240,7 +240,7 @@ function AdminNav() {
 						<select
 							value={currentEventId || ""}
 							onChange={e => handleEventChange(e.target.value)}
-							className="p-2.5 border-2 border-gray-600 bg-gray-800 text-inherit rounded-md text-sm cursor-pointer"
+							className="p-2.5 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-inherit rounded-md text-sm cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
 						>
 							{events.map(event => (
 								<option key={event.id} value={event.id}>
@@ -271,12 +271,12 @@ function AdminNav() {
 												onClick={() => handleNavClick(href)}
 												onMouseEnter={() => setHoveredLink(href)}
 												onMouseLeave={() => setHoveredLink(null)}
-												className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-500 border-l-[3px] border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
+												className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
 											>
 												{t[i18nKey]}
 											</a>
 										</li>
-										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-700 my-4" />}
+										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
 									</div>
 								);
 							})}
@@ -314,7 +314,7 @@ function AdminNav() {
 						<select
 							value={locale}
 							onChange={e => handleLocaleChange(e.target.value)}
-							className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 py-1 px-2"
+							className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
 						>
 							{routing.locales.map(loc => (
 								<option key={loc} value={loc}>
