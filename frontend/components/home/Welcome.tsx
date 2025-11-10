@@ -175,9 +175,11 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				isSafari ? (
 					registeredContent
 				) : (
-					<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
-						{registeredContent}
-					</ElectricBorder>
+					<div className="max-w-3xl mx-auto">
+						<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
+							{registeredContent}
+						</ElectricBorder>
+					</div>
 				)
 			) : null}
 
