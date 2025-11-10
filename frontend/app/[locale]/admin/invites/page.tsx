@@ -501,7 +501,7 @@ export default function InvitesPage() {
 					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
 						📥 {t.bulkImport}
 					</Button>
-					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
+					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="" />
 				</section>
 
 				<section>
@@ -561,7 +561,7 @@ export default function InvitesPage() {
 								<div className="flex flex-col gap-4">
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="admin-select">
+										<select name="ticketId" required className="">
 											<option value="">{t.pleaseSelectTicket}</option>
 											{tickets.map(ticket => (
 												<option key={ticket.id} value={ticket.id}>
@@ -572,16 +572,16 @@ export default function InvitesPage() {
 									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.name}</label>
-										<input name="name" type="text" required placeholder="e.g. VIP Media" className="admin-input" />
+										<input name="name" type="text" required placeholder="e.g. VIP Media" className="" />
 									</div>
 									<div className="grid grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.amount}</label>
-											<input name="amount" type="number" min="1" max="1000" defaultValue="10" required className="admin-input" />
+											<input name="amount" type="number" min="1" max="1000" defaultValue="10" required className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
+											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="" />
 										</div>
 									</div>
 									<div className="grid grid-cols-2 gap-4">
@@ -589,13 +589,13 @@ export default function InvitesPage() {
 											<label className="admin-form-label">
 												{t.validFrom} ({t.optional})
 											</label>
-											<input name="validFrom" type="datetime-local" className="admin-input" />
+											<input name="validFrom" type="datetime-local" className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">
 												{t.validUntil} ({t.optional})
 											</label>
-											<input name="validUntil" type="datetime-local" className="admin-input" />
+											<input name="validUntil" type="datetime-local" className="" />
 										</div>
 									</div>
 								</div>
@@ -627,7 +627,7 @@ export default function InvitesPage() {
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="admin-select">
+										<select name="ticketId" required className="">
 											<option value="">{t.pleaseSelectTicket}</option>
 											{tickets.map(ticket => (
 												<option key={ticket.id} value={ticket.id}>
@@ -641,30 +641,30 @@ export default function InvitesPage() {
 										<label className="admin-form-label">
 											{t.name} ({t.optional})
 										</label>
-										<input name="name" type="text" placeholder="e.g. VIP Media" className="admin-input" />
+										<input name="name" type="text" placeholder="e.g. VIP Media" className="" />
 									</div>
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.uploadFile}</label>
-										<input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="admin-input" />
+										<input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="" />
 									</div>
 
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="admin-input font-mono resize-y" />
+										<textarea value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="font-mono resize-y" />
 									</div>
 
 									<div className="grid grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
+											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="" />
 										</div>
 										<div className="flex flex-col gap-2">
 											<div className="admin-form-group">
 												<label className="admin-form-label">
 													{t.validFrom} ({t.optional})
 												</label>
-												<input name="validFrom" type="datetime-local" className="admin-input" />
+												<input name="validFrom" type="datetime-local" className="" />
 											</div>
 										</div>
 									</div>
@@ -673,7 +673,7 @@ export default function InvitesPage() {
 										<label className="admin-form-label">
 											{t.validUntil} ({t.optional})
 										</label>
-										<input name="validUntil" type="datetime-local" className="admin-input" />
+										<input name="validUntil" type="datetime-local" className="" />
 									</div>
 								</div>
 								<div className="admin-modal-actions">
@@ -776,7 +776,7 @@ export default function InvitesPage() {
 								<p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
 								<div className="admin-form-group">
 									<label className="admin-form-label">{t.emailAddress}</label>
-									<input type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} className="admin-input" required />
+									<input type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} className="" required />
 								</div>
 							</div>
 							<div className="admin-modal-actions">

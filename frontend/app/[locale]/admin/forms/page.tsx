@@ -1129,8 +1129,8 @@ export default function FormsPage() {
 																		{condition.type === "time" && (
 																			<>
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</label>
-																					<input
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
+																					<Input
 																						type="datetime-local"
 																						value={condition.startTime || ""}
 																						onChange={e => {
@@ -1146,13 +1146,13 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input w-full text-xs py-[0.45rem] px-2.5"
+																						className="w-full text-xs"
 																					/>
 																				</div>
 
 																				<div>
-																					<label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</label>
-																					<input
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
+																					<Input
 																						type="datetime-local"
 																						value={condition.endTime || ""}
 																						onChange={e => {
@@ -1168,7 +1168,7 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input w-full text-xs py-[0.45rem] px-2.5"
+																						className="w-full text-xs"
 																					/>
 																				</div>
 																			</>

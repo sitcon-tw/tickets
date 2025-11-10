@@ -285,11 +285,11 @@ export default function EventsPage() {
 										<>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.eventName} (English) *</label>
-												<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="admin-input" />
+												<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="" />
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (English, Markdown)</label>
-												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-input" rows={6} />
+												<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="" rows={6} />
 												{descEn && (
 													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
 														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
@@ -302,7 +302,7 @@ export default function EventsPage() {
 												<textarea
 													value={plainDescEn}
 													onChange={e => setPlainDescEn(e.target.value)}
-													className="admin-input"
+													className=""
 													rows={4}
 													placeholder="Plain text description without markdown formatting"
 												/>
@@ -315,11 +315,11 @@ export default function EventsPage() {
 										<>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.eventName} (繁體中文)</label>
-												<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="admin-input" />
+												<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="" />
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
-												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-input" rows={6} />
+												<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="" rows={6} />
 												{descZhHant && (
 													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
 														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
@@ -329,7 +329,7 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
-												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-input" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
+												<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
@@ -339,11 +339,11 @@ export default function EventsPage() {
 										<>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.eventName} (简体中文)</label>
-												<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="admin-input" />
+												<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="" />
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
-												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-input" rows={6} />
+												<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="" rows={6} />
 												{descZhHans && (
 													<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-900">
 														<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
@@ -353,26 +353,26 @@ export default function EventsPage() {
 											</div>
 											<div className="admin-form-group">
 												<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
-												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-input" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
+												<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
 											</div>
 										</>
 									)}
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.ogImage}</label>
-										<input type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} className="admin-input" placeholder="https://example.com/image.jpg" />
+										<input type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} className="" placeholder="https://example.com/image.jpg" />
 									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.location}</label>
-										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="admin-input" />
+										<input name="location" type="text" defaultValue={editingEvent?.location || ""} className="" />
 									</div>
 									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.startDate}</label>
-											<input name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} className="admin-input" />
+											<input name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.endDate}</label>
-											<input name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} className="admin-input" />
+											<input name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} className="" />
 										</div>
 								</div>
 							</div>

@@ -3,6 +3,11 @@
 import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -308,122 +313,118 @@ export default function EmailCampaignsPage() {
 							</Button>
 						</div>
 
-						<div className="flex flex-col gap-4 p-6">
-							<div>
-								<label className="admin-stat-label">{t.name}</label>
-								<input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="admin-input w-full" />
-							</div>
+					<div className="flex flex-col gap-4 p-6">
+						<div>
+							<Label className="admin-stat-label">{t.name}</Label>
+							<Input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full" />
+						</div>
 
-							<div>
-								<label className="admin-stat-label">{t.subject}</label>
-								<input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="admin-input w-full" />
-							</div>
+						<div>
+							<Label className="admin-stat-label">{t.subject}</Label>
+							<Input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full" />
+						</div>
 
-							<div>
-								<label className="admin-stat-label">{t.content}</label>
-								<textarea
-									value={formData.content}
-									onChange={e => setFormData({ ...formData, content: e.target.value })}
-									className="admin-input w-full min-h-[200px] font-mono"
-									placeholder="<h1>Hello {{name}}!</h1>"
+						<div>
+							<Label className="admin-stat-label">{t.content}</Label>
+							<Textarea
+								value={formData.content}
+								onChange={e => setFormData({ ...formData, content: e.target.value })}
+								className="w-full min-h-[200px] font-mono"
+								placeholder="<h1>Hello {{name}}!</h1>"
+							/>
+						<small className="text-xs opacity-70">{t.templateVars}</small>
+					</div>
+
+					<div>
+						<Label className="admin-stat-label">{t.targetAudience}</Label>
+
+						<div className="mt-2">
+							<Label className="text-sm">{t.selectEvents}</Label>
+							<select
+								multiple
+								value={formData.targetAudience.eventIds}
+								onChange={e => {
+									const selected = Array.from(e.target.selectedOptions, option => option.value);
+									setFormData({
+										...formData,
+										targetAudience: { ...formData.targetAudience, eventIds: selected }
+									});
+								}}
+								className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							>
+								{events.map(event => (
+									<option key={event.id} value={event.id}>
+										{getLocalizedText(event.name, locale)}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div className="mt-2">
+							<Label className="text-sm">{t.selectTickets}</Label>
+							<select
+								multiple
+								value={formData.targetAudience.ticketIds}
+								onChange={e => {
+									const selected = Array.from(e.target.selectedOptions, option => option.value);
+									setFormData({
+										...formData,
+										targetAudience: { ...formData.targetAudience, ticketIds: selected }
+									});
+								}}
+								className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+							>
+								{tickets.map(ticket => (
+									<option key={ticket.id} value={ticket.id}>
+										{getLocalizedText(ticket.name, locale)}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div className="mt-2 flex gap-4">
+							<Label className="flex items-center gap-2">
+								<Checkbox
+									checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
+									onCheckedChange={checked => {
+										const statuses = formData.targetAudience.registrationStatuses;
+										if (checked) {
+											setFormData({
+												...formData,
+												targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
+											});
+										} else {
+											setFormData({
+												...formData,
+												targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
+											});
+										}
+									}}
 								/>
-								<small className="text-xs opacity-70">{t.templateVars}</small>
-							</div>
-
-							<div>
-								<label className="admin-stat-label">{t.targetAudience}</label>
-
-								<div className="mt-2">
-									<label className="text-sm">{t.selectEvents}</label>
-									<select
-										multiple
-										value={formData.targetAudience.eventIds}
-										onChange={e => {
-											const selected = Array.from(e.target.selectedOptions, option => option.value);
+								{t.confirmed}
+							</Label>
+							<Label className="flex items-center gap-2">
+								<Checkbox
+									checked={formData.targetAudience.registrationStatuses.includes("pending")}
+									onCheckedChange={checked => {
+										const statuses = formData.targetAudience.registrationStatuses;
+										if (checked) {
 											setFormData({
 												...formData,
-												targetAudience: { ...formData.targetAudience, eventIds: selected }
+												targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
 											});
-										}}
-										className="admin-select w-full min-h-[80px]"
-									>
-										{events.map(event => (
-											<option key={event.id} value={event.id}>
-												{getLocalizedText(event.name, locale)}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="mt-2">
-									<label className="text-sm">{t.selectTickets}</label>
-									<select
-										multiple
-										value={formData.targetAudience.ticketIds}
-										onChange={e => {
-											const selected = Array.from(e.target.selectedOptions, option => option.value);
+										} else {
 											setFormData({
 												...formData,
-												targetAudience: { ...formData.targetAudience, ticketIds: selected }
+												targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
 											});
-										}}
-										className="admin-select w-full min-h-[80px]"
-									>
-										{tickets.map(ticket => (
-											<option key={ticket.id} value={ticket.id}>
-												{getLocalizedText(ticket.name, locale)}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="mt-2 flex gap-4">
-									<label className="flex items-center gap-2">
-										<input
-											type="checkbox"
-											checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
-											onChange={e => {
-												const statuses = formData.targetAudience.registrationStatuses;
-												if (e.target.checked) {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
-													});
-												} else {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
-													});
-												}
-											}}
-										/>
-										{t.confirmed}
-									</label>
-									<label className="flex items-center gap-2">
-										<input
-											type="checkbox"
-											checked={formData.targetAudience.registrationStatuses.includes("pending")}
-											onChange={e => {
-												const statuses = formData.targetAudience.registrationStatuses;
-												if (e.target.checked) {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
-													});
-												} else {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
-													});
-												}
-											}}
-										/>
-										{t.pending}
-									</label>
-								</div>
-							</div>
-
-							{recipientCount !== null && (
+										}
+									}}
+								/>
+								{t.pending}
+							</Label>
+						</div>
+					</div>							{recipientCount !== null && (
 								<div className="p-4 bg-gray-800 dark:bg-gray-900 rounded-lg border-2 border-gray-600 dark:border-gray-700">
 									<strong>{t.recipientCountLabel}:</strong> {recipientCount}
 								</div>

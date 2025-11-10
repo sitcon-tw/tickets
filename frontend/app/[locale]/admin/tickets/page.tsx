@@ -358,7 +358,7 @@ export default function TicketsPage() {
 									<>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.ticketName} (English) *</label>
-											<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="admin-input" />
+											<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.description} (English, Markdown)</label>
@@ -388,7 +388,7 @@ export default function TicketsPage() {
 									<>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.ticketName} (繁體中文)</label>
-											<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="admin-input" />
+											<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
@@ -412,7 +412,7 @@ export default function TicketsPage() {
 									<>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.ticketName} (简体中文)</label>
-											<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="admin-input" />
+											<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="" />
 										</div>
 										<div className="admin-form-group">
 											<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
@@ -433,21 +433,21 @@ export default function TicketsPage() {
 								<div className="grid grid-cols-2 gap-4">
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.price}</label>
-										<input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="admin-input" />
+										<input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="" />
 									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.quantity}</label>
-										<input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="admin-input" />
+										<input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="" />
 									</div>
 								</div>
 								<div className="grid grid-cols-2 gap-4">
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.startTime}</label>
-										<input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} className="admin-input" />
+										<input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} className="" />
 									</div>
 									<div className="admin-form-group">
 										<label className="admin-form-label">{t.endTime}</label>
-										<input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} className="admin-input" />
+										<input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} className="" />
 									</div>
 								</div>
 								<label className="flex items-center gap-2">
@@ -490,18 +490,18 @@ export default function TicketsPage() {
 								<label className="admin-form-label">
 									{t.inviteCode} ({t.optional})
 								</label>
-								<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="admin-input" />
+								<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="" />
 							</div>
 							<div className="admin-form-group">
 								<label className="admin-form-label">
 									{t.referralCode} ({t.optional})
 								</label>
-								<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="admin-input" />
+								<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="" />
 							</div>
 							<div className="admin-form-group">
 								<label className="admin-form-label">{t.generatedLink}</label>
 								<div className="flex gap-2">
-									<input type="text" value={generateDirectLink()} readOnly className="admin-input flex-1 font-mono text-[0.9rem]" />
+									<input type="text" value={generateDirectLink()} readOnly className="flex-1 font-mono text-[0.9rem]" />
 									<Button onClick={copyToClipboard}>
 										{t.copyLink}
 									</Button>

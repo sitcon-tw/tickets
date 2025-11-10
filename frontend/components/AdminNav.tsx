@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
@@ -235,23 +237,24 @@ function AdminNav() {
 						<X size={24} />
 					</Button>
 				)}
-				<div className="text-3xl mt-2">{t.systemTitle}</div>
-				<div className="mb-6 mt-4">
-					<label className="flex flex-col gap-2">
-						<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
-						<select
-							value={currentEventId || ""}
-							onChange={e => handleEventChange(e.target.value)}
-							className="p-2.5 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-inherit rounded-md text-sm cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-						>
+			<div className="text-3xl mt-2">{t.systemTitle}</div>
+			<div className="mb-6 mt-4">
+				<Label className="flex flex-col gap-2">
+					<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
+					<Select value={currentEventId || ""} onValueChange={handleEventChange}>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
 							{events.map(event => (
-								<option key={event.id} value={event.id}>
+								<SelectItem key={event.id} value={event.id}>
 									{getLocalizedText(event.name, locale)}
-								</option>
+								</SelectItem>
 							))}
-						</select>
-					</label>
-				</div>
+						</SelectContent>
+					</Select>
+				</Label>
+			</div>
 				<nav className="mt-8 flex-1 overflow-y-auto">
 					<ul className="pl-3 m-0">
 						{activityLinks

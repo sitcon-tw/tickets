@@ -68,18 +68,6 @@
 		@apply px-3 py-1.5 text-sm;
 	}
 
-	.admin-input,
-	.admin-select {
-		@apply px-3 py-2 rounded-md transition-colors;
-		@apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600;
-		@apply text-gray-900 dark:text-gray-100;
-		@apply focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
-	}
-
-	.admin-select {
-		@apply cursor-pointer;
-	}
-
 	.admin-controls {
 		@apply flex flex-wrap gap-3 items-center;
 	}

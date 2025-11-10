@@ -179,7 +179,7 @@ export default function UsersPage() {
 		<main>
 			<AdminHeader title={t.title} />
 			<section className="admin-controls">
-				<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
+				<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="" />
 			</section>
 
 			<section>
@@ -215,7 +215,7 @@ export default function UsersPage() {
 								<select
 									name="role"
 									value={selectedRole}
-									className="admin-select"
+									className=""
 									onChange={e => {
 										const newRole = e.target.value as "admin" | "viewer" | "eventAdmin";
 										setSelectedRole(newRole);
@@ -232,7 +232,7 @@ export default function UsersPage() {
 							</div>
 							<div className="admin-form-group mt-4">
 								<label className="admin-form-label">{t.status}</label>
-								<select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"} className="admin-select">
+								<select name="isActive" defaultValue={editingUser.isActive ? "true" : "false"} className="">
 									<option value="true">{t.active}</option>
 									<option value="false">{t.inactive}</option>
 								</select>

@@ -3,6 +3,8 @@
 import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminRegistrationsAPI } from "@/lib/api/endpoints";
@@ -337,20 +339,25 @@ export default function RegistrationsPage() {
 							<div className="admin-stat-label">{t.cancelled}</div>
 							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-red-500">{stats.cancelled}</div>
 						</div>
-					</div>
-				</section>
+			</div>
+		</section>
 
-			<section className="admin-controls my-4">
-				<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
-				<select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select">
-					<option value="">{t.allStatus}</option>
-					<option value="confirmed">{t.confirmed}</option>
-					<option value="pending">{t.pending}</option>
-					<option value="cancelled">{t.cancelled}</option>
-				</select>
-				<Button onClick={loadRegistrations} variant="secondary">
-					↻ {t.refresh}
-				</Button>
+		<section className="admin-controls my-4">
+			<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+			<Select value={statusFilter} onValueChange={setStatusFilter}>
+				<SelectTrigger className="w-[180px]">
+					<SelectValue placeholder={t.allStatus} />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="">{t.allStatus}</SelectItem>
+					<SelectItem value="confirmed">{t.confirmed}</SelectItem>
+					<SelectItem value="pending">{t.pending}</SelectItem>
+					<SelectItem value="cancelled">{t.cancelled}</SelectItem>
+				</SelectContent>
+			</Select>
+			<Button onClick={loadRegistrations} variant="secondary">
+				↻ {t.refresh}
+			</Button>
 				<Button onClick={syncToSheets}>
 					📥 {t.syncSheets}
 				</Button>
