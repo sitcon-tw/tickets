@@ -607,37 +607,35 @@ export default function FormsPage() {
 								const isDragging = draggedIndex === index;
 								const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
 
-								return (
+							return (
+								<div
+									key={q.id}
+									data-id={q.id}
+									onDragOver={e => handleDragOver(e, index)}
+									onDragLeave={handleDragLeave}
+									onDrop={e => handleDrop(e, index)}
+									className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+										isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
+									} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
+								>
+									{/* Drag Handle */}
 									<div
-										key={q.id}
-										data-id={q.id}
-										onDragOver={e => handleDragOver(e, index)}
-										onDragLeave={handleDragLeave}
-										onDrop={e => handleDrop(e, index)}
-										className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
-											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
-										} ${isDropTarget ? "border-(--color-primary) border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
+										draggable
+										onDragStart={e => handleDragStart(e, index)}
+										onDragEnd={handleDragEnd}
+										className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
+											isDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"
+										}`}
+										title="拖曳以重新排序"
+										onMouseDown={e => {
+											e.currentTarget.style.cursor = "grabbing";
+										}}
+										onMouseUp={e => {
+											e.currentTarget.style.cursor = "grab";
+										}}
 									>
-										{/* Drag Handle */}
-										<div
-											draggable
-											onDragStart={e => handleDragStart(e, index)}
-											onDragEnd={handleDragEnd}
-											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
-												isDragging ? "text-(--color-primary)" : "text-gray-400 dark:text-gray-600"
-											}`}
-											title="拖曳以重新排序"
-											onMouseDown={e => {
-												e.currentTarget.style.cursor = "grabbing";
-											}}
-											onMouseUp={e => {
-												e.currentTarget.style.cursor = "grab";
-											}}
-										>
-											<GripVertical size={20} />
-										</div>
-
-										{/* Field Number Badge */}
+										<GripVertical size={20} />
+									</div>										{/* Field Number Badge */}
 										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Main Content Area */}
 										<div className="flex flex-col gap-4 flex-1 pr-12">
@@ -768,7 +766,7 @@ export default function FormsPage() {
 																		isOptionDragging
 																			? "bg-gray-200 dark:bg-gray-800 opacity-60"
 																			: isOptionDropTarget
-																				? "bg-gray-100 dark:bg-(--color-gray-750) border border-(--color-primary) shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
+																				? "bg-gray-100 dark:bg-(--color-gray-750) border border-primary shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
 																				: "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
 																	}`}
 																>
@@ -777,7 +775,7 @@ export default function FormsPage() {
 																			draggable
 																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
 																			onDragEnd={handleOptionDragEnd}
-																			className={`cursor-grab ${isOptionDragging ? "text-(--color-primary)" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
+																			className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
 																			title="拖曳以重新排序選項"
 																			onMouseDown={e => {
 																				e.currentTarget.style.cursor = "grabbing";
@@ -1217,7 +1215,7 @@ export default function FormsPage() {
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="text-[0.9rem] py-2.5 px-5 border border-(--color-primary) text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							className="text-[0.9rem] py-2.5 px-5 border border-primary text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
 						</Button>
