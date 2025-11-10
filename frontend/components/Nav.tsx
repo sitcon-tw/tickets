@@ -91,7 +91,7 @@ export default function Nav({ children }: NavProps) {
 	}
 
 	return (
-		<nav className="fixed top-0 left-0 z-[1000] w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors">
+		<nav className="fixed top-0 left-0 z-1000 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors">
 			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-3">
 				<a href={linkBuilder("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity">
 					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" className="dark:invert" />

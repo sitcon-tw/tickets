@@ -357,7 +357,7 @@ export default function MyRegistrationPage() {
 					{!loading && !error && registration && (
 						<div className="flex flex-col gap-8">
 							{/* Event Information - Read Only */}
-							<div className="p-6 border border-[var(--border-color)] rounded-lg bg-[var(--background-secondary)]">
+							<div className="p-6 border border-(--border-color) rounded-lg bg-(--background-secondary)">
 								<h2 className="mb-4 text-2xl">{t.eventInfo}</h2>
 								<div className="flex flex-col gap-3">
 									<div>
@@ -375,7 +375,7 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Ticket Information - Read Only */}
-							<div className="p-6 border border-[var(--border-color)] rounded-lg bg-[var(--background-secondary)]">
+							<div className="p-6 border border-(--border-color) rounded-lg bg-(--background-secondary)">
 								<h2 className="mb-4 text-2xl">{t.ticketInfo}</h2>
 								<div className="flex flex-col gap-3">
 									<div>
@@ -403,7 +403,7 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Registration Form Data - Editable */}
-							<div className="p-6 border border-[var(--border-color)] rounded-lg">
+							<div className="p-6 border border-(--border-color) rounded-lg">
 								<div className="flex justify-between items-center mb-4">
 									<h2 className="text-2xl">{t.registrationInfo}</h2>
 									{!isEditing && registration.canEdit && (
@@ -413,7 +413,7 @@ export default function MyRegistrationPage() {
 									)}
 								</div>
 
-								{!registration.canEdit && <p className="text-[var(--text-secondary)] mb-4 text-sm">{t.cannotEdit}</p>}
+								{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
 
 								<div className="flex flex-col gap-6">
 									{formFields.map((field, index) => {
@@ -446,7 +446,7 @@ export default function MyRegistrationPage() {
 											return (
 												<div key={index}>
 													<div className="font-bold mb-1">{fieldName}</div>
-													<div className="p-2 bg-[var(--background-secondary)] rounded min-h-10 flex items-center">{displayValue}</div>
+													<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
 												</div>
 											);
 										}

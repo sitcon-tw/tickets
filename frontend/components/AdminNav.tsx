@@ -221,8 +221,8 @@ function AdminNav() {
 	return (
 		<>
 			{/* Mobile Header */}
-			<div className={`fixed top-0 left-0 right-0 bg-[var(--color-gray-950)] p-4 z-[999] items-center justify-between border-b border-[var(--color-gray-800)] ${isMobile ? "flex" : "hidden"}`}>
-				<button className="bg-transparent border-none text-[var(--color-gray-100)] cursor-pointer p-2" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+			<div className={`fixed top-0 left-0 right-0 bg-gray-950 p-4 z-999 items-center justify-between border-b border-gray-800 ${isMobile ? "flex" : "hidden"}`}>
+				<button className="bg-transparent border-none text-gray-100 cursor-pointer p-2" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 					<Menu size={24} />
 				</button>
 				<div className="text-xl font-semibold">{t.activityName}</div>
@@ -230,15 +230,15 @@ function AdminNav() {
 			</div>
 
 			{/* Overlay for mobile */}
-			{mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-[998]" onClick={() => setMobileMenuOpen(false)} />}
+			{mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-998" onClick={() => setMobileMenuOpen(false)} />}
 
 			{/* Sidebar */}
 			<aside
-				className={`bg-[var(--color-gray-950)] p-8 w-[17rem] h-dvh fixed flex flex-col text-xl z-[1000] transition-transform duration-300 ease-in-out ${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
+				className={`bg-gray-950 p-8 w-68 h-dvh fixed flex flex-col text-xl z-1000 transition-transform duration-300 ease-in-out ${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}`}
 			>
 				{/* Close button for mobile */}
 				{isMobile && (
-					<button className="absolute top-4 right-4 bg-transparent border-none text-[var(--color-gray-100)] cursor-pointer p-2" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<button className="absolute top-4 right-4 bg-transparent border-none text-gray-100 cursor-pointer p-2" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={24} />
 					</button>
 				)}
@@ -250,7 +250,7 @@ function AdminNav() {
 						<select
 							value={currentEventId || ""}
 							onChange={e => handleEventChange(e.target.value)}
-							className="p-2.5 border-2 border-[var(--color-gray-600)] bg-[var(--color-gray-800)] text-inherit rounded-md text-sm cursor-pointer"
+							className="p-2.5 border-2 border-gray-600 bg-gray-800 text-inherit rounded-md text-sm cursor-pointer"
 						>
 							{events.map(event => (
 								<option key={event.id} value={event.id}>
@@ -286,7 +286,7 @@ function AdminNav() {
 												{t[i18nKey]}
 											</a>
 										</li>
-										{i18nKey === "registrations" && <hr className="border-0 border-t border-[var(--color-gray-700)] my-4" />}
+										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-700 my-4" />}
 									</div>
 								);
 							})}

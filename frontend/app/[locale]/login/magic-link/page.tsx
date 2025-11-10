@@ -94,23 +94,23 @@ export default function MagicLinkVerify() {
 									<Spinner size="lg" />
 								</div>
 								<h1 className="mb-2">{t.verifying}</h1>
-								<p className="text-[var(--color-gray-700)]">{t.redirecting}</p>
+								<p className="text-gray-700">{t.redirecting}</p>
 							</>
 						)}
 
 						{status === "success" && (
 							<>
-								<div className="text-5xl mb-4 text-[var(--color-primary)]">✓</div>
-								<h1 className="mb-2 text-[var(--color-primary)]">{t.success}</h1>
-								<p className="text-[var(--color-gray-700)]">{t.redirecting}</p>
+								<div className="text-5xl mb-4 text-(--color-primary)">✓</div>
+								<h1 className="mb-2 text-(--color-primary)">{t.success}</h1>
+								<p className="text-gray-700">{t.redirecting}</p>
 							</>
 						)}
 
 						{status === "error" && (
 							<>
-								<div className="text-5xl mb-4 text-[var(--color-error,#dc2626)]">✗</div>
-								<h1 className="mb-4 text-[var(--color-error,#dc2626)]">{t.error}</h1>
-								<p className="mb-8 text-[var(--color-gray-700)]">{errorMessage}</p>
+								<div className="text-5xl mb-4 text-(--color-error,#dc2626)">✗</div>
+								<h1 className="mb-4 text-(--color-error,#dc2626)">{t.error}</h1>
+								<p className="mb-8 text-gray-700">{errorMessage}</p>
 								<button className="button mx-auto" onClick={() => router.push(`/${locale}/login`)}>
 									{t.backToLogin}
 								</button>

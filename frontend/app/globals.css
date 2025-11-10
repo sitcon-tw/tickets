@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @layer base {
 	* {
 		@apply border-gray-200 dark:border-gray-800;
@@ -147,7 +149,7 @@
 	}
 
 	.admin-table-container tr:hover {
-		@apply bg-gray-750 dark:bg-gray-850;
+		@apply bg-gray-700 dark:bg-gray-800;
 	}
 
 	.admin-loading {

@@ -32,7 +32,7 @@ export default function Select({ label, id, options, required = true, value, onC
 		<div className="space-y-2">
 			<Label htmlFor={id}>{label}</Label>
 			<SelectUI value={value} onValueChange={onChange} required={required}>
-				<SelectTrigger id={id} className="max-w-[15rem]" aria-label={label}>
+				<SelectTrigger id={id} className="max-w-60" aria-label={label}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>

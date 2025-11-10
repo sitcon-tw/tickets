@@ -317,7 +317,7 @@ export default function AdminDashboard() {
 		return (
 			<main>
 				<h1>{t.overview}</h1>
-				<div className="text-center p-12 text-[var(--color-gray-300)]">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+				<div className="text-center p-12 text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 			</main>
 		);
 	}
@@ -326,42 +326,42 @@ export default function AdminDashboard() {
 		<main>
 			<h1>{t.overview}</h1>
 			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.totalTickets}</h3>
-					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{totalTicketQuantity}</div>
-					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.totalTickets}</h3>
+					<div className="text-4xl font-bold text-gray-100 mb-2">{totalTicketQuantity}</div>
+					<div className="text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.sold}</h3>
-					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{totalSold}</div>
-					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.sold}</h3>
+					<div className="text-4xl font-bold text-gray-100 mb-2">{totalSold}</div>
+					<div className="text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.remaining}</h3>
-					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{remainingTickets}</div>
-					<div className="text-[var(--color-gray-100)] text-xs">{t.tickets}</div>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.remaining}</h3>
+					<div className="text-4xl font-bold text-gray-100 mb-2">{remainingTickets}</div>
+					<div className="text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md text-center">
-					<h3 className="m-0 mb-4 text-[var(--color-gray-300)] text-sm font-medium">{t.salesRate}</h3>
-					<div className="text-4xl font-bold text-[var(--color-gray-100)] mb-2">{salesRate}%</div>
-					<div className="text-[var(--color-gray-100)] text-xs">{t.completion}</div>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md text-center">
+					<h3 className="m-0 mb-4 text-gray-300 text-sm font-medium">{t.salesRate}</h3>
+					<div className="text-4xl font-bold text-gray-100 mb-2">{salesRate}%</div>
+					<div className="text-gray-100 text-xs">{t.completion}</div>
 				</div>
 			</div>
 
 			<div className="flex gap-8 mb-12 flex-wrap">
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md flex-[2] max-w-full">
-					<h2 className="m-0 mb-4 text-[var(--color-gray-100)] text-xl">{t.salesTrend}</h2>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md flex-2 max-w-full">
+					<h2 className="m-0 mb-4 text-gray-100 text-xl">{t.salesTrend}</h2>
 					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
 				</div>
 
-				<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md flex-1 max-w-full">
-					<h2 className="m-0 mb-4 text-[var(--color-gray-100)] text-xl">{t.ticketDistribution}</h2>
+				<div className="bg-gray-800 p-6 rounded-lg shadow-md flex-1 max-w-full">
+					<h2 className="m-0 mb-4 text-gray-100 text-xl">{t.ticketDistribution}</h2>
 					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
 				</div>
 			</div>
 
-			<div className="bg-[var(--color-gray-800)] p-6 rounded-lg shadow-md">
-				<h2 className="m-0 mb-6 text-[var(--color-gray-100)] text-xl">{t.progressTitle}</h2>
+			<div className="bg-gray-800 p-6 rounded-lg shadow-md">
+				<h2 className="m-0 mb-6 text-gray-100 text-xl">{t.progressTitle}</h2>
 				<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
 					{tickets.slice(0, 5).map((ticket, idx) => {
 						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
@@ -371,23 +371,23 @@ export default function AdminDashboard() {
 						const remaining = total - soldCount;
 
 						return (
-							<div key={idx} className="bg-[var(--color-gray-700)] p-6 rounded-xl shadow-md text-center max-w-full">
-								<h3 className="m-0 mb-6 text-[var(--color-gray-200)] text-lg font-semibold">{ticketName}</h3>
+							<div key={idx} className="bg-gray-700 p-6 rounded-xl shadow-md text-center max-w-full">
+								<h3 className="m-0 mb-6 text-gray-200 text-lg font-semibold">{ticketName}</h3>
 								<div className="flex justify-center mb-4">
 									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
 								</div>
-								<div className="mb-6 p-4 bg-[var(--color-gray-600)] rounded-lg">
-									<div className="text-4xl font-bold text-[var(--color-gray-100)] leading-none">{remaining}</div>
-									<div className="text-sm text-[var(--color-gray-300)] mt-1">{t.remainingLabel}</div>
+								<div className="mb-6 p-4 bg-gray-600 rounded-lg">
+									<div className="text-4xl font-bold text-gray-100 leading-none">{remaining}</div>
+									<div className="text-sm text-gray-300 mt-1">{t.remainingLabel}</div>
 								</div>
 								<div className="flex justify-around gap-4">
 									<div className="flex flex-col items-center gap-1">
-										<span className="text-[var(--color-gray-300)] text-sm font-medium">{t.total}</span>
-										<span className="font-semibold text-[var(--color-gray-200)] text-lg">{total}</span>
+										<span className="text-gray-300 text-sm font-medium">{t.total}</span>
+										<span className="font-semibold text-gray-200 text-lg">{total}</span>
 									</div>
 									<div className="flex flex-col items-center gap-1">
-										<span className="text-[var(--color-gray-300)] text-sm font-medium">{t.soldLabel}</span>
-										<span className="font-semibold text-[var(--color-gray-200)] text-lg">{soldCount}</span>
+										<span className="text-gray-300 text-sm font-medium">{t.soldLabel}</span>
+										<span className="font-semibold text-gray-200 text-lg">{soldCount}</span>
 									</div>
 								</div>
 							</div>
