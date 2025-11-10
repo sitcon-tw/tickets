@@ -4,6 +4,12 @@ import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
@@ -35,6 +41,9 @@ export default function TicketsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [requireInviteCode, setRequireInviteCode] = useState(false);
+	const [requireSmsVerification, setRequireSmsVerification] = useState(false);
+	const [hidden, setHidden] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -102,6 +111,13 @@ export default function TicketsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setRequireInviteCode(ticket.requireInviteCode || false);
+			setRequireSmsVerification(ticket.requireSmsVerification || false);
+			setHidden(ticket.hidden || false);
+		} else {
+			setRequireInviteCode(false);
+			setRequireSmsVerification(false);
+			setHidden(false);
 		}
 
 		setShowModal(true);
@@ -119,6 +135,9 @@ export default function TicketsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setRequireInviteCode(false);
+		setRequireSmsVerification(false);
+		setHidden(false);
 	}
 
 	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
@@ -160,9 +179,9 @@ export default function TicketsPage() {
 			},
 			price: parseInt(formData.get("price") as string) || 0,
 			quantity: parseInt(formData.get("quantity") as string) || 0,
-			requireInviteCode: formData.get("requireInviteCode") === "on",
-			requireSmsVerification: formData.get("requireSmsVerification") === "on",
-			hidden: formData.get("hidden") === "on"
+			requireInviteCode: requireInviteCode,
+			requireSmsVerification: requireSmsVerification,
+			hidden: hidden
 		};
 
 		if (saleStartStr) {
@@ -318,199 +337,174 @@ export default function TicketsPage() {
 				<Button onClick={() => openModal()}>+ {t.addTicket}</Button>
 			</section>
 
-			{showModal && (
-				<div className="admin-modal-overlay" onClick={closeModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{editingTicket ? t.editTicket : t.addTicket}</h2>
-							<Button variant="ghost" size="icon" onClick={closeModal} className="h-8 w-8">
-								✕
-							</Button>
-						</div>
-						<form onSubmit={saveTicket}>
-							<div className="flex flex-col gap-4">
-								{/* Language Tabs */}
-								<div className="flex gap-2 border-b-2 border-gray-700 dark:border-gray-800 mb-4">
-									{[
-										{ key: "en" as const, label: "English" },
-										{ key: "zh-Hant" as const, label: "繁體中文" },
-										{ key: "zh-Hans" as const, label: "简体中文" }
-									].map(tab => (
-										<Button
-											key={tab.key}
-											type="button"
-											onClick={() => setActiveTab(tab.key)}
-											className={`
-												px-4 py-2 border-none transition-all duration-200 cursor-pointer
-												${activeTab === tab.key ? "bg-gray-600 dark:bg-gray-700 border-b-2 border-blue-500 text-gray-100 dark:text-gray-200 font-bold" : "bg-transparent text-gray-400 dark:text-gray-500 font-normal"}
-											`}
-										>
-											{tab.label}
-										</Button>
-									))}
-								</div>
+			<Dialog open={showModal} onOpenChange={setShowModal}>
+				<DialogContent className="max-h-[85vh] overflow-y-auto max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>{editingTicket ? t.editTicket : t.addTicket}</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={saveTicket} className="space-y-4">
+						<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
+							<TabsList className="grid w-full grid-cols-3">
+								<TabsTrigger value="en">English</TabsTrigger>
+								<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
+								<TabsTrigger value="zh-Hans">简体中文</TabsTrigger>
+							</TabsList>
 
-								{/* English Fields */}
-								{activeTab === "en" && (
-									<>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.ticketName} (English) *</label>
-											<input type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.description} (English, Markdown)</label>
-											<textarea value={descEn} onChange={e => setDescEn(e.target.value)} className="admin-textarea" rows={6} />
-											{descEn && (
-												<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-800">
-													<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-													<MarkdownContent content={descEn} />
-												</div>
-											)}
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.plainDescription} (English)</label>
-											<textarea
-												value={plainDescEn}
-												onChange={e => setPlainDescEn(e.target.value)}
-												className="admin-textarea"
-												rows={4}
-												placeholder="Plain text description without markdown formatting"
-											/>
-										</div>
-									</>
-								)}
-
-								{/* Traditional Chinese Fields */}
-								{activeTab === "zh-Hant" && (
-									<>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.ticketName} (繁體中文)</label>
-											<input type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.description} (繁體中文，Markdown)</label>
-											<textarea value={descZhHant} onChange={e => setDescZhHant(e.target.value)} className="admin-textarea" rows={6} />
-											{descZhHant && (
-												<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-800">
-													<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-													<MarkdownContent content={descZhHant} />
-												</div>
-											)}
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.plainDescription} (繁體中文)</label>
-											<textarea value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} className="admin-textarea" rows={4} placeholder="純文字描述，不含 Markdown 格式" />
-										</div>
-									</>
-								)}
-
-								{/* Simplified Chinese Fields */}
-								{activeTab === "zh-Hans" && (
-									<>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.ticketName} (简体中文)</label>
-											<input type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} className="" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.description} (简体中文，Markdown)</label>
-											<textarea value={descZhHans} onChange={e => setDescZhHans(e.target.value)} className="admin-textarea" rows={6} />
-											{descZhHans && (
-												<div className="mt-2 p-3 border border-gray-600 dark:border-gray-700 rounded bg-gray-800 dark:bg-gray-800">
-													<div className="text-sm font-bold mb-2 text-gray-300 dark:text-gray-400">Preview:</div>
-													<MarkdownContent content={descZhHans} />
-												</div>
-											)}
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.plainDescription} (简体中文)</label>
-											<textarea value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} className="admin-textarea" rows={4} placeholder="纯文字描述，不含 Markdown 格式" />
-										</div>
-									</>
-								)}
-								<div className="grid grid-cols-2 gap-4">
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.price}</label>
-										<input name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} className="" />
-									</div>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.quantity}</label>
-										<input name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} className="" />
-									</div>
+							<TabsContent value="en" className="space-y-4">
+								<div className="space-y-2">
+									<Label htmlFor="nameEn">{t.ticketName} (English) *</Label>
+									<Input id="nameEn" type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} />
 								</div>
-								<div className="grid grid-cols-2 gap-4">
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.startTime}</label>
-										<input name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} className="" />
-									</div>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.endTime}</label>
-										<input name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} className="" />
-									</div>
+								<div className="space-y-2">
+									<Label htmlFor="descEn">{t.description} (English, Markdown)</Label>
+									<Textarea id="descEn" value={descEn} onChange={e => setDescEn(e.target.value)} rows={4} />
+									{descEn && (
+										<div className="mt-2 p-3 border rounded-md bg-muted">
+											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+											<MarkdownContent content={descEn} />
+										</div>
+									)}
 								</div>
-								<label className="flex items-center gap-2">
-									<input name="requireInviteCode" type="checkbox" defaultChecked={editingTicket?.requireInviteCode || false} className="w-[18px] h-[18px]" />
-									<span className="admin-form-label mb-0">{t.requireInviteCode}</span>
-								</label>
-								<label className="flex items-center gap-2">
-									<input name="requireSmsVerification" type="checkbox" defaultChecked={editingTicket?.requireSmsVerification || false} className="w-[18px] h-[18px]" />
-									<span className="admin-form-label mb-0">{t.requireSmsVerification}</span>
-								</label>
-								<label className="flex items-center gap-2">
-									<input name="hidden" type="checkbox" defaultChecked={editingTicket?.hidden || false} className="w-[18px] h-[18px]" />
-									<span className="admin-form-label mb-0">{t.hideTicket}</span>
-								</label>
-							</div>
-							<div className="admin-modal-actions">
-								<Button type="submit" variant="default">
-									{t.save}
-								</Button>
-								<Button type="button" variant="secondary" onClick={closeModal}>
-									{t.cancel}
-								</Button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+								<div className="space-y-2">
+									<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
+									<Textarea
+										id="plainDescEn"
+										value={plainDescEn}
+										onChange={e => setPlainDescEn(e.target.value)}
+										rows={3}
+										placeholder="Plain text description without markdown formatting"
+									/>
+								</div>
+							</TabsContent>
 
-			{showLinkModal && selectedTicketForLink && (
-				<div className="admin-modal-overlay" onClick={() => setShowLinkModal(false)}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.linkBuilder}</h2>
-							<Button variant="ghost" size="icon" onClick={() => setShowLinkModal(false)} className="h-8 w-8">
-								✕
-							</Button>
-						</div>
-						<div className="flex flex-col gap-4">
-							<div className="admin-form-group">
-								<label className="admin-form-label">
-									{t.inviteCode} ({t.optional})
-								</label>
-								<input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" className="" />
-							</div>
-							<div className="admin-form-group">
-								<label className="admin-form-label">
-									{t.referralCode} ({t.optional})
-								</label>
-								<input type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" className="" />
-							</div>
-							<div className="admin-form-group">
-								<label className="admin-form-label">{t.generatedLink}</label>
-								<div className="flex gap-2">
-									<input type="text" value={generateDirectLink()} readOnly className="flex-1 font-mono text-[0.9rem]" />
-									<Button onClick={copyToClipboard}>{t.copyLink}</Button>
+							<TabsContent value="zh-Hant" className="space-y-4">
+								<div className="space-y-2">
+									<Label htmlFor="nameZhHant">{t.ticketName} (繁體中文)</Label>
+									<Input id="nameZhHant" type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} />
 								</div>
+								<div className="space-y-2">
+									<Label htmlFor="descZhHant">{t.description} (繁體中文，Markdown)</Label>
+									<Textarea id="descZhHant" value={descZhHant} onChange={e => setDescZhHant(e.target.value)} rows={4} />
+									{descZhHant && (
+										<div className="mt-2 p-3 border rounded-md bg-muted">
+											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+											<MarkdownContent content={descZhHant} />
+										</div>
+									)}
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="plainDescZhHant">{t.plainDescription} (繁體中文)</Label>
+									<Textarea id="plainDescZhHant" value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} rows={3} placeholder="純文字描述，不含 Markdown 格式" />
+								</div>
+							</TabsContent>
+
+							<TabsContent value="zh-Hans" className="space-y-4">
+								<div className="space-y-2">
+									<Label htmlFor="nameZhHans">{t.ticketName} (简体中文)</Label>
+									<Input id="nameZhHans" type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} />
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="descZhHans">{t.description} (简体中文，Markdown)</Label>
+									<Textarea id="descZhHans" value={descZhHans} onChange={e => setDescZhHans(e.target.value)} rows={4} />
+									{descZhHans && (
+										<div className="mt-2 p-3 border rounded-md bg-muted">
+											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+											<MarkdownContent content={descZhHans} />
+										</div>
+									)}
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="plainDescZhHans">{t.plainDescription} (简体中文)</Label>
+									<Textarea id="plainDescZhHans" value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} rows={3} placeholder="纯文字描述，不含 Markdown 格式" />
+								</div>
+							</TabsContent>
+						</Tabs>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="price">{t.price}</Label>
+								<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} />
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="quantity">{t.quantity}</Label>
+								<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
 							</div>
 						</div>
-						<div className="admin-modal-actions">
-							<Button type="button" variant="secondary" onClick={() => setShowLinkModal(false)}>
-								{t.close}
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="saleStart">{t.startTime}</Label>
+								<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} />
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="saleEnd">{t.endTime}</Label>
+								<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} />
+							</div>
+						</div>
+
+						<div className="space-y-3">
+							<div className="flex items-center gap-2">
+								<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={(checked) => setRequireInviteCode(checked as boolean)} />
+								<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">{t.requireInviteCode}</Label>
+							</div>
+							<div className="flex items-center gap-2">
+								<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={(checked) => setRequireSmsVerification(checked as boolean)} />
+								<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">{t.requireSmsVerification}</Label>
+							</div>
+							<div className="flex items-center gap-2">
+								<Checkbox id="hidden" checked={hidden} onCheckedChange={(checked) => setHidden(checked as boolean)} />
+								<Label htmlFor="hidden" className="font-normal cursor-pointer">{t.hideTicket}</Label>
+							</div>
+						</div>
+
+						<DialogFooter>
+							<Button type="button" variant="outline" onClick={closeModal}>
+								{t.cancel}
 							</Button>
+							<Button type="submit" variant="default">
+								{t.save}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>{t.linkBuilder}</DialogTitle>
+						<DialogDescription>
+							Generate a direct link to this ticket with optional invite and referral codes.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="inviteCode">
+								{t.inviteCode} ({t.optional})
+							</Label>
+							<Input id="inviteCode" type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="e.g., VIP2026A" />
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="refCode">
+								{t.referralCode} ({t.optional})
+							</Label>
+							<Input id="refCode" type="text" value={refCode} onChange={e => setRefCode(e.target.value)} placeholder="e.g., ABC123" />
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="generatedLink">{t.generatedLink}</Label>
+							<div className="flex gap-2">
+								<Input id="generatedLink" type="text" value={generateDirectLink()} readOnly className="flex-1 font-mono text-sm" />
+								<Button onClick={copyToClipboard}>{t.copyLink}</Button>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
+					<DialogFooter>
+						<Button type="button" variant="outline" onClick={() => setShowLinkModal(false)}>
+							{t.close}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</main>
 	);
 }

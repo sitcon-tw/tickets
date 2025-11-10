@@ -54,21 +54,20 @@ export default function Footer() {
 			</div>
 			<div className="flex justify-center items-center gap-1">
 				<p className="text-muted-foreground">
-					Made by EM & Nelson from{" "}
-					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="underline">
+					Made by{" "}
+					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
 						SITCON
 					</a>{" "}
 					with{" "}
 				</p>
-				<Heart size={16} className="text-red-700" />
+				<Heart size={16} className="text-red-700 hover:text-blue-600 transition-colors cursor-pointer" />
 			</div>
 			<p className="text-sm text-muted-foreground mt-1">
-				This project is open-sourced on{" "}
-				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="underline">
-					GitHub
+				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
+					View on GitHub
 				</a>
-				.
-				<a href={`/${locale}/terms`} className="underline hover:text-foreground transition-colors ml-2">
+				・
+				<a href={`/${locale}/terms`} className="hover:text-blue-600 transition-colors">
 					ToS & PP
 				</a>
 			</p>

@@ -325,30 +325,30 @@ export default function RegistrationsPage() {
 					<div className="flex gap-4">
 						<div className="admin-stat-card">
 							<div className="admin-stat-label">{t.total}</div>
-							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</div>
+							<div className="text-3xl font-bold">{stats.total}</div>
 						</div>
 						<div className="admin-stat-card border-green-500">
 							<div className="admin-stat-label">{t.confirmed}</div>
-							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-green-500">{stats.confirmed}</div>
+							<div className="text-3xl font-bold text-green-500">{stats.confirmed}</div>
 						</div>
 						<div className="admin-stat-card border-amber-500">
 							<div className="admin-stat-label">{t.pending}</div>
-							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-amber-500">{stats.pending}</div>
+							<div className="text-3xl font-bold text-amber-500">{stats.pending}</div>
 						</div>
 						<div className="admin-stat-card border-red-500">
 							<div className="admin-stat-label">{t.cancelled}</div>
-							<div className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-red-500">{stats.cancelled}</div>
+							<div className="text-3xl font-bold text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>
 				<section className="admin-controls my-4">
 					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-					<Select value={statusFilter} onValueChange={setStatusFilter}>
+					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
 						<SelectTrigger className="w-[180px]">
 							<SelectValue placeholder={t.allStatus} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">{t.allStatus}</SelectItem>
+							<SelectItem value="all">{t.allStatus}</SelectItem>
 							<SelectItem value="confirmed">{t.confirmed}</SelectItem>
 							<SelectItem value="pending">{t.pending}</SelectItem>
 							<SelectItem value="cancelled">{t.cancelled}</SelectItem>

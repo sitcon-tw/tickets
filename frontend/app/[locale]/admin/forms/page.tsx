@@ -590,7 +590,7 @@ export default function FormsPage() {
 					{/* Questions List */}
 					<div className="mb-6">
 						<div className="flex justify-between items-center mb-4">
-							<h2 className="text-base font-semibold text-gray-200 m-0">{t.formFields}</h2>
+							<h2 className="text-base font-semibold text-gray-800 dark:text-gray-400 m-0">{t.formFields}</h2>
 							<span className="text-xs text-gray-400 bg-gray-800 py-1 px-2.5 rounded border border-gray-700">
 								{questions.length} {t.howManyFields}
 							</span>

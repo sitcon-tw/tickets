@@ -199,7 +199,6 @@ function AdminNav() {
 		}
 	});
 
-	// Only show on admin pages - check after all hooks are called
 	const isAdminPage = pathname.includes("/admin");
 	if (!isAdminPage) {
 		return null;
@@ -209,7 +208,7 @@ function AdminNav() {
 		<>
 			{/* Mobile Header */}
 			{isMobile && (
-				<div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-50 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+				<div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-10 flex items-center gap-2 border-b border-gray-200 dark:border-gray-800">
 					<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 						<Menu size={24} />
 					</Button>
@@ -226,7 +225,7 @@ function AdminNav() {
 				className={`
 					bg-gray-50 dark:bg-gray-950 p-8 h-screen fixed top-0 left-0 z-45
 					border-r border-gray-200 dark:border-gray-800 flex flex-col w-64
-					transition-transform duration-300 ease-in-out pt-24
+					transition-transform duration-300 ease-in-out sm:pt-24
 					${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
 					md:sticky md:translate-x-0
 				`}
@@ -237,7 +236,7 @@ function AdminNav() {
 						<X size={24} />
 					</Button>
 				)}
-				<div className="text-3xl mt-2">{t.systemTitle}</div>
+				<div className="text-2xl mt-2 sm:text-xl text-center font-semibold">{t.systemTitle}</div>
 				<div className="mb-6 mt-4">
 					<Label className="flex flex-col gap-2">
 						<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
