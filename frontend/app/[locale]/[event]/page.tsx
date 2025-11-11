@@ -1,16 +1,19 @@
 "use client";
 
-import Header from "@/components/home/Header";
-import Info from "@/components/home/Info";
-import Tickets from "@/components/home/Tickets";
-import Welcome from "@/components/home/Welcome";
 import PageSpinner from "@/components/PageSpinner";
+import Welcome from "@/components/home/Welcome";
+import Tickets from "@/components/home/Tickets";
+import Info from "@/components/home/Info";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
-import { EventListItem } from "@/lib/types/api";
+import { EventListItem, Ticket } from "@/lib/types/api";
+import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Calendar, MapPin, Users } from "lucide-react";
 
 export default function Main() {
 	const params = useParams();
@@ -19,6 +22,9 @@ export default function Main() {
 	const eventSlug = params.event as string;
 
 	const [event, setEvent] = useState<EventListItem | null>(null);
+	const [tickets, setTickets] = useState<Ticket[]>([]);
+	const [registrationCount, setRegistrationCount] = useState<number>(0);
+	const [eventDescription, setEventDescription] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +38,21 @@ export default function Main() {
 			"zh-Hant": "載入活動失敗",
 			"zh-Hans": "载入活动失败",
 			en: "Failed to load events"
+		},
+		peopleSignedUp: {
+			"zh-Hant": "人已報名",
+			"zh-Hans": "人已报名",
+			en: "people already signed up"
+		},
+		eventInfo: {
+			"zh-Hant": "活動資訊",
+			"zh-Hans": "活动资讯",
+			en: "Event Information"
+		},
+		ticketInfo: {
+			"zh-Hant": "票券資訊",
+			"zh-Hans": "票券资讯",
+			en: "Ticket Information"
 		}
 	});
 
@@ -45,6 +66,24 @@ export default function Main() {
 
 					if (foundEvent) {
 						setEvent(foundEvent);
+						
+						// Fetch event details
+						const eventData = await eventsAPI.getInfo(foundEvent.id);
+						if (eventData?.success && eventData.data) {
+							setEventDescription(getLocalizedText(eventData.data.description, locale));
+						}
+
+						// Fetch stats
+						const statsData = await eventsAPI.getStats(foundEvent.id);
+						if (statsData?.success && statsData.data) {
+							setRegistrationCount(statsData.data.confirmedRegistrations);
+						}
+
+						// Fetch tickets
+						const ticketsData = await eventsAPI.getTickets(foundEvent.id);
+						if (ticketsData.success && Array.isArray(ticketsData.data)) {
+							setTickets(ticketsData.data);
+						}
 					} else {
 						setError(t.eventNotFound);
 					}
@@ -73,7 +112,7 @@ export default function Main() {
 			localStorage.setItem("invitationCode", invitationCode);
 			router.refresh();
 		}
-	}, [eventSlug, router, t.eventNotFound, t.failedToLoadEvents]);
+	}, [eventSlug, router, t.eventNotFound, t.failedToLoadEvents, locale]);
 
 	if (loading) {
 		return (
@@ -96,13 +135,118 @@ export default function Main() {
 		);
 	}
 
+	const eventName = getLocalizedText(event.name, locale);
+	const coverImage = event.ogImage || "/assets/default.webp";
+	const formatDate = (dateString: string) => {
+		const date = new Date(dateString);
+		return date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+	};
+
 	return (
 		<>
 			<main>
-				<Header eventId={event.id} />
-				<Welcome eventId={event.id} eventSlug={eventSlug} />
-				<Tickets eventId={event.id} eventSlug={eventSlug} />
-				<Info eventId={event.id} />
+				{/* Cover Image */}
+				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px]">
+					<Image
+						src={coverImage}
+						alt={eventName}
+						fill
+						className="object-cover"
+						priority
+					/>
+					<div className="absolute inset-0 bg-linear-to-b from-transparent to-black/20 rounded-b-[40px]" />
+				</div>
+
+				{/* Main Container with Shadow */}
+				<div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="bg-background shadow-2xl rounded-b-xl overflow-hidden">
+						{/* Event Info & Welcome - Two containers with rounded bottom */}
+						<div className="flex flex-col lg:flex-row lg:gap-8 px-16">
+							{/* Left: Basic Info */}
+							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 z-10">
+								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+									{eventName}
+								</h1>
+								<div className="space-y-3 text-muted-foreground">
+									<div className="flex items-center gap-3">
+										<Calendar size={20} className="shrink-0" />
+										<span className="text-base">
+											{formatDate(event.startDate)}
+											{event.endDate && event.endDate !== event.startDate && 
+												` - ${formatDate(event.endDate)}`
+											}
+										</span>
+									</div>
+									
+									{event.location && (
+										<div className="flex items-center gap-3">
+											<MapPin size={20} className="shrink-0" />
+											<span className="text-base">{event.location}</span>
+										</div>
+									)}
+									
+									<div className="flex items-center gap-3 pt-2">
+										<Users size={24} className="shrink-0" />
+										<div>
+											<span className="text-4xl font-bold text-foreground">
+												{registrationCount}
+											</span>
+											<span className="text-base ml-2">{t.peopleSignedUp}</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							{/* Right: Welcome Box */}
+							<div className="p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 h-fit -mt-8 pt-16 lg:mt-0 lg:pt-8">
+								<Welcome eventId={event.id} eventSlug={eventSlug} />
+							</div>
+						</div>
+
+						{/* Tickets Grid */}
+						<div className="p-6 md:p-8 border-b border-border">
+							<Tickets eventId={event.id} eventSlug={eventSlug} />
+						</div>
+
+						{/* Event Information - No border */}
+						{eventDescription && (
+							<div className="p-6 md:p-8 border-b border-border">
+								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">
+									{t.eventInfo}
+								</h2>
+								<div className="prose prose-lg dark:prose-invert max-w-none">
+									<MarkdownContent content={eventDescription} />
+								</div>
+							</div>
+						)}
+
+						{/* Ticket Information - No border, but borders on individual tickets */}
+						{tickets.length > 0 && (
+							<div className="p-6 md:p-8">
+								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">
+									{t.ticketInfo}
+								</h2>
+								<div className="space-y-6">
+									{tickets.map((ticket) => (
+										<div key={ticket.id} className="border border-border rounded-lg p-6">
+											<h3 className="text-xl font-bold mb-3 text-foreground">
+												{getLocalizedText(ticket.name, locale)}
+											</h3>
+											<div className="prose dark:prose-invert max-w-none">
+												<MarkdownContent content={getLocalizedText(ticket.description, locale)} />
+											</div>
+											{ticket.price && (
+												<p className="mt-4 text-lg font-semibold text-foreground">
+													NT$ {ticket.price}
+												</p>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
 			</main>
 		</>
 	);

@@ -101,7 +101,7 @@ export default function EventList() {
 						const eventSlug = event.id.slice(-6);
 						const eventName = getLocalizedText(event.name, locale);
 						const eventDescription = event.plainDescription ? getLocalizedText(event.plainDescription, locale) : event.description ? getLocalizedText(event.description, locale) : "";
-						event.ogImage = event.ogImage || "/assets/default.png";
+						event.ogImage = event.ogImage || "/assets/default.webp";
 
 						return (
 							<Link key={event.id} href={`/${eventSlug}`} className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">

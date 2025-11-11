@@ -109,13 +109,8 @@ export default function FormPage() {
 		},
 		agreeToTerms: {
 			"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
-			"zh-Hans": "我已阅读并同意服务条款",
-			en: "I have read and agree to the terms"
-		},
-		termsLink: {
-			"zh-Hant": "服務條款與隱私政策連結",
-			"zh-Hans": "服务条款与隐私政策链接",
-			en: "Terms and Privacy Policy link"
+			"zh-Hans": "我已阅读并同意服务条款与隐私政策",
+			en: "I have read and agree to the Terms and Privacy Policy"
 		}
 	});
 
@@ -316,12 +311,13 @@ export default function FormPage() {
 	return (
 		<>
 			<main>
-				<section className="mt-24 max-w-3xl mx-auto px-4">
-					<Button variant="outline" onClick={() => router.back()} className="mb-8">
+				<section className="mt-8 max-w-3xl mx-auto p-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+					
+					<Button variant="outline" onClick={() => router.back()}>
 						<ChevronLeft />
 						<p>{t.reselectTicket}</p>
 					</Button>
-					<h1 className="my-4 text-4xl">{t.fillForm}</h1>
+					<h1 className="my-8 text-4xl">{t.fillForm}</h1>
 
 					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
@@ -367,18 +363,22 @@ export default function FormPage() {
 
 							{/* Terms and conditions checkbox */}
 							<div>
-								<Checkbox
-									label={t.agreeToTerms}
-									question={t.agreeToTermsQuestion}
-									value={agreeToTerms}
-									required
-									id="agreeToTerms"
-									checked={agreeToTerms}
-									onChange={e => setAgreeToTerms(e.target.checked)}
-								/>
-								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline mt-2 ml-8">
-									{t.termsLink}
-								</a>
+								<div className="flex items-center space-x-2">
+									<input
+										type="checkbox"
+										id="agreeToTerms"
+										required
+										checked={agreeToTerms}
+										onChange={e => setAgreeToTerms(e.target.checked)}
+										className="h-4 w-4 rounded border-gray-300"
+									/>
+									<label htmlFor="agreeToTerms" className="text-sm cursor-pointer">
+										{t.agreeToTerms.split(/服務條款與隱私政策|服务条款与隐私政策|Terms and Privacy Policy/)[0]}
+										<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline">
+											{locale === "zh-Hant" ? "服務條款與隱私政策" : locale === "zh-Hans" ? "服务条款与隐私政策" : "Terms and Privacy Policy"}
+										</a>
+									</label>
+								</div>
 							</div>
 
 							<Button type="submit" disabled={isSubmitting}>

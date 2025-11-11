@@ -62,11 +62,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			"zh-Hans": "邀请你一起参加 SITCON！",
 			en: "invites you to join SITCON!"
 		},
-		selectTicket: {
-			"zh-Hant": "請選擇你要的票種",
-			"zh-Hans": "请选择你要的票种",
-			en: "Please select your ticket type"
-		},
 		loading: {
 			"zh-Hant": "載入中...",
 			"zh-Hans": "载入中...",
@@ -154,7 +149,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	}, [referralParam, eventId, t.loadFailed]);
 
 	const registeredContent = (
-		<section className={`p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out] bg-gray-100 dark:bg-gray-800 ${isSafari ? "border-[5px] border-[#5A738F]" : ""}`}>
+		<>
 			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 			<div className="items-center justify-center flex">
 				<Button
@@ -171,7 +166,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					{t.viewRegDetail}
 				</Button>
 			</div>
-		</section>
+		</>
 	);
 
 	return (
@@ -187,16 +182,16 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			) : null}
 
 			{welcomeState === "referral" ? (
-				<section className="bg-gray-100 dark:bg-gray-800 p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out]">
+				<>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
 					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
-				</section>
+				</>
 			) : null}
 
 			{welcomeState === "default" ? (
-				<section className="bg-gray-100 dark:bg-gray-800 p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out]">
+				<>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.loggedInWelcome}</h2>
 					{!isSmsVerified && (
 						<div className="text-yellow-500 items-center justify-center flex flex-col gap-2">
@@ -214,10 +209,8 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 							</Button>
 						</div>
 					)}
-				</section>
+				</>
 			) : null}
-
-			<h2 className="text-base my-8 text-center font-normal animate-[blink_1s_infinite_linear_alternate] opacity-80 text-gray-900 dark:text-gray-100">{t.selectTicket}</h2>
 		</section>
 	);
 }

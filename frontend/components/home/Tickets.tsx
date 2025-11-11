@@ -13,6 +13,7 @@ import { Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface TicketsProps {
 	eventId: string;
@@ -73,6 +74,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [canRegister, setCanRegister] = useState(true);
+	const [isMounted, setIsMounted] = useState(false);
 
 	const ticketAnimationRef = useRef<HTMLDivElement>(null);
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -131,12 +133,14 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			const rect = element.getBoundingClientRect();
 			const transform = window.getComputedStyle(element).transform;
 
+			// Position fixed is relative to viewport, so use rect directly
 			ticketAnimation.style.top = `${rect.top}px`;
 			ticketAnimation.style.left = `${rect.left}px`;
 			ticketAnimation.style.width = `${rect.width}px`;
 			ticketAnimation.style.height = `${rect.height}px`;
 			ticketAnimation.style.transform = transform;
 			ticketAnimation.style.display = "block";
+			ticketAnimation.style.position = "fixed";
 
 			// Step 3: Hide original, show animation clone
 			element.style.visibility = "hidden";
@@ -261,6 +265,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			if (await checkAuth()) {
 				await checkRegistrationStatus();
 			}
+			
+			setIsMounted(true);
 		}
 
 		init();
@@ -325,7 +331,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
 							<p>
 								{t.time}
-								{selectedTicket.saleStart} - {selectedTicket.saleEnd}
+								{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
 							</p>
 							<p className="remain">
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
@@ -347,21 +353,24 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					</div>
 				) : null}
 			</Confirm>
-			{/* Animation ticket */}
-			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
-				{selectedTicket ? (
-					<>
-						<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
-						<p>
-							{t.time}
-							{selectedTicket.saleStart} - {selectedTicket.saleEnd}
-						</p>
-						<p className="remain">
-							{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-						</p>
-					</>
-				) : null}
-			</div>
+			{/* Animation ticket - rendered at body level via portal */}
+			{isMounted && typeof window !== 'undefined' && createPortal(
+				<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+					{selectedTicket ? (
+						<>
+							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
+							<p>
+								{t.time}
+								{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+							</p>
+							<p className="remain">
+								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+							</p>
+						</>
+					) : null}
+				</div>,
+				document.body
+			)}
 		</>
 	);
 }
