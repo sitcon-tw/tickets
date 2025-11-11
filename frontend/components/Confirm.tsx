@@ -17,7 +17,7 @@ export default function Confirm({ isOpen, onClose, children, isConfirming = fals
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
 			<DialogOverlay className="backdrop-blur-lg" />
-			<DialogContent className="max-w-[800px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0" onPointerDownOutside={onClose}>
+			<DialogContent className="max-w-[900px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0" onPointerDownOutside={onClose} showCloseButton={false}>
 				<VisuallyHidden>
 					<DialogTitle>Ticket Confirmation</DialogTitle>
 				</VisuallyHidden>

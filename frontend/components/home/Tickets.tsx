@@ -331,7 +331,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 							</p>
 						</div>
-						<div className="mb-6 mt-4">
+						<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
 							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
 							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
 							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
