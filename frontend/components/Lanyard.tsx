@@ -207,6 +207,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
 								position={[0, 0.5, 0.01]}
 								fontSize={getFontSize(name)}
 								color="#fff"
+								font="/assets/NotoSansTC-Regular.ttf"
 								anchorX="center"
 								anchorY="middle"
 								maxWidth={0.7}
