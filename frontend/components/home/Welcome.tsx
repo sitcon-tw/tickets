@@ -192,15 +192,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 			{welcomeState === "default" ? (
 				<>
-					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.loggedInWelcome}</h2>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100 text-center">{t.loggedInWelcome}</h2>
 					{!isSmsVerified && (
-						<div className="text-yellow-500 items-center justify-center flex flex-col gap-2">
-							<div>
+						<div className="text-yellow-500 text-center mt-4">
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>
-							</div>
 							<Button
-								className="text-white"
+								className="text-white mt-3"
 								onClick={() => {
 									router.push(`/verify`);
 								}}
@@ -208,6 +206,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 								{t.verifyNow}
 							</Button>
 						</div>
+						
 					)}
 				</>
 			) : null}

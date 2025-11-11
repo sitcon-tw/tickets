@@ -129,50 +129,52 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				return;
 			}
 
-			// Step 1-2: Clone styling and position to original position
+			// Step 1: Clone styling and position to original position
 			const rect = element.getBoundingClientRect();
-			const transform = window.getComputedStyle(element).transform;
 
-			// Position fixed is relative to viewport, so use rect directly
+			// Position the animation ticket at the original ticket's position
 			ticketAnimation.style.top = `${rect.top}px`;
 			ticketAnimation.style.left = `${rect.left}px`;
 			ticketAnimation.style.width = `${rect.width}px`;
 			ticketAnimation.style.height = `${rect.height}px`;
-			ticketAnimation.style.transform = transform;
+			ticketAnimation.style.transform = "rotate(0deg)";
+			ticketAnimation.style.opacity = "1";
 			ticketAnimation.style.display = "block";
-			ticketAnimation.style.position = "fixed";
 
-			// Step 3: Hide original, show animation clone
+			// Step 2: Hide original ticket
 			element.style.visibility = "hidden";
 
-			// Step 4: Show the confirm popup (but keep popup ticket hidden initially)
+			// Step 3: Show the confirm popup (popup ticket is initially hidden)
 			ticketConfirm.style.opacity = "0";
 			ticketConfirm.style.visibility = "hidden";
 			setIsConfirming(true);
 
-			// Step 5-6: Wait for popup to render, then animate to popup position
+			// Step 4: Wait for popup to render in DOM, then get its position
 			requestAnimationFrame(() => {
-				setTimeout(() => {
+				requestAnimationFrame(() => {
 					const confirmRect = ticketConfirm.getBoundingClientRect();
-					const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
 
-					// Animate the clone ticket to the popup position
+					// Step 5: Animate to popup position and rotation simultaneously
 					ticketAnimation.style.top = `${confirmRect.top}px`;
 					ticketAnimation.style.left = `${confirmRect.left}px`;
 					ticketAnimation.style.width = `${confirmRect.width}px`;
 					ticketAnimation.style.height = `${confirmRect.height}px`;
-					ticketAnimation.style.transform = confirmTransform;
+					ticketAnimation.style.transform = "rotate(2deg)";
 
-					// After animation completes, hide clone and fade in popup ticket
-					setTimeout(() => {
-						ticketAnimation.style.display = "none";
+					// Step 6: After animation completes, swap to real popup ticket
+					const handleTransitionEnd = () => {
+						ticketAnimation.removeEventListener("transitionend", handleTransitionEnd);
+						ticketAnimation.style.opacity = "0";
 						ticketConfirm.style.visibility = "visible";
-						// Trigger fade-in via CSS transition
-						requestAnimationFrame(() => {
-							ticketConfirm.style.opacity = "1";
-						});
-					}, 300);
-				}, 100);
+						ticketConfirm.style.opacity = "1";
+						// Hide animation ticket after fade completes
+						setTimeout(() => {
+							ticketAnimation.style.display = "none";
+						}, 200);
+					};
+
+					ticketAnimation.addEventListener("transitionend", handleTransitionEnd, { once: true });
+				});
 			});
 		});
 	}
@@ -326,8 +328,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			</div>
 			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
 				{selectedTicket ? (
-					<div className="p-8">
-						<div className="ticket ticketConfirm" ref={ticketConfirmRef}>
+					<div className="p-8 pt-12">
+						<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
 							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
 							<p>
 								{t.time}

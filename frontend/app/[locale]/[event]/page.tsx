@@ -198,7 +198,7 @@ export default function Main() {
 							</div>
 							
 							{/* Right: Welcome Box */}
-							<div className="p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 h-fit -mt-8 pt-16 lg:mt-0 lg:pt-8">
+							<div className="p-8 shadow-lg rounded-b-4xl bg-gray-200 dark:bg-gray-800 h-fit -mt-8 pt-16 lg:mt-0 lg:pt-8 flex-1">
 								<Welcome eventId={event.id} eventSlug={eventSlug} />
 							</div>
 						</div>
