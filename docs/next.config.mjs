@@ -5,7 +5,9 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
 	reactStrictMode: true,
-	output: "export"
+	output: "export",
+	basePath: "/tickets",
+	assetPrefix: "/tickets/"
 };
 
 export default withMDX(config);
