@@ -18,6 +18,78 @@ import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
 
+// Language fields component
+interface LanguageFieldsProps {
+	ticketName: string;
+	description: string;
+	plainDescription: string;
+	language: string;
+	languageLabel: string;
+	onNameChange: (value: string) => void;
+	onDescriptionChange: (value: string) => void;
+	onPlainDescriptionChange: (value: string) => void;
+	required?: boolean;
+	t: {
+		ticketName: string;
+		description: string;
+		plainDescription: string;
+	};
+}
+
+function LanguageFields({
+	ticketName,
+	description,
+	plainDescription,
+	language,
+	languageLabel,
+	onNameChange,
+	onDescriptionChange,
+	onPlainDescriptionChange,
+	required = false,
+	t
+}: LanguageFieldsProps) {
+	const placeholders = {
+		en: {
+			plainDesc: "Plain text description without markdown formatting"
+		},
+		"zh-Hant": {
+			plainDesc: "純文字描述，不含 Markdown 格式"
+		},
+		"zh-Hans": {
+			plainDesc: "纯文字描述，不含 Markdown 格式"
+		}
+	};
+
+	const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
+
+	return (
+		<div className="space-y-4">
+			<div className="space-y-2">
+				<Label htmlFor={`name-${language}`}>
+					{t.ticketName} ({languageLabel}) {required && "*"}
+				</Label>
+				<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor={`desc-${language}`}>
+					{t.description} ({languageLabel}, Markdown)
+				</Label>
+				<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
+				{description && (
+					<div className="mt-2 p-3 border rounded-md bg-muted">
+						<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+						<MarkdownContent content={description} />
+					</div>
+				)}
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor={`plainDesc-${language}`}>{t.plainDescription} ({languageLabel})</Label>
+				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
+			</div>
+		</div>
+	);
+}
+
 export default function TicketsPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
@@ -26,7 +98,7 @@ export default function TicketsPage() {
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [showModal, setShowModal] = useState(false);
 	const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-	const [activeTab, setActiveTab] = useState<"en" | "zh-Hant" | "zh-Hans">("en");
+	const [activeTab, setActiveTab] = useState<"info" | "en" | "zh-Hant" | "zh-Hans">("info");
 	const [showLinkModal, setShowLinkModal] = useState(false);
 	const [selectedTicketForLink, setSelectedTicketForLink] = useState<Ticket | null>(null);
 	const [inviteCode, setInviteCode] = useState("");
@@ -48,6 +120,7 @@ export default function TicketsPage() {
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
 		ticketTypes: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Types" },
+		ticketInfo: { "zh-Hant": "票種資訊", "zh-Hans": "票种资讯", en: "Ticket Info" },
 		startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start Time" },
 		endTime: { "zh-Hant": "結束時間", "zh-Hans": "结束时间", en: "End Time" },
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
@@ -342,119 +415,114 @@ export default function TicketsPage() {
 						<DialogTitle>{editingTicket ? t.editTicket : t.addTicket}</DialogTitle>
 					</DialogHeader>
 					<form onSubmit={saveTicket} className="space-y-4">
-						<Tabs value={activeTab} onValueChange={value => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
-							<TabsList className="grid w-full grid-cols-3">
+						<Tabs value={activeTab} onValueChange={value => setActiveTab(value as "info" | "en" | "zh-Hant" | "zh-Hans")}>
+							<TabsList className="grid w-full grid-cols-4">
+								<TabsTrigger value="info">{t.ticketInfo}</TabsTrigger>
 								<TabsTrigger value="en">English</TabsTrigger>
 								<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
 								<TabsTrigger value="zh-Hans">简体中文</TabsTrigger>
 							</TabsList>
 
+							<TabsContent value="info" className="space-y-4">
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="price">{t.price}</Label>
+										<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="quantity">{t.quantity}</Label>
+										<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
+									</div>
+								</div>
+
+								<div className="grid grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label htmlFor="saleStart">{t.startTime}</Label>
+										<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="saleEnd">{t.endTime}</Label>
+										<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} />
+									</div>
+								</div>
+
+								<div className="space-y-3">
+									<div className="flex items-center gap-2">
+										<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={checked => setRequireInviteCode(checked as boolean)} />
+										<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">
+											{t.requireInviteCode}
+										</Label>
+									</div>
+									<div className="flex items-center gap-2">
+										<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={checked => setRequireSmsVerification(checked as boolean)} />
+										<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">
+											{t.requireSmsVerification}
+										</Label>
+									</div>
+									<div className="flex items-center gap-2">
+										<Checkbox id="hidden" checked={hidden} onCheckedChange={checked => setHidden(checked as boolean)} />
+										<Label htmlFor="hidden" className="font-normal cursor-pointer">
+											{t.hideTicket}
+										</Label>
+									</div>
+								</div>
+							</TabsContent>
+
 							<TabsContent value="en" className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="nameEn">{t.ticketName} (English) *</Label>
-									<Input id="nameEn" type="text" required value={nameEn} onChange={e => setNameEn(e.target.value)} />
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="descEn">{t.description} (English, Markdown)</Label>
-									<Textarea id="descEn" value={descEn} onChange={e => setDescEn(e.target.value)} rows={4} />
-									{descEn && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
-											<MarkdownContent content={descEn} />
-										</div>
-									)}
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
-									<Textarea id="plainDescEn" value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} rows={3} placeholder="Plain text description without markdown formatting" />
-								</div>
+								<LanguageFields
+									ticketName={nameEn}
+									description={descEn}
+									plainDescription={plainDescEn}
+									language="en"
+									languageLabel="English"
+									onNameChange={setNameEn}
+									onDescriptionChange={setDescEn}
+									onPlainDescriptionChange={setPlainDescEn}
+									required={true}
+									t={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription
+									}}
+								/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hant" className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="nameZhHant">{t.ticketName} (繁體中文)</Label>
-									<Input id="nameZhHant" type="text" value={nameZhHant} onChange={e => setNameZhHant(e.target.value)} />
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="descZhHant">{t.description} (繁體中文，Markdown)</Label>
-									<Textarea id="descZhHant" value={descZhHant} onChange={e => setDescZhHant(e.target.value)} rows={4} />
-									{descZhHant && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
-											<MarkdownContent content={descZhHant} />
-										</div>
-									)}
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="plainDescZhHant">{t.plainDescription} (繁體中文)</Label>
-									<Textarea id="plainDescZhHant" value={plainDescZhHant} onChange={e => setPlainDescZhHant(e.target.value)} rows={3} placeholder="純文字描述，不含 Markdown 格式" />
-								</div>
+								<LanguageFields
+									ticketName={nameZhHant}
+									description={descZhHant}
+									plainDescription={plainDescZhHant}
+									language="zh-Hant"
+									languageLabel="繁體中文"
+									onNameChange={setNameZhHant}
+									onDescriptionChange={setDescZhHant}
+									onPlainDescriptionChange={setPlainDescZhHant}
+									t={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription
+									}}
+								/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hans" className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="nameZhHans">{t.ticketName} (简体中文)</Label>
-									<Input id="nameZhHans" type="text" value={nameZhHans} onChange={e => setNameZhHans(e.target.value)} />
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="descZhHans">{t.description} (简体中文，Markdown)</Label>
-									<Textarea id="descZhHans" value={descZhHans} onChange={e => setDescZhHans(e.target.value)} rows={4} />
-									{descZhHans && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
-											<MarkdownContent content={descZhHans} />
-										</div>
-									)}
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="plainDescZhHans">{t.plainDescription} (简体中文)</Label>
-									<Textarea id="plainDescZhHans" value={plainDescZhHans} onChange={e => setPlainDescZhHans(e.target.value)} rows={3} placeholder="纯文字描述，不含 Markdown 格式" />
-								</div>
+								<LanguageFields
+									ticketName={nameZhHans}
+									description={descZhHans}
+									plainDescription={plainDescZhHans}
+									language="zh-Hans"
+									languageLabel="简体中文"
+									onNameChange={setNameZhHans}
+									onDescriptionChange={setDescZhHans}
+									onPlainDescriptionChange={setPlainDescZhHans}
+									t={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription
+									}}
+								/>
 							</TabsContent>
 						</Tabs>
-
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="price">{t.price}</Label>
-								<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} />
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="quantity">{t.quantity}</Label>
-								<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
-							</div>
-						</div>
-
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="saleStart">{t.startTime}</Label>
-								<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} />
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="saleEnd">{t.endTime}</Label>
-								<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} />
-							</div>
-						</div>
-
-						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={checked => setRequireInviteCode(checked as boolean)} />
-								<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">
-									{t.requireInviteCode}
-								</Label>
-							</div>
-							<div className="flex items-center gap-2">
-								<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={checked => setRequireSmsVerification(checked as boolean)} />
-								<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">
-									{t.requireSmsVerification}
-								</Label>
-							</div>
-							<div className="flex items-center gap-2">
-								<Checkbox id="hidden" checked={hidden} onCheckedChange={checked => setHidden(checked as boolean)} />
-								<Label htmlFor="hidden" className="font-normal cursor-pointer">
-									{t.hideTicket}
-								</Label>
-							</div>
-						</div>
 
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={closeModal}>

@@ -414,15 +414,15 @@ export default function RegistrationsPage() {
 					<div className="flex flex-col gap-4">
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">Ticket ID</Label>
-							<div className="font-mono text-sm">{selectedRegistration && ticketHashes[selectedRegistration.id]}</div>
+							<div className="font-mono text-sm break-all">{selectedRegistration && ticketHashes[selectedRegistration.id]}</div>
 						</div>
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">ID</Label>
-							<div className="font-mono text-sm">{selectedRegistration?.id}</div>
+							<div className="font-mono text-sm break-all">{selectedRegistration?.id}</div>
 						</div>
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">Email</Label>
-							<div className="text-[0.95rem]">{selectedRegistration?.email}</div>
+							<div className="text-[0.95rem] break-all">{selectedRegistration?.email}</div>
 						</div>
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">Status</Label>
@@ -479,11 +479,11 @@ export default function RegistrationsPage() {
 						)}
 					</div>
 
-					<DialogFooter className="flex flex-col gap-2">
-						<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full">
+					<DialogFooter className="flex flex-col gap-2 sm:flex-col">
+						<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full whitespace-normal h-auto py-2">
 							🗑️ {t.deleteData}
 						</Button>
-						<p className="text-xs opacity-60 text-center">
+						<p className="text-xs opacity-60 text-center text-wrap">
 							⚠️{" "}
 							{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
 						</p>

@@ -564,7 +564,7 @@ export default function InvitesPage() {
 				</section>
 
 				<Dialog open={showModal} onOpenChange={setShowModal}>
-					<DialogContent className="max-w-2xl">
+					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t.add}</DialogTitle>
 						</DialogHeader>
@@ -632,7 +632,7 @@ export default function InvitesPage() {
 				</Dialog>
 
 				<Dialog open={showBulkImportModal} onOpenChange={setShowBulkImportModal}>
-					<DialogContent className="max-w-2xl">
+					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t.bulkImportTitle}</DialogTitle>
 						</DialogHeader>
@@ -705,7 +705,7 @@ export default function InvitesPage() {
 				</Dialog>
 
 				<Dialog open={showCodesModal} onOpenChange={setShowCodesModal}>
-					<DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+					<DialogContent className="sm:max-w-2xl max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>
 								{currentType && (
@@ -748,10 +748,10 @@ export default function InvitesPage() {
 												/>
 											</TableHead>
 											<TableHead>{t.code}</TableHead>
-											<TableHead>{t.usage}</TableHead>
-											<TableHead>{t.limit}</TableHead>
-											<TableHead>{t.status}</TableHead>
-											<TableHead>{t.actions}</TableHead>
+											<TableHead className="w-[100px] whitespace-nowrap">{t.usage}</TableHead>
+											<TableHead className="w-[100px] whitespace-nowrap">{t.limit}</TableHead>
+											<TableHead className="whitespace-nowrap">{t.status}</TableHead>
+											<TableHead className="whitespace-nowrap">{t.actions}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -764,8 +764,8 @@ export default function InvitesPage() {
 														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
 													</TableCell>
 													<TableCell className="font-mono text-sm">{code.code}</TableCell>
-													<TableCell>{code.usedCount}</TableCell>
-													<TableCell>{code.usageLimit}</TableCell>
+													<TableCell className="whitespace-nowrap">{code.usedCount}</TableCell>
+													<TableCell className="whitespace-nowrap">{code.usageLimit}</TableCell>
 													<TableCell>
 														<span className={`status-badge ${statusClass}`}>{status}</span>
 													</TableCell>

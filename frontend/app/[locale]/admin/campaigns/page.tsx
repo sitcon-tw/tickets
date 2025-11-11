@@ -302,21 +302,21 @@ export default function EmailCampaignsPage() {
 
 			{/* Create Campaign Modal */}
 			<Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-				<DialogContent className="max-w-3xl">
+				<DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>{t.createNew}</DialogTitle>
 					</DialogHeader>
 
 					<div className="flex flex-col gap-4">
-						<div>
+						<div className="space-y-2">
 							<Label>{t.name}</Label>
 							<Input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full" />
 						</div>
-						<div>
+						<div className="space-y-2">
 							<Label>{t.subject}</Label>
 							<Input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full" />
 						</div>
-						<div>
+						<div className="space-y-2">
 							<Label>{t.content}</Label>
 							<Textarea
 								value={formData.content}
@@ -326,51 +326,63 @@ export default function EmailCampaignsPage() {
 							/>
 							<small className="text-xs opacity-70">{t.templateVars}</small>
 						</div>
-						<div>
+						<div className="space-y-2">
 							<Label>{t.targetAudience}</Label>
 
-							<div className="mt-2">
+							<div className="space-y-2">
 								<Label className="text-sm">{t.selectEvents}</Label>
-								<select
-									multiple
-									value={formData.targetAudience.eventIds}
-									onChange={e => {
-										const selected = Array.from(e.target.selectedOptions, option => option.value);
-										setFormData({
-											...formData,
-											targetAudience: { ...formData.targetAudience, eventIds: selected }
-										});
-									}}
-									className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-								>
+								<div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800">
 									{events.map(event => (
-										<option key={event.id} value={event.id}>
-											{getLocalizedText(event.name, locale)}
-										</option>
+										<Label key={event.id} className="flex items-center gap-2 cursor-pointer">
+											<Checkbox
+												checked={formData.targetAudience.eventIds.includes(event.id)}
+												onCheckedChange={checked => {
+													const eventIds = formData.targetAudience.eventIds;
+													if (checked) {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, eventIds: [...eventIds, event.id] }
+														});
+													} else {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, eventIds: eventIds.filter(id => id !== event.id) }
+														});
+													}
+												}}
+											/>
+											<span className="text-sm">{getLocalizedText(event.name, locale)}</span>
+										</Label>
 									))}
-								</select>
+								</div>
 							</div>
 
-							<div className="mt-2">
+							<div className="space-y-2">
 								<Label className="text-sm">{t.selectTickets}</Label>
-								<select
-									multiple
-									value={formData.targetAudience.ticketIds}
-									onChange={e => {
-										const selected = Array.from(e.target.selectedOptions, option => option.value);
-										setFormData({
-											...formData,
-											targetAudience: { ...formData.targetAudience, ticketIds: selected }
-										});
-									}}
-									className="w-full min-h-20 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-								>
+								<div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800">
 									{tickets.map(ticket => (
-										<option key={ticket.id} value={ticket.id}>
-											{getLocalizedText(ticket.name, locale)}
-										</option>
+										<Label key={ticket.id} className="flex items-center gap-2 cursor-pointer">
+											<Checkbox
+												checked={formData.targetAudience.ticketIds.includes(ticket.id)}
+												onCheckedChange={checked => {
+													const ticketIds = formData.targetAudience.ticketIds;
+													if (checked) {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, ticketIds: [...ticketIds, ticket.id] }
+														});
+													} else {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, ticketIds: ticketIds.filter(id => id !== ticket.id) }
+														});
+													}
+												}}
+											/>
+											<span className="text-sm">{getLocalizedText(ticket.name, locale)}</span>
+										</Label>
 									))}
-								</select>
+								</div>
 							</div>
 
 							<div className="mt-2 flex gap-4">
