@@ -34,7 +34,7 @@ jobs:
 
       # 🏗️ 只 build docs
       - name: Build docs
-        run: pnpm --filter docs build
+        run: pnpm build:docs
 
       # 📦 上傳輸出
       - name: Upload artifact
