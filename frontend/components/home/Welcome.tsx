@@ -166,7 +166,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					{t.viewRegDetail}
 				</Button>
 			</div>
-		</>
+		</section>
 	);
 
 	return (
