@@ -586,41 +586,24 @@ export default function InvitesPage() {
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="name">{t.name}</Label>
-								<Input 
-									id="name" 
-									name="name" 
-									type="text" 
-									required 
-									placeholder="e.g. VIP Media"
-									value={formData.name}
-									onChange={e => setFormData({...formData, name: e.target.value})}
-								/>
+								<Input id="name" name="name" type="text" required placeholder="e.g. VIP Media" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label htmlFor="amount">{t.amount}</Label>
-									<Input 
-										id="amount" 
-										name="amount" 
-										type="number" 
-										min="1" 
-										max="1000" 
-										required
-										value={formData.amount}
-										onChange={e => setFormData({...formData, amount: parseInt(e.target.value)})}
-									/>
+									<Input id="amount" name="amount" type="number" min="1" max="1000" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseInt(e.target.value) })} />
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="usageLimit">{t.usageLimit}</Label>
-									<Input 
-										id="usageLimit" 
-										name="usageLimit" 
-										type="number" 
-										min="1" 
-										max="100" 
+									<Input
+										id="usageLimit"
+										name="usageLimit"
+										type="number"
+										min="1"
+										max="100"
 										required
 										value={formData.usageLimit}
-										onChange={e => setFormData({...formData, usageLimit: parseInt(e.target.value)})}
+										onChange={e => setFormData({ ...formData, usageLimit: parseInt(e.target.value) })}
 									/>
 								</div>
 							</div>
@@ -629,25 +612,13 @@ export default function InvitesPage() {
 									<Label htmlFor="validFrom">
 										{t.validFrom} ({t.optional})
 									</Label>
-									<Input 
-										id="validFrom" 
-										name="validFrom" 
-										type="datetime-local"
-										value={formData.validFrom}
-										onChange={e => setFormData({...formData, validFrom: e.target.value})}
-									/>
+									<Input id="validFrom" name="validFrom" type="datetime-local" value={formData.validFrom} onChange={e => setFormData({ ...formData, validFrom: e.target.value })} />
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="validUntil">
 										{t.validUntil} ({t.optional})
 									</Label>
-									<Input 
-										id="validUntil" 
-										name="validUntil" 
-										type="datetime-local"
-										value={formData.validUntil}
-										onChange={e => setFormData({...formData, validUntil: e.target.value})}
-									/>
+									<Input id="validUntil" name="validUntil" type="datetime-local" value={formData.validUntil} onChange={e => setFormData({ ...formData, validUntil: e.target.value })} />
 								</div>
 							</div>
 							<DialogFooter>
@@ -698,14 +669,7 @@ export default function InvitesPage() {
 
 							<div className="space-y-2">
 								<Label htmlFor="bulkCodes">{t.pasteOrType}</Label>
-								<Textarea 
-									id="bulkCodes"
-									value={bulkImportCodes} 
-									onChange={e => setBulkImportCodes(e.target.value)} 
-									placeholder={t.codesPlaceholder} 
-									rows={10} 
-									className="font-mono"
-								/>
+								<Textarea id="bulkCodes" value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="font-mono" />
 							</div>
 
 							<div className="grid grid-cols-2 gap-4">
@@ -747,11 +711,7 @@ export default function InvitesPage() {
 								{currentType && (
 									<>
 										{t.codes} - {currentType.name}
-										{selectedCodes.size > 0 && (
-											<span className="text-sm font-normal text-muted-foreground ml-2">
-												({t.selected.replace("{count}", selectedCodes.size.toString())})
-											</span>
-										)}
+										{selectedCodes.size > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
 									</>
 								)}
 							</DialogTitle>
@@ -780,11 +740,11 @@ export default function InvitesPage() {
 									<TableHeader>
 										<TableRow>
 											<TableHead className="w-[50px] text-center">
-												<input 
-													type="checkbox" 
-													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} 
-													onChange={toggleSelectAll} 
-													className="cursor-pointer" 
+												<input
+													type="checkbox"
+													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
+													onChange={toggleSelectAll}
+													className="cursor-pointer"
 												/>
 											</TableHead>
 											<TableHead>{t.code}</TableHead>
@@ -801,12 +761,7 @@ export default function InvitesPage() {
 											return (
 												<TableRow key={code.id}>
 													<TableCell className="text-center">
-														<input 
-															type="checkbox" 
-															checked={selectedCodes.has(code.id)} 
-															onChange={() => toggleCodeSelection(code.id)} 
-															className="cursor-pointer" 
-														/>
+														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
 													</TableCell>
 													<TableCell className="font-mono text-sm">{code.code}</TableCell>
 													<TableCell>{code.usedCount}</TableCell>
@@ -835,19 +790,10 @@ export default function InvitesPage() {
 							<DialogTitle>{t.sendEmail}</DialogTitle>
 						</DialogHeader>
 						<div className="space-y-4">
-							<p className="text-sm text-muted-foreground">
-								將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址
-							</p>
+							<p className="text-sm text-muted-foreground">將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
 							<div className="space-y-2">
 								<Label htmlFor="emailAddress">{t.emailAddress}</Label>
-								<Input 
-									id="emailAddress"
-									type="email" 
-									value={emailAddress} 
-									onChange={e => setEmailAddress(e.target.value)} 
-									placeholder={t.emailPlaceholder}
-									required 
-								/>
+								<Input id="emailAddress" type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} required />
 							</div>
 						</div>
 						<DialogFooter>

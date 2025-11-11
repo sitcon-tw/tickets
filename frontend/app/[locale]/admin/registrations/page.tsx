@@ -427,9 +427,7 @@ export default function RegistrationsPage() {
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">Status</Label>
 							{selectedRegistration && (
-								<span
-									className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}
-								>
+								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
 									{selectedRegistration.status}
 								</span>
 							)}
@@ -482,20 +480,12 @@ export default function RegistrationsPage() {
 					</div>
 
 					<DialogFooter className="flex flex-col gap-2">
-						<Button
-							variant="destructive"
-							onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)}
-							className="w-full"
-						>
+						<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full">
 							🗑️ {t.deleteData}
 						</Button>
 						<p className="text-xs opacity-60 text-center">
 							⚠️{" "}
-							{locale === "zh-Hant"
-								? "此操作無法復原，符合個人資料保護法"
-								: locale === "zh-Hans"
-									? "此操作无法复原，符合個人資料保護法"
-									: "This action is irreversible and complies with privacy law"}
+							{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
 						</p>
 					</DialogFooter>
 				</DialogContent>

@@ -207,22 +207,23 @@ export default function EventsPage() {
 				...event,
 				statusLabel: status.label,
 				statusClass: status.class,
-			displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
-			formattedStartDate: formatDateTime(event.startDate),
-			formattedEndDate: formatDateTime(event.endDate)
-		};
-	});
-}, [events, locale, computeStatus]);
+				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
+				formattedStartDate: formatDateTime(event.startDate),
+				formattedEndDate: formatDateTime(event.endDate)
+			};
+		});
+	}, [events, locale, computeStatus]);
 
-const columns = useMemo(
-	() =>
-		createEventsColumns({
-			onEdit: openModal,
-			onDelete: deleteEvent,
-			t: { edit: t.edit, delete: t.delete }
-		}),
-	[t.edit, t.delete, openModal, deleteEvent]
-);	useEffect(() => {
+	const columns = useMemo(
+		() =>
+			createEventsColumns({
+				onEdit: openModal,
+				onDelete: deleteEvent,
+				t: { edit: t.edit, delete: t.delete }
+			}),
+		[t.edit, t.delete, openModal, deleteEvent]
+	);
+	useEffect(() => {
 		loadEvents();
 	}, [loadEvents]);
 
@@ -252,7 +253,7 @@ const columns = useMemo(
 							<DialogTitle>{editingEvent ? t.editEvent : t.addEvent}</DialogTitle>
 						</DialogHeader>
 						<form onSubmit={saveEvent} className="space-y-4">
-							<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
+							<Tabs value={activeTab} onValueChange={value => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
 								<TabsList className="grid w-full grid-cols-3">
 									<TabsTrigger value="en">English</TabsTrigger>
 									<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
@@ -276,13 +277,7 @@ const columns = useMemo(
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
-										<Textarea
-											id="plainDescEn"
-											value={plainDescEn}
-											onChange={e => setPlainDescEn(e.target.value)}
-											rows={4}
-											placeholder="Plain text description without markdown formatting"
-										/>
+										<Textarea id="plainDescEn" value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} rows={4} placeholder="Plain text description without markdown formatting" />
 									</div>
 								</TabsContent>
 

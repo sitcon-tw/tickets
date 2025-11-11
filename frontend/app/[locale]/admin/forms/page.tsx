@@ -607,35 +607,36 @@ export default function FormsPage() {
 								const isDragging = draggedIndex === index;
 								const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
 
-							return (
-								<div
-									key={q.id}
-									data-id={q.id}
-									onDragOver={e => handleDragOver(e, index)}
-									onDragLeave={handleDragLeave}
-									onDrop={e => handleDrop(e, index)}
-									className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
-										isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
-									} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
-								>
-									{/* Drag Handle */}
+								return (
 									<div
-										draggable
-										onDragStart={e => handleDragStart(e, index)}
-										onDragEnd={handleDragEnd}
-										className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
-											isDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"
-										}`}
-										title="拖曳以重新排序"
-										onMouseDown={e => {
-											e.currentTarget.style.cursor = "grabbing";
-										}}
-										onMouseUp={e => {
-											e.currentTarget.style.cursor = "grab";
-										}}
+										key={q.id}
+										data-id={q.id}
+										onDragOver={e => handleDragOver(e, index)}
+										onDragLeave={handleDragLeave}
+										onDrop={e => handleDrop(e, index)}
+										className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
+										} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
 									>
-										<GripVertical size={20} />
-									</div>										{/* Field Number Badge */}
+										{/* Drag Handle */}
+										<div
+											draggable
+											onDragStart={e => handleDragStart(e, index)}
+											onDragEnd={handleDragEnd}
+											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
+												isDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"
+											}`}
+											title="拖曳以重新排序"
+											onMouseDown={e => {
+												e.currentTarget.style.cursor = "grabbing";
+											}}
+											onMouseUp={e => {
+												e.currentTarget.style.cursor = "grab";
+											}}
+										>
+											<GripVertical size={20} />
+										</div>{" "}
+										{/* Field Number Badge */}
 										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Main Content Area */}
 										<div className="flex flex-col gap-4 flex-1 pr-12">
@@ -697,21 +698,10 @@ export default function FormsPage() {
 													</div>
 
 													<div className="flex gap-1.5 items-end">
-														<Button
-															type="button"
-															onClick={() => updateQuestion(q.id, { required: !q.required })}
-															variant={q.required ? "default" : "secondary"}
-															className="text-xs py-2 px-3"
-														>
+														<Button type="button" onClick={() => updateQuestion(q.id, { required: !q.required })} variant={q.required ? "default" : "secondary"} className="text-xs py-2 px-3">
 															{q.required ? t.fieldRequired : t.fieldOptional}
 														</Button>
-														<Button
-															type="button"
-															onClick={() => deleteQuestion(q.id)}
-															className="text-xs py-2 px-3"
-															variant="destructive"
-															title={t.deleteField}
-														>
+														<Button type="button" onClick={() => deleteQuestion(q.id)} className="text-xs py-2 px-3" variant="destructive" title={t.deleteField}>
 															{t.deleteField}
 														</Button>
 													</div>

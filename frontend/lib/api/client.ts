@@ -138,7 +138,7 @@ class APIClient {
 							const currentPath = window.location.pathname;
 							const locale = currentPath.split("/")[1] || "zh-Hant";
 							const isOnHomePage = currentPath === `/${locale}` || currentPath === `/${locale}/` || currentPath === "/";
-							
+
 							// Only redirect if not already on home page
 							if (!isOnHomePage) {
 								window.location.href = `/${locale}/`;

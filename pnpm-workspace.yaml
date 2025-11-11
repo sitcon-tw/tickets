@@ -4,9 +4,9 @@ packages:
   - docs
 
 onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - '@tailwindcss/oxide'
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "@tailwindcss/oxide"
   - better-sqlite3
   - esbuild
   - msw

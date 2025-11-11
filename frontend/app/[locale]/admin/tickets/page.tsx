@@ -242,29 +242,30 @@ export default function TicketsPage() {
 			return {
 				...ticket,
 				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
-			formattedSaleStart: formatDateTime(ticket.saleStart),
-			formattedSaleEnd: formatDateTime(ticket.saleEnd),
-			statusLabel: status.label,
-			statusClass: status.class
-		};
-	});
-}, [tickets, locale, computeStatus]);
+				formattedSaleStart: formatDateTime(ticket.saleStart),
+				formattedSaleEnd: formatDateTime(ticket.saleEnd),
+				statusLabel: status.label,
+				statusClass: status.class
+			};
+		});
+	}, [tickets, locale, computeStatus]);
 
-const columns = useMemo(
-	() =>
-		createTicketsColumns({
-			onEdit: openModal,
-			onDelete: deleteTicket,
-			onLinkBuilder: openLinkBuilder,
-			t: {
-				editTicket: t.editTicket,
-				delete: t.delete,
-				directLink: t.directLink,
-				hidden: t.hidden
-			}
-		}),
-	[t.editTicket, t.delete, t.directLink, t.hidden, openModal, deleteTicket, openLinkBuilder]
-);	function openLinkBuilder(ticket: Ticket) {
+	const columns = useMemo(
+		() =>
+			createTicketsColumns({
+				onEdit: openModal,
+				onDelete: deleteTicket,
+				onLinkBuilder: openLinkBuilder,
+				t: {
+					editTicket: t.editTicket,
+					delete: t.delete,
+					directLink: t.directLink,
+					hidden: t.hidden
+				}
+			}),
+		[t.editTicket, t.delete, t.directLink, t.hidden, openModal, deleteTicket, openLinkBuilder]
+	);
+	function openLinkBuilder(ticket: Ticket) {
 		setSelectedTicketForLink(ticket);
 		setInviteCode("");
 		setRefCode("");
@@ -341,7 +342,7 @@ const columns = useMemo(
 						<DialogTitle>{editingTicket ? t.editTicket : t.addTicket}</DialogTitle>
 					</DialogHeader>
 					<form onSubmit={saveTicket} className="space-y-4">
-						<Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
+						<Tabs value={activeTab} onValueChange={value => setActiveTab(value as "en" | "zh-Hant" | "zh-Hans")}>
 							<TabsList className="grid w-full grid-cols-3">
 								<TabsTrigger value="en">English</TabsTrigger>
 								<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
@@ -365,13 +366,7 @@ const columns = useMemo(
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
-									<Textarea
-										id="plainDescEn"
-										value={plainDescEn}
-										onChange={e => setPlainDescEn(e.target.value)}
-										rows={3}
-										placeholder="Plain text description without markdown formatting"
-									/>
+									<Textarea id="plainDescEn" value={plainDescEn} onChange={e => setPlainDescEn(e.target.value)} rows={3} placeholder="Plain text description without markdown formatting" />
 								</div>
 							</TabsContent>
 
@@ -442,16 +437,22 @@ const columns = useMemo(
 
 						<div className="space-y-3">
 							<div className="flex items-center gap-2">
-								<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={(checked) => setRequireInviteCode(checked as boolean)} />
-								<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">{t.requireInviteCode}</Label>
+								<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={checked => setRequireInviteCode(checked as boolean)} />
+								<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">
+									{t.requireInviteCode}
+								</Label>
 							</div>
 							<div className="flex items-center gap-2">
-								<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={(checked) => setRequireSmsVerification(checked as boolean)} />
-								<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">{t.requireSmsVerification}</Label>
+								<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={checked => setRequireSmsVerification(checked as boolean)} />
+								<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">
+									{t.requireSmsVerification}
+								</Label>
 							</div>
 							<div className="flex items-center gap-2">
-								<Checkbox id="hidden" checked={hidden} onCheckedChange={(checked) => setHidden(checked as boolean)} />
-								<Label htmlFor="hidden" className="font-normal cursor-pointer">{t.hideTicket}</Label>
+								<Checkbox id="hidden" checked={hidden} onCheckedChange={checked => setHidden(checked as boolean)} />
+								<Label htmlFor="hidden" className="font-normal cursor-pointer">
+									{t.hideTicket}
+								</Label>
 							</div>
 						</div>
 
@@ -471,9 +472,7 @@ const columns = useMemo(
 				<DialogContent className="max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>{t.linkBuilder}</DialogTitle>
-						<DialogDescription>
-							Generate a direct link to this ticket with optional invite and referral codes.
-						</DialogDescription>
+						<DialogDescription>Generate a direct link to this ticket with optional invite and referral codes.</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">

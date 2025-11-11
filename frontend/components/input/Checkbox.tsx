@@ -13,7 +13,7 @@ type CheckboxProps = {
 	inputRef?: React.Ref<HTMLInputElement>;
 };
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = true, value, checked, onChange }, /* _ref */) => {
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = true, value, checked, onChange } /* _ref */) => {
 	return (
 		<div className="space-y-4">
 			{question ? <p className="text-sm text-muted-foreground">{question}</p> : null}
