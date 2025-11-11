@@ -373,7 +373,7 @@ export default function FormPage() {
 										className="h-4 w-4 rounded border-gray-300"
 									/>
 									<label htmlFor="agreeToTerms" className="text-sm cursor-pointer">
-										{t.agreeToTerms.split(/服務條款與隱私政策|服务条款与隐私政策|Terms and Privacy Policy/)[0]}
+										{t.agreeToTerms.split(/服務條款與隱私政策 | 服务条款与隐私政策|Terms and Privacy Policy/)[0]}
 										<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline">
 											{locale === "zh-Hant" ? "服務條款與隱私政策" : locale === "zh-Hans" ? "服务条款与隐私政策" : "Terms and Privacy Policy"}
 										</a>
