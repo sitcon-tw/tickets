@@ -3,7 +3,6 @@
 import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -346,11 +345,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
 						</div>
 						<Button
-							className={`inline-flex items-center gap-2 transition-opacity duration-200 ${isSubmitting ? "opacity-70" : ""}`}
-							disabled={!canRegister || isSubmitting}
+							className={`inline-flex items-center gap-2`}
+							disabled={!canRegister}
+							isLoading={isSubmitting}
 							onClick={() => handleConfirmRegistration()}
 						>
-							{isSubmitting && <Spinner size="sm" />}
 							{canRegister ? t.confirm : t.cannotRegister}
 						</Button>
 					</div>

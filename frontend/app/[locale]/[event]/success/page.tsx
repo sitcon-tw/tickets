@@ -2,7 +2,6 @@
 
 import Lanyard from "@/components/Lanyard";
 import QRCodePopup from "@/components/QRCodePopup";
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -204,21 +203,23 @@ export default function Success() {
 						<div className={`gap-4 mt-2 ${locale.includes("zh") && "flex flex-wrap"}`}>
 							{registrationId && (
 								<Button
+									isLoading={viewRegLoading}
 									onClick={() => {
 										setViewRegLoading(true);
 										router.push(`/my-registration/${registrationId}`);
 									}}
 								>
-									{viewRegLoading && <Spinner size="sm" />} {t.viewMyRegistration}
+									{t.viewMyRegistration}
 								</Button>
 							)}
 							<Button
+								isLoading={viewRefLoading}
 								onClick={() => {
 									setViewRefLoading(true);
 									router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
 								}}
 							>
-								{viewRefLoading && <Spinner size="sm" />} {t.viewReferralStatus}
+								{t.viewReferralStatus}
 							</Button>
 						</div>
 						<Button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>

@@ -1,6 +1,5 @@
 "use client";
 
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
@@ -153,16 +152,12 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 			<div className="items-center justify-center flex">
 				<Button
+					isLoading={loading}
 					onClick={() => {
 						setLoading(true);
 						router.push(`/${eventSlug}/success`);
 					}}
 				>
-					{loading ? (
-						<>
-							<Spinner size="sm" />{" "}
-						</>
-					) : null}
 					{t.viewRegDetail}
 				</Button>
 			</div>
