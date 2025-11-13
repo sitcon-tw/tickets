@@ -44,8 +44,8 @@ export default function RootLayout({
 					<Nav />
 					<main className="min-h-svh flex items-stretch">
 						<AdminNav />
-						<div className="grow px-8">
-							<div className="flex flex-col w-full h-full mx-auto max-w-6xl pt-16">
+						<div className="grow">
+							<div className="flex flex-col w-full h-full mx-auto">
 								<div className="grow">{children}</div>
 								<Footer />
 							</div>

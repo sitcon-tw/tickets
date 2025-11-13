@@ -32,6 +32,7 @@ export function ThemeToggle() {
 		if (typeof document !== "undefined") {
 			document.documentElement.classList.remove("light", "dark");
 			document.documentElement.classList.add(newTheme);
+			window.dispatchEvent(new CustomEvent("systemThemeChanged", { detail: { newTheme } }));
 		}
 	};
 

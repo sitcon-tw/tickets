@@ -20,7 +20,6 @@ type SessionUser = {
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
 
-// Generate Gravatar URL from email
 function getGravatarUrl(email: string, size = 40): string {
 	const hash = crypto.createHash("md5").update(email.trim().toLowerCase()).digest("hex");
 	return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
@@ -30,21 +29,20 @@ export default function Nav() {
 	const pathname = usePathname();
 	const router = useRouter();
 
-	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
 
-	// Helper to build localized links
 	const localizedPath = (path: string) => `/${locale}${path}`;
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
 	const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
+	const [isScrolled, setIsScrolled] = useState(false);
+	const [isDarkMode, setIsDarkMode] = useState(false);
 
-	// Check if on admin page
 	const isAdminPage = pathname.includes("/admin");
 
 	const t = getTranslations(locale, {
@@ -59,9 +57,7 @@ export default function Nav() {
 		setIsLoggingOut(true);
 		try {
 			await authAPI.signOut();
-			// Refresh session state after logout
 			setSession({ status: "anonymous" });
-			// Navigate to home page
 			router.push(localizedPath("/"));
 		} catch (error) {
 			console.error("Logout failed", error);
@@ -77,7 +73,6 @@ export default function Nav() {
 		return hasAccess;
 	}, [session]);
 
-	// Generate Gravatar URL when user email changes
 	useEffect(() => {
 		if (session.status === "authenticated" && session.user.email) {
 			setGravatarUrl(getGravatarUrl(session.user.email));
@@ -86,7 +81,6 @@ export default function Nav() {
 		}
 	}, [session]);
 
-	// Check for mobile viewport
 	useEffect(() => {
 		const checkMobile = () => {
 			setIsMobile(window.innerWidth <= 768);
@@ -139,16 +133,51 @@ export default function Nav() {
 		};
 	}, []);
 
-	// Hide nav if both mobile and admin page
+	useEffect(() => {
+		function handleScroll() {
+			setIsScrolled(window.scrollY > 5);
+		}
+
+		handleScroll();
+		window.addEventListener("scroll", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+		};
+	}, []);
+
+	useEffect(() => {
+		function updateDarkMode() {
+			const darkModeCheck = localStorage.getItem("sitcontix-theme");
+			setIsDarkMode(darkModeCheck === "dark");
+		};
+
+		updateDarkMode();
+
+		function handleThemeChange(event: CustomEvent) {
+			setIsDarkMode(event.detail.newTheme === "dark");
+		}
+
+		window.addEventListener("systemThemeChanged", handleThemeChange as EventListener);
+		return () => {
+			window.removeEventListener("systemThemeChanged", handleThemeChange as EventListener);
+		};
+	}, []);
+
 	if (isMobile && isAdminPage) {
 		return null;
 	}
 
 	return (
-		<nav className="fixed top-0 left-0 z-1000 w-full bg-gray-600 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-800 transition-colors text-gray-200 dark:text-gray-300">
+		<nav className={`fixed top-0 left-0 z-1000 w-full ${isScrolled ? "bg-gray-600 dark:bg-gray-900/30 backdrop-blur-sm text-gray-200" : "dark:bg-transparent text-gray-600"} border-b border-gray-700 dark:border-gray-800 transition-colors duration-100 dark:text-gray-300`}>
 			<div className="flex items-center justify-between w-full max-w-7xl mx-auto px-4 py-4">
 				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
-					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
+					{
+						isDarkMode || isScrolled ?
+						<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
+						:
+						<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" />
+					}
 				</Link>
 				<div className="flex items-center gap-4">
 					{session.status === "authenticated" ? (

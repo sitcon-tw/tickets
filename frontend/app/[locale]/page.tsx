@@ -3,9 +3,9 @@ import Hero from "@/components/home/Hero";
 
 export default function HomePage() {
 	return (
-		<>
+		<div className="pt-20 max-w-6xl mx-auto">
 			<Hero />
 			<EventList />
-		</>
+		</div>
 	);
 }

@@ -228,7 +228,7 @@ export default function Success() {
 						</Button>
 					</div>
 				</section>
-				<div className="relative overflow-hidden hidden sm:block">
+				<div className="relative overflow-hidden hidden sm:block h-screen">
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
 				</div>
 			</div>

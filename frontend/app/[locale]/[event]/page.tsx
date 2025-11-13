@@ -67,19 +67,16 @@ export default function Main() {
 					if (foundEvent) {
 						setEvent(foundEvent);
 						
-						// Fetch event details
 						const eventData = await eventsAPI.getInfo(foundEvent.id);
 						if (eventData?.success && eventData.data) {
 							setEventDescription(getLocalizedText(eventData.data.description, locale));
 						}
 
-						// Fetch stats
 						const statsData = await eventsAPI.getStats(foundEvent.id);
 						if (statsData?.success && statsData.data) {
 							setRegistrationCount(statsData.data.confirmedRegistrations);
 						}
 
-						// Fetch tickets
 						const ticketsData = await eventsAPI.getTickets(foundEvent.id);
 						if (ticketsData.success && Array.isArray(ticketsData.data)) {
 							setTickets(ticketsData.data);
@@ -144,7 +141,7 @@ export default function Main() {
 
 	return (
 		<>
-			<main>
+			<main className="pt-18 max-w-6xl mx-auto">
 				{/* Cover Image */}
 				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px]">
 					<Image
