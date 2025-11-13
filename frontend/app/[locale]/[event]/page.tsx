@@ -158,9 +158,9 @@ export default function Main() {
 				<div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="bg-background shadow-2xl rounded-b-xl overflow-hidden">
 						{/* Event Info & Welcome - Two containers with rounded bottom */}
-						<div className="flex flex-col lg:flex-row lg:gap-8 px-16">
+						<div className="flex flex-col lg:flex-row lg:gap-8 lg:px-16 sm:px-8">
 							{/* Left: Basic Info */}
-							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 z-10">
+							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 border-b-1 border-gray-600 sm:border-none z-10">
 								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
 									{eventName}
 								</h1>

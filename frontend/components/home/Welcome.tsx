@@ -6,9 +6,8 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import ElectricBorder from "../ElectricBorder";
 
-type WelcomeState = "hidden" | "registered" | "referral" | "default";
+type WelcomeState = "notloggedin" | "registered" | "referral" | "default";
 
 interface WelcomeProps {
 	eventId: string;
@@ -19,13 +18,22 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const locale = useLocale();
 	const router = useRouter();
 
-	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
+	const [welcomeState, setWelcomeState] = useState<WelcomeState>("notloggedin");
 	const [referralParam, setReferralParam] = useState<string | null>(null);
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [isSafari, setIsSafari] = useState(false);
 
 	const t = getTranslations(locale, {
+		loginToRegister: {
+			"zh-Hant": "登入後即可報名！",
+			"zh-Hans": "登录后即可报名！",
+			en: "Login to register!"
+		},
+		login: {
+			"zh-Hant": "立刻登入",
+			"zh-Hans": "立刻登录",
+			en: "Login now"
+		},
 		loggedInWelcome: {
 			"zh-Hant": "歡迎回來！趕緊開始報名吧！",
 			"zh-Hans": "欢迎回来！赶紧开始报名吧！",
@@ -89,10 +97,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		const referral = localStorage.getItem("referralCode");
 		setReferralParam(referral);
 
-		const ua = navigator.userAgent;
-		const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
-		setIsSafari(isSafariBrowser);
-
 		let cancelled = false;
 
 		async function handleWelcome() {
@@ -137,7 +141,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				setWelcomeState("referral");
 				return;
 			}
-			setWelcomeState(isAuthenticated ? "default" : "hidden");
+			setWelcomeState(isAuthenticated ? "default" : "notloggedin");
 		}
 
 		handleWelcome();
@@ -147,35 +151,23 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		};
 	}, [referralParam, eventId, t.loadFailed]);
 
-	const registeredContent = (
-		<section className={`p-8 m-4 text-center animate-[fadeInUp_0.5s_ease-out] ${isSafari ? "border-[5px] border-[#5A738F]" : ""}`}>
-			<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
-			<div className="items-center justify-center flex">
-				<Button
-					isLoading={loading}
-					onClick={() => {
-						setLoading(true);
-						router.push(`/${eventSlug}/success`);
-					}}
-				>
-					{t.viewRegDetail}
-				</Button>
-			</div>
-		</section>
-	);
-
 	return (
-		<section>
+		<section className="pb-4">
 			{welcomeState === "registered" ? (
-				isSafari ? (
-					registeredContent
-				) : (
-					<div className="max-w-3xl mx-auto">
-						<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
-							{registeredContent}
-						</ElectricBorder>
+				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							isLoading={loading}
+							onClick={() => {
+								setLoading(true);
+								router.push(`/${eventSlug}/success`);
+							}}
+						>
+							{t.viewRegDetail}
+						</Button>
 					</div>
-				)
+				</section>
 			) : null}
 
 			{welcomeState === "referral" ? (
@@ -207,6 +199,22 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					)}
 				</>
 			) : null}
+
+			{welcomeState === "notloggedin" ? (
+				<>
+					<h2 className="text-2xl mb-4 text-gray-900 dark:text-gray-100 text-center">{t.loginToRegister}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							onClick={() => {
+								router.push(`/login`);
+							}}
+						>
+							{t.login}
+						</Button>
+					</div>
+				</>
+			) : null
+			}
 		</section>
 	);
 }
