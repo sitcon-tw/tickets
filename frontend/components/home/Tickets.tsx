@@ -154,7 +154,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					const confirmRect = ticketConfirm.getBoundingClientRect();
 
 					// Step 5: Animate to popup position and rotation simultaneously
-					ticketAnimation.style.top = `${confirmRect.top}px`;
+					ticketAnimation.style.top = `${confirmRect.top-10}px`;
 					ticketAnimation.style.left = `${confirmRect.left}px`;
 					ticketAnimation.style.width = `${confirmRect.width}px`;
 					ticketAnimation.style.height = `${confirmRect.height}px`;
@@ -312,16 +312,21 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								}
 							}}
 						>
-							<h3>{getLocalizedText(ticket.name, locale)}</h3>
-							<p>
-								{t.time}
-								{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
-							</p>
-							<p className="remain">
-								{t.remaining} {ticket.available} / {ticket.quantity}
-								{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
-								{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
-							</p>
+							<div className="space-y-2">
+								<h3 className="text-xl font-bold">{getLocalizedText(ticket.name, locale)}</h3>
+								<div className="border-t-2 border-gray-500 max-w-32" />
+								<div>
+									<p>
+										{t.time}
+										{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
+									</p>
+									<p className="remain">
+										{t.remaining} {ticket.available} / {ticket.quantity}
+										{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
+										{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
+									</p>
+								</div>
+							</div>
 						</div>
 					);
 				})}
@@ -330,14 +335,19 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				{selectedTicket ? (
 					<div className="p-8 pt-12">
 						<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
-							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
-							<p>
-								{t.time}
-								{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
-							</p>
-							<p className="remain">
-								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-							</p>
+							<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+										</p>
+									</div>
+								</div>
 						</div>
 						<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
 							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
@@ -359,16 +369,19 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			{isMounted && typeof window !== 'undefined' && createPortal(
 				<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
 					{selectedTicket ? (
-						<>
-							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
-							<p>
-								{t.time}
-								{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
-							</p>
-							<p className="remain">
-								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-							</p>
-						</>
+						<div className="space-y-2">
+							<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
+							<div className="border-t-2 border-gray-500 max-w-32" />
+							<div>
+								<p>
+									{t.time}
+									{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+								</p>
+								<p className="remain">
+									{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+								</p>
+							</div>
+						</div>
 					) : null}
 				</div>,
 				document.body
