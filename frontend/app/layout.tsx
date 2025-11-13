@@ -1,6 +1,4 @@
-import AdminNav from "@/components/AdminNav";
-import Footer from "@/components/Footer";
-import Nav from "@/components/Nav";
+import LayoutWrapper from "@/components/LayoutWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from "@next/third-parties/google";
@@ -41,16 +39,7 @@ export default function RootLayout({
 
 			<body suppressHydrationWarning>
 				<ThemeProvider>
-					<Nav />
-					<main className="min-h-svh flex items-stretch">
-						<AdminNav />
-						<div className="grow">
-							<div className="flex flex-col w-full h-full mx-auto">
-								<div className="grow">{children}</div>
-								<Footer />
-							</div>
-						</div>
-					</main>
+					<LayoutWrapper>{children}</LayoutWrapper>
 					<Toaster richColors position="bottom-center" />
 				</ThemeProvider>
 			</body>
