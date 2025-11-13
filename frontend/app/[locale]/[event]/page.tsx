@@ -143,7 +143,7 @@ export default function Main() {
 		<>
 			<main className="pt-18 max-w-6xl mx-auto">
 				{/* Cover Image */}
-				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px]">
+				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px] border-1 border-b-2 border-gray-800">
 					<Image
 						src={coverImage}
 						alt={eventName}

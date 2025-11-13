@@ -10,7 +10,13 @@ const nextConfig: NextConfig = {
 				protocol: "https",
 				hostname: "www.gravatar.com",
 				pathname: "/avatar/**"
-			}
+			},
+			{
+				protocol: 'https',
+				hostname: 'i.imgur.com',
+				port: '',
+				pathname: '/**',
+			},
 		]
 	},
 	webpack: config => {
@@ -21,22 +27,6 @@ const nextConfig: NextConfig = {
 
 		return config;
 	},
-	images: {
-    remotePatterns: [
-			{
-        protocol: 'https',
-        hostname: 'www.gravatar.com',
-        port: '',
-        pathname: '/avatar/**',
-      },
-			{
-				protocol: 'https',
-				hostname: 'imgur.com',
-				port: '',
-				pathname: '/**',
-			}
-		],
-  },
 	async rewrites() {
 		// Backend URL is hardcoded for proxy - users only access via frontend
 		const backendUrl = process.env.BACKEND_URI || "http://localhost:3000";
