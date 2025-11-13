@@ -309,8 +309,8 @@ export default function FormPage() {
 
 	return (
 		<>
-			<main>
-				<section className="mt-8 max-w-3xl mx-auto p-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+			<main className="mt-32">
+				<section className="max-w-3xl mx-auto p-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
 					
 					<Button variant="outline" onClick={() => router.back()}>
 						<ChevronLeft />
