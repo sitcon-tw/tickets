@@ -100,7 +100,7 @@ export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<Re
 			const registration = row.original;
 
 			return (
-				<Button size="sm" onClick={() => actions.onViewDetails(registration)}>
+				<Button size="sm" variant="secondary" onClick={() => actions.onViewDetails(registration)}>
 					{actions.t.viewDetails}
 				</Button>
 			);
