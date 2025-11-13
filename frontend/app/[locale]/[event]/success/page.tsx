@@ -12,6 +12,7 @@ import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Spinner from "@/components/Spinner";
 
 export default function Success() {
 	const locale = useLocale();
@@ -200,7 +201,7 @@ export default function Success() {
 							</Button>
 						)}
 						<div className="border-t-2 border-gray-700" />
-						<div className={`gap-4 mt-2 ${locale.includes("zh") && "flex flex-wrap"}`}>
+						<div className={`gap-4 mt-2 flex ${locale.includes("en") && "flex-col"}`}>
 							{registrationId && (
 								<Button
 									isLoading={viewRegLoading}
@@ -222,7 +223,7 @@ export default function Success() {
 								{t.viewReferralStatus}
 							</Button>
 						</div>
-						<Button onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>
+						<Button className="w-fit" onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>
 							<ArrowLeft size={24} />
 						</Button>
 					</div>
