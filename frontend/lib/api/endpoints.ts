@@ -185,7 +185,11 @@ export const adminRegistrationsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<{ id: string; email: string }>>(`/api/admin/registrations/${id}`),
 
-	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) => apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params)
+	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) => apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params),
+
+	getServiceAccountEmail: () => apiClient.get<ApiResponse<{ email: string }>>("/api/admin/registrations/google-sheets/service-account"),
+
+	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) => apiClient.post<ApiResponse<{ count: number; sheetsUrl: string }>>("/api/admin/registrations/google-sheets/sync", data)
 };
 
 // Admin - Invitation Codes

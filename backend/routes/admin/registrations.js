@@ -10,6 +10,7 @@ import prisma from "#config/database.js";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth.js";
 import { registrationSchemas } from "#schemas/registration.js";
 import { sendDataDeletionNotification } from "#utils/email.js";
+import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
 /**
@@ -460,6 +461,162 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			} catch (error) {
 				console.error("Delete registration error:", error);
 				const { response, statusCode } = serverErrorResponse("刪除報名記錄失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Get Google Sheets service account email
+	fastify.get(
+		"/registrations/google-sheets/service-account",
+		{
+			schema: {
+				description: "取得 Google Sheets 服務帳號 Email",
+				tags: ["admin/registrations"],
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							data: {
+								type: "object",
+								properties: {
+									email: { type: "string" }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		async (request, reply) => {
+			try {
+				const email = getServiceAccountEmail();
+				return reply.send(successResponse({ email }));
+			} catch (error) {
+				console.error("Get service account email error:", error);
+				const { response, statusCode } = serverErrorResponse("取得服務帳號 Email 失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Sync registrations to Google Sheets
+	fastify.post(
+		"/registrations/google-sheets/sync",
+		{
+			preHandler: requireEventAccess,
+			schema: {
+				description: "同步報名資料到 Google Sheets",
+				tags: ["admin/registrations"],
+				body: {
+					type: "object",
+					properties: {
+						eventId: {
+							type: "string",
+							description: "活動 ID"
+						},
+						sheetsUrl: {
+							type: "string",
+							description: "Google Sheets URL"
+						}
+					},
+					required: ["eventId", "sheetsUrl"]
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: {
+								type: "object",
+								properties: {
+									count: { type: "number" },
+									sheetsUrl: { type: "string" }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Body: {eventId: string, sheetsUrl: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { eventId, sheetsUrl } = request.body;
+
+				// Validate sheets URL
+				const spreadsheetId = extractSpreadsheetId(sheetsUrl);
+				if (!spreadsheetId) {
+					const { response, statusCode } = validationErrorResponse("無效的 Google Sheets URL");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Check if event exists
+				const event = await prisma.event.findUnique({
+					where: { id: eventId }
+				});
+
+				if (!event) {
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Get registrations for the event
+				const registrations = await prisma.registration.findMany({
+					where: { eventId },
+					include: {
+						user: {
+							select: {
+								name: true,
+								email: true
+							}
+						},
+						event: {
+							select: {
+								name: true
+							}
+						},
+						ticket: {
+							select: {
+								name: true,
+								price: true
+							}
+						}
+					},
+					orderBy: { createdAt: "desc" }
+				});
+
+				// Export to Google Sheets
+				const result = await exportToGoogleSheets(spreadsheetId, registrations);
+
+				if (!result.success) {
+					const { response, statusCode } = serverErrorResponse(result.message);
+					return reply.code(statusCode).send(response);
+				}
+
+				// Update event with Google Sheets URL
+				await prisma.event.update({
+					where: { id: eventId },
+					data: { googleSheetsUrl: sheetsUrl }
+				});
+
+				return reply.send(
+					successResponse(
+						{
+							count: registrations.length,
+							sheetsUrl
+						},
+						result.message
+					)
+				);
+			} catch (error) {
+				console.error("Sync to Google Sheets error:", error);
+				const { response, statusCode } = serverErrorResponse("同步到 Google Sheets 失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

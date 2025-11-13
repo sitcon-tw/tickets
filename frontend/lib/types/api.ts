@@ -82,6 +82,7 @@ export interface Event {
 	endDate: string;
 	ogImage?: string;
 	landingPage?: string;
+	googleSheetsUrl?: string;
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;

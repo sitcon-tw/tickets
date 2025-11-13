@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminRegistrationsAPI } from "@/lib/api/endpoints";
+import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -40,6 +40,11 @@ export default function RegistrationsPage() {
 	const [page] = useState(1);
 	const [pageSize] = useState(50);
 	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
+	const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
+	const [googleSheetsUrl, setGoogleSheetsUrl] = useState("");
+	const [serviceAccountEmail, setServiceAccountEmail] = useState("");
+	const [isExporting, setIsExporting] = useState(false);
+	const [exportSuccess, setExportSuccess] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -78,7 +83,21 @@ export default function RegistrationsPage() {
 		page: { "zh-Hant": "頁", "zh-Hans": "页", en: "Page" },
 		of: { "zh-Hant": "共", "zh-Hans": "共", en: "of" },
 		perPage: { "zh-Hant": "每頁筆數", "zh-Hans": "每页笔数", en: "Per Page" },
-		stats: { "zh-Hant": "統計", "zh-Hans": "统计", en: "Statistics" }
+		stats: { "zh-Hant": "統計", "zh-Hans": "统计", en: "Statistics" },
+		exportToSheets: { "zh-Hant": "匯出到 Google Sheets", "zh-Hans": "导出到 Google Sheets", en: "Export to Google Sheets" },
+		exportToSheetsTitle: { "zh-Hant": "匯出到 Google Sheets", "zh-Hans": "导出到 Google Sheets", en: "Export to Google Sheets" },
+		exportToSheetsDesc: {
+			"zh-Hant": "請將以下服務帳號加入您的 Google Sheets 編輯權限：",
+			"zh-Hans": "请将以下服务帐号加入您的 Google Sheets 编辑权限：",
+			en: "Please invite the following service account to your Google Sheets:"
+		},
+		sheetsUrlLabel: { "zh-Hant": "Sheets URL", "zh-Hans": "Sheets URL", en: "Sheets URL" },
+		openSheets: { "zh-Hant": "開啟 Sheets", "zh-Hans": "打开 Sheets", en: "Open Sheets" },
+		confirm: { "zh-Hant": "確認", "zh-Hans": "确认", en: "Confirm" },
+		exporting: { "zh-Hant": "匯出中...", "zh-Hans": "导出中...", en: "Exporting..." },
+		exportSuccessMsg: { "zh-Hant": "成功匯出到 Google Sheets", "zh-Hans": "成功导出到 Google Sheets", en: "Successfully exported to Google Sheets" },
+		exportErrorMsg: { "zh-Hant": "匯出失敗", "zh-Hans": "导出失败", en: "Export failed" },
+		noEventSelected: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Please select an event first" }
 	});
 
 	const columnDefs = [
@@ -273,6 +292,82 @@ export default function RegistrationsPage() {
 		showAlert(`Exporting ${selectedRegistrations.size} selected registrations`, "info");
 	}
 
+	async function openGoogleSheetsExport() {
+		if (!currentEventId) {
+			showAlert(t.noEventSelected, "warning");
+			return;
+		}
+
+		setExportSuccess(false);
+
+		// Fetch both event data and service account email before opening modal
+		const fetchPromises = [
+			adminEventsAPI.getById(currentEventId).then(eventResponse => {
+				console.log("Event response:", eventResponse);
+				console.log("Event response.data:", eventResponse.data);
+				console.log("Event response.data.googleSheetsUrl:", eventResponse.data?.googleSheetsUrl);
+				console.log("Type of googleSheetsUrl:", typeof eventResponse.data?.googleSheetsUrl);
+				if (eventResponse.success && eventResponse.data?.googleSheetsUrl) {
+					console.log("Found googleSheetsUrl:", eventResponse.data.googleSheetsUrl);
+					return eventResponse.data.googleSheetsUrl;
+				}
+				console.log("No googleSheetsUrl found in event data");
+				return "";
+			}).catch(error => {
+				console.error("Failed to load event data:", error);
+				return "";
+			}),
+			adminRegistrationsAPI.getServiceAccountEmail().then(response => {
+				if (response.success && response.data) {
+					return response.data.email;
+				}
+				return "";
+			}).catch(error => {
+				console.error("Failed to get service account email:", error);
+				return "";
+			})
+		];
+
+		const [sheetsUrl, email] = await Promise.all(fetchPromises);
+		
+		console.log("Setting googleSheetsUrl to:", sheetsUrl);
+		setGoogleSheetsUrl(sheetsUrl);
+		setServiceAccountEmail(email);
+		setShowGoogleSheetsModal(true);
+	}
+
+	async function exportToGoogleSheets() {
+		if (!currentEventId) {
+			showAlert(t.noEventSelected, "warning");
+			return;
+		}
+
+		if (!googleSheetsUrl.trim()) {
+			showAlert("Please enter a Google Sheets URL", "warning");
+			return;
+		}
+
+		setIsExporting(true);
+		try {
+			const response = await adminRegistrationsAPI.syncToGoogleSheets({
+				eventId: currentEventId,
+				sheetsUrl: googleSheetsUrl
+			});
+
+			if (response.success) {
+				showAlert(response.message || t.exportSuccessMsg, "success");
+				setExportSuccess(true);
+			} else {
+				showAlert(response.message || t.exportErrorMsg, "error");
+			}
+		} catch (error) {
+			console.error("Failed to export to Google Sheets:", error);
+			showAlert(`${t.exportErrorMsg}: ${error instanceof Error ? error.message : String(error)}`, "error");
+		} finally {
+			setIsExporting(false);
+		}
+	}
+
 	const deleteRegistration = async (registration: Registration) => {
 		if (!confirm(t.deleteConfirm)) {
 			return;
@@ -344,7 +439,7 @@ export default function RegistrationsPage() {
 					</div>
 				</section>
 				<section className="flex gap-2 my-4">
-					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-1" />
 					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
 						<SelectTrigger className="w-[180px]">
 							<SelectValue placeholder={t.allStatus} />
@@ -360,6 +455,7 @@ export default function RegistrationsPage() {
 						↻ {t.refresh}
 					</Button>
 					<Button onClick={syncToSheets}>📥 {t.syncSheets}</Button>
+					<Button onClick={openGoogleSheetsExport}>📊 {t.exportToSheets}</Button>
 					{selectedRegistrations.size > 0 && (
 						<>
 							<Button onClick={exportSelected} variant="default">
@@ -487,6 +583,68 @@ export default function RegistrationsPage() {
 							⚠️{" "}
 							{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
 						</p>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Google Sheets Export Modal */}
+			<Dialog open={showGoogleSheetsModal} onOpenChange={setShowGoogleSheetsModal}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>{t.exportToSheetsTitle}</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-4">
+						<div>
+							<p className="text-sm mb-2">{t.exportToSheetsDesc}</p>
+							<div className="bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-3 font-mono text-sm break-all">
+								{serviceAccountEmail || "Loading..."}
+							</div>
+						</div>
+
+						<div>
+							<Label htmlFor="sheetsUrl" className="text-sm font-medium mb-2">
+								{t.sheetsUrlLabel}
+							</Label>
+							<Input id="sheetsUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." value={googleSheetsUrl} onChange={e => setGoogleSheetsUrl(e.target.value)} disabled={isExporting} />
+						</div>
+
+						{exportSuccess && (
+							<div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-3 text-sm text-green-700 dark:text-green-300">✅ {t.exportSuccessMsg}</div>
+						)}
+					</div>
+
+					<DialogFooter className="flex flex-row gap-2 justify-end">
+						{exportSuccess ? (
+							<>
+								<Button variant="secondary" onClick={() => setShowGoogleSheetsModal(false)}>
+									{t.close}
+								</Button>
+								<Button
+									variant="default"
+									onClick={() => {
+										if (googleSheetsUrl) window.open(googleSheetsUrl, "_blank");
+									}}
+								>
+									{t.openSheets}
+								</Button>
+							</>
+						) : (
+							<>
+								<Button
+									variant="secondary"
+									onClick={() => {
+										if (googleSheetsUrl) window.open(googleSheetsUrl, "_blank");
+									}}
+									disabled={!googleSheetsUrl || isExporting}
+								>
+									{t.openSheets}
+								</Button>
+								<Button variant="default" onClick={exportToGoogleSheets} disabled={isExporting || !googleSheetsUrl}>
+									{isExporting ? t.exporting : t.confirm}
+								</Button>
+							</>
+						)}
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

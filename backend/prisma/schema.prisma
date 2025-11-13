@@ -92,6 +92,7 @@ model Event {
   endDate     DateTime
   ogImage     String?
   landingPage String?  // JSON content
+  googleSheetsUrl String? // Google Sheets URL for data export
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
