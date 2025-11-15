@@ -67,11 +67,6 @@ export default function AdminDashboard() {
 		salesTrend: { "zh-Hant": "票券銷售趨勢", "zh-Hans": "票券销售趋势", en: "Ticket Sales Trend" },
 		ticketDistribution: { "zh-Hant": "票券類型分布", "zh-Hans": "票券类型分布", en: "Ticket Type Distribution" },
 		progressTitle: { "zh-Hant": "票券銷售進度", "zh-Hans": "票券销售进度", en: "Ticket Sales Progress" },
-		student: { "zh-Hant": "學生票", "zh-Hans": "学生票", en: "Student Ticket" },
-		regular: { "zh-Hant": "普通票", "zh-Hans": "普通票", en: "Regular Ticket" },
-		distant: { "zh-Hant": "遠道而來票", "zh-Hans": "远道而来票", en: "Distant Ticket" },
-		invite: { "zh-Hant": "邀請票", "zh-Hans": "邀请票", en: "Invite Ticket" },
-		opensource: { "zh-Hant": "開源貢獻票", "zh-Hans": "开源贡献票", en: "Open Source Ticket" },
 		remainingLabel: { "zh-Hant": "張剩餘", "zh-Hans": "张剩余", en: "remaining" },
 		total: { "zh-Hant": "總數", "zh-Hans": "总数", en: "Total" },
 		soldLabel: { "zh-Hant": "已售", "zh-Hans": "已售", en: "Sold" }

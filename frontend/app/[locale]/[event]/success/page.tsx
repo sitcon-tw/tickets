@@ -159,7 +159,7 @@ export default function Success() {
 						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
 						<p>{t.emailCheck}</p>
 						<p>{t.inviteFriends}</p>
-						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : (
@@ -174,7 +174,7 @@ export default function Success() {
 							)}
 						</div>
 						<p>{t.copyInviteLink}</p>
-						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-500 hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
 							{referralCode === t.loading ? (
 								<Spinner />
 							) : referralCode === t.loadFailed ? (

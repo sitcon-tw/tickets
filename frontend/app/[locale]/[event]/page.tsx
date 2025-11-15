@@ -232,11 +232,6 @@ export default function Main() {
 											<div className="prose dark:prose-invert max-w-none">
 												<MarkdownContent content={getLocalizedText(ticket.description, locale)} />
 											</div>
-											{ticket.price && (
-												<p className="mt-4 text-lg font-semibold text-foreground">
-													NT$ {ticket.price}
-												</p>
-											)}
 										</div>
 									))}
 								</div>
