@@ -182,8 +182,14 @@ export default function MyRegistrationPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
+			// Single checkbox (boolean value)
 			setFormData(prev => ({ ...prev, [name]: checked }));
+		} else if (value.includes(",")) {
+			// Multi-checkbox with comma-separated values
+			const values = value.split(",").filter(v => v.trim() !== "");
+			setFormData(prev => ({ ...prev, [name]: values }));
 		} else {
+			// Single checkbox with a specific value (legacy support)
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -413,13 +419,14 @@ export default function MyRegistrationPage() {
 								<div className="flex flex-col gap-6">
 									{formFields.map((field, index) => {
 										const fieldName = getLocalizedText(field.name, locale);
+										const fieldId = field.id;
 
 										if (isEditing) {
 											return (
 												<FormField
-													key={index}
+													key={fieldId}
 													field={field}
-													value={formData[fieldName] || ""}
+													value={formData[fieldId] || ""}
 													onTextChange={handleTextChange}
 													onCheckboxChange={handleCheckboxChange}
 													pleaseSelectText={t.pleaseSelect}
@@ -427,7 +434,7 @@ export default function MyRegistrationPage() {
 											);
 										} else {
 											// Display as read-only
-											const value = formData[fieldName];
+											const value = formData[fieldId];
 											let displayValue: string;
 
 											if (Array.isArray(value)) {
@@ -439,7 +446,7 @@ export default function MyRegistrationPage() {
 											}
 
 											return (
-												<div key={index}>
+												<div key={fieldId}>
 													<div className="font-bold mb-1">{fieldName}</div>
 													<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
 												</div>

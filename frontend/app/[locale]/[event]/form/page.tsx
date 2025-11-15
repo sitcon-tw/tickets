@@ -122,8 +122,14 @@ export default function FormPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
+			// Single checkbox (boolean value)
 			setFormData(prev => ({ ...prev, [name]: checked }));
+		} else if (value.includes(",")) {
+			// Multi-checkbox with comma-separated values
+			const values = value.split(",").filter(v => v.trim() !== "");
+			setFormData(prev => ({ ...prev, [name]: values }));
 		} else {
+			// Single checkbox with a specific value (legacy support)
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -351,9 +357,8 @@ export default function FormPage() {
 
 							{/* Dynamic form fields from API - filtered by display conditions */}
 							{visibleFields.map((field, index) => {
-								const fieldName = getLocalizedText(field.name, locale);
 								return (
-									<FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+									<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
 								);
 							})}
 

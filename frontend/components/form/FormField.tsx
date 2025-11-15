@@ -24,6 +24,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 	const requiredMark = field.required ? " *" : "";
 	const fieldLabel = getLocalizedText(field.name, locale);
 	const label = `${fieldLabel}${requiredMark}`;
+	const fieldId = field.id; // Use unique field ID instead of localized name
 
 	const localizedOptions =
 		field.options?.map(opt => ({
@@ -33,13 +34,13 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 
 	switch (field.type) {
 		case "text":
-			return <Text label={label} id={getLocalizedText(field.name, locale)} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
+			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
 
 		case "textarea":
 			return (
 				<Textarea
 					label={label}
-					id={getLocalizedText(field.name, locale)}
+					id={fieldId}
 					rows={3}
 					placeholder={field.placeholder || ""}
 					required={field.required}
@@ -52,14 +53,17 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 			return (
 				<Select
 					label={label}
-					id={getLocalizedText(field.name, locale)}
+					id={fieldId}
 					options={localizedOptions as SelectOption[]}
 					required={field.required}
 					value={(value as string) || ""}
 					onChange={newValue => {
 						// Create a synthetic event to match onTextChange signature
 						const syntheticEvent = {
-							target: { value: newValue }
+							target: {
+								name: fieldId,
+								value: newValue
+							}
 						} as React.ChangeEvent<HTMLSelectElement>;
 						onTextChange(syntheticEvent);
 					}}
@@ -71,14 +75,17 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 			return (
 				<Radio
 					label={fieldLabel}
-					name={getLocalizedText(field.name, locale)}
+					name={fieldId}
 					options={localizedOptions as RadioOption[]}
 					required={field.required}
 					value={(value as string) || ""}
 					onValueChange={newValue => {
 						// Create a synthetic event to match onTextChange signature
 						const syntheticEvent = {
-							target: { value: newValue }
+							target: {
+								name: fieldId,
+								value: newValue
+							}
 						} as React.ChangeEvent<HTMLInputElement>;
 						onTextChange(syntheticEvent);
 					}}
@@ -91,23 +98,27 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 				return (
 					<MultiCheckbox
 						label={label}
-						name={getLocalizedText(field.name, locale)}
+						name={fieldId}
 						options={localizedOptions as CheckboxOption[]}
 						values={currentValues}
 						onValueChange={newValues => {
 							// Create a synthetic event with comma-separated values
 							const syntheticEvent = {
-								target: { value: newValues.join(",") }
+								target: {
+									name: fieldId,
+									value: newValues.join(","),
+									checked: true
+								}
 							} as React.ChangeEvent<HTMLInputElement>;
 							onCheckboxChange(syntheticEvent);
 						}}
 					/>
 				);
 			} else {
-				return <Checkbox label={label} id={getLocalizedText(field.name, locale)} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
+				return <Checkbox label={label} id={fieldId} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />;
 			}
 
 		default:
-			return <Text label={label} id={getLocalizedText(field.name, locale)} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
+			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
 	}
 }
