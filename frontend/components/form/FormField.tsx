@@ -94,7 +94,8 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {
-				const currentValues = Array.isArray(value) ? value : [];
+				// Ensure we filter out empty strings from the current values
+				const currentValues = Array.isArray(value) ? value.filter((v: string) => v && v.trim() !== "") : [];
 				return (
 					<MultiCheckbox
 						label={label}
@@ -103,6 +104,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 						values={currentValues}
 						onValueChange={newValues => {
 							// Create a synthetic event with comma-separated values
+							// Always set checked: true for multi-checkbox to identify it in the handler
 							const syntheticEvent = {
 								target: {
 									name: fieldId,
