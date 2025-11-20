@@ -68,6 +68,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 						onTextChange(syntheticEvent);
 					}}
 					pleaseSelectText={pleaseSelectText}
+					searchable
 				/>
 			);
 
