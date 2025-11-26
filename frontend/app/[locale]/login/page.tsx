@@ -138,8 +138,6 @@ export default function Login() {
 					router.push(`/${locale}`);
 				}
 			} catch {
-				// User is not logged in, stay on login page
-				console.log("User not logged in");
 			} finally {
 				setIsCheckingAuth(false);
 			}

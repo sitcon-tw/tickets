@@ -25,7 +25,6 @@ export function ThemeToggle() {
 
 	const handleToggle = () => {
 		const newTheme = isDark ? "light" : "dark";
-		console.log("Toggling theme from", resolvedTheme, "to", newTheme);
 		setTheme(newTheme);
 
 		// Force update the document class for immediate visual feedback

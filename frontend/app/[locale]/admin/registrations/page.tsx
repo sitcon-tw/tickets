@@ -303,15 +303,9 @@ export default function RegistrationsPage() {
 		// Fetch both event data and service account email before opening modal
 		const fetchPromises = [
 			adminEventsAPI.getById(currentEventId).then(eventResponse => {
-				console.log("Event response:", eventResponse);
-				console.log("Event response.data:", eventResponse.data);
-				console.log("Event response.data.googleSheetsUrl:", eventResponse.data?.googleSheetsUrl);
-				console.log("Type of googleSheetsUrl:", typeof eventResponse.data?.googleSheetsUrl);
 				if (eventResponse.success && eventResponse.data?.googleSheetsUrl) {
-					console.log("Found googleSheetsUrl:", eventResponse.data.googleSheetsUrl);
 					return eventResponse.data.googleSheetsUrl;
 				}
-				console.log("No googleSheetsUrl found in event data");
 				return "";
 			}).catch(error => {
 				console.error("Failed to load event data:", error);
@@ -330,7 +324,6 @@ export default function RegistrationsPage() {
 
 		const [sheetsUrl, email] = await Promise.all(fetchPromises);
 		
-		console.log("Setting googleSheetsUrl to:", sheetsUrl);
 		setGoogleSheetsUrl(sheetsUrl);
 		setServiceAccountEmail(email);
 		setShowGoogleSheetsModal(true);

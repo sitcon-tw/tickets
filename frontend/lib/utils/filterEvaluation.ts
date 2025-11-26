@@ -131,17 +131,6 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 
 	const operator = condition.operator || "equals";
 
-	// Debug logging
-	console.log("Field condition evaluation:", {
-		referencedFieldName: typeof referencedField.name === "object" ? referencedField.name.en : referencedField.name,
-		possibleKeys,
-		foundKey,
-		fieldValue,
-		operator,
-		expectedValue: condition.value,
-		formData: context.formData
-	});
-
 	switch (operator) {
 		case "filled":
 			return isFilled(fieldValue);
@@ -151,7 +140,6 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 
 		case "equals":
 			const result = String(fieldValue) === String(condition.value);
-			console.log("Equals comparison:", { fieldValue, expectedValue: condition.value, result });
 			return result;
 
 		default:

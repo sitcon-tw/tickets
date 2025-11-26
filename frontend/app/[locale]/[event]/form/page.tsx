@@ -253,7 +253,6 @@ export default function FormPage() {
 						return { en: String(opt) };
 					});
 
-					// Parse filters if they're a string
 					let filters = field.filters;
 					if (typeof filters === "string") {
 						try {
@@ -284,7 +283,6 @@ export default function FormPage() {
 		initForm();
 	}, [router, showAlert, t.noTicketAlert]);
 
-	// Filter visible fields based on conditions
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
 
@@ -296,19 +294,8 @@ export default function FormPage() {
 					formData: formData,
 					currentTime: new Date()
 				},
-				formFields // Pass all fields for field-based condition evaluation
+				formFields
 			);
-
-			// Debug logging
-			if (field.filters?.enabled) {
-				console.log("Field filter evaluation:", {
-					fieldName: typeof field.name === "object" ? field.name.en : field.name,
-					filters: field.filters,
-					shouldDisplay,
-					ticketId,
-					formData
-				});
-			}
 
 			return shouldDisplay;
 		});

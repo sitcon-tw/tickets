@@ -88,8 +88,6 @@ export default function AdminDashboard() {
 			}
 
 			if (trendsResponse.success && trendsResponse.data) {
-				console.log("Registration trends data:", trendsResponse.data);
-				// The API returns data with a 'trends' property
 				const trends = trendsResponse.data || [];
 				setRegistrationTrends(trends);
 			} else {
