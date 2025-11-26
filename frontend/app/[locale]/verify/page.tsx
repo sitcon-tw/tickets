@@ -316,23 +316,7 @@ export default function VerifyPage() {
 		router.push(redirectUrl);
 	};
 
-	// const isCodeComplete = verificationCode.every(digit => digit !== "");
-
 	useEffect(() => {
-		smsVerificationAPI
-			.getStatus()
-			.then(response => {
-				if (response.data.phoneVerified) {
-					router.push(redirectUrl);
-				}
-				if (response.data.phoneNumber) {
-					setPhoneNumber(response.data.phoneNumber);
-				}
-			})
-			.catch((err: ApiError) => {
-				console.error("Failed to check verification status:", err);
-			});
-
 		if (countdown > 0) {
 			const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
 			return () => clearTimeout(timer);
@@ -341,7 +325,7 @@ export default function VerifyPage() {
 
 	return (
 		<>
-			<div className="flex items-center justify-center p-4">
+			<div className="flex items-center justify-center p-4 h-full">
 				<div className="w-full max-w-md">
 					<div className="p-8">
 						{step === "phone" && !isVerified && (
