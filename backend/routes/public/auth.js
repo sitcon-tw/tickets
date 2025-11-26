@@ -19,7 +19,6 @@ export default async function authRoutes(fastify) {
 	fastify.get(
 		"/auth/permissions",
 		{
-			preHandler: requireAuth,
 			schema: {
 				description: "取得當前用戶的權限資訊",
 				tags: ["auth"],
@@ -60,6 +59,7 @@ export default async function authRoutes(fastify) {
 			}
 		},
 		async (request, reply) => {
+			if (!request.user || !request.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 			try {
 				const user = await prisma.user.findUnique({
 					where: { id: request.user.id },
