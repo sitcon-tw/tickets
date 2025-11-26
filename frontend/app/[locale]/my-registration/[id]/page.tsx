@@ -395,8 +395,8 @@ export default function MyRegistrationPage() {
 	return (
 		<>
 			<main>
-				<section className="mt-24 max-w-[900px] mx-auto px-4 mb-16">
-					<Button variant="outline" onClick={() => router.back()} className="mb-8">
+				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
+					<Button variant="secondary" onClick={() => router.push(`/${registration?.eventId.slice(-6)}/success`)}>
 						<ChevronLeft />
 						<p>{t.backToRegistrations}</p>
 					</Button>
