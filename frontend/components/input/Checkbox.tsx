@@ -2,7 +2,7 @@ import { ChangeEvent, forwardRef } from "react";
 import styled from "styled-components";
 
 type CheckboxProps = {
-    label: string;
+    label?: string;
     id: string;
     question?: string;
     required?: boolean;

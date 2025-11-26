@@ -345,7 +345,6 @@ export default function FormPage() {
 
 					{!loading && !error && (
 						<form onSubmit={handleSubmit} className="flex flex-col gap-6">
-							{/* Invitation code field - shown if ticket requires it */}
 							{requiresInviteCode && (
 								<Text
 									label={`${t.invitationCode} *`}
@@ -357,39 +356,33 @@ export default function FormPage() {
 								/>
 							)}
 
-							{/* Dynamic form fields from API - filtered by display conditions */}
 							{visibleFields.map((field, index) => {
 								return (
 									<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
 								);
 							})}
 
-							{/* Referral code field - always shown and editable */}
 							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
 
-							{/* Terms and conditions checkbox */}
 							<div>
 								<div className="flex items-center space-x-2">
-									<input
-										type="checkbox"
+									<Checkbox
 										id="agreeToTerms"
 										required
 										checked={agreeToTerms}
 										onChange={e => setAgreeToTerms(e.target.checked)}
-										className="h-4 w-4 rounded border-gray-300"
+										label={t.agreeToTerms}
 									/>
-									<label htmlFor="agreeToTerms" className="text-sm cursor-pointer">
-										{t.agreeToTerms.split(/服務條款與隱私政策 | 服务条款与隐私政策|Terms and Privacy Policy/)[0]}
-										<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline">
-											{locale === "zh-Hant" ? "服務條款與隱私政策" : locale === "zh-Hans" ? "服务条款与隐私政策" : "Terms and Privacy Policy"}
-										</a>
-									</label>
 								</div>
 							</div>
 
-							<Button type="submit" isLoading={isSubmitting}>
-								{t.submitRegistration}
-							</Button>
+							<div className="justify-between flex">
+								<div />
+								<Button type="submit" isLoading={isSubmitting} size={"lg"}>
+									{t.submitRegistration}
+								</Button>
+								<div />
+							</div>
 						</form>
 					)}
 				</section>

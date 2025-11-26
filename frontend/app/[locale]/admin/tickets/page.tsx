@@ -4,7 +4,7 @@ import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import Checkbox from "@/components/input/Checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -448,19 +448,19 @@ export default function TicketsPage() {
 
 								<div className="space-y-3">
 									<div className="flex items-center gap-2">
-										<Checkbox id="requireInviteCode" checked={requireInviteCode} onCheckedChange={checked => setRequireInviteCode(checked as boolean)} />
+										<Checkbox id="requireInviteCode" checked={requireInviteCode} onChange={(e) => setRequireInviteCode(e.target.checked)} />
 										<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">
 											{t.requireInviteCode}
 										</Label>
 									</div>
 									<div className="flex items-center gap-2">
-										<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onCheckedChange={checked => setRequireSmsVerification(checked as boolean)} />
+										<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onChange={(e) => setRequireSmsVerification(e.target.checked)} />
 										<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">
 											{t.requireSmsVerification}
 										</Label>
 									</div>
 									<div className="flex items-center gap-2">
-										<Checkbox id="hidden" checked={hidden} onCheckedChange={checked => setHidden(checked as boolean)} />
+										<Checkbox id="hidden" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />
 										<Label htmlFor="hidden" className="font-normal cursor-pointer">
 											{t.hideTicket}
 										</Label>
