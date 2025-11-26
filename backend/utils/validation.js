@@ -162,8 +162,8 @@ const shouldDisplayField = (field, ticketId, formData, allFields) => {
 				const referencedField = allFields.find(f => f.id === condition.fieldId);
 				if (!referencedField) return true;
 
-				const fieldNameKey = getFieldNameKey(referencedField.name, formData);
-				const fieldValue = formData[fieldNameKey || condition.fieldId];
+				const fieldIdKey = referencedField.id;
+				const fieldValue = formData[fieldIdKey || condition.fieldId];
 				const operator = condition.operator || "equals";
 
 				switch (operator) {
@@ -215,21 +215,21 @@ export const validateRegistrationFormData = (formData, formFields, ticketId = nu
 			continue;
 		}
 
-		// Get the actual field name key that exists in formData
-		const fieldNameKey = getFieldNameKey(field.name, formData);
+		// Get the actual field id that exists in formData
+		const fieldIdKey = field.id;
 
-		if (!fieldNameKey) {
-			// Skip field if name key cannot be determined
+		if (!fieldIdKey) {
+			// Skip field if id cannot be determined
 			continue;
 		}
 
-		const value = formData[fieldNameKey];
+		const value = formData[fieldIdKey];
 		const fieldErrors = [];
 
 		// Check required fields (only for visible fields)
 		if (field.required && (value === undefined || value === null || value === "")) {
-			fieldErrors.push(`${field.description}為必填欄位`);
-			errors[fieldNameKey] = fieldErrors;
+			fieldErrors.push(`為必填欄位`);
+			errors[fieldIdKey] = fieldErrors;
 			continue;
 		}
 

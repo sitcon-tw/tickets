@@ -34,6 +34,7 @@ export default function MyRegistrationPage() {
 	const [formData, setFormData] = useState<FormDataType>({});
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isCancelling, setIsCancelling] = useState(false);
 
 	const t = getTranslations(locale, {
 		myRegistration: {
@@ -170,6 +171,36 @@ export default function MyRegistrationPage() {
 			"zh-Hant": "免費",
 			"zh-Hans": "免费",
 			en: "Free"
+		},
+		cancelRegistration: {
+			"zh-Hant": "取消報名",
+			"zh-Hans": "取消报名",
+			en: "Cancel Registration"
+		},
+		cancelConfirm: {
+			"zh-Hant": "確定要取消此報名嗎？",
+			"zh-Hans": "确定要取消此报名吗？",
+			en: "Are you sure you want to cancel this registration?"
+		},
+		cancelling: {
+			"zh-Hant": "取消中...",
+			"zh-Hans": "取消中...",
+			en: "Cancelling..."
+		},
+		cancelSuccess: {
+			"zh-Hant": "報名已成功取消",
+			"zh-Hans": "报名已成功取消",
+			en: "Registration cancelled successfully"
+		},
+		cancelFailed: {
+			"zh-Hant": "取消失敗：",
+			"zh-Hans": "取消失败：",
+			en: "Failed to cancel: "
+		},
+		cannotCancel: {
+			"zh-Hant": "此報名無法取消",
+			"zh-Hans": "此报名无法取消",
+			en: "This registration cannot be cancelled"
 		}
 	});
 
@@ -233,6 +264,34 @@ export default function MyRegistrationPage() {
 			setFormData(registration.formData as FormDataType);
 		}
 		setIsEditing(false);
+	}
+
+	async function handleCancelRegistration() {
+		if (!registration || !registration.canCancel) {
+			showAlert(t.cannotCancel, "warning");
+			return;
+		}
+
+		if (!confirm(t.cancelConfirm)) {
+			return;
+		}
+
+		setIsCancelling(true);
+		try {
+			const result = await registrationsAPI.cancel(registrationId);
+
+			if (result.success) {
+				showAlert(t.cancelSuccess, "success");
+				setRegistration({ ...registration, status: "cancelled", canEdit: false, canCancel: false });
+			} else {
+				throw new Error(result.message || "Failed to cancel registration");
+			}
+		} catch (error) {
+			console.error("Cancel error:", error);
+			showAlert(t.cancelFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+		} finally {
+			setIsCancelling(false);
+		}
 	}
 
 	function formatDate(dateString: string) {
@@ -404,6 +463,16 @@ export default function MyRegistrationPage() {
 									</div>
 								</div>
 							</div>
+
+							{/* Cancel Registration Button */}
+							{registration.canCancel && registration.status !== "cancelled" && (
+								<div className="flex justify-center">
+									<Button variant="destructive" onClick={handleCancelRegistration} disabled={isCancelling || isEditing}>
+										{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
+										{isCancelling ? t.cancelling : t.cancelRegistration}
+									</Button>
+								</div>
+							)}
 
 							{/* Registration Form Data - Editable */}
 							<div className="p-6 border border-(--border-color) rounded-lg">

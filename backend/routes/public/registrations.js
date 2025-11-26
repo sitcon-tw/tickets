@@ -392,7 +392,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 								id: true,
 								name: true,
 								description: true,
-								price: true
+								price: true,
+								saleEnd: true
 							}
 						}
 					},
@@ -409,7 +410,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						formData: parsedFormData,
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
-						canEdit: reg.status === "confirmed" && reg.event.startDate > now,
+						canEdit: reg.status === "confirmed" && reg.event.startDate > now && (!reg.ticket.saleEnd || reg.ticket.saleEnd > now),
 						canCancel: reg.status === "confirmed" && reg.event.startDate > now
 					};
 				});
@@ -488,8 +489,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
-					canEdit: registration.status === "confirmed" && registration.event.startDate > now && registration.ticket.saleEnd > now,
-					canCancel: registration.status === "confirmed" && registration.event.startDate > now && registration.ticket.saleEnd > now
+					canEdit: registration.status === "confirmed" && registration.event.startDate > now && (!registration.ticket.saleEnd || registration.ticket.saleEnd > now),
+					canCancel: registration.status === "confirmed" && registration.event.startDate > now
 				};
 
 				return reply.send(successResponse(registrationWithStatus));
@@ -576,14 +577,14 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (new Date() >= registration.ticket.saleEnd) {
+				if (registration.ticket.saleEnd && new Date() >= registration.ticket.saleEnd) {
 					const { response, statusCode } = validationErrorResponse("票券已截止，無法編輯報名");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, registration.ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
