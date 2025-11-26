@@ -62,7 +62,8 @@ export default function Main() {
 				const eventsData = await eventsAPI.getAll();
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
+					// Match by slug first, then fallback to last 6 chars of ID
+					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (foundEvent) {
 						setEvent(foundEvent);

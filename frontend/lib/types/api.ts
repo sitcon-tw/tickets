@@ -74,6 +74,7 @@ export type LocalizedText = Record<string, string>; // e.g., { "en": "SITCON 202
 // Event Types
 export interface Event {
 	id: string;
+	slug?: string;
 	name: LocalizedText;
 	description?: LocalizedText;
 	plainDescription?: LocalizedText;

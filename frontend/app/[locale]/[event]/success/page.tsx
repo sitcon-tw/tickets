@@ -124,7 +124,8 @@ export default function Success() {
 			try {
 				try {
 					const eventsData = await eventsAPI.getAll();
-					const foundEvent = eventsData.data.find(e => e.id.slice(-6) === eventSlug);
+					// Match by slug first, then fallback to last 6 chars of ID
+					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (!foundEvent) {
 						setReferralCode(t.loadFailed);

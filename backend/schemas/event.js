@@ -9,6 +9,10 @@ export const eventProperties = {
 		type: "string",
 		description: "活動 ID"
 	},
+	slug: {
+		type: "string",
+		description: "活動 URL slug (可選，用於自訂網址)"
+	},
 	name: {
 		type: "object",
 		additionalProperties: true,
@@ -61,6 +65,10 @@ export const eventProperties = {
 export const eventCreateBody = {
 	type: "object",
 	properties: {
+		slug: {
+			type: "string",
+			description: "活動 URL slug (可選，用於自訂網址)"
+		},
 		name: {
 			type: "object",
 			additionalProperties: true,
@@ -99,6 +107,10 @@ export const eventCreateBody = {
 export const eventUpdateBody = {
 	type: "object",
 	properties: {
+		slug: {
+			type: "string",
+			description: "活動 URL slug (可選，用於自訂網址)"
+		},
 		name: {
 			type: "object",
 			additionalProperties: true,
@@ -275,6 +287,7 @@ export const publicEventsListResponse = {
 					type: "object",
 					properties: {
 						id: { type: "string" },
+						slug: { type: "string" },
 						name: { type: "object", additionalProperties: true },
 						description: { type: "object", additionalProperties: true },
 						plainDescription: { type: "object", additionalProperties: true },

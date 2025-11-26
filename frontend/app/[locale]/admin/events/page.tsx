@@ -37,6 +37,7 @@ export default function EventsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
 
 	const t = getTranslations(locale, {
@@ -46,6 +47,7 @@ export default function EventsPage() {
 		eventName: { "zh-Hant": "活動名稱", "zh-Hans": "活动名称", en: "Event Name" },
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
 		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用於 Metadata）", en: "Plain Description (Use for Metadata)" },
+		slug: { "zh-Hant": "自訂網址 Slug", "zh-Hans": "自定义网址 Slug", en: "Custom URL Slug" },
 		ogImage: { "zh-Hant": "OG 圖片網址", "zh-Hans": "OG 图片网址", en: "OG Image URL" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
@@ -116,6 +118,7 @@ export default function EventsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setSlug(event.slug || "");
 			setOgImage(event.ogImage || "");
 		} else {
 			setNameEn("");
@@ -127,6 +130,7 @@ export default function EventsPage() {
 			setPlainDescEn("");
 			setPlainDescZhHant("");
 			setPlainDescZhHans("");
+			setSlug("");
 			setOgImage("");
 		}
 
@@ -145,6 +149,7 @@ export default function EventsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setSlug("");
 		setOgImage("");
 	};
 
@@ -170,6 +175,7 @@ export default function EventsPage() {
 				"zh-Hant": plainDescZhHant,
 				"zh-Hans": plainDescZhHans
 			},
+			slug: slug || undefined,
 			ogImage: ogImage || undefined,
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? new Date(startDateStr).toISOString() : new Date().toISOString(),
@@ -324,6 +330,21 @@ export default function EventsPage() {
 								</TabsContent>
 							</Tabs>
 
+							<div className="space-y-2">
+								<Label htmlFor="slug">{t.slug}</Label>
+								<Input
+									id="slug"
+									type="text"
+									value={slug}
+									onChange={e => setSlug(e.target.value)}
+									placeholder="sitcon-2026"
+									pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
+									title="Only lowercase letters, numbers, and hyphens (e.g., sitcon-2026)"
+								/>
+								<p className="text-xs text-muted-foreground">
+									Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID.
+								</p>
+							</div>
 							<div className="space-y-2">
 								<Label htmlFor="ogImage">{t.ogImage}</Label>
 								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://example.com/image.jpg" />

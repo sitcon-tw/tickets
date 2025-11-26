@@ -31,6 +31,19 @@ export const createEventsColumns = (actions: ColumnActions): ColumnDef<EventWith
 		}
 	},
 	{
+		accessorKey: "slug",
+		header: ({ column }) => <DataTableColumnHeader column={column} title="Slug" />,
+		cell: ({ row }) => {
+			const slug = row.getValue("slug") as string | undefined;
+			const fallbackSlug = row.original.id.slice(-6);
+			return (
+				<div className="font-mono text-sm">
+					{slug || <span className="text-muted-foreground italic">{fallbackSlug}</span>}
+				</div>
+			);
+		}
+	},
+	{
 		accessorKey: "location",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Location" />,
 		cell: ({ row }) => {

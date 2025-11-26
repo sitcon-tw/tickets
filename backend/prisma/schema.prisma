@@ -84,6 +84,7 @@ model Verification {
 
 model Event {
   id          String   @id @default(cuid())
+  slug        String?  @unique // Custom URL-friendly slug (optional, falls back to last 6 chars of id)
   name        Json     // Localized: {"en": "Event Name", "zh": "活動名稱"}
   description Json?    // Localized: {"en": "Description", "zh": "描述"}
   plainDescription Json? // Localized plain text: {"en": "Plain description", "zh": "純文字描述"}

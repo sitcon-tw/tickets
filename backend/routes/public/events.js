@@ -33,13 +33,18 @@ export default async function publicEventsRoutes(fastify, options) {
 				const { id } = request.params;
 
 				/** @type {Event | null} */
-				const event = await prisma.event.findUnique({
+				let event = await prisma.event.findFirst({
 					where: {
-						id,
+						OR: [
+							{ id },
+							{ slug: id },
+							{ id: { endsWith: id.length === 6 ? id : '' } } // Support last 6 chars of ID
+						],
 						isActive: true // Only show active events
 					},
 					select: {
 						id: true,
+						slug: true,
 						name: true,
 						description: true,
 						plainDescription: true,
@@ -84,10 +89,14 @@ export default async function publicEventsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Verify event exists and is active
-				const event = await prisma.event.findUnique({
+				// Verify event exists and is active - support slug, full ID, or last 6 chars
+				const event = await prisma.event.findFirst({
 					where: {
-						id,
+						OR: [
+							{ id },
+							{ slug: id },
+							{ id: { endsWith: id.length === 6 ? id : '' } }
+						],
 						isActive: true
 					}
 				});
@@ -100,7 +109,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where: {
-						eventId: id,
+						eventId: event.id,
 						isActive: true,
 						hidden: false
 					},
@@ -123,7 +132,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Get form fields for the event (all tickets in the event share the same form)
 				const formFieldsRaw = await prisma.eventFormFields.findMany({
 					where: {
-						eventId: id
+						eventId: event.id
 					},
 					select: {
 						id: true,
@@ -231,6 +240,7 @@ export default async function publicEventsRoutes(fastify, options) {
 					where,
 					select: {
 						id: true,
+						slug: true,
 						name: true,
 						description: true,
 						plainDescription: true,
@@ -272,6 +282,7 @@ export default async function publicEventsRoutes(fastify, options) {
 
 					return {
 						id: event.id,
+						slug: event.slug,
 						name: event.name,
 						description: event.description,
 						plainDescription: event.plainDescription,
@@ -313,10 +324,14 @@ export default async function publicEventsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Get event with registration counts
-				const event = await prisma.event.findUnique({
+				// Get event with registration counts - support slug, full ID, or last 6 chars
+				const event = await prisma.event.findFirst({
 					where: {
-						id,
+						OR: [
+							{ id },
+							{ slug: id },
+							{ id: { endsWith: id.length === 6 ? id : '' } }
+						],
 						isActive: true
 					},
 					select: {
@@ -500,7 +515,7 @@ export default async function publicEventsRoutes(fastify, options) {
 					properties: {
 						id: {
 							type: "string",
-							description: "活動 ID"
+							description: "活動 ID 或 slug"
 						}
 					},
 					required: ["id"]
@@ -541,10 +556,14 @@ export default async function publicEventsRoutes(fastify, options) {
 			try {
 				const { id } = request.params;
 
-				// Verify event exists and is active
-				const event = await prisma.event.findUnique({
+				// Verify event exists and is active - support slug, full ID, or last 6 chars
+				const event = await prisma.event.findFirst({
 					where: {
-						id,
+						OR: [
+							{ id },
+							{ slug: id },
+							{ id: { endsWith: id.length === 6 ? id : '' } }
+						],
 						isActive: true
 					}
 				});
@@ -557,7 +576,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Get form fields for this event
 				const formFields = await prisma.eventFormFields.findMany({
 					where: {
-						eventId: id
+						eventId: event.id
 					},
 					select: {
 						id: true,

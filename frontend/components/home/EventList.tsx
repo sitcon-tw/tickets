@@ -98,7 +98,8 @@ export default function EventList() {
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{events.map(event => {
-						const eventSlug = event.id.slice(-6);
+						// Use custom slug if available, otherwise fallback to last 6 chars of ID
+						const eventSlug = event.slug || event.id.slice(-6);
 						const eventName = getLocalizedText(event.name, locale);
 						const eventDescription = event.plainDescription ? getLocalizedText(event.plainDescription, locale) : event.description ? getLocalizedText(event.description, locale) : "";
 						event.ogImage = event.ogImage || "/assets/default.webp";
