@@ -3,7 +3,7 @@
  */
 
 import prisma from "#config/database.js";
-import { requireAuth } from "#middleware/auth.js";
+import { auth } from "#lib/auth.js";
 import { safeJsonParse } from "#utils/json.js";
 import { serverErrorResponse, successResponse } from "#utils/response.js";
 
@@ -59,10 +59,13 @@ export default async function authRoutes(fastify) {
 			}
 		},
 		async (request, reply) => {
-			if (!request.user || !request.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
+			const session = await auth.api.getSession({
+				headers: request.headers
+			})
+			if (!session.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 			try {
 				const user = await prisma.user.findUnique({
-					where: { id: request.user.id },
+					where: { id: session.user.id },
 					select: {
 						role: true,
 						permissions: true
