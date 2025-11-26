@@ -25,6 +25,12 @@ const activityLinks = [
 
 function AdminNav() {
 	const pathname = usePathname();
+
+	const isAdminPage = pathname.includes("/admin");
+	if (!isAdminPage) {
+		return null;
+	}
+	
 	const router = useNextRouter();
 
 	// Detect locale from pathname since we're outside NextIntlClientProvider
@@ -198,11 +204,6 @@ function AdminNav() {
 			en: "Select Event"
 		}
 	});
-
-	const isAdminPage = pathname.includes("/admin");
-	if (!isAdminPage) {
-		return null;
-	}
 
 	return (
 		<>
