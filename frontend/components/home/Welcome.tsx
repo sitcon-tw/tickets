@@ -7,7 +7,7 @@ import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoin
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 
-type WelcomeState = "notloggedin" | "registered" | "referral" | "default";
+type WelcomeState = "notloggedin" | "registered" | "referral" | "default" | "cancelled";
 
 interface WelcomeProps {
 	eventId: string;
@@ -59,10 +59,20 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			"zh-Hans": "你已完成报名！",
 			en: "Registration Complete!"
 		},
+		cancelledWelcome: {
+			"zh-Hant": "你的報名已取消",
+			"zh-Hans": "你的报名已取消",
+			en: "Your Registration Has Been Cancelled"
+		},
 		viewRegDetail: {
 			"zh-Hant": "查看報名資料",
 			"zh-Hans": "查看报名资料",
 			en: "View Registration Details"
+		},
+		viewCancelledReg: {
+			"zh-Hant": "查看已取消的報名",
+			"zh-Hans": "查看已取消的报名",
+			en: "View Cancelled Registration"
 		},
 		referralWelcome: {
 			"zh-Hant": "邀請你一起參加 SITCON！",
@@ -111,9 +121,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				try {
 					const registrations = await registrationsAPI.getAll();
 					if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
-						const hasRegisteredForEvent = registrations.data.some(reg => reg.event?.id === eventId);
-						if (hasRegisteredForEvent && !cancelled) {
-							setWelcomeState("registered");
+						const eventRegistration = registrations.data.find(reg => reg.event?.id === eventId);
+						if (eventRegistration && !cancelled) {
+							if (eventRegistration.status === "cancelled") {
+								setWelcomeState("cancelled");
+							} else {
+								setWelcomeState("registered");
+							}
 							return;
 						}
 					}
@@ -165,6 +179,23 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 							}}
 						>
 							{t.viewRegDetail}
+						</Button>
+					</div>
+				</section>
+			) : null}
+
+			{welcomeState === "cancelled" ? (
+				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.cancelledWelcome}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							isLoading={loading}
+							onClick={() => {
+								setLoading(true);
+								router.push(`/${eventSlug}/success`);
+							}}
+						>
+							{t.viewCancelledReg}
 						</Button>
 					</div>
 				</section>

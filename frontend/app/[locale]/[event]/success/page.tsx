@@ -30,12 +30,18 @@ export default function Success() {
 	const [registerationTicketName, setRegistrationTicketName] = useState<string | null>(null);
 	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
+	const [isCancelled, setIsCancelled] = useState(false);
 
 	const t = getTranslations(locale, {
 		success: {
 			"zh-Hant": "報名成功！",
 			"zh-Hans": "报名成功！",
 			en: "You're In!"
+		},
+		cancelled: {
+			"zh-Hant": "報名已取消",
+			"zh-Hans": "报名已取消",
+			en: "Registration Cancelled"
 		},
 		emailCheck: {
 			"zh-Hant": "請多留意電子信箱",
@@ -133,8 +139,16 @@ export default function Success() {
 						setRegistrationId(eventRegistration.id);
 						setRegistrationTime(eventRegistration.createdAt);
 						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
-						const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
-						setReferralCode(code);
+
+						// Check if cancelled first to avoid fetching referral data
+						if (eventRegistration.status === "cancelled") {
+							setIsCancelled(true);
+							setReferralCode(t.loadFailed); // Set to failed so UI doesn't show loading
+						} else {
+							setIsCancelled(false);
+							const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
+							setReferralCode(code);
+						}
 					} else {
 						setReferralCode(t.loadFailed);
 					}
@@ -156,49 +170,53 @@ export default function Success() {
 			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] max-w-full overflow-hidden">
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
-						<h1 className="my-4 text-5xl font-bold">{t.success}</h1>
-						<p>{t.emailCheck}</p>
-						<p>{t.inviteFriends}</p>
-						<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
-							{referralCode === t.loading ? (
-								<Spinner />
-							) : (
-								<div className="flex items-center gap-2">
-									<span className="font-mono text-lg">{referralCode}</span>
-									{referralCode !== t.loadFailed && (
-										<span className="cursor-pointer" title={t.copyInvite}>
-											{copiedCode ? <Check className="text-green-500" /> : <Copy />}
-										</span>
+						<h1 className="my-4 text-5xl font-bold">{isCancelled ? t.cancelled : t.success}</h1>
+						{!isCancelled && <p>{t.emailCheck}</p>}
+						{!isCancelled && (
+							<>
+								<p>{t.inviteFriends}</p>
+								<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+									{referralCode === t.loading ? (
+										<Spinner />
+									) : (
+										<div className="flex items-center gap-2">
+											<span className="font-mono text-lg">{referralCode}</span>
+											{referralCode !== t.loadFailed && (
+												<span className="cursor-pointer" title={t.copyInvite}>
+													{copiedCode ? <Check className="text-green-500" /> : <Copy />}
+												</span>
+											)}
+										</div>
 									)}
 								</div>
-							)}
-						</div>
-						<p>{t.copyInviteLink}</p>
-						<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
-							{referralCode === t.loading ? (
-								<Spinner />
-							) : referralCode === t.loadFailed ? (
-								<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
-							) : (
-								<div className="flex items-center gap-2">
-									<span className="font-mono text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
-										{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
-											? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
-											: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}
-									</span>
-									{referralCode !== t.loadFailed && (
-										<span className="cursor-pointer" title={t.copyInvite}>
-											{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
-										</span>
+								<p>{t.copyInviteLink}</p>
+								<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+									{referralCode === t.loading ? (
+										<Spinner />
+									) : referralCode === t.loadFailed ? (
+										<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
+									) : (
+										<div className="flex items-center gap-2">
+											<span className="font-mono text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
+												{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
+													? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
+													: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}
+											</span>
+											{referralCode !== t.loadFailed && (
+												<span className="cursor-pointer" title={t.copyInvite}>
+													{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
+												</span>
+											)}
+										</div>
 									)}
 								</div>
-							)}
-						</div>
-						<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
-						{registrationId && registrationTime && (
-							<Button onClick={() => setShowQRCode(true)} className="flex items-center gap-2 mb-2">
-								<CheckCheck size={24} /> {t.viewQRCode}
-							</Button>
+								<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
+								{registrationId && registrationTime && (
+									<Button onClick={() => setShowQRCode(true)} className="flex items-center gap-2 mb-2">
+										<CheckCheck size={24} /> {t.viewQRCode}
+									</Button>
+								)}
+							</>
 						)}
 						<div className="border-t-2 border-gray-700" />
 						<div className={`gap-4 mt-2 flex ${locale.includes("en") && "flex-col"}`}>
@@ -213,15 +231,17 @@ export default function Success() {
 									{t.viewMyRegistration}
 								</Button>
 							)}
-							<Button
-								isLoading={viewRefLoading}
-								onClick={() => {
-									setViewRefLoading(true);
-									router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
-								}}
-							>
-								{t.viewReferralStatus}
-							</Button>
+							{!isCancelled && (
+								<Button
+									isLoading={viewRefLoading}
+									onClick={() => {
+										setViewRefLoading(true);
+										router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
+									}}
+								>
+									{t.viewReferralStatus}
+								</Button>
+							)}
 						</div>
 						<Button className="w-fit" onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>
 							<ArrowLeft size={24} />
