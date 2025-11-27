@@ -39,6 +39,11 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			"zh-Hans": "欢迎回来！赶紧开始报名吧！",
 			en: "Welcome back! Let's get you registered!"
 		},
+		loggedInWelcomeDescription: {
+			"zh-Hant": "選擇下方的票種開始報名。",
+			"zh-Hans": "选择下方的票种开始报名。",
+			en: "Choose a ticket type below to get started."
+		},
 		haveNotVerifySMS1: {
 			"zh-Hant": "您還沒有完成簡訊驗證！",
 			"zh-Hans": "您还没有完成短信验证！",
@@ -167,7 +172,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 	return (
 		<section className="pb-4">
-			{welcomeState === "registered" ? (
+			{welcomeState === "registered" && (
 				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
 					<div className="items-center justify-center flex">
@@ -182,9 +187,9 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						</Button>
 					</div>
 				</section>
-			) : null}
+			)}
 
-			{welcomeState === "cancelled" ? (
+			{welcomeState === "cancelled" && (
 				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.cancelledWelcome}</h2>
 					<div className="items-center justify-center flex">
@@ -199,39 +204,42 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						</Button>
 					</div>
 				</section>
-			) : null}
+			)}
 
-			{welcomeState === "referral" ? (
+			{welcomeState === "referral" && (
 				<>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
 					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
 				</>
-			) : null}
+			)}
 
-			{welcomeState === "default" ? (
+			{welcomeState === "default" && (
 				<>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100 text-center">{t.loggedInWelcome}</h2>
-					{!isSmsVerified && (
-						<div className="text-yellow-500 text-center mt-4">
-								<p>{t.haveNotVerifySMS1}</p>
-								<p>{t.haveNotVerifySMS2}</p>
-							<Button
-								className="text-white mt-3"
-								onClick={() => {
-									router.push(`/verify`);
-								}}
-							>
-								{t.verifyNow}
-							</Button>
-						</div>
-						
-					)}
+					{isSmsVerified ?
+						<p className="text-gray-800 dark:text-gray-200 text-center mt-4">{t.loggedInWelcomeDescription}</p>
+						:
+					 	<>
+							<div className="text-yellow-500 text-center mt-4">
+									<p>{t.haveNotVerifySMS1}</p>
+									<p>{t.haveNotVerifySMS2}</p>
+								<Button
+									className="text-gray-900 dark:text-gray-100 mt-3"
+									onClick={() => {
+										router.push(`/verify`);
+									}}
+								>
+									{t.verifyNow}
+								</Button>
+							</div>
+						</>
+					}
 				</>
-			) : null}
+			)}
 
-			{welcomeState === "notloggedin" ? (
+			{welcomeState === "notloggedin" && (
 				<>
 					<h2 className="text-2xl mb-4 text-gray-900 dark:text-gray-100 text-center">{t.loginToRegister}</h2>
 					<div className="items-center justify-center flex">
@@ -244,8 +252,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						</Button>
 					</div>
 				</>
-			) : null
-			}
+			)}
 		</section>
 	);
 }
