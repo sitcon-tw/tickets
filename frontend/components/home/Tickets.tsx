@@ -288,11 +288,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		<>
 		<div className="max-w-4xl mx-auto w-full">
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-				{isLoading && tickets.length === 0 ? (
+				{isLoading && tickets.length === 0 && (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
 						<PageSpinner />
 					</div>
-				) : null}
+				)}
 				{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
 				{tickets.map(ticket => {
 					const isExpired = isTicketExpired(ticket);
