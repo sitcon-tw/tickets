@@ -19,7 +19,7 @@ export default function TermsPage() {
 	function TermsPageLayout({ children }: { children: React.ReactNode }) {
 		return (
 			<>
-				<main className="max-w-3xl mx-auto mt-16 mb-8 px-4">
+				<main className="max-w-3xl mx-auto mt-32 mb-8 px-4">
 					<h1 className="text-xl font-bold mb-8 text-gray-900 dark:text-gray-100">{t.termsOfService}</h1>
 					{children}
 				</main>
