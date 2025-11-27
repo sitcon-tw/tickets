@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "path";
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -19,6 +20,9 @@ const nextConfig: NextConfig = {
 			},
 		]
 	},
+	turbopack: {
+		root: path.resolve(__dirname, "..")
+	},
 	webpack: config => {
 		config.module.rules.push({
 			test: /\.(glb|gltf)$/,
@@ -37,7 +41,7 @@ const nextConfig: NextConfig = {
 			}
 		];
 	},
-	outputFileTracingRoot: process.cwd()
+	outputFileTracingRoot: path.resolve(__dirname, "..")
 };
 
 export default withNextIntl(nextConfig);
