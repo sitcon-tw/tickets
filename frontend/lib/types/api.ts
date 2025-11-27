@@ -205,7 +205,7 @@ export interface Registration {
 		location?: string;
 		startDate: string;
 		endDate: string;
-		ogImage?: string | null;
+		slug?: string;
 	};
 	ticket?: {
 		id: string;

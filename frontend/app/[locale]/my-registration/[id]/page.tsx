@@ -396,7 +396,7 @@ export default function MyRegistrationPage() {
 		<>
 			<main>
 				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
-					<Button variant="secondary" onClick={() => router.push(`/${registration?.eventId.slice(-6)}/success`)}>
+					<Button variant="secondary" onClick={() => router.push(registration?.event?.slug? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
 						<ChevronLeft />
 						<p>{t.backToRegistrations}</p>
 					</Button>

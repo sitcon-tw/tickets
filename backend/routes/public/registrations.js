@@ -460,7 +460,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 								location: true,
 								startDate: true,
 								endDate: true,
-								ogImage: true
+								slug: true,
 							}
 						},
 						ticket: {
