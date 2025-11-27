@@ -35,9 +35,14 @@ export default function Main() {
 			en: "Event not found"
 		},
 		failedToLoadEvents: {
-			"zh-Hant": "載入活動失敗",
-			"zh-Hans": "载入活动失败",
-			en: "Failed to load events"
+			"zh-Hant": "載入活動失敗 :(",
+			"zh-Hans": "载入活动失败 :(",
+			en: "Failed to load events :("
+		},
+		tryToDebug: {
+			"zh-Hant": "請確認網址正確，或嘗試於稍後重新整理。",
+			"zh-Hans": "请确认网址正确，或尝试于稍后重新刷新。",
+			en: "Please ensure the URL is correct, or try refreshing later."
 		},
 		peopleSignedUp: {
 			"zh-Hant": "人已報名",
@@ -123,11 +128,9 @@ export default function Main() {
 	if (error || !event) {
 		return (
 			<>
-				<main>
-					<div className="flex flex-col items-center justify-center h-full gap-4">
-						<h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t.eventNotFound}</h1>
-						<p className="text-gray-700 dark:text-gray-300">{error}</p>
-					</div>
+				<main className="h-full flex flex-col items-center justify-center">
+					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{error || t.eventNotFound}</h1>
+					<p className="text-center text-muted-foreground">{t.tryToDebug}</p>
 				</main>
 			</>
 		);
@@ -144,7 +147,7 @@ export default function Main() {
 		<>
 			<main className="pt-18 max-w-6xl mx-auto">
 				{/* Cover Image */}
-				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px] border-1 border-b-2 border-gray-800">
+				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px] border border-b-2 border-gray-800">
 					<Image
 						src={coverImage}
 						alt={eventName}
@@ -161,7 +164,7 @@ export default function Main() {
 						{/* Event Info & Welcome - Two containers with rounded bottom */}
 						<div className="flex flex-col lg:flex-row lg:gap-8 lg:px-16 sm:px-8">
 							{/* Left: Basic Info */}
-							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 border-b-1 border-gray-600 sm:border-none z-10">
+							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 border-b border-gray-600 sm:border-none z-10">
 								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
 									{eventName}
 								</h1>

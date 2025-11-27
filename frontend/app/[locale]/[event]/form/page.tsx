@@ -12,7 +12,6 @@ import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { TicketFormField } from "@/lib/types/api";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { getLocalizedText } from "@/lib/utils/localization";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";

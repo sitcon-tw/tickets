@@ -46,9 +46,14 @@ export default function SetTicket() {
 			en: "Event not found"
 		},
 		failedToLoadEvents: {
-			"zh-Hant": "載入活動失敗",
-			"zh-Hans": "载入活动失败",
-			en: "Failed to load events"
+			"zh-Hant": "載入活動失敗 :(",
+			"zh-Hans": "载入活动失败 :(",
+			en: "Failed to load events :("
+		},
+		tryToDebug: {
+			"zh-Hant": "請確認網址正確，或嘗試於稍後重新整理。",
+			"zh-Hans": "请确认网址正确，或尝试于稍后重新刷新。",
+			en: "Please ensure the URL is correct, or try refreshing later."
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
@@ -79,7 +84,6 @@ export default function SetTicket() {
 			const eventsData = await eventsAPI.getAll();
 
 			if (eventsData?.success && Array.isArray(eventsData.data)) {
-				// Match by slug first, then fallback to last 6 chars of ID
 				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 				if (foundEvent) {
@@ -93,7 +97,6 @@ export default function SetTicket() {
 				setHasError(true);
 			}
 		} catch (err) {
-			console.error("Failed to load event:", err);
 			showAlert(t.loadFailed, "error");
 			setHasError(true);
 		}
@@ -118,7 +121,6 @@ export default function SetTicket() {
 				setHasError(true);
 			}
 		} catch (err) {
-			console.error("Failed to load ticket:", err);
 			showAlert(t.loadFailed, "error");
 			setHasError(true);
 		} finally {
@@ -173,17 +175,16 @@ export default function SetTicket() {
 
 	return (
 		<>
-			{isLoading ? (
+			{isLoading || !hasError ? (
 				<main>
 					<div className="flex items-center justify-center h-screen">
 						<PageSpinner />
 					</div>
 				</main>
 			) : (
-				<main>
-					<div className="flex flex-col items-center justify-center h-screen p-4 text-center">
-						<h1 className="text-3xl font-bold mb-4">{hasError ? t.error : t.redirecting}</h1>
-					</div>
+				<main className="h-full flex flex-col items-center justify-center">
+					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{t.eventNotFound}</h1>
+					<p className="text-center text-muted-foreground">{t.tryToDebug}</p>
 				</main>
 			)}
 		</>
