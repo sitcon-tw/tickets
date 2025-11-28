@@ -302,28 +302,34 @@ export default function RegistrationsPage() {
 
 		// Fetch both event data and service account email before opening modal
 		const fetchPromises = [
-			adminEventsAPI.getById(currentEventId).then(eventResponse => {
-				if (eventResponse.success && eventResponse.data?.googleSheetsUrl) {
-					return eventResponse.data.googleSheetsUrl;
-				}
-				return "";
-			}).catch(error => {
-				console.error("Failed to load event data:", error);
-				return "";
-			}),
-			adminRegistrationsAPI.getServiceAccountEmail().then(response => {
-				if (response.success && response.data) {
-					return response.data.email;
-				}
-				return "";
-			}).catch(error => {
-				console.error("Failed to get service account email:", error);
-				return "";
-			})
+			adminEventsAPI
+				.getById(currentEventId)
+				.then(eventResponse => {
+					if (eventResponse.success && eventResponse.data?.googleSheetsUrl) {
+						return eventResponse.data.googleSheetsUrl;
+					}
+					return "";
+				})
+				.catch(error => {
+					console.error("Failed to load event data:", error);
+					return "";
+				}),
+			adminRegistrationsAPI
+				.getServiceAccountEmail()
+				.then(response => {
+					if (response.success && response.data) {
+						return response.data.email;
+					}
+					return "";
+				})
+				.catch(error => {
+					console.error("Failed to get service account email:", error);
+					return "";
+				})
 		];
 
 		const [sheetsUrl, email] = await Promise.all(fetchPromises);
-		
+
 		setGoogleSheetsUrl(sheetsUrl);
 		setServiceAccountEmail(email);
 		setShowGoogleSheetsModal(true);
@@ -444,12 +450,16 @@ export default function RegistrationsPage() {
 							<SelectItem value="cancelled">{t.cancelled}</SelectItem>
 						</SelectContent>
 					</Select>
-				<Button onClick={loadRegistrations} variant="secondary">
-					↻ {t.refresh}
-				</Button>
-				<Button onClick={syncToSheets} variant="secondary">📥 {t.syncSheets}</Button>
-				<Button onClick={openGoogleSheetsExport} variant="secondary">📊 {t.exportToSheets}</Button>
-				{selectedRegistrations.size > 0 && (
+					<Button onClick={loadRegistrations} variant="secondary">
+						↻ {t.refresh}
+					</Button>
+					<Button onClick={syncToSheets} variant="secondary">
+						📥 {t.syncSheets}
+					</Button>
+					<Button onClick={openGoogleSheetsExport} variant="secondary">
+						📊 {t.exportToSheets}
+					</Button>
+					{selectedRegistrations.size > 0 && (
 						<>
 							<Button onClick={exportSelected} variant="default">
 								📤 {t.exportSelected} ({selectedRegistrations.size})
@@ -462,20 +472,20 @@ export default function RegistrationsPage() {
 				</section>
 				<section className="flex flex-col gap-2 mb-4">
 					<label className="text-sm font-medium">{t.columns}</label>
-				<div className="flex flex-wrap gap-2">
-					{columnDefs.map(col => (
-						<Button
-							key={col.id}
-							size="sm"
-							variant={activeColumns.has(col.id) ? "secondary" : "outline"}
-							onClick={() => {
-								const newCols = new Set(activeColumns);
-								if (newCols.has(col.id)) newCols.delete(col.id);
-								else newCols.add(col.id);
-								setActiveColumns(newCols);
-							}}
-							className={`rounded-full text-xs py-1 px-3 ${!activeColumns.has(col.id) && "opacity-50"}`}
-						>
+					<div className="flex flex-wrap gap-2">
+						{columnDefs.map(col => (
+							<Button
+								key={col.id}
+								size="sm"
+								variant={activeColumns.has(col.id) ? "secondary" : "outline"}
+								onClick={() => {
+									const newCols = new Set(activeColumns);
+									if (newCols.has(col.id)) newCols.delete(col.id);
+									else newCols.add(col.id);
+									setActiveColumns(newCols);
+								}}
+								className={`rounded-full text-xs py-1 px-3 ${!activeColumns.has(col.id) && "opacity-50"}`}
+							>
 								{col.label}
 							</Button>
 						))}
@@ -590,21 +600,24 @@ export default function RegistrationsPage() {
 					<div className="flex flex-col gap-4">
 						<div>
 							<p className="text-sm mb-2">{t.exportToSheetsDesc}</p>
-							<div className="bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-3 font-mono text-sm break-all">
-								{serviceAccountEmail || "Loading..."}
-							</div>
+							<div className="bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-3 font-mono text-sm break-all">{serviceAccountEmail || "Loading..."}</div>
 						</div>
 
 						<div>
 							<Label htmlFor="sheetsUrl" className="text-sm font-medium mb-2">
 								{t.sheetsUrlLabel}
 							</Label>
-							<Input id="sheetsUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." value={googleSheetsUrl} onChange={e => setGoogleSheetsUrl(e.target.value)} disabled={isExporting} />
+							<Input
+								id="sheetsUrl"
+								type="url"
+								placeholder="https://docs.google.com/spreadsheets/d/..."
+								value={googleSheetsUrl}
+								onChange={e => setGoogleSheetsUrl(e.target.value)}
+								disabled={isExporting}
+							/>
 						</div>
 
-						{exportSuccess && (
-							<div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-3 text-sm text-green-700 dark:text-green-300">✅ {t.exportSuccessMsg}</div>
-						)}
+						{exportSuccess && <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-3 text-sm text-green-700 dark:text-green-300">✅ {t.exportSuccessMsg}</div>}
 					</div>
 
 					<DialogFooter className="flex flex-row gap-2 justify-end">

@@ -38,7 +38,7 @@ export default async function publicEventsRoutes(fastify, options) {
 						OR: [
 							{ id },
 							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : '' } } // Support last 6 chars of ID
+							{ id: { endsWith: id.length === 6 ? id : "" } } // Support last 6 chars of ID
 						],
 						isActive: true // Only show active events
 					},
@@ -92,11 +92,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Verify event exists and is active - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-							{ id },
-							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : '' } }
-						],
+						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
 						isActive: true
 					}
 				});
@@ -327,11 +323,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Get event with registration counts - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-							{ id },
-							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : '' } }
-						],
+						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
 						isActive: true
 					},
 					select: {
@@ -559,11 +551,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				// Verify event exists and is active - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-							{ id },
-							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : '' } }
-						],
+						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
 						isActive: true
 					}
 				});

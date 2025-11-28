@@ -111,7 +111,7 @@ class APIClient {
 							const locale = currentPath.split("/")[1] || "zh-Hant";
 							const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
 							const isHomePage = pathWithoutLocale === "/" || pathWithoutLocale === "";
-							
+
 							// Only redirect if not already on login page and not on home page
 							if (!currentPath.includes("/login") && !isHomePage) {
 								// Don't include returnUrl if already on login-related pages

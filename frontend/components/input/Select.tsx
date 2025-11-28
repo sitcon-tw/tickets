@@ -1,10 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem } from "@/components/ui/select";
 import { getTranslations } from "@/i18n/helpers";
-import { useLocale } from "next-intl";
-import { useState, useRef, useEffect } from "react";
-import { ChevronDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronDownIcon } from "lucide-react";
+import { useLocale } from "next-intl";
+import { useEffect, useRef, useState } from "react";
 
 export type SelectOption = string | { value: string; label: string };
 
@@ -44,22 +44,18 @@ export default function Select({ label, id, options, required = true, value, onC
 	const searchPlaceholderText = searchPlaceholder || t.search;
 
 	const filteredOptions = searchQuery
-		? options.filter((option) => {
+		? options.filter(option => {
 				const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
 				return optionLabel.toLowerCase().includes(searchQuery.toLowerCase());
-		  })
+			})
 		: options;
 
-	const selectedOption = options.find((option) => {
+	const selectedOption = options.find(option => {
 		const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 		return optionValue === value;
 	});
 
-	const selectedLabel = selectedOption
-		? typeof selectedOption === "object" && selectedOption !== null && "label" in selectedOption
-			? selectedOption.label
-			: String(selectedOption)
-		: "";
+	const selectedLabel = selectedOption ? (typeof selectedOption === "object" && selectedOption !== null && "label" in selectedOption ? selectedOption.label : String(selectedOption)) : "";
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -114,7 +110,7 @@ export default function Select({ label, id, options, required = true, value, onC
 						id={id}
 						type="text"
 						value={isOpen ? searchQuery : selectedLabel}
-						onChange={(e) => setSearchQuery(e.target.value)}
+						onChange={e => setSearchQuery(e.target.value)}
 						onFocus={() => {
 							setIsOpen(true);
 							setSearchQuery("");
@@ -152,9 +148,7 @@ export default function Select({ label, id, options, required = true, value, onC
 									);
 								})
 							) : (
-								<div className="px-2 py-6 text-center text-sm text-muted-foreground">
-									{locale === "zh-Hant" ? "找不到結果" : locale === "zh-Hans" ? "找不到结果" : "No results found"}
-								</div>
+								<div className="px-2 py-6 text-center text-sm text-muted-foreground">{locale === "zh-Hant" ? "找不到結果" : locale === "zh-Hans" ? "找不到结果" : "No results found"}</div>
 							)}
 						</div>
 					</div>

@@ -1,3 +1,4 @@
+// @ts-nocheck - React Three Fiber types not fully compatible with React 19 yet
 "use client";
 import { Environment, Lightformer, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, extend, useFrame } from "@react-three/fiber";
@@ -25,6 +26,7 @@ export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], 
 	return (
 		<div className="absolute inset-0 w-full h-full flex justify-center items-center transform scale-100 origin-center">
 			<Canvas camera={{ position, fov }} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
+				{/* @ts-expect-error - React Three Fiber types not fully compatible with React 19 */}
 				<ambientLight intensity={Math.PI} />
 				<Physics gravity={gravity} timeStep={1 / 60}>
 					<Band name={name} />

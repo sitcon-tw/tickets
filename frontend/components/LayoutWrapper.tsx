@@ -5,11 +5,7 @@ import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
 import { usePathname } from "next/navigation";
 
-export default function LayoutWrapper({
-	children
-}: {
-	children: React.ReactNode;
-}) {
+export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
 	const isAdminLayout = pathname.includes("/admin");
 

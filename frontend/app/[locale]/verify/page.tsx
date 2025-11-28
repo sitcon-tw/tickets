@@ -4,7 +4,6 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/types/api";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -382,16 +381,6 @@ export default function VerifyPage() {
 										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{sendingCode ? t.sendingCode : t.sendCode}</span>
 									</Button>
 								</div>
-								<style jsx>{`
-									@keyframes fly-1 {
-										from {
-											transform: translateY(0.1em);
-										}
-										to {
-											transform: translateY(-0.1em);
-										}
-									}
-								`}</style>
 							</>
 						)}
 						{step === "verify" && !isVerified && (
