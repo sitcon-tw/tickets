@@ -37,17 +37,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
 
 		case "textarea":
-			return (
-				<Textarea
-					label={label}
-					id={fieldId}
-					rows={3}
-					placeholder={field.placeholder || ""}
-					required={field.required}
-					value={(value as string) || ""}
-					onChange={onTextChange}
-				/>
-			);
+			return <Textarea label={label} id={fieldId} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />;
 
 		case "select":
 			return (

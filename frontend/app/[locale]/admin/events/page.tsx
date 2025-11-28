@@ -341,9 +341,7 @@ export default function EventsPage() {
 									pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
 									title="Only lowercase letters, numbers, and hyphens (e.g., sitcon-2026)"
 								/>
-								<p className="text-xs text-muted-foreground">
-									Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID.
-								</p>
+								<p className="text-xs text-muted-foreground">Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID.</p>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="ogImage">{t.ogImage}</Label>

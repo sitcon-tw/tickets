@@ -1,19 +1,18 @@
 "use client";
 
-import PageSpinner from "@/components/PageSpinner";
-import Welcome from "@/components/home/Welcome";
 import Tickets from "@/components/home/Tickets";
-import Info from "@/components/home/Info";
+import Welcome from "@/components/home/Welcome";
 import MarkdownContent from "@/components/MarkdownContent";
+import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { EventListItem, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Calendar, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Calendar, MapPin, Users } from "lucide-react";
 
 export default function Main() {
 	const params = useParams();
@@ -72,7 +71,7 @@ export default function Main() {
 
 					if (foundEvent) {
 						setEvent(foundEvent);
-						
+
 						const eventData = await eventsAPI.getInfo(foundEvent.id);
 						if (eventData?.success && eventData.data) {
 							setEventDescription(getLocalizedText(eventData.data.description, locale));
@@ -140,7 +139,7 @@ export default function Main() {
 	const coverImage = event.ogImage || "/assets/default.webp";
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
-		return date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+		return date.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 	};
 
 	return (
@@ -148,13 +147,7 @@ export default function Main() {
 			<main className="pt-18 max-w-6xl mx-auto">
 				{/* Cover Image */}
 				<div className="relative w-full h-[300px] md:h-[400px] overflow-hidden shadow-lg rounded-b-[40px] border border-b-2 border-gray-800">
-					<Image
-						src={coverImage}
-						alt={eventName}
-						fill
-						className="object-cover"
-						priority
-					/>
+					<Image src={coverImage} alt={eventName} fill className="object-cover" priority />
 					<div className="absolute inset-0 bg-linear-to-b from-transparent to-black/20 rounded-b-[40px]" />
 				</div>
 
@@ -165,39 +158,33 @@ export default function Main() {
 						<div className="flex flex-col lg:flex-row lg:gap-8 lg:px-16 sm:px-8">
 							{/* Left: Basic Info */}
 							<div className="p-6 md:p-8 shadow-lg rounded-b-4xl bg-gray-100 dark:bg-gray-900 border-b border-gray-600 sm:border-none z-10">
-								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-									{eventName}
-								</h1>
+								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{eventName}</h1>
 								<div className="space-y-3 text-muted-foreground">
 									<div className="flex items-center gap-3">
 										<Calendar size={20} className="shrink-0" />
 										<span className="text-base">
 											{formatDate(event.startDate)}
-											{event.endDate && event.endDate !== event.startDate && 
-												` - ${formatDate(event.endDate)}`
-											}
+											{event.endDate && event.endDate !== event.startDate && ` - ${formatDate(event.endDate)}`}
 										</span>
 									</div>
-									
+
 									{event.location && (
 										<div className="flex items-center gap-3">
 											<MapPin size={20} className="shrink-0" />
 											<span className="text-base">{event.location}</span>
 										</div>
 									)}
-									
+
 									<div className="flex items-center gap-3 pt-2">
 										<Users size={24} className="shrink-0" />
 										<div>
-											<span className="text-4xl font-bold text-foreground">
-												{registrationCount}
-											</span>
+											<span className="text-4xl font-bold text-foreground">{registrationCount}</span>
 											<span className="text-base ml-2">{t.peopleSignedUp}</span>
 										</div>
 									</div>
 								</div>
 							</div>
-							
+
 							{/* Right: Welcome Box */}
 							<div className="p-8 shadow-lg rounded-b-4xl bg-gray-200 dark:bg-gray-800 h-fit -mt-8 pt-16 lg:mt-0 lg:pt-8 flex-1">
 								<Welcome eventId={event.id} eventSlug={eventSlug} />
@@ -212,9 +199,7 @@ export default function Main() {
 						{/* Event Information - No border */}
 						{eventDescription && (
 							<div className="p-6 md:p-8 border-b border-border">
-								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">
-									{t.eventInfo}
-								</h2>
+								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">{t.eventInfo}</h2>
 								<div className="prose prose-lg dark:prose-invert max-w-none">
 									<MarkdownContent content={eventDescription} />
 								</div>
@@ -224,15 +209,11 @@ export default function Main() {
 						{/* Ticket Information - No border, but borders on individual tickets */}
 						{tickets.length > 0 && (
 							<div className="p-6 md:p-8">
-								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">
-									{t.ticketInfo}
-								</h2>
+								<h2 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">{t.ticketInfo}</h2>
 								<div className="space-y-6">
-									{tickets.map((ticket) => (
+									{tickets.map(ticket => (
 										<div key={ticket.id} className="border border-border rounded-lg p-6">
-											<h3 className="text-xl font-bold mb-3 text-foreground">
-												{getLocalizedText(ticket.name, locale)}
-											</h3>
+											<h3 className="text-xl font-bold mb-3 text-foreground">{getLocalizedText(ticket.name, locale)}</h3>
 											<div className="prose dark:prose-invert max-w-none">
 												<MarkdownContent content={getLocalizedText(ticket.description, locale)} />
 											</div>

@@ -61,7 +61,7 @@ export default async function authRoutes(fastify) {
 		async (request, reply) => {
 			const session = await auth.api.getSession({
 				headers: request.headers
-			})
+			});
 			if (!session.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 			try {
 				const user = await prisma.user.findUnique({

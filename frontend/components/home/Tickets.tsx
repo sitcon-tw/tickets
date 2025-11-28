@@ -154,7 +154,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					const confirmRect = ticketConfirm.getBoundingClientRect();
 
 					// Step 5: Animate to popup position and rotation simultaneously
-					ticketAnimation.style.top = `${confirmRect.top-10}px`;
+					ticketAnimation.style.top = `${confirmRect.top - 10}px`;
 					ticketAnimation.style.left = `${confirmRect.left}px`;
 					ticketAnimation.style.width = `${confirmRect.width}px`;
 					ticketAnimation.style.height = `${confirmRect.height}px`;
@@ -266,7 +266,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			if (await checkAuth()) {
 				await checkRegistrationStatus();
 			}
-			
+
 			setIsMounted(true);
 		}
 
@@ -286,122 +286,121 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	return (
 		<>
-		<div className="max-w-4xl mx-auto w-full">
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-				{isLoading && tickets.length === 0 && (
-					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
-						<PageSpinner />
-					</div>
-				)}
-				{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-				{tickets.map(ticket => {
-					const isExpired = isTicketExpired(ticket);
-					const isSoldOut = isTicketSoldOut(ticket);
-					const isUnavailable = isExpired || isSoldOut;
-					return (
-						<div
-							key={ticket.id}
-							className={`ticket ${isUnavailable ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer"}`}
-							role="button"
-							tabIndex={0}
-							onClick={e => handleTicketSelect(ticket, e.currentTarget)}
-							onKeyDown={event => {
-								if (event.key === "Enter" || event.key === " ") {
-									event.preventDefault();
-									handleTicketSelect(ticket, event.currentTarget);
-								}
-							}}
-						>
-							<div className="space-y-2">
-								<h3 className="text-xl font-bold">{getLocalizedText(ticket.name, locale)}</h3>
-								<div className="border-t-2 border-gray-500 max-w-32" />
-								<div>
-									<p>
-										{t.time}
-										{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
-									</p>
-									<p className="remain">
-										{t.remaining} {ticket.available} / {ticket.quantity}
-										{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
-										{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
-									</p>
+			<div className="max-w-4xl mx-auto w-full">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+					{isLoading && tickets.length === 0 && (
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
+							<PageSpinner />
+						</div>
+					)}
+					{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
+					{tickets.map(ticket => {
+						const isExpired = isTicketExpired(ticket);
+						const isSoldOut = isTicketSoldOut(ticket);
+						const isUnavailable = isExpired || isSoldOut;
+						return (
+							<div
+								key={ticket.id}
+								className={`ticket ${isUnavailable ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer"}`}
+								role="button"
+								tabIndex={0}
+								onClick={e => handleTicketSelect(ticket, e.currentTarget)}
+								onKeyDown={event => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										handleTicketSelect(ticket, event.currentTarget);
+									}
+								}}
+							>
+								<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(ticket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {ticket.available} / {ticket.quantity}
+											{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
+											{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
+										</p>
+									</div>
 								</div>
 							</div>
-						</div>
-					);
-				})}
-			</div>
-			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
-				{selectedTicket ? (
-					<div className="p-8 pt-12">
-						<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
-							<div className="space-y-2">
+						);
+					})}
+				</div>
+				<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
+					{selectedTicket ? (
+						<div className="p-8 pt-12">
+							<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
+								<div className="space-y-2">
 									<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
 									<div className="border-t-2 border-gray-500 max-w-32" />
 									<div>
 										<p>
 											{t.time}
-											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 										</p>
 									</div>
 								</div>
-						</div>
-						<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
-							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
-							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
-							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
-						</div>
-						<Button
-							className={`inline-flex items-center gap-2`}
-							disabled={!canRegister}
-							isLoading={isSubmitting}
-							onClick={() => handleConfirmRegistration()}
-						>
-							{canRegister ? t.confirm : t.cannotRegister}
-						</Button>
-					</div>
-				) : null}
-			</Confirm>
-			{/* Animation ticket - rendered at body level via portal */}
-			{isMounted && typeof window !== 'undefined' && createPortal(
-				<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
-					{selectedTicket ? (
-						<div className="space-y-2">
-							<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
-							<div className="border-t-2 border-gray-500 max-w-32" />
-							<div>
-								<p>
-									{t.time}
-									{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} - {selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
-								</p>
-								<p className="remain">
-									{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-								</p>
 							</div>
+							<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
+								<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
+								<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
+								{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
+							</div>
+							<Button className={`inline-flex items-center gap-2`} disabled={!canRegister} isLoading={isSubmitting} onClick={() => handleConfirmRegistration()}>
+								{canRegister ? t.confirm : t.cannotRegister}
+							</Button>
 						</div>
 					) : null}
-				</div>,
-				document.body
-			)}
-			{/* Animation ticket */}
-			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
-				{selectedTicket ? (
-					<>
-						<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
-						<p>
-							{t.time}
-							{selectedTicket.saleStart} - {selectedTicket.saleEnd}
-						</p>
-						<p className="remain">
-							{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-						</p>
-					</>
-				) : null}
+				</Confirm>
+				{/* Animation ticket - rendered at body level via portal */}
+				{isMounted &&
+					typeof window !== "undefined" &&
+					createPortal(
+						<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+							{selectedTicket ? (
+								<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+										</p>
+									</div>
+								</div>
+							) : null}
+						</div>,
+						document.body
+					)}
+				{/* Animation ticket */}
+				<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+					{selectedTicket ? (
+						<>
+							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
+							<p>
+								{t.time}
+								{selectedTicket.saleStart} - {selectedTicket.saleEnd}
+							</p>
+							<p className="remain">
+								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+							</p>
+						</>
+					) : null}
+				</div>
 			</div>
-		</div>
 		</>
 	);
 }

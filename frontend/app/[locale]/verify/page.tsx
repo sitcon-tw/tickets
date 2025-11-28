@@ -4,7 +4,6 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/types/api";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";

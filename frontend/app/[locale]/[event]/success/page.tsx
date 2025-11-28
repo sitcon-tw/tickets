@@ -2,6 +2,7 @@
 
 import Lanyard from "@/components/Lanyard";
 import QRCodePopup from "@/components/QRCodePopup";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -12,7 +13,6 @@ import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Spinner from "@/components/Spinner";
 
 export default function Success() {
 	const locale = useLocale();
@@ -176,7 +176,10 @@ export default function Success() {
 						{!isCancelled && (
 							<>
 								<p>{t.inviteFriends}</p>
-								<div onClick={handleCopyRefCode} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+								<div
+									onClick={handleCopyRefCode}
+									className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2"
+								>
 									{referralCode === t.loading ? (
 										<Spinner />
 									) : (
@@ -191,7 +194,10 @@ export default function Success() {
 									)}
 								</div>
 								<p>{t.copyInviteLink}</p>
-								<div onClick={handleCopyRefUrl} className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2">
+								<div
+									onClick={handleCopyRefUrl}
+									className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2"
+								>
 									{referralCode === t.loading ? (
 										<Spinner />
 									) : referralCode === t.loadFailed ? (

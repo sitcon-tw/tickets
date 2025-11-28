@@ -218,13 +218,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			{welcomeState === "default" && (
 				<>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100 text-center">{t.loggedInWelcome}</h2>
-					{isSmsVerified ?
+					{isSmsVerified ? (
 						<p className="text-gray-800 dark:text-gray-200 text-center mt-4">{t.loggedInWelcomeDescription}</p>
-						:
-					 	<>
+					) : (
+						<>
 							<div className="text-yellow-500 text-center mt-4">
-									<p>{t.haveNotVerifySMS1}</p>
-									<p>{t.haveNotVerifySMS2}</p>
+								<p>{t.haveNotVerifySMS1}</p>
+								<p>{t.haveNotVerifySMS2}</p>
 								<Button
 									className="text-gray-900 dark:text-gray-100 mt-3"
 									onClick={() => {
@@ -235,7 +235,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 								</Button>
 							</div>
 						</>
-					}
+					)}
 				</>
 			)}
 

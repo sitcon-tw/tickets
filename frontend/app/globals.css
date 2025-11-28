@@ -295,7 +295,9 @@
 		@apply fixed pointer-events-none;
 		z-index: 9999;
 		display: none;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+		transition:
+			all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			opacity 0.2s ease-out;
 	}
 
 	.ticketConfirm {

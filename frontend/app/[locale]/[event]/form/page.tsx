@@ -7,7 +7,7 @@ import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { TicketFormField } from "@/lib/types/api";
 import type { FormDataType } from "@/lib/types/data";
@@ -306,7 +306,6 @@ export default function FormPage() {
 		<>
 			<main className="mt-32">
 				<section className="max-w-3xl mx-auto p-16 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-					
 					<Button variant="secondary" onClick={() => router.push(pathname.replace("/form", ""))}>
 						<ChevronLeft />
 						<p>{t.reselectTicket}</p>
@@ -353,13 +352,7 @@ export default function FormPage() {
 
 							<div>
 								<div className="flex items-center space-x-2">
-									<Checkbox
-										id="agreeToTerms"
-										required
-										checked={agreeToTerms}
-										onChange={e => setAgreeToTerms(e.target.checked)}
-										label={t.agreeToTerms}
-									/>
+									<Checkbox id="agreeToTerms" required checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} label={t.agreeToTerms} />
 								</div>
 							</div>
 

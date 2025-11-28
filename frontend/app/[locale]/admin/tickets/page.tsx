@@ -2,9 +2,9 @@
 
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
+import Checkbox from "@/components/input/Checkbox";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
-import Checkbox from "@/components/input/Checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,18 +36,7 @@ interface LanguageFieldsProps {
 	};
 }
 
-function LanguageFields({
-	ticketName,
-	description,
-	plainDescription,
-	language,
-	languageLabel,
-	onNameChange,
-	onDescriptionChange,
-	onPlainDescriptionChange,
-	required = false,
-	t
-}: LanguageFieldsProps) {
+function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, t }: LanguageFieldsProps) {
 	const placeholders = {
 		en: {
 			plainDesc: "Plain text description without markdown formatting"
@@ -83,7 +72,9 @@ function LanguageFields({
 				)}
 			</div>
 			<div className="space-y-2">
-				<Label htmlFor={`plainDesc-${language}`}>{t.plainDescription} ({languageLabel})</Label>
+				<Label htmlFor={`plainDesc-${language}`}>
+					{t.plainDescription} ({languageLabel})
+				</Label>
 				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
 			</div>
 		</div>
@@ -448,19 +439,19 @@ export default function TicketsPage() {
 
 								<div className="space-y-3">
 									<div className="flex items-center gap-2">
-										<Checkbox id="requireInviteCode" checked={requireInviteCode} onChange={(e) => setRequireInviteCode(e.target.checked)} />
+										<Checkbox id="requireInviteCode" checked={requireInviteCode} onChange={e => setRequireInviteCode(e.target.checked)} />
 										<Label htmlFor="requireInviteCode" className="font-normal cursor-pointer">
 											{t.requireInviteCode}
 										</Label>
 									</div>
 									<div className="flex items-center gap-2">
-										<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onChange={(e) => setRequireSmsVerification(e.target.checked)} />
+										<Checkbox id="requireSmsVerification" checked={requireSmsVerification} onChange={e => setRequireSmsVerification(e.target.checked)} />
 										<Label htmlFor="requireSmsVerification" className="font-normal cursor-pointer">
 											{t.requireSmsVerification}
 										</Label>
 									</div>
 									<div className="flex items-center gap-2">
-										<Checkbox id="hidden" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />
+										<Checkbox id="hidden" checked={hidden} onChange={e => setHidden(e.target.checked)} />
 										<Label htmlFor="hidden" className="font-normal cursor-pointer">
 											{t.hideTicket}
 										</Label>
