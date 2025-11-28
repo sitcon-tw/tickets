@@ -1,8 +1,7 @@
-// IMPORTANT: Import tracing FIRST before any other modules
+// IMPORTANT: Import tracing FIRST before any other modules (if enabled)
 // This ensures OpenTelemetry SDK is initialized before Fastify
 import "./lib/tracing.js";
 
-import openTelemetryPlugin from "@autotelic/fastify-opentelemetry";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -31,11 +30,14 @@ const fastify = Fastify({
 	}
 });
 
-// Register OpenTelemetry plugin for automatic HTTP request tracing
-await fastify.register(openTelemetryPlugin, {
-	wrapRoutes: true, // Automatically trace each route with active context
-	exposeApi: true // Expose request.openTelemetry() API
-});
+// Register OpenTelemetry plugin only if enabled
+if (process.env.OTEL_ENABLED === "true") {
+	const openTelemetryPlugin = await import("@autotelic/fastify-opentelemetry");
+	await fastify.register(openTelemetryPlugin.default, {
+		wrapRoutes: true, // Automatically trace each route with active context
+		exposeApi: true // Expose request.openTelemetry() API
+	});
+}
 
 // Register Prometheus metrics exporter
 await fastify.register(fastifyMetrics, {
