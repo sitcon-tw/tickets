@@ -1,18 +1,26 @@
 import prisma from "#config/database.js";
 import fs from "fs/promises";
-import { MailtrapClient } from "mailtrap";
 
 import path from "path";
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const client = new MailtrapClient({
-	token: process.env.MAILTRAP_TOKEN
-});
+// Lazy-load MailtrapClient only when needed
+let client;
+async function getMailtrapClient() {
+	if (!client) {
+		const { MailtrapClient } = await import("mailtrap");
+		client = new MailtrapClient({
+			token: process.env.MAILTRAP_TOKEN
+		});
+	}
+	return client;
+}
 
 export const sendRegistrationConfirmation = async (registration, event, qrCodeUrl) => {
 	try {
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
@@ -51,6 +59,7 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 
 export const sendEditLink = async (email, editToken, event) => {
 	try {
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
@@ -97,6 +106,7 @@ export const sendMagicLink = async (email, magicLink) => {
 		if (!process.env.MAILTRAP_SENDER_EMAIL) {
 			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
 		}
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
@@ -264,6 +274,7 @@ const replaceTemplateVariables = (content, data) => {
  */
 export const sendCampaignEmail = async (campaign, recipients) => {
 	try {
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
@@ -322,6 +333,7 @@ export const sendCampaignEmail = async (campaign, recipients) => {
  */
 export const sendInvitationCodes = async (email, codes, groupName) => {
 	try {
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
@@ -403,6 +415,7 @@ export const sendInvitationCodes = async (email, codes, groupName) => {
  */
 export const sendDataDeletionNotification = async (registration, event) => {
 	try {
+		const client = await getMailtrapClient();
 		const sender = {
 			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 			name: "SITCON"

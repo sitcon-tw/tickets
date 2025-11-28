@@ -1,9 +1,7 @@
-import { PrismaClient } from "../generated/prisma/index.js";
+import prisma from "../config/database.js";
 import { auth } from "../lib/auth.js";
 import { safeJsonParse } from "../utils/json.js";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response.js";
-
-const prisma = new PrismaClient();
 
 export const requireAuth = async (request, reply) => {
 	try {

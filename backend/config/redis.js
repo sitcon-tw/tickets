@@ -21,7 +21,14 @@ export function getRedisClient() {
 		redis = new Redis(process.env.REDIS_URI, {
 			maxRetriesPerRequest: 3,
 			enableReadyCheck: true,
+			connectTimeout: 5000, // 5 second connection timeout
+			lazyConnect: true, // Don't connect immediately, wait for first command
 			retryStrategy(times) {
+				// Limit retry attempts during startup
+				if (times > 3) {
+					console.warn("Redis connection failed after 3 attempts, falling back to in-memory cache");
+					return null; // Stop retrying
+				}
 				const delay = Math.min(times * 50, 2000);
 				return delay;
 			},
@@ -37,6 +44,7 @@ export function getRedisClient() {
 
 		redis.on("error", err => {
 			console.error("Redis client error:", err);
+			// Don't crash the app if Redis fails
 		});
 
 		redis.on("connect", () => {
@@ -45,6 +53,11 @@ export function getRedisClient() {
 
 		redis.on("ready", () => {
 			console.log("Redis client ready");
+		});
+
+		// Connect asynchronously without blocking startup
+		redis.connect().catch(err => {
+			console.warn("Redis connection failed, falling back to in-memory cache:", err.message);
 		});
 
 		return redis;

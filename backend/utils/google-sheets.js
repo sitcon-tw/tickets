@@ -2,14 +2,15 @@
  * @fileoverview Google Sheets utilities for exporting registration data
  */
 
-import { google } from "googleapis";
-
 /**
  * Get authenticated Google Sheets client
  * @returns {Promise<{sheets: import('googleapis').sheets_v4.Sheets, auth: import('google-auth-library').JWT}>}
  */
 export async function getGoogleSheetsClient() {
 	try {
+		// Lazy-load googleapis only when needed
+		const { google } = await import("googleapis");
+
 		const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
 
 		const auth = new google.auth.JWT({

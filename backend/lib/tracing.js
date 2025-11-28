@@ -1,44 +1,58 @@
 import { context, SpanStatusCode, trace } from "@opentelemetry/api";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { NodeSDK } from "@opentelemetry/sdk-node";
 
-// Configure the OTLP trace exporter to send traces to Tempo
-const traceExporter = new OTLPTraceExporter({
-	url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tempo:4318/v1/traces"
-});
+// Only initialize OpenTelemetry if explicitly enabled
+const isOtelEnabled = process.env.OTEL_ENABLED === "true";
+let tracer;
 
-// Initialize the OpenTelemetry SDK with resource attributes
-const sdk = new NodeSDK({
-	traceExporter,
-	serviceName: "tickets-backend",
-	serviceVersion: "1.0.0",
-	instrumentations: [
-		getNodeAutoInstrumentations({
-			// Custom configuration for HTTP instrumentation
-			"@opentelemetry/instrumentation-http": {
-				ignoreIncomingRequestHook: request => {
-					// Ignore health check and metrics endpoints
-					const url = request.url || "";
-					return url === "/health" || url === "/metrics";
+if (isOtelEnabled) {
+	const { getNodeAutoInstrumentations } = await import("@opentelemetry/auto-instrumentations-node");
+	const { OTLPTraceExporter } = await import("@opentelemetry/exporter-trace-otlp-http");
+	const { NodeSDK } = await import("@opentelemetry/sdk-node");
+
+	// Configure the OTLP trace exporter to send traces to Tempo
+	const traceExporter = new OTLPTraceExporter({
+		url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tempo:4318/v1/traces"
+	});
+
+	// Initialize the OpenTelemetry SDK with resource attributes
+	const sdk = new NodeSDK({
+		traceExporter,
+		serviceName: "tickets-backend",
+		serviceVersion: "1.0.0",
+		instrumentations: [
+			getNodeAutoInstrumentations({
+				// Custom configuration for HTTP instrumentation
+				"@opentelemetry/instrumentation-http": {
+					ignoreIncomingRequestHook: request => {
+						// Ignore health check and metrics endpoints
+						const url = request.url || "";
+						return url === "/health" || url === "/metrics";
+					}
+				},
+				// Custom configuration for Fastify instrumentation
+				"@opentelemetry/instrumentation-fastify": {
+					requestHook: (span, info) => {
+						// Add custom attributes to HTTP spans
+						span.setAttribute("http.route", info.request.routeOptions?.url || "unknown");
+					}
 				}
-			},
-			// Custom configuration for Fastify instrumentation
-			"@opentelemetry/instrumentation-fastify": {
-				requestHook: (span, info) => {
-					// Add custom attributes to HTTP spans
-					span.setAttribute("http.route", info.request.routeOptions?.url || "unknown");
-				}
-			}
-		})
-	]
-});
+			})
+		]
+	});
 
-sdk.start();
-console.log("✅ OpenTelemetry tracing initialized");
+	sdk.start();
+	console.log("✅ OpenTelemetry tracing initialized");
 
-// Export tracer for manual instrumentation
-const tracer = trace.getTracer("tickets-backend", "1.0.0");
+	// Export tracer for manual instrumentation
+	tracer = trace.getTracer("tickets-backend", "1.0.0");
+} else {
+	console.log("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
+	// Create a no-op tracer
+	tracer = {
+		startActiveSpan: (name, fn) => fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {} }),
+		startSpan: () => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })
+	};
+}
 
 /**
  * Wrap an async function with a span for tracing
