@@ -60,9 +60,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers
+				headers: request.headers as any
 			});
-			if (!session.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
+			if (!session?.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 			try {
 				const user = await prisma.user.findUnique({
 					where: { id: session.user.id },

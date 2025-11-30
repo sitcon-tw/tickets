@@ -8,7 +8,6 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 const isProduction = process.env.NODE_ENV === "production";
-const isDevelopment = !isProduction;
 const SCHEMA_HASH_FILE = ".prisma-schema-hash";
 
 function getSchemaHash(): string | null {

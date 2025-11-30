@@ -17,8 +17,8 @@ interface VerifyCodeRequest {
 
 const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 	// Apply preHandler if provided
-	if (options.preHandler) {
-		fastify.addHook("preHandler", options.preHandler);
+	if ((options as any).preHandler) {
+		fastify.addHook("preHandler", (options as any).preHandler);
 	}
 
 	/**
@@ -44,7 +44,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
 
 				if (!session?.user) {
@@ -191,7 +191,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
 
 				if (!session?.user) {
@@ -299,7 +299,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
 
 				if (!session?.user) {

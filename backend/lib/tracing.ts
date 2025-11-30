@@ -12,8 +12,8 @@ interface NoopSpan {
 }
 
 interface NoopTracer {
-	startActiveSpan: <T>(_: string, fn: (span: NoopSpan) => T) => T;
-	startSpan: (_?: string) => NoopSpan;
+	startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T) => T;
+	startSpan: (_name?: string) => NoopSpan;
 }
 
 let tracer: Tracer | NoopTracer;
@@ -120,7 +120,7 @@ export async function withSpan<T>(spanName: string, fn: (span: Span | NoopSpan) 
 
 /**
  * Create a manual span (for more complex scenarios)
- * @param spanName - The name of the span
+ * @param _spanName - The name of the span
  * @param attributes - Attributes for the span
  * @returns The created span
  */

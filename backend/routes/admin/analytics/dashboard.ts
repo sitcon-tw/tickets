@@ -40,7 +40,7 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		},
 		async (_request: FastifyRequest, reply: FastifyReply) => {
 			try {
-				const [totalStats, revenueData] = await Promise.all([
+				const [totalStats, _revenueData] = await Promise.all([
 					prisma.registration.groupBy({
 						by: ["status"],
 						_count: { id: true }

@@ -5,7 +5,7 @@ import { magicLink } from "better-auth/plugins";
 import { getAdminEmails } from "../config/security.js";
 import prisma from "../config/database.js";
 
-export const auth = betterAuth({
+export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "sqlite"
 	}),
@@ -25,7 +25,7 @@ export const auth = betterAuth({
 	plugins: [
 		magicLink({
 			expiresIn: 600,
-			sendMagicLink: async ({ email, token, url }, request) => {
+			sendMagicLink: async ({ email, token, url }, request?) => {
 				const normalizedEmail = email.toLowerCase();
 
 				// Rate limiting: Check for recent magic link attempts (30 seconds)

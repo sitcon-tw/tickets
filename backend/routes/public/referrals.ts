@@ -160,7 +160,7 @@ const referralRoutes: FastifyPluginAsync = async (fastify) => {
 
 				// Check if user is authenticated
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
 
 				if (!session) {

@@ -13,23 +13,26 @@ import { sendDataDeletionNotification } from "#utils/email.js";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api.js";
 
 /**
  * Admin registrations routes with modular schemas and types
  */
 const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	fastify.get(
+	fastify.get<{
+		Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string };
+	}>(
 		"/registrations",
 		{
 			preHandler: requireEventAccess,
 			schema: registrationSchemas.listRegistrations
 		},
-		async (request: import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string}}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string } }>, reply: FastifyReply) => {
 			try {
 				const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
-				const where = {};
+				const where: any = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 				if (userId) where.userId = userId;
@@ -115,13 +118,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Get registration by ID
-	fastify.get(
+	fastify.get<{
+		Params: { id: string };
+	}>(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
-		async (request: import('fastify').FastifyRequest<{Params: {id: string}}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -183,16 +188,18 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Update registration
-	fastify.put(
+	fastify.put<{
+		Params: { id: string };
+		Body: RegistrationUpdateRequest;
+	}>(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
-		async (request: import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
-				/** @type {RegistrationUpdateRequest} */
 				const updateData = request.body;
 
 				const existingRegistration = await prisma.registration.findUnique({
@@ -221,7 +228,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				const registration = await prisma.registration.update({
 					where: { id },
 					data: {
-						...updateData,
+						...(updateData as any),
 						updatedAt: new Date()
 					},
 					include: {
@@ -258,7 +265,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Export registrations (CSV/Excel)
-	fastify.get(
+	fastify.get<{
+		Querystring: { eventId?: string; status?: string; format?: 'csv' | 'excel' };
+	}>(
 		"/registrations/export",
 		{
 			schema: {
@@ -286,11 +295,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			}
 		},
-		async (request: import('fastify').FastifyRequest<{Querystring: {eventId?: string, status?: string, format?: 'csv'|'excel'}}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: 'csv' | 'excel' } }>, reply: FastifyReply) => {
 			try {
 				const { eventId, status, format = "csv" } = request.query;
 
-				const where = {};
+				const where: any = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 
@@ -335,13 +344,13 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	function generateCSV(registrations: any) {
-		const parsedRegistrations = registrations.map(reg => ({
+		const parsedRegistrations = registrations.map((reg: any) => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData) : {}
 		}));
 
-		const formFieldKeys = new Set();
-		parsedRegistrations.forEach(reg => {
+		const formFieldKeys = new Set<string>();
+		parsedRegistrations.forEach((reg: any) => {
 			Object.keys(reg.formData).forEach(key => formFieldKeys.add(key));
 		});
 
@@ -375,7 +384,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}
 
 	// Delete registration and personal data
-	fastify.delete(
+	fastify.delete<{
+		Params: { id: string };
+	}>(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
@@ -404,7 +415,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			}
 		},
-		async (request: import('fastify').FastifyRequest<{Params: {id: string}}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -469,7 +480,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			}
 		},
-		async (_request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => {
+		async (_request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const email = getServiceAccountEmail();
 				return reply.send(successResponse({ email }));
@@ -482,7 +493,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Sync registrations to Google Sheets
-	fastify.post(
+	fastify.post<{
+		Body: { eventId: string; sheetsUrl: string };
+	}>(
 		"/registrations/google-sheets/sync",
 		{
 			preHandler: requireEventAccess,
@@ -521,7 +534,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			}
 		},
-		async (request: import('fastify').FastifyRequest<{Body: {eventId: string, sheetsUrl: string}}>, reply: import('fastify').FastifyReply) => {
+		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
 			try {
 				const { eventId, sheetsUrl } = request.body;
 

@@ -8,7 +8,7 @@ const systemRoutes: FastifyPluginAsync = async (fastify) => {
 				tags: ["system"]
 			}
 		},
-		async (request, reply) => {
+		async (_request, _reply) => {
 			return { status: "ok" };
 		}
 	);

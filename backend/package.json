@@ -6,13 +6,14 @@
 	"imports": {
 		"#*": "./*"
 	},
-	"main": "app.js",
+	"main": "app.ts",
 	"scripts": {
 		"db:migrate": "prisma migrate dev",
 		"db:sync": "prisma db push",
-		"dev": "node scripts/db-init.js && nodemon app.js",
+		"dev": "tsx scripts/db-init.ts && nodemon --exec tsx app.ts",
 		"postinstall": "prisma generate",
-		"start": "node scripts/db-init.js && node app.js"
+		"start": "tsx scripts/db-init.ts && tsx app.ts",
+		"type-check": "tsc --noEmit"
 	},
 	"license": "Apache-2.0",
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40",
@@ -50,9 +51,6 @@
 		"mailtrap": "^4.2.0",
 		"prisma": "^6.13.0",
 		"prisma-extension-redis": "^2.1.1"
-	},
-	"devDependencies": {
-		"nodemon": "^3.1.10"
 	},
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
 }

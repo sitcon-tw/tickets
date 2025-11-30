@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api.js";
 import type { EventFormFields } from "#types/database.js";
+import { Prisma } from "#generated/prisma/index.js";
 
 import prisma from "#config/database.js";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth.js";
@@ -17,10 +18,10 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.createEventFormField
 		},
-		async (request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) => {
+		async function(this: any, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
 			try {
 				// Check event access
-				await requireEventAccess(request, reply, request.body.eventId);
+				await requireEventAccess.call(this, request, reply, () => {});
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
 
 				// Verify event exists
@@ -56,10 +57,10 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description || null,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values === "" ? null : (values ?? null),
-						filters: filters === "" ? null : (filters ?? null)
+						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
+						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull)
 					},
-					// @ts-expect-error - uncache is added by prisma-extension-redis
+				// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
@@ -259,12 +260,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
-		async (request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) => {
+		async function(this: any, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
 			const { eventId } = request.query;
 
 			// Check event access if eventId is provided
 			if (eventId) {
-				await requireEventAccess(request, reply, eventId);
+				await requireEventAccess.call(this, request, reply, () => {});
 			}
 
 			try {
@@ -370,11 +371,11 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 			}
 		},
-		async (request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) => {
+		async function(this: any, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
 			const { eventId } = request.params;
 
 			// Check event access
-			await requireEventAccess(request, reply, eventId);
+			await requireEventAccess.call(this, request, reply, () => {});
 
 			try {
 				const { fieldOrders } = request.body;

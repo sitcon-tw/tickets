@@ -3,7 +3,6 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import type { Event, Ticket } from "#types/database.js";
 import prisma from "#config/database.js";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event.js";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
@@ -156,7 +155,7 @@ const publicEventsRoutes: FastifyPluginAsync = async (fastify) => {
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
 					const available = ticket.quantity - ticket.soldCount;
-					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd) && ticket.isActive;
+					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 					const isSoldOut = available <= 0;
 
 					return {

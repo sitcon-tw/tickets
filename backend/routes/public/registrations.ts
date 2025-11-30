@@ -23,8 +23,8 @@ interface RegistrationUpdateRequest {
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) => {
 	// Apply preHandler if provided
-	if (options.preHandler) {
-		fastify.addHook("preHandler", options.preHandler);
+	if ((options as any).preHandler) {
+		fastify.addHook("preHandler", (options as any).preHandler);
 	}
 
 	// Create new registration
@@ -41,11 +41,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 				const sanitizedFormData = sanitizeObject(formData, false);
 
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
 
 				// Get user info from session
-				const user = session.user;
+				const user = session!.user;
 
 				// Check if user already registered for this event
 				addSpanEvent("checking_existing_registration");
@@ -173,9 +173,15 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 						return reply.code(statusCode).send(response);
 					}
 
-					// Check if code is expired
-					if (code.expiresAt && now > code.expiresAt) {
+					// Check if code is expired (based on validFrom/validUntil)
+					if (code.validUntil && now > code.validUntil) {
 						const { response, statusCode } = validationErrorResponse("邀請碼已過期");
+						return reply.code(statusCode).send(response);
+					}
+
+					// Check if code is not yet valid
+					if (code.validFrom && now < code.validFrom) {
+						const { response, statusCode } = validationErrorResponse("邀請碼尚未生效");
 						return reply.code(statusCode).send(response);
 					}
 
@@ -201,7 +207,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 						}
 					});
 
-					if (code && (!code.expiresAt || now <= code.expiresAt) && (!code.usageLimit || code.usedCount < code.usageLimit)) {
+					if (code && (!code.validUntil || now <= code.validUntil) && (!code.validFrom || now >= code.validFrom) && (!code.usageLimit || code.usedCount < code.usageLimit)) {
 						invitationCodeId = code.id;
 					}
 				}
@@ -240,7 +246,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as any, ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -359,9 +365,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
-				const userId = session.user?.id;
+				const userId = session?.user?.id;
 
 				const registrations = await prisma.registration.findMany({
 					where: { userId },
@@ -426,9 +432,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
-				const userId = session.user?.id;
+				const userId = session?.user?.id;
 				const { id } = request.params;
 
 				const registration = await prisma.registration.findFirst({
@@ -501,9 +507,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
-				const userId = session.user?.id;
+				const userId = session?.user?.id;
 				const id = request.params.id;
 				const { formData } = request.body;
 
@@ -565,7 +571,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields, registration.ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as any, registration.ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -633,9 +639,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers
+					headers: request.headers as any
 				});
-				const userId = session.user?.id;
+				const userId = session?.user?.id;
 				const id = request.params.id;
 
 				// Check if registration exists and belongs to user

@@ -87,13 +87,23 @@ const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
 					);
 				}
 
-				// Check if code is expired
+				// Check if code is expired (based on validFrom/validUntil)
 				const now = new Date();
-				if (invitationCode.expiresAt && now > invitationCode.expiresAt) {
+				if (invitationCode.validUntil && now > invitationCode.validUntil) {
 					return reply.send(
 						successResponse({
 							valid: false,
 							message: "邀請碼已過期"
+						})
+					);
+				}
+
+				// Check if code is not yet valid
+				if (invitationCode.validFrom && now < invitationCode.validFrom) {
+					return reply.send(
+						successResponse({
+							valid: false,
+							message: "邀請碼尚未生效"
 						})
 					);
 				}
@@ -148,10 +158,11 @@ const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
 						invitationCode: {
 							id: invitationCode.id,
 							code: invitationCode.code,
-							description: invitationCode.description,
+							name: invitationCode.name,
 							usedCount: invitationCode.usedCount,
 							usageLimit: invitationCode.usageLimit,
-							expiresAt: invitationCode.expiresAt,
+							validFrom: invitationCode.validFrom,
+							validUntil: invitationCode.validUntil,
 							ticketId: invitationCode.ticketId
 						},
 						availableTickets
@@ -190,15 +201,20 @@ const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
 					select: {
 						id: true,
 						code: true,
-						description: true,
+						name: true,
 						usedCount: true,
 						usageLimit: true,
-						expiresAt: true,
-						event: {
+						validFrom: true,
+						validUntil: true,
+						ticket: {
 							select: {
-								name: true,
-								startDate: true,
-								endDate: true
+								event: {
+									select: {
+										name: true,
+										startDate: true,
+										endDate: true
+									}
+								}
 							}
 						}
 					}
@@ -211,14 +227,16 @@ const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
 
 				// Check validity
 				const now = new Date();
-				const isExpired = invitationCode.expiresAt && now > invitationCode.expiresAt;
+				const isExpired = invitationCode.validUntil && now > invitationCode.validUntil;
+				const isNotYetValid = invitationCode.validFrom && now < invitationCode.validFrom;
 				const isUsageExceeded = invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit;
 
 				return reply.send(
 					successResponse({
 						...invitationCode,
-						isValid: !isExpired && !isUsageExceeded,
+						isValid: !isExpired && !isNotYetValid && !isUsageExceeded,
 						isExpired,
+						isNotYetValid,
 						isUsageExceeded,
 						remainingUses: invitationCode.usageLimit ? Math.max(0, invitationCode.usageLimit - invitationCode.usedCount) : null
 					})

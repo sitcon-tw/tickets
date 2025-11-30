@@ -12,10 +12,10 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
 	await fastify.register(authRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);
-	await fastify.register(registrationsRoutes, { preHandler: requireAuth });
+	await fastify.register(registrationsRoutes, { preHandler: requireAuth } as any);
 	await fastify.register(referralRoutes);
 	await fastify.register(invitationCodesRoutes);
-	await fastify.register(smsVerificationRoutes, { preHandler: requireAuth });
+	await fastify.register(smsVerificationRoutes, { preHandler: requireAuth } as any);
 };
 
 export default publicRoutes;

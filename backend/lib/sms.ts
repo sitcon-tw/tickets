@@ -40,7 +40,6 @@ interface SMSSendResult {
  */
 interface SMSSendOptions {
 	[key: string]: string | number | undefined;
-	expirytime?: number;
 }
 
 /**
