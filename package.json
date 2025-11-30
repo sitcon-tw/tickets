@@ -1,22 +1,23 @@
 {
 	"name": "fastro",
 	"version": "1.0.0",
-	"author": "Elvis Mao",
 	"license": "Apache-2.0",
+	"author": "Elvis Mao",
 	"scripts": {
-		"dev:frontend": "pnpm --filter frontend dev --port 4322",
-		"dev:backend": "pnpm --filter backend dev",
-		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
-		"format": "prettier --write .",
-		"check-format": "prettier --check .",
+		"build:docs": "pnpm --filter docs build",
 		"build:frontend": "pnpm --filter frontend build",
-		"build:docs": "pnpm --filter docs build"
+		"check-format": "prettier --check .",
+		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
+		"dev:backend": "pnpm --filter backend dev",
+		"dev:frontend": "pnpm --filter frontend dev --port 4322",
+		"format": "prettier --write ."
 	},
 	"devDependencies": {
 		"concurrently": "^9.2.0",
 		"prettier": "3.6.2",
 		"prettier-plugin-astro": "^0.14.1",
-		"prettier-plugin-organize-imports": "^4.2.0"
+		"prettier-plugin-organize-imports": "^4.2.0",
+		"prettier-plugin-packagejson": "^2.5.20"
 	},
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
 }
