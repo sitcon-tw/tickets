@@ -80,7 +80,7 @@ async function initDatabase(): Promise<void> {
 		// Development: Use db push for rapid iteration
 		console.log("\n🛠️  Development mode: Using db push for rapid iteration");
 
-		const pushSuccess = await runCommand("npx prisma db push --skip-generate", "Syncing database schema");
+		const pushSuccess = await runCommand("npx prisma db push", "Syncing database schema");
 
 		if (!pushSuccess) {
 			console.error("\n❌ Database sync failed! Please check your database connection.");

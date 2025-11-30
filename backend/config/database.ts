@@ -1,5 +1,5 @@
-import { CacheCase, PrismaExtensionRedis } from "prisma-extension-redis";
-import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaExtensionRedis } from "prisma-extension-redis";
+import { PrismaClient } from "../generated/prisma";
 import { getRedisClient } from "./redis.js";
 
 // Extend globalThis to include prisma property
@@ -55,7 +55,7 @@ const config = {
 	logger: process.env.REDIS_DEBUG === "true" ? console : undefined,
 	cacheKey: {
 		delimiter: ":",
-		case: CacheCase.SNAKE_CASE,
+		case: "snake_case",
 		prefix: "prisma"
 	}
 };
