@@ -1,19 +1,21 @@
-/**
- * @fileoverview SMS verification routes
- */
-
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms.js";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeText } from "#utils/sanitize.js";
 
-/**
- * SMS verification routes
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function smsVerificationRoutes(fastify, options) {
+interface SendVerificationRequest {
+	phoneNumber: string;
+	locale?: "zh-Hant" | "zh-Hans" | "en";
+}
+
+interface VerifyCodeRequest {
+	phoneNumber: string;
+	code: string;
+}
+
+const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 	// Apply preHandler if provided
 	if (options.preHandler) {
 		fastify.addHook("preHandler", options.preHandler);
@@ -39,7 +41,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -186,7 +188,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -294,7 +296,7 @@ export default async function smsVerificationRoutes(fastify, options) {
 				tags: ["sms-verification"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -329,4 +331,6 @@ export default async function smsVerificationRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default smsVerificationRoutes;

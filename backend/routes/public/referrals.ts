@@ -1,3 +1,4 @@
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
 import { referralSchemas, referralStatsResponse } from "#schemas/referral.js";
@@ -15,7 +16,12 @@ const regIdParam = {
 	required: ["regId"]
 };
 
-export default async function referralRoutes(fastify, options) {
+interface ReferralValidateRequest {
+	code: string;
+	eventId: string;
+}
+
+const referralRoutes: FastifyPluginAsync = async (fastify) => {
 	// 獲取專屬推薦連結
 	fastify.get(
 		"/registrations/:regId/referral-link",
@@ -45,7 +51,7 @@ export default async function referralRoutes(fastify, options) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
 			try {
 				const { regId } = request.params;
 
@@ -77,7 +83,7 @@ export default async function referralRoutes(fastify, options) {
 
 				// If no referral exists, create one
 				if (!referral) {
-					let referralCode;
+					let referralCode: string;
 					let isUnique = false;
 					let attempts = 0;
 					const maxAttempts = 20;
@@ -105,7 +111,7 @@ export default async function referralRoutes(fastify, options) {
 					// Create the referral
 					referral = await prisma.referral.create({
 						data: {
-							code: referralCode,
+							code: referralCode!,
 							registrationId: regId,
 							eventId: registration.eventId,
 							isActive: true
@@ -131,7 +137,7 @@ export default async function referralRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Get referral link error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", error.message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -148,7 +154,7 @@ export default async function referralRoutes(fastify, options) {
 				response: referralStatsResponse
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
 			try {
 				const { regId } = request.params;
 
@@ -242,7 +248,7 @@ export default async function referralRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Get referral stats error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", error.message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
@@ -254,7 +260,7 @@ export default async function referralRoutes(fastify, options) {
 		{
 			schema: { ...referralSchemas.validateReferral, tags: ["referrals"] }
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: ReferralValidateRequest }>, reply: FastifyReply) => {
 			try {
 				const { code: referralCode, eventId } = request.body;
 
@@ -275,9 +281,11 @@ export default async function referralRoutes(fastify, options) {
 				});
 			} catch (error) {
 				console.error("Validate referral code error:", error);
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", error.message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
-}
+};
+
+export default referralRoutes;

@@ -13,23 +13,19 @@ import { sendDataDeletionNotification } from "#utils/email.js";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
+import type { FastifyPluginAsync } from "fastify";
+
 /**
  * Admin registrations routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
  */
-export default async function adminRegistrationsRoutes(fastify, options) {
+const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.get(
 		"/registrations",
 		{
 			preHandler: requireEventAccess,
 			schema: registrationSchemas.listRegistrations
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Querystring: PaginationQuery & {eventId?: string, status?: string, userId?: string}}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
@@ -125,11 +121,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Params: {id: string}}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -197,11 +189,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Params: {id: string}, Body: RegistrationUpdateRequest}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { id } = request.params;
 				/** @type {RegistrationUpdateRequest} */
@@ -298,11 +286,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, status?: string, format?: 'csv'|'excel'}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Querystring: {eventId?: string, status?: string, format?: 'csv'|'excel'}}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { eventId, status, format = "csv" } = request.query;
 
@@ -350,7 +334,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		}
 	);
 
-	function generateCSV(registrations) {
+	function generateCSV(registrations: any) {
 		const parsedRegistrations = registrations.map(reg => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData) : {}
@@ -367,27 +351,27 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
-		const getLocalizedName = nameObj => {
+		const getLocalizedName = (nameObj: any) => {
 			if (!nameObj || typeof nameObj !== "object") return "";
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
-		const formatFormValue = value => {
+		const formatFormValue = (value: any) => {
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
 			return String(value);
 		};
 
-		const rows = parsedRegistrations.map(reg => {
+		const rows = parsedRegistrations.map((reg: any) => {
 			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
-			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
+			const formDataValues = sortedFormFields.map((key: string) => formatFormValue(reg.formData[key]));
 
 			return [...baseValues, ...formDataValues];
 		});
 
 		const csvRows = [headers, ...rows];
-		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+		return csvRows.map((row: any) => row.map((field: any) => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
 
 	// Delete registration and personal data
@@ -420,11 +404,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Params: {id: string}}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -452,7 +432,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				});
 
 				try {
-					await sendDataDeletionNotification(registration, registration.event);
+					await sendDataDeletionNotification(registration, registration.event as any);
 				} catch (emailError) {
 					console.error("Failed to send deletion notification email:", emailError);
 				}
@@ -489,7 +469,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (_request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => {
 			try {
 				const email = getServiceAccountEmail();
 				return reply.send(successResponse({ email }));
@@ -541,11 +521,7 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: {eventId: string, sheetsUrl: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: import('fastify').FastifyRequest<{Body: {eventId: string, sheetsUrl: string}}>, reply: import('fastify').FastifyReply) => {
 			try {
 				const { eventId, sheetsUrl } = request.body;
 
@@ -621,4 +597,6 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminRegistrationsRoutes;

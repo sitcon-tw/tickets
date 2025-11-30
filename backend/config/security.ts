@@ -24,7 +24,7 @@ export const rateLimitConfig = {
 		timeWindow: "10 minutes",
 		skipOnError: false,
 		ban: 20000,
-		errorResponseBuilder: (_: FastifyRequest, context: errorResponseBuilderContext) => {
+		errorResponseBuilder: (_req: FastifyRequest, context: errorResponseBuilderContext) => {
 			return {
 				success: false,
 				error: "請求過於頻繁，請稍後再試",

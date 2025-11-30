@@ -1,37 +1,26 @@
-/**
- * @fileoverview Admin event form fields routes with modular types and schemas
- * @typedef {import('#types/database.js').EventFormFields} EventFormFields
- * @typedef {import('#types/api.js').EventFormFieldCreateRequest} EventFormFieldCreateRequest
- * @typedef {import('#types/api.js').EventFormFieldUpdateRequest} EventFormFieldUpdateRequest
- */
+import type { FastifyPluginAsync } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api.js";
+import type { EventFormFields } from "#types/database.js";
 
 import prisma from "#config/database.js";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth.js";
 import { eventFormFieldSchemas } from "#schemas/eventFormFields.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-/**
- * Admin event form fields routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function adminEventFormFieldsRoutes(fastify, options) {
+const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event form field
-	fastify.post(
+	fastify.post<{
+		Body: EventFormFieldCreateRequest;
+	}>(
 		"/event-form-fields",
 		{
-			preHandler: async (request, reply) => {
-				await requireEventAccess(request, reply, request.body.eventId);
-			},
 			schema: eventFormFieldSchemas.createEventFormField
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: EventFormFieldCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {EventFormFieldCreateRequest} */
+				// Check event access
+				await requireEventAccess(request, reply, request.body.eventId);
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
 
 				// Verify event exists
@@ -57,25 +46,25 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				/** @type {EventFormFields} */
 				const formField = await prisma.eventFormFields.create({
 					data: {
 						eventId,
 						order,
 						type,
-						validater: validater || null,
+						validater: validater === "" ? null : (validater ?? null),
 						name,
 						description: description || null,
-						placeholder: placeholder || null,
+						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values || null,
-						filters: filters || null
+						values: values === "" ? null : (values ?? null),
+						filters: filters === "" ? null : (filters ?? null)
 					},
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				});
+				}) as EventFormFields;
 
 				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
 			} catch (error) {
@@ -87,21 +76,18 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 	);
 
 	// Get event form field by ID
-	fastify.get(
+	fastify.get<{
+		Params: { id: string };
+	}>(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
 			schema: eventFormFieldSchemas.getEventFormField
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {EventFormFields | null} */
 				const formField = await prisma.eventFormFields.findUnique({
 					where: { id },
 					include: {
@@ -112,7 +98,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 							}
 						}
 					}
-				});
+				}) as EventFormFields | null;
 
 				if (!formField) {
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
@@ -129,20 +115,18 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 	);
 
 	// Update event form field
-	fastify.put(
+	fastify.put<{
+		Params: { id: string };
+		Body: EventFormFieldUpdateRequest;
+	}>(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
 			schema: eventFormFieldSchemas.updateEventFormField
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: EventFormFieldUpdateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: EventFormFieldUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
-				/** @type {EventFormFieldUpdateRequest} */
 				const updateData = request.body;
 
 				// Check if form field exists
@@ -172,7 +156,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 				}
 
 				// Prepare update data, handling JSON fields properly
-				const data = { ...updateData };
+				const data: any = { ...updateData };
 
 				// Remove fields that shouldn't be updated
 				delete data.eventId; // eventId is immutable
@@ -207,15 +191,15 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 					}
 				}
 
-				/** @type {EventFormFields} */
 				const formField = await prisma.eventFormFields.update({
 					where: { id },
 					data,
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event_form_fields:*"],
 						hasPattern: true
 					}
-				});
+				}) as EventFormFields;
 
 				return reply.send(successResponse(formField, "表單欄位更新成功"));
 			} catch (error) {
@@ -227,17 +211,15 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 	);
 
 	// Delete event form field
-	fastify.delete(
+	fastify.delete<{
+		Params: { id: string };
+	}>(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
 			schema: eventFormFieldSchemas.deleteEventFormField
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -253,6 +235,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 
 				await prisma.eventFormFields.delete({
 					where: { id },
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event_form_fields:*"],
 						hasPattern: true
@@ -269,27 +252,25 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 	);
 
 	// List event form fields
-	fastify.get(
+	fastify.get<{
+		Querystring: { eventId?: string };
+	}>(
 		"/event-form-fields",
 		{
-			preHandler: async (request, reply) => {
-				const { eventId } = request.query;
-				if (eventId) {
-					await requireEventAccess(request, reply, eventId);
-				}
-			},
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) => {
+			const { eventId } = request.query;
+
+			// Check event access if eventId is provided
+			if (eventId) {
+				await requireEventAccess(request, reply, eventId);
+			}
+
 			try {
-				const { eventId } = request.query;
 
 				// Build where clause
-				const where = {};
+				const where: any = {};
 				if (eventId) {
 					// Verify event exists
 					const event = await prisma.event.findUnique({
@@ -304,7 +285,6 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 					where.eventId = eventId;
 				}
 
-				/** @type {EventFormFields[]} */
 				const formFields = await prisma.eventFormFields.findMany({
 					where,
 					include: {
@@ -316,7 +296,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 						}
 					},
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
-				});
+				}) as EventFormFields[];
 
 				return reply.send(successResponse(formFields));
 			} catch (error) {
@@ -328,12 +308,12 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 	);
 
 	// Bulk update form field orders for an event
-	fastify.put(
+	fastify.put<{
+		Params: { eventId: string };
+		Body: { fieldOrders: Array<{ id: string; order: number }> };
+	}>(
 		"/events/:eventId/form-fields/reorder",
 		{
-			preHandler: async (request, reply) => {
-				await requireEventAccess(request, reply, request.params.eventId);
-			},
 			schema: {
 				description: "重新排序活動表單欄位",
 				tags: ["admin/events"],
@@ -390,13 +370,13 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {eventId: string}, Body: {fieldOrders: Array<{id: string, order: number}>}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) => {
+			const { eventId } = request.params;
+
+			// Check event access
+			await requireEventAccess(request, reply, eventId);
+
 			try {
-				const { eventId } = request.params;
 				const { fieldOrders } = request.body;
 
 				// Verify event exists
@@ -437,6 +417,7 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 						await prisma.eventFormFields.update({
 							where: { id },
 							data: { order },
+							// @ts-expect-error - uncache is added by prisma-extension-redis
 							uncache: {
 								uncacheKeys: ["prisma:event_form_fields:*"],
 								hasPattern: true
@@ -453,4 +434,6 @@ export default async function adminEventFormFieldsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminEventFormFieldsRoutes;

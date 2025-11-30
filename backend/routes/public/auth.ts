@@ -2,6 +2,7 @@
  * @fileoverview Auth-related public routes
  */
 
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
 import { safeJsonParse } from "#utils/json.js";
@@ -9,9 +10,8 @@ import { serverErrorResponse, successResponse } from "#utils/response.js";
 
 /**
  * Auth routes
- * @param {import('fastify').FastifyInstance} fastify
  */
-export default async function authRoutes(fastify) {
+const authRoutes: FastifyPluginAsync = async (fastify) => {
 	/**
 	 * GET /api/auth/permissions
 	 * Get current user's permissions and capabilities
@@ -58,7 +58,7 @@ export default async function authRoutes(fastify) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest, reply: FastifyReply) => {
 			const session = await auth.api.getSession({
 				headers: request.headers
 			});
@@ -105,4 +105,6 @@ export default async function authRoutes(fastify) {
 			}
 		}
 	);
-}
+};
+
+export default authRoutes;

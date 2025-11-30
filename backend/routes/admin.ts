@@ -1,3 +1,4 @@
+import type { FastifyPluginAsync } from "fastify";
 import { requireAdminOrEventAdmin } from "#middleware/auth.js";
 
 import analyticsRoutes from "./admin/analytics.js";
@@ -11,7 +12,7 @@ import smsVerificationLogsRoutes from "./admin/smsVerificationLogs.js";
 import ticketsRoutes from "./admin/tickets.js";
 import usersRoutes from "./admin/users.js";
 
-export default async function adminRoutes(fastify) {
+const adminRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.addHook("preHandler", requireAdminOrEventAdmin);
 
 	await fastify.register(analyticsRoutes);
@@ -24,4 +25,6 @@ export default async function adminRoutes(fastify) {
 	await fastify.register(referralsRoutes);
 	await fastify.register(emailCampaignsRoutes);
 	await fastify.register(smsVerificationLogsRoutes);
-}
+};
+
+export default adminRoutes;

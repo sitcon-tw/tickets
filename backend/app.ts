@@ -9,8 +9,10 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import dotenv from "dotenv";
 import Fastify from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
 import fastifyMetrics from "fastify-metrics";
 
+import prisma from "./config/database.js";
 import { closeRedis } from "./config/redis.js";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
 import { auth } from "./lib/auth.js";
@@ -24,11 +26,11 @@ const fastify = Fastify({
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
-	trustProxy: true,
-	logger: {
-		level: "error"
-	}
+	trustProxy: true
 });
+
+// Override logger config (the second one takes precedence)
+fastify.log.level = "error";
 
 // Register OpenTelemetry plugin only if enabled
 if (process.env.OTEL_ENABLED === "true") {
@@ -96,15 +98,15 @@ await fastify.register(fastifySwaggerUi, {
 		deepLinking: false
 	},
 	uiHooks: {
-		onRequest: function (request, reply, next) {
+		onRequest: function (_request, _reply, next) {
 			next();
 		},
-		preHandler: function (request, reply, next) {
+		preHandler: function (_request, _reply, next) {
 			next();
 		}
 	},
 	transformStaticCSP: header => header,
-	transformSpecification: (swaggerObject, request, reply) => {
+	transformSpecification: (swaggerObject, _request, _reply) => {
 		return swaggerObject;
 	},
 	transformSpecificationClone: true,
@@ -138,6 +140,12 @@ await fastify.register(fastifySwaggerUi, {
 	}
 });
 
+interface AuthQuerystring {
+	locale?: string;
+	token?: string;
+	returnUrl?: string;
+}
+
 // Better Auth routes with rate limiting
 fastify.all(
 	"/api/auth/*",
@@ -150,18 +158,18 @@ fastify.all(
 			rateLimit: rateLimitConfig.auth
 		}
 	},
-	async (request, reply) => {
+	async (request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const protocol = request.headers["x-forwarded-proto"] || "http";
 			const host = request.headers.host;
 			const url = `${protocol}://${host}${request.url}`;
 
-			let body = undefined;
+			let body: string | undefined = undefined;
 			if (request.method !== "GET" && request.method !== "HEAD") {
 				if (request.headers["content-type"]?.includes("application/json")) {
 					body = JSON.stringify(request.body);
 				} else {
-					const chunks = [];
+					const chunks: Buffer[] = [];
 					for await (const chunk of request.raw) {
 						chunks.push(chunk);
 					}
@@ -171,7 +179,7 @@ fastify.all(
 
 			const webRequest = new Request(url, {
 				method: request.method,
-				headers: request.headers,
+				headers: request.headers as Record<string, string>,
 				body: body
 			});
 
@@ -204,7 +212,7 @@ fastify.all(
 );
 
 // Handle magic link verification with redirect
-fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
+fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", async (request, reply) => {
 	const locale = request.query.locale || "zh-Hant";
 
 	try {
@@ -229,10 +237,10 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 
 		const webRequest = new Request(authUrl, {
 			method: "GET",
-			headers: request.headers
+			headers: request.headers as Record<string, string>
 		});
 
-		let response;
+		let response: Response;
 		try {
 			response = await auth.handler(webRequest);
 		} catch (authError) {
@@ -254,7 +262,7 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 					.clone()
 					.json()
 					.catch(() => null);
-				const userEmail = responseData?.user?.email;
+				const userEmail = (responseData as { user?: { email?: string } })?.user?.email;
 
 				if (userEmail) {
 					await prisma.magicLinkAttempt.updateMany({
@@ -301,16 +309,28 @@ fastify.get("/api/auth/magic-link/verify", async (request, reply) => {
 		}
 	} catch (error) {
 		fastify.log.error("Magic link verification error:", {
-			error: error.message,
-			stack: error.stack,
+			error: (error as Error).message,
+			stack: (error as Error).stack,
 			query: request.query
 		});
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
 });
 
+interface ValidationError {
+	instancePath: string;
+	message?: string;
+	keyword?: string;
+}
+
+interface FastifyValidationError extends Error {
+	validation?: ValidationError[];
+	statusCode?: number;
+	code?: string;
+}
+
 // Global error handler to format errors according to API response structure
-fastify.setErrorHandler((error, request, reply) => {
+fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest, reply: FastifyReply) => {
 	const { log } = fastify;
 
 	// Handle Fastify validation errors (FST_ERR_VALIDATION)
@@ -364,7 +384,7 @@ fastify.setErrorHandler((error, request, reply) => {
 // 剩下的 routes
 await fastify.register(routes);
 
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 
 // // Initialize database with default data
 // try {

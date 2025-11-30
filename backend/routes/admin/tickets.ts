@@ -1,35 +1,21 @@
-/**
- * @fileoverview Admin tickets routes with modular types and schemas
- * @typedef {import('#types/database.js').Ticket} Ticket
- * @typedef {import('#types/api.js').TicketCreateRequest} TicketCreateRequest
- * @typedef {import('#types/api.js').TicketUpdateRequest} TicketUpdateRequest
- */
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import type { TicketCreateRequest, TicketUpdateRequest } from "#types/api.js";
 
 import prisma from "#config/database.js";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth.js";
 import { ticketSchemas } from "#schemas/ticket.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-/**
- * Admin tickets routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function adminTicketsRoutes(fastify, options) {
+const adminTicketsRoutes: FastifyPluginAsync = async (fastify) => {
 	// Create new ticket
-	fastify.post(
+	fastify.post<{ Body: TicketCreateRequest }>(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
 			schema: ticketSchemas.createTicket
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: TicketCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: TicketCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {TicketCreateRequest} */
 				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden } = request.body;
 
 				// Verify event exists
@@ -64,7 +50,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 					}
 				}
 
-				/** @type {Ticket} */
 				const ticket = await prisma.ticket.create({
 					data: {
 						eventId,
@@ -79,6 +64,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 						requireInviteCode,
 						hidden: hidden ?? false
 					},
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
@@ -95,21 +81,16 @@ export default async function adminTicketsRoutes(fastify, options) {
 	);
 
 	// Get ticket by ID
-	fastify.get(
+	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.getTicket
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {Ticket | null} */
 				const ticket = await prisma.ticket.findUnique({
 					where: { id },
 					include: {
@@ -144,20 +125,15 @@ export default async function adminTicketsRoutes(fastify, options) {
 	);
 
 	// Update ticket
-	fastify.put(
+	fastify.put<{ Params: { id: string }; Body: TicketUpdateRequest }>(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.updateTicket
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: TicketUpdateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: TicketUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
-				/** @type {TicketUpdateRequest} */
 				const updateData = request.body;
 
 				// Check if ticket exists
@@ -216,17 +192,17 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 
 				// Prepare update data
-				const updatePayload = {
+				const updatePayload: any = {
 					...updateData,
 					...(updateData.saleStart && { saleStart: new Date(updateData.saleStart) }),
 					...(updateData.saleEnd && { saleEnd: new Date(updateData.saleEnd) }),
 					updatedAt: new Date()
 				};
 
-				/** @type {Ticket} */
 				const ticket = await prisma.ticket.update({
 					where: { id },
 					data: updatePayload,
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
 						hasPattern: true
@@ -243,17 +219,13 @@ export default async function adminTicketsRoutes(fastify, options) {
 	);
 
 	// Delete ticket
-	fastify.delete(
+	fastify.delete<{ Params: { id: string } }>(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.deleteTicket
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -280,6 +252,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 
 				await prisma.ticket.delete({
 					where: { id },
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
 						hasPattern: true
@@ -296,26 +269,21 @@ export default async function adminTicketsRoutes(fastify, options) {
 	);
 
 	// List tickets
-	fastify.get(
+	fastify.get<{ Querystring: { eventId?: string; isActive?: boolean } }>(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
 			schema: ticketSchemas.listTickets
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {eventId?: string, isActive?: boolean}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string; isActive?: boolean } }>, reply: FastifyReply) => {
 			try {
 				const { eventId, isActive } = request.query;
 
 				// Build where clause
-				const where = {};
+				const where: any = {};
 				if (eventId) where.eventId = eventId;
 				if (isActive !== undefined) where.isActive = isActive;
 
-				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where,
 					include: {
@@ -361,7 +329,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 	);
 
 	// Get ticket sales analytics
-	fastify.get(
+	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/analytics",
 		{
 			schema: {
@@ -398,11 +366,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -426,11 +390,11 @@ export default async function adminTicketsRoutes(fastify, options) {
 					}),
 					// Daily sales data
 					prisma.$queryRaw`
-						SELECT 
+						SELECT
 							DATE(createdAt) as date,
 							COUNT(*) as count,
 							SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_count
-						FROM Registration 
+						FROM Registration
 						WHERE ticketId = ${id}
 						GROUP BY DATE(createdAt)
 						ORDER BY date DESC
@@ -446,7 +410,7 @@ export default async function adminTicketsRoutes(fastify, options) {
 					totalSold,
 					totalRevenue,
 					availableQuantity,
-					salesByStatus: salesByStatus.reduce((acc, item) => {
+					salesByStatus: salesByStatus.reduce((acc: any, item) => {
 						acc[item.status] = item._count.id;
 						return acc;
 					}, {}),
@@ -461,4 +425,6 @@ export default async function adminTicketsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminTicketsRoutes;

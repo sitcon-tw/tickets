@@ -1,12 +1,11 @@
-/**
- * @fileoverview Admin referrals routes with efficient response functions
- */
+import type { FastifyPluginAsync } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
 
 import prisma from "#config/database.js";
 import { requireAdmin } from "#middleware/auth.js";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-export default async function adminReferralsRoutes(fastify, options) {
+const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
 
 	// 推薦機制總覽統計
@@ -18,7 +17,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (_request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const totalReferrals = await prisma.referralUsage.count();
 				const uniqueReferrers = await prisma.referral.count({
@@ -69,7 +68,9 @@ export default async function adminReferralsRoutes(fastify, options) {
 	);
 
 	// 推薦排行榜
-	fastify.get(
+	fastify.get<{
+		Querystring: { limit?: number };
+	}>(
 		"/referrals/leaderboard",
 		{
 			schema: {
@@ -77,7 +78,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
 			try {
 				const { limit = 10 } = request.query;
 
@@ -99,7 +100,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 							_count: "desc"
 						}
 					},
-					take: parseInt(limit)
+					take: parseInt(limit as any)
 				});
 
 				const formattedLeaderboard = leaderboard.map((r, index) => ({
@@ -122,7 +123,9 @@ export default async function adminReferralsRoutes(fastify, options) {
 	);
 
 	// 獲取推薦擴譜圖數據
-	fastify.get(
+	fastify.get<{
+		Params: { regId: string };
+	}>(
 		"/referrals/tree/:regId",
 		{
 			schema: {
@@ -130,7 +133,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
 			try {
 				const { regId } = request.params;
 
@@ -155,7 +158,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				const buildTree = reg => ({
+				const buildTree = (reg: any): any => ({
 					id: reg.id,
 					email: reg.email,
 					name: JSON.parse(reg.formData || "{}").name || "Unknown",
@@ -174,7 +177,9 @@ export default async function adminReferralsRoutes(fastify, options) {
 	);
 
 	// 獲取達標推薦者名單
-	fastify.get(
+	fastify.get<{
+		Querystring: { minReferrals?: number };
+	}>(
 		"/referrals/qualified",
 		{
 			schema: {
@@ -182,7 +187,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { minReferrals?: number } }>, reply: FastifyReply) => {
 			try {
 				const { minReferrals = 1 } = request.query;
 
@@ -206,7 +211,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 					}
 				});
 
-				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals));
+				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals as any));
 
 				const formattedList = filtered.map(r => ({
 					id: r.id,
@@ -227,7 +232,9 @@ export default async function adminReferralsRoutes(fastify, options) {
 	);
 
 	// 從達標者中隨機抽選
-	fastify.post(
+	fastify.post<{
+		Body: { minReferrals: number; drawCount: number; seed?: string };
+	}>(
 		"/referrals/draw",
 		{
 			schema: {
@@ -235,7 +242,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: { minReferrals: number; drawCount: number; seed?: string } }>, reply: FastifyReply) => {
 			try {
 				const { minReferrals, drawCount, seed } = request.body;
 
@@ -264,17 +271,17 @@ export default async function adminReferralsRoutes(fastify, options) {
 					}
 				});
 
-				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals));
+				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals as any));
 
 				if (eligible.length === 0) {
 					const { response, statusCode } = validationErrorResponse("沒有符合條件的推薦者");
 					return reply.code(statusCode).send(response);
 				}
 
-				const actualDrawCount = Math.min(parseInt(drawCount), eligible.length);
+				const actualDrawCount = Math.min(parseInt(drawCount as any), eligible.length);
 				const usedSeed = seed || Date.now().toString();
 
-				const seededRandom = seed => {
+				const seededRandom = (seed: string) => {
 					let x = Math.sin(parseInt(seed)) * 10000;
 					return x - Math.floor(x);
 				};
@@ -309,7 +316,9 @@ export default async function adminReferralsRoutes(fastify, options) {
 	);
 
 	// 推薦統計報表
-	fastify.get(
+	fastify.get<{
+		Querystring: { startDate?: string; endDate?: string };
+	}>(
 		"/referrals/stats",
 		{
 			schema: {
@@ -317,11 +326,11 @@ export default async function adminReferralsRoutes(fastify, options) {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { startDate?: string; endDate?: string } }>, reply: FastifyReply) => {
 			try {
 				const { startDate, endDate } = request.query;
 
-				const dateFilter = {};
+				const dateFilter: any = {};
 				if (startDate) dateFilter.gte = new Date(startDate);
 				if (endDate) dateFilter.lte = new Date(endDate);
 
@@ -340,7 +349,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 					}
 				});
 
-				const dailyStats = {};
+				const dailyStats: Record<string, number> = {};
 				referralUsages.forEach(usage => {
 					const date = usage.usedAt.toISOString().split("T")[0];
 					dailyStats[date] = (dailyStats[date] || 0) + 1;
@@ -368,7 +377,7 @@ export default async function adminReferralsRoutes(fastify, options) {
 					{ stage: "轉換率", count: `${Math.round(conversionRate * 100) / 100}%` }
 				];
 
-				const referralCounts = {};
+				const referralCounts: Record<string, number> = {};
 				referralUsages.forEach(usage => {
 					const code = usage.referral.code;
 					const name = JSON.parse(usage.referral.registration.formData || "{}").name || "Unknown";
@@ -393,4 +402,6 @@ export default async function adminReferralsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminReferralsRoutes;

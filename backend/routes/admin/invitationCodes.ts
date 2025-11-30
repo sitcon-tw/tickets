@@ -1,35 +1,25 @@
-/**
- * @fileoverview Admin invitation codes routes with modular types and schemas
- * @typedef {import('#types/database.js').InvitationCode} InvitationCode
- * @typedef {import('#types/api.js').InvitationCodeCreateRequest} InvitationCodeCreateRequest
- * @typedef {import('#types/api.js').InvitationCodeUpdateRequest} InvitationCodeUpdateRequest
- */
+import type { FastifyPluginAsync } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api.js";
+import type { InvitationCode } from "#types/database.js";
 
 import prisma from "#config/database.js";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth.js";
 import { invitationCodeSchemas } from "#schemas/invitationCode.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-/**
- * Admin invitation codes routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function adminInvitationCodesRoutes(fastify, options) {
+const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
-	fastify.post(
+	fastify.post<{
+		Body: InvitationCodeCreateRequest;
+	}>(
 		"/invitation-codes",
 		{
 			preHandler: requireEventAccessViaTicketBody,
 			schema: invitationCodeSchemas.createInvitationCode
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: InvitationCodeCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: InvitationCodeCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {InvitationCodeCreateRequest} */
 				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body;
 
 				const existingCode = await prisma.invitationCode.findFirst({
@@ -57,18 +47,21 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				/** @type {InvitationCode} */
-				const invitationCode = await prisma.$transaction(async tx => {
-					if (ticketId) {
-						const ticket = await tx.ticket.findFirst({
-							where: {
-								id: ticketId
-							}
-						});
+				// Ensure ticketId is defined before proceeding
+				if (!ticketId) {
+					const { response, statusCode } = validationErrorResponse("必須提供票券 ID");
+					return reply.code(statusCode).send(response);
+				}
 
-						if (!ticket) {
-							throw new Error("票券不存在");
+				const invitationCode: InvitationCode = await prisma.$transaction(async tx => {
+					const ticket = await tx.ticket.findFirst({
+						where: {
+							id: ticketId
 						}
+					});
+
+					if (!ticket) {
+						throw new Error("票券不存在");
 					}
 
 					const newCode = await tx.invitationCode.create({
@@ -97,22 +90,19 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// Get invitation code by ID
-	fastify.get(
+	fastify.get<{
+		Params: { id: string };
+	}>(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.getInvitationCode
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {InvitationCode | null} */
-				const invitationCode = await prisma.invitationCode.findUnique({
+				const invitationCode: InvitationCode | null = await prisma.invitationCode.findUnique({
 					where: { id },
 					include: {
 						ticket: {
@@ -149,17 +139,16 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// Update invitation code
-	fastify.put(
+	fastify.put<{
+		Params: { id: string };
+		Body: InvitationCodeUpdateRequest;
+	}>(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.updateInvitationCode
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: InvitationCodeUpdateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: InvitationCodeUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body;
@@ -207,9 +196,8 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				}
 
 				// Update invitation code in transaction
-				/** @type {InvitationCode} */
-				const invitationCode = await prisma.$transaction(async tx => {
-					const updatePayload = {};
+				const invitationCode: InvitationCode = await prisma.$transaction(async tx => {
+					const updatePayload: any = {};
 					if (code !== undefined) updatePayload.code = code;
 					if (name !== undefined) updatePayload.name = name;
 					if (usageLimit !== undefined) updatePayload.usageLimit = usageLimit;
@@ -250,17 +238,15 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// Delete invitation code
-	fastify.delete(
+	fastify.delete<{
+		Params: { id: string };
+	}>(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.deleteInvitationCode
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -292,22 +278,20 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// List invitation codes
-	fastify.get(
+	fastify.get<{
+		Querystring: { ticketId?: string; isActive?: boolean };
+	}>(
 		"/invitation-codes",
 		{
 			preHandler: requireEventListAccess,
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {ticketId?: string, isActive?: boolean}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { ticketId?: string; isActive?: boolean } }>, reply: FastifyReply) => {
 			try {
 				const { ticketId, isActive } = request.query;
 
 				// Build where clause
-				const where = {};
+				const where: any = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
@@ -322,8 +306,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					where.ticketId = ticketId ? (accessibleTicketIds.includes(ticketId) ? ticketId : "none") : { in: accessibleTicketIds };
 				}
 
-				/** @type {InvitationCode[]} */
-				const invitationCodes = await prisma.invitationCode.findMany({
+				const invitationCodes: InvitationCode[] = await prisma.invitationCode.findMany({
 					where,
 					include: {
 						ticket: {
@@ -366,7 +349,16 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// Bulk create invitation codes
-	fastify.post(
+	fastify.post<{
+		Body: {
+			ticketId: string;
+			prefix: string;
+			count: number;
+			usageLimit?: number;
+			validFrom?: string;
+			validUntil?: string;
+		};
+	}>(
 		"/invitation-codes/bulk",
 		{
 			preHandler: requireEventAccessViaTicketBody,
@@ -411,11 +403,19 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: {ticketId: string, prefix: string, count: number, usageLimit?: number, validFrom?: string, validUntil?: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (
+			request: FastifyRequest<{
+				Body: {
+					ticketId: string;
+					prefix: string;
+					count: number;
+					usageLimit?: number;
+					validFrom?: string;
+					validUntil?: string;
+				};
+			}>,
+			reply: FastifyReply
+		) => {
 			try {
 				const { ticketId, prefix, count, usageLimit, validFrom, validUntil } = request.body;
 
@@ -428,7 +428,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				const codes = [];
+				const codes: any[] = [];
 				const existingCodes = await prisma.invitationCode.findMany({
 					where: { ticketId },
 					select: { code: true }
@@ -488,7 +488,9 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 	);
 
 	// Send invitation codes via email
-	fastify.post(
+	fastify.post<{
+		Body: { email: string; codes: string[]; groupName?: string };
+	}>(
 		"/invitation-codes/send-email",
 		{
 			schema: {
@@ -516,11 +518,7 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: {email: string, codes: string[], groupName?: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: { email: string; codes: string[]; groupName?: string } }>, reply: FastifyReply) => {
 			try {
 				const { email, codes, groupName } = request.body;
 
@@ -536,4 +534,6 @@ export default async function adminInvitationCodesRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminInvitationCodesRoutes;

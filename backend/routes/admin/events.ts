@@ -1,9 +1,7 @@
-/**
- * @fileoverview Admin events routes with modular types and schemas
- * @typedef {import('#types/database.js').Event} Event
- * @typedef {import('#types/api.js').EventCreateRequest} EventCreateRequest
- * @typedef {import('#types/api.js').EventUpdateRequest} EventUpdateRequest
- */
+import type { FastifyPluginAsync } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { EventCreateRequest, EventUpdateRequest } from "#types/api.js";
+import type { Event } from "#types/database.js";
 
 import prisma from "#config/database.js";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth.js";
@@ -11,26 +9,18 @@ import { eventSchemas } from "#schemas/event.js";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 import { sanitizeObject } from "#utils/sanitize.js";
 
-/**
- * Admin events routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function adminEventsRoutes(fastify, options) {
+const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
-	fastify.post(
+	fastify.post<{
+		Body: EventCreateRequest;
+	}>(
 		"/events",
 		{
 			preHandler: requireAdmin,
 			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: EventCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: EventCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {EventCreateRequest} */
 				const rawBody = request.body;
 
 				const sanitizedBody = sanitizeObject(rawBody, true);
@@ -49,7 +39,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				/** @type {Event} */
 				const event = await prisma.event.create({
 					data: {
 						name,
@@ -61,11 +50,12 @@ export default async function adminEventsRoutes(fastify, options) {
 						ogImage,
 						isActive: true
 					},
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				});
+				}) as Event;
 
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
@@ -77,21 +67,18 @@ export default async function adminEventsRoutes(fastify, options) {
 	);
 
 	// Get event by ID - admin and eventAdmin (for their events) can access
-	fastify.get(
+	fastify.get<{
+		Params: { id: string };
+	}>(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
 			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {Event | null} */
 				const event = await prisma.event.findUnique({
 					where: { id },
 					include: {
@@ -105,7 +92,7 @@ export default async function adminEventsRoutes(fastify, options) {
 							}
 						}
 					}
-				});
+				}) as Event | null;
 
 				if (!event) {
 					const { response, statusCode } = notFoundResponse("活動不存在");
@@ -122,20 +109,18 @@ export default async function adminEventsRoutes(fastify, options) {
 	);
 
 	// Update event - admin and eventAdmin (for their events) can update
-	fastify.put(
+	fastify.put<{
+		Params: { id: string };
+		Body: EventUpdateRequest;
+	}>(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
 			schema: eventSchemas.updateEvent
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: EventUpdateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: EventUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
-				/** @type {EventUpdateRequest} */
 				const updateData = request.body;
 
 				const existingEvent = await prisma.event.findUnique({
@@ -167,22 +152,22 @@ export default async function adminEventsRoutes(fastify, options) {
 					}
 				}
 
-				const updatePayload = {
+				const updatePayload: any = {
 					...updateData,
 					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
 					...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
 					updatedAt: new Date()
 				};
 
-				/** @type {Event} */
 				const event = await prisma.event.update({
 					where: { id },
 					data: updatePayload,
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				});
+				}) as Event;
 
 				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
@@ -194,17 +179,15 @@ export default async function adminEventsRoutes(fastify, options) {
 	);
 
 	// Delete event - only admin can delete events
-	fastify.delete(
+	fastify.delete<{
+		Params: { id: string };
+	}>(
 		"/events/:id",
 		{
 			preHandler: requireAdmin,
 			schema: eventSchemas.deleteEvent
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -229,6 +212,7 @@ export default async function adminEventsRoutes(fastify, options) {
 
 				await prisma.event.delete({
 					where: { id },
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
@@ -245,21 +229,19 @@ export default async function adminEventsRoutes(fastify, options) {
 	);
 
 	// List events - admin sees all, eventAdmin sees only their assigned events
-	fastify.get(
+	fastify.get<{
+		Querystring: { isActive?: boolean };
+	}>(
 		"/events",
 		{
 			preHandler: requireEventListAccess,
 			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {isActive?: boolean}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: { isActive?: boolean } }>, reply: FastifyReply) => {
 			try {
 				const { isActive } = request.query;
 
-				const whereClause = {};
+				const whereClause: any = {};
 				if (isActive !== undefined) {
 					whereClause.isActive = isActive;
 				}
@@ -268,7 +250,6 @@ export default async function adminEventsRoutes(fastify, options) {
 					whereClause.id = { in: request.userEventPermissions };
 				}
 
-				/** @type {Event[]} */
 				const events = await prisma.event.findMany({
 					where: whereClause,
 					include: {
@@ -280,7 +261,7 @@ export default async function adminEventsRoutes(fastify, options) {
 						}
 					},
 					orderBy: { createdAt: "desc" }
-				});
+				}) as Event[];
 
 				return reply.send(successResponse(events));
 			} catch (error) {
@@ -290,4 +271,6 @@ export default async function adminEventsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminEventsRoutes;

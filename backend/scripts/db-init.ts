@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * @fileoverview Database initialization script
- * Automatically checks and syncs database schema on startup
- */
 
 import { exec } from "child_process";
 import { createHash } from "crypto";
@@ -15,7 +11,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const isDevelopment = !isProduction;
 const SCHEMA_HASH_FILE = ".prisma-schema-hash";
 
-function getSchemaHash() {
+function getSchemaHash(): string | null {
 	try {
 		const schemaPath = "prisma/schema.prisma";
 		if (!existsSync(schemaPath)) return null;
@@ -26,7 +22,7 @@ function getSchemaHash() {
 	}
 }
 
-function hasSchemaChanged() {
+function hasSchemaChanged(): boolean {
 	const currentHash = getSchemaHash();
 	if (!currentHash) return true;
 
@@ -40,14 +36,14 @@ function hasSchemaChanged() {
 	}
 }
 
-function saveSchemaHash() {
+function saveSchemaHash(): void {
 	const currentHash = getSchemaHash();
 	if (currentHash) {
 		writeFileSync(SCHEMA_HASH_FILE, currentHash);
 	}
 }
 
-async function runCommand(command, description) {
+async function runCommand(command: string, description: string): Promise<boolean> {
 	console.log(`\n🔄 ${description}...`);
 	try {
 		const { stdout, stderr } = await execAsync(command, {
@@ -59,14 +55,15 @@ async function runCommand(command, description) {
 		console.log(`✅ ${description} completed`);
 		return true;
 	} catch (error) {
-		console.error(`❌ ${description} failed:`, error.message);
-		if (error.stdout) console.log(error.stdout);
-		if (error.stderr) console.error(error.stderr);
+		const err = error as { message: string; stdout?: string; stderr?: string };
+		console.error(`❌ ${description} failed:`, err.message);
+		if (err.stdout) console.log(err.stdout);
+		if (err.stderr) console.error(err.stderr);
 		return false;
 	}
 }
 
-async function initDatabase() {
+async function initDatabase(): Promise<void> {
 	console.log("\n🚀 Starting database initialization...");
 	console.log(`📍 Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}`);
 

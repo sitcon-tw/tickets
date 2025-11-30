@@ -1,8 +1,6 @@
-/**
- * @fileoverview Admin email campaigns routes with modular types and schemas
- * @typedef {import('#types/api.js').EmailCampaignCreateRequest} EmailCampaignCreateRequest
- * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
- */
+import type { FastifyPluginAsync } from "fastify";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api.js";
 
 import prisma from "#config/database.js";
 import { requireAdmin } from "#middleware/auth.js";
@@ -10,16 +8,13 @@ import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email.js";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
 
-/**
- * Admin email campaigns routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function adminEmailCampaignsRoutes(fastify, options) {
+const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
 
 	// Get email campaigns with pagination
-	fastify.get(
+	fastify.get<{
+		Querystring: PaginationQuery;
+	}>(
 		"/email-campaigns",
 		{
 			schema: {
@@ -46,11 +41,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: PaginationQuery}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
 			try {
 				const { page = 1, limit = 20 } = request.query;
 				const skip = (page - 1) * limit;
@@ -68,10 +59,12 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				const total = await prisma.emailCampaign.count();
 
 				const pagination = {
-					page: parseInt(page),
-					limit: parseInt(limit),
+					page: parseInt(page as any),
+					limit: parseInt(limit as any),
 					total,
-					totalPages: Math.ceil(total / limit)
+					totalPages: Math.ceil(total / limit),
+					hasNext: page < Math.ceil(total / limit),
+					hasPrev: page > 1
 				};
 
 				return reply.send(successResponse(campaigns, "取得郵件發送記錄成功", pagination));
@@ -84,19 +77,16 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 	);
 
 	// Create email campaign
-	fastify.post(
+	fastify.post<{
+		Body: EmailCampaignCreateRequest;
+	}>(
 		"/email-campaigns",
 		{
 			schema: emailCampaignSchemas.createEmailCampaign
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: EmailCampaignCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: EmailCampaignCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {EmailCampaignCreateRequest} */
-				const { name, subject, content, eventId, targetAudience, scheduledAt } = request.body;
+				const { name, subject, content, targetAudience, scheduledAt } = request.body;
 
 				if (!content) {
 					const { response, statusCode } = validationErrorResponse("必須提供郵件內容");
@@ -125,7 +115,9 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 	);
 
 	// Get email campaign status
-	fastify.get(
+	fastify.get<{
+		Params: { campaignId: string };
+	}>(
 		"/email-campaigns/:campaignId/status",
 		{
 			schema: {
@@ -143,11 +135,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			try {
 				const { campaignId } = request.params;
 
@@ -187,7 +175,9 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 	);
 
 	// Preview email content
-	fastify.post(
+	fastify.post<{
+		Params: { campaignId: string };
+	}>(
 		"/email-campaigns/:campaignId/preview",
 		{
 			schema: {
@@ -205,11 +195,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			try {
 				const { campaignId } = request.params;
 
@@ -237,14 +223,14 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					previewHtml = previewHtml
 						.replace(/{{name}}/g, formData.name || "Sample User")
 						.replace(/{{email}}/g, sampleRegistration.email)
-						.replace(/{{eventName}}/g, sampleRegistration.event.name)
-						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
+						.replace(/{{eventName}}/g, String(sampleRegistration.event.name))
+						.replace(/{{ticketName}}/g, String(sampleRegistration.ticket.name));
 
 					previewText = previewText
 						.replace(/{{name}}/g, formData.name || "Sample User")
 						.replace(/{{email}}/g, sampleRegistration.email)
-						.replace(/{{eventName}}/g, sampleRegistration.event.name)
-						.replace(/{{ticketName}}/g, sampleRegistration.ticket.name);
+						.replace(/{{eventName}}/g, String(sampleRegistration.event.name))
+						.replace(/{{ticketName}}/g, String(sampleRegistration.ticket.name));
 				}
 
 				return reply.send(
@@ -264,7 +250,9 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 	);
 
 	// Calculate recipient count
-	fastify.post(
+	fastify.post<{
+		Params: { campaignId: string };
+	}>(
 		"/email-campaigns/:campaignId/calculate-recipients",
 		{
 			schema: {
@@ -282,11 +270,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			try {
 				const { campaignId } = request.params;
 
@@ -320,7 +304,10 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 	);
 
 	// Send email campaign
-	fastify.post(
+	fastify.post<{
+		Params: { campaignId: string };
+		Body: { sendNow?: boolean };
+	}>(
 		"/email-campaigns/:campaignId/send",
 		{
 			schema: {
@@ -348,11 +335,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}, Body: {sendNow?: boolean}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
 			try {
 				const { campaignId } = request.params;
 				const { sendNow = true } = request.body || {};
@@ -446,14 +429,16 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 					console.error("Failed to update campaign status:", updateError);
 				}
 
-				const { response, statusCode } = serverErrorResponse("發送郵件失敗：" + error.message);
+				const { response, statusCode } = serverErrorResponse("發送郵件失敗：" + (error as Error).message);
 				return reply.code(statusCode).send(response);
 			}
 		}
 	);
 
 	// Cancel email campaign
-	fastify.delete(
+	fastify.delete<{
+		Params: { campaignId: string };
+	}>(
 		"/email-campaigns/:campaignId",
 		{
 			schema: {
@@ -471,11 +456,7 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {campaignId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			try {
 				const { campaignId } = request.params;
 
@@ -509,4 +490,6 @@ export default async function adminEmailCampaignsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default adminEmailCampaignsRoutes;

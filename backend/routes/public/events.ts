@@ -1,22 +1,27 @@
 /**
  * @fileoverview Public events routes with modular types and schemas
- * @typedef {import('#types/database.js').Event} Event
- * @typedef {import('#types/database.js').Ticket} Ticket
- * @typedef {import('#types/database.js').Registration} Registration
  */
 
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import type { Event, Ticket } from "#types/database.js";
 import prisma from "#config/database.js";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event.js";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
 
+interface EventIdParams {
+	id: string;
+}
+
+interface UpcomingQuery {
+	upcoming?: boolean;
+}
+
 /**
  * Public events routes - accessible without authentication
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
  */
-export default async function publicEventsRoutes(fastify, options) {
+const publicEventsRoutes: FastifyPluginAsync = async (fastify) => {
 	// Get public event information
-	fastify.get(
+	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/info",
 		{
 			schema: {
@@ -24,16 +29,11 @@ export default async function publicEventsRoutes(fastify, options) {
 				description: "獲取活動公開資訊"
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {Event | null} */
-				let event = await prisma.event.findFirst({
+				const event = await prisma.event.findFirst({
 					where: {
 						OR: [
 							{ id },
@@ -71,7 +71,7 @@ export default async function publicEventsRoutes(fastify, options) {
 	);
 
 	// Get available tickets for an event
-	fastify.get(
+	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/tickets",
 		{
 			schema: {
@@ -81,11 +81,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				response: eventTicketsResponse
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -102,7 +98,6 @@ export default async function publicEventsRoutes(fastify, options) {
 					return reply.code(statusCode).send(response);
 				}
 
-				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where: {
 						eventId: event.id,
@@ -192,7 +187,7 @@ export default async function publicEventsRoutes(fastify, options) {
 	);
 
 	// List all active events
-	fastify.get(
+	fastify.get<{ Querystring: UpcomingQuery }>(
 		"/events",
 		{
 			schema: {
@@ -211,16 +206,12 @@ export default async function publicEventsRoutes(fastify, options) {
 				response: publicEventsListResponse
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {upcoming?: boolean}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: UpcomingQuery }>, reply: FastifyReply) => {
 			try {
 				const { upcoming } = request.query;
 
 				// Build where clause
-				const where = {
+				const where: any = {
 					isActive: true
 				};
 
@@ -231,7 +222,6 @@ export default async function publicEventsRoutes(fastify, options) {
 					};
 				}
 
-				/** @type {Event[]} */
 				const events = await prisma.event.findMany({
 					where,
 					select: {
@@ -302,7 +292,7 @@ export default async function publicEventsRoutes(fastify, options) {
 	);
 
 	// Get event registration statistics (public view)
-	fastify.get(
+	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/stats",
 		{
 			schema: {
@@ -312,11 +302,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				response: eventStatsResponse
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -380,7 +366,7 @@ export default async function publicEventsRoutes(fastify, options) {
 	);
 
 	// Get form fields for an event (via ticket ID for backward compatibility)
-	fastify.get(
+	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
 			schema: {
@@ -425,11 +411,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -496,7 +478,7 @@ export default async function publicEventsRoutes(fastify, options) {
 	);
 
 	// Get form fields for an event directly
-	fastify.get(
+	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/form-fields",
 		{
 			schema: {
@@ -540,11 +522,7 @@ export default async function publicEventsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
@@ -601,4 +579,6 @@ export default async function publicEventsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default publicEventsRoutes;

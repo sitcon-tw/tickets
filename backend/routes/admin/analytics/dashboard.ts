@@ -1,13 +1,11 @@
-/**
- * @typedef {import('#../types/api.js').AnalyticsData} AnalyticsData
- */
-
 //TODO: This dashboard is not finished.
 
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import type { AnalyticsData } from "#types/api.js";
 import prisma from "#config/database.js";
 import { serverErrorResponse, successResponse } from "#utils/response.js";
 
-export default async function dashboardRoutes(fastify, options) {
+const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// 管理後台儀表板數據
 	fastify.get(
 		"/dashboard",
@@ -40,7 +38,7 @@ export default async function dashboardRoutes(fastify, options) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (_request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const [totalStats, revenueData] = await Promise.all([
 					prisma.registration.groupBy({
@@ -64,11 +62,12 @@ export default async function dashboardRoutes(fastify, options) {
 						acc[stat.status] = stat._count.id;
 						return acc;
 					},
-					{ confirmed: 0, pending: 0, cancelled: 0 }
+					{ confirmed: 0, pending: 0, cancelled: 0 } as Record<string, number>
 				);
 
 				const totalRegistrations = Object.values(registrationCounts).reduce((sum, count) => sum + count, 0);
-				const totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
+				// Total revenue calculation (not currently used in response)
+				// const _totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
 
 				const thirtyDaysAgo = new Date();
 				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -96,9 +95,11 @@ export default async function dashboardRoutes(fastify, options) {
 						acc[date].confirmed++;
 					}
 					return acc;
-				}, {});
+				}, {} as Record<string, { date: string; count: number; confirmed: number }>);
 
-				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort((a, b) => new Date(b.date) - new Date(a.date));
+				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				);
 
 				// Get ticket sales summary
 				const ticketSales = await prisma.ticket.findMany({
@@ -114,8 +115,7 @@ export default async function dashboardRoutes(fastify, options) {
 					}
 				});
 
-				/** @type {AnalyticsData} */
-				const analytics = {
+				const analytics: AnalyticsData = {
 					totalRegistrations,
 					confirmedRegistrations: registrationCounts.confirmed,
 					pendingRegistrations: registrationCounts.pending,
@@ -124,7 +124,7 @@ export default async function dashboardRoutes(fastify, options) {
 					registrationsByDate: dailyRegistrationsArray.reduce((acc, day) => {
 						acc[day.date] = { total: day.count, confirmed: day.confirmed };
 						return acc;
-					}, {}),
+					}, {} as Record<string, any>),
 					ticketSales: ticketSales.reduce((acc, ticket) => {
 						acc[ticket.id] = {
 							name: ticket.name,
@@ -135,7 +135,7 @@ export default async function dashboardRoutes(fastify, options) {
 							revenue: ticket.soldCount * ticket.price
 						};
 						return acc;
-					}, {}),
+					}, {} as Record<string, any>),
 					referralStats: await getReferralStats()
 				};
 
@@ -193,4 +193,6 @@ export default async function dashboardRoutes(fastify, options) {
 			};
 		}
 	}
-}
+};
+
+export default dashboardRoutes;

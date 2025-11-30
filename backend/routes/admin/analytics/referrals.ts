@@ -1,9 +1,17 @@
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { errorResponse, successResponse } from "#utils/response.js";
 
-export default async function referralsRoutes(fastify, options) {
+interface ReferralSourcesQuerystring {
+	startDate?: string;
+	endDate?: string;
+}
+
+const referralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// 來源統計分析
-	fastify.get(
+	fastify.get<{
+		Querystring: ReferralSourcesQuerystring;
+	}>(
 		"/referral-sources",
 		{
 			schema: {
@@ -11,11 +19,11 @@ export default async function referralsRoutes(fastify, options) {
 				tags: ["admin/analytics"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: ReferralSourcesQuerystring }>, reply: FastifyReply) => {
 			try {
 				const { startDate, endDate } = request.query;
 
-				const dateFilter = {};
+				const dateFilter: any = {};
 				if (startDate) dateFilter.gte = new Date(startDate);
 				if (endDate) dateFilter.lte = new Date(endDate);
 
@@ -40,7 +48,7 @@ export default async function referralsRoutes(fastify, options) {
 					}
 				});
 
-				const sourceCounts = {};
+				const sourceCounts: Record<string, number> = {};
 				referralUsages.forEach(usage => {
 					const referrerData = JSON.parse(usage.referral.registration.formData || "{}");
 					const source = `${referrerData.name || "Unknown"} (${usage.referral.code})`;
@@ -65,4 +73,6 @@ export default async function referralsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default referralsRoutes;

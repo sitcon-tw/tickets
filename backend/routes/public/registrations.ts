@@ -1,10 +1,4 @@
-/**
- * @fileoverview Public registrations routes with modular types and schemas
- * @typedef {import('#types/database.js').Registration} Registration
- * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
- * @typedef {import('#types/api.js').InvitationCode} InvitationCode
- */
-
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { auth } from "#lib/auth.js";
 import { addSpanEvent } from "#lib/tracing.js";
@@ -15,12 +9,19 @@ import { sanitizeObject } from "#utils/sanitize.js";
 import { tracePrismaOperation } from "#utils/trace-db.js";
 import { validateRegistrationFormData } from "#utils/validation.js";
 
-/**
- * Public registrations routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function publicRegistrationsRoutes(fastify, options) {
+interface RegistrationCreateRequest {
+	eventId: string;
+	ticketId: string;
+	invitationCode?: string;
+	referralCode?: string;
+	formData: Record<string, any>;
+}
+
+interface RegistrationUpdateRequest {
+	formData: Record<string, any>;
+}
+
+const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) => {
 	// Apply preHandler if provided
 	if (options.preHandler) {
 		fastify.addHook("preHandler", options.preHandler);
@@ -32,13 +33,8 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 		{
 			schema: registrationSchemas.createRegistration
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: RegistrationCreateRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: RegistrationCreateRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {RegistrationCreateRequest} */
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
 
 				// Sanitize form data to prevent XSS attacks
@@ -148,7 +144,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate invitation code logic
-				let invitationCodeId = null;
+				let invitationCodeId: string | null = null;
 				if (ticket.requireInviteCode) {
 					// Ticket requires invitation code
 					addSpanEvent("validating_required_invitation_code");
@@ -157,7 +153,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 						return reply.code(statusCode).send(response);
 					}
 
-					/** @type {InvitationCode | null} */
 					const code = await tracePrismaOperation(
 						"InvitationCode",
 						"findFirst",
@@ -225,7 +220,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				}
 
 				// Validate referral code if provided
-				let referralCodeId = null;
+				let referralCodeId: string | null = null;
 				if (referralCode) {
 					const referral = await prisma.referral.findFirst({
 						where: {
@@ -329,19 +324,19 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				request.log.error("Create registration error:", error);
 
 				// Handle specific transaction errors
-				if (error.message === "TICKET_SOLD_OUT") {
+				if ((error as Error).message === "TICKET_SOLD_OUT") {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
 				}
 
 				// If error is a known validation error, return 400/422
-				if (error.code === "P2002" && error.meta && error.meta.target && error.meta.target.includes("email")) {
+				if ((error as any).code === "P2002" && (error as any).meta && (error as any).meta.target && (error as any).meta.target.includes("email")) {
 					// Prisma unique constraint violation (e.g. duplicate email)
 					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
 					return reply.code(statusCode).send(response);
 				}
-				if (error.name === "ValidationError" || error.message?.includes("必填") || error.message?.includes("驗證失敗") || error.message?.includes("required")) {
-					const { response, statusCode } = validationErrorResponse(error.message || "表單驗證失敗");
+				if ((error as any).name === "ValidationError" || (error as Error).message?.includes("必填") || (error as Error).message?.includes("驗證失敗") || (error as Error).message?.includes("required")) {
+					const { response, statusCode } = validationErrorResponse((error as Error).message || "表單驗證失敗");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -361,18 +356,13 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				response: userRegistrationsResponse
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
 				});
 				const userId = session.user?.id;
 
-				/** @type {Registration[]} */
 				const registrations = await prisma.registration.findMany({
 					where: { userId },
 					include: {
@@ -433,11 +423,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				tags: ["registrations"]
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -445,7 +431,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				const userId = session.user?.id;
 				const { id } = request.params;
 
-				/** @type {Registration | null} */
 				const registration = await prisma.registration.findFirst({
 					where: {
 						id,
@@ -513,11 +498,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				response: registrationSchemas.updateRegistration.response
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}, Body: {formData: Object}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -649,11 +630,7 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 				tags: ["registrations"]
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers
@@ -719,4 +696,6 @@ export default async function publicRegistrationsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default publicRegistrationsRoutes;

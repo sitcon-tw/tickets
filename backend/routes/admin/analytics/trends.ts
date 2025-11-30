@@ -2,17 +2,23 @@
  * @fileoverview Admin analytics trends routes with efficient response functions
  */
 
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { serverErrorResponse, successResponse } from "#utils/response.js";
 
+interface RegistrationTrendsQuerystring {
+	period?: "daily" | "weekly" | "monthly";
+	eventId?: string;
+}
+
 /**
  * Admin analytics trends routes
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
  */
-export default async function trendsRoutes(fastify, options) {
+const trendsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Registration trends analysis
-	fastify.get(
+	fastify.get<{
+		Querystring: RegistrationTrendsQuerystring;
+	}>(
 		"/registration-trends",
 		{
 			schema: {
@@ -35,31 +41,15 @@ export default async function trendsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Querystring: {period?: string, eventId?: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: RegistrationTrendsQuerystring }>, reply: FastifyReply) => {
 			try {
 				const { period = "daily", eventId } = request.query;
 
 				const whereClause = eventId ? { eventId } : {};
 				const daysBack = period === "daily" ? 30 : period === "weekly" ? 84 : 365;
 
-				let groupByClause;
-				switch (period) {
-					case "daily":
-						groupByClause = "DATE(createdAt)";
-						break;
-					case "weekly":
-						groupByClause = "strftime('%Y-%W', createdAt)";
-						break;
-					case "monthly":
-						groupByClause = "strftime('%Y-%m', createdAt)";
-						break;
-					default:
-						groupByClause = "DATE(createdAt)";
-				}
+				// Note: groupByClause would be used in raw SQL queries for better performance
+				// Currently using Prisma's findMany with manual grouping for compatibility
 
 				const registrations = await prisma.registration.findMany({
 					where: {
@@ -74,9 +64,9 @@ export default async function trendsRoutes(fastify, options) {
 					}
 				});
 
-				const trendsMap = {};
+				const trendsMap: Record<string, { total: number; confirmed: number; pending: number; cancelled: number }> = {};
 				registrations.forEach(reg => {
-					let key;
+					let key: string;
 					switch (period) {
 						case "daily":
 							key = reg.createdAt.toISOString().split("T")[0];
@@ -89,13 +79,17 @@ export default async function trendsRoutes(fastify, options) {
 						case "monthly":
 							key = reg.createdAt.toISOString().substring(0, 7);
 							break;
+						default:
+							key = reg.createdAt.toISOString().split("T")[0];
 					}
 
 					if (!trendsMap[key]) {
 						trendsMap[key] = { total: 0, confirmed: 0, pending: 0, cancelled: 0 };
 					}
 					trendsMap[key].total++;
-					trendsMap[key][reg.status]++;
+					if (reg.status in trendsMap[key]) {
+						(trendsMap[key] as any)[reg.status]++;
+					}
 				});
 
 				const trends = Object.entries(trendsMap)
@@ -105,7 +99,10 @@ export default async function trendsRoutes(fastify, options) {
 				const totalRegistrations = registrations.length;
 				const totalDays = Object.keys(trendsMap).length;
 				const averagePerDay = totalDays > 0 ? totalRegistrations / totalDays : 0;
-				const peakDay = trends.reduce((max, day) => (day.total > (max?.total || 0) ? day : max), null);
+				const peakDay = trends.reduce<{ date: string; total: number; confirmed: number; pending: number; cancelled: number } | null>(
+					(max, day) => (day.total > (max?.total || 0) ? day : max),
+					null
+				);
 
 				return reply.send(
 					successResponse({
@@ -127,4 +124,6 @@ export default async function trendsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default trendsRoutes;

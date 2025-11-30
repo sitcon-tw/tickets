@@ -37,17 +37,21 @@ export interface PaginationQuery {
 export interface EventCreateRequest {
 	name: string;
 	description?: string;
+	plainDescription?: string;
 	startDate: string;
 	endDate: string;
 	location?: string;
+	ogImage?: string;
 }
 
 export interface EventUpdateRequest {
 	name?: string;
 	description?: string;
+	plainDescription?: string;
 	startDate?: string;
 	endDate?: string;
 	location?: string;
+	ogImage?: string;
 	isActive?: boolean;
 }
 
@@ -74,6 +78,7 @@ export interface TicketCreateRequest {
 	saleStart?: string;
 	saleEnd?: string;
 	requireInviteCode?: boolean;
+	hidden?: boolean;
 }
 
 export interface TicketUpdateRequest {
@@ -170,6 +175,7 @@ export interface EventFormFieldCreateRequest {
 	placeholder?: string;
 	required?: boolean;
 	values?: string;
+	filters?: string;
 }
 
 export interface EventFormFieldUpdateRequest {
@@ -181,4 +187,15 @@ export interface EventFormFieldUpdateRequest {
 	placeholder?: string;
 	required?: boolean;
 	values?: string;
+	filters?: string;
+}
+
+export interface InvitationCodeVerifyRequest {
+	code: string;
+	ticketId: string;
+}
+
+export interface ReferralValidateRequest {
+	code: string;
+	eventId: string;
 }

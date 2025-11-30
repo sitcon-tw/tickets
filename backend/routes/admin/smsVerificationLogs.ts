@@ -1,16 +1,18 @@
-/**
- * @fileoverview Admin routes for SMS verification logs
- */
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 
 import prisma from "#config/database.js";
 import { requireAdmin } from "#middleware/auth.js";
 import { serverErrorResponse, successResponse } from "#utils/response.js";
 
-/**
- * Admin SMS verification logs routes
- * @param {import('fastify').FastifyInstance} fastify
- */
-export default async function adminSmsVerificationLogsRoutes(fastify) {
+interface SmsLogsQuery {
+	userId?: string;
+	phoneNumber?: string;
+	verified?: boolean;
+	page?: number;
+	limit?: number;
+}
+
+const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async (fastify) => {
 	// Apply admin auth middleware
 	fastify.addHook("preHandler", requireAdmin);
 
@@ -18,7 +20,7 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 	 * GET /api/admin/sms-verification-logs
 	 * Get SMS verification logs with filters
 	 */
-	fastify.get(
+	fastify.get<{ Querystring: SmsLogsQuery }>(
 		"/sms-verification-logs",
 		{
 			schema: {
@@ -36,12 +38,12 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 				}
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Querystring: SmsLogsQuery }>, reply: FastifyReply) => {
 			try {
 				const { userId, phoneNumber, verified, page = 1, limit = 20 } = request.query;
 
 				// Build where clause
-				const where = {};
+				const where: any = {};
 				if (userId) where.userId = userId;
 				if (phoneNumber) where.phoneNumber = { contains: phoneNumber };
 				if (typeof verified === "boolean") where.verified = verified;
@@ -105,7 +107,7 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 				tags: ["admin/sms-verification"]
 			}
 		},
-		async (request, reply) => {
+		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const [totalSent, totalVerified, totalExpired] = await Promise.all([
 					// Total SMS sent
@@ -145,7 +147,7 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 						totalSent,
 						totalVerified,
 						totalExpired,
-						successRate: parseFloat(successRate),
+						successRate: parseFloat(successRate as string),
 						recentActivity: recentCount
 					})
 				);
@@ -156,4 +158,6 @@ export default async function adminSmsVerificationLogsRoutes(fastify) {
 			}
 		}
 	);
-}
+};
+
+export default adminSmsVerificationLogsRoutes;

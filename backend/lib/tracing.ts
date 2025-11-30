@@ -62,9 +62,9 @@ if (isOtelEnabled) {
 	console.log("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
 	// Create a no-op tracer
 	tracer = {
-		startActiveSpan: <T>(_: string, fn: (span: NoopSpan) => T): T =>
+		startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T): T =>
 			fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} }),
-		startSpan: (_?: string): NoopSpan => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })
+		startSpan: (_name?: string): NoopSpan => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })
 	};
 }
 
@@ -85,7 +85,7 @@ interface SpanAttributes {
 export async function withSpan<T>(spanName: string, fn: (span: Span | NoopSpan) => Promise<T>, attributes: SpanAttributes = {}): Promise<T> {
 	if (isOtelEnabled) {
 		// Use real OpenTelemetry tracer
-		return (tracer as Tracer).startActiveSpan(spanName, async (span) => {
+		return (tracer as Tracer).startActiveSpan(spanName, async (span: Span) => {
 			try {
 				// Add custom attributes
 				Object.entries(attributes).forEach(([key, value]) => {
@@ -124,8 +124,8 @@ export async function withSpan<T>(spanName: string, fn: (span: Span | NoopSpan) 
  * @param attributes - Attributes for the span
  * @returns The created span
  */
-export function createSpan(spanName: string, attributes: SpanAttributes = {}): Span | NoopSpan {
-	const span = isOtelEnabled ? (tracer as Tracer).startSpan(spanName) : (tracer as NoopTracer).startSpan(spanName);
+export function createSpan(_spanName: string, attributes: SpanAttributes = {}): Span | NoopSpan {
+	const span = isOtelEnabled ? (tracer as Tracer).startSpan(_spanName) : (tracer as NoopTracer).startSpan(_spanName);
 	Object.entries(attributes).forEach(([key, value]) => {
 		span.setAttribute(key, value);
 	});

@@ -1,18 +1,8 @@
-/**
- * @fileoverview Public tickets routes
- * @typedef {import('#types/database.js').Ticket} Ticket
- * @typedef {import('#types/database.js').TicketFormField} TicketFormField
- */
-
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
 
-/**
- * Public tickets routes - accessible without authentication
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function publicTicketsRoutes(fastify, options) {
+const publicTicketsRoutes: FastifyPluginAsync = async (fastify) => {
 	// Get single ticket information (public)
 	fastify.get(
 		"/tickets/:id",
@@ -73,15 +63,10 @@ export default async function publicTicketsRoutes(fastify, options) {
 				}
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const { id } = request.params;
 
-				/** @type {Ticket | null} */
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id
@@ -128,4 +113,6 @@ export default async function publicTicketsRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default publicTicketsRoutes;

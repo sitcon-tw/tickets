@@ -1,10 +1,4 @@
-/**
- * @fileoverview Public invitation codes routes with modular types and schemas
- * @typedef {import('#types/database.js').InvitationCode} InvitationCode
- * @typedef {import('#types/database.js').Ticket} Ticket
- * @typedef {import('#types/api.js').InvitationCodeVerifyRequest} InvitationCodeVerifyRequest
- */
-
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database.js";
 import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode.js";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
@@ -32,12 +26,12 @@ const ticketIdQuery = {
 	required: ["ticketId"]
 };
 
-/**
- * Public invitation codes routes with modular schemas and types
- * @param {import('fastify').FastifyInstance} fastify
- * @param {Object} options
- */
-export default async function invitationCodesRoutes(fastify, options) {
+interface InvitationCodeVerifyRequest {
+	code: string;
+	ticketId: string;
+}
+
+const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
 	// Verify invitation code
 	fastify.post(
 		"/invitation-codes/verify",
@@ -49,13 +43,8 @@ export default async function invitationCodesRoutes(fastify, options) {
 				response: invitationCodeVerifyResponse
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Body: InvitationCodeVerifyRequest}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Body: InvitationCodeVerifyRequest }>, reply: FastifyReply) => {
 			try {
-				/** @type {InvitationCodeVerifyRequest} */
 				const { code, ticketId } = request.body;
 
 				if (!code || !ticketId) {
@@ -81,7 +70,6 @@ export default async function invitationCodesRoutes(fastify, options) {
 				}
 
 				// Find invitation code
-				/** @type {InvitationCode | null} */
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
@@ -121,7 +109,6 @@ export default async function invitationCodesRoutes(fastify, options) {
 				}
 
 				// Get available tickets for the event
-				/** @type {Ticket[]} */
 				const tickets = await prisma.ticket.findMany({
 					where: {
 						id: ticketId,
@@ -189,16 +176,11 @@ export default async function invitationCodesRoutes(fastify, options) {
 				querystring: ticketIdQuery
 			}
 		},
-		/**
-		 * @param {import('fastify').FastifyRequest<{Params: {code: string}, Querystring: {ticketId: string}}>} request
-		 * @param {import('fastify').FastifyReply} reply
-		 */
-		async (request, reply) => {
+		async (request: FastifyRequest<{ Params: { code: string }; Querystring: { ticketId: string } }>, reply: FastifyReply) => {
 			try {
 				const { code } = request.params;
 				const { ticketId } = request.query;
 
-				/** @type {InvitationCode | null} */
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
@@ -248,4 +230,6 @@ export default async function invitationCodesRoutes(fastify, options) {
 			}
 		}
 	);
-}
+};
+
+export default invitationCodesRoutes;
