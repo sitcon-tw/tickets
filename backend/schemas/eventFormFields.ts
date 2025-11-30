@@ -2,7 +2,7 @@
  * EventFormFields-related schema definitions
  */
 
-import { errorResponse, idParam, successResponse } from "./common.js";
+import { errorResponse, idParam, successResponse } from "./common";
 
 export const eventFormFieldProperties = {
 	id: {

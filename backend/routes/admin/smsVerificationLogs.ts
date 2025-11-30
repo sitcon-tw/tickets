@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 
-import prisma from "#config/database.js";
-import { requireAdmin } from "#middleware/auth.js";
-import { serverErrorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireAdmin } from "#middleware/auth";
+import { serverErrorResponse, successResponse } from "#utils/response";
 
 interface SmsLogsQuery {
 	userId?: string;

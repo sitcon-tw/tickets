@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
-import prisma from "#config/database.js";
-import { requireAdmin } from "#middleware/auth.js";
-import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireAdmin } from "#middleware/auth";
+import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);

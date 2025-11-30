@@ -1,7 +1,7 @@
-import prisma from "../config/database.js";
-import { auth } from "../lib/auth.js";
-import { safeJsonParse } from "../utils/json.js";
-import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response.js";
+import prisma from "../config/database";
+import { auth } from "../lib/auth";
+import { safeJsonParse } from "../utils/json";
+import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 import type { FastifyRequest, FastifyReply, preHandlerHookHandler, HookHandlerDoneFunction } from "fastify";
 
 // Extend Fastify request interface to include user and session

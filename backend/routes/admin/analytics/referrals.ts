@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { errorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { errorResponse, successResponse } from "#utils/response";
 
 interface ReferralSourcesQuerystring {
 	startDate?: string;

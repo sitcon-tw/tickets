@@ -1,6 +1,6 @@
 import { PrismaExtensionRedis } from "prisma-extension-redis";
 import { PrismaClient } from "../generated/prisma";
-import { getRedisClient } from "./redis.js";
+import { getRedisClient } from "./redis";
 
 // Extend globalThis to include prisma property
 declare global {

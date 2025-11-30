@@ -1,12 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api.js";
+import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api";
 
-import prisma from "#config/database.js";
-import { requireAdmin } from "#middleware/auth.js";
-import { emailCampaignSchemas } from "#schemas/emailCampaign.js";
-import { calculateRecipients, sendCampaignEmail } from "#utils/email.js";
-import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireAdmin } from "#middleware/auth";
+import { emailCampaignSchemas } from "#schemas/emailCampaign";
+import { calculateRecipients, sendCampaignEmail } from "#utils/email";
+import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);

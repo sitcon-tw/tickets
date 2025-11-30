@@ -3,10 +3,10 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { auth } from "#lib/auth.js";
-import { safeJsonParse } from "#utils/json.js";
-import { serverErrorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { auth } from "#lib/auth";
+import { safeJsonParse } from "#utils/json";
+import { serverErrorResponse, successResponse } from "#utils/response";
 
 /**
  * Auth routes

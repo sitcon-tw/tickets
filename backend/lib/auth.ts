@@ -1,9 +1,9 @@
-import { sendMagicLink } from "#utils/email.js";
+import { sendMagicLink } from "#utils/email";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
-import { getAdminEmails } from "../config/security.js";
-import prisma from "../config/database.js";
+import { getAdminEmails } from "../config/security";
+import prisma from "../config/database";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {

@@ -1,13 +1,13 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api.js";
-import type { EventFormFields } from "#types/database.js";
-import { Prisma } from "#generated/prisma/index.js";
+import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
+import type { EventFormFields } from "#types/database";
+import { Prisma } from "#generated/prisma/index";
 
-import prisma from "#config/database.js";
-import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth.js";
-import { eventFormFieldSchemas } from "#schemas/eventFormFields.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
+import { eventFormFieldSchemas } from "#schemas/eventFormFields";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event form field

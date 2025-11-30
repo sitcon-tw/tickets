@@ -1,9 +1,9 @@
 //TODO: This dashboard is not finished.
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import type { AnalyticsData } from "#types/api.js";
-import prisma from "#config/database.js";
-import { serverErrorResponse, successResponse } from "#utils/response.js";
+import type { AnalyticsData } from "#types/api";
+import prisma from "#config/database";
+import { serverErrorResponse, successResponse } from "#utils/response";
 
 const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// 管理後台儀表板數據

@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { auth } from "#lib/auth.js";
-import { generateVerificationCode, sendVerificationCode } from "#lib/sms.js";
-import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
-import { sanitizeText } from "#utils/sanitize.js";
+import prisma from "#config/database";
+import { auth } from "#lib/auth";
+import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
+import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { sanitizeText } from "#utils/sanitize";
 
 interface SendVerificationRequest {
 	phoneNumber: string;

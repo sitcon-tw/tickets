@@ -1,6 +1,6 @@
 // IMPORTANT: Import tracing FIRST before any other modules (if enabled)
 // This ensures OpenTelemetry SDK is initialized before Fastify
-import "./lib/tracing.js";
+import "./lib/tracing";
 
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -12,12 +12,12 @@ import Fastify from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import fastifyMetrics from "fastify-metrics";
 
-import prisma from "./config/database.js";
-import { closeRedis } from "./config/redis.js";
-import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security.js";
-import { auth } from "./lib/auth.js";
-import routes from "./routes/index.js";
-import { cleanup } from "./utils/database-init.js";
+import prisma from "./config/database";
+import { closeRedis } from "./config/redis";
+import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
+import { auth } from "./lib/auth";
+import routes from "./routes/index";
+import { cleanup } from "./utils/database-init";
 
 dotenv.config();
 

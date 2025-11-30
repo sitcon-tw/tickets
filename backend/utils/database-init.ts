@@ -1,5 +1,5 @@
-import prisma from "#config/database.js";
-import type { Event, Ticket } from "../generated/prisma/index.js";
+import prisma from "#config/database";
+import type { Event, Ticket } from "../generated/prisma/index";
 
 /**
  * Initialize the database with default data

@@ -1,13 +1,13 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { auth } from "#lib/auth.js";
-import { addSpanEvent } from "#lib/tracing.js";
-import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration.js";
-import { safeJsonParse, safeJsonStringify } from "#utils/json.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response.js";
-import { sanitizeObject } from "#utils/sanitize.js";
-import { tracePrismaOperation } from "#utils/trace-db.js";
-import { validateRegistrationFormData } from "#utils/validation.js";
+import prisma from "#config/database";
+import { auth } from "#lib/auth";
+import { addSpanEvent } from "#lib/tracing";
+import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
+import { safeJsonParse, safeJsonStringify } from "#utils/json";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { sanitizeObject } from "#utils/sanitize";
+import { tracePrismaOperation } from "#utils/trace-db";
+import { validateRegistrationFormData } from "#utils/validation";
 
 interface RegistrationCreateRequest {
 	eventId: string;

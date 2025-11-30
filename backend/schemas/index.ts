@@ -4,11 +4,11 @@
  */
 
 // Re-export all schema modules
-export * from "./common.js";
-export * from "./emailCampaign.js";
-export * from "./event.js";
-export * from "./invitationCode.js";
-export * from "./referral.js";
-export * from "./registration.js";
-export * from "./ticket.js";
-export * from "./user.js";
+export * from "./common";
+export * from "./emailCampaign";
+export * from "./event";
+export * from "./invitationCode";
+export * from "./referral";
+export * from "./registration";
+export * from "./ticket";
+export * from "./user";

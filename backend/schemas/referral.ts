@@ -2,7 +2,7 @@
  * Referral-related schema definitions
  */
 
-import { dateTimeString, errorResponse, idParam, successResponse } from "./common.js";
+import { dateTimeString, errorResponse, idParam, successResponse } from "./common";
 
 export const referralProperties = {
 	id: {

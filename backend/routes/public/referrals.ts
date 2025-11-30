@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { auth } from "#lib/auth.js";
-import { referralSchemas, referralStatsResponse } from "#schemas/referral.js";
-import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { auth } from "#lib/auth";
+import { referralSchemas, referralStatsResponse } from "#schemas/referral";
+import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
 
 // Custom param schema for regId parameter
 const regIdParam = {

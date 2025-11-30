@@ -2,7 +2,7 @@
  * User-related schema definitions
  */
 
-import { dateTimeString, errorResponse, idParam, roleEnum, successResponse } from "./common.js";
+import { dateTimeString, errorResponse, idParam, roleEnum, successResponse } from "./common";
 
 export const userProperties = {
 	id: {

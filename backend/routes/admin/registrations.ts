@@ -6,15 +6,15 @@
  * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
-import prisma from "#config/database.js";
-import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth.js";
-import { registrationSchemas } from "#schemas/registration.js";
-import { sendDataDeletionNotification } from "#utils/email.js";
-import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets.js";
-import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
+import { registrationSchemas } from "#schemas/registration";
+import { sendDataDeletionNotification } from "#utils/email";
+import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
+import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api.js";
+import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
 
 /**
  * Admin registrations routes with modular schemas and types

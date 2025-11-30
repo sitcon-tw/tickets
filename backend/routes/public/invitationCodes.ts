@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode.js";
-import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode";
+import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 // Custom param schemas for invitation code routes
 const codeParam = {

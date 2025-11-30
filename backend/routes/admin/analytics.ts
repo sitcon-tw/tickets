@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
-import { requireAdmin } from "#middleware/auth.js";
-import dashboardRoutes from "./analytics/dashboard.js";
-import referralsRoutes from "./analytics/referrals.js";
-import trendsRoutes from "./analytics/trends.js";
+import { requireAdmin } from "#middleware/auth";
+import dashboardRoutes from "./analytics/dashboard";
+import referralsRoutes from "./analytics/referrals";
+import trendsRoutes from "./analytics/trends";
 
 const analyticsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);

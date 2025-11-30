@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 
 const publicTicketsRoutes: FastifyPluginAsync = async (fastify) => {
 	// Get single ticket information (public)

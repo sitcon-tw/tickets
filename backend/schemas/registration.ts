@@ -2,7 +2,7 @@
  * Registration-related schema definitions
  */
 
-import { dateTimeString, errorResponse, idParam, paginationQuery, statusEnum, successResponse } from "./common.js";
+import { dateTimeString, errorResponse, idParam, paginationQuery, statusEnum, successResponse } from "./common";
 
 export const registrationProperties = {
 	id: {

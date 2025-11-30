@@ -1,13 +1,13 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { EventCreateRequest, EventUpdateRequest } from "#types/api.js";
-import type { Event } from "#types/database.js";
+import type { EventCreateRequest, EventUpdateRequest } from "#types/api";
+import type { Event } from "#types/database";
 
-import prisma from "#config/database.js";
-import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth.js";
-import { eventSchemas } from "#schemas/event.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
-import { sanitizeObject } from "#utils/sanitize.js";
+import prisma from "#config/database";
+import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
+import { eventSchemas } from "#schemas/event";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { sanitizeObject } from "#utils/sanitize";
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events

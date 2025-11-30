@@ -3,9 +3,9 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event.js";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
+import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 
 interface EventIdParams {
 	id: string;

@@ -3,8 +3,8 @@
  */
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import prisma from "#config/database.js";
-import { serverErrorResponse, successResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { serverErrorResponse, successResponse } from "#utils/response";
 
 interface RegistrationTrendsQuerystring {
 	period?: "daily" | "weekly" | "monthly";

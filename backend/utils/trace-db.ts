@@ -3,9 +3,9 @@
  * Provides manual tracing for Prisma database operations
  */
 
-import { addSpanEvent, withSpan } from "#lib/tracing.js";
+import { addSpanEvent, withSpan } from "#lib/tracing";
 import type { Span } from "@opentelemetry/api";
-import type { NoopSpan } from "#lib/tracing.js";
+import type { NoopSpan } from "#lib/tracing";
 
 interface QueryParams {
 	where?: any;

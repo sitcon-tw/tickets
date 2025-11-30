@@ -1,11 +1,11 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import type { AdminUserUpdateRequest } from "#types/auth.js";
+import type { AdminUserUpdateRequest } from "#types/auth";
 
-import prisma from "#config/database.js";
-import { requireAdmin } from "#middleware/auth.js";
-import { userSchemas } from "#schemas/user.js";
-import { safeJsonParse } from "#utils/json.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireAdmin } from "#middleware/auth";
+import { userSchemas } from "#schemas/user";
+import { safeJsonParse } from "#utils/json";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminUsersRoutes: FastifyPluginAsync = async (fastify) => {
 	// List users - admin only

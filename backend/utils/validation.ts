@@ -1,4 +1,4 @@
-import { validationErrorResponse } from "./response.js";
+import { validationErrorResponse } from "./response";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 export type ValidationRule = (value: any) => true | string;

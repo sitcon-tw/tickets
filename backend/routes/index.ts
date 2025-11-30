@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
-import adminRoutes from "./admin.js";
-import publicRoutes from "./public.js";
-import systemRoutes from "./system.js";
+import adminRoutes from "./admin";
+import publicRoutes from "./public";
+import systemRoutes from "./system";
 
 const routes: FastifyPluginAsync = async (fastify) => {
 	await fastify.register(publicRoutes, { prefix: "/api" });

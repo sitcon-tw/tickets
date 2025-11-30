@@ -1,16 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
-import { requireAdminOrEventAdmin } from "#middleware/auth.js";
+import { requireAdminOrEventAdmin } from "#middleware/auth";
 
-import analyticsRoutes from "./admin/analytics.js";
-import emailCampaignsRoutes from "./admin/emailCampaigns.js";
-import eventFormFieldsRoutes from "./admin/eventFormFields.js";
-import eventsRoutes from "./admin/events.js";
-import invitationCodesRoutes from "./admin/invitationCodes.js";
-import referralsRoutes from "./admin/referrals.js";
-import registrationsRoutes from "./admin/registrations.js";
-import smsVerificationLogsRoutes from "./admin/smsVerificationLogs.js";
-import ticketsRoutes from "./admin/tickets.js";
-import usersRoutes from "./admin/users.js";
+import analyticsRoutes from "./admin/analytics";
+import emailCampaignsRoutes from "./admin/emailCampaigns";
+import eventFormFieldsRoutes from "./admin/eventFormFields";
+import eventsRoutes from "./admin/events";
+import invitationCodesRoutes from "./admin/invitationCodes";
+import referralsRoutes from "./admin/referrals";
+import registrationsRoutes from "./admin/registrations";
+import smsVerificationLogsRoutes from "./admin/smsVerificationLogs";
+import ticketsRoutes from "./admin/tickets";
+import usersRoutes from "./admin/users";
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.addHook("preHandler", requireAdminOrEventAdmin);

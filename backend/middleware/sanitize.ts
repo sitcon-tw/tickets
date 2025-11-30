@@ -2,7 +2,7 @@
  * @fileoverview Middleware for automatic input sanitization
  */
 
-import { sanitizeObject } from "#utils/sanitize.js";
+import { sanitizeObject } from "#utils/sanitize";
 import type { FastifyRequest, FastifyReply, preHandlerHookHandler } from "fastify";
 
 /**

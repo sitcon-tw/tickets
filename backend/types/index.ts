@@ -4,7 +4,7 @@
  */
 
 // Re-export all type modules
-export * from "./api.js";
-export * from "./auth.js";
-export * from "./database.js";
-export * from "./validation.js";
+export * from "./api";
+export * from "./auth";
+export * from "./database";
+export * from "./validation";

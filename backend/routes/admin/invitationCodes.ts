@@ -1,12 +1,12 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api.js";
-import type { InvitationCode } from "#types/database.js";
+import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api";
+import type { InvitationCode } from "#types/database";
 
-import prisma from "#config/database.js";
-import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth.js";
-import { invitationCodeSchemas } from "#schemas/invitationCode.js";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import prisma from "#config/database";
+import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
+import { invitationCodeSchemas } from "#schemas/invitationCode";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
