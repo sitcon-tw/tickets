@@ -1,5 +1,5 @@
 import { PrismaExtensionRedis } from "prisma-extension-redis";
-import { PrismaClient } from "../generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import { getRedisClient } from "./redis";
 
 // Extend globalThis to include prisma property
@@ -11,10 +11,10 @@ declare global {
 let basePrisma: PrismaClient;
 
 if (process.env.NODE_ENV === "production") {
-	basePrisma = new PrismaClient();
+	basePrisma = new PrismaClient({});
 } else {
 	if (!globalThis.prisma) {
-		globalThis.prisma = new PrismaClient();
+		globalThis.prisma = new PrismaClient({});
 	}
 	basePrisma = globalThis.prisma;
 }
