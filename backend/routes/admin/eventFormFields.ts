@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
 import type { EventFormFields } from "#types/database";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "#generated/prisma/index";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";

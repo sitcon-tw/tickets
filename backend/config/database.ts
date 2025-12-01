@@ -11,10 +11,8 @@ declare global {
 let basePrisma: PrismaClient;
 
 if (process.env.NODE_ENV === "production") {
-	basePrisma = new PrismaClient({});
 } else {
 	if (!globalThis.prisma) {
-		globalThis.prisma = new PrismaClient({});
 	}
 	basePrisma = globalThis.prisma;
 }

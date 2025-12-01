@@ -11,8 +11,7 @@
 		"db:migrate": "prisma migrate dev",
 		"db:sync": "prisma db push",
 		"dev": "tsx scripts/db-init.ts && nodemon --exec tsx app.ts",
-		"postinstall": "prisma generate && node scripts/fix-prisma-engine-type.js",
-		"postgenerate": "node scripts/fix-prisma-engine-type.js",
+		"postinstall": "prisma generate",
 		"start": "tsx scripts/db-init.ts && tsx app.ts",
 		"type-check": "tsc --noEmit"
 	},
