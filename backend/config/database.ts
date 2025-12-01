@@ -1,4 +1,4 @@
-import { PrismaExtensionRedis } from "prisma-extension-redis";
+import { CacheCase, PrismaExtensionRedis } from "prisma-extension-redis";
 import { PrismaClient } from "@prisma/client";
 import { getRedisClient } from "./redis";
 
@@ -56,6 +56,7 @@ const config = {
 	cacheKey: {
 		delimiter: ":",
 		case: "snake_case",
+		case: CacheCase.SNAKE_CASE,
 		prefix: "prisma"
 	}
 };
