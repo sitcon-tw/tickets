@@ -327,7 +327,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
 			} catch (error) {
-				request.log.error("Create registration error:", error);
+				request.log.error({ err: error }, "Create registration error");
 
 				// Handle specific transaction errors
 				if ((error as Error).message === "TICKET_SOLD_OUT") {
@@ -413,7 +413,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				return reply.send(successResponse(registrationsWithStatus));
 			} catch (error) {
-				request.log.error("Get user registrations error:", error);
+				request.log.error({ err: error }, "Get user registrations error");
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -486,7 +486,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				return reply.send(successResponse(registrationWithStatus));
 			} catch (error) {
-				request.log.error("Get registration error:", error);
+				request.log.error({ err: error }, "Get registration error");
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -620,7 +620,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 					)
 				);
 			} catch (error) {
-				request.log.error("Edit registration error:", error);
+				request.log.error({ err: error }, "Edit registration error");
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -696,7 +696,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				return reply.send(successResponse(null, "報名已取消"));
 			} catch (error) {
-				request.log.error("Cancel registration error:", error);
+				request.log.error({ err: error }, "Cancel registration error");
 				const { response, statusCode } = serverErrorResponse("取消報名失敗");
 				return reply.code(statusCode).send(response);
 			}

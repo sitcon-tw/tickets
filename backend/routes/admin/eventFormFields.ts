@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
 import type { EventFormFields } from "#types/database";
-import { Prisma } from "#generated/prisma/index";
+import { Prisma } from "#generated/prisma/index.js";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
@@ -57,8 +57,8 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description || null,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
-						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull)
+						values: values === "" ? (Prisma.DbNull as any) : (values ?? (Prisma.DbNull as any)),
+						filters: filters === "" ? (Prisma.DbNull as any) : (filters ?? (Prisma.DbNull as any))
 					},
 				// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {

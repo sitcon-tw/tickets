@@ -59,7 +59,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
-				request.log.error("Create event error:", error);
+				request.log.error({ err: error }, "Create event error");
 				const { response, statusCode } = serverErrorResponse("創建活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -101,7 +101,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return reply.send(successResponse(event));
 			} catch (error) {
-				request.log.error("Get event error:", error);
+				request.log.error({ err: error }, "Get event error");
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -171,7 +171,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
-				request.log.error("Update event error:", error);
+				request.log.error({ err: error }, "Update event error");
 				const { response, statusCode } = serverErrorResponse("更新活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -221,7 +221,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return reply.send(successResponse(null, "活動刪除成功"));
 			} catch (error) {
-				request.log.error("Delete event error:", error);
+				request.log.error({ err: error }, "Delete event error");
 				const { response, statusCode } = serverErrorResponse("刪除活動失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -265,7 +265,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return reply.send(successResponse(events));
 			} catch (error) {
-				request.log.error("List events error:", error);
+				request.log.error({ err: error }, "List events error");
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
 				return reply.code(statusCode).send(response);
 			}

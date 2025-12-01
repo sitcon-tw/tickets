@@ -99,7 +99,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 					})
 				);
 			} catch (error) {
-				request.log.error("Get permissions error:", error);
+				request.log.error({ err: error }, "Get session error");
 				const { response, statusCode } = serverErrorResponse("取得權限資訊失敗");
 				return reply.code(statusCode).send(response);
 			}

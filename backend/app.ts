@@ -195,7 +195,7 @@ fastify.all(
 
 			return "";
 		} catch (error) {
-			fastify.log.error("Auth handler error:", error);
+			fastify.log.error({ err: error }, "Auth handler error");
 			reply.code(500);
 			return {
 				success: false,
@@ -241,7 +241,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 		try {
 			response = await auth.handler(webRequest);
 		} catch (authError) {
-			fastify.log.error("Better Auth handler error:", authError);
+			fastify.log.error({ err: authError }, "Better Auth handler error:");
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
 		}
 
@@ -276,7 +276,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 					});
 				}
 			} catch (updateError) {
-				fastify.log.warn("Failed to update magic link attempt status:", updateError);
+				fastify.log.warn({ err: updateError }, "Failed to update magic link attempt status");
 				// Don't fail the login if we can't update the attempt
 			}
 
@@ -305,11 +305,11 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=${errorType}`);
 		}
 	} catch (error) {
-		fastify.log.error("Magic link verification error:", {
+		fastify.log.error({
 			error: (error as Error).message,
 			stack: (error as Error).stack,
 			query: request.query
-		});
+		}, "Magic link verification error");
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
 });
@@ -408,7 +408,7 @@ process.on("SIGINT", async () => {
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		fastify.log.error("Error during shutdown:", error);
+		fastify.log.error({ err: error }, "Error during shutdown");
 		process.exit(1);
 	}
 });
@@ -421,7 +421,7 @@ process.on("SIGTERM", async () => {
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		fastify.log.error("Error during shutdown:", error);
+		fastify.log.error({ err: error }, "Error during shutdown");
 		process.exit(1);
 	}
 });

@@ -40,7 +40,7 @@ export const requireAuth: preHandlerHookHandler = async (
 		request.user = session.user;
 		request.session = session;
 	} catch (error) {
-		request.log.error("Auth middleware error:", error);
+		request.log.error({ err: error }, "Auth middleware error");
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
 		return reply.code(statusCode).send(response);
 	}
@@ -48,7 +48,7 @@ export const requireAuth: preHandlerHookHandler = async (
 
 export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
-		await requireAuth.call(this, request, reply);
+		await (requireAuth as any).call(this, request, reply);
 
 		if (reply.sent) return;
 
@@ -72,7 +72,7 @@ export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 
 export const requirePermission = (permission: string): preHandlerHookHandler => {
 	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
-		await requireAuth.call(this, request, reply);
+		await (requireAuth as any).call(this, request, reply);
 
 		if (reply.sent) return;
 
@@ -99,7 +99,7 @@ export const requireEventAccess: preHandlerHookHandler = async function(
 	request: FastifyRequest,
 	reply: FastifyReply
 ): Promise<void> {
-	await requireAuth.call(this, request, reply);
+	await (requireAuth as any).call(this, request, reply);
 
 	if (reply.sent) return;
 
@@ -145,7 +145,7 @@ export const requireEventListAccess: preHandlerHookHandler = async function(
 	request: FastifyRequest,
 	reply: FastifyReply
 ): Promise<void> {
-	await requireAuth.call(this, request, reply);
+	await (requireAuth as any).call(this, request, reply);
 
 	if (reply.sent) return;
 
@@ -187,7 +187,7 @@ export const requireEventAccessViaTicketBody: preHandlerHookHandler = async func
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -208,7 +208,7 @@ export const requireEventAccessViaTicketParam: preHandlerHookHandler = async fun
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -229,7 +229,7 @@ export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async fun
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -250,7 +250,7 @@ export const requireEventAccessViaFieldId: preHandlerHookHandler = async functio
 			request.query = { ...(request.query || {}), eventId: field.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -271,7 +271,7 @@ export const requireEventAccessViaCodeId: preHandlerHookHandler = async function
 			request.query = { ...(request.query || {}), eventId: code.ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -292,7 +292,7 @@ export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async 
 			request.query = { ...(request.query || {}), eventId: registration.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };
 
 /**
@@ -313,5 +313,5 @@ export const requireEventAccessViaTicketId: preHandlerHookHandler = async functi
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply);
+	await (requireEventAccess as any).call(this, request, reply);
 };

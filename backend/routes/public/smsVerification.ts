@@ -137,7 +137,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 				try {
 					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
 				} catch (smsError) {
-					request.log.error("SMS send error:", smsError);
+								request.log.error({ err: smsError }, "SMS send error");
 					const { response, statusCode } = serverErrorResponse("發送簡訊失敗，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
@@ -161,7 +161,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					)
 				);
 			} catch (error) {
-				request.log.error("Send SMS verification error:", error);
+				request.log.error({ err: error }, "Send SMS verification error");
 				const { response, statusCode } = serverErrorResponse("發送驗證碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -277,7 +277,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					)
 				);
 			} catch (error) {
-				request.log.error("Verify SMS code error:", error);
+				request.log.error({ err: error }, "Verify SMS code error");
 				const { response, statusCode } = serverErrorResponse("驗證失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -325,7 +325,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					})
 				);
 			} catch (error) {
-				request.log.error("Get SMS verification status error:", error);
+				request.log.error({ err: error }, "Get SMS verification status error");
 				const { response, statusCode } = serverErrorResponse("取得驗證狀態失敗");
 				return reply.code(statusCode).send(response);
 			}

@@ -88,7 +88,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async (fastify) => {
 					})
 				);
 			} catch (error) {
-				request.log.error("Get SMS verification logs error:", error);
+				request.log.error({ err: error }, "Get SMS verification logs error");
 				const { response, statusCode } = serverErrorResponse("取得簡訊驗證記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -152,7 +152,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async (fastify) => {
 					})
 				);
 			} catch (error) {
-				request.log.error("Get SMS verification stats error:", error);
+				request.log.error({ err: error }, "Get SMS verification stats error");
 				const { response, statusCode } = serverErrorResponse("取得簡訊驗證統計失敗");
 				return reply.code(statusCode).send(response);
 			}
