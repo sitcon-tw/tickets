@@ -7,7 +7,6 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import dotenv from "dotenv";
 import Fastify from "fastify";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import fastifyMetrics from "fastify-metrics";
@@ -18,8 +17,6 @@ import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./
 import { auth } from "./lib/auth";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
-
-dotenv.config();
 
 const fastify = Fastify({
 	logger: true,

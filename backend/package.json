@@ -10,9 +10,9 @@
 	"scripts": {
 		"db:migrate": "prisma migrate dev",
 		"db:sync": "prisma db push",
-		"dev": "tsx scripts/db-init.ts && nodemon --exec tsx app.ts",
+		"dev": "tsx scripts/db-init.ts && nodemon --exec tsx -r dotenv/config app.ts",
 		"postinstall": "prisma generate",
-		"start": "tsx scripts/db-init.ts && tsx app.ts",
+		"start": "tsx scripts/db-init.ts && tsx -r dotenv/config app.ts",
 		"type-check": "tsc --noEmit"
 	},
 	"devDependencies": {
