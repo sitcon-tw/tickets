@@ -2,7 +2,7 @@ import prisma from "../config/database";
 import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
-import type { FastifyRequest, FastifyReply, preHandlerHookHandler, HookHandlerDoneFunction } from "fastify";
+import type { FastifyRequest, FastifyReply, preHandlerHookHandler } from "fastify";
 
 // Extend Fastify request interface to include user and session
 declare module "fastify" {
@@ -47,8 +47,8 @@ export const requireAuth: preHandlerHookHandler = async (
 };
 
 export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
-	return async function(this: any, request: FastifyRequest, reply: FastifyReply, done: HookHandlerDoneFunction): Promise<void> {
-		await requireAuth.call(this, request, reply, done);
+	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+		await requireAuth.call(this, request, reply);
 
 		if (reply.sent) return;
 
@@ -71,8 +71,8 @@ export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 };
 
 export const requirePermission = (permission: string): preHandlerHookHandler => {
-	return async function(this: any, request: FastifyRequest, reply: FastifyReply, done: HookHandlerDoneFunction): Promise<void> {
-		await requireAuth.call(this, request, reply, done);
+	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+		await requireAuth.call(this, request, reply);
 
 		if (reply.sent) return;
 
@@ -97,10 +97,9 @@ export const requireAdminOrEventAdmin = requireRole(["admin", "eventAdmin"]);
 export const requireEventAccess: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
-	await requireAuth.call(this, request, reply, done);
+	await requireAuth.call(this, request, reply);
 
 	if (reply.sent) return;
 
@@ -144,10 +143,9 @@ export const requireEventAccess: preHandlerHookHandler = async function(
 export const requireEventListAccess: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
-	await requireAuth.call(this, request, reply, done);
+	await requireAuth.call(this, request, reply);
 
 	if (reply.sent) return;
 
@@ -177,8 +175,7 @@ export const requireEventListAccess: preHandlerHookHandler = async function(
 export const requireEventAccessViaTicketBody: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { ticketId } = request.body as any;
 	if (ticketId) {
@@ -190,7 +187,7 @@ export const requireEventAccessViaTicketBody: preHandlerHookHandler = async func
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -199,8 +196,7 @@ export const requireEventAccessViaTicketBody: preHandlerHookHandler = async func
 export const requireEventAccessViaTicketParam: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { ticketId } = request.params as any;
 	if (ticketId) {
@@ -212,7 +208,7 @@ export const requireEventAccessViaTicketParam: preHandlerHookHandler = async fun
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -221,8 +217,7 @@ export const requireEventAccessViaTicketParam: preHandlerHookHandler = async fun
 export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { ticketId } = request.query as any;
 	if (ticketId) {
@@ -234,7 +229,7 @@ export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async fun
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -243,8 +238,7 @@ export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async fun
 export const requireEventAccessViaFieldId: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
@@ -256,7 +250,7 @@ export const requireEventAccessViaFieldId: preHandlerHookHandler = async functio
 			request.query = { ...(request.query || {}), eventId: field.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -265,8 +259,7 @@ export const requireEventAccessViaFieldId: preHandlerHookHandler = async functio
 export const requireEventAccessViaCodeId: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
@@ -278,7 +271,7 @@ export const requireEventAccessViaCodeId: preHandlerHookHandler = async function
 			request.query = { ...(request.query || {}), eventId: code.ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -287,8 +280,7 @@ export const requireEventAccessViaCodeId: preHandlerHookHandler = async function
 export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
@@ -300,7 +292,7 @@ export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async 
 			request.query = { ...(request.query || {}), eventId: registration.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };
 
 /**
@@ -309,8 +301,7 @@ export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async 
 export const requireEventAccessViaTicketId: preHandlerHookHandler = async function(
 	this: any,
 	request: FastifyRequest,
-	reply: FastifyReply,
-	done: HookHandlerDoneFunction
+	reply: FastifyReply
 ): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
@@ -322,5 +313,5 @@ export const requireEventAccessViaTicketId: preHandlerHookHandler = async functi
 			request.query = { ...(request.query || {}), eventId: ticket.eventId };
 		}
 	}
-	await requireEventAccess.call(this, request, reply, done);
+	await requireEventAccess.call(this, request, reply);
 };

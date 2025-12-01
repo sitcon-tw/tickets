@@ -1,4 +1,4 @@
-import { CacheCase, PrismaExtensionRedis } from "prisma-extension-redis";
+import { PrismaExtensionRedis } from "prisma-extension-redis";
 import { PrismaClient } from "@prisma/client";
 import { getRedisClient } from "./redis";
 
@@ -11,8 +11,10 @@ declare global {
 let basePrisma: PrismaClient;
 
 if (process.env.NODE_ENV === "production") {
+	basePrisma = new PrismaClient();
 } else {
 	if (!globalThis.prisma) {
+		globalThis.prisma = new PrismaClient();
 	}
 	basePrisma = globalThis.prisma;
 }
@@ -54,7 +56,6 @@ const config = {
 	cacheKey: {
 		delimiter: ":",
 		case: "snake_case",
-		case: CacheCase.SNAKE_CASE,
 		prefix: "prisma"
 	}
 };
