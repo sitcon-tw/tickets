@@ -19,7 +19,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { role, isActive } = request.query;
 
-				// Build where clause
 				const where: any = {};
 				if (role) where.role = role;
 				if (isActive !== undefined) where.isActive = isActive;
@@ -47,7 +46,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { createdAt: "desc" }
 				});
 
-				// Parse permissions from JSON string to array
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions")
@@ -109,7 +107,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Parse permissions from JSON string to array
 				const userWithParsedPermissions = {
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions")
@@ -136,7 +133,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const { id } = request.params;
 				const updateData = request.body;
 
-				// Check if user exists
 				const existingUser = await prisma.user.findUnique({
 					where: { id }
 				});
@@ -146,7 +142,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for email conflicts
 				if (updateData.email && updateData.email !== existingUser.email) {
 					const emailConflict = await prisma.user.findFirst({
 						where: {
@@ -161,14 +156,12 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
-				// Validate role
 				const validRoles = ["admin", "viewer", "eventAdmin"];
 				if (updateData.role && !validRoles.includes(updateData.role)) {
 					const { response, statusCode } = validationErrorResponse("無效的用戶角色");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prepare update data
 				const updatePayload: any = {
 					...updateData,
 					...(updateData.permissions && { permissions: JSON.stringify(updateData.permissions) }),
@@ -192,7 +185,6 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				// Parse permissions from JSON string to array
 				const userWithParsedPermissions = {
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions")

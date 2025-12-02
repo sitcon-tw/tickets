@@ -46,7 +46,6 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Ensure ticketId is defined before proceeding
 				if (!ticketId) {
 					const { response, statusCode } = validationErrorResponse("必須提供票券 ID");
 					return reply.code(statusCode).send(response);
@@ -289,14 +288,11 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { ticketId, isActive } = request.query;
 
-				// Build where clause
 				const where: any = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
-				// For eventAdmins, filter by their accessible events
 				if (request.userEventPermissions) {
-					// Get tickets from events the user has access to
 					const accessibleTickets = await prisma.ticket.findMany({
 						where: { eventId: { in: request.userEventPermissions } },
 						select: { id: true }

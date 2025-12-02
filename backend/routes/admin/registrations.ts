@@ -538,14 +538,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			try {
 				const { eventId, sheetsUrl } = request.body;
 
-				// Validate sheets URL
 				const spreadsheetId = extractSpreadsheetId(sheetsUrl);
 				if (!spreadsheetId) {
 					const { response, statusCode } = validationErrorResponse("無效的 Google Sheets URL");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if event exists
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
@@ -555,7 +553,6 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get registrations for the event
 				const registrations = await prisma.registration.findMany({
 					where: { eventId },
 					include: {
@@ -579,8 +576,6 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					},
 					orderBy: { createdAt: "desc" }
 				});
-
-				// Export to Google Sheets
 				const result = await exportToGoogleSheets(spreadsheetId, registrations);
 
 				if (!result.success) {
@@ -588,7 +583,6 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					return reply.code(statusCode).send(response);
 				}
 
-				// Update event with Google Sheets URL
 				await prisma.event.update({
 					where: { id: eventId },
 					data: { googleSheetsUrl: sheetsUrl }

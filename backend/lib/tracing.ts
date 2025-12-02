@@ -1,6 +1,5 @@
 import { context, SpanStatusCode, trace, type Span, type Tracer } from "@opentelemetry/api";
 
-// Only initialize OpenTelemetry if explicitly enabled
 const isOtelEnabled = process.env.OTEL_ENABLED === "true";
 
 interface NoopSpan {
@@ -23,29 +22,23 @@ if (isOtelEnabled) {
 	const { OTLPTraceExporter } = await import("@opentelemetry/exporter-trace-otlp-http");
 	const { NodeSDK } = await import("@opentelemetry/sdk-node");
 
-	// Configure the OTLP trace exporter to send traces to Tempo
 	const traceExporter = new OTLPTraceExporter({
 		url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://tempo:4318/v1/traces"
 	});
 
-	// Initialize the OpenTelemetry SDK with resource attributes
 	const sdk = new NodeSDK({
 		traceExporter,
 		serviceName: "tickets-backend",
 		instrumentations: [
 			getNodeAutoInstrumentations({
-				// Custom configuration for HTTP instrumentation
 				"@opentelemetry/instrumentation-http": {
 					ignoreIncomingRequestHook: request => {
-						// Ignore health check and metrics endpoints
 						const url = request.url || "";
 						return url === "/health" || url === "/metrics";
 					}
 				},
-				// Custom configuration for Fastify instrumentation
 				"@opentelemetry/instrumentation-fastify": {
 					requestHook: (span, info) => {
-						// Add custom attributes to HTTP spans
 						span.setAttribute("http.route", info.request.routeOptions?.url || "unknown");
 					}
 				}
@@ -56,11 +49,9 @@ if (isOtelEnabled) {
 	sdk.start();
 	console.log("✅ OpenTelemetry tracing initialized");
 
-	// Export tracer for manual instrumentation
 	tracer = trace.getTracer("tickets-backend", "1.0.0");
 } else {
 	console.log("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
-	// Create a no-op tracer
 	tracer = {
 		startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T): T => fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} }),
 		startSpan: (_name?: string): NoopSpan => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })
@@ -83,22 +74,16 @@ interface SpanAttributes {
  */
 export async function withSpan<T>(spanName: string, fn: (span: Span | NoopSpan) => Promise<T>, attributes: SpanAttributes = {}): Promise<T> {
 	if (isOtelEnabled) {
-		// Use real OpenTelemetry tracer
 		return (tracer as Tracer).startActiveSpan(spanName, async (span: Span) => {
 			try {
-				// Add custom attributes
 				Object.entries(attributes).forEach(([key, value]) => {
 					span.setAttribute(key, value);
 				});
 
-				// Execute the function
 				const result = await fn(span);
-
-				// Mark span as successful
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
 			} catch (error) {
-				// Record the error
 				span.recordException(error as Error);
 				span.setStatus({
 					code: SpanStatusCode.ERROR,
@@ -110,7 +95,6 @@ export async function withSpan<T>(spanName: string, fn: (span: Span | NoopSpan) 
 			}
 		});
 	} else {
-		// Use no-op tracer
 		return (tracer as NoopTracer).startActiveSpan(spanName, async (span: NoopSpan) => {
 			return fn(span);
 		});

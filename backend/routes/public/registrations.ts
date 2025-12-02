@@ -7,6 +7,7 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData } from "#utils/validation";
+import { requireAuth } from "#middleware/auth.ts";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {
@@ -21,11 +22,8 @@ interface RegistrationUpdateRequest {
 	formData: Record<string, any>;
 }
 
-const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) => {
-	// Apply preHandler if provided
-	if ((options as any).preHandler) {
-		fastify.addHook("preHandler", (options as any).preHandler);
-	}
+const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
+	fastify.addHook("preHandler", requireAuth);
 
 	// Create new registration
 	fastify.post(

@@ -92,7 +92,6 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Add availability and sale status
 				const now = new Date();
 				const available = ticket.quantity - ticket.soldCount;
 				const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);

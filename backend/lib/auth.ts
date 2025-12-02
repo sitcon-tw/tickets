@@ -28,12 +28,11 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 			sendMagicLink: async ({ email, token, url }, request?) => {
 				const normalizedEmail = email.toLowerCase();
 
-				// Rate limiting: Check for recent magic link attempts (30 seconds)
 				const recentAttempt = await prisma.magicLinkAttempt.findFirst({
 					where: {
 						email: normalizedEmail,
 						createdAt: {
-							gt: new Date(Date.now() - 30000) // Within last 30 seconds
+							gt: new Date(Date.now() - 30000)
 						}
 					},
 					orderBy: {
@@ -51,8 +50,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 				const todayEnd = new Date();
 				todayEnd.setHours(23, 59, 59, 999);
 
-				// Rule 1: Check unsuccessful login attempts since last success (max 3)
-				// Find the most recent successful login
 				const lastSuccessfulLogin = await prisma.magicLinkAttempt.findFirst({
 					where: {
 						email: normalizedEmail,
@@ -63,13 +60,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					}
 				});
 
-				// Count failed attempts since last success
 				const failedAttemptsSinceSuccess = await prisma.magicLinkAttempt.count({
 					where: {
 						email: normalizedEmail,
 						success: false,
 						createdAt: {
-							gt: lastSuccessfulLogin?.createdAt || new Date(0) // Since last success or all time
+							gt: lastSuccessfulLogin?.createdAt || new Date(0)
 						}
 					}
 				});
@@ -78,7 +74,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					throw new Error("登入嘗試次數已達上限（3 次），請稍後再試或聯繫客服");
 				}
 
-				// Rule 2: Check daily successful login limit (max 20 per day)
 				const successfulLoginsToday = await prisma.magicLinkAttempt.count({
 					where: {
 						email: normalizedEmail,
@@ -94,7 +89,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					throw new Error("今日登入次數已達上限（20 次），請明天再試");
 				}
 
-				// IP-based rate limiting (50 per day to prevent abuse)
 				let ipAddress: string | null = null;
 				if (request?.headers) {
 					ipAddress = (request.headers as any)["x-forwarded-for"]?.split(",")[0]?.trim() || (request.headers as any)["x-real-ip"] || (request as any).ip;
@@ -116,12 +110,11 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					}
 				}
 
-				// Record this attempt (success will be updated when user verifies)
 				await prisma.magicLinkAttempt.create({
 					data: {
 						email: normalizedEmail,
 						ipAddress,
-						success: false // Will be updated to true when login succeeds
+						success: false 
 					}
 				});
 
@@ -136,15 +129,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						if (callbackPathParts.length > 0 && ["en", "zh-Hant", "zh-Hans"].includes(callbackPathParts[0])) {
 							locale = callbackPathParts[0];
 						}
-						// Extract returnUrl from callbackURL (path + search params)
 						returnUrl = callbackUrl.pathname + callbackUrl.search;
 					}
 				} catch (e) {
-					// URL parsing failed, use defaults
+					console.error("Error parsing callback URL:", e);
 				}
 
-				// Send users to frontend, which will proxy the verification to backend
-				// Include returnUrl in the verification link
 				let frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;
 				if (returnUrl) {
 					frontendUrl += `&returnUrl=${encodeURIComponent(returnUrl)}`;

@@ -4,7 +4,6 @@ import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 
-// Extend Fastify request interface to include user and session
 declare module "fastify" {
 	interface FastifyRequest {
 		user?: any;

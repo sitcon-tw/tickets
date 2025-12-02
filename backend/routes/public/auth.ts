@@ -80,7 +80,6 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 				const role = user.role || "viewer";
 				const permissions = safeJsonParse(user.permissions, [], "user permissions");
 
-				// Determine capabilities based on role
 				const capabilities = {
 					canManageUsers: role === "admin",
 					canManageAllEvents: role === "admin",

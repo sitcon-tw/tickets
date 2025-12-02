@@ -55,7 +55,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { regId } = request.params;
 
-				// First, verify the registration exists and is confirmed
 				const registration = await prisma.registration.findUnique({
 					where: { id: regId },
 					include: { event: true }
@@ -66,7 +65,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Find existing referral by registration ID
 				let referral = await prisma.referral.findFirst({
 					where: {
 						registrationId: regId,
@@ -81,7 +79,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				// If no referral exists, create one
 				if (!referral) {
 					let referralCode: string;
 					let isUnique = false;
@@ -108,7 +105,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					// Create the referral
 					referral = await prisma.referral.create({
 						data: {
 							code: referralCode!,
@@ -158,7 +154,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { regId } = request.params;
 
-				// Check if user is authenticated
 				const session = await auth.api.getSession({
 					headers: request.headers as any
 				});
@@ -168,7 +163,6 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Find referral by registration ID
 				const referral = await prisma.referral.findFirst({
 					where: {
 						registrationId: regId,
@@ -184,13 +178,11 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if the authenticated user owns this registration
 				if (referral.registration.userId !== session.user.id) {
 					const { response, statusCode } = forbiddenResponse("您無權訪問此推薦統計");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get all referral usages for this referral
 				const referralUsages = await prisma.referralUsage.findMany({
 					where: {
 						referralId: referral.id
@@ -218,16 +210,13 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				// Count successful referrals (confirmed registrations)
 				const successfulReferrals = referralUsages.filter(usage => usage.registration.status === "confirmed");
 
-				// Build referral list with anonymized data for privacy
 				const referralList = referralUsages.map(usage => ({
 					id: usage.registration.id,
 					status: usage.registration.status,
 					ticketName: usage.registration.ticket.name,
 					registeredAt: usage.usedAt,
-					// Don't expose email or other personal info - improved masking
 					email: usage.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
 						const maskedLength = Math.max(3, match.length - start.length - domain.length);
 						return start + "*".repeat(maskedLength) + domain;

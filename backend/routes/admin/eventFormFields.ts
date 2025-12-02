@@ -19,11 +19,9 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		},
 		async function (this: any, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
 			try {
-				// Check event access
 				await requireEventAccess.call(this, request, reply, () => {});
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
 
-				// Verify event exists
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
@@ -33,7 +31,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for duplicate order in the same event
 				const existingOrder = await prisma.eventFormFields.findFirst({
 					where: {
 						eventId,
@@ -129,7 +126,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const { id } = request.params;
 				const updateData = request.body;
 
-				// Check if form field exists
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
 				});
@@ -139,7 +135,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for order conflicts in the same event
 				if (updateData.order !== undefined && updateData.order !== existingField.order) {
 					const orderConflict = await prisma.eventFormFields.findFirst({
 						where: {
@@ -155,18 +150,14 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				}
 
-				// Prepare update data, handling JSON fields properly
 				const data: any = { ...updateData };
 
-				// Remove fields that shouldn't be updated
-				delete data.eventId; // eventId is immutable
+				delete data.eventId;
 
-				// Handle nullable string fields - convert empty strings to null
 				if (updateData.validater === "") data.validater = null;
 				if (updateData.placeholder === "") data.placeholder = null;
 				if (updateData.description === "") data.description = null;
 
-				// Handle JSON fields - ensure proper serialization for PostgreSQL
 				if ("name" in updateData) {
 					if (updateData.name === "" || updateData.name === null) {
 						delete data.name;
@@ -223,7 +214,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { id } = request.params;
 
-				// Check if form field exists
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
 				});
@@ -262,16 +252,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		async function (this: any, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
 			const { eventId } = request.query;
 
-			// Check event access if eventId is provided
 			if (eventId) {
 				await requireEventAccess.call(this, request, reply, () => {});
 			}
 
 			try {
-				// Build where clause
 				const where: any = {};
 				if (eventId) {
-					// Verify event exists
 					const event = await prisma.event.findUnique({
 						where: { id: eventId }
 					});
@@ -306,7 +293,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		}
 	);
 
-	// Bulk update form field orders for an event
 	fastify.put<{
 		Params: { eventId: string };
 		Body: { fieldOrders: Array<{ id: string; order: number }> };
@@ -372,13 +358,11 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		async function (this: any, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
 			const { eventId } = request.params;
 
-			// Check event access
 			await requireEventAccess.call(this, request, reply, () => {});
 
 			try {
 				const { fieldOrders } = request.body;
 
-				// Verify event exists
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
@@ -388,7 +372,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Verify all form fields belong to this event
 				const fieldIds = fieldOrders.map(f => f.id);
 				const existingFields = await prisma.eventFormFields.findMany({
 					where: {
@@ -402,7 +385,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for duplicate orders
 				const orders = fieldOrders.map(f => f.order);
 				const uniqueOrders = new Set(orders);
 				if (orders.length !== uniqueOrders.size) {
@@ -410,7 +392,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				// Update field orders in a transaction
 				await prisma.$transaction(async prisma => {
 					for (const { id, order } of fieldOrders) {
 						await prisma.eventFormFields.update({

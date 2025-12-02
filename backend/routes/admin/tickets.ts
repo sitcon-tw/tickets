@@ -18,7 +18,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden } = request.body;
 
-				// Verify event exists
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
@@ -28,7 +27,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate sale dates
 				if (saleStart && saleEnd) {
 					const saleStartDate = new Date(saleStart);
 					const saleEndDate = new Date(saleEnd);
@@ -43,7 +41,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					// Sale end should not be after event start
 					if (saleEndDate > event.startDate) {
 						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
 						return reply.code(statusCode).send(response);
@@ -135,7 +132,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 				const updateData = request.body;
-
 				// Check if ticket exists
 				const existingTicket = await prisma.ticket.findUnique({
 					where: { id },
@@ -159,13 +155,11 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prevent quantity reduction below sold amount
 				if (updateData.quantity !== undefined && updateData.quantity < existingTicket.soldCount) {
 					const { response, statusCode } = validationErrorResponse(`票券數量不能低於已售出數量 (${existingTicket.soldCount})`);
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate sale dates if provided
 				if (updateData.saleStart || updateData.saleEnd) {
 					const saleStart = updateData.saleStart ? new Date(updateData.saleStart) : existingTicket.saleStart;
 					const saleEnd = updateData.saleEnd ? new Date(updateData.saleEnd) : existingTicket.saleEnd;
@@ -191,7 +185,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
-				// Prepare update data
 				const updatePayload: any = {
 					...updateData,
 					...(updateData.saleStart && { saleStart: new Date(updateData.saleStart) }),
@@ -229,7 +222,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Check if ticket exists
 				const existingTicket = await prisma.ticket.findUnique({
 					where: { id },
 					include: {
@@ -244,7 +236,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Prevent deletion if there are registrations
 				if (existingTicket._count.registrations > 0) {
 					const { response, statusCode } = conflictResponse("無法刪除已有報名的票券");
 					return reply.code(statusCode).send(response);
@@ -279,7 +270,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { eventId, isActive } = request.query;
 
-				// Build where clause
 				const where: any = {};
 				if (eventId) where.eventId = eventId;
 				if (isActive !== undefined) where.isActive = isActive;
@@ -304,7 +294,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { createdAt: "desc" }
 				});
 
-				// Add availability status to each ticket
 				const ticketsWithAvailability = tickets.map(ticket => {
 					const now = new Date();
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
@@ -370,7 +359,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Check if ticket exists
 				const ticket = await prisma.ticket.findUnique({
 					where: { id }
 				});
@@ -380,15 +368,12 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get registration statistics
 				const [salesByStatus, dailySales] = await Promise.all([
-					// Sales by registration status
 					prisma.registration.groupBy({
 						by: ["status"],
 						where: { ticketId: id },
 						_count: { id: true }
 					}),
-					// Daily sales data
 					prisma.$queryRaw`
 						SELECT
 							DATE(createdAt) as date,

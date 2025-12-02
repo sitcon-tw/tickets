@@ -13,7 +13,6 @@ interface SmsLogsQuery {
 }
 
 const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
-	// Apply admin auth middleware
 	fastify.addHook("preHandler", requireAdmin);
 
 	/**
@@ -42,16 +41,13 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { userId, phoneNumber, verified, page = 1, limit = 20 } = request.query;
 
-				// Build where clause
 				const where: any = {};
 				if (userId) where.userId = userId;
 				if (phoneNumber) where.phoneNumber = { contains: phoneNumber };
 				if (typeof verified === "boolean") where.verified = verified;
 
-				// Get total count
 				const total = await prisma.smsVerification.count({ where });
 
-				// Get logs with pagination
 				const logs = await prisma.smsVerification.findMany({
 					where,
 					include: {
@@ -70,7 +66,6 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 					take: limit
 				});
 
-				// Remove sensitive code from response
 				const sanitizedLogs = logs.map(log => ({
 					...log,
 					code: log.verified ? "******" : log.expiresAt < new Date() ? "EXPIRED" : "PENDING"
@@ -110,13 +105,10 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const [totalSent, totalVerified, totalExpired] = await Promise.all([
-					// Total SMS sent
 					prisma.smsVerification.count(),
-					// Total verified
 					prisma.smsVerification.count({
 						where: { verified: true }
 					}),
-					// Total expired (not verified and past expiry)
 					prisma.smsVerification.count({
 						where: {
 							verified: false,
@@ -127,10 +119,8 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 					})
 				]);
 
-				// Get verification success rate
 				const successRate = totalSent > 0 ? ((totalVerified / totalSent) * 100).toFixed(2) : 0;
 
-				// Get recent activity (last 7 days)
 				const sevenDaysAgo = new Date();
 				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 

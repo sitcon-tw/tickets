@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaExtensionRedis } from "prisma-extension-redis";
 import { getRedisClient } from "./redis";
 
-// Extend globalThis to include prisma property
 declare global {
 	var prisma: PrismaClient | undefined;
 }
@@ -18,38 +17,35 @@ if (process.env.NODE_ENV === "production") {
 	basePrisma = globalThis.prisma;
 }
 
-// Configure Redis caching extension
 const redis = getRedisClient();
 
-// Configure auto-caching behavior
 const auto = {
-	excludedModels: [], // No models excluded by default
-	excludedOperations: [], // Cache all operations
+	excludedModels: [],
+	excludedOperations: [],
 	models: [
 		{
 			model: "Event",
-			ttl: 100, // Cache events for 10 seconds (basic info, rarely changes during registration rush)
-			stale: 5 // Allow using stale data for 5 seconds after expiration
+			ttl: 100,
+			stale: 5
 		},
 		{
 			model: "Ticket",
-			ttl: 300, // Cache tickets for 3 seconds (availability needs to be relatively fresh)
-			stale: 1 // Minimal stale period for ticket availability
+			ttl: 300,
+			stale: 1
 		},
 		{
 			model: "EventFormFields",
-			ttl: 100, // Cache event form fields for 10 seconds (static data)
+			ttl: 100,
 			stale: 5
 		}
 	],
-	ttl: 0 // Default: don't cache anything not explicitly listed above
+	ttl: 0
 };
 
-// Configure storage settings
 const config = {
-	ttl: 0, // Default TTL (disabled unless model-specific)
+	ttl: 0,
 	stale: 0,
-	type: "JSON" as const, // Store cache as JSON for complex objects
+	type: "JSON" as const,
 	auto,
 	logger: process.env.REDIS_DEBUG === "true" ? console : undefined,
 	cacheKey: {
@@ -59,7 +55,6 @@ const config = {
 	}
 };
 
-// Define Redis client config interface
 interface RedisClientConfig {
 	host: string;
 	port: number;
@@ -68,11 +63,8 @@ interface RedisClientConfig {
 	db?: number;
 }
 
-// Apply Redis caching extension or use base Prisma client
-// The extension expects Redis connection config
 let prisma: PrismaClient;
 if (redis && process.env.REDIS_URI) {
-	// Parse Redis URI to get connection config
 	const url = new URL(process.env.REDIS_URI);
 
 	const clientConfig: RedisClientConfig = {
@@ -80,14 +72,12 @@ if (redis && process.env.REDIS_URI) {
 		port: parseInt(url.port) || 6379
 	};
 
-	// Add authentication if available in URI
 	if (url.password) {
 		clientConfig.password = url.password;
 	}
 	if (url.username) {
 		clientConfig.username = url.username;
 	}
-	// Parse database number from pathname
 	if (url.pathname && url.pathname.length > 1) {
 		const db = parseInt(url.pathname.substring(1));
 		if (!isNaN(db)) {

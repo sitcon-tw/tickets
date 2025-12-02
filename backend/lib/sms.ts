@@ -85,7 +85,6 @@ export async function sendSMS(phoneNumber: string, message: string, options: SMS
 
 		const data = (await response.json()) as TwSMSResponse;
 
-		// Check for errors
 		if (data.code !== "00000") {
 			throw new Error(`TwSMS API Error: ${data.code} - ${data.text}`);
 		}
