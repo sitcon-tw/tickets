@@ -5,47 +5,8 @@
 
 const TWSMS_API_BASE = "https://api.twsms.com/json";
 
-/**
- * TwSMS API response structure
- */
-interface TwSMSResponse {
-	code: string;
-	text: string;
-	msgid?: string;
-}
+import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "../types/sms";
 
-/**
- * SMS delivery status response
- */
-interface TwSMSStatusResponse {
-	code: string;
-	text: string;
-	statuscode?: string;
-	statustext?: string;
-	donetime?: string;
-}
-
-/**
- * SMS send result
- */
-interface SMSSendResult {
-	success: boolean;
-	msgid: string;
-	code: string;
-	text: string;
-}
-
-/**
- * SMS send options
- */
-interface SMSSendOptions {
-	[key: string]: string | number | undefined;
-}
-
-/**
- * Supported locales for verification codes
- */
-type Locale = "zh-Hant" | "zh-Hans" | "en";
 
 /**
  * Send SMS using TwSMS API

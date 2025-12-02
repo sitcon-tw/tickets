@@ -55,13 +55,8 @@ const config = {
 	}
 };
 
-interface RedisClientConfig {
-	host: string;
-	port: number;
-	password?: string;
-	username?: string;
-	db?: number;
-}
+import type { RedisClientConfig } from "../types/database";
+
 
 let prisma: PrismaClient;
 if (redis && process.env.REDIS_URI) {

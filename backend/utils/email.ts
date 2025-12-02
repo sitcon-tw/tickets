@@ -1,5 +1,5 @@
 import prisma from "#config/database";
-import type { Event, Registration, Ticket } from "@prisma/client";
+import type { Event, Registration, Ticket } from "../types/database";
 import fs from "fs/promises";
 import type { MailtrapClient } from "mailtrap";
 import path from "path";
@@ -21,14 +21,8 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 	return client;
 }
 
-interface EmailSender {
-	email: string;
-	name: string;
-}
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
 
-interface EmailRecipient {
-	email: string;
-}
 
 export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
 	try {
@@ -154,25 +148,7 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 	}
 };
 
-interface TargetAudienceFilters {
-	eventIds?: string[];
-	ticketIds?: string[];
-	registrationStatuses?: string[];
-	hasReferrals?: boolean;
-	registeredAfter?: string;
-	registeredBefore?: string;
-	emailDomains?: string[];
-	roles?: string[];
-	isReferrer?: boolean;
-}
 
-interface RecipientData {
-	email: string;
-	id: string;
-	formData?: any;
-	event?: Event;
-	ticket?: Ticket;
-}
 
 /**
  * Calculate recipients based on target audience filters
@@ -302,22 +278,12 @@ const replaceTemplateVariables = (content: string, data: RecipientData): string 
 	return result;
 };
 
-interface EmailCampaign {
-	subject: string;
-	content: string;
-}
 
-interface CampaignResult {
-	success: boolean;
-	sentCount: number;
-	failedCount: number;
-	totalRecipients: number;
-}
 
 /**
  * Send campaign email to recipients
  */
-export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: RecipientData[]): Promise<CampaignResult> => {
+export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipients: RecipientData[]): Promise<CampaignResult> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
