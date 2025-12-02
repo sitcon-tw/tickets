@@ -1,9 +1,9 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface SendVerificationRequest {
 	phoneNumber: string;
@@ -137,7 +137,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 				try {
 					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
 				} catch (smsError) {
-								request.log.error({ err: smsError }, "SMS send error");
+					request.log.error({ err: smsError }, "SMS send error");
 					const { response, statusCode } = serverErrorResponse("發送簡訊失敗，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}

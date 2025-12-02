@@ -3,9 +3,9 @@
  * Provides manual tracing for Prisma database operations
  */
 
+import type { NoopSpan } from "#lib/tracing";
 import { addSpanEvent, withSpan } from "#lib/tracing";
 import type { Span } from "@opentelemetry/api";
-import type { NoopSpan } from "#lib/tracing";
 
 interface QueryParams {
 	where?: any;
@@ -22,12 +22,7 @@ interface QueryParams {
  * @param queryParams - Query parameters for debugging (optional)
  * @returns Promise resolving to the operation result
  */
-export async function tracePrismaOperation<T>(
-	model: string,
-	operation: string,
-	fn: () => Promise<T>,
-	queryParams: QueryParams = {}
-): Promise<T> {
+export async function tracePrismaOperation<T>(model: string, operation: string, fn: () => Promise<T>, queryParams: QueryParams = {}): Promise<T> {
 	const spanName = `prisma.${model}.${operation}`;
 
 	return withSpan(
@@ -82,11 +77,7 @@ export async function tracePrismaOperation<T>(
  * @param fn - The cache operation function
  * @returns Promise resolving to the operation result
  */
-export async function traceRedisOperation<T>(
-	operation: string,
-	key: string,
-	fn: () => Promise<T>
-): Promise<T> {
+export async function traceRedisOperation<T>(operation: string, key: string, fn: () => Promise<T>): Promise<T> {
 	const spanName = `redis.${operation}`;
 
 	return withSpan(spanName, async (span: Span | NoopSpan) => {
@@ -112,11 +103,7 @@ export async function traceRedisOperation<T>(
  * @param attributes - Additional attributes
  * @returns Promise resolving to the operation result
  */
-export async function traceBusinessOperation<T>(
-	operationName: string,
-	fn: (span: Span | NoopSpan) => Promise<T>,
-	attributes: Record<string, string | number | boolean> = {}
-): Promise<T> {
+export async function traceBusinessOperation<T>(operationName: string, fn: (span: Span | NoopSpan) => Promise<T>, attributes: Record<string, string | number | boolean> = {}): Promise<T> {
 	return withSpan(
 		operationName,
 		async (span: Span | NoopSpan) => {
@@ -142,11 +129,7 @@ export async function traceBusinessOperation<T>(
  * @param fn - The email sending function
  * @returns Promise resolving to the operation result
  */
-export async function traceEmailOperation<T>(
-	recipient: string,
-	subject: string,
-	fn: () => Promise<T>
-): Promise<T> {
+export async function traceEmailOperation<T>(recipient: string, subject: string, fn: () => Promise<T>): Promise<T> {
 	return withSpan(
 		"email.send",
 		async (span: Span | NoopSpan) => {
@@ -172,10 +155,7 @@ export async function traceEmailOperation<T>(
  * @param fn - The SMS sending function
  * @returns Promise resolving to the operation result
  */
-export async function traceSMSOperation<T>(
-	phoneNumber: string,
-	fn: () => Promise<T>
-): Promise<T> {
+export async function traceSMSOperation<T>(phoneNumber: string, fn: () => Promise<T>): Promise<T> {
 	return withSpan("sms.send", async (span: Span | NoopSpan) => {
 		// Mask phone number for privacy (show only last 4 digits)
 		const maskedPhone = phoneNumber.slice(0, -4).replace(/\d/g, "*") + phoneNumber.slice(-4);
@@ -196,11 +176,7 @@ export async function traceSMSOperation<T>(
  * @param attributes - Additional attributes
  * @returns Promise resolving to the validation result
  */
-export async function traceValidation<T>(
-	validationType: string,
-	fn: () => Promise<T>,
-	attributes: Record<string, string | number | boolean> = {}
-): Promise<T> {
+export async function traceValidation<T>(validationType: string, fn: () => Promise<T>, attributes: Record<string, string | number | boolean> = {}): Promise<T> {
 	return withSpan(
 		`validation.${validationType}`,
 		async (span: Span | NoopSpan) => {

@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -12,7 +12,7 @@ interface SmsLogsQuery {
 	limit?: number;
 }
 
-const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async (fastify) => {
+const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	// Apply admin auth middleware
 	fastify.addHook("preHandler", requireAdmin);
 

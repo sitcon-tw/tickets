@@ -1,8 +1,8 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { referralSchemas, referralStatsResponse } from "#schemas/referral";
 import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 // Custom param schema for regId parameter
 const regIdParam = {
@@ -21,7 +21,7 @@ interface ReferralValidateRequest {
 	eventId: string;
 }
 
-const referralRoutes: FastifyPluginAsync = async (fastify) => {
+const referralRoutes: FastifyPluginAsync = async fastify => {
 	// 獲取專屬推薦連結
 	fastify.get(
 		"/registrations/:regId/referral-link",

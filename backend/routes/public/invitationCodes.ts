@@ -1,7 +1,7 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 // Custom param schemas for invitation code routes
 const codeParam = {
@@ -31,7 +31,7 @@ interface InvitationCodeVerifyRequest {
 	ticketId: string;
 }
 
-const invitationCodesRoutes: FastifyPluginAsync = async (fastify) => {
+const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 	// Verify invitation code
 	fastify.post(
 		"/invitation-codes/verify",

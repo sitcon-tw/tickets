@@ -13,8 +13,8 @@ import { sendDataDeletionNotification } from "#utils/email";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -266,7 +266,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 	// Export registrations (CSV/Excel)
 	fastify.get<{
-		Querystring: { eventId?: string; status?: string; format?: 'csv' | 'excel' };
+		Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" };
 	}>(
 		"/registrations/export",
 		{
@@ -295,7 +295,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: 'csv' | 'excel' } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
 			try {
 				const { eventId, status, format = "csv" } = request.query;
 

@@ -7,8 +7,8 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
-import type { FastifyRequest, FastifyReply } from "fastify";
 import fastifyMetrics from "fastify-metrics";
 
 import prisma from "./config/database";
@@ -305,11 +305,14 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=${errorType}`);
 		}
 	} catch (error) {
-		fastify.log.error({
-			error: (error as Error).message,
-			stack: (error as Error).stack,
-			query: request.query
-		}, "Magic link verification error");
+		fastify.log.error(
+			{
+				error: (error as Error).message,
+				stack: (error as Error).stack,
+				query: request.query
+			},
+			"Magic link verification error"
+		);
 		return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=server_error`);
 	}
 });

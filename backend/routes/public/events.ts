@@ -2,10 +2,10 @@
  * @fileoverview Public events routes with modular types and schemas
  */
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface EventIdParams {
 	id: string;
@@ -18,7 +18,7 @@ interface UpcomingQuery {
 /**
  * Public events routes - accessible without authentication
  */
-const publicEventsRoutes: FastifyPluginAsync = async (fastify) => {
+const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	// Get public event information
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/info",

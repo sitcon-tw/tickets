@@ -47,7 +47,7 @@ export interface UserUpdateRequest {
 	image?: string;
 }
 
-export type UserRole = 'admin' | 'viewer' | 'eventAdmin';
+export type UserRole = "admin" | "viewer" | "eventAdmin";
 
 export interface AdminUserUpdateRequest {
 	name?: string;
@@ -73,7 +73,7 @@ export interface AdminUserUpdateRequest {
 export type Permission = string;
 
 export interface RolePermissions {
-	admin: 'admin';
-	viewer: 'viewer';
-	eventAdmin: 'eventAdmin';
+	admin: "admin";
+	viewer: "viewer";
+	eventAdmin: "eventAdmin";
 }

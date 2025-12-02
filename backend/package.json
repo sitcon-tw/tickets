@@ -15,13 +15,6 @@
 		"start": "tsx scripts/db-init.ts && tsx -r dotenv/config app.ts",
 		"type-check": "tsc --noEmit"
 	},
-	"devDependencies": {
-		"@types/better-sqlite3": "^7.6.13",
-		"@types/node": "^24.10.1",
-		"nodemon": "^3.1.11",
-		"tsx": "^4.20.6",
-		"typescript": "^5.9.3"
-	},
 	"dependencies": {
 		"@autotelic/fastify-opentelemetry": "^0.22.1",
 		"@fastify/cors": "^11.1.0",
@@ -49,6 +42,13 @@
 		"mailtrap": "^4.2.0",
 		"prisma": "^6.19.0",
 		"prisma-extension-redis": "^3.4.1"
+	},
+	"devDependencies": {
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/node": "^24.10.1",
+		"nodemon": "^3.1.11",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3"
 	},
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
 }

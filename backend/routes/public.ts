@@ -1,5 +1,5 @@
-import type { FastifyPluginAsync } from "fastify";
 import { requireAuth } from "#middleware/auth";
+import type { FastifyPluginAsync } from "fastify";
 import authRoutes from "./public/auth";
 import eventsRoutes from "./public/events";
 import invitationCodesRoutes from "./public/invitationCodes";
@@ -8,7 +8,7 @@ import registrationsRoutes from "./public/registrations";
 import smsVerificationRoutes from "./public/smsVerification";
 import ticketsRoutes from "./public/tickets";
 
-const publicRoutes: FastifyPluginAsync = async (fastify) => {
+const publicRoutes: FastifyPluginAsync = async fastify => {
 	await fastify.register(authRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);

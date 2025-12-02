@@ -82,8 +82,8 @@ const sanitizeError = (error: any): SafeError => {
 	};
 
 	// Include additional error properties if they exist
-	if ('code' in error) safeError.code = (error as any).code;
-	if ('statusCode' in error) safeError.statusCode = (error as any).statusCode;
+	if ("code" in error) safeError.code = (error as any).code;
+	if ("statusCode" in error) safeError.statusCode = (error as any).statusCode;
 
 	// Redact any potentially sensitive data in the error
 	return redactSensitiveData(safeError);

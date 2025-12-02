@@ -2,8 +2,8 @@
  * @fileoverview Security configuration for the application
  */
 
-import type { FastifyRequest } from "fastify";
 import type { RateLimitPluginOptions, errorResponseBuilderContext } from "@fastify/rate-limit";
+import type { FastifyRequest } from "fastify";
 
 /**
  * Rate limiting configuration
@@ -69,9 +69,7 @@ export const helmetConfig = {
  * CORS configuration
  */
 export const getCorsConfig = () => {
-	const allowedOrigins: (string | RegExp)[] = [process.env.FRONTEND_URI, process.env.BACKEND_URI].filter(
-		(origin): origin is string => Boolean(origin)
-	);
+	const allowedOrigins: (string | RegExp)[] = [process.env.FRONTEND_URI, process.env.BACKEND_URI].filter((origin): origin is string => Boolean(origin));
 
 	if (process.env.NODE_ENV !== "production") {
 		allowedOrigins.push(/^http:\/\/localhost:\d+$/);

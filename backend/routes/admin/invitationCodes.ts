@@ -1,7 +1,6 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { FastifyRequest, FastifyReply } from "fastify";
 import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api";
 import type { InvitationCode } from "#types/database";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";

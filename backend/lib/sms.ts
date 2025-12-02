@@ -83,7 +83,7 @@ export async function sendSMS(phoneNumber: string, message: string, options: SMS
 			}
 		});
 
-		const data = await response.json() as TwSMSResponse;
+		const data = (await response.json()) as TwSMSResponse;
 
 		// Check for errors
 		if (data.code !== "00000") {
@@ -128,7 +128,7 @@ export async function querySMSStatus(phoneNumber: string, msgid: string): Promis
 			method: "GET"
 		});
 
-		const data = await response.json() as TwSMSStatusResponse;
+		const data = (await response.json()) as TwSMSStatusResponse;
 
 		return {
 			code: data.code,

@@ -29,7 +29,7 @@ export interface Event {
 	updatedAt: Date;
 }
 
-export type RegistrationStatus = 'pending' | 'confirmed' | 'cancelled';
+export type RegistrationStatus = "pending" | "confirmed" | "cancelled";
 
 export interface Registration {
 	id: string;
@@ -93,7 +93,7 @@ export interface ReferralUsage {
 	usedAt: Date;
 }
 
-export type EmailCampaignStatus = 'draft' | 'sent' | 'scheduled';
+export type EmailCampaignStatus = "draft" | "sent" | "scheduled";
 
 export interface EmailCampaign {
 	id: string;
@@ -111,7 +111,7 @@ export interface EmailCampaign {
 	updatedAt: Date;
 }
 
-export type EventFormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+export type EventFormFieldType = "text" | "textarea" | "select" | "checkbox" | "radio";
 
 export interface EventFormFields {
 	id: string;

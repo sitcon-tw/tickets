@@ -2,8 +2,8 @@ import { sendMagicLink } from "#utils/email";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
-import { getAdminEmails } from "../config/security";
 import prisma from "../config/database";
+import { getAdminEmails } from "../config/security";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
@@ -159,7 +159,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				before: async (user) => {
+				before: async user => {
 					const adminEmails = getAdminEmails();
 					if (adminEmails.includes(user.email)) {
 						return {

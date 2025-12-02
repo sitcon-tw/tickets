@@ -9,11 +9,7 @@
  * @param context - Context for error logging
  * @returns Parsed object or fallback value
  */
-export const safeJsonParse = <T = any>(
-	jsonString: string | null | undefined,
-	fallback: T = {} as T,
-	_context: string = "unknown"
-): T => {
+export const safeJsonParse = <T = any>(jsonString: string | null | undefined, fallback: T = {} as T, _context: string = "unknown"): T => {
 	if (!jsonString || typeof jsonString !== "string") {
 		return fallback;
 	}
@@ -33,11 +29,7 @@ export const safeJsonParse = <T = any>(
  * @param context - Context for error logging
  * @returns JSON string or fallback
  */
-export const safeJsonStringify = (
-	object: any,
-	fallback: string = "{}",
-	_context: string = "unknown"
-): string => {
+export const safeJsonStringify = (object: any, fallback: string = "{}", _context: string = "unknown"): string => {
 	try {
 		return JSON.stringify(object);
 	} catch (stringifyError) {

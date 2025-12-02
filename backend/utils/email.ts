@@ -1,9 +1,9 @@
 import prisma from "#config/database";
+import type { Event, Registration, Ticket } from "@prisma/client";
 import fs from "fs/promises";
+import type { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { MailtrapClient } from "mailtrap";
-import type { Registration, Event, Ticket } from "@prisma/client";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,11 +30,7 @@ interface EmailRecipient {
 	email: string;
 }
 
-export const sendRegistrationConfirmation = async (
-	registration: Registration,
-	event: Event,
-	qrCodeUrl: string
-): Promise<boolean> => {
+export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -73,11 +69,7 @@ export const sendRegistrationConfirmation = async (
 	}
 };
 
-export const sendEditLink = async (
-	email: string,
-	editToken: string,
-	event: Event
-): Promise<boolean> => {
+export const sendEditLink = async (email: string, editToken: string, event: Event): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -185,9 +177,7 @@ interface RecipientData {
 /**
  * Calculate recipients based on target audience filters
  */
-export const calculateRecipients = async (
-	targetAudience: string | TargetAudienceFilters | null
-): Promise<RecipientData[]> => {
+export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
 	try {
 		const where: any = {};
 
@@ -327,10 +317,7 @@ interface CampaignResult {
 /**
  * Send campaign email to recipients
  */
-export const sendCampaignEmail = async (
-	campaign: EmailCampaign,
-	recipients: RecipientData[]
-): Promise<CampaignResult> => {
+export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: RecipientData[]): Promise<CampaignResult> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -389,11 +376,7 @@ export const sendCampaignEmail = async (
 /**
  * Send invitation codes via email
  */
-export const sendInvitationCodes = async (
-	email: string,
-	codes: string[],
-	groupName?: string
-): Promise<boolean> => {
+export const sendInvitationCodes = async (email: string, codes: string[], groupName?: string): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -472,14 +455,10 @@ export const sendInvitationCodes = async (
 	}
 };
 
-
 /**
  * Send personal data deletion notification to event organizers
  */
-export const sendDataDeletionNotification = async (
-	registration: Registration,
-	event: Event
-): Promise<boolean> => {
+export const sendDataDeletionNotification = async (registration: Registration, event: Event): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {

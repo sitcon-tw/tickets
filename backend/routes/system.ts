@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 
-const systemRoutes: FastifyPluginAsync = async (fastify) => {
+const systemRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/health",
 		{

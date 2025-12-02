@@ -65,7 +65,7 @@ export interface RegistrationCreateRequest {
 
 export interface RegistrationUpdateRequest {
 	formData?: Record<string, any>;
-	status?: import('./database.js').RegistrationStatus;
+	status?: import("./database.js").RegistrationStatus;
 	tags?: string[];
 }
 
@@ -143,7 +143,7 @@ export interface TargetAudience {
 	tags?: string[];
 }
 
-export type SortOrder = 'asc' | 'desc';
+export type SortOrder = "asc" | "desc";
 
 export interface SearchQuery {
 	q?: string;
@@ -163,7 +163,7 @@ export interface AnalyticsData {
 	referralStats: Record<string, any>;
 }
 
-export type FormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+export type FormFieldType = "text" | "textarea" | "select" | "checkbox" | "radio";
 
 export interface EventFormFieldCreateRequest {
 	eventId: string;

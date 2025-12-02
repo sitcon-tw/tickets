@@ -2,9 +2,9 @@
  * @fileoverview Admin analytics trends routes with efficient response functions
  */
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationTrendsQuerystring {
 	period?: "daily" | "weekly" | "monthly";
@@ -99,10 +99,7 @@ const trendsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const totalRegistrations = registrations.length;
 				const totalDays = Object.keys(trendsMap).length;
 				const averagePerDay = totalDays > 0 ? totalRegistrations / totalDays : 0;
-				const peakDay = trends.reduce<{ date: string; total: number; confirmed: number; pending: number; cancelled: number } | null>(
-					(max, day) => (day.total > (max?.total || 0) ? day : max),
-					null
-				);
+				const peakDay = trends.reduce<{ date: string; total: number; confirmed: number; pending: number; cancelled: number } | null>((max, day) => (day.total > (max?.total || 0) ? day : max), null);
 
 				return reply.send(
 					successResponse({

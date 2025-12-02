@@ -2,8 +2,8 @@
  * @fileoverview Google Sheets utilities for exporting registration data
  */
 
-import type { sheets_v4 } from "googleapis";
 import type { JWT } from "google-auth-library";
+import type { sheets_v4 } from "googleapis";
 
 interface GoogleSheetsClient {
 	sheets: sheets_v4.Sheets;
@@ -101,10 +101,7 @@ export function getServiceAccountEmail(): string {
  * @param registrations - Registration data to export
  * @returns Promise resolving to export result
  */
-export async function exportToGoogleSheets(
-	spreadsheetId: string,
-	registrations: RegistrationWithRelations[]
-): Promise<ExportResult> {
+export async function exportToGoogleSheets(spreadsheetId: string, registrations: RegistrationWithRelations[]): Promise<ExportResult> {
 	try {
 		const { sheets } = await getGoogleSheetsClient();
 
@@ -173,15 +170,7 @@ export async function exportToGoogleSheets(
 
 		// Prepare data rows
 		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [
-				reg.id,
-				reg.email,
-				getLocalizedName(reg.event?.name),
-				getLocalizedName(reg.ticket?.name),
-				reg.ticket?.price || 0,
-				reg.status,
-				new Date(reg.createdAt).toISOString()
-			];
+			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
 			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
 

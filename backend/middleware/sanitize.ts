@@ -3,7 +3,7 @@
  */
 
 import { sanitizeObject } from "#utils/sanitize";
-import type { FastifyRequest, FastifyReply, preHandlerHookHandler } from "fastify";
+import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 
 /**
  * Middleware to automatically sanitize request body

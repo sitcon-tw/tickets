@@ -1,8 +1,8 @@
+import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
 import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
-import type { FastifyRequest, FastifyReply, preHandlerHookHandler } from "fastify";
 
 // Extend Fastify request interface to include user and session
 declare module "fastify" {
@@ -13,10 +13,7 @@ declare module "fastify" {
 	}
 }
 
-export const requireAuth: preHandlerHookHandler = async (
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> => {
+export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	try {
 		const session = await auth.api.getSession({
 			headers: request.headers as any
@@ -47,7 +44,7 @@ export const requireAuth: preHandlerHookHandler = async (
 };
 
 export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
-	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+	return async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 		await (requireAuth as any).call(this, request, reply);
 
 		if (reply.sent) return;
@@ -71,7 +68,7 @@ export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 };
 
 export const requirePermission = (permission: string): preHandlerHookHandler => {
-	return async function(this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+	return async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 		await (requireAuth as any).call(this, request, reply);
 
 		if (reply.sent) return;
@@ -94,11 +91,7 @@ export const requireAdminOrEventAdmin = requireRole(["admin", "eventAdmin"]);
  * Admins can access all events, eventAdmins can only access events in their permissions
  * Returns 404 for eventAdmins without permission (to avoid redirect)
  */
-export const requireEventAccess: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccess: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	await (requireAuth as any).call(this, request, reply);
 
 	if (reply.sent) return;
@@ -140,11 +133,7 @@ export const requireEventAccess: preHandlerHookHandler = async function(
  * Middleware to check if user can list events
  * Admins can see all events, eventAdmins can only see their assigned events
  */
-export const requireEventListAccess: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventListAccess: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	await (requireAuth as any).call(this, request, reply);
 
 	if (reply.sent) return;
@@ -172,11 +161,7 @@ export const requireEventListAccess: preHandlerHookHandler = async function(
 /**
  * Helper middleware to check event access via ticketId in request body
  */
-export const requireEventAccessViaTicketBody: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaTicketBody: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { ticketId } = request.body as any;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
@@ -193,11 +178,7 @@ export const requireEventAccessViaTicketBody: preHandlerHookHandler = async func
 /**
  * Helper middleware to check event access via ticketId in params
  */
-export const requireEventAccessViaTicketParam: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaTicketParam: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { ticketId } = request.params as any;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
@@ -214,11 +195,7 @@ export const requireEventAccessViaTicketParam: preHandlerHookHandler = async fun
 /**
  * Helper middleware to check event access via ticketId in query string
  */
-export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { ticketId } = request.query as any;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
@@ -235,11 +212,7 @@ export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async fun
 /**
  * Helper middleware to check event access via form field ID in params
  */
-export const requireEventAccessViaFieldId: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaFieldId: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
 		const field = await prisma.eventFormFields.findUnique({
@@ -256,11 +229,7 @@ export const requireEventAccessViaFieldId: preHandlerHookHandler = async functio
 /**
  * Helper middleware to check event access via invitation code ID in params
  */
-export const requireEventAccessViaCodeId: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaCodeId: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
 		const code = await prisma.invitationCode.findUnique({
@@ -277,11 +246,7 @@ export const requireEventAccessViaCodeId: preHandlerHookHandler = async function
 /**
  * Helper middleware to check event access via registration ID in params
  */
-export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
 		const registration = await prisma.registration.findUnique({
@@ -298,11 +263,7 @@ export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async 
 /**
  * Helper middleware to check event access via ticket ID in params
  */
-export const requireEventAccessViaTicketId: preHandlerHookHandler = async function(
-	this: any,
-	request: FastifyRequest,
-	reply: FastifyReply
-): Promise<void> {
+export const requireEventAccessViaTicketId: preHandlerHookHandler = async function (this: any, request: FastifyRequest, reply: FastifyReply): Promise<void> {
 	const { id } = request.params as any;
 	if (id) {
 		const ticket = await prisma.ticket.findUnique({

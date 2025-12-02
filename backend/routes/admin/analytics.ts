@@ -1,5 +1,5 @@
-import type { FastifyPluginAsync } from "fastify";
 import { requireAdmin } from "#middleware/auth";
+import type { FastifyPluginAsync } from "fastify";
 import dashboardRoutes from "./analytics/dashboard";
 import referralsRoutes from "./analytics/referrals";
 import trendsRoutes from "./analytics/trends";

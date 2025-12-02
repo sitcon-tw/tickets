@@ -1,7 +1,6 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EventCreateRequest, EventUpdateRequest } from "#types/api";
 import type { Event } from "#types/database";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
@@ -39,7 +38,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const event = await prisma.event.create({
+				const event = (await prisma.event.create({
 					data: {
 						name,
 						description,
@@ -55,7 +54,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				}) as Event;
+				})) as Event;
 
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
@@ -79,7 +78,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			try {
 				const { id } = request.params;
 
-				const event = await prisma.event.findUnique({
+				const event = (await prisma.event.findUnique({
 					where: { id },
 					include: {
 						tickets: {
@@ -92,7 +91,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 							}
 						}
 					}
-				}) as Event | null;
+				})) as Event | null;
 
 				if (!event) {
 					const { response, statusCode } = notFoundResponse("活動不存在");
@@ -159,7 +158,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					updatedAt: new Date()
 				};
 
-				const event = await prisma.event.update({
+				const event = (await prisma.event.update({
 					where: { id },
 					data: updatePayload,
 					// @ts-expect-error - uncache is added by prisma-extension-redis
@@ -167,7 +166,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				}) as Event;
+				})) as Event;
 
 				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
@@ -250,7 +249,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					whereClause.id = { in: request.userEventPermissions };
 				}
 
-				const events = await prisma.event.findMany({
+				const events = (await prisma.event.findMany({
 					where: whereClause,
 					include: {
 						_count: {
@@ -261,7 +260,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						}
 					},
 					orderBy: { createdAt: "desc" }
-				}) as Event[];
+				})) as Event[];
 
 				return reply.send(successResponse(events));
 			} catch (error) {

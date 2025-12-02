@@ -1,5 +1,5 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import type { AdminUserUpdateRequest } from "#types/auth";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -7,7 +7,7 @@ import { userSchemas } from "#schemas/user";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-const adminUsersRoutes: FastifyPluginAsync = async (fastify) => {
+const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
 	fastify.get<{ Querystring: { role?: string; isActive?: boolean } }>(
 		"/users",

@@ -1,9 +1,9 @@
 //TODO: This dashboard is not finished.
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
-import type { AnalyticsData } from "#types/api";
 import prisma from "#config/database";
+import type { AnalyticsData } from "#types/api";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// 管理後台儀表板數據
@@ -85,21 +85,22 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 
 				// Group by date
-				const dailyRegistrations = registrationsLast30Days.reduce((acc, reg) => {
-					const date = reg.createdAt.toISOString().split("T")[0];
-					if (!acc[date]) {
-						acc[date] = { date, count: 0, confirmed: 0 };
-					}
-					acc[date].count++;
-					if (reg.status === "confirmed") {
-						acc[date].confirmed++;
-					}
-					return acc;
-				}, {} as Record<string, { date: string; count: number; confirmed: number }>);
-
-				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort(
-					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				const dailyRegistrations = registrationsLast30Days.reduce(
+					(acc, reg) => {
+						const date = reg.createdAt.toISOString().split("T")[0];
+						if (!acc[date]) {
+							acc[date] = { date, count: 0, confirmed: 0 };
+						}
+						acc[date].count++;
+						if (reg.status === "confirmed") {
+							acc[date].confirmed++;
+						}
+						return acc;
+					},
+					{} as Record<string, { date: string; count: number; confirmed: number }>
 				);
+
+				const dailyRegistrationsArray = Object.values(dailyRegistrations).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 				// Get ticket sales summary
 				const ticketSales = await prisma.ticket.findMany({
@@ -121,21 +122,27 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					pendingRegistrations: registrationCounts.pending,
 					cancelledRegistrations: registrationCounts.cancelled,
 					checkedInCount,
-					registrationsByDate: dailyRegistrationsArray.reduce((acc, day) => {
-						acc[day.date] = { total: day.count, confirmed: day.confirmed };
-						return acc;
-					}, {} as Record<string, any>),
-					ticketSales: ticketSales.reduce((acc, ticket) => {
-						acc[ticket.id] = {
-							name: ticket.name,
-							event: ticket.event.name,
-							price: ticket.price,
-							quantity: ticket.quantity,
-							soldCount: ticket.soldCount,
-							revenue: ticket.soldCount * ticket.price
-						};
-						return acc;
-					}, {} as Record<string, any>),
+					registrationsByDate: dailyRegistrationsArray.reduce(
+						(acc, day) => {
+							acc[day.date] = { total: day.count, confirmed: day.confirmed };
+							return acc;
+						},
+						{} as Record<string, any>
+					),
+					ticketSales: ticketSales.reduce(
+						(acc, ticket) => {
+							acc[ticket.id] = {
+								name: ticket.name,
+								event: ticket.event.name,
+								price: ticket.price,
+								quantity: ticket.quantity,
+								soldCount: ticket.soldCount,
+								revenue: ticket.soldCount * ticket.price
+							};
+							return acc;
+						},
+						{} as Record<string, any>
+					),
 					referralStats: await getReferralStats()
 				};
 

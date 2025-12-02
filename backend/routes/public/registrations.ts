@@ -1,4 +1,3 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
@@ -8,6 +7,7 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData } from "#utils/validation";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {
 	eventId: string;
@@ -341,7 +341,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
 					return reply.code(statusCode).send(response);
 				}
-				if ((error as any).name === "ValidationError" || (error as Error).message?.includes("必填") || (error as Error).message?.includes("驗證失敗") || (error as Error).message?.includes("required")) {
+				if (
+					(error as any).name === "ValidationError" ||
+					(error as Error).message?.includes("必填") ||
+					(error as Error).message?.includes("驗證失敗") ||
+					(error as Error).message?.includes("required")
+				) {
 					const { response, statusCode } = validationErrorResponse((error as Error).message || "表單驗證失敗");
 					return reply.code(statusCode).send(response);
 				}

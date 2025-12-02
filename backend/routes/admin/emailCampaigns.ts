@@ -1,6 +1,5 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";

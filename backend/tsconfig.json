@@ -2,9 +2,7 @@
 	"compilerOptions": {
 		"target": "ES2022",
 		"module": "ESNext",
-		"lib": [
-			"ES2022"
-		],
+		"lib": ["ES2022"],
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"allowJs": true,
@@ -24,23 +22,12 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"paths": {
-			"#*": [
-				"./*"
-			]
+			"#*": ["./*"]
 		},
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"allowImportingTsExtensions": true,
 		"noEmit": true
 	},
-	"include": [
-		"**/*.ts",
-		"**/*.js"
-	],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"generated"
-	]
+	"include": ["**/*.ts", "**/*.js"],
+	"exclude": ["node_modules", "dist", "generated"]
 }

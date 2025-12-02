@@ -62,8 +62,7 @@ if (isOtelEnabled) {
 	console.log("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
 	// Create a no-op tracer
 	tracer = {
-		startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T): T =>
-			fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} }),
+		startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T): T => fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} }),
 		startSpan: (_name?: string): NoopSpan => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })
 	};
 }
@@ -152,5 +151,5 @@ export function addSpanEvent(name: string, attributes: SpanAttributes = {}): voi
 	}
 }
 
-export type { NoopSpan };
 export { context, SpanStatusCode, trace, tracer };
+export type { NoopSpan };

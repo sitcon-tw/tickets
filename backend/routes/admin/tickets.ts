@@ -1,12 +1,12 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import type { TicketCreateRequest, TicketUpdateRequest } from "#types/api";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { ticketSchemas } from "#schemas/ticket";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-const adminTicketsRoutes: FastifyPluginAsync = async (fastify) => {
+const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Create new ticket
 	fastify.post<{ Body: TicketCreateRequest }>(
 		"/tickets",

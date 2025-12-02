@@ -2,16 +2,16 @@
  * @fileoverview Auth-related public routes
  */
 
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
  * Auth routes
  */
-const authRoutes: FastifyPluginAsync = async (fastify) => {
+const authRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * GET /api/auth/permissions
 	 * Get current user's permissions and capabilities

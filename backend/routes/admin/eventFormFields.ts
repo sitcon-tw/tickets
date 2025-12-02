@@ -1,8 +1,7 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { FastifyRequest, FastifyReply } from "fastify";
 import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
 import type { EventFormFields } from "#types/database";
 import { Prisma } from "@prisma/client";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
@@ -18,7 +17,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.createEventFormField
 		},
-		async function(this: any, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
+		async function (this: any, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
 			try {
 				// Check event access
 				await requireEventAccess.call(this, request, reply, () => {});
@@ -47,7 +46,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				const formField = await prisma.eventFormFields.create({
+				const formField = (await prisma.eventFormFields.create({
 					data: {
 						eventId,
 						order,
@@ -60,12 +59,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						values: values === "" ? (Prisma.DbNull as any) : (values ?? (Prisma.DbNull as any)),
 						filters: filters === "" ? (Prisma.DbNull as any) : (filters ?? (Prisma.DbNull as any))
 					},
-				// @ts-expect-error - uncache is added by prisma-extension-redis
+					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
 						uncacheKeys: ["prisma:event:*"],
 						hasPattern: true
 					}
-				}) as EventFormFields;
+				})) as EventFormFields;
 
 				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
 			} catch (error) {
@@ -89,7 +88,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { id } = request.params;
 
-				const formField = await prisma.eventFormFields.findUnique({
+				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id },
 					include: {
 						event: {
@@ -99,7 +98,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 							}
 						}
 					}
-				}) as EventFormFields | null;
+				})) as EventFormFields | null;
 
 				if (!formField) {
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
@@ -192,7 +191,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				}
 
-				const formField = await prisma.eventFormFields.update({
+				const formField = (await prisma.eventFormFields.update({
 					where: { id },
 					data,
 					// @ts-expect-error - uncache is added by prisma-extension-redis
@@ -200,7 +199,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						uncacheKeys: ["prisma:event_form_fields:*"],
 						hasPattern: true
 					}
-				}) as EventFormFields;
+				})) as EventFormFields;
 
 				return reply.send(successResponse(formField, "表單欄位更新成功"));
 			} catch (error) {
@@ -260,7 +259,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
-		async function(this: any, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
+		async function (this: any, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
 			const { eventId } = request.query;
 
 			// Check event access if eventId is provided
@@ -269,7 +268,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			}
 
 			try {
-
 				// Build where clause
 				const where: any = {};
 				if (eventId) {
@@ -286,7 +284,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					where.eventId = eventId;
 				}
 
-				const formFields = await prisma.eventFormFields.findMany({
+				const formFields = (await prisma.eventFormFields.findMany({
 					where,
 					include: {
 						event: {
@@ -297,7 +295,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						}
 					},
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
-				}) as EventFormFields[];
+				})) as EventFormFields[];
 
 				return reply.send(successResponse(formFields));
 			} catch (error) {
@@ -371,7 +369,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 			}
 		},
-		async function(this: any, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
+		async function (this: any, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
 			const { eventId } = request.params;
 
 			// Check event access

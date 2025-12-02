@@ -1,5 +1,5 @@
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
-import type { FastifyRequest, FastifyReply } from "fastify";
 
 export type ValidationRule = (value: any) => true | string;
 
@@ -57,15 +57,19 @@ export const rules = {
 		return phoneRegex.test(value.replace(/[-\s]/g, "")) || "電話格式不正確";
 	},
 
-	minLength: (min: number) => (value: any): true | string => {
-		if (!value) return true;
-		return value.toString().length >= min || `最少需要 ${min} 個字元`;
-	},
+	minLength:
+		(min: number) =>
+		(value: any): true | string => {
+			if (!value) return true;
+			return value.toString().length >= min || `最少需要 ${min} 個字元`;
+		},
 
-	maxLength: (max: number) => (value: any): true | string => {
-		if (!value) return true;
-		return value.toString().length <= max || `最多 ${max} 個字元`;
-	},
+	maxLength:
+		(max: number) =>
+		(value: any): true | string => {
+			if (!value) return true;
+			return value.toString().length <= max || `最多 ${max} 個字元`;
+		},
 
 	numeric: (value: any): true | string => {
 		if (!value) return true;
@@ -133,7 +137,6 @@ export const validateQuery = (schema: ValidationSchema) => {
 	};
 };
 
-
 /**
  * Evaluates if a field should be displayed based on its filters
  * @param field - Form field with potential filters
@@ -142,12 +145,7 @@ export const validateQuery = (schema: ValidationSchema) => {
  * @param allFields - All form fields for field-based conditions
  * @returns True if field should be displayed
  */
-const shouldDisplayField = (
-	field: FormField,
-	ticketId: string,
-	formData: Record<string, any>,
-	allFields: FormField[]
-): boolean => {
+const shouldDisplayField = (field: FormField, ticketId: string, formData: Record<string, any>, allFields: FormField[]): boolean => {
 	// If no filters or not enabled, always display
 	if (!field.filters || !field.filters.enabled) {
 		return true;
@@ -209,11 +207,7 @@ const shouldDisplayField = (
  * @param ticketId - Selected ticket ID (for filter evaluation)
  * @returns Validation errors or null if valid
  */
-export const validateRegistrationFormData = (
-	formData: Record<string, any>,
-	formFields: FormField[],
-	ticketId: string | null = null
-): ValidationErrors | null => {
+export const validateRegistrationFormData = (formData: Record<string, any>, formFields: FormField[], ticketId: string | null = null): ValidationErrors | null => {
 	const errors: ValidationErrors = {};
 
 	// Validate each field

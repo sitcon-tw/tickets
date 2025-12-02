@@ -41,11 +41,7 @@ export interface ErrorResponseWithStatus {
  * @param pagination - Pagination info
  * @returns Standardized success response
  */
-export const successResponse = <T = any>(
-	data: T = null as T,
-	message: string = "操作成功",
-	pagination: Pagination | null = null
-): ApiResponse<T> => {
+export const successResponse = <T = any>(data: T = null as T, message: string = "操作成功", pagination: Pagination | null = null): ApiResponse<T> => {
 	const response: ApiResponse<T> = {
 		success: true,
 		message,
@@ -67,12 +63,7 @@ export const successResponse = <T = any>(
  * @param statusCode - HTTP status code
  * @returns Error response with status code
  */
-export const errorResponse = (
-	code: string,
-	message: string,
-	details: any = null,
-	statusCode: number = 400
-): ErrorResponseWithStatus => {
+export const errorResponse = (code: string, message: string, details: any = null, statusCode: number = 400): ErrorResponseWithStatus => {
 	const response: ApiErrorResponse = {
 		success: false,
 		error: {
@@ -121,10 +112,7 @@ export const notFoundResponse = (message: string = "資源不存在"): ErrorResp
  * @param details - Validation error details
  * @returns Validation error response
  */
-export const validationErrorResponse = (
-	message: string = "驗證失敗",
-	details: any = null
-): ErrorResponseWithStatus => {
+export const validationErrorResponse = (message: string = "驗證失敗", details: any = null): ErrorResponseWithStatus => {
 	return errorResponse("VALIDATION_ERROR", message, details, 422);
 };
 
