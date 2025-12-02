@@ -1,9 +1,9 @@
 import prisma from "#config/database";
-import type { Event, Registration, Ticket } from "../types/database";
 import fs from "fs/promises";
 import type { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
+import type { Event, Registration } from "../types/database";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +22,6 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 }
 
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
-
 
 export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
 	try {
@@ -147,8 +146,6 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 		throw new Error(`Failed to send magic link email: ${error.message}`);
 	}
 };
-
-
 
 /**
  * Calculate recipients based on target audience filters
@@ -277,8 +274,6 @@ const replaceTemplateVariables = (content: string, data: RecipientData): string 
 
 	return result;
 };
-
-
 
 /**
  * Send campaign email to recipients

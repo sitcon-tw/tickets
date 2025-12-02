@@ -1,13 +1,13 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
+import { requireAuth } from "#middleware/auth.ts";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData } from "#utils/validation";
-import { requireAuth } from "#middleware/auth.ts";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {

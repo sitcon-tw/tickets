@@ -114,7 +114,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					data: {
 						email: normalizedEmail,
 						ipAddress,
-						success: false 
+						success: false
 					}
 				});
 

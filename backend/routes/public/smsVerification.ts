@@ -1,10 +1,10 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
+import { requireAuth } from "#middleware/auth.ts";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { requireAuth } from "#middleware/auth.ts";
 
 interface SendVerificationRequest {
 	phoneNumber: string;

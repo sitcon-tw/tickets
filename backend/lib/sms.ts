@@ -7,7 +7,6 @@ const TWSMS_API_BASE = "https://api.twsms.com/json";
 
 import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "../types/sms";
 
-
 /**
  * Send SMS using TwSMS API
  * @param phoneNumber - Phone number (09xxxxxxxx for Taiwan, country code + number for international)

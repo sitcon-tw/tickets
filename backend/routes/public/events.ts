@@ -34,11 +34,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-							{ id },
-							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : "" } } 
-						],
+						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
 						isActive: true
 					},
 					select: {
@@ -144,7 +140,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [], 
+					options: field.values || [],
 					order: field.order
 				}));
 
@@ -168,7 +164,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: ticket.saleEnd,
 						requireInviteCode: ticket.requireInviteCode,
 						requireSmsVerification: ticket.requireSmsVerification,
-						formFields 
+						formFields
 					};
 				});
 
@@ -553,7 +549,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [], 
+					options: field.values || [],
 					order: field.order
 				}));
 
