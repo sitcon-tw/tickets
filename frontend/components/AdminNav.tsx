@@ -33,7 +33,6 @@ function AdminNav() {
 
 	const router = useNextRouter();
 
-	// Detect locale from pathname since we're outside NextIntlClientProvider
 	const locale = useMemo(() => {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
 		return detectedLocale || routing.defaultLocale;
@@ -46,7 +45,6 @@ function AdminNav() {
 	const [isMobile, setIsMobile] = useState(false);
 	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
 
-	// Track if data has been loaded to prevent re-fetching
 	const dataLoadedRef = useRef(false);
 
 	const handleLocaleChange = (newLocale: string) => {
@@ -264,7 +262,6 @@ function AdminNav() {
 								return capabilities[requireCapability as keyof UserCapabilities];
 							})
 							.map(({ href, i18nKey }) => {
-								// Remove locale prefix and normalize trailing slashes for comparison
 								const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
 								const normalizedPath = pathWithoutLocale.endsWith("/") ? pathWithoutLocale : pathWithoutLocale + "/";
 								const normalizedHref = href.endsWith("/") ? href : href + "/";
