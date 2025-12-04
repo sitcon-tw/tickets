@@ -6,11 +6,7 @@ import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-
-interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
-	column: Column<TData, TValue>;
-	title: string;
-}
+import { DataTableColumnHeaderProps } from "@/lib/types/data-table";
 
 export function DataTableColumnHeader<TData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
 	if (!column.getCanSort()) {

@@ -2,11 +2,7 @@
 
 import { marked } from "marked";
 import { useMemo } from "react";
-
-interface MarkdownContentProps {
-	content: string;
-	className?: string;
-}
+import { MarkdownContentProps } from "@/lib/types/components";
 
 export default function MarkdownContent({ content, className = "" }: MarkdownContentProps) {
 	const html = useMemo(() => {

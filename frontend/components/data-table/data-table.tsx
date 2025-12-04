@@ -17,13 +17,9 @@ import {
 import * as React from "react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTableProps } from "@/lib/types/data-table";
 
 import { DataTablePagination } from "./data-table-pagination";
-
-interface DataTableProps<TData, TValue> {
-	columns: ColumnDef<TData, TValue>[];
-	data: TData[];
-}
 
 export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
 	const [rowSelection, setRowSelection] = React.useState({});

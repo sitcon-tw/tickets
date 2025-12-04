@@ -10,14 +10,7 @@ import { TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React from "react";
-
-interface FormFieldProps {
-	field: TicketFormField;
-	value: string | boolean | string[];
-	onTextChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-	onCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	pleaseSelectText: string;
-}
+import { FormFieldProps } from "@/lib/types/components";
 
 export function FormField({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
 	const locale = useLocale();

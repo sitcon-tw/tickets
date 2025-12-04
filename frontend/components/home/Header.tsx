@@ -6,10 +6,7 @@ import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-
-interface HeaderProps {
-	eventId: string;
-}
+import { HeaderProps } from "@/lib/types/components";
 
 export default function Header({ eventId }: HeaderProps) {
 	const locale = useLocale();

@@ -1,7 +1,4 @@
-interface AdminHeaderProps {
-	title: string;
-	description?: string;
-}
+import { AdminHeaderProps } from "@/lib/types/components";
 
 export default function AdminHeader({ title, description }: AdminHeaderProps) {
 	return (

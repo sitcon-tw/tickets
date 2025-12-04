@@ -5,10 +5,7 @@ import { Settings2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
-interface DataTableViewOptionsProps<TData> {
-	table: Table<TData>;
-}
+import { DataTableViewOptionsProps } from "@/lib/types/data-table";
 
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
 	return (

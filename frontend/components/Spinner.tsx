@@ -1,9 +1,5 @@
 import { cn } from "@/lib/utils";
-
-interface SpinnerProps {
-	size?: "sm" | "md" | "lg";
-	className?: string;
-}
+import { SpinnerProps } from "@/lib/types/components";
 
 export default function Spinner({ size = "md", className }: SpinnerProps) {
 	const sizeClasses = {

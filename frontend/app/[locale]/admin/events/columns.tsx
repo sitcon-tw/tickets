@@ -3,6 +3,7 @@
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import type { Event } from "@/lib/types/api";
+import { ColumnActions } from "@/lib/types/columns";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type EventWithStatus = Event & {
@@ -13,7 +14,7 @@ export type EventWithStatus = Event & {
 	formattedEndDate: string;
 };
 
-interface ColumnActions {
+interface EventColumnActions extends ColumnActions {
 	onEdit: (event: Event) => void;
 	onDelete: (eventId: string) => void;
 	t: {
@@ -22,7 +23,7 @@ interface ColumnActions {
 	};
 }
 
-export const createEventsColumns = (actions: ColumnActions): ColumnDef<EventWithStatus>[] => [
+export const createEventsColumns = (actions: EventColumnActions): ColumnDef<EventWithStatus>[] => [
 	{
 		accessorKey: "displayName",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Event Name" />,

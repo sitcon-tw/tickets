@@ -2,19 +2,10 @@
 
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { Alert, AlertType, AlertContextType } from "@/lib/types/contexts";
 
-export type AlertType = "success" | "error" | "warning" | "info";
-
-export interface Alert {
-	id: string;
-	message: string;
-	type: AlertType;
-	duration?: number;
-}
-
-interface AlertContextType {
-	showAlert: (message: string, type: AlertType, duration?: number) => void;
-}
+// Re-export for backward compatibility
+export type { Alert, AlertType, AlertContextType };
 
 /**
  * useAlert Hook - Wrapper around shadcn/sonner toast

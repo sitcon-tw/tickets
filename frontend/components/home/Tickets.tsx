@@ -13,11 +13,7 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-
-interface TicketsProps {
-	eventId: string;
-	eventSlug: string;
-}
+import { TicketsProps } from "@/lib/types/components";
 
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const locale = useLocale();

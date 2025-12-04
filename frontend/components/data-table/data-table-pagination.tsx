@@ -5,10 +5,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-r
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface DataTablePaginationProps<TData> {
-	table: Table<TData>;
-}
+import { DataTablePaginationProps } from "@/lib/types/data-table";
 
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
 	return (

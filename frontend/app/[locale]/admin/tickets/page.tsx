@@ -17,24 +17,7 @@ import type { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
-
-// Language fields component
-interface LanguageFieldsProps {
-	ticketName: string;
-	description: string;
-	plainDescription: string;
-	language: string;
-	languageLabel: string;
-	onNameChange: (value: string) => void;
-	onDescriptionChange: (value: string) => void;
-	onPlainDescriptionChange: (value: string) => void;
-	required?: boolean;
-	t: {
-		ticketName: string;
-		description: string;
-		plainDescription: string;
-	};
-}
+import { LanguageFieldsProps } from "@/lib/types/pages";
 
 function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, t }: LanguageFieldsProps) {
 	const placeholders = {

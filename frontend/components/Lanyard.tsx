@@ -13,14 +13,7 @@ const lanyard = "/assets/lanyard.png";
 extend({ MeshLineGeometry, MeshLineMaterial });
 
 import { Text } from "@react-three/drei";
-
-interface LanyardProps {
-	position?: [number, number, number];
-	gravity?: [number, number, number];
-	fov?: number;
-	transparent?: boolean;
-	name?: string;
-}
+import { LanyardProps, BandProps } from "@/lib/types/components";
 
 export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name = "一般票" }: LanyardProps) {
 	return (
@@ -42,14 +35,7 @@ export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], 
 	);
 }
 
-interface BandProps {
-	maxSpeed?: number;
-	minSpeed?: number;
-	name?: string;
-}
-
 function Band({ maxSpeed = 50, minSpeed = 0, name }: BandProps) {
-	const band = useRef<THREE.Mesh & { geometry: MeshLineGeometry }>(null);
 	const fixed = useRef<RapierRigidBody>(null!);
 	const j1 = useRef<RapierRigidBody>(null!);
 	const j2 = useRef<RapierRigidBody>(null!);

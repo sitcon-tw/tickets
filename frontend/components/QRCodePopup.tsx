@@ -3,17 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import generateHash from "@/lib/utils/hash";
+import { QRCodePopupProps } from "@/lib/types/components";
 import { ExternalLink, TriangleAlert, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
-
-interface QRCodePopupProps {
-	isOpen: boolean;
-	onClose: () => void;
-	registrationId: string;
-	registrationTime: string;
-}
 
 export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime }: QRCodePopupProps) {
 	const locale = useLocale();

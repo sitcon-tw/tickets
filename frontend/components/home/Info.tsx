@@ -6,10 +6,7 @@ import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import MarkdownContent from "../MarkdownContent";
 import PageSpinner from "../PageSpinner";
-
-interface InfoProps {
-	eventId: string;
-}
+import { InfoProps } from "@/lib/types/components";
 
 export default function Info({ eventId }: InfoProps) {
 	const locale = useLocale();

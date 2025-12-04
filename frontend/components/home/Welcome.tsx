@@ -6,13 +6,9 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
+import { WelcomeProps } from "@/lib/types/components";
 
 type WelcomeState = "notloggedin" | "registered" | "referral" | "default" | "cancelled";
-
-interface WelcomeProps {
-	eventId: string;
-	eventSlug: string;
-}
 
 export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const locale = useLocale();
