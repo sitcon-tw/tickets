@@ -6,13 +6,14 @@
 	"imports": {
 		"#*": "./*"
 	},
-	"main": "app.js",
+	"main": "app.ts",
 	"scripts": {
 		"db:migrate": "prisma migrate dev",
 		"db:sync": "prisma db push",
-		"dev": "node scripts/db-init.js && nodemon app.js",
+		"dev": "tsx scripts/db-init.ts && nodemon --exec tsx -r dotenv/config app.ts",
 		"postinstall": "prisma generate",
-		"start": "node scripts/db-init.js && node app.js"
+		"start": "tsx scripts/db-init.ts && tsx -r dotenv/config app.ts",
+		"type-check": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@autotelic/fastify-opentelemetry": "^0.22.1",
@@ -28,23 +29,26 @@
 		"@opentelemetry/resources": "^2.2.0",
 		"@opentelemetry/sdk-node": "^0.207.0",
 		"@opentelemetry/semantic-conventions": "^1.37.0",
-		"@prisma/client": "^6.13.0",
-		"@types/better-sqlite3": "^7.6.13",
-		"@types/ioredis": "^5.0.0",
+		"@prisma/client": "^6.19.0",
+		"@types/ioredis": "^4.28.10",
 		"better-auth": "^1.3.5",
 		"better-sqlite3": "^12.2.0",
 		"dotenv": "^17.2.1",
-		"fastify": "^5.4.0",
+		"fastify": "^5.6.2",
 		"fastify-metrics": "^12.1.0",
 		"googleapis": "^166.0.0",
 		"ioredis": "^5.8.1",
 		"isomorphic-dompurify": "^2.28.0",
 		"mailtrap": "^4.2.0",
-		"prisma": "^6.13.0",
-		"prisma-extension-redis": "^2.1.1"
+		"prisma": "^6.19.0",
+		"prisma-extension-redis": "^3.4.1"
 	},
 	"devDependencies": {
-		"nodemon": "^3.1.10"
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/node": "^24.10.1",
+		"nodemon": "^3.1.11",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3"
 	},
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40"
 }
