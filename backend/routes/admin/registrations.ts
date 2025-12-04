@@ -1,9 +1,5 @@
 /**
  * @fileoverview Admin registrations routes with modular types and schemas
- * @typedef {import('#types/database.js').Registration} Registration
- * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
- * @typedef {import('#types/api.js').RegistrationUpdateRequest} RegistrationUpdateRequest
- * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
 import prisma from "#config/database";
@@ -418,10 +414,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			try {
-				await sendDataDeletionNotification(
-					{ id: registration.id, email: registration.email },
-					{ name: String(registration.event.name) }
-				);
+				await sendDataDeletionNotification({ id: registration.id, email: registration.email }, { name: String(registration.event.name) });
 			} catch (emailError) {
 				console.error("Failed to send deletion notification email:", emailError);
 			}

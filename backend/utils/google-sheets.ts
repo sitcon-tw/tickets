@@ -81,33 +81,37 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 
 		const sheetName = "報名系統匯出";
 
-		const spreadsheet = await sheets.spreadsheets.get({
-			spreadsheetId
-		}).catch(error => {
-			console.error("Failed to access sheet:", error);
-			throw new Error("無法存取 Google Sheets，請確認已將服務帳號加入共用");
-		});
+		const spreadsheet = await sheets.spreadsheets
+			.get({
+				spreadsheetId
+			})
+			.catch(error => {
+				console.error("Failed to access sheet:", error);
+				throw new Error("無法存取 Google Sheets，請確認已將服務帳號加入共用");
+			});
 
 		const sheetExists = spreadsheet.data.sheets?.some(sheet => sheet.properties?.title === sheetName);
 
 		if (!sheetExists) {
-			await sheets.spreadsheets.batchUpdate({
-				spreadsheetId,
-				requestBody: {
-					requests: [
-						{
-							addSheet: {
-								properties: {
-									title: sheetName
+			await sheets.spreadsheets
+				.batchUpdate({
+					spreadsheetId,
+					requestBody: {
+						requests: [
+							{
+								addSheet: {
+									properties: {
+										title: sheetName
+									}
 								}
 							}
-						}
-					]
-				}
-			}).catch(error => {
-				console.error("Failed to create sheet:", error);
-				throw new Error("無法建立工作表，請確認已將服務帳號加入共用");
-			});
+						]
+					}
+				})
+				.catch(error => {
+					console.error("Failed to create sheet:", error);
+					throw new Error("無法建立工作表，請確認已將服務帳號加入共用");
+				});
 		}
 
 		const parsedRegistrations = registrations.map(reg => ({
@@ -141,7 +145,15 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 		const headers = [...baseHeaders, ...formDataHeaders];
 
 		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name || ""), getLocalizedName(reg.ticket?.name || ""), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
+			const baseValues = [
+				reg.id,
+				reg.email,
+				getLocalizedName(reg.event?.name || ""),
+				getLocalizedName(reg.ticket?.name || ""),
+				reg.ticket?.price || 0,
+				reg.status,
+				new Date(reg.createdAt).toISOString()
+			];
 
 			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
 

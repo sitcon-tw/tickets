@@ -179,14 +179,10 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 		}
 
 		if (filters.registeredAfter) {
-			where.createdAt = where.createdAt && typeof where.createdAt === "object"
-				? { ...where.createdAt, gte: new Date(filters.registeredAfter) }
-				: { gte: new Date(filters.registeredAfter) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, gte: new Date(filters.registeredAfter) } : { gte: new Date(filters.registeredAfter) };
 		}
 		if (filters.registeredBefore) {
-			where.createdAt = where.createdAt && typeof where.createdAt === "object"
-				? { ...where.createdAt, lte: new Date(filters.registeredBefore) }
-				: { lte: new Date(filters.registeredBefore) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, lte: new Date(filters.registeredBefore) } : { lte: new Date(filters.registeredBefore) };
 		}
 
 		let registrations = await prisma.registration.findMany({

@@ -227,8 +227,7 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 						if (!regex.test(value)) {
 							fieldErrors.push(`${field.description}格式不正確`);
 						}
-					} catch (e) {
-					}
+					} catch (e) {}
 				}
 				break;
 

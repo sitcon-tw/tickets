@@ -340,12 +340,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 				const standardError = error as Error;
-				if (
-					standardError.name === "ValidationError" ||
-					standardError.message?.includes("必填") ||
-					standardError.message?.includes("驗證失敗") ||
-					standardError.message?.includes("required")
-				) {
+				if (standardError.name === "ValidationError" || standardError.message?.includes("必填") || standardError.message?.includes("驗證失敗") || standardError.message?.includes("required")) {
 					const { response, statusCode } = validationErrorResponse((error as Error).message || "表單驗證失敗");
 					return reply.code(statusCode).send(response);
 				}

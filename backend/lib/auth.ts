@@ -95,7 +95,11 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					const forwardedFor = headers["x-forwarded-for"];
 					const realIp = headers["x-real-ip"];
 					const requestWithIp = request as unknown as Record<string, unknown>;
-					ipAddress = (typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined) || (typeof realIp === "string" ? realIp : undefined) || (requestWithIp.ip as string | undefined) || null;
+					ipAddress =
+						(typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined) ||
+						(typeof realIp === "string" ? realIp : undefined) ||
+						(requestWithIp.ip as string | undefined) ||
+						null;
 				}
 
 				if (ipAddress) {
