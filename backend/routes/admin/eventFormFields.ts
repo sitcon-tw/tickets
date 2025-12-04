@@ -1,7 +1,7 @@
 import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
 import type { EventFormFields } from "#types/database";
 import { Prisma } from "@prisma/client";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
@@ -17,7 +17,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.createEventFormField
 		},
-		async function (this: any, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
+		async function (this: FastifyInstance, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
 			try {
 				await requireEventAccess.call(this, request, reply, () => {});
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
@@ -53,8 +53,8 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description || null,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values === "" ? (Prisma.DbNull as any) : (values ?? (Prisma.DbNull as any)),
-						filters: filters === "" ? (Prisma.DbNull as any) : (filters ?? (Prisma.DbNull as any))
+						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
+						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull)
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
@@ -150,7 +150,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				}
 
-				const data: any = { ...updateData };
+				const data: Record<string, unknown> = { ...updateData };
 
 				delete data.eventId;
 
@@ -249,7 +249,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		{
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
-		async function (this: any, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
+		async function (this: FastifyInstance, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
 			const { eventId } = request.query;
 
 			if (eventId) {
@@ -257,7 +257,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			}
 
 			try {
-				const where: any = {};
+				const where: Record<string, unknown> = {};
 				if (eventId) {
 					const event = await prisma.event.findUnique({
 						where: { id: eventId }
@@ -355,7 +355,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 			}
 		},
-		async function (this: any, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
+		async function (this: FastifyInstance, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
 			const { eventId } = request.params;
 
 			await requireEventAccess.call(this, request, reply, () => {});

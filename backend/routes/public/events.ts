@@ -1,7 +1,3 @@
-/**
- * @fileoverview Public events routes with modular types and schemas
- */
-
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
@@ -15,11 +11,7 @@ interface UpcomingQuery {
 	upcoming?: boolean;
 }
 
-/**
- * Public events routes - accessible without authentication
- */
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
-	// Get public event information
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/info",
 		{
@@ -65,7 +57,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get available tickets for an event
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/tickets",
 		{
@@ -279,7 +270,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get event registration statistics (public view)
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/stats",
 		{
@@ -351,7 +341,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get form fields for an event (via ticket ID for backward compatibility)
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
@@ -462,7 +451,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get form fields for an event directly
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/form-fields",
 		{

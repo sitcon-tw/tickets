@@ -32,7 +32,6 @@ interface InvitationCodeVerifyRequest {
 }
 
 const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
-	// Verify invitation code
 	fastify.post(
 		"/invitation-codes/verify",
 		{
@@ -169,7 +168,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get invitation code info by code
 	fastify.get(
 		"/invitation-codes/:code/info",
 		{

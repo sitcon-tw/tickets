@@ -7,7 +7,6 @@ import { ticketSchemas } from "#schemas/ticket";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
-	// Create new ticket
 	fastify.post<{ Body: TicketCreateRequest }>(
 		"/tickets",
 		{
@@ -77,7 +76,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get ticket by ID
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id",
 		{
@@ -121,7 +119,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Update ticket
 	fastify.put<{ Params: { id: string }; Body: TicketUpdateRequest }>(
 		"/tickets/:id",
 		{
@@ -132,7 +129,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 				const updateData = request.body;
-				// Check if ticket exists
+
 				const existingTicket = await prisma.ticket.findUnique({
 					where: { id },
 					include: {
@@ -211,7 +208,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Delete ticket
 	fastify.delete<{ Params: { id: string } }>(
 		"/tickets/:id",
 		{
@@ -317,7 +313,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get ticket sales analytics
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/analytics",
 		{

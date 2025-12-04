@@ -42,7 +42,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {
@@ -180,7 +180,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {
@@ -281,7 +281,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {

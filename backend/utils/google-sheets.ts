@@ -1,7 +1,3 @@
-/**
- * @fileoverview Google Sheets utilities for exporting registration data
- */
-
 import type { JWT } from "google-auth-library";
 import type { sheets_v4 } from "googleapis";
 
@@ -13,20 +9,20 @@ interface GoogleSheetsClient {
 interface ServiceAccountKey {
 	client_email: string;
 	private_key: string;
-	[key: string]: any;
+	[key: string]: string;
 }
 
 interface RegistrationWithRelations {
 	id: string;
 	email: string;
-	formData: any;
+	formData: string | Record<string, unknown>;
 	status: string;
 	createdAt: Date;
 	event?: {
-		name: any;
+		name: string | Record<string, string>;
 	};
 	ticket?: {
-		name: any;
+		name: string | Record<string, string>;
 		price: number;
 	};
 }
@@ -36,13 +32,8 @@ interface ExportResult {
 	message: string;
 }
 
-/**
- * Get authenticated Google Sheets client
- * @returns Promise resolving to Google Sheets client and auth
- */
 export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 	try {
-		// Lazy-load googleapis only when needed
 		const { google } = await import("googleapis");
 
 		const serviceAccountKey: ServiceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
@@ -64,15 +55,8 @@ export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 	}
 }
 
-/**
- * Extract spreadsheet ID from Google Sheets URL
- * @param url - Google Sheets URL
- * @returns Spreadsheet ID or null if invalid
- */
 export function extractSpreadsheetId(url: string): string | null {
 	try {
-		// Match patterns like:
-		// https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit...
 		const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
 		return match ? match[1] : null;
 	} catch (error) {
@@ -81,10 +65,6 @@ export function extractSpreadsheetId(url: string): string | null {
 	}
 }
 
-/**
- * Get the client email from service account
- * @returns Client email
- */
 export function getServiceAccountEmail(): string {
 	try {
 		const serviceAccountKey: ServiceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
@@ -95,49 +75,41 @@ export function getServiceAccountEmail(): string {
 	}
 }
 
-/**
- * Export registrations to Google Sheets
- * @param spreadsheetId - Google Sheets spreadsheet ID
- * @param registrations - Registration data to export
- * @returns Promise resolving to export result
- */
 export async function exportToGoogleSheets(spreadsheetId: string, registrations: RegistrationWithRelations[]): Promise<ExportResult> {
 	try {
 		const { sheets } = await getGoogleSheetsClient();
 
 		const sheetName = "報名系統匯出";
 
-		// Check if sheet exists, create if not
-		try {
-			const spreadsheet = await sheets.spreadsheets.get({
-				spreadsheetId
-			});
+		const spreadsheet = await sheets.spreadsheets.get({
+			spreadsheetId
+		}).catch(error => {
+			console.error("Failed to access sheet:", error);
+			throw new Error("無法存取 Google Sheets，請確認已將服務帳號加入共用");
+		});
 
-			const sheetExists = spreadsheet.data.sheets?.some(sheet => sheet.properties?.title === sheetName);
+		const sheetExists = spreadsheet.data.sheets?.some(sheet => sheet.properties?.title === sheetName);
 
-			if (!sheetExists) {
-				// Create the sheet
-				await sheets.spreadsheets.batchUpdate({
-					spreadsheetId,
-					requestBody: {
-						requests: [
-							{
-								addSheet: {
-									properties: {
-										title: sheetName
-									}
+		if (!sheetExists) {
+			await sheets.spreadsheets.batchUpdate({
+				spreadsheetId,
+				requestBody: {
+					requests: [
+						{
+							addSheet: {
+								properties: {
+									title: sheetName
 								}
 							}
-						]
-					}
-				});
-			}
-		} catch (error) {
-			console.error("Failed to check/create sheet:", error);
-			throw new Error("無法存取 Google Sheets，請確認已將服務帳號加入共用");
+						}
+					]
+				}
+			}).catch(error => {
+				console.error("Failed to create sheet:", error);
+				throw new Error("無法建立工作表，請確認已將服務帳號加入共用");
+			});
 		}
 
-		// Parse form data and collect all form field keys
 		const parsedRegistrations = registrations.map(reg => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData as string) : {}
@@ -150,25 +122,23 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
-		// Helper function to get localized name
-		const getLocalizedName = (nameObj: any): string => {
-			if (!nameObj || typeof nameObj !== "object") return "";
+		const getLocalizedName = (nameObj: string | Record<string, string> | undefined): string => {
+			if (!nameObj) return "";
+			if (typeof nameObj === "string") return nameObj;
+			if (typeof nameObj !== "object") return "";
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
-		// Helper function to format form values
-		const formatFormValue = (value: any): string => {
+		const formatFormValue = (value: unknown): string => {
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
 			return String(value);
 		};
 
-		// Prepare headers
 		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Created At"];
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
-		// Prepare data rows
 		const rows = parsedRegistrations.map(reg => {
 			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
@@ -177,13 +147,11 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 			return [...baseValues, ...formDataValues];
 		});
 
-		// Clear existing data in the sheet
 		await sheets.spreadsheets.values.clear({
 			spreadsheetId,
 			range: `${sheetName}!A:ZZ`
 		});
 
-		// Write new data
 		await sheets.spreadsheets.values.update({
 			spreadsheetId,
 			range: `${sheetName}!A1`,
@@ -197,11 +165,11 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 			success: true,
 			message: `成功匯出 ${registrations.length} 筆報名資料到 Google Sheets`
 		};
-	} catch (error: any) {
+	} catch (error) {
 		console.error("Failed to export to Google Sheets:", error);
 		return {
 			success: false,
-			message: error.message || "匯出到 Google Sheets 失敗"
+			message: error instanceof Error ? error.message : "匯出到 Google Sheets 失敗"
 		};
 	}
 }

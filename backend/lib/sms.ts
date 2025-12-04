@@ -1,19 +1,7 @@
-/**
- * TwSMS (Taiwan SMS) API Integration
- * API Documentation: https://api.twsms.com/
- */
-
 const TWSMS_API_BASE = "https://api.twsms.com/json";
 
 import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "../types/sms";
 
-/**
- * Send SMS using TwSMS API
- * @param phoneNumber - Phone number (09xxxxxxxx for Taiwan, country code + number for international)
- * @param message - SMS content (UTF8 or BIG5 encoding)
- * @param options - Optional parameters
- * @returns API response
- */
 export async function sendSMS(phoneNumber: string, message: string, options: SMSSendOptions = {}): Promise<SMSSendResult> {
 	const username = process.env.TWSMS_USERNAME;
 	const password = process.env.TWSMS_PASSWORD;
@@ -35,38 +23,27 @@ export async function sendSMS(phoneNumber: string, message: string, options: SMS
 		...Object.fromEntries(Object.entries(options).map(([k, v]) => [k, String(v)]))
 	});
 
-	try {
-		const response = await fetch(`${TWSMS_API_BASE}/sms_send.php?${params.toString()}`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/x-www-form-urlencoded"
-			}
-		});
-
-		const data = (await response.json()) as TwSMSResponse;
-
-		if (data.code !== "00000") {
-			throw new Error(`TwSMS API Error: ${data.code} - ${data.text}`);
+	const response = await fetch(`${TWSMS_API_BASE}/sms_send.php?${params.toString()}`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded"
 		}
+	});
 
-		return {
-			success: true,
-			msgid: data.msgid || "",
-			code: data.code,
-			text: data.text
-		};
-	} catch (error) {
-		console.error("Failed to send SMS:", error);
-		throw error;
+	const data = (await response.json()) as TwSMSResponse;
+
+	if (data.code !== "00000") {
+		throw new Error(`TwSMS API Error: ${data.code} - ${data.text}`);
 	}
+
+	return {
+		success: true,
+		msgid: data.msgid || "",
+		code: data.code,
+		text: data.text
+	};
 }
 
-/**
- * Query SMS delivery status
- * @param phoneNumber - Phone number used when sending
- * @param msgid - Message ID from send API
- * @returns Delivery status
- */
 export async function querySMSStatus(phoneNumber: string, msgid: string): Promise<TwSMSStatusResponse> {
 	const username = process.env.TWSMS_USERNAME;
 	const password = process.env.TWSMS_PASSWORD;
@@ -82,41 +59,25 @@ export async function querySMSStatus(phoneNumber: string, msgid: string): Promis
 		msgid
 	});
 
-	try {
-		const response = await fetch(`${TWSMS_API_BASE}/sms_query.php?${params.toString()}`, {
-			method: "GET"
-		});
+	const response = await fetch(`${TWSMS_API_BASE}/sms_query.php?${params.toString()}`, {
+		method: "GET"
+	});
 
-		const data = (await response.json()) as TwSMSStatusResponse;
+	const data = (await response.json()) as TwSMSStatusResponse;
 
-		return {
-			code: data.code,
-			text: data.text,
-			statuscode: data.statuscode,
-			statustext: data.statustext,
-			donetime: data.donetime
-		};
-	} catch (error) {
-		console.error("Failed to query SMS status:", error);
-		throw error;
-	}
+	return {
+		code: data.code,
+		text: data.text,
+		statuscode: data.statuscode,
+		statustext: data.statustext,
+		donetime: data.donetime
+	};
 }
 
-/**
- * Generate a random 6-digit verification code
- * @returns 6-digit code
- */
 export function generateVerificationCode(): string {
 	return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-/**
- * Send a verification code via SMS
- * @param phoneNumber - Phone number to send to
- * @param code - Verification code
- * @param locale - Language locale (zh-Hant, zh-Hans, en)
- * @returns API response
- */
 export async function sendVerificationCode(phoneNumber: string, code: string, locale: Locale = "zh-Hant"): Promise<SMSSendResult> {
 	const messages: Record<Locale, string> = {
 		"zh-Hant": `[SITCON] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(twsms)`,
@@ -131,9 +92,6 @@ export async function sendVerificationCode(phoneNumber: string, code: string, lo
 	});
 }
 
-/**
- * Error codes reference for TwSMS API
- */
 export const TWSMS_ERROR_CODES: Record<string, string> = {
 	"00000": "Success",
 	"00011": "Account error",
@@ -144,9 +102,6 @@ export const TWSMS_ERROR_CODES: Record<string, string> = {
 	"00110": "No message content"
 };
 
-/**
- * Delivery status codes
- */
 export const TWSMS_STATUS_CODES: Record<string, string> = {
 	DELIVRD: "Successfully delivered",
 	EXPIRED: "Message expired",

@@ -1,5 +1,6 @@
 import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api";
 import type { InvitationCode } from "#types/database";
+import type { Prisma } from "@prisma/client";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
@@ -195,7 +196,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				// Update invitation code in transaction
 				const invitationCode: InvitationCode = await prisma.$transaction(async tx => {
-					const updatePayload: any = {};
+					const updatePayload: Record<string, unknown> = {};
 					if (code !== undefined) updatePayload.code = code;
 					if (name !== undefined) updatePayload.name = name;
 					if (usageLimit !== undefined) updatePayload.usageLimit = usageLimit;
@@ -288,7 +289,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { ticketId, isActive } = request.query;
 
-				const where: any = {};
+				const where: Record<string, unknown> = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
@@ -423,7 +424,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				const codes: any[] = [];
+				const codes: Array<Prisma.InvitationCodeCreateInput> = [];
 				const existingCodes = await prisma.invitationCode.findMany({
 					where: { ticketId },
 					select: { code: true }
@@ -445,7 +446,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 
 					codes.push({
-						ticketId,
+						ticket: { connect: { id: ticketId } },
 						code,
 						name: `批量生成的邀請碼 - ${prefix}`,
 						usageLimit,
