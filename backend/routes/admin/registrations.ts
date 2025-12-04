@@ -1,9 +1,5 @@
 /**
  * @fileoverview Admin registrations routes with modular types and schemas
- * @typedef {import('#types/database.js').Registration} Registration
- * @typedef {import('#types/api.js').RegistrationCreateRequest} RegistrationCreateRequest
- * @typedef {import('#types/api.js').RegistrationUpdateRequest} RegistrationUpdateRequest
- * @typedef {import('#types/api.js').PaginationQuery} PaginationQuery
  */
 
 import prisma from "#config/database";
@@ -29,91 +25,85 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: registrationSchemas.listRegistrations
 		},
 		async (request: FastifyRequest<{ Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string } }>, reply: FastifyReply) => {
-			try {
-				const { page = 1, limit = 20, eventId, status, userId } = request.query;
+			const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
-				const where: any = {};
-				if (eventId) where.eventId = eventId;
-				if (status) where.status = status;
-				if (userId) where.userId = userId;
+			const where: any = {};
+			if (eventId) where.eventId = eventId;
+			if (status) where.status = status;
+			if (userId) where.userId = userId;
 
-				const total = await prisma.registration.count({ where });
+			const total = await prisma.registration.count({ where });
 
-				/** @type {Registration[]} */
-				const registrations = await prisma.registration.findMany({
-					where,
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								id: true,
-								name: true,
-								startDate: true,
-								endDate: true
-							}
-						},
-						ticket: {
-							select: {
-								id: true,
-								name: true,
-								price: true
-							}
-						},
-						referral: {
-							select: {
-								id: true,
-								code: true
-							}
+			/** @type {Registration[]} */
+			const registrations = await prisma.registration.findMany({
+				where,
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true
 						}
 					},
-					orderBy: { createdAt: "desc" },
-					skip: (page - 1) * limit,
-					take: limit
-				});
-				const parsedRegistrations = registrations.map(reg => {
-					let parsedFormData = {};
-					try {
-						if (reg.formData) {
-							parsedFormData = JSON.parse(reg.formData);
+					event: {
+						select: {
+							id: true,
+							name: true,
+							startDate: true,
+							endDate: true
 						}
-					} catch (error) {
-						console.error(`Failed to parse formData for registration ${reg.id}:`, error);
-						console.error(`Raw formData was:`, reg.formData);
+					},
+					ticket: {
+						select: {
+							id: true,
+							name: true,
+							price: true
+						}
+					},
+					referral: {
+						select: {
+							id: true,
+							code: true
+						}
 					}
+				},
+				orderBy: { createdAt: "desc" },
+				skip: (page - 1) * limit,
+				take: limit
+			});
+			const parsedRegistrations = registrations.map(reg => {
+				let parsedFormData = {};
+				try {
+					if (reg.formData) {
+						parsedFormData = JSON.parse(reg.formData);
+					}
+				} catch (error) {
+					console.error(`Failed to parse formData for registration ${reg.id}:`, error);
+					console.error(`Raw formData was:`, reg.formData);
+				}
 
-					const plainReg = {
-						id: reg.id,
-						eventId: reg.eventId,
-						ticketId: reg.ticketId,
-						email: reg.email,
-						status: reg.status,
-						referredBy: reg.referredBy || "",
-						formData: parsedFormData,
-						createdAt: reg.createdAt,
-						updatedAt: reg.updatedAt,
-						user: reg.user,
-						event: reg.event,
-						ticket: reg.ticket,
-						referral: reg.referral
-					};
+				const plainReg = {
+					id: reg.id,
+					eventId: reg.eventId,
+					ticketId: reg.ticketId,
+					email: reg.email,
+					status: reg.status,
+					referredBy: reg.referredBy || "",
+					formData: parsedFormData,
+					createdAt: reg.createdAt,
+					updatedAt: reg.updatedAt,
+					user: reg.user,
+					event: reg.event,
+					ticket: reg.ticket,
+					referral: reg.referral
+				};
 
-					return plainReg;
-				});
+				return plainReg;
+			});
 
-				const pagination = createPagination(page, limit, total);
+			const pagination = createPagination(page, limit, total);
 
-				return reply.send(successResponse(parsedRegistrations, "取得報名列表成功", pagination));
-			} catch (error) {
-				console.error("List registrations error:", error);
-				const { response, statusCode } = serverErrorResponse("取得報名列表失敗");
-				return reply.code(statusCode).send(response);
-			}
+			return reply.send(successResponse(parsedRegistrations, "取得報名列表成功", pagination));
 		}
 	);
 
@@ -127,63 +117,57 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			try {
-				const { id } = request.params;
+			const { id } = request.params;
 
-				/** @type {Registration | null} */
-				const registration = await prisma.registration.findUnique({
-					where: { id },
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								email: true,
-								role: true
-							}
-						},
-						event: {
-							select: {
-								id: true,
-								name: true,
-								startDate: true,
-								endDate: true,
-								location: true
-							}
-						},
-						ticket: {
-							select: {
-								id: true,
-								name: true,
-								description: true,
-								price: true
-							}
-						},
-						referral: {
-							select: {
-								id: true,
-								code: true
-							}
+			/** @type {Registration | null} */
+			const registration = await prisma.registration.findUnique({
+				where: { id },
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+							role: true
+						}
+					},
+					event: {
+						select: {
+							id: true,
+							name: true,
+							startDate: true,
+							endDate: true,
+							location: true
+						}
+					},
+					ticket: {
+						select: {
+							id: true,
+							name: true,
+							description: true,
+							price: true
+						}
+					},
+					referral: {
+						select: {
+							id: true,
+							code: true
 						}
 					}
-				});
-
-				if (!registration) {
-					const { response, statusCode } = notFoundResponse("報名記錄不存在");
-					return reply.code(statusCode).send(response);
 				}
+			});
 
-				const parsedRegistration = {
-					...registration,
-					formData: registration.formData ? JSON.parse(registration.formData) : {}
-				};
-
-				return reply.send(successResponse(parsedRegistration));
-			} catch (error) {
-				console.error("Get registration error:", error);
-				const { response, statusCode } = serverErrorResponse("取得報名詳情失敗");
+			if (!registration) {
+				const { response, statusCode } = notFoundResponse("報名記錄不存在");
 				return reply.code(statusCode).send(response);
 			}
+
+			const parsedRegistration = {
+				...registration,
+				formData: registration.formData ? JSON.parse(registration.formData) : {}
+			};
+
+			return reply.send(successResponse(parsedRegistration));
 		}
 	);
 
@@ -198,69 +182,63 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
 		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
-			try {
-				const { id } = request.params;
-				const updateData = request.body;
+			const { id } = request.params;
+			const updateData = request.body;
 
-				const existingRegistration = await prisma.registration.findUnique({
-					where: { id },
-					include: {
-						event: {
-							select: {
-								startDate: true,
-								endDate: true
-							}
+			const existingRegistration = await prisma.registration.findUnique({
+				where: { id },
+				include: {
+					event: {
+						select: {
+							startDate: true,
+							endDate: true
 						}
 					}
-				});
-
-				if (!existingRegistration) {
-					const { response, statusCode } = notFoundResponse("報名記錄不存在");
-					return reply.code(statusCode).send(response);
 				}
+			});
 
-				if (updateData.status && new Date() > existingRegistration.event.endDate) {
-					const { response, statusCode } = validationErrorResponse("活動已結束，無法修改報名狀態");
-					return reply.code(statusCode).send(response);
-				}
-
-				/** @type {Registration} */
-				const registration = await prisma.registration.update({
-					where: { id },
-					data: {
-						...(updateData as any),
-						updatedAt: new Date()
-					},
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								id: true,
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								id: true,
-								name: true,
-								price: true
-							}
-						}
-					}
-				});
-
-				return reply.send(successResponse(registration, "報名更新成功"));
-			} catch (error) {
-				console.error("Update registration error:", error);
-				const { response, statusCode } = serverErrorResponse("更新報名失敗");
+			if (!existingRegistration) {
+				const { response, statusCode } = notFoundResponse("報名記錄不存在");
 				return reply.code(statusCode).send(response);
 			}
+
+			if (updateData.status && new Date() > existingRegistration.event.endDate) {
+				const { response, statusCode } = validationErrorResponse("活動已結束，無法修改報名狀態");
+				return reply.code(statusCode).send(response);
+			}
+
+			/** @type {Registration} */
+			const registration = await prisma.registration.update({
+				where: { id },
+				data: {
+					...updateData,
+					updatedAt: new Date()
+				},
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
+					event: {
+						select: {
+							id: true,
+							name: true
+						}
+					},
+					ticket: {
+						select: {
+							id: true,
+							name: true,
+							price: true
+						}
+					}
+				}
+			});
+
+			return reply.send(successResponse(registration, "報名更新成功"));
 		}
 	);
 
@@ -296,50 +274,44 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
-			try {
-				const { eventId, status, format = "csv" } = request.query;
+			const { eventId, status, format = "csv" } = request.query;
 
-				const where: any = {};
-				if (eventId) where.eventId = eventId;
-				if (status) where.status = status;
+			const where: any = {};
+			if (eventId) where.eventId = eventId;
+			if (status) where.status = status;
 
-				/** @type {Registration[]} */
-				const registrations = await prisma.registration.findMany({
-					where,
-					include: {
-						user: {
-							select: {
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								name: true,
-								price: true
-							}
+			/** @type {Registration[]} */
+			const registrations = await prisma.registration.findMany({
+				where,
+				include: {
+					user: {
+						select: {
+							name: true,
+							email: true
 						}
 					},
-					orderBy: { createdAt: "desc" }
-				});
+					event: {
+						select: {
+							name: true
+						}
+					},
+					ticket: {
+						select: {
+							name: true,
+							price: true
+						}
+					}
+				},
+				orderBy: { createdAt: "desc" }
+			});
 
-				const timestamp = Date.now();
-				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
+			const timestamp = Date.now();
+			const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
-				const csvContent = generateCSV(registrations);
-				reply.header("Content-Type", "text/csv; charset=utf-8");
-				reply.header("Content-Disposition", `attachment; filename="${filename}"`);
-				return reply.send("\uFEFF" + csvContent);
-			} catch (error) {
-				console.error("Export registrations error:", error);
-				const { response, statusCode } = serverErrorResponse("匯出失敗");
-				return reply.code(statusCode).send(response);
-			}
+			const csvContent = generateCSV(registrations);
+			reply.header("Content-Type", "text/csv; charset=utf-8");
+			reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+			return reply.send("\uFEFF" + csvContent);
 		}
 	);
 
@@ -416,44 +388,38 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			try {
-				const { id } = request.params;
+			const { id } = request.params;
 
-				const registration = await prisma.registration.findUnique({
-					where: { id },
-					include: {
-						event: {
-							select: {
-								id: true,
-								name: true,
-								startDate: true,
-								endDate: true
-							}
+			const registration = await prisma.registration.findUnique({
+				where: { id },
+				include: {
+					event: {
+						select: {
+							id: true,
+							name: true,
+							startDate: true,
+							endDate: true
 						}
 					}
-				});
-
-				if (!registration) {
-					const { response, statusCode } = notFoundResponse("報名記錄不存在");
-					return reply.code(statusCode).send(response);
 				}
+			});
 
-				await prisma.registration.delete({
-					where: { id }
-				});
-
-				try {
-					await sendDataDeletionNotification(registration, registration.event as any);
-				} catch (emailError) {
-					console.error("Failed to send deletion notification email:", emailError);
-				}
-
-				return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除，通知信已發送給活動主辦方"));
-			} catch (error) {
-				console.error("Delete registration error:", error);
-				const { response, statusCode } = serverErrorResponse("刪除報名記錄失敗");
+			if (!registration) {
+				const { response, statusCode } = notFoundResponse("報名記錄不存在");
 				return reply.code(statusCode).send(response);
 			}
+
+			await prisma.registration.delete({
+				where: { id }
+			});
+
+			try {
+				await sendDataDeletionNotification({ id: registration.id, email: registration.email }, { name: String(registration.event.name) });
+			} catch (emailError) {
+				console.error("Failed to send deletion notification email:", emailError);
+			}
+
+			return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除，通知信已發送給活動主辦方"));
 		}
 	);
 
@@ -481,14 +447,8 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (_request: FastifyRequest, reply: FastifyReply) => {
-			try {
-				const email = getServiceAccountEmail();
-				return reply.send(successResponse({ email }));
-			} catch (error) {
-				console.error("Get service account email error:", error);
-				const { response, statusCode } = serverErrorResponse("取得服務帳號 Email 失敗");
-				return reply.code(statusCode).send(response);
-			}
+			const email = getServiceAccountEmail();
+			return reply.send(successResponse({ email }));
 		}
 	);
 
@@ -535,79 +495,67 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
-			try {
-				const { eventId, sheetsUrl } = request.body;
+			const { eventId, sheetsUrl } = request.body;
 
-				// Validate sheets URL
-				const spreadsheetId = extractSpreadsheetId(sheetsUrl);
-				if (!spreadsheetId) {
-					const { response, statusCode } = validationErrorResponse("無效的 Google Sheets URL");
-					return reply.code(statusCode).send(response);
-				}
-
-				// Check if event exists
-				const event = await prisma.event.findUnique({
-					where: { id: eventId }
-				});
-
-				if (!event) {
-					const { response, statusCode } = notFoundResponse("活動不存在");
-					return reply.code(statusCode).send(response);
-				}
-
-				// Get registrations for the event
-				const registrations = await prisma.registration.findMany({
-					where: { eventId },
-					include: {
-						user: {
-							select: {
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								name: true,
-								price: true
-							}
-						}
-					},
-					orderBy: { createdAt: "desc" }
-				});
-
-				// Export to Google Sheets
-				const result = await exportToGoogleSheets(spreadsheetId, registrations);
-
-				if (!result.success) {
-					const { response, statusCode } = serverErrorResponse(result.message);
-					return reply.code(statusCode).send(response);
-				}
-
-				// Update event with Google Sheets URL
-				await prisma.event.update({
-					where: { id: eventId },
-					data: { googleSheetsUrl: sheetsUrl }
-				});
-
-				return reply.send(
-					successResponse(
-						{
-							count: registrations.length,
-							sheetsUrl
-						},
-						result.message
-					)
-				);
-			} catch (error) {
-				console.error("Sync to Google Sheets error:", error);
-				const { response, statusCode } = serverErrorResponse("同步到 Google Sheets 失敗");
+			const spreadsheetId = extractSpreadsheetId(sheetsUrl);
+			if (!spreadsheetId) {
+				const { response, statusCode } = validationErrorResponse("無效的 Google Sheets URL");
 				return reply.code(statusCode).send(response);
 			}
+
+			const event = await prisma.event.findUnique({
+				where: { id: eventId }
+			});
+
+			if (!event) {
+				const { response, statusCode } = notFoundResponse("活動不存在");
+				return reply.code(statusCode).send(response);
+			}
+
+			const registrations = await prisma.registration.findMany({
+				where: { eventId },
+				include: {
+					user: {
+						select: {
+							name: true,
+							email: true
+						}
+					},
+					event: {
+						select: {
+							name: true
+						}
+					},
+					ticket: {
+						select: {
+							name: true,
+							price: true
+						}
+					}
+				},
+				orderBy: { createdAt: "desc" }
+			});
+			const result = await exportToGoogleSheets(spreadsheetId, registrations);
+
+			if (!result.success) {
+				const { response, statusCode } = serverErrorResponse(result.message);
+				return reply.code(statusCode).send(response);
+			}
+
+			await prisma.event.update({
+				where: { id: eventId },
+				data: { googleSheetsUrl: sheetsUrl }
+			});
+
+			return reply.send(
+				successResponse(
+					{
+						count: registrations.length,
+						sheetsUrl
+					},
+					result.message
+				)
+			);
 		}
 	);
 };

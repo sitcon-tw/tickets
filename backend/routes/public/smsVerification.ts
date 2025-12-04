@@ -1,6 +1,7 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
+import { requireAuth } from "#middleware/auth.ts";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -15,11 +16,8 @@ interface VerifyCodeRequest {
 	code: string;
 }
 
-const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
-	// Apply preHandler if provided
-	if ((options as any).preHandler) {
-		fastify.addHook("preHandler", (options as any).preHandler);
-	}
+const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
+	fastify.addHook("preHandler", requireAuth);
 
 	/**
 	 * Send SMS verification code
@@ -44,7 +42,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {
@@ -56,13 +54,11 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const userId = session.user.id;
 
-				// Validate phone number format
 				if (!sanitizedPhoneNumber.match(/^09\d{8}$/)) {
 					const { response, statusCode } = validationErrorResponse("無效的手機號碼格式，請使用 09xxxxxxxx");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if user already verified their phone
 				const user = await prisma.user.findUnique({
 					where: { id: userId },
 					select: { phoneVerified: true }
@@ -73,7 +69,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if phone number is already used by another user
 				const existingUser = await prisma.user.findFirst({
 					where: {
 						phoneNumber: sanitizedPhoneNumber,
@@ -87,12 +82,11 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check for existing verification code sent within last 30 seconds (rate limiting by phone number)
 				const recentCode = await prisma.smsVerification.findFirst({
 					where: {
 						phoneNumber: sanitizedPhoneNumber,
 						createdAt: {
-							gt: new Date(Date.now() - 60000) // Within last 1 minute
+							gt: new Date(Date.now() - 60000)
 						}
 					},
 					orderBy: {
@@ -105,7 +99,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check daily rate limit by phone number (3 SMS per phone per day)
 				const todayStart = new Date();
 				todayStart.setHours(0, 0, 0, 0);
 
@@ -127,13 +120,10 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Generate 6-digit verification code
 				const code = generateVerificationCode();
 
-				// Calculate expiry time (10 minutes from now)
 				const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-				// Send SMS
 				try {
 					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
 				} catch (smsError) {
@@ -142,7 +132,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Store verification code in database
 				await prisma.smsVerification.create({
 					data: {
 						userId,
@@ -191,7 +180,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {
@@ -204,7 +193,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 				const sanitizedCode = sanitizeText(code);
 				const userId = session.user.id;
 
-				// Check if user already verified their phone
 				const user = await prisma.user.findUnique({
 					where: { id: userId },
 					select: { phoneVerified: true }
@@ -214,8 +202,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
 					return reply.code(statusCode).send(response);
 				}
-
-				// Find verification record
 				const verification = await prisma.smsVerification.findFirst({
 					where: {
 						userId,
@@ -233,13 +219,11 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if code has expired
 				if (new Date() > verification.expiresAt) {
 					const { response, statusCode } = validationErrorResponse("驗證碼已過期，請重新發送");
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if phone is already used by another user before verifying
 				const existingUser = await prisma.user.findFirst({
 					where: {
 						phoneNumber: sanitizedPhoneNumber,
@@ -253,13 +237,11 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Mark verification as verified
 				await prisma.smsVerification.update({
 					where: { id: verification.id },
 					data: { verified: true }
 				});
 
-				// Update user's phone verification status
 				await prisma.user.update({
 					where: { id: userId },
 					data: {
@@ -299,7 +281,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
 				if (!session?.user) {
@@ -309,7 +291,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async (fastify, options) => {
 
 				const userId = session.user.id;
 
-				// Get user info
 				const user = await prisma.user.findUnique({
 					where: { id: userId },
 					select: {

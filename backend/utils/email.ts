@@ -1,9 +1,9 @@
 import prisma from "#config/database";
-import type { Event, Registration, Ticket } from "@prisma/client";
 import fs from "fs/promises";
 import type { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
+import type { Event, Registration, Ticket } from "../types/database";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,14 +21,7 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 	return client;
 }
 
-interface EmailSender {
-	email: string;
-	name: string;
-}
-
-interface EmailRecipient {
-	email: string;
-}
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
 
 export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
 	try {
@@ -44,7 +37,6 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			}
 		];
 
-		// Load and render template using JS string replacement
 		const templatePath = path.join(__dirname, "../email-templates/registration-confirmation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template
@@ -85,7 +77,6 @@ export const sendEditLink = async (email: string, editToken: string, event: Even
 
 		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
 
-		// Load and render template using JS string replacement
 		const templatePath = path.join(__dirname, "../email-templates/edit-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{eventName\}\}/g, String(event.name)).replace(/\{\{editUrl\}\}/g, editUrl);
@@ -105,7 +96,6 @@ export const sendEditLink = async (email: string, editToken: string, event: Even
 
 export const sendMagicLink = async (email: string, magicLink: string): Promise<boolean> => {
 	try {
-		// Validate inputs
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
 		}
@@ -128,7 +118,6 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 				email: email
 			}
 		];
-		// Load and render template using JS string replacement
 		const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
@@ -138,54 +127,27 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			subject: `【SITCONTIX】登入連結 Login Link`,
 			html
 		});
-		// Log successful email send
 		console.log(`Magic link email sent successfully to ${email}`);
 		return true;
-	} catch (error: any) {
-		// Enhanced error logging with more context
+	} catch (error) {
 		console.error("Email sending error:", {
 			email,
-			errorMessage: error.message,
-			errorCode: error.code,
-			errorName: error.name,
-			stack: error.stack
+			errorMessage: error instanceof Error ? error.message : String(error),
+			errorCode: error && typeof error === "object" && "code" in error ? error.code : undefined,
+			errorName: error instanceof Error ? error.name : undefined,
+			stack: error instanceof Error ? error.stack : undefined
 		});
-		throw new Error(`Failed to send magic link email: ${error.message}`);
+		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
 
-interface TargetAudienceFilters {
-	eventIds?: string[];
-	ticketIds?: string[];
-	registrationStatuses?: string[];
-	hasReferrals?: boolean;
-	registeredAfter?: string;
-	registeredBefore?: string;
-	emailDomains?: string[];
-	roles?: string[];
-	isReferrer?: boolean;
-}
-
-interface RecipientData {
-	email: string;
-	id: string;
-	formData?: any;
-	event?: Event;
-	ticket?: Ticket;
-}
-
-/**
- * Calculate recipients based on target audience filters
- */
 export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
 	try {
-		const where: any = {};
+		const where: Record<string, unknown> = {};
 
-		// Parse targetAudience if it's a string
 		const filters: TargetAudienceFilters | null = typeof targetAudience === "string" ? JSON.parse(targetAudience) : targetAudience;
 
 		if (!filters) {
-			// If no filters, return all registrations
 			const allRegistrations = await prisma.registration.findMany({
 				where: { status: "confirmed" },
 				select: { email: true, id: true, formData: true },
@@ -194,25 +156,20 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			return allRegistrations as RecipientData[];
 		}
 
-		// Event filter
 		if (filters.eventIds && filters.eventIds.length > 0) {
 			where.eventId = { in: filters.eventIds };
 		}
 
-		// Ticket filter
 		if (filters.ticketIds && filters.ticketIds.length > 0) {
 			where.ticketId = { in: filters.ticketIds };
 		}
 
-		// Registration status filter
 		if (filters.registrationStatuses && filters.registrationStatuses.length > 0) {
 			where.status = { in: filters.registrationStatuses };
 		} else {
-			// Default to confirmed registrations only
 			where.status = "confirmed";
 		}
 
-		// Referral filters
 		if (filters.hasReferrals !== undefined) {
 			if (filters.hasReferrals) {
 				where.referredBy = { not: null };
@@ -221,15 +178,13 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			}
 		}
 
-		// Date range filters
 		if (filters.registeredAfter) {
-			where.createdAt = { ...where.createdAt, gte: new Date(filters.registeredAfter) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, gte: new Date(filters.registeredAfter) } : { gte: new Date(filters.registeredAfter) };
 		}
 		if (filters.registeredBefore) {
-			where.createdAt = { ...where.createdAt, lte: new Date(filters.registeredBefore) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, lte: new Date(filters.registeredBefore) } : { lte: new Date(filters.registeredBefore) };
 		}
 
-		// Get initial registrations
 		let registrations = await prisma.registration.findMany({
 			where,
 			include: {
@@ -239,7 +194,6 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			}
 		});
 
-		// Filter by email domains
 		if (filters.emailDomains && filters.emailDomains.length > 0) {
 			registrations = registrations.filter(r => {
 				const emailDomain = r.email.split("@")[1];
@@ -247,12 +201,10 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			});
 		}
 
-		// Filter by user roles
 		if (filters.roles && filters.roles.length > 0) {
 			registrations = registrations.filter(r => r.user && filters.roles!.includes(r.user.role));
 		}
 
-		// Filter by isReferrer
 		if (filters.isReferrer !== undefined) {
 			const referrerIds = await prisma.referral.findMany({
 				select: { registrationId: true }
@@ -262,7 +214,6 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			registrations = registrations.filter(r => (filters.isReferrer ? referrerIdSet.has(r.id) : !referrerIdSet.has(r.id)));
 		}
 
-		// Deduplicate by email and return
 		const uniqueEmails = new Map<string, RecipientData>();
 		registrations.forEach(r => {
 			if (!uniqueEmails.has(r.email)) {
@@ -270,8 +221,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					email: r.email,
 					id: r.id,
 					formData: r.formData,
-					event: r.event,
-					ticket: r.ticket
+					event: r.event as Partial<Event>,
+					ticket: r.ticket as Partial<Ticket>
 				});
 			}
 		});
@@ -283,16 +234,11 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 	}
 };
 
-/**
- * Replace template variables in email content
- */
 const replaceTemplateVariables = (content: string, data: RecipientData): string => {
 	let result = content;
 
-	// Parse formData if it's a string
 	const formData = typeof data.formData === "string" ? JSON.parse(data.formData) : data.formData || {};
 
-	// Replace common variables
 	result = result.replace(/\{\{email\}\}/g, data.email || "");
 	result = result.replace(/\{\{name\}\}/g, formData.name || "");
 	result = result.replace(/\{\{eventName\}\}/g, data.event?.name ? String(data.event.name) : "");
@@ -302,22 +248,7 @@ const replaceTemplateVariables = (content: string, data: RecipientData): string 
 	return result;
 };
 
-interface EmailCampaign {
-	subject: string;
-	content: string;
-}
-
-interface CampaignResult {
-	success: boolean;
-	sentCount: number;
-	failedCount: number;
-	totalRecipients: number;
-}
-
-/**
- * Send campaign email to recipients
- */
-export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: RecipientData[]): Promise<CampaignResult> => {
+export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipients: RecipientData[]): Promise<CampaignResult> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -328,7 +259,6 @@ export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: Rec
 		let sentCount = 0;
 		let failedCount = 0;
 
-		// Send emails in batches to avoid rate limits
 		const batchSize = 10;
 		for (let i = 0; i < recipients.length; i += batchSize) {
 			const batch = recipients.slice(i, i + batchSize);
@@ -346,16 +276,15 @@ export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: Rec
 
 					sentCount++;
 					return { success: true, email: recipient.email };
-				} catch (error: any) {
+				} catch (error) {
 					console.error(`Failed to send to ${recipient.email}:`, error);
 					failedCount++;
-					return { success: false, email: recipient.email, error: error.message };
+					return { success: false, email: recipient.email, error: error instanceof Error ? error.message : String(error) };
 				}
 			});
 
 			await Promise.all(promises);
 
-			// Small delay between batches to respect rate limits
 			if (i + batchSize < recipients.length) {
 				await new Promise(resolve => setTimeout(resolve, 1000));
 			}
@@ -373,9 +302,6 @@ export const sendCampaignEmail = async (campaign: EmailCampaign, recipients: Rec
 	}
 };
 
-/**
- * Send invitation codes via email
- */
 export const sendInvitationCodes = async (email: string, codes: string[], groupName?: string): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
@@ -455,10 +381,7 @@ export const sendInvitationCodes = async (email: string, codes: string[], groupN
 	}
 };
 
-/**
- * Send personal data deletion notification to event organizers
- */
-export const sendDataDeletionNotification = async (registration: Registration, event: Event): Promise<boolean> => {
+export const sendDataDeletionNotification = async (registration: Pick<Registration, "id" | "email">, event: Pick<Event, "name">): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -476,8 +399,10 @@ export const sendDataDeletionNotification = async (registration: Registration, e
 		];
 
 		// Get localized event name
-		const getLocalizedName = (nameObj: any): string => {
-			if (!nameObj || typeof nameObj !== "object") return "未命名活動";
+		const getLocalizedName = (nameObj: string | Record<string, string> | undefined): string => {
+			if (!nameObj) return "未命名活動";
+			if (typeof nameObj === "string") return nameObj;
+			if (typeof nameObj !== "object") return "未命名活動";
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "未命名活動";
 		};
 

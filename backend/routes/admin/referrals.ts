@@ -99,7 +99,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 							_count: "desc"
 						}
 					},
-					take: parseInt(limit as any)
+					take: typeof limit === "number" ? limit : parseInt(String(limit), 10)
 				});
 
 				const formattedLeaderboard = leaderboard.map((r, index) => ({
@@ -210,7 +210,8 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				});
 
-				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals as any));
+				const minReferralsNum = typeof minReferrals === "number" ? minReferrals : parseInt(String(minReferrals), 10);
+				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= minReferralsNum);
 
 				const formattedList = filtered.map(r => ({
 					id: r.id,
@@ -270,14 +271,17 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				});
 
-				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= parseInt(minReferrals as any));
+				const minReferralsNum = typeof minReferrals === "number" ? minReferrals : parseInt(String(minReferrals), 10);
+				const drawCountNum = typeof drawCount === "number" ? drawCount : parseInt(String(drawCount), 10);
+
+				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= minReferralsNum);
 
 				if (eligible.length === 0) {
 					const { response, statusCode } = validationErrorResponse("沒有符合條件的推薦者");
 					return reply.code(statusCode).send(response);
 				}
 
-				const actualDrawCount = Math.min(parseInt(drawCount as any), eligible.length);
+				const actualDrawCount = Math.min(drawCountNum, eligible.length);
 				const usedSeed = seed || Date.now().toString();
 
 				const seededRandom = (seed: string) => {

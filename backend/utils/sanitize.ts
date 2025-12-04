@@ -9,9 +9,9 @@ import DOMPurify from "isomorphic-dompurify";
  * @param dirty - Potentially unsafe HTML string
  * @returns Sanitized HTML string
  */
-export const sanitizeHtml = (dirty: any): any => {
+export const sanitizeHtml = (dirty: unknown): string => {
 	if (typeof dirty !== "string") {
-		return dirty;
+		return String(dirty);
 	}
 	return DOMPurify.sanitize(dirty, {
 		ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
@@ -24,9 +24,9 @@ export const sanitizeHtml = (dirty: any): any => {
  * @param dirty - Potentially unsafe text string
  * @returns Sanitized text string
  */
-export const sanitizeText = (dirty: any): any => {
+export const sanitizeText = (dirty: unknown): string => {
 	if (typeof dirty !== "string") {
-		return dirty;
+		return String(dirty);
 	}
 	return DOMPurify.sanitize(dirty, {
 		ALLOWED_TAGS: [],
@@ -40,7 +40,7 @@ export const sanitizeText = (dirty: any): any => {
  * @param allowHtml - Whether to allow safe HTML tags
  * @returns Sanitized object
  */
-export const sanitizeObject = <T = any>(obj: T, allowHtml: boolean = false): T => {
+export const sanitizeObject = <T>(obj: T, allowHtml: boolean = false): T => {
 	if (typeof obj !== "object" || obj === null) {
 		return obj;
 	}
@@ -49,7 +49,7 @@ export const sanitizeObject = <T = any>(obj: T, allowHtml: boolean = false): T =
 		return obj.map(item => sanitizeObject(item, allowHtml)) as T;
 	}
 
-	const sanitized: any = {};
+	const sanitized: Record<string, unknown> = {};
 	for (const [key, value] of Object.entries(obj)) {
 		if (typeof value === "string") {
 			sanitized[key] = allowHtml ? sanitizeHtml(value) : sanitizeText(value);

@@ -32,7 +32,6 @@ interface InvitationCodeVerifyRequest {
 }
 
 const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
-	// Verify invitation code
 	fastify.post(
 		"/invitation-codes/verify",
 		{
@@ -52,7 +51,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Verify ticket exists and is active
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id: ticketId,
@@ -69,7 +67,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
-				// Find invitation code
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
@@ -87,7 +84,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
-				// Check if code is expired (based on validFrom/validUntil)
 				const now = new Date();
 				if (invitationCode.validUntil && now > invitationCode.validUntil) {
 					return reply.send(
@@ -98,7 +94,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
-				// Check if code is not yet valid
 				if (invitationCode.validFrom && now < invitationCode.validFrom) {
 					return reply.send(
 						successResponse({
@@ -108,7 +103,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
-				// Check if code has remaining uses
 				if (invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit) {
 					return reply.send(
 						successResponse({
@@ -118,7 +112,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
-				// Get available tickets for the event
 				const tickets = await prisma.ticket.findMany({
 					where: {
 						id: ticketId,
@@ -138,7 +131,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { createdAt: "asc" }
 				});
 
-				// Filter and add availability info to tickets
 				const availableTickets = tickets
 					.map(ticket => {
 						const available = ticket.quantity - ticket.soldCount;
@@ -176,7 +168,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get invitation code info by code
 	fastify.get(
 		"/invitation-codes/:code/info",
 		{
@@ -225,7 +216,6 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check validity
 				const now = new Date();
 				const isExpired = invitationCode.validUntil && now > invitationCode.validUntil;
 				const isNotYetValid = invitationCode.validFrom && now < invitationCode.validFrom;

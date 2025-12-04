@@ -1,7 +1,3 @@
-/**
- * @fileoverview Public events routes with modular types and schemas
- */
-
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
@@ -15,11 +11,7 @@ interface UpcomingQuery {
 	upcoming?: boolean;
 }
 
-/**
- * Public events routes - accessible without authentication
- */
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
-	// Get public event information
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/info",
 		{
@@ -34,12 +26,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-							{ id },
-							{ slug: id },
-							{ id: { endsWith: id.length === 6 ? id : "" } } // Support last 6 chars of ID
-						],
-						isActive: true // Only show active events
+						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
+						isActive: true
 					},
 					select: {
 						id: true,
@@ -69,7 +57,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get available tickets for an event
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/tickets",
 		{
@@ -84,7 +71,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Verify event exists and is active - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
 						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
@@ -119,7 +105,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { createdAt: "asc" }
 				});
 
-				// Get form fields for the event (all tickets in the event share the same form)
 				const formFieldsRaw = await prisma.eventFormFields.findMany({
 					where: {
 						eventId: event.id
@@ -138,7 +123,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { order: "asc" }
 				});
 
-				// Transform form fields once for the event
 				const formFields = formFieldsRaw.map(field => ({
 					id: field.id,
 					name: field.name,
@@ -147,11 +131,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [], // values is already JSON
+					options: field.values || [],
 					order: field.order
 				}));
 
-				// Add availability and sale status to each ticket
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
 					const available = ticket.quantity - ticket.soldCount;
@@ -172,7 +155,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: ticket.saleEnd,
 						requireInviteCode: ticket.requireInviteCode,
 						requireSmsVerification: ticket.requireSmsVerification,
-						formFields // All tickets share the same event form fields
+						formFields
 					};
 				});
 
@@ -209,12 +192,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { upcoming } = request.query;
 
-				// Build where clause
 				const where: any = {
 					isActive: true
 				};
 
-				// Filter for upcoming events only
 				if (upcoming) {
 					where.startDate = {
 						gt: new Date()
@@ -256,7 +237,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { startDate: "asc" }
 				});
 
-				// Add computed properties
 				const eventsWithStatus = events.map(event => {
 					const now = new Date();
 					const activeTickets = event.tickets.filter(ticket => {
@@ -290,7 +270,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get event registration statistics (public view)
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/stats",
 		{
@@ -305,7 +284,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Get event with registration counts - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
 						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
@@ -339,7 +317,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Calculate statistics
 				const activeTickets = event.tickets.filter(t => t.isActive);
 				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
 				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.soldCount, 0);
@@ -364,7 +341,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get form fields for an event (via ticket ID for backward compatibility)
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
@@ -414,7 +390,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Verify ticket exists and is active, get its eventId
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id,
@@ -476,7 +451,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get form fields for an event directly
 	fastify.get<{ Params: EventIdParams }>(
 		"/events/:id/form-fields",
 		{
@@ -525,7 +499,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { id } = request.params;
 
-				// Verify event exists and is active - support slug, full ID, or last 6 chars
 				const event = await prisma.event.findFirst({
 					where: {
 						OR: [{ id }, { slug: id }, { id: { endsWith: id.length === 6 ? id : "" } }],
@@ -538,7 +511,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Get form fields for this event
 				const formFields = await prisma.eventFormFields.findMany({
 					where: {
 						eventId: event.id
@@ -557,7 +529,6 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { order: "asc" }
 				});
 
-				// Transform the data to match the expected format
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
 					name: field.name,
@@ -566,7 +537,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [], // values is already JSON
+					options: field.values || [],
 					order: field.order
 				}));
 

@@ -1,12 +1,13 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
+import { requireAuth } from "#middleware/auth.ts";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
-import { validateRegistrationFormData } from "#utils/validation";
+import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {
@@ -21,13 +22,16 @@ interface RegistrationUpdateRequest {
 	formData: Record<string, any>;
 }
 
-const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) => {
-	// Apply preHandler if provided
-	if ((options as any).preHandler) {
-		fastify.addHook("preHandler", (options as any).preHandler);
-	}
+interface PrismaError extends Error {
+	code?: string;
+	meta?: {
+		target?: string[];
+	};
+}
 
-	// Create new registration
+const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
+	fastify.addHook("preHandler", requireAuth);
+
 	fastify.post(
 		"/registrations",
 		{
@@ -37,17 +41,13 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 			try {
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
 
-				// Sanitize form data to prevent XSS attacks
 				const sanitizedFormData = sanitizeObject(formData, false);
 
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 
-				// Get user info from session
 				const user = session!.user;
-
-				// Check if user already registered for this event
 				addSpanEvent("checking_existing_registration");
 				const existingRegistration = await tracePrismaOperation(
 					"Registration",
@@ -69,7 +69,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 					return reply.code(statusCode).send(response);
 				}
 
-				// Verify event and ticket, and get form fields
 				addSpanEvent("fetching_event_and_ticket");
 				const [event, ticket, formFields] = await Promise.all([
 					tracePrismaOperation(
@@ -131,7 +130,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check sale period
 				const now = new Date();
 				if (ticket.saleStart && now < ticket.saleStart) {
 					const { response, statusCode } = validationErrorResponse("票券尚未開始販售");
@@ -143,7 +141,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate invitation code logic
 				let invitationCodeId: string | null = null;
 				if (ticket.requireInviteCode) {
 					// Ticket requires invitation code
@@ -246,7 +243,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as any, ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -336,17 +333,14 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 				}
 
 				// If error is a known validation error, return 400/422
-				if ((error as any).code === "P2002" && (error as any).meta && (error as any).meta.target && (error as any).meta.target.includes("email")) {
+				const prismaError = error as PrismaError;
+				if (prismaError.code === "P2002" && prismaError.meta?.target?.includes("email")) {
 					// Prisma unique constraint violation (e.g. duplicate email)
 					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
 					return reply.code(statusCode).send(response);
 				}
-				if (
-					(error as any).name === "ValidationError" ||
-					(error as Error).message?.includes("必填") ||
-					(error as Error).message?.includes("驗證失敗") ||
-					(error as Error).message?.includes("required")
-				) {
+				const standardError = error as Error;
+				if (standardError.name === "ValidationError" || standardError.message?.includes("必填") || standardError.message?.includes("驗證失敗") || standardError.message?.includes("required")) {
 					const { response, statusCode } = validationErrorResponse((error as Error).message || "表單驗證失敗");
 					return reply.code(statusCode).send(response);
 				}
@@ -357,7 +351,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		}
 	);
 
-	// Get user's registrations
 	fastify.get(
 		"/registrations",
 		{
@@ -370,7 +363,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 				const userId = session?.user?.id;
 
@@ -425,7 +418,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		}
 	);
 
-	// Get specific registration
 	fastify.get(
 		"/registrations/:id",
 		{
@@ -437,7 +429,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 				const userId = session?.user?.id;
 				const { id } = request.params;
@@ -498,7 +490,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		}
 	);
 
-	// Edit registration (only form data can be edited)
 	fastify.put(
 		"/registrations/:id",
 		{
@@ -512,13 +503,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 				const userId = session?.user?.id;
 				const id = request.params.id;
 				const { formData } = request.body;
 
-				// Sanitize form data to prevent XSS attacks
 				const sanitizedFormData = sanitizeObject(formData, false);
 
 				// Check if registration exists and belongs to user
@@ -576,7 +566,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as any, registration.ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], registration.ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
@@ -632,7 +622,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		}
 	);
 
-	// Cancel registration
 	fastify.put(
 		"/registrations/:id/cancel",
 		{
@@ -644,7 +633,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async (fastify, options) =
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: request.headers as unknown as Headers
 				});
 				const userId = session?.user?.id;
 				const id = request.params.id;

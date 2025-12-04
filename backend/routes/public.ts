@@ -1,4 +1,3 @@
-import { requireAuth } from "#middleware/auth";
 import type { FastifyPluginAsync } from "fastify";
 import authRoutes from "./public/auth";
 import eventsRoutes from "./public/events";
@@ -12,10 +11,10 @@ const publicRoutes: FastifyPluginAsync = async fastify => {
 	await fastify.register(authRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);
-	await fastify.register(registrationsRoutes, { preHandler: requireAuth } as any);
+	await fastify.register(registrationsRoutes);
 	await fastify.register(referralRoutes);
 	await fastify.register(invitationCodesRoutes);
-	await fastify.register(smsVerificationRoutes, { preHandler: requireAuth } as any);
+	await fastify.register(smsVerificationRoutes);
 };
 
 export default publicRoutes;

@@ -1,20 +1,15 @@
 import prisma from "#config/database";
 import type { Event, Ticket } from "@prisma/client";
 
-/**
- * Initialize the database with default data
- */
 export async function initializeDatabase(): Promise<void> {
 	try {
 		console.log("Checking database initialization...");
 
-		// Check if any events exist
 		const eventCount = await prisma.event.count();
 
 		if (eventCount === 0) {
 			console.log("No events found, creating default event: SITCON 2026");
 
-			// Create default event
 			const defaultEvent: Event = await prisma.event.create({
 				data: {
 					name: "SITCON 2026",
@@ -35,7 +30,6 @@ export async function initializeDatabase(): Promise<void> {
 
 			console.log(`✅ Created default event: ${defaultEvent.name} (ID: ${defaultEvent.id})`);
 
-			// Create some default tickets for the event
 			const defaultTickets = [
 				{
 					name: "學生票",
@@ -89,9 +83,6 @@ export async function initializeDatabase(): Promise<void> {
 	}
 }
 
-/**
- * Cleanup function for graceful shutdown
- */
 export async function cleanup(): Promise<void> {
 	await prisma.$disconnect();
 }

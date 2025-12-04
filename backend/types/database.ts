@@ -36,6 +36,7 @@ export interface Registration {
 	userId: string;
 	eventId: string;
 	ticketId: string;
+	email: string;
 	invitationCodeId: string | null;
 	referralCodeId: string | null;
 	formData: string;
@@ -130,3 +131,11 @@ export interface EventFormFields {
  * @deprecated Use EventFormFields instead
  */
 export type TicketFromFields = EventFormFields;
+
+export interface RedisClientConfig {
+	host: string;
+	port: number;
+	password?: string;
+	username?: string;
+	db?: number;
+}
