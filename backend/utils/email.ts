@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import type { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { Event, Registration } from "../types/database";
+import type { Event, Registration, Ticket } from "../types/database";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,10 +179,14 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 		}
 
 		if (filters.registeredAfter) {
-			where.createdAt = { ...where.createdAt, gte: new Date(filters.registeredAfter) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object"
+				? { ...where.createdAt, gte: new Date(filters.registeredAfter) }
+				: { gte: new Date(filters.registeredAfter) };
 		}
 		if (filters.registeredBefore) {
-			where.createdAt = { ...where.createdAt, lte: new Date(filters.registeredBefore) };
+			where.createdAt = where.createdAt && typeof where.createdAt === "object"
+				? { ...where.createdAt, lte: new Date(filters.registeredBefore) }
+				: { lte: new Date(filters.registeredBefore) };
 		}
 
 		let registrations = await prisma.registration.findMany({
@@ -221,8 +225,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					email: r.email,
 					id: r.id,
 					formData: r.formData,
-					event: r.event,
-					ticket: r.ticket
+					event: r.event as Partial<Event>,
+					ticket: r.ticket as Partial<Ticket>
 				});
 			}
 		});

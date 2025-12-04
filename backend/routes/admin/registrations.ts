@@ -14,7 +14,6 @@ import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } fr
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
-import type { Event } from "#types/database";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
@@ -419,7 +418,10 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			try {
-				await sendDataDeletionNotification(registration, registration.event);
+				await sendDataDeletionNotification(
+					{ id: registration.id, email: registration.email },
+					{ name: String(registration.event.name) }
+				);
 			} catch (emailError) {
 				console.error("Failed to send deletion notification email:", emailError);
 			}

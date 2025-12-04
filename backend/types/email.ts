@@ -24,9 +24,9 @@ export interface TargetAudienceFilters {
 export interface RecipientData {
 	email: string;
 	id: string;
-	formData?: any;
-	event?: Event;
-	ticket?: Ticket;
+	formData?: string | null;
+	event?: Partial<Event>;
+	ticket?: Partial<Ticket>;
 }
 
 export interface EmailCampaignContent {

@@ -1,9 +1,9 @@
-import type { JWT } from "google-auth-library";
+import type { JsonValue } from "@prisma/client/runtime/library";
 import type { sheets_v4 } from "googleapis";
 
 interface GoogleSheetsClient {
 	sheets: sheets_v4.Sheets;
-	auth: JWT;
+	auth: unknown;
 }
 
 interface ServiceAccountKey {
@@ -15,14 +15,14 @@ interface ServiceAccountKey {
 interface RegistrationWithRelations {
 	id: string;
 	email: string;
-	formData: string | Record<string, unknown>;
+	formData: string | Record<string, unknown> | null;
 	status: string;
 	createdAt: Date;
 	event?: {
-		name: string | Record<string, string>;
+		name: JsonValue;
 	};
 	ticket?: {
-		name: string | Record<string, string>;
+		name: JsonValue;
 		price: number;
 	};
 }
@@ -48,7 +48,7 @@ export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 
 		const sheets = google.sheets({ version: "v4", auth });
 
-		return { sheets, auth: auth as unknown as JWT };
+		return { sheets, auth };
 	} catch (error) {
 		console.error("Failed to authenticate with Google Sheets:", error);
 		throw new Error("Google Sheets authentication failed");
@@ -122,11 +122,12 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
-		const getLocalizedName = (nameObj: string | Record<string, string> | undefined): string => {
+		const getLocalizedName = (nameObj: JsonValue): string => {
 			if (!nameObj) return "";
 			if (typeof nameObj === "string") return nameObj;
-			if (typeof nameObj !== "object") return "";
-			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
+			if (typeof nameObj !== "object" || Array.isArray(nameObj)) return "";
+			const obj = nameObj as Record<string, string>;
+			return obj["zh-Hant"] || obj["zh-Hans"] || obj["en"] || Object.values(obj)[0] || "";
 		};
 
 		const formatFormValue = (value: unknown): string => {
@@ -140,7 +141,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 		const headers = [...baseHeaders, ...formDataHeaders];
 
 		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
+			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name || ""), getLocalizedName(reg.ticket?.name || ""), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
 
 			const formDataValues = sortedFormFields.map(key => formatFormValue(reg.formData[key]));
 
