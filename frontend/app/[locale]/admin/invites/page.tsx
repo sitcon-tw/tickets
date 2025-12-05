@@ -16,6 +16,7 @@ import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import { Plus, Import, Search, Mail, Download } from "lucide-react";
 
 type InviteCode = {
 	id: string;
@@ -510,11 +511,20 @@ export default function InvitesPage() {
 			<main>
 				<AdminHeader title={t.title} />
 				<section className="flex gap-2 mb-4">
-					<Button onClick={() => setShowModal(true)}>➕ {t.add}</Button>
+					<Button onClick={() => setShowModal(true)}><Plus /> {t.add}</Button>
 					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
-						📥 {t.bulkImport}
+						<Import /> {t.bulkImport}
 					</Button>
-					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
+					<div className="relative max-w-xs">
+						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+						<Input 
+							type="text" 
+							placeholder={t.search} 
+							value={searchTerm} 
+							onChange={e => setSearchTerm(e.target.value)} 
+							className="pl-10 h-11" 
+						/>
+					</div>
 				</section>
 
 				<section>
@@ -722,10 +732,10 @@ export default function InvitesPage() {
 								{selectedCodes.size > 0 && (
 									<>
 										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsTxt}>
-											📥 {t.downloadTxt} ({selectedCodes.size})
+											<Download size={20} /> {t.downloadTxt} ({selectedCodes.size})
 										</Button>
 										<Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
-											📧 {t.sendEmail} ({selectedCodes.size})
+											<Mail size={20} /> {t.sendEmail} ({selectedCodes.size})
 										</Button>
 										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
 											{t.bulkDelete} ({selectedCodes.size})

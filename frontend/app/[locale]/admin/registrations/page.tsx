@@ -17,6 +17,7 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
+import { RotateCw, Search, Download, FileSpreadsheet } from "lucide-react";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -31,7 +32,6 @@ export default function RegistrationsPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
-	const [activeColumns, setActiveColumns] = useState(new Set(["email", "status", "ticket", "event", "createdAt"]));
 	const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
 	const [showDetailModal, setShowDetailModal] = useState(false);
 	const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
@@ -48,7 +48,7 @@ export default function RegistrationsPage() {
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
-		search: { "zh-Hant": "搜尋電子郵件、ID", "zh-Hans": "搜索电子邮件、ID", en: "Search Email, ID" },
+		search: { "zh-Hant": "搜尋電子郵件、ID、票種、活動名稱、表單資料...", "zh-Hans": "搜索电子邮件、ID、票种、活动名称、表单资料...", en: "Search Email, ID, Ticket Type, Event Name, Form Data..." },
 		allStatus: { "zh-Hant": "全部狀態", "zh-Hans": "全部状态", en: "All statuses" },
 		confirmed: { "zh-Hant": "已確認", "zh-Hans": "已确认", en: "Confirmed" },
 		pending: { "zh-Hant": "待處理", "zh-Hans": "待处理", en: "Pending" },
@@ -419,28 +419,37 @@ export default function RegistrationsPage() {
 				<section className="my-6">
 					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-800 dark:border-gray-300 dark:bg-gray-900">
 							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.total}</div>
 							<div className="text-3xl font-bold">{stats.total}</div>
 						</div>
-						<div className="flex flex-col p-4 rounded-lg border-2 border-green-500 bg-green-50 dark:bg-gray-900">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
 							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.confirmed}</div>
 							<div className="text-3xl font-bold text-green-600 dark:text-green-500">{stats.confirmed}</div>
 						</div>
-						<div className="flex flex-col p-4 rounded-lg border-2 border-amber-500 bg-amber-50 dark:bg-gray-900">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
 							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.pending}</div>
 							<div className="text-3xl font-bold text-amber-600 dark:text-amber-500">{stats.pending}</div>
 						</div>
-						<div className="flex flex-col p-4 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-gray-900">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
 							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.cancelled}</div>
 							<div className="text-3xl font-bold text-red-600 dark:text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>
 				<section className="flex gap-2 my-4">
-					<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-1" />
+					<div className="relative w-fit">
+						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+						<Input 
+							type="text" 
+							placeholder={t.search} 
+							value={searchTerm} 
+							onChange={e => setSearchTerm(e.target.value)} 
+							className="pl-10 h-11" 
+						/>
+					</div>
 					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
-						<SelectTrigger className="w-[180px]">
+						<SelectTrigger className="w-[180px] min-h-11">
 							<SelectValue placeholder={t.allStatus} />
 						</SelectTrigger>
 						<SelectContent>
@@ -451,45 +460,24 @@ export default function RegistrationsPage() {
 						</SelectContent>
 					</Select>
 					<Button onClick={loadRegistrations} variant="secondary">
-						↻ {t.refresh}
+						<RotateCw /> {t.refresh}
 					</Button>
 					<Button onClick={syncToSheets} variant="secondary">
-						📥 {t.syncSheets}
+						<Download /> {t.syncSheets}
 					</Button>
 					<Button onClick={openGoogleSheetsExport} variant="secondary">
-						📊 {t.exportToSheets}
+						<FileSpreadsheet /> {t.exportToSheets}
 					</Button>
 					{selectedRegistrations.size > 0 && (
 						<>
 							<Button onClick={exportSelected} variant="default">
-								📤 {t.exportSelected} ({selectedRegistrations.size})
+								<Download /> {t.exportSelected} ({selectedRegistrations.size})
 							</Button>
 							<Button onClick={() => setSelectedRegistrations(new Set())} variant="destructive">
 								✕ {t.deselectAll}
 							</Button>
 						</>
 					)}
-				</section>
-				<section className="flex flex-col gap-2 mb-4">
-					<label className="text-sm font-medium">{t.columns}</label>
-					<div className="flex flex-wrap gap-2">
-						{columnDefs.map(col => (
-							<Button
-								key={col.id}
-								size="sm"
-								variant={activeColumns.has(col.id) ? "secondary" : "outline"}
-								onClick={() => {
-									const newCols = new Set(activeColumns);
-									if (newCols.has(col.id)) newCols.delete(col.id);
-									else newCols.add(col.id);
-									setActiveColumns(newCols);
-								}}
-								className={`rounded-full text-xs py-1 px-3 ${!activeColumns.has(col.id) && "opacity-50"}`}
-							>
-								{col.label}
-							</Button>
-						))}
-					</div>
 				</section>
 				<section>
 					{isLoading ? (
