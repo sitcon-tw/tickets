@@ -155,7 +155,7 @@ export interface EventFormField {
 	type: "text" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
 	name: LocalizedText;
-	description?: string;
+	description?: LocalizedText; // Localized description with markdown support
 	placeholder?: string;
 	required: boolean;
 	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]

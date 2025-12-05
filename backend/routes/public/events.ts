@@ -370,7 +370,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 									properties: {
 										id: { type: "string" },
 										name: { type: "object", additionalProperties: true },
-										description: { type: "string" },
+										description: { type: "object", additionalProperties: true },
 										type: { type: "string" },
 										required: { type: "boolean" },
 										options: { type: "array" },
@@ -480,7 +480,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 									properties: {
 										id: { type: "string" },
 										name: { type: "object", additionalProperties: true },
-										description: { type: "string" },
+										description: { type: "object", additionalProperties: true },
 										type: { type: "string" },
 										required: { type: "boolean" },
 										options: { type: "array" },

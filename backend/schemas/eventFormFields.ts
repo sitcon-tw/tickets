@@ -33,8 +33,9 @@ export const eventFormFieldProperties = {
 		description: "欄位名稱 (localized JSON object)"
 	},
 	description: {
-		type: "string",
-		description: "欄位標籤"
+		type: "object",
+		additionalProperties: true,
+		description: "欄位描述 (localized JSON object)"
 	},
 	placeholder: {
 		type: "string",
@@ -86,8 +87,9 @@ export const eventFormFieldCreateBody = {
 			description: "欄位名稱 (localized JSON object)"
 		},
 		description: {
-			type: "string",
-			description: "欄位標籤"
+			type: "object",
+			additionalProperties: true,
+			description: "欄位描述 (localized JSON object)"
 		},
 		placeholder: {
 			type: "string",
@@ -138,8 +140,9 @@ export const eventFormFieldUpdateBody = {
 			description: "欄位名稱 (localized JSON object)"
 		},
 		description: {
-			type: "string",
-			description: "欄位標籤"
+			type: "object",
+			additionalProperties: true,
+			description: "欄位描述 (localized JSON object)"
 		},
 		placeholder: {
 			type: "string",

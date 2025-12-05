@@ -50,7 +50,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						type,
 						validater: validater === "" ? null : (validater ?? null),
 						name,
-						description: description || null,
+						description: description && typeof description === "object" ? description : null,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
 						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
@@ -156,13 +156,20 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				if (updateData.validater === "") data.validater = null;
 				if (updateData.placeholder === "") data.placeholder = null;
-				if (updateData.description === "") data.description = null;
 
 				if ("name" in updateData) {
 					if (updateData.name === "" || updateData.name === null) {
 						delete data.name;
 					} else if (typeof updateData.name === "object") {
 						data.name = JSON.parse(JSON.stringify(updateData.name));
+					}
+				}
+
+				if ("description" in updateData) {
+					if (updateData.description === "" || updateData.description === null) {
+						data.description = null;
+					} else if (typeof updateData.description === "object") {
+						data.description = JSON.parse(JSON.stringify(updateData.description));
 					}
 				}
 

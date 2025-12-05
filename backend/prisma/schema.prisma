@@ -139,7 +139,7 @@ model EventFormFields {
   type        String   // text, textarea, select, checkbox, radio
   validater   String?  // regex pattern for validation
   name        Json     // Localized: {"en": "Field Name", "zh": "欄位名稱"}
-  description String?
+  description Json?    // Localized: {"en": "Description", "zh": "描述"}
   placeholder String?
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]

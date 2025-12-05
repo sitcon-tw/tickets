@@ -121,7 +121,7 @@ export interface EventFormFields {
 	type: EventFormFieldType;
 	validater: string | null;
 	name: string;
-	description: string;
+	description: string | null;
 	placeholder: string | null;
 	required: boolean;
 	values: string | null;

@@ -28,6 +28,9 @@ type Question = {
 	type: string;
 	required: boolean;
 	description?: string;
+	descriptionEn?: string;
+	descriptionZhHant?: string;
+	descriptionZhHans?: string;
 	validater?: string;
 	options?: Array<{
 		en: string;
@@ -82,7 +85,7 @@ export default function FormsPage() {
 		fieldOptional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
 		deleteField: { "zh-Hant": "刪除欄位", "zh-Hans": "删除栏位", en: "Delete Field" },
 		additionalSettings: { "zh-Hant": "其他設定", "zh-Hans": "其他设定", en: "Additional Settings" },
-		fieldDescription: { "zh-Hant": "說明文字（僅管理員可見）", "zh-Hans": "说明文字（仅管理员可见）", en: "Description (Admin Only)" },
+		fieldDescription: { "zh-Hant": "說明文字（使用者可見，支援 Markdown）", "zh-Hans": "说明文字（使用者可见，支援 Markdown）", en: "Description (User-visible, Markdown supported)" },
 		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
@@ -209,18 +212,23 @@ export default function FormsPage() {
 					}
 
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+
+					// Parse description as localized object
+					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: field.id,
-						label: field.description || fieldName,
+						label: fieldName,
 						labelEn: nameObj.en || "",
 						labelZhHant: nameObj["zh-Hant"] || "",
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						description: field.description || "",
+						description: typeof field.description === "string" ? field.description : "",
+						descriptionEn: descriptionObj.en || "",
+						descriptionZhHant: descriptionObj["zh-Hant"] || "",
+						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						options,
 						filters: field.filters || undefined
@@ -287,6 +295,9 @@ export default function FormsPage() {
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
+					// Parse description as localized object
+					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+
 					return {
 						id: "temp-" + crypto.randomUUID(),
 						label: fieldName,
@@ -295,7 +306,10 @@ export default function FormsPage() {
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						description: field.description || "",
+						description: typeof field.description === "string" ? field.description : "",
+						descriptionEn: descriptionObj.en || "",
+						descriptionZhHant: descriptionObj["zh-Hant"] || "",
+						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						filters: field.filters || undefined,
 						options
@@ -326,7 +340,11 @@ export default function FormsPage() {
 					"zh-Hant": q.labelZhHant || "",
 					"zh-Hans": q.labelZhHans || ""
 				},
-				description: q.description,
+				description: {
+					en: q.descriptionEn || "",
+					"zh-Hant": q.descriptionZhHant || "",
+					"zh-Hans": q.descriptionZhHans || ""
+				},
 				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 				required: q.required,
 				validater: q.validater || "",
@@ -714,13 +732,38 @@ export default function FormsPage() {
 												<div className="flex flex-col gap-2.5">
 													<div>
 														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</Label>
-														<Input
-															type="text"
-															value={q.description || ""}
-															placeholder="給自己或其他管理員加上註記..."
-															onChange={e => updateQuestion(q.id, { description: e.target.value })}
-															className="w-full text-sm"
-														/>
+														<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionEn || ""}
+																	placeholder="English description (Markdown supported)"
+																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionZhHant || ""}
+																	placeholder="繁體中文描述（支援 Markdown）"
+																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionZhHans || ""}
+																	placeholder="简体中文描述（支持 Markdown）"
+																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+														</div>
 													</div>
 
 													{(q.type === "text" || q.type === "textarea") && (
