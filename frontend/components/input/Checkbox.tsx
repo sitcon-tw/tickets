@@ -75,7 +75,7 @@ const StyledLabel = styled.label`
 	}
 `;
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = true, value, checked, onChange, inputRef }, ref) => {
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = false, value, checked, onChange, inputRef }, ref) => {
 	return (
 		<div>
 			{question ? <p style={{ marginBottom: "1rem", color: "inherit" }}>{question}</p> : null}
