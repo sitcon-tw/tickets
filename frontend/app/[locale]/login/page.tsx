@@ -128,13 +128,11 @@ export default function Login() {
 		}
 	});
 
-	// Check if user is already logged in and redirect to home
 	useEffect(() => {
 		const checkAuthAndRedirect = async () => {
 			try {
 				const session = await authAPI.getSession();
 				if (session && session.user) {
-					// User is already logged in, redirect to home
 					router.push(`/${locale}`);
 				}
 			} catch {
@@ -209,7 +207,6 @@ export default function Login() {
 		}
 	};
 
-	// Show loading spinner while checking auth
 	if (isCheckingAuth) {
 		return (
 			<div className="flex flex-col items-center justify-center h-full">
@@ -219,7 +216,7 @@ export default function Login() {
 	}
 
 	return (
-		<div className="flex flex-col items-center justify-center h-full">
+		<div className="flex flex-col items-center justify-center h-screen">
 			{viewState === "login" ? (
 				<>
 					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
