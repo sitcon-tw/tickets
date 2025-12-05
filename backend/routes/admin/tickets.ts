@@ -62,7 +62,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
-						uncacheKeys: ["prisma:event:*"],
+						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
 						hasPattern: true
 					}
 				});
