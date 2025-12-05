@@ -128,30 +128,28 @@ export default function InvitesPage() {
 
 		setIsLoading(true);
 		try {
-			const response = await adminInvitationCodesAPI.getAll({ticketId: currentEventId});
+			const response = await adminInvitationCodesAPI.getAll({eventId: currentEventId});
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
 					const ticket = tickets.find(t => t.id === code.ticketId);
-					if (ticket && ticket.eventId === currentEventId) {
-						const typeName = code.name || "Default";
-						if (!codesByType[typeName]) {
-							codesByType[typeName] = {
-								id: typeName,
-								name: typeName,
-								createdAt: code.createdAt,
-								codes: []
-							};
-						}
-						codesByType[typeName].codes.push({
-							id: code.id,
-							code: code.code,
-							usedCount: code.usedCount || 0,
-							usageLimit: code.usageLimit || 1,
-							usedBy: "",
-							active: code.isActive !== false
-						});
+					const typeName = code.name || "Default";
+					if (!codesByType[typeName]) {
+						codesByType[typeName] = {
+							id: typeName,
+							name: typeName,
+							createdAt: code.createdAt,
+							codes: []
+						};
 					}
+					codesByType[typeName].codes.push({
+						id: code.id,
+						code: code.code,
+						usedCount: code.usedCount || 0,
+						usageLimit: code.usageLimit || 1,
+						usedBy: "",
+						active: code.isActive !== false
+					});
 				});
 				setInviteTypes(Object.values(codesByType));
 				setFilteredTypes(Object.values(codesByType));
