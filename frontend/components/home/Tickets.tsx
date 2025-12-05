@@ -51,6 +51,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			"zh-Hans": "此票种报名时间已结束",
 			en: "This ticket's registration period has ended"
 		},
+		ticketNotYetAvailable: {
+			"zh-Hant": "此票種尚未開放報名",
+			"zh-Hans": "此票种尚未开放报名",
+			en: "This ticket is not yet available for registration"
+		},
 		soldOut: {
 			"zh-Hant": "已售完",
 			"zh-Hans": "已售完",
@@ -82,6 +87,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		return saleEndDate < new Date();
 	}
 
+	function isTicketNotYetAvailable(ticket: Ticket): boolean {
+		if (!ticket.saleStart) return false;
+		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
+		if (!saleStartDate) return false;
+		return saleStartDate > new Date();
+	}
+
 	function isTicketSoldOut(ticket: Ticket): boolean {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}
@@ -89,6 +101,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
+			return;
+		}
+
+		if (isTicketNotYetAvailable(ticket)) {
+			showAlert(t.ticketNotYetAvailable, "warning");
 			return;
 		}
 
@@ -293,7 +310,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 					{tickets.map(ticket => {
 						const isExpired = isTicketExpired(ticket);
 						const isSoldOut = isTicketSoldOut(ticket);
-						const isUnavailable = isExpired || isSoldOut;
+						const isNotYetAvailable = isTicketNotYetAvailable(ticket);
+						const isUnavailable = isExpired || isSoldOut || isNotYetAvailable;
 						return (
 							<div
 								key={ticket.id}
