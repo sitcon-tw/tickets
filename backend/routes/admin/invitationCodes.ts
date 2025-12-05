@@ -278,28 +278,39 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 	// List invitation codes
 	fastify.get<{
-		Querystring: { ticketId?: string; isActive?: boolean };
+		Querystring: { ticketId?: string; isActive?: boolean; eventId?: string };
 	}>(
 		"/invitation-codes",
 		{
 			preHandler: requireEventListAccess,
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
-		async (request: FastifyRequest<{ Querystring: { ticketId?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: { ticketId?: string; isActive?: boolean; eventId?: string } }>, reply: FastifyReply) => {
 			try {
-				const { ticketId, isActive } = request.query;
+				const { ticketId, isActive, eventId } = request.query;
 
 				const where: Record<string, unknown> = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
 				if (request.userEventPermissions) {
+					const ticketWhere: Record<string, unknown> = { eventId: { in: request.userEventPermissions } };
+					if (eventId) ticketWhere.eventId = eventId;
+
 					const accessibleTickets = await prisma.ticket.findMany({
-						where: { eventId: { in: request.userEventPermissions } },
+						where: ticketWhere,
 						select: { id: true }
 					});
 					const accessibleTicketIds = accessibleTickets.map(t => t.id);
 					where.ticketId = ticketId ? (accessibleTicketIds.includes(ticketId) ? ticketId : "none") : { in: accessibleTicketIds };
+				} else if (eventId) {
+					// If no user permissions but eventId is provided, filter by eventId
+					const eventTickets = await prisma.ticket.findMany({
+						where: { eventId },
+						select: { id: true }
+					});
+					const eventTicketIds = eventTickets.map(t => t.id);
+					where.ticketId = ticketId ? (eventTicketIds.includes(ticketId) ? ticketId : "none") : { in: eventTicketIds };
 				}
 
 				const invitationCodes: InvitationCode[] = await prisma.invitationCode.findMany({

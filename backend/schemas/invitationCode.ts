@@ -229,6 +229,10 @@ export const invitationCodeSchemas = {
 				isActive: {
 					type: "boolean",
 					description: "篩選啟用狀態"
+				},
+				eventId: {
+					type: "string",
+					description: "篩選活動 ID"
 				}
 			}
 		},

@@ -195,7 +195,7 @@ export const adminRegistrationsAPI = {
 
 // Admin - Invitation Codes
 export const adminInvitationCodesAPI = {
-	getAll: (params?: { ticketId?: string; isActive?: boolean }) => apiClient.get<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes", params),
+	getAll: (params?: { ticketId?: string; eventId?: string; isActive?: boolean }) => apiClient.get<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes", params),
 
 	getById: (id: string) => apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`),
 

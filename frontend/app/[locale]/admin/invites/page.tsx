@@ -128,7 +128,7 @@ export default function InvitesPage() {
 
 		setIsLoading(true);
 		try {
-			const response = await adminInvitationCodesAPI.getAll();
+			const response = await adminInvitationCodesAPI.getAll({ticketId: currentEventId});
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
