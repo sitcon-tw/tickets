@@ -153,7 +153,7 @@ export const adminEventFormFieldsAPI = {
 		order: number;
 		type: "text" | "textarea" | "select" | "checkbox" | "radio";
 		name: LocalizedText;
-		description?: string;
+		description?: LocalizedText;
 		placeholder?: string;
 		required?: boolean;
 		validater?: string;
@@ -179,18 +179,22 @@ export const adminRegistrationsAPI = {
 		data: {
 			formData?: Record<string, unknown>;
 			status?: "pending" | "confirmed" | "cancelled";
-			tags?: string[];
 		}
 	) => apiClient.put<ApiResponse<Registration>>(`/api/admin/registrations/${id}`, data),
 
 	delete: (id: string) => apiClient.delete<ApiResponse<{ id: string; email: string }>>(`/api/admin/registrations/${id}`),
 
-	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) => apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params)
+	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) =>
+		apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params),
+
+	getServiceAccountEmail: () => apiClient.get<ApiResponse<{ email: string }>>("/api/admin/registrations/google-sheets/service-account"),
+
+	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) => apiClient.post<ApiResponse<{ count: number; sheetsUrl: string }>>("/api/admin/registrations/google-sheets/sync", data)
 };
 
 // Admin - Invitation Codes
 export const adminInvitationCodesAPI = {
-	getAll: (params?: { ticketId?: string; isActive?: boolean }) => apiClient.get<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes", params),
+	getAll: (params?: { ticketId?: string; eventId?: string; isActive?: boolean }) => apiClient.get<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes", params),
 
 	getById: (id: string) => apiClient.get<ApiResponse<InvitationCodeInfo>>(`/api/admin/invitation-codes/${id}`),
 

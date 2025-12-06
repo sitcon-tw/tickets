@@ -1,4 +1,6 @@
-export default `# SITCON 隱私權與個人資料保護政策前言
+const termsContent = `# SITCON 隱私權與個人資料保護政策
+
+## 前言
 
 學生計算機年會（SITCON，下稱「我們」）為非營利之學生社群。本報名系統僅供 SITCON 活動使用，非一般商業售票平台。我們重視您的隱私與個人資料保護，並依中華民國個人資料保護法等相關法令處理您的資料。當您使用本系統，即表示您已閱讀、理解並同意本政策。
 
@@ -101,3 +103,5 @@ export default `# SITCON 隱私權與個人資料保護政策前言
 如對本條款或服務有疑問，請來信 [ticket@sitcon.org](mailto:ticket@sitcon.org) 與 SITCON 籌備團隊聯繫。
 
 生效日：2025-10-11  `;
+
+export default termsContent;

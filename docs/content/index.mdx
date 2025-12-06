@@ -1,0 +1,119 @@
+---
+title: SITCONTIX 系統指南
+description: SITCON 報名與票券服務的介紹、使用、部署與程式規則
+---
+
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+<Callout type="info">這裡的文檔都是 AI 生的，還沒有整理完，僅供參考。</Callout>
+
+## 專案介紹
+
+SITCONTIX 是 SITCON 2026 報名與票券系統，採用 pnpm 工作區管理前後端與文件。後端服務使用 Fastify、Prisma、PostgreSQL 與 Redis，搭配 BetterAuth 的魔術連結登入；前端則以 Next.js App Router、`next-intl` 以及 Tailwind CSS 4 提供多語系的報名與管理體驗。系統同時整合 OpenTelemetry 與 Prometheus 指標，方便在 Grafana 等平台進行監控。
+
+## 系統架構概覽
+
+- **frontend/**：Next.js 15 (App Router) 應用，支援 `next-intl` 多語介面、管理後台介面與公開報名頁。使用 Turbopack 開發伺服與 Tailwind 4 建構樣式。
+- **backend/**：Fastify 5 服務，並整合 OpenTelemetry、Prometheus `/metrics`，透過 Prisma 連線 PostgreSQL，Redis 提供快取，以及 Mailtrap 寄送郵件。
+- **docs/**：以 Fumadocs 撰寫的技術文件，即本頁；`source.config.ts` 定義導覽結構。
+- **wrangler.jsonc**：定義前端靜態資產上傳至 Cloudflare Assets 的建構流程。
+- **grafana.yaml**：提供監控堆疊（Tempo/Prometheus/Grafana）示例設定，可搭配 OTLP 匯出使用。
+
+## 文檔地圖
+
+- 入門：[`快速開始`](./getting-started)
+- 後端：[`概覽`](./backend/overview)、[`路由與模組`](./backend/routes)、[`資料模型`](./backend/database)、[`安全與驗證`](./backend/security)
+- 前端：[`概覽`](./frontend/overview)、[`多語與在地化`](./frontend/i18n)
+- DevOps：[`部署指引`](./devops/deployment)、[`監控與觀測`](./devops/monitoring)
+- 參考：[`環境變數對照`](./reference/env)、[`指令速查`](./reference/scripts)
+
+## 使用說明
+
+### 先決條件
+
+- Node.js 20.x 以上（建議與 CI 相同版本）
+- pnpm 10.x：`npm install -g pnpm`
+- PostgreSQL 資料庫與對應連線 URI
+- Redis（選用，啟用後可支援 Prisma 快取與速率限制）
+- Mailtrap 帳號與 Token（寄送魔術連結與通知所需）
+
+### 環境變數
+
+在 `backend/.env` 與 `frontend/.env` 內設定必要變數，常用鍵值如下：
+
+| 變數                                       | 用途                                                         |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| `POSTGRES_URI`                             | Prisma 連線字串，格式 `postgresql://user:pass@host:5432/db`  |
+| `REDIS_URI`                                | Redis 連線字串，用於快取與 rate limit（缺省則以直連 Prisma） |
+| `FRONTEND_URI`                             | 前端站點的 Base URL，魔術連結與郵件模板會引用                |
+| `BACKEND_URI`                              | 後端 API Base URL，BetterAuth 驗證流程使用                   |
+| `BETTER_AUTH_SECRET`                       | BetterAuth 的簽章金鑰，至少 32 字元                          |
+| `MAILTRAP_TOKEN` / `MAILTRAP_SENDER_EMAIL` | Mailtrap API 與寄件人設定                                    |
+| `MAIL_FROM_NAME`                           | 郵件顯示名稱                                                 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`              | OTLP Trace 匯出端點，預設 `http://tempo:4318/v1/traces`      |
+
+> 提醒：前後端各自載入 `.env`，若要共用值可在根目錄透過 shell script 同步。
+
+### 建置與開發流程
+
+```bash
+# 安裝相依套件
+pnpm install
+
+# 產生 Prisma Client 與資料庫 schema（需正確 POSTGRES_URI）
+pnpm --filter backend prisma generate
+pnpm --filter backend db:migrate -- --name init
+
+# 同時啟動前後端開發模式
+pnpm dev
+
+# 或者只啟動單向服務
+pnpm dev:frontend
+pnpm dev:backend
+```
+
+後端預設於 `http://localhost:3000`，前端於 `http://localhost:4322`；兩者透過 `/api` 路徑串接，並由中介層 `frontend/middleware.ts` 處理 i18n 與 session 導向。
+
+### 常見開發工作
+
+- **資料庫初始化**：`backend/scripts/db-init.js` 用於建立預設管理員、票券或測試資料。
+- **Swagger 文件**：部署後訪問 `/docs` 取得 Fastify 自動產生的 API 規格。
+- **觀測指標**：Prometheus 指標在 `/metrics`，追蹤資料透過 OTLP 匯出，可在 `grafana.yaml` 建議設定中匯入。
+
+## 部署方式
+
+- **前端**：執行 `pnpm --filter frontend build` 產生 `.next`，若要配合 Cloudflare Pages/Workers，使用 `wrangler publish` 會自動將 `frontend/dist` 上傳至指定資產空間。
+- **後端**：使用 Node.js 20 執行 `pnpm --filter backend start`。部署前請確保 `POSTGRES_URI`、`BETTER_AUTH_SECRET`、`MAILTRAP_*` 等變數已設定，並在 CI/CD 中先執行 `pnpm --filter backend db:migrate`。
+- **監控**：設定 OTLP 端點 (Tempo、Grafana Agent 或 OTEL Collector) 並開啟 Prometheus 對 `/metrics` 的抓取。`grafana.yaml` 提供 Tempo + Prometheus + Loki 的建議設定，可作為部署模板。
+- **靜態資產**：`frontend/public/assets`、`frontend/public/fonts` 內的素材會在 build 時複製，確保 CDN 或反向代理允許快取。
+
+## 程式邏輯規則
+
+- **身份驗證**：
+  - 使用 BetterAuth Magic Link，限制同一 Email 30 秒一次請求，單日最多 20 次成功登入；同來源 IP 單日最多 50 次。
+  - Admin 清單來自 `backend/config/security.js` 中的 Email，首次登入即授權角色。
+- **票券與報名**：
+  - `Ticket.requireInviteCode` 控制是否需要邀請碼，`requireSmsVerification` 需要手機 OTP。
+  - `Registration` 以 `email + eventId` 做唯一鍵，避免重覆報名，同時保存多語系表單 `formData`。
+  - Referral 邏輯：每位報名者可擁有唯一推薦碼 (`Referral`)，使用紀錄透過 `ReferralUsage` 管理，不允許重覆使用 (`@@unique([referralId, registrationId])`)。
+- **表單欄位**：
+  - `EventFormFields` 以 `order` 決定呈現順序，`filters` 支援條件顯示；`validater` 可存放 Regex 字串供前端驗證。
+- **安全防護**：
+  - Fastify `helmet`、`rate-limit`、`cors` 皆由 `backend/config/security.js` 集中設定。
+  - `middleware/sanitize.js` 透過 DOMPurify 過濾輸入，避免 XSS。
+- **郵件通知**：
+  - `utils/email.js` 統一寄送報名確認、編輯連結、邀請碼與群發 Campaign，需 Mailtrap Token。
+  - Magic Link 驗證成功後會回寫 `MagicLinkAttempt.success = true` 以解除失敗次數限制。
+- **快取策略**：
+  - Prisma 透過 `prisma-extension-redis` 快取 Event/Ticket/FormFields，預設 TTL 介於 3–10 秒，保持即時資訊。
+  - 若未設定 Redis，系統會以警告模式運作但仍可正常服務。
+
+外部參考：
+
+<Cards>
+	<Card title="GitHub Repository" href="https://github.com/sitcon-tw/2026-tickets" />
+	<Card title="Fastify Docs" href="https://www.fastify.io/docs/latest/" />
+	<Card title="Next.js Docs" href="https://nextjs.org/docs" />
+	<Card title="Fumadocs" href="https://fumadocs.dev" />
+</Cards>

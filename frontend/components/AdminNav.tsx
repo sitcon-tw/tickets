@@ -1,17 +1,19 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getTranslations } from "@/i18n/helpers";
-import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
 import type { Event, UserCapabilities } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
-import { useLocale } from "next-intl";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter as useNextRouter, usePathname } from "next/navigation";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const activityLinks = [
-	{ href: "/admin/", i18nKey: "overview", requireCapability: "canViewAnalytics" },
+	{ href: "/admin/", i18nKey: "statistics", requireCapability: "canViewAnalytics" },
 	{ href: "/admin/events/", i18nKey: "events", requireCapability: null }, // Always show
 	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null }, // Always show
 	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null }, // Always show
@@ -21,96 +23,20 @@ const activityLinks = [
 	{ href: "/admin/users/", i18nKey: "users", requireCapability: "canManageUsers" }
 ] as const;
 
-const styles = {
-	aside: {
-		backgroundColor: "var(--color-gray-950)",
-		padding: "2rem",
-		width: "17rem",
-		height: "100dvh",
-		position: "fixed" as const,
-		display: "flex",
-		flexDirection: "column" as const,
-		fontSize: "1.2rem",
-		zIndex: 1000,
-		transition: "transform 0.3s ease-in-out"
-	},
-	activity: {
-		fontSize: "1.2rem"
-	},
-	title: {
-		fontSize: "2rem",
-		marginTop: "0.5rem"
-	},
-	nav: {
-		marginTop: "2rem",
-		flex: 1
-	},
-	navList: {
-		paddingLeft: "0.8rem",
-		margin: 0
-	},
-	navItem: {
-		listStyle: "none",
-		marginBottom: "1rem"
-	},
-	links: {
-		display: "flex",
-		flexDirection: "column" as const,
-		gap: "0.8rem"
-	},
-	user: {
-		fontWeight: 600
-	},
-	logout: {
-		display: "flex",
-		gap: "0.5rem"
-	},
-	mobileHeader: {
-		display: "none",
-		position: "fixed" as const,
-		top: 0,
-		left: 0,
-		right: 0,
-		backgroundColor: "var(--color-gray-950)",
-		padding: "1rem",
-		zIndex: 999,
-		alignItems: "center",
-		justifyContent: "space-between",
-		borderBottom: "1px solid var(--color-gray-800)"
-	},
-	hamburger: {
-		background: "none",
-		border: "none",
-		color: "var(--color-gray-100)",
-		cursor: "pointer",
-		padding: "0.5rem"
-	},
-	overlay: {
-		display: "none",
-		position: "fixed" as const,
-		top: 0,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		backgroundColor: "rgba(0, 0, 0, 0.5)",
-		zIndex: 998
-	},
-	closeButton: {
-		position: "absolute" as const,
-		top: "1rem",
-		right: "1rem",
-		background: "none",
-		border: "none",
-		color: "var(--color-gray-100)",
-		cursor: "pointer",
-		padding: "0.5rem"
-	}
-};
-
 function AdminNav() {
-	const locale = useLocale();
-	const router = useRouter();
 	const pathname = usePathname();
+
+	const isAdminPage = pathname.includes("/admin");
+	if (!isAdminPage) {
+		return null;
+	}
+
+	const router = useNextRouter();
+
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
 
 	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
@@ -119,11 +45,12 @@ function AdminNav() {
 	const [isMobile, setIsMobile] = useState(false);
 	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
 
-	// Track if data has been loaded to prevent re-fetching
 	const dataLoadedRef = useRef(false);
 
 	const handleLocaleChange = (newLocale: string) => {
-		router.replace(pathname, { locale: newLocale });
+		// Replace the locale part in the pathname
+		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 
 	const localeNames: Record<string, string> = {
@@ -190,33 +117,10 @@ function AdminNav() {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	// Inject styles only once and don't remove them on unmount
-	useEffect(() => {
-		const styleId = "admin-nav-global-styles";
-		if (!document.getElementById(styleId)) {
-			const style = document.createElement("style");
-			style.id = styleId;
-			style.textContent = `
-        main {
-          padding-top: 5rem;
-          max-width: unset;
-          margin-left: 17rem;
-        }
-
-        @media (max-width: 768px) {
-          main {
-            margin-left: 0 !important;
-            padding-top: 5rem !important;
-          }
-        }
-      `;
-			document.head.appendChild(style);
-		}
-		// Don't remove styles on unmount to prevent layout shift
-	}, []);
-
 	const handleNavClick = (href: string) => {
-		router.push(href);
+		// Add locale prefix to href
+		const localizedHref = `/${locale}${href}`;
+		router.push(localizedHref);
 		setMobileMenuOpen(false);
 	};
 
@@ -232,20 +136,15 @@ function AdminNav() {
 	}, [mobileMenuOpen]);
 
 	const t = getTranslations(locale, {
-		activityName: {
-			"zh-Hant": "SITCON",
-			"zh-Hans": "SITCON",
-			en: "SITCON"
-		},
 		systemTitle: {
-			"zh-Hant": "報名系統後台",
-			"zh-Hans": "报名系统后台",
+			"zh-Hant": "管理員介面",
+			"zh-Hans": "管理员界面",
 			en: "Admin Panel"
 		},
-		overview: {
-			"zh-Hant": "總覽",
-			"zh-Hans": "总览",
-			en: "Overview"
+		statistics: {
+			"zh-Hant": "報名統計",
+			"zh-Hans": "报名统计",
+			en: "Statistics"
 		},
 		events: {
 			"zh-Hant": "活動管理",
@@ -307,64 +206,55 @@ function AdminNav() {
 	return (
 		<>
 			{/* Mobile Header */}
-			<div style={{ ...styles.mobileHeader, display: isMobile ? "flex" : "none" }}>
-				<button style={styles.hamburger} onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
-					<Menu size={24} />
-				</button>
-				<div style={{ fontSize: "1.2rem", fontWeight: 600 }}>{t.activityName}</div>
-				<div style={{ width: "40px" }} /> {/* Spacer for centering */}
-			</div>
+			{isMobile && (
+				<div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-10 flex items-center gap-2 border-b border-gray-200 dark:border-gray-800">
+					<Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+						<Menu size={24} />
+					</Button>
+					<div className="text-xl font-semibold">{t.systemTitle}</div>
+					<div className="w-10" /> {/* Spacer for centering */}
+				</div>
+			)}
 
 			{/* Overlay for mobile */}
-			{mobileMenuOpen && <div style={{ ...styles.overlay, display: "block" }} onClick={() => setMobileMenuOpen(false)} />}
+			{isMobile && mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMobileMenuOpen(false)} />}
 
 			{/* Sidebar */}
 			<aside
-				style={{
-					...styles.aside,
-					transform: isMobile ? (mobileMenuOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)"
-				}}
+				className={`
+					bg-gray-50 dark:bg-gray-950 p-8 h-screen fixed top-0 left-0 z-45
+					border-r border-gray-200 dark:border-gray-800 flex flex-col w-64
+					transition-transform duration-300 ease-in-out sm:pt-24
+					${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
+					md:sticky md:translate-x-0
+				`}
 			>
 				{/* Close button for mobile */}
 				{isMobile && (
-					<button style={styles.closeButton} onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={24} />
-					</button>
+					</Button>
 				)}
-				<div style={styles.activity}>{t.activityName}</div>
-				<div style={styles.title}>{t.systemTitle}</div>
-				<div style={{ marginBottom: "1.5rem", marginTop: "1rem" }}>
-					<label
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: "0.5rem"
-						}}
-					>
-						<span style={{ fontWeight: 600, fontSize: "0.85rem", opacity: 0.8 }}>{t.selectEvent}</span>
-						<select
-							value={currentEventId || ""}
-							onChange={e => handleEventChange(e.target.value)}
-							style={{
-								padding: "0.6rem",
-								border: "2px solid var(--color-gray-600)",
-								background: "var(--color-gray-800)",
-								color: "inherit",
-								borderRadius: "6px",
-								fontSize: "0.9rem",
-								cursor: "pointer"
-							}}
-						>
-							{events.map(event => (
-								<option key={event.id} value={event.id}>
-									{getLocalizedText(event.name, locale)}
-								</option>
-							))}
-						</select>
-					</label>
+				<div className="text-2xl mt-2 sm:text-xl text-center font-semibold">{t.systemTitle}</div>
+				<div className="mb-6 mt-4">
+					<Label className="flex flex-col gap-2">
+						<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
+						<Select value={currentEventId || ""} onValueChange={handleEventChange}>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{events.map(event => (
+									<SelectItem key={event.id} value={event.id}>
+										{getLocalizedText(event.name, locale)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</Label>
 				</div>
-				<nav style={styles.nav}>
-					<ul style={styles.navList}>
+				<nav className="mt-8 flex-1 overflow-y-auto">
+					<ul className="pl-3 m-0">
 						{activityLinks
 							.filter(({ requireCapability }) => {
 								if (!requireCapability) return true;
@@ -372,87 +262,61 @@ function AdminNav() {
 								return capabilities[requireCapability as keyof UserCapabilities];
 							})
 							.map(({ href, i18nKey }) => {
-								// Remove locale prefix and normalize trailing slashes for comparison
 								const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
 								const normalizedPath = pathWithoutLocale.endsWith("/") ? pathWithoutLocale : pathWithoutLocale + "/";
 								const normalizedHref = href.endsWith("/") ? href : href + "/";
 								const isActive = normalizedPath === normalizedHref || (normalizedHref !== "/admin/" && normalizedPath.startsWith(normalizedHref));
 								return (
 									<div key={href}>
-										<li style={styles.navItem}>
+										<li className="list-none mb-4">
 											<a
 												onClick={() => handleNavClick(href)}
 												onMouseEnter={() => setHoveredLink(href)}
 												onMouseLeave={() => setHoveredLink(null)}
-												style={{
-													textDecoration: hoveredLink === href ? "underline" : "none",
-													fontWeight: isActive ? 700 : 400,
-													color: isActive ? "#3b82f6" : "inherit",
-													borderLeft: isActive ? "3px solid #3b82f6" : "3px solid transparent",
-													paddingLeft: "0.5rem",
-													marginLeft: "-0.5rem",
-													display: "block",
-													transition: "all 0.2s ease"
-												}}
-												className="cursor-pointer"
+												className={`block pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
 											>
 												{t[i18nKey]}
 											</a>
 										</li>
-										{i18nKey === "registrations" && (
-											<hr
-												style={{
-													border: "none",
-													borderTop: "1px solid var(--color-gray-700)",
-													margin: "1rem 0"
-												}}
-											/>
-										)}
+										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
 									</div>
 								);
 							})}
 					</ul>
 				</nav>
-				<div style={styles.links}>
-					<div style={styles.user}>{t.userPlaceholder}</div>
-					<div style={styles.logout}>
+				<div className="flex flex-col gap-3 mt-4">
+					<div className="font-semibold">{t.userPlaceholder}</div>
+					<div className="flex gap-2">
 						<a
 							onClick={() => {
-								router.push("/logout");
+								router.push(`/${locale}/logout`);
 								setMobileMenuOpen(false);
 							}}
 							onMouseEnter={() => setHoveredLink("logout")}
 							onMouseLeave={() => setHoveredLink(null)}
-							style={{
-								textDecoration: hoveredLink === "logout" ? "underline" : "none"
-							}}
-							className="cursor-pointer"
+							className={`cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
 						>
 							{t.logout}
 						</a>
 						<span>・</span>
 						<a
 							onClick={() => {
-								router.push("/");
+								router.push(`/${locale}/`);
 								setMobileMenuOpen(false);
 							}}
 							onMouseEnter={() => setHoveredLink("home")}
 							onMouseLeave={() => setHoveredLink(null)}
-							style={{
-								textDecoration: hoveredLink === "home" ? "underline" : "none"
-							}}
-							className="cursor-pointer"
+							className={`cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
 						>
 							{t.backHome}
 						</a>
 					</div>
-					<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
+					<div className="flex justify-center items-center gap-2 mb-3">
 						<Globe size={16} className="text-gray-500" />
 						<select
 							value={locale}
 							onChange={e => handleLocaleChange(e.target.value)}
-							className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
-							style={{ padding: "0.25rem 0.5rem" }}
+							className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
 						>
 							{routing.locales.map(loc => (
 								<option key={loc} value={loc}>
@@ -463,15 +327,6 @@ function AdminNav() {
 					</div>
 				</div>
 			</aside>
-
-			{/* Inject mobile-specific CSS */}
-			<style jsx>{`
-				@media (max-width: 768px) {
-					aside {
-						transform: ${mobileMenuOpen ? "translateX(0)" : "translateX(-100%)"} !important;
-					}
-				}
-			`}</style>
 		</>
 	);
 }

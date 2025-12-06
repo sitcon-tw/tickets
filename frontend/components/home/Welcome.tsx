@@ -1,40 +1,44 @@
 "use client";
 
-import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
+import { WelcomeProps } from "@/lib/types/components";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import ElectricBorder from "../ElectricBorder";
 
-type WelcomeState = "hidden" | "registered" | "referral" | "default";
-
-interface WelcomeProps {
-	eventId: string;
-	eventSlug: string;
-}
+type WelcomeState = "notloggedin" | "registered" | "referral" | "default" | "cancelled";
 
 export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const locale = useLocale();
 	const router = useRouter();
 
-	const [welcomeState, setWelcomeState] = useState<WelcomeState>("hidden");
+	const [welcomeState, setWelcomeState] = useState<WelcomeState>("notloggedin");
 	const [referralParam, setReferralParam] = useState<string | null>(null);
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [isSafari, setIsSafari] = useState(false);
 
 	const t = getTranslations(locale, {
-		description: {
-			"zh-Hant": "毛哥EM 的網站起始模板，使用 Astro 和 Fastify 構建。",
-			"zh-Hans": "毛哥EM 的网站起始模板，使用 Astro 和 Fastify 构建。",
-			en: "Elvis Mao's Website starter template using Astro and Fastify."
+		loginToRegister: {
+			"zh-Hant": "登入後即可報名！",
+			"zh-Hans": "登录后即可报名！",
+			en: "Login to register!"
+		},
+		login: {
+			"zh-Hant": "立刻登入",
+			"zh-Hans": "立刻登录",
+			en: "Login now"
 		},
 		loggedInWelcome: {
 			"zh-Hant": "歡迎回來！趕緊開始報名吧！",
 			"zh-Hans": "欢迎回来！赶紧开始报名吧！",
 			en: "Welcome back! Let's get you registered!"
+		},
+		loggedInWelcomeDescription: {
+			"zh-Hant": "選擇下方的票種開始報名。",
+			"zh-Hans": "选择下方的票种开始报名。",
+			en: "Choose a ticket type below to get started."
 		},
 		haveNotVerifySMS1: {
 			"zh-Hant": "您還沒有完成簡訊驗證！",
@@ -56,20 +60,25 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			"zh-Hans": "你已完成报名！",
 			en: "Registration Complete!"
 		},
+		cancelledWelcome: {
+			"zh-Hant": "你的報名已取消",
+			"zh-Hans": "你的报名已取消",
+			en: "Your Registration Has Been Cancelled"
+		},
 		viewRegDetail: {
 			"zh-Hant": "查看報名資料",
 			"zh-Hans": "查看报名资料",
 			en: "View Registration Details"
 		},
+		viewCancelledReg: {
+			"zh-Hant": "查看已取消的報名",
+			"zh-Hans": "查看已取消的报名",
+			en: "View Cancelled Registration"
+		},
 		referralWelcome: {
 			"zh-Hant": "邀請你一起參加 SITCON！",
 			"zh-Hans": "邀请你一起参加 SITCON！",
 			en: "invites you to join SITCON!"
-		},
-		selectTicket: {
-			"zh-Hant": "請選擇你要的票種",
-			"zh-Hans": "请选择你要的票种",
-			en: "Please select your ticket type"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
@@ -99,10 +108,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		const referral = localStorage.getItem("referralCode");
 		setReferralParam(referral);
 
-		const ua = navigator.userAgent;
-		const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(ua);
-		setIsSafari(isSafariBrowser);
-
 		let cancelled = false;
 
 		async function handleWelcome() {
@@ -117,9 +122,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				try {
 					const registrations = await registrationsAPI.getAll();
 					if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
-						const hasRegisteredForEvent = registrations.data.some(reg => reg.event?.id === eventId);
-						if (hasRegisteredForEvent && !cancelled) {
-							setWelcomeState("registered");
+						const eventRegistration = registrations.data.find(reg => reg.event?.id === eventId);
+						if (eventRegistration && !cancelled) {
+							if (eventRegistration.status === "cancelled") {
+								setWelcomeState("cancelled");
+							} else {
+								setWelcomeState("registered");
+							}
 							return;
 						}
 					}
@@ -147,7 +156,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				setWelcomeState("referral");
 				return;
 			}
-			setWelcomeState(isAuthenticated ? "default" : "hidden");
+			setWelcomeState(isAuthenticated ? "default" : "notloggedin");
 		}
 
 		handleWelcome();
@@ -157,126 +166,89 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		};
 	}, [referralParam, eventId, t.loadFailed]);
 
-	const registeredContent = (
-		<section
-			style={{
-				padding: "2rem",
-				margin: "1rem",
-				textAlign: "center",
-				animation: "fadeInUp 0.5s ease-out",
-				...(isSafari ? { backgroundColor: "var(--color-gray-800)", border: "5px solid #5A738F" } : {})
-			}}
-		>
-			<h2
-				style={{
-					fontSize: "1.5rem",
-					marginBottom: "0.5rem"
-				}}
-			>
-				{t.registeredWelcome}
-			</h2>
-			<div className="items-center justify-center flex">
-				<button
-					className="button"
-					onClick={() => {
-						setLoading(true);
-						router.push(`/${eventSlug}/success`);
-					}}
-				>
-					{loading ? (
-						<>
-							<Spinner size="sm" />{" "}
-						</>
-					) : null}
-					{t.viewRegDetail}
-				</button>
-			</div>
-		</section>
-	);
-
 	return (
-		<section>
-			{welcomeState === "registered" ? (
-				isSafari ? (
-					registeredContent
-				) : (
-					<ElectricBorder color="#5A738F" chaos={0.7} thickness={5}>
-						{registeredContent}
-					</ElectricBorder>
-				)
-			) : null}
+		<section className="pb-4">
+			{welcomeState === "registered" && (
+				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							isLoading={loading}
+							onClick={() => {
+								setLoading(true);
+								router.push(`/${eventSlug}/success`);
+							}}
+						>
+							{t.viewRegDetail}
+						</Button>
+					</div>
+				</section>
+			)}
 
-			{welcomeState === "referral" ? (
-				<section
-					style={{
-						backgroundColor: "var(--color-gray-800)",
-						padding: "2rem",
-						margin: "1rem",
-						textAlign: "center",
-						animation: "fadeInUp 0.5s ease-out"
-					}}
-				>
-					<h2
-						style={{
-							fontSize: "1.5rem",
-							marginBottom: "0.5rem"
-						}}
-					>
+			{welcomeState === "cancelled" && (
+				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.cancelledWelcome}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							isLoading={loading}
+							onClick={() => {
+								setLoading(true);
+								router.push(`/${eventSlug}/success`);
+							}}
+						>
+							{t.viewCancelledReg}
+						</Button>
+					</div>
+				</section>
+			)}
+
+			{welcomeState === "referral" && (
+				<>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
-					<p>{t.promotionalText}</p>
-				</section>
-			) : null}
+					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
+				</>
+			)}
 
-			{welcomeState === "default" ? (
-				<section
-					style={{
-						backgroundColor: "var(--color-gray-800)",
-						padding: "2rem",
-						margin: "1rem",
-						textAlign: "center",
-						animation: "fadeInUp 0.5s ease-out"
-					}}
-				>
-					<h2
-						style={{
-							fontSize: "1.5rem",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{t.loggedInWelcome}
-					</h2>
-					{!isSmsVerified && (
-						<div className="text-yellow-200 items-center justify-center flex flex-col gap-2">
-							<div>
+			{welcomeState === "default" && (
+				<>
+					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100 text-center">{t.loggedInWelcome}</h2>
+					{isSmsVerified ? (
+						<p className="text-gray-800 dark:text-gray-200 text-center mt-4">{t.loggedInWelcomeDescription}</p>
+					) : (
+						<>
+							<div className="text-yellow-500 text-center mt-4">
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>
+								<Button
+									className="text-gray-900 dark:text-gray-100 mt-3"
+									onClick={() => {
+										router.push(`/verify`);
+									}}
+								>
+									{t.verifyNow}
+								</Button>
 							</div>
-							<button
-								className="button text-white"
-								onClick={() => {
-									router.push(`/verify`);
-								}}
-							>
-								{t.verifyNow}
-							</button>
-						</div>
+						</>
 					)}
-				</section>
-			) : null}
+				</>
+			)}
 
-			<h2
-				style={{
-					fontSize: "1rem",
-					marginBlock: "2rem",
-					textAlign: "center",
-					fontWeight: "normal",
-					animation: "blink 1s infinite linear alternate",
-					opacity: 0.8
-				}}
-			>
-				{t.selectTicket}
-			</h2>
+			{welcomeState === "notloggedin" && (
+				<>
+					<h2 className="text-2xl mb-4 text-gray-900 dark:text-gray-100 text-center">{t.loginToRegister}</h2>
+					<div className="items-center justify-center flex">
+						<Button
+							onClick={() => {
+								router.push(`/login`);
+							}}
+						>
+							{t.login}
+						</Button>
+					</div>
+				</>
+			)}
 		</section>
 	);
 }

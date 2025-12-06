@@ -1,4 +1,4 @@
-export default `# **SITCON Privacy Policy and Personal Data Protection Statement**
+const termsContent = `# **SITCON Privacy Policy and Personal Data Protection Statement**
 
 The Students' Information Technology Conference (SITCON, hereinafter referred to as "we") is a non-profit student community. This registration system is used solely for SITCON events and is not a general commercial ticketing platform. We value your privacy and the protection of personal data, and we process your information in accordance with the *Personal Data Protection Act of the Republic of China (Taiwan)* and other applicable laws.
  By using this system, you acknowledge that you have read, understood, and agreed to this policy.
@@ -118,3 +118,5 @@ For any questions regarding these terms or related services, please contact the 
 
 **Effective Date:** October 11, 2025
 `;
+
+export default termsContent;

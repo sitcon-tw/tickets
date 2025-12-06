@@ -10,6 +10,11 @@
 	"requirePragma": false,
 	"insertPragma": false,
 	"proseWrap": "never",
-	"plugins": ["prettier-plugin-organize-imports"],
-	"overrides": []
+	"endOfLine": "lf",
+	"htmlWhitespaceSensitivity": "ignore",
+	"embeddedLanguageFormatting": "auto",
+	"quoteProps": "as-needed",
+	"jsxSingleQuote": false,
+	"singleAttributePerLine": false,
+	"plugins": ["prettier-plugin-organize-imports", "prettier-plugin-packagejson"]
 }

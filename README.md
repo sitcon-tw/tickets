@@ -41,10 +41,6 @@ pnpm dev
 
 在每個元件獨立編輯，不會全部塞在同一個大 JSON。看了你就懂了不多解釋。
 
-## 來自 Nelson 的留言：
+## contributing
 
-這票券系統因為換過好幾個技術棧，從 Astro 到 React JS 再到 Next + React TSX，refactor 了好幾次，如果來年還有人要維護，可以幫我完成：
-
-- 把後端 Fastify 換成 TS，然後統一前後端 type，現在這樣真的太痛苦了
-- 把 BetterAuth 移到 AuthJS
-- 想不到了，加油吧
+想要增加新功能或發現 bug 的話，歡迎開 issue；如果你直接寫好 code 的話可以直接發 PR！PR 請丟到 dev branch

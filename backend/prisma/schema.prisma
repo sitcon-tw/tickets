@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -84,6 +83,7 @@ model Verification {
 
 model Event {
   id          String   @id @default(cuid())
+  slug        String?  @unique // Custom URL-friendly slug (optional, falls back to last 6 chars of id)
   name        Json     // Localized: {"en": "Event Name", "zh": "活動名稱"}
   description Json?    // Localized: {"en": "Description", "zh": "描述"}
   plainDescription Json? // Localized plain text: {"en": "Plain description", "zh": "純文字描述"}
@@ -92,6 +92,7 @@ model Event {
   endDate     DateTime
   ogImage     String?
   landingPage String?  // JSON content
+  googleSheetsUrl String? // Google Sheets URL for data export
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -138,7 +139,7 @@ model EventFormFields {
   type        String   // text, textarea, select, checkbox, radio
   validater   String?  // regex pattern for validation
   name        Json     // Localized: {"en": "Field Name", "zh": "欄位名稱"}
-  description String?
+  description Json?    // Localized: {"en": "Description", "zh": "描述"}
   placeholder String?
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]

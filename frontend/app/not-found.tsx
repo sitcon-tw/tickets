@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import Link from "next/link";
@@ -35,27 +36,12 @@ export default function NotFound() {
 	});
 
 	return (
-		<>
-			<main
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					justifyContent: "center",
-					minHeight: "100vh",
-					padding: "2rem",
-					textAlign: "center"
-				}}
-			>
-				<section>
-					<h1 style={{ marginBlock: "1rem" }} className="text-2xl font-bold">
-						{t.title}
-					</h1>
-					<p>{t.description}</p>
-					<Link style={{ margin: "1rem auto" }} className="button" href={`/${locale}/`}>
-						{t.backHome}
-					</Link>
-				</section>
-			</main>
-		</>
+		<section className="flex flex-col justify-center items-center p-8 text-center">
+			<h1 className="text-2xl font-bold my-4 text-gray-900 dark:text-gray-100">{t.title}</h1>
+			<p className="text-gray-700 dark:text-gray-300">{t.description}</p>
+			<Button asChild className="my-4 mx-auto">
+				<Link href={`/${locale}/`}>{t.backHome}</Link>
+			</Button>
+		</section>
 	);
 }

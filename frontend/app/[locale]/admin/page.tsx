@@ -1,11 +1,13 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Register Chart.js components
 if (typeof window !== "undefined") {
@@ -14,11 +16,13 @@ if (typeof window !== "undefined") {
 
 export default function AdminDashboard() {
 	const locale = useLocale();
+	const { theme, resolvedTheme } = useTheme();
 
-	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+	const [, setDashboardData] = useState<DashboardData | null>(null);
 	const [registrationTrends, setRegistrationTrends] = useState<RegistrationTrend[]>([]);
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [mounted, setMounted] = useState(false);
 
 	// Chart refs
 	const trendsChartRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,9 +35,29 @@ export default function AdminDashboard() {
 
 	const chartsInstancesRef = useRef<Chart[]>([]);
 
+	// Track mounted state for theme
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Get theme-aware colors
+	const getThemeColors = useCallback(() => {
+		const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && theme === "dark"));
+
+		return {
+			chartColors: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+			textColor: isDark ? "#f3f4f6" : "#1f2937",
+			gridColor: isDark ? "#4b5563" : "#e5e7eb",
+			tickColor: isDark ? "#d1d5db" : "#6b7280",
+			tooltipBg: isDark ? "#374151" : "#ffffff",
+			tooltipBorder: isDark ? "#6b7280" : "#d1d5db",
+			remainingColor: isDark ? "#E5E5E5" : "#e5e7eb"
+		};
+	}, [mounted, resolvedTheme, theme]);
+
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "管理後台總覽", "zh-Hans": "管理后台总览", en: "Admin Dashboard" },
-		overview: { "zh-Hant": "總覽", "zh-Hans": "总览", en: "Overview" },
+		statistics: { "zh-Hant": "報名統計", "zh-Hans": "报名统计", en: "Statistics" },
 		totalTickets: { "zh-Hant": "總票券數", "zh-Hans": "总票券数", en: "Total Tickets" },
 		sold: { "zh-Hant": "已售出", "zh-Hans": "已售出", en: "Sold" },
 		remaining: { "zh-Hant": "剩餘票券", "zh-Hans": "剩余票券", en: "Remaining Tickets" },
@@ -43,11 +67,6 @@ export default function AdminDashboard() {
 		salesTrend: { "zh-Hant": "票券銷售趨勢", "zh-Hans": "票券销售趋势", en: "Ticket Sales Trend" },
 		ticketDistribution: { "zh-Hant": "票券類型分布", "zh-Hans": "票券类型分布", en: "Ticket Type Distribution" },
 		progressTitle: { "zh-Hant": "票券銷售進度", "zh-Hans": "票券销售进度", en: "Ticket Sales Progress" },
-		student: { "zh-Hant": "學生票", "zh-Hans": "学生票", en: "Student Ticket" },
-		regular: { "zh-Hant": "普通票", "zh-Hans": "普通票", en: "Regular Ticket" },
-		distant: { "zh-Hant": "遠道而來票", "zh-Hans": "远道而来票", en: "Distant Ticket" },
-		invite: { "zh-Hant": "邀請票", "zh-Hans": "邀请票", en: "Invite Ticket" },
-		opensource: { "zh-Hant": "開源貢獻票", "zh-Hans": "开源贡献票", en: "Open Source Ticket" },
 		remainingLabel: { "zh-Hant": "張剩餘", "zh-Hans": "张剩余", en: "remaining" },
 		total: { "zh-Hant": "總數", "zh-Hans": "总数", en: "Total" },
 		soldLabel: { "zh-Hant": "已售", "zh-Hans": "已售", en: "Sold" }
@@ -69,8 +88,6 @@ export default function AdminDashboard() {
 			}
 
 			if (trendsResponse.success && trendsResponse.data) {
-				console.log("Registration trends data:", trendsResponse.data);
-				// The API returns data with a 'trends' property
 				const trends = trendsResponse.data || [];
 				setRegistrationTrends(trends);
 			} else {
@@ -95,7 +112,8 @@ export default function AdminDashboard() {
 		chartsInstancesRef.current.forEach(chart => chart.destroy());
 		chartsInstancesRef.current = [];
 
-		const colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
+		const themeColors = getThemeColors();
+		const colors = themeColors.chartColors;
 
 		// Line Chart - Registration Trends
 		if (trendsChartRef.current) {
@@ -129,10 +147,11 @@ export default function AdminDashboard() {
 					},
 					options: {
 						responsive: true,
+						maintainAspectRatio: true,
 						plugins: {
 							legend: {
 								position: "bottom",
-								labels: { color: "#f3f4f6" }
+								labels: { color: themeColors.textColor }
 							}
 						},
 						scales: {
@@ -141,19 +160,19 @@ export default function AdminDashboard() {
 								title: {
 									display: true,
 									text: locale === "zh-Hant" ? "註冊數量" : locale === "zh-Hans" ? "注册数量" : "Registration Count",
-									color: "#f3f4f6"
+									color: themeColors.textColor
 								},
-								ticks: { color: "#d1d5db" },
-								grid: { color: "#4b5563" }
+								ticks: { color: themeColors.tickColor },
+								grid: { color: themeColors.gridColor }
 							},
 							x: {
 								title: {
 									display: true,
 									text: locale === "zh-Hant" ? "日期" : locale === "zh-Hans" ? "日期" : "Date",
-									color: "#f3f4f6"
+									color: themeColors.textColor
 								},
-								ticks: { color: "#d1d5db" },
-								grid: { color: "#4b5563" }
+								ticks: { color: themeColors.tickColor },
+								grid: { color: themeColors.gridColor }
 							}
 						}
 					}
@@ -179,22 +198,23 @@ export default function AdminDashboard() {
 								data: soldCounts,
 								backgroundColor: colors.slice(0, tickets.length),
 								borderWidth: 2,
-								borderColor: "#fff"
+								borderColor: themeColors.tooltipBg
 							}
 						]
 					},
 					options: {
 						responsive: true,
+						maintainAspectRatio: true,
 						plugins: {
 							legend: {
 								position: "bottom",
-								labels: { color: "#f3f4f6" }
+								labels: { color: themeColors.textColor }
 							},
 							tooltip: {
-								titleColor: "#f3f4f6",
-								bodyColor: "#f3f4f6",
-								backgroundColor: "#374151",
-								borderColor: "#6b7280",
+								titleColor: themeColors.textColor,
+								bodyColor: themeColors.textColor,
+								backgroundColor: themeColors.tooltipBg,
+								borderColor: themeColors.tooltipBorder,
 								borderWidth: 1,
 								callbacks: {
 									label: function (context: TooltipItem<"pie">) {
@@ -233,7 +253,7 @@ export default function AdminDashboard() {
 							datasets: [
 								{
 									data: [soldCount, remaining],
-									backgroundColor: [color, "#E5E5E5"],
+									backgroundColor: [color, themeColors.remainingColor],
 									borderWidth: 0
 								}
 							]
@@ -248,10 +268,10 @@ export default function AdminDashboard() {
 							plugins: {
 								legend: { display: false },
 								tooltip: {
-									titleColor: "#f3f4f6",
-									bodyColor: "#f3f4f6",
-									backgroundColor: "#374151",
-									borderColor: "#6b7280",
+									titleColor: themeColors.textColor,
+									bodyColor: themeColors.textColor,
+									backgroundColor: themeColors.tooltipBg,
+									borderColor: themeColors.tooltipBorder,
 									borderWidth: 1,
 									callbacks: {
 										label: function (context: TooltipItem<"doughnut">) {
@@ -290,14 +310,14 @@ export default function AdminDashboard() {
 				}
 			}
 		});
-	}, [registrationTrends, tickets, locale]);
+	}, [registrationTrends, tickets, locale, getThemeColors]);
 
 	useEffect(() => {
 		initializeDashboard();
 	}, [initializeDashboard]);
 
 	useEffect(() => {
-		if (!loading) {
+		if (!loading && mounted) {
 			initCharts();
 		}
 
@@ -305,7 +325,31 @@ export default function AdminDashboard() {
 			chartsInstancesRef.current.forEach(chart => chart.destroy());
 			chartsInstancesRef.current = [];
 		};
-	}, [loading, initCharts]);
+	}, [loading, initCharts, mounted]);
+
+	// Handle window resize
+	useEffect(() => {
+		if (!mounted || loading) return;
+
+		const handleResize = () => {
+			// Debounce the resize to avoid too many re-renders
+			const timeoutId = setTimeout(() => {
+				initCharts();
+			}, 250);
+
+			return () => clearTimeout(timeoutId);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, [initCharts, mounted, loading]);
+
+	// Re-initialize charts when theme changes
+	useEffect(() => {
+		if (!loading && mounted) {
+			initCharts();
+		}
+	}, [resolvedTheme, theme, loading, mounted, initCharts]);
 
 	// Calculate actual ticket stats from tickets data
 	const totalTicketQuantity = tickets.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0);
@@ -313,224 +357,56 @@ export default function AdminDashboard() {
 	const remainingTickets = totalTicketQuantity - totalSold;
 	const salesRate = totalTicketQuantity > 0 ? ((totalSold / totalTicketQuantity) * 100).toFixed(1) : "0";
 
-	const statCardStyle: React.CSSProperties = {
-		background: "var(--color-gray-800)",
-		padding: "1.5rem",
-		borderRadius: "8px",
-		boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-		textAlign: "center"
-	};
-
-	const chartContainerStyle: React.CSSProperties = {
-		background: "var(--color-gray-800)",
-		padding: "1.5rem",
-		borderRadius: "8px",
-		boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-		flex: "1",
-		maxWidth: "100%"
-	};
-
 	if (loading) {
 		return (
 			<main>
-				<h1>{t.overview}</h1>
-				<div style={{ textAlign: "center", padding: "3rem", color: "var(--color-gray-300)" }}>{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+				<h1>{t.statistics}</h1>
+				<div className="text-center p-12 text-gray-600 dark:text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
 			</main>
 		);
 	}
 
 	return (
 		<main>
-			<h1>{t.overview}</h1>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-					gap: "1.5rem",
-					marginBottom: "3rem"
-				}}
-			>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.totalTickets}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{totalTicketQuantity}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+			<AdminHeader title={t.statistics} />
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalTickets}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalTicketQuantity}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.sold}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{totalSold}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.sold}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalSold}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.remaining}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{remainingTickets}
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.tickets}
-					</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.remaining}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{remainingTickets}</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
 				</div>
-				<div style={statCardStyle}>
-					<h3
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-300)",
-							fontSize: "0.9rem",
-							fontWeight: 500
-						}}
-					>
-						{t.salesRate}
-					</h3>
-					<div
-						style={{
-							fontSize: "2.5rem",
-							fontWeight: "bold",
-							color: "var(--color-gray-100)",
-							marginBottom: "0.5rem"
-						}}
-					>
-						{salesRate}%
-					</div>
-					<div
-						style={{
-							color: "var(--color-gray-100)",
-							fontSize: "0.8rem"
-						}}
-					>
-						{t.completion}
-					</div>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.salesRate}</h3>
+					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{salesRate}%</div>
+					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.completion}</div>
 				</div>
 			</div>
 
-			<div
-				style={{
-					display: "flex",
-					gap: "2rem",
-					marginBottom: "3rem",
-					flexWrap: "wrap"
-				}}
-			>
-				<div style={{ ...chartContainerStyle, flex: "2" }}>
-					<h2
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-100)",
-							fontSize: "1.2rem"
-						}}
-					>
-						{t.salesTrend}
-					</h2>
+			<div className="flex gap-8 mb-12 flex-wrap">
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-2 max-w-full border border-gray-200 dark:border-gray-700">
+					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
 					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
 				</div>
 
-				<div style={chartContainerStyle}>
-					<h2
-						style={{
-							margin: "0 0 1rem 0",
-							color: "var(--color-gray-100)",
-							fontSize: "1.2rem"
-						}}
-					>
-						{t.ticketDistribution}
-					</h2>
+				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-1 max-w-full border border-gray-200 dark:border-gray-700">
+					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDistribution}</h2>
 					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
 				</div>
 			</div>
 
-			<div
-				style={{
-					background: "var(--color-gray-800)",
-					padding: "1.5rem",
-					borderRadius: "8px",
-					boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
-				}}
-			>
-				<h2
-					style={{
-						margin: "0 0 1.5rem 0",
-						color: "var(--color-gray-100)",
-						fontSize: "1.2rem"
-					}}
-				>
-					{t.progressTitle}
-				</h2>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-						gap: "1.5rem"
-					}}
-				>
+			<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+				<h2 className="m-0 mb-6 text-gray-900 dark:text-gray-100 text-xl">{t.progressTitle}</h2>
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
 					{tickets.slice(0, 5).map((ticket, idx) => {
 						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
 						const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
@@ -539,124 +415,23 @@ export default function AdminDashboard() {
 						const remaining = total - soldCount;
 
 						return (
-							<div
-								key={idx}
-								style={{
-									background: "var(--color-gray-700)",
-									padding: "1.5rem",
-									borderRadius: "12px",
-									boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-									textAlign: "center",
-									maxWidth: "100%"
-								}}
-							>
-								<h3
-									style={{
-										margin: "0 0 1.5rem 0",
-										color: "var(--color-gray-200)",
-										fontSize: "1.1rem",
-										fontWeight: 600
-									}}
-								>
-									{ticketName}
-								</h3>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "center",
-										marginBottom: "1rem"
-									}}
-								>
+							<div key={idx} className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-md text-center max-w-full border border-gray-200 dark:border-gray-600">
+								<h3 className="m-0 mb-6 text-gray-800 dark:text-gray-200 text-lg font-semibold">{ticketName}</h3>
+								<div className="flex justify-center mb-4">
 									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
 								</div>
-								<div
-									style={{
-										marginBottom: "1.5rem",
-										padding: "1rem",
-										background: "var(--color-gray-600)",
-										borderRadius: "8px"
-									}}
-								>
-									<div
-										style={{
-											fontSize: "2.5rem",
-											fontWeight: "bold",
-											color: "var(--color-gray-100)",
-											lineHeight: "1"
-										}}
-									>
-										{remaining}
-									</div>
-									<div
-										style={{
-											fontSize: "0.9rem",
-											color: "var(--color-gray-300)",
-											marginTop: "0.25rem"
-										}}
-									>
-										{t.remainingLabel}
-									</div>
+								<div className="mb-6 p-4 bg-gray-100 dark:bg-gray-600 rounded-lg">
+									<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 leading-none">{remaining}</div>
+									<div className="text-sm text-gray-600 dark:text-gray-300 mt-1">{t.remainingLabel}</div>
 								</div>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "space-around",
-										gap: "1rem"
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
-										}}
-									>
-										<span
-											style={{
-												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
-											}}
-										>
-											{t.total}
-										</span>
-										<span
-											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
-											}}
-										>
-											{total}
-										</span>
+								<div className="flex justify-around gap-4">
+									<div className="flex flex-col items-center gap-1">
+										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.total}</span>
+										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{total}</span>
 									</div>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											alignItems: "center",
-											gap: "0.25rem"
-										}}
-									>
-										<span
-											style={{
-												color: "var(--color-gray-300)",
-												fontSize: "0.85rem",
-												fontWeight: 500
-											}}
-										>
-											{t.soldLabel}
-										</span>
-										<span
-											style={{
-												fontWeight: 600,
-												color: "var(--color-gray-200)",
-												fontSize: "1.1rem"
-											}}
-										>
-											{soldCount}
-										</span>
+									<div className="flex flex-col items-center gap-1">
+										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.soldLabel}</span>
+										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{soldCount}</span>
 									</div>
 								</div>
 							</div>

@@ -1,7 +1,3 @@
-import { AlertContainer } from "@/components/Alert";
-import Footer from "@/components/Footer";
-import Nav from "@/components/Nav";
-import { AlertProvider } from "@/contexts/AlertContext";
 import { routing } from "@/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -22,12 +18,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 
 	return (
 		<NextIntlClientProvider messages={messages}>
-			<AlertProvider>
-				<Nav />
-				{children}
-				<Footer />
-				<AlertContainer />
-			</AlertProvider>
+			<div className="mx-4 sm:mx-8">{children}</div>
 		</NextIntlClientProvider>
 	);
 }

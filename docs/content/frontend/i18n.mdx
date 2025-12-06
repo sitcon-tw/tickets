@@ -1,0 +1,44 @@
+---
+title: 多語與在地化
+description: next-intl 設定、語系檔案與最佳實務
+---
+
+## Routing 設定
+
+`frontend/i18n/routing.ts` 使用 `defineRouting`：
+
+```ts
+locales: ["en", "zh-Hant", "zh-Hans"],
+defaultLocale: "zh-Hant",
+localePrefix: "always"
+```
+
+`frontend/middleware.ts` 套用 `createMiddleware(routing)`，讓所有非 `/api`、`/_next`、靜態檔案路徑都會附上語系前綴。
+
+## 翻譯檔案
+
+- 建議依頁面建立目錄，例如 `app/[locale]/(public)/home/messages.json`
+- App Router 透過 `getTranslations` 或 `useTranslations` 載入對應語系檔案
+- 若在伺服端元件中使用，請使用 async component 並呼叫 `getMessages()`
+
+## URL 與路由
+
+- 頁面路徑皆位於 `app/[locale]/...`
+- 導覽元件 (`components/Nav.tsx`, `components/AdminNav.tsx`) 需透過 `next-intl` 的 `Link` 元件或 `useLocale()` 將語系帶入
+- API 呼叫保持無語系前綴，以免破壞 `/api` 對應（Middleware 已排除）
+
+## 表單與多語資料
+
+- 後端活動/票券名稱使用 JSON 儲存多語，前端收到後以 `locale` 選擇顯示
+- 若缺少對應語系，應回退到 `defaultLocale` 或顯示英文版
+
+## 日期與數字格式
+
+- 建議使用 `Intl.DateTimeFormat`、`Intl.NumberFormat` 並以 `locale` 變數初始化
+- 若需自定義格式可封裝在 `lib/utils/intl.ts`（目前可自行新增）
+
+## 測試與驗證
+
+1. 於本地切換 `/en/`, `/zh-Hant/`, `/zh-Hans/` 確認所有頁面正常
+2. 檢查動態連結與 API 呼叫是否保留查詢參數
+3. 新增語系時需更新 `i18n/routing.ts` 並建立對應翻譯檔案

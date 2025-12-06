@@ -1,13 +1,6 @@
 import { motion } from "motion/react";
 import { JSXElementConstructor, ReactElement, ReactNode, ReactPortal, useEffect, useRef, useState } from "react";
 
-const styles = {
-	wrapper: {
-		display: "inline-block",
-		whiteSpace: "pre-wrap"
-	}
-};
-
 export default function DecryptedText({
 	text,
 	speed = 50,
@@ -188,21 +181,8 @@ export default function DecryptedText({
 			: {};
 
 	return (
-		<motion.span className={parentClassName} ref={containerRef} style={styles.wrapper} {...hoverProps} {...props}>
-			<span
-				style={{
-					position: "absolute",
-					width: "1px",
-					height: "1px",
-					padding: 0,
-					margin: "-1px",
-					overflow: "hidden",
-					clip: "rect(0,0,0,0)",
-					border: 0
-				}}
-			>
-				{displayText}
-			</span>
+		<motion.span className={`inline-block whitespace-pre-wrap ${parentClassName}`} ref={containerRef} {...hoverProps} {...props}>
+			<span className="absolute w-px h-px p-0 -m-px overflow-hidden clip-[rect(0,0,0,0)] border-0">{displayText}</span>
 
 			<span aria-hidden="true">
 				{displayText

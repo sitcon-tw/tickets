@@ -1,6 +1,7 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
@@ -144,12 +145,10 @@ export default function ReferralStatus() {
 	if (error) {
 		return (
 			<>
-				<div className="min-h-screen flex items-center justify-center">
+				<div className="flex items-center justify-center">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
-						<button onClick={() => router.push("/")} className="button">
-							{t.backToSuccess}
-						</button>
+						<Button onClick={() => router.push("/")}>{t.backToSuccess}</Button>
 					</div>
 				</div>
 			</>
@@ -159,72 +158,50 @@ export default function ReferralStatus() {
 	return (
 		<>
 			{loading ? (
-				<div className="min-h-screen flex items-center justify-center">
+				<div className="flex items-center justify-center">
 					<PageSpinner />
 				</div>
 			) : (
-				<main className="min-h-screen" style={{ paddingTop: "5rem", paddingBottom: "2.5rem", paddingLeft: "1rem", paddingRight: "1rem", marginTop: "8rem" }}>
+				<main className="pt-20 pb-10 px-4 mt-32">
 					<div className="max-w-6xl mx-auto">
-						<h1 className="text-4xl font-bold" style={{ marginBottom: "2rem" }}>
-							{t.title}
-						</h1>
+						<h1 className="text-4xl font-bold mb-8">{t.title}</h1>
 
 						{/* Stats Cards */}
-						<div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: "1.5rem", marginBottom: "2rem" }}>
-							<div className="border-2 border-gray-500 rounded-lg" style={{ padding: "1.5rem" }}>
-								<div className="text-gray-400" style={{ marginBottom: "0.5rem" }}>
-									{t.totalReferrals}
-								</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+							<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
+								<div className="text-gray-400 dark:text-gray-500 mb-2">{t.totalReferrals}</div>
 								<div className="text-4xl font-bold">{stats?.totalReferrals || 0}</div>
 							</div>
-							<div className="border-2 border-gray-500 rounded-lg" style={{ padding: "1.5rem" }}>
-								<div className="text-gray-400" style={{ marginBottom: "0.5rem" }}>
-									{t.successfulReferrals}
-								</div>
+							<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
+								<div className="text-gray-400 dark:text-gray-500 mb-2">{t.successfulReferrals}</div>
 								<div className="text-4xl font-bold text-green-500">{stats?.successfulReferrals || 0}</div>
 							</div>
 						</div>
 
 						{/* Referral List */}
-						<div className="border-2 border-gray-500 rounded-lg" style={{ padding: "1.5rem" }}>
-							<h2 className="text-2xl font-bold" style={{ marginBottom: "1rem" }}>
-								{t.referralList}
-							</h2>
+						<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
+							<h2 className="text-2xl font-bold mb-4">{t.referralList}</h2>
 
 							{!stats?.referralList || stats.referralList.length === 0 ? (
-								<div className="text-center text-gray-400" style={{ paddingTop: "2rem", paddingBottom: "2rem" }}>
-									{t.noReferrals}
-								</div>
+								<div className="text-center text-gray-400 dark:text-gray-500 py-8">{t.noReferrals}</div>
 							) : (
 								<div className="overflow-x-auto">
 									<table className="w-full">
 										<thead>
-											<tr className="border-b border-gray-700">
-												<th className="text-left" style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-													{t.email}
-												</th>
-												<th className="text-left" style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-													{t.ticketName}
-												</th>
-												<th className="text-left" style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-													{t.status}
-												</th>
-												<th className="text-left" style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-													{t.registeredAt}
-												</th>
+											<tr className="border-b border-gray-700 dark:border-gray-800">
+												<th className="text-left py-3 px-2">{t.email}</th>
+												<th className="text-left py-3 px-2">{t.ticketName}</th>
+												<th className="text-left py-3 px-2">{t.status}</th>
+												<th className="text-left py-3 px-2">{t.registeredAt}</th>
 											</tr>
 										</thead>
 										<tbody>
 											{stats.referralList.map(referral => (
-												<tr key={referral.id} className="border-b border-gray-800 hover:bg-gray-900">
-													<td style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>{referral.email}</td>
-													<td style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>{getLocalizedText(referral.ticketName, locale)}</td>
-													<td className={`font-semibold ${getStatusColor(referral.status)}`} style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-														{getStatusText(referral.status)}
-													</td>
-													<td style={{ paddingTop: "0.75rem", paddingBottom: "0.75rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-														{new Date(referral.registeredAt).toLocaleDateString(locale)}
-													</td>
+												<tr key={referral.id} className="border-b border-gray-800 dark:border-gray-900 hover:bg-gray-900 dark:hover:bg-gray-800">
+													<td className="py-3 px-2">{referral.email}</td>
+													<td className="py-3 px-2">{getLocalizedText(referral.ticketName, locale)}</td>
+													<td className={`font-semibold py-3 px-2 ${getStatusColor(referral.status)}`}>{getStatusText(referral.status)}</td>
+													<td className="py-3 px-2">{new Date(referral.registeredAt).toLocaleDateString(locale)}</td>
 												</tr>
 											))}
 										</tbody>
@@ -234,10 +211,8 @@ export default function ReferralStatus() {
 						</div>
 
 						{/* Back Button */}
-						<div style={{ marginTop: "2rem" }}>
-							<button onClick={() => router.back()} className="button">
-								{t.backToSuccess}
-							</button>
+						<div className="mt-8">
+							<Button onClick={() => router.back()}>{t.backToSuccess}</Button>
 						</div>
 					</div>
 				</main>

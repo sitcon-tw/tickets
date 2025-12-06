@@ -18,7 +18,6 @@ export function shouldDisplayField(
 	},
 	allFields?: EventFormField[]
 ): boolean {
-	// If no filters or filters not enabled, always display
 	if (!field.filters || !field.filters.enabled) {
 		return true;
 	}
@@ -26,15 +25,10 @@ export function shouldDisplayField(
 	const filter = field.filters;
 	const currentTime = context.currentTime || new Date();
 
-	// Evaluate each condition
 	const results = filter.conditions.map(condition => evaluateCondition(condition, context, currentTime, allFields));
 
-	// Apply logical operator (AND/OR)
 	const conditionsMet = filter.operator === "and" ? results.every(r => r) : results.some(r => r);
 
-	// Apply action (display/hide)
-	// If action is "display": show when conditions met
-	// If action is "hide": show when conditions NOT met
 	return filter.action === "display" ? conditionsMet : !conditionsMet;
 }
 
@@ -75,41 +69,18 @@ function evaluateTicketCondition(condition: FilterCondition, context: { selected
 	return context.selectedTicketId === condition.ticketId;
 }
 
-/**
- * Gets the localized field name that's used as the key in formData
- */
-function getFieldNameKey(field: EventFormField, locale: string = "en"): string {
-	if (typeof field.name === "string") {
-		return field.name;
-	}
-
-	if (typeof field.name === "object" && field.name !== null) {
-		// Try the current locale first, then fallback to 'en', then any available locale
-		return field.name[locale] || field.name["en"] || Object.values(field.name)[0] || field.id;
-	}
-
-	return field.id;
-}
-
-/**
- * Evaluates a field-based condition
- */
 function evaluateFieldCondition(condition: FilterCondition, context: { formData: FormDataType }, allFields?: EventFormField[]): boolean {
 	if (!condition.fieldId || !allFields) {
 		return true;
 	}
 
-	// Find the referenced field
 	const referencedField = allFields.find(f => f.id === condition.fieldId);
 	if (!referencedField) {
 		return true;
 	}
 
-	// The formData is keyed by localized field names, not IDs
-	// We need to get all possible keys for this field
 	const possibleKeys = [condition.fieldId, referencedField.id];
 
-	// Add localized names as possible keys
 	if (typeof referencedField.name === "object" && referencedField.name !== null) {
 		Object.values(referencedField.name).forEach(name => {
 			if (name) possibleKeys.push(String(name));
@@ -118,7 +89,6 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 		possibleKeys.push(referencedField.name);
 	}
 
-	// Try to find the value using any of the possible keys
 	let fieldValue: unknown = undefined;
 	let foundKey: string | undefined;
 	for (const key of possibleKeys) {
@@ -131,17 +101,6 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 
 	const operator = condition.operator || "equals";
 
-	// Debug logging
-	console.log("Field condition evaluation:", {
-		referencedFieldName: typeof referencedField.name === "object" ? referencedField.name.en : referencedField.name,
-		possibleKeys,
-		foundKey,
-		fieldValue,
-		operator,
-		expectedValue: condition.value,
-		formData: context.formData
-	});
-
 	switch (operator) {
 		case "filled":
 			return isFilled(fieldValue);
@@ -151,7 +110,6 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 
 		case "equals":
 			const result = String(fieldValue) === String(condition.value);
-			console.log("Equals comparison:", { fieldValue, expectedValue: condition.value, result });
 			return result;
 
 		default:

@@ -1,33 +1,10 @@
-interface RetryConfig {
-	maxRetries: number;
-	baseDelay: number;
-	maxDelay: number;
-	retryableStatusCodes: Set<number>;
-	timeoutMs: number;
-}
-
-interface APIError {
-	message?: string;
-	detail?:
-		| Array<{
-				loc: Array<string | number>;
-				msg: string;
-				type: string;
-		  }>
-		| string;
-	error?: {
-		code?: string;
-		message?: string;
-	};
-	success?: boolean;
-}
+import { APIError, RetryConfig } from "@/lib/types/client";
 
 class APIClient {
 	private baseURL: string;
 	private retryConfig: RetryConfig;
 
 	constructor(baseURL: string = "") {
-		// Always use relative URLs - routes through Next.js proxy
 		this.baseURL = baseURL;
 		this.retryConfig = {
 			maxRetries: 3,
@@ -104,29 +81,41 @@ class APIClient {
 				const response = await this.fetchWithTimeout(url, config);
 
 				if (!response.ok) {
-					// Handle 401 Unauthorized - redirect to login
 					if (response.status === 401) {
 						if (typeof window !== "undefined") {
-							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-							window.location.href = `/${locale}/login?returnUrl=${returnUrl}`;
+							const currentPath = window.location.pathname;
+							const locale = currentPath.split("/")[1] || "zh-Hant";
+							const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+							const isHomePage = pathWithoutLocale === "/" || pathWithoutLocale === "";
+
+							if (!currentPath.includes("/login") && !isHomePage) {
+								const shouldIncludeReturnUrl = !currentPath.includes("/login") && !currentPath.includes("/verify");
+								const returnUrl = shouldIncludeReturnUrl ? encodeURIComponent(currentPath + window.location.search) : "";
+								window.location.href = `/${locale}/login${returnUrl ? `?returnUrl=${returnUrl}` : ""}`;
+							}
 						}
 						throw new Error("Unauthorized - please login");
 					}
 
-					// Handle 423 Locked - Account disabled
 					if (response.status === 423) {
 						if (typeof window !== "undefined") {
 							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							window.location.href = `/${locale}/account-disabled`;
+							if (!window.location.pathname.includes("/account-disabled")) {
+								window.location.href = `/${locale}/account-disabled`;
+							}
 						}
 						throw new Error("Account disabled");
 					}
 
-					// Handle 403 Forbidden - redirect to home
 					if (response.status === 403) {
 						if (typeof window !== "undefined") {
-							window.location.href = "/";
+							const currentPath = window.location.pathname;
+							const locale = currentPath.split("/")[1] || "zh-Hant";
+							const isOnHomePage = currentPath === `/${locale}` || currentPath === `/${locale}/` || currentPath === "/";
+
+							if (!isOnHomePage) {
+								window.location.href = `/${locale}/`;
+							}
 						}
 						throw new Error("Forbidden access");
 					}
@@ -135,8 +124,6 @@ class APIClient {
 						detail: [{ loc: [], msg: "發生了未知的錯誤 [C]", type: "unknown" }]
 					}));
 
-					// Extract error message from API response
-					// Priority: 1. error.message, 2. message field, 3. detail field (string or array), 4. HTTP status text
 					let errorMessage: string;
 					if (errorData.error && errorData.error.message) {
 						errorMessage = errorData.error.message;
@@ -204,7 +191,6 @@ class APIClient {
 		return this.request<T>(finalEndpoint, { method: "GET" });
 	}
 
-	// POST request
 	async post<T>(endpoint: string, data?: unknown): Promise<T> {
 		return this.request<T>(endpoint, {
 			method: "POST",
@@ -212,7 +198,6 @@ class APIClient {
 		});
 	}
 
-	// PUT request
 	async put<T>(endpoint: string, data?: unknown): Promise<T> {
 		return this.request<T>(endpoint, {
 			method: "PUT",
@@ -220,7 +205,6 @@ class APIClient {
 		});
 	}
 
-	// DELETE request
 	async delete<T>(endpoint: string): Promise<T> {
 		return this.request<T>(endpoint, { method: "DELETE", body: "{}" });
 	}
