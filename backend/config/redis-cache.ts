@@ -1,6 +1,6 @@
+import type { RedisClientConfig } from "#types/database";
 import type { AutoCacheConfig, CacheConfig } from "prisma-extension-redis";
 import { CacheCase } from "prisma-extension-redis";
-import type { RedisClientConfig } from "#types/database";
 
 /**
  * Parse Redis URI into client configuration

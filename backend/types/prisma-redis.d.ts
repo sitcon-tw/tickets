@@ -3,7 +3,7 @@
  * Extends Prisma client types to include caching capabilities
  */
 
-import type { Prisma } from "@prisma/client";
+import "@prisma/client";
 
 declare module "@prisma/client" {
 	/**

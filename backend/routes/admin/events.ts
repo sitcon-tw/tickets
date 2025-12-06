@@ -5,9 +5,9 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
 import { eventSchemas } from "#schemas/event";
+import { CacheInvalidation } from "#utils/cache-keys";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
-import { CacheInvalidation } from "#utils/cache-keys";
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
