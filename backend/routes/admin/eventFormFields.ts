@@ -6,6 +6,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { eventFormFieldSchemas } from "#schemas/eventFormFields";
+import { CacheInvalidation } from "#utils/cache-keys.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options) => {
@@ -50,17 +51,14 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						type,
 						validater: validater === "" ? null : (validater ?? null),
 						name,
-						description: description && typeof description === "object" ? description : null,
+						description: description && typeof description === "object" ? description : {},
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
 						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
 						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull)
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:event:*"],
-						hasPattern: true
-					}
+					uncache: CacheInvalidation.eventFormFields()
 				})) as EventFormFields;
 
 				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));

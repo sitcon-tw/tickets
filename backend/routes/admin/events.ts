@@ -49,6 +49,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					ogImage,
 					isActive: true
 				},
+				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
 			})) as Event;
 
@@ -145,6 +146,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			const event = (await prisma.event.update({
 				where: { id },
 				data: updatePayload,
+				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
 			})) as Event;
 
@@ -185,6 +187,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 			await prisma.event.delete({
 				where: { id },
+				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
 			});
 
