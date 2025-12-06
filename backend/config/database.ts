@@ -57,7 +57,14 @@ const config = {
 
 import type { RedisClientConfig } from "../types/database";
 
-// Add middleware to handle duplicate user creation for Better Auth
+/**
+ * Prisma extension to handle duplicate user creation gracefully
+ *
+ * Better Auth's magic link flow may attempt to create a user that already exists,
+ * which would trigger a P2002 unique constraint error. This extension catches
+ * that error and returns the existing user instead, allowing the authentication
+ * flow to continue seamlessly.
+ */
 const handleDuplicateUserExtension = {
 	name: "handleDuplicateUser",
 	query: {
@@ -65,7 +72,7 @@ const handleDuplicateUserExtension = {
 			try {
 				return await query(args);
 			} catch (error: any) {
-				// If it's a unique constraint violation on user creation, return the existing user
+				// Catch unique constraint violations on user email field
 				if (error.code === "P2002" && model === "User" && operation === "create" && error.meta?.target?.includes("email")) {
 					const email = args.data?.email;
 					if (email) {

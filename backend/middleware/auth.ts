@@ -77,11 +77,8 @@ export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 		const authenticated = await ensureAuth(request, reply);
 		if (!authenticated || reply.sent) return;
 
-		// Get role from Better Auth session (includes additionalFields)
+		// Get role from Better Auth session (includes additionalFields configured in lib/auth.ts)
 		const userRole = (request.user as any)?.role || "user";
-
-		console.log("[AUTH] requireRole - userId:", request.user!.id, "role:", userRole, "allowedRoles:", allowedRoles);
-
 		const userRoles = userRole.split(",").map(role => role.trim());
 
 		const hasPermission = allowedRoles.some(allowedRole => userRoles.includes(allowedRole));

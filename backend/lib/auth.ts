@@ -10,6 +10,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 		provider: "postgresql"
 	}),
 	user: {
+		// Define additional fields to include in the user session
+		// This ensures role/permissions are available without extra DB queries
 		additionalFields: {
 			role: {
 				type: "string",
@@ -36,7 +38,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	],
 	session: {
 		cookieCache: {
-			enabled: false // Disabled to always fetch fresh user data from database
+			// Disabled to ensure role changes are reflected immediately
+			// When enabled, user data is cached in cookies and may become stale
+			enabled: false
 		}
 	},
 	plugins: [
