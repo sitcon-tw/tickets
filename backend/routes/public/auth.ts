@@ -2,10 +2,9 @@
  * @fileoverview Auth-related public routes
  */
 
-import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { safeJsonParse } from "#utils/json";
-import { serverErrorResponse, successResponse } from "#utils/response";
+import { successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
