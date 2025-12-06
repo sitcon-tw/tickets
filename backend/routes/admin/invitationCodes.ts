@@ -289,35 +289,31 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { ticketId, isActive, eventId } = request.query;
 
-				const where: Prisma.InvitationCodeWhereInput = {};
+				const where: Record<string, unknown> = {};
+				if (ticketId) where.ticketId = ticketId;
+				if (isActive !== undefined) where.isActive = isActive;
 
-				// Priority: eventId > ticketId
-				if (eventId) {
-					// Filter by event
-					if (request.userEventPermissions) {
-						// EventAdmin: can only access events in their permissions
-						if (request.userEventPermissions.includes(eventId)) {
-							where.ticket = { eventId };
-						}
-					} else {
-						// Admin: can access any event
-						where.ticket = { eventId };
-					}
-				} else if (ticketId) {
-					// Only filter by ticketId if no eventId provided
-					where.ticketId = ticketId;
-				} else if (request.userEventPermissions) {
-					// EventAdmin without specific filters: show codes for their events only
-					where.ticket = {
-						eventId: { in: request.userEventPermissions }
-					};
+				if (request.userEventPermissions) {
+					const ticketWhere: Record<string, unknown> = { eventId: { in: request.userEventPermissions } };
+					if (eventId) ticketWhere.eventId = eventId;
+
+					const accessibleTickets = await prisma.ticket.findMany({
+						where: ticketWhere,
+						select: { id: true }
+					});
+					const accessibleTicketIds = accessibleTickets.map(t => t.id);
+					where.ticketId = ticketId ? (accessibleTicketIds.includes(ticketId) ? ticketId : "none") : { in: accessibleTicketIds };
+				} else if (eventId) {
+					// If no user permissions but eventId is provided, filter by eventId
+					const eventTickets = await prisma.ticket.findMany({
+						where: { eventId },
+						select: { id: true }
+					});
+					const eventTicketIds = eventTickets.map(t => t.id);
+					where.ticketId = ticketId ? (eventTicketIds.includes(ticketId) ? ticketId : "none") : { in: eventTicketIds };
 				}
 
-				if (isActive !== undefined) {
-					where.isActive = isActive;
-				}
-
-				const invitationCodes = await prisma.invitationCode.findMany({
+				const invitationCodes: InvitationCode[] = await prisma.invitationCode.findMany({
 					where,
 					include: {
 						ticket: {

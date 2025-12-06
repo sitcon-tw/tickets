@@ -2,9 +2,10 @@
  * @fileoverview Auth-related public routes
  */
 
+import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { safeJsonParse } from "#utils/json";
-import { successResponse } from "#utils/response";
+import { serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
@@ -61,14 +62,23 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 			const session = await auth.api.getSession({
 				headers: request.headers as any
 			});
+			if (!session?.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 
-			if (!session?.user || !session.user.id) {
-				return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
+			const user = await prisma.user.findUnique({
+				where: { id: session.user.id },
+				select: {
+					role: true,
+					permissions: true
+				}
+			});
+
+			if (!user) {
+				const { response, statusCode } = serverErrorResponse("用戶不存在");
+				return reply.code(statusCode).send(response);
 			}
 
-			// Get role and permissions from Better Auth session (includes additionalFields)
-			const role = (session.user as any).role || "viewer";
-			const permissions = safeJsonParse((session.user as any).permissions, [], "user permissions");
+			const role = user.role || "viewer";
+			const permissions = safeJsonParse(user.permissions, [], "user permissions");
 
 			const capabilities = {
 				canManageUsers: role === "admin",

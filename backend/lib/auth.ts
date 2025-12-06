@@ -9,26 +9,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql"
 	}),
-	user: {
-		// Define additional fields to include in the user session
-		// This ensures role/permissions are available without extra DB queries
-		additionalFields: {
-			role: {
-				type: "string",
-				defaultValue: "viewer",
-				required: false
-			},
-			permissions: {
-				type: "string",
-				required: false
-			},
-			isActive: {
-				type: "boolean",
-				defaultValue: true,
-				required: false
-			}
-		}
-	},
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
 	trustedOrigins: [
@@ -38,15 +18,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	],
 	session: {
 		cookieCache: {
-			// Disabled to ensure role changes are reflected immediately
-			// When enabled, user data is cached in cookies and may become stale
-			enabled: false
+			enabled: true,
+			maxAge: 60 * 60 * 24 * 30 // 30 days
 		}
 	},
 	plugins: [
 		magicLink({
 			expiresIn: 600,
-			disableSignUp: false,
 			sendMagicLink: async ({ email, token, url }, request?) => {
 				const normalizedEmail = email.toLowerCase();
 
@@ -175,12 +153,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	],
 	emailAndPassword: {
 		enabled: false
-	},
-	advanced: {
-		useSecureCookies: process.env.NODE_ENV === "production",
-		crossSubDomainCookies: {
-			enabled: false
-		}
 	},
 	databaseHooks: {
 		user: {
