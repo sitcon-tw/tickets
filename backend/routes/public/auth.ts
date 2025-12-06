@@ -62,23 +62,19 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 			const session = await auth.api.getSession({
 				headers: request.headers as any
 			});
-			if (!session?.user || !session.user.id) return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 
-			const user = await prisma.user.findUnique({
-				where: { id: session.user.id },
-				select: {
-					role: true,
-					permissions: true
-				}
-			});
+			console.log("[PERMISSIONS] Better Auth session user role:", session?.user?.role);
 
-			if (!user) {
-				const { response, statusCode } = serverErrorResponse("用戶不存在");
-				return reply.code(statusCode).send(response);
+			if (!session?.user || !session.user.id) {
+				console.log("[PERMISSIONS] No session found");
+				return reply.send(successResponse({ role: "viewer", permissions: [], capabilities: {} }));
 			}
 
-			const role = user.role || "viewer";
-			const permissions = safeJsonParse(user.permissions, [], "user permissions");
+			// Use role from Better Auth session (which now includes additionalFields)
+			const role = (session.user as any).role || "viewer";
+			const permissions = safeJsonParse((session.user as any).permissions, [], "user permissions");
+
+			console.log("[PERMISSIONS] Using role from session:", role);
 
 			const capabilities = {
 				canManageUsers: role === "admin",

@@ -57,6 +57,32 @@ const config = {
 
 import type { RedisClientConfig } from "../types/database";
 
+// Add middleware to handle duplicate user creation for Better Auth
+const handleDuplicateUserExtension = {
+	name: "handleDuplicateUser",
+	query: {
+		async $allOperations({ operation, model, args, query }: any) {
+			try {
+				return await query(args);
+			} catch (error: any) {
+				// If it's a unique constraint violation on user creation, return the existing user
+				if (error.code === "P2002" && model === "User" && operation === "create" && error.meta?.target?.includes("email")) {
+					const email = args.data?.email;
+					if (email) {
+						const existingUser = await basePrisma.user.findUnique({
+							where: { email }
+						});
+						if (existingUser) {
+							return existingUser;
+						}
+					}
+				}
+				throw error;
+			}
+		}
+	}
+};
+
 let prisma: PrismaClient;
 if (redis && process.env.REDIS_URI) {
 	const url = new URL(process.env.REDIS_URI);
@@ -79,9 +105,9 @@ if (redis && process.env.REDIS_URI) {
 		}
 	}
 
-	prisma = basePrisma.$extends(PrismaExtensionRedis({ config, client: clientConfig })) as unknown as PrismaClient;
+	prisma = basePrisma.$extends(handleDuplicateUserExtension).$extends(PrismaExtensionRedis({ config, client: clientConfig })) as unknown as PrismaClient;
 } else {
-	prisma = basePrisma;
+	prisma = basePrisma.$extends(handleDuplicateUserExtension) as unknown as PrismaClient;
 }
 
 if (!redis && process.env.NODE_ENV !== "test") {

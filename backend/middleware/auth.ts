@@ -77,12 +77,10 @@ export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
 		const authenticated = await ensureAuth(request, reply);
 		if (!authenticated || reply.sent) return;
 
-		const user = await prisma.user.findUnique({
-			where: { id: request.user!.id },
-			select: { role: true }
-		});
+		// Get role from Better Auth session (includes additionalFields)
+		const userRole = (request.user as any)?.role || "user";
 
-		const userRole = user?.role || "user";
+		console.log("[AUTH] requireRole - userId:", request.user!.id, "role:", userRole, "allowedRoles:", allowedRoles);
 
 		const userRoles = userRole.split(",").map(role => role.trim());
 
@@ -117,12 +115,9 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
 	const authenticated = await ensureAuth(request, reply);
 	if (!authenticated || reply.sent) return;
 
-	const user = await prisma.user.findUnique({
-		where: { id: request.user!.id },
-		select: { role: true, permissions: true }
-	});
-
-	const userRole = user?.role || "user";
+	// Get role and permissions from Better Auth session
+	const userRole = (request.user as any)?.role || "user";
+	const userPermissionsStr = (request.user as any)?.permissions;
 
 	if (userRole === "admin") {
 		return;
@@ -139,7 +134,7 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
 			return reply.code(statusCode).send(response);
 		}
 
-		const userPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
+		const userPermissions = safeJsonParse<string[]>(userPermissionsStr, [], "user permissions");
 
 		if (!userPermissions.includes(eventId)) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
@@ -170,19 +165,16 @@ export const requireEventListAccess: preHandlerHookHandler = async (request: Fas
 	const authenticated = await ensureAuth(request, reply);
 	if (!authenticated || reply.sent) return;
 
-	const user = await prisma.user.findUnique({
-		where: { id: request.user!.id },
-		select: { role: true, permissions: true }
-	});
-
-	const userRole = user?.role || "user";
+	// Get role and permissions from Better Auth session
+	const userRole = (request.user as any)?.role || "user";
+	const userPermissionsStr = (request.user as any)?.permissions;
 
 	if (userRole === "admin") {
 		return;
 	}
 
 	if (userRole === "eventAdmin") {
-		request.userEventPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
+		request.userEventPermissions = safeJsonParse<string[]>(userPermissionsStr, [], "user permissions");
 		return;
 	}
 

@@ -9,6 +9,24 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql"
 	}),
+	user: {
+		additionalFields: {
+			role: {
+				type: "string",
+				defaultValue: "viewer",
+				required: false
+			},
+			permissions: {
+				type: "string",
+				required: false
+			},
+			isActive: {
+				type: "boolean",
+				defaultValue: true,
+				required: false
+			}
+		}
+	},
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
 	trustedOrigins: [
@@ -18,13 +36,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	],
 	session: {
 		cookieCache: {
-			enabled: true,
-			maxAge: 60 * 60 * 24 * 30 // 30 days
+			enabled: false // Disabled to always fetch fresh user data from database
 		}
 	},
 	plugins: [
 		magicLink({
 			expiresIn: 600,
+			disableSignUp: false,
 			sendMagicLink: async ({ email, token, url }, request?) => {
 				const normalizedEmail = email.toLowerCase();
 
@@ -153,6 +171,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	],
 	emailAndPassword: {
 		enabled: false
+	},
+	advanced: {
+		useSecureCookies: process.env.NODE_ENV === "production",
+		crossSubDomainCookies: {
+			enabled: false
+		}
 	},
 	databaseHooks: {
 		user: {
