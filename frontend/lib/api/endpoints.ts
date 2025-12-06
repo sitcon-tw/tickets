@@ -153,7 +153,7 @@ export const adminEventFormFieldsAPI = {
 		order: number;
 		type: "text" | "textarea" | "select" | "checkbox" | "radio";
 		name: LocalizedText;
-		description?: string;
+		description?: LocalizedText;
 		placeholder?: string;
 		required?: boolean;
 		validater?: string;

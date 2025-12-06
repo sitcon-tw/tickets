@@ -9,7 +9,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { TicketFormField } from "@/lib/types/api";
+import { LocalizedText, TicketFormField } from "@/lib/types/api";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { ChevronLeft } from "lucide-react";
@@ -218,9 +218,9 @@ export default function FormPage() {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
 				const processedFields = (formFieldsData.data || []).map(field => {
-					let name = field.name;
+					let name: LocalizedText = field.name;
 					if (typeof name === "string" && name === "[object Object]") {
-						name = { en: field.description || "field" };
+						name = { en: typeof field.description === "string" ? field.description : "field" };
 					} else if (typeof name === "string") {
 						try {
 							name = JSON.parse(name);
@@ -229,12 +229,18 @@ export default function FormPage() {
 						}
 					}
 
-					let description = field.description;
+					let description: LocalizedText | string | undefined = field.description as any;
 					if (typeof description === "string" && description.startsWith("{")) {
+						const originalStr = description;
 						try {
-							const parsed = JSON.parse(description);
-							description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-						} catch {}
+							description = JSON.parse(description);
+						} catch {
+							// If parsing fails, convert string to LocalizedText
+							description = { en: originalStr };
+						}
+					} else if (typeof description === "string") {
+						// Convert plain string to LocalizedText
+						description = { en: description };
 					}
 
 					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
@@ -264,7 +270,7 @@ export default function FormPage() {
 					return {
 						...field,
 						name,
-						description,
+						description: description as LocalizedText | undefined,
 						options,
 						filters
 					};

@@ -8,7 +8,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { Registration, TicketFormField } from "@/lib/types/api";
+import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { ChevronLeft, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -333,9 +333,9 @@ export default function MyRegistrationPage() {
 					const fieldsResponse = await ticketsAPI.getFormFields(regData.ticketId);
 					if (fieldsResponse.success) {
 						const processedFields = (fieldsResponse.data || []).map(field => {
-							let name = field.name;
+							let name: LocalizedText = field.name;
 							if (typeof name === "string" && name === "[object Object]") {
-								name = { en: field.description || "field" };
+								name = { en: typeof field.description === "string" ? field.description : "field" };
 							} else if (typeof name === "string") {
 								try {
 									name = JSON.parse(name);
@@ -344,12 +344,16 @@ export default function MyRegistrationPage() {
 								}
 							}
 
-							let description = field.description;
+							let description: LocalizedText | string | undefined = field.description as any;
+							const originalStr = typeof description === "string" ? description : "";
 							if (typeof description === "string" && description.startsWith("{")) {
 								try {
-									const parsed = JSON.parse(description);
-									description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-								} catch {}
+									description = JSON.parse(description);
+								} catch {
+									description = { en: originalStr };
+								}
+							} else if (typeof description === "string") {
+								description = { en: description };
 							}
 
 							const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
@@ -370,7 +374,7 @@ export default function MyRegistrationPage() {
 							return {
 								...field,
 								name,
-								description,
+								description: description as LocalizedText | undefined,
 								options
 							};
 						});
