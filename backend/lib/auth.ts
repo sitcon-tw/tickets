@@ -7,7 +7,7 @@ import { getAdminEmails } from "../config/security";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
-		provider: "sqlite"
+		provider: "postgresql"
 	}),
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
