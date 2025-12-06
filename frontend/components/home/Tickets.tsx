@@ -9,11 +9,11 @@ import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
+import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { TicketsProps } from "@/lib/types/components";
 
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const locale = useLocale();

@@ -14,9 +14,9 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Download, Import, Mail, Plus, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
-import { Plus, Import, Search, Mail, Download } from "lucide-react";
 
 type InviteCode = {
 	id: string;
@@ -129,7 +129,7 @@ export default function InvitesPage() {
 
 		setIsLoading(true);
 		try {
-			const response = await adminInvitationCodesAPI.getAll({eventId: currentEventId});
+			const response = await adminInvitationCodesAPI.getAll({ eventId: currentEventId });
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
@@ -511,19 +511,15 @@ export default function InvitesPage() {
 			<main>
 				<AdminHeader title={t.title} />
 				<section className="flex gap-2 mb-4">
-					<Button onClick={() => setShowModal(true)}><Plus /> {t.add}</Button>
+					<Button onClick={() => setShowModal(true)}>
+						<Plus /> {t.add}
+					</Button>
 					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
 						<Import /> {t.bulkImport}
 					</Button>
 					<div className="relative max-w-xs">
 						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-						<Input 
-							type="text" 
-							placeholder={t.search} 
-							value={searchTerm} 
-							onChange={e => setSearchTerm(e.target.value)} 
-							className="pl-10 h-11" 
-						/>
+						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
 					</div>
 				</section>
 

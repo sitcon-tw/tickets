@@ -7,11 +7,10 @@ import Select, { SelectOption } from "@/components/input/Select";
 import Text from "@/components/input/Text";
 import Textarea from "@/components/input/Textarea";
 import MarkdownContent from "@/components/MarkdownContent";
-import { TicketFormField } from "@/lib/types/api";
+import { FormFieldProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React from "react";
-import { FormFieldProps } from "@/lib/types/components";
 
 export function FormField({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
 	const locale = useLocale();

@@ -3,10 +3,10 @@
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
+import { HeaderProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import { HeaderProps } from "@/lib/types/components";
 
 export default function Header({ eventId }: HeaderProps) {
 	const locale = useLocale();

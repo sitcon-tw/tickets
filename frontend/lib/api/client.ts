@@ -1,4 +1,4 @@
-import { RetryConfig, APIError } from "@/lib/types/client";
+import { APIError, RetryConfig } from "@/lib/types/client";
 
 class APIClient {
 	private baseURL: string;

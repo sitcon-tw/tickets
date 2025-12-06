@@ -1,11 +1,11 @@
 "use client";
 
+import { Alert, AlertContextType, AlertType } from "@/lib/types/contexts";
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { Alert, AlertType, AlertContextType } from "@/lib/types/contexts";
 
 // Re-export for backward compatibility
-export type { Alert, AlertType, AlertContextType };
+export type { Alert, AlertContextType, AlertType };
 
 /**
  * useAlert Hook - Wrapper around shadcn/sonner toast

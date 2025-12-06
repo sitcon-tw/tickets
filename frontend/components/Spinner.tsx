@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { SpinnerProps } from "@/lib/types/components";
+import { cn } from "@/lib/utils";
 
 export default function Spinner({ size = "md", className }: SpinnerProps) {
 	const sizeClasses = {

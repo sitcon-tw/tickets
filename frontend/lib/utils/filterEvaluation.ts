@@ -69,7 +69,6 @@ function evaluateTicketCondition(condition: FilterCondition, context: { selected
 	return context.selectedTicketId === condition.ticketId;
 }
 
-
 function evaluateFieldCondition(condition: FilterCondition, context: { formData: FormDataType }, allFields?: EventFormField[]): boolean {
 	if (!condition.fieldId || !allFields) {
 		return true;

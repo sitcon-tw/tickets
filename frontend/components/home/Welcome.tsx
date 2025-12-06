@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
+import { WelcomeProps } from "@/lib/types/components";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
-import { WelcomeProps } from "@/lib/types/components";
 
 type WelcomeState = "notloggedin" | "registered" | "referral" | "default" | "cancelled";
 

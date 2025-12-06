@@ -1,12 +1,12 @@
 "use client";
 
 import { eventsAPI } from "@/lib/api/endpoints";
+import { InfoProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import MarkdownContent from "../MarkdownContent";
 import PageSpinner from "../PageSpinner";
-import { InfoProps } from "@/lib/types/components";
 
 export default function Info({ eventId }: InfoProps) {
 	const locale = useLocale();

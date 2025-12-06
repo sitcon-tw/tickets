@@ -18,9 +18,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 
 	return (
 		<NextIntlClientProvider messages={messages}>
-			<div className="mx-4 sm:mx-8">
-				{children}
-			</div>
+			<div className="mx-4 sm:mx-8">{children}</div>
 		</NextIntlClientProvider>
 	);
 }

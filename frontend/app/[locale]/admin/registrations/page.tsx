@@ -14,10 +14,10 @@ import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Download, FileSpreadsheet, RotateCw, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
-import { RotateCw, Search, Download, FileSpreadsheet } from "lucide-react";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -440,13 +440,7 @@ export default function RegistrationsPage() {
 				<section className="flex gap-2 my-4">
 					<div className="relative w-fit">
 						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-						<Input 
-							type="text" 
-							placeholder={t.search} 
-							value={searchTerm} 
-							onChange={e => setSearchTerm(e.target.value)} 
-							className="pl-10 h-11" 
-						/>
+						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
 					</div>
 					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
 						<SelectTrigger className="w-[180px] min-h-11">

@@ -12,8 +12,8 @@ const lanyard = "/assets/lanyard.png";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
+import { BandProps, LanyardProps } from "@/lib/types/components";
 import { Text } from "@react-three/drei";
-import { LanyardProps, BandProps } from "@/lib/types/components";
 
 export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name = "一般票" }: LanyardProps) {
 	return (

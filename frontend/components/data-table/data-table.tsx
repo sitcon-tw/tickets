@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	ColumnDef,
 	ColumnFiltersState,
 	SortingState,
 	VisibilityState,
