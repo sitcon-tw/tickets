@@ -66,7 +66,6 @@ export interface RegistrationCreateRequest {
 export interface RegistrationUpdateRequest {
 	formData?: Record<string, any>;
 	status?: import("./database.js").RegistrationStatus;
-	tags?: string[];
 }
 
 export interface TicketCreateRequest {

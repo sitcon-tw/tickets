@@ -207,11 +207,17 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				return reply.code(statusCode).send(response);
 			}
 
+			// Convert formData object to JSON string if present
+			const dataToUpdate = { ...updateData };
+			if (dataToUpdate.formData && typeof dataToUpdate.formData === "object") {
+				dataToUpdate.formData = JSON.stringify(dataToUpdate.formData);
+			}
+
 			/** @type {Registration} */
 			const registration = await prisma.registration.update({
 				where: { id },
 				data: {
-					...updateData,
+					...dataToUpdate,
 					updatedAt: new Date()
 				},
 				include: {
@@ -238,7 +244,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			});
 
-			return reply.send(successResponse(registration, "報名更新成功"));
+			const parsedRegistration = {
+				...registration,
+				formData: registration.formData ? JSON.parse(registration.formData) : {}
+			};
+
+			return reply.send(successResponse(parsedRegistration, "報名更新成功"));
 		}
 	);
 

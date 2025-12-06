@@ -1,5 +1,5 @@
 // Component Props Types
-import * as React from "react";
+import React from "react";
 import { TicketFormField } from "./api";
 
 // Spinner

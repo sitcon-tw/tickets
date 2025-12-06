@@ -45,6 +45,10 @@ export default function RegistrationsPage() {
 	const [serviceAccountEmail, setServiceAccountEmail] = useState("");
 	const [isExporting, setIsExporting] = useState(false);
 	const [exportSuccess, setExportSuccess] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const [editedFormData, setEditedFormData] = useState<Record<string, unknown>>({});
+	const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "cancelled">("pending");
+	const [isSaving, setIsSaving] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -97,7 +101,13 @@ export default function RegistrationsPage() {
 		exporting: { "zh-Hant": "匯出中...", "zh-Hans": "导出中...", en: "Exporting..." },
 		exportSuccessMsg: { "zh-Hant": "成功匯出到 Google Sheets", "zh-Hans": "成功导出到 Google Sheets", en: "Successfully exported to Google Sheets" },
 		exportErrorMsg: { "zh-Hant": "匯出失敗", "zh-Hans": "导出失败", en: "Export failed" },
-		noEventSelected: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Please select an event first" }
+		noEventSelected: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Please select an event first" },
+		edit: { "zh-Hant": "編輯", "zh-Hans": "编辑", en: "Edit" },
+		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
+		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
+		saving: { "zh-Hant": "儲存中...", "zh-Hans": "保存中...", en: "Saving..." },
+		saveSuccess: { "zh-Hant": "報名資料已成功更新", "zh-Hans": "报名资料已成功更新", en: "Registration updated successfully" },
+		saveError: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" }
 	});
 
 	const columnDefs = [
@@ -255,12 +265,69 @@ export default function RegistrationsPage() {
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
+		setEditedFormData(registration.formData || {});
+		setEditedStatus(registration.status);
+		setIsEditing(false);
 		setShowDetailModal(true);
 	}
 
 	function closeDetailModal() {
 		setSelectedRegistration(null);
+		setIsEditing(false);
 		setShowDetailModal(false);
+	}
+
+	function toggleEditMode() {
+		if (isEditing) {
+			// Reset to original values when canceling edit
+			if (selectedRegistration) {
+				setEditedFormData(selectedRegistration.formData || {});
+				setEditedStatus(selectedRegistration.status);
+			}
+		}
+		setIsEditing(!isEditing);
+	}
+
+	async function saveChanges() {
+		if (!selectedRegistration) return;
+
+		setIsSaving(true);
+		try {
+			const response = await adminRegistrationsAPI.update(selectedRegistration.id, {
+				formData: editedFormData,
+				status: editedStatus
+			});
+
+			if (response.success) {
+				showAlert(t.saveSuccess, "success");
+				setIsEditing(false);
+				await loadRegistrations();
+				// Update the selected registration with new data
+				if (response.data) {
+					// Parse formData if it's a string
+					const updatedRegistration = {
+						...response.data,
+						formData: typeof response.data.formData === "string" ? JSON.parse(response.data.formData) : response.data.formData
+					};
+					setSelectedRegistration(updatedRegistration);
+					setEditedFormData(updatedRegistration.formData || {});
+				}
+			} else {
+				showAlert(`${t.saveError}: ${response.message || "Unknown error"}`, "error");
+			}
+		} catch (error) {
+			console.error("Failed to update registration:", error);
+			showAlert(`${t.saveError}: ${error instanceof Error ? error.message : String(error)}`, "error");
+		} finally {
+			setIsSaving(false);
+		}
+	}
+
+	function updateFormDataField(key: string, value: unknown) {
+		setEditedFormData(prev => ({
+			...prev,
+			[key]: value
+		}));
 	}
 
 	async function syncToSheets() {
@@ -489,7 +556,14 @@ export default function RegistrationsPage() {
 			<Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
 				<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>{t.registrationDetails}</DialogTitle>
+						<DialogTitle className="flex items-center justify-between">
+							<span>{t.registrationDetails}</span>
+							{!isEditing && (
+								<Button size="sm" variant="outline" onClick={toggleEditMode}>
+									{t.edit}
+								</Button>
+							)}
+						</DialogTitle>
 					</DialogHeader>
 
 					<div className="flex flex-col gap-4">
@@ -507,10 +581,23 @@ export default function RegistrationsPage() {
 						</div>
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">Status</Label>
-							{selectedRegistration && (
-								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
-									{selectedRegistration.status}
-								</span>
+							{isEditing ? (
+								<Select value={editedStatus} onValueChange={value => setEditedStatus(value as "pending" | "confirmed" | "cancelled")}>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="pending">{t.pending}</SelectItem>
+										<SelectItem value="confirmed">{t.confirmed}</SelectItem>
+										<SelectItem value="cancelled">{t.cancelled}</SelectItem>
+									</SelectContent>
+								</Select>
+							) : (
+								selectedRegistration && (
+									<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
+										{selectedRegistration.status}
+									</span>
+								)
 							)}
 						</div>
 						{selectedRegistration?.event && (
@@ -548,26 +635,66 @@ export default function RegistrationsPage() {
 						{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
 							<div>
 								<Label className="text-xs uppercase tracking-wider opacity-70 mb-2">{t.formData}</Label>
-								<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
-									{Object.entries(selectedRegistration.formData).map(([key, value]) => (
-										<div key={key} className="mb-2">
-											<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
-											<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
-										</div>
-									))}
-								</div>
+								{isEditing ? (
+									<div className="space-y-3">
+										{Object.entries(editedFormData).map(([key, value]) => (
+											<div key={key}>
+												<Label className="text-sm mb-1 block">{key}</Label>
+												<Input
+													value={typeof value === "object" ? JSON.stringify(value) : String(value)}
+													onChange={e => {
+														try {
+															// Try to parse as JSON if it looks like JSON
+															const newValue = e.target.value;
+															if (newValue.startsWith("{") || newValue.startsWith("[")) {
+																updateFormDataField(key, JSON.parse(newValue));
+															} else {
+																updateFormDataField(key, newValue);
+															}
+														} catch {
+															// If JSON parse fails, just use the string value
+															updateFormDataField(key, e.target.value);
+														}
+													}}
+												/>
+											</div>
+										))}
+									</div>
+								) : (
+									<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
+										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
+											<div key={key} className="mb-2">
+												<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
+												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 						)}
 					</div>
 
 					<DialogFooter className="flex flex-col gap-2 sm:flex-col">
-						<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full whitespace-normal h-auto py-2">
-							🗑️ {t.deleteData}
-						</Button>
-						<p className="text-xs opacity-60 text-center text-wrap">
-							⚠️{" "}
-							{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
-						</p>
+						{isEditing ? (
+							<div className="flex gap-2 w-full">
+								<Button variant="outline" onClick={toggleEditMode} className="flex-1" disabled={isSaving}>
+									{t.cancel}
+								</Button>
+								<Button variant="default" onClick={saveChanges} className="flex-1" disabled={isSaving}>
+									{isSaving ? t.saving : t.save}
+								</Button>
+							</div>
+						) : (
+							<>
+								<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full whitespace-normal h-auto py-2">
+									🗑️ {t.deleteData}
+								</Button>
+								<p className="text-xs opacity-60 text-center text-wrap">
+									⚠️{" "}
+									{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
+								</p>
+							</>
+						)}
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

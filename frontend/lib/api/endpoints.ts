@@ -179,7 +179,6 @@ export const adminRegistrationsAPI = {
 		data: {
 			formData?: Record<string, unknown>;
 			status?: "pending" | "confirmed" | "cancelled";
-			tags?: string[];
 		}
 	) => apiClient.put<ApiResponse<Registration>>(`/api/admin/registrations/${id}`, data),
 
