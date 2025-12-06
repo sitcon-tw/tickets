@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>報名取消通知</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+			background-color: #0f172a;
+			color: #e2e8f0;
+			margin: 0;
+			padding: 0;
+		}
+		.container {
+			max-width: 640px;
+			margin: 0 auto;
+			padding: 24px;
+		}
+		.card {
+			background-color: #111827;
+			border: 1px solid #1f2937;
+			border-radius: 12px;
+			padding: 24px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+		}
+		h1 {
+			margin-top: 0;
+			margin-bottom: 16px;
+			font-size: 20px;
+			color: #f97316;
+		}
+		p {
+			line-height: 1.6;
+			margin: 0 0 12px 0;
+		}
+		.note {
+			color: #94a3b8;
+			font-size: 14px;
+		}
+		strong {
+			color: #e0f2fe;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="card">
+			<h1>報名取消通知</h1>
+			<p>您好，</p>
+			<p>您在 <strong>{{eventName}}</strong> 的報名已由管理者取消並從系統刪除。</p>
+			<p>報名編號：<strong>{{registrationId}}</strong></p>
+			<p>活動時間：<strong>{{eventStartDate}}</strong> - <strong>{{eventEndDate}}</strong></p>
+			<p class="note">若有疑問，請回覆此信或聯繫活動主辦單位。</p>
+		</div>
+	</div>
+</body>
+</html>
+

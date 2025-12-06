@@ -183,6 +183,8 @@ export const adminRegistrationsAPI = {
 		}
 	) => apiClient.put<ApiResponse<Registration>>(`/api/admin/registrations/${id}`, data),
 
+	cancel: (id: string) => apiClient.put<ApiResponse<{ id: string; email: string }>>(`/api/admin/registrations/${id}/cancel`),
+
 	delete: (id: string) => apiClient.delete<ApiResponse<{ id: string; email: string }>>(`/api/admin/registrations/${id}`),
 
 	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) => apiClient.get<ApiResponse<ExportData>>("/api/admin/registrations/export", params)

@@ -40,6 +40,14 @@ export default function RegistrationsPage() {
 		confirmed: { "zh-Hant": "已確認", "zh-Hans": "已确认", en: "Confirmed" },
 		pending: { "zh-Hant": "待處理", "zh-Hans": "待处理", en: "Pending" },
 		cancelled: { "zh-Hant": "已取消", "zh-Hans": "已取消", en: "Cancelled" },
+		cancel: { "zh-Hant": "取消報名", "zh-Hans": "取消报名", en: "Cancel Registration" },
+		cancelConfirm: {
+			"zh-Hant": "確定要取消並刪除此報名嗎？將同時寄出通知電子郵件與簡訊。",
+			"zh-Hans": "确定要取消并删除此报名吗？将同时寄出通知电子邮件与短信。",
+			en: "Are you sure you want to cancel and delete this registration? A notification email and SMS will be sent."
+		},
+		cancelSuccess: { "zh-Hant": "報名已取消並刪除，已嘗試寄送通知", "zh-Hans": "报名已取消并删除，已尝试寄送通知", en: "Registration cancelled and deleted; notification attempted." },
+		cancelError: { "zh-Hant": "取消報名失敗", "zh-Hans": "取消报名失败", en: "Cancellation failed" },
 		refresh: { "zh-Hant": "重新整理", "zh-Hans": "重新整理", en: "Refresh" },
 		syncSheets: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
 		columns: { "zh-Hant": "欄位", "zh-Hans": "栏位", en: "Columns" },
@@ -260,6 +268,26 @@ export default function RegistrationsPage() {
 		} catch (error) {
 			console.error("Failed to delete registration:", error);
 			showAlert(`${t.deleteError}: ${error instanceof Error ? error.message : String(error)}`, "error");
+		}
+	};
+
+	const cancelRegistration = async (registration: Registration) => {
+		if (!confirm(t.cancelConfirm)) {
+			return;
+		}
+
+		try {
+			const response = await adminRegistrationsAPI.cancel(registration.id);
+			if (response.success) {
+				showAlert(t.cancelSuccess, "success");
+				closeDetailModal();
+				await loadRegistrations();
+			} else {
+				showAlert(`${t.cancelError}: ${response.message || "Unknown error"}`, "error");
+			}
+		} catch (error) {
+			console.error("Failed to cancel registration:", error);
+			showAlert(`${t.cancelError}: ${error instanceof Error ? error.message : String(error)}`, "error");
 		}
 	};
 
@@ -606,6 +634,9 @@ export default function RegistrationsPage() {
 
 							{/* Delete Personal Data Button */}
 							<div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "2px solid var(--color-gray-700)" }}>
+								<button onClick={() => cancelRegistration(selectedRegistration)} className="admin-button secondary" style={{ width: "100%", marginBottom: "0.5rem" }}>
+									✕ {t.cancel}
+								</button>
 								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger" style={{ width: "100%" }}>
 									🗑️ {t.deleteData}
 								</button>

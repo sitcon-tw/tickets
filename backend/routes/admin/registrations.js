@@ -9,8 +9,26 @@
 import prisma from "#config/database.js";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth.js";
 import { registrationSchemas } from "#schemas/registration.js";
-import { sendDataDeletionNotification } from "#utils/email.js";
+
+
+
+
+
+
+
+import { sendDataDeletionNotification, sendRegistrationCancellationEmail } from "#utils/email.js";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response.js";
+import { traceEmailOperation, traceSMSOperation } from "#utils/trace-db.js";
+import { sendSMS } from "../../lib/sms.js";
+
+const getLocalizedName = nameObj => {
+	if (!nameObj) return "";
+	if (typeof nameObj === "string") return nameObj;
+	if (typeof nameObj === "object") {
+		return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
+	}
+	return String(nameObj);
+};
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -263,6 +281,115 @@ export default async function adminRegistrationsRoutes(fastify, options) {
 			} catch (error) {
 				console.error("Update registration error:", error);
 				const { response, statusCode } = serverErrorResponse("更新報名失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Cancel and delete registration (admin)
+	fastify.put(
+		"/registrations/:id/cancel",
+		{
+			preHandler: requireEventAccessViaRegistrationId,
+			schema: {
+				description: "管理者取消並刪除報名，並通知使用者",
+				tags: ["admin/registrations"],
+				params: {
+					type: "object",
+					properties: {
+						id: { type: "string", description: "報名記錄 ID" }
+					},
+					required: ["id"]
+				}
+			}
+		},
+		/**
+		 * @param {import('fastify').FastifyRequest<{Params: {id: string}}>} request
+		 * @param {import('fastify').FastifyReply} reply
+		 */
+		async (request, reply) => {
+			try {
+				const { id } = request.params;
+
+				const registration = await prisma.registration.findUnique({
+					where: { id },
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+								phoneNumber: true
+							}
+						},
+						event: {
+							select: {
+								id: true,
+								name: true,
+								startDate: true,
+								endDate: true,
+								location: true
+							}
+						},
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								soldCount: true
+							}
+						}
+					}
+				});
+
+				if (!registration) {
+					const { response, statusCode } = notFoundResponse("報名記錄不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (new Date() >= registration.event.startDate) {
+					const { response, statusCode } = validationErrorResponse("活動已開始或已結束，無法取消報名");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Delete registration and update ticket count inside transaction
+				await prisma.$transaction(async tx => {
+					await tx.registration.delete({
+						where: { id }
+					});
+
+					// Adjust sold count but avoid negative numbers
+					if ((registration.ticket?.soldCount ?? 0) > 0) {
+						await tx.ticket.update({
+							where: { id: registration.ticketId },
+							data: { soldCount: { decrement: 1 } }
+						});
+					}
+				});
+
+				const eventName = getLocalizedName(registration.event?.name) || "活動";
+
+				// Fire-and-forget notifications; do not block cancellation if they fail
+				try {
+					await traceEmailOperation(registration.email, `報名取消通知 - ${eventName}`, () =>
+						sendRegistrationCancellationEmail(registration, registration.event)
+					);
+				} catch (emailError) {
+					request.log.error("Send cancellation email failed:", emailError);
+				}
+
+				if (registration.user?.phoneNumber) {
+					const smsContent = `[SITCON] 您的「${eventName}」報名已由管理者取消並刪除，如有疑問請聯絡主辦單位。`;
+					try {
+						await traceSMSOperation(registration.user.phoneNumber, () => sendSMS(registration.user.phoneNumber, smsContent));
+					} catch (smsError) {
+						request.log.error("Send cancellation SMS failed:", smsError);
+					}
+				}
+
+				return reply.send(successResponse({ id, email: registration.email }, "報名已取消並刪除，已嘗試寄送通知"));
+			} catch (error) {
+				console.error("Admin cancel registration error:", error);
+				const { response, statusCode } = serverErrorResponse("取消報名失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

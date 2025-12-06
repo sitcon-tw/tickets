@@ -11,6 +11,15 @@ const client = new MailtrapClient({
 	token: process.env.MAILTRAP_TOKEN
 });
 
+const getLocalizedName = nameObj => {
+	if (!nameObj) return "";
+	if (typeof nameObj === "string") return nameObj;
+	if (typeof nameObj === "object") {
+		return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
+	}
+	return String(nameObj);
+};
+
 export const sendRegistrationConfirmation = async (registration, event, qrCodeUrl) => {
 	try {
 		const sender = {
@@ -45,6 +54,42 @@ export const sendRegistrationConfirmation = async (registration, event, qrCodeUr
 		return true;
 	} catch (error) {
 		console.error("Email sending error:", error);
+		return false;
+	}
+};
+
+export const sendRegistrationCancellationEmail = async (registration, event) => {
+	try {
+		const sender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
+		};
+
+		const recipients = [
+			{
+				email: registration.email
+			}
+		];
+
+		const eventName = getLocalizedName(event?.name) || "活動";
+
+		const templatePath = path.join(__dirname, "../email-templates/registration-cancellation.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template
+			.replace(/\{\{eventName\}\}/g, eventName)
+			.replace(/\{\{eventStartDate\}\}/g, event?.startDate ? new Date(event.startDate).toLocaleString("zh-TW") : "")
+			.replace(/\{\{eventEndDate\}\}/g, event?.endDate ? new Date(event.endDate).toLocaleString("zh-TW") : "")
+			.replace(/\{\{registrationId\}\}/g, registration.id);
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: `【${eventName}】報名取消通知`,
+			html
+		});
+		return true;
+	} catch (error) {
+		console.error("Send cancellation email error:", error);
 		return false;
 	}
 };
