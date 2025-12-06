@@ -7,6 +7,7 @@ import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middl
 import { eventSchemas } from "#schemas/event";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
+import { CacheInvalidation } from "#utils/cache-keys";
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
@@ -48,11 +49,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					ogImage,
 					isActive: true
 				},
-				// @ts-expect-error - uncache is added by prisma-extension-redis
-				uncache: {
-					uncacheKeys: ["prisma:event:*"],
-					hasPattern: true
-				}
+				uncache: CacheInvalidation.events()
 			})) as Event;
 
 			return reply.code(201).send(successResponse(event, "活動創建成功"));
@@ -148,11 +145,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			const event = (await prisma.event.update({
 				where: { id },
 				data: updatePayload,
-				// @ts-expect-error - uncache is added by prisma-extension-redis
-				uncache: {
-					uncacheKeys: ["prisma:event:*"],
-					hasPattern: true
-				}
+				uncache: CacheInvalidation.events()
 			})) as Event;
 
 			return reply.send(successResponse(event, "活動更新成功"));
@@ -192,11 +185,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 			await prisma.event.delete({
 				where: { id },
-				// @ts-expect-error - uncache is added by prisma-extension-redis
-				uncache: {
-					uncacheKeys: ["prisma:event:*"],
-					hasPattern: true
-				}
+				uncache: CacheInvalidation.events()
 			});
 
 			return reply.send(successResponse(null, "活動刪除成功"));

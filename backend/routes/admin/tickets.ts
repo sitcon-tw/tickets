@@ -5,6 +5,7 @@ import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { ticketSchemas } from "#schemas/ticket";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { CacheInvalidation } from "#utils/cache-keys";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post<{ Body: TicketCreateRequest }>(
