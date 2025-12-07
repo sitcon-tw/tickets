@@ -47,7 +47,7 @@ export default function Nav() {
 
 	const t = getTranslations(locale, {
 		adminPanel: { "zh-Hant": "管理員介面", "zh-Hans": "管理员介面", en: "Admin Panel" },
-		myTickets: { "zh-Hant": "我的票券", "zh-Hans": "我的票券", en: "My Tickets" },
+		myRegistrations: { "zh-Hant": "我的報名", "zh-Hans": "我的报名", en: "My Registrations" },
 		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
 		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
 	});
@@ -180,17 +180,17 @@ export default function Nav() {
 						<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" />
 					)}
 				</Link>
-				<div className="flex items-center gap-4">
+				<div className="flex items-center space-x-4">
 					{session.status === "authenticated" ? (
 						<>
 							{hasAdminAccess && (
-								<Link href={localizedPath("/admin/events")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								<Link href={localizedPath("/admin/events")} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
 									{t.adminPanel}
 								</Link>
 							)}
-							{/* <Link href={localizedPath("/my-registration/")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-								{t.myTickets}
-							</Link> */}
+							<Link href={localizedPath("/my-registration")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								{t.myRegistrations}
+							</Link>
 							<Button
 								variant="ghost"
 								size="sm"

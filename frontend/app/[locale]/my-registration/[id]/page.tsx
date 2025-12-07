@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { ChevronLeft, Save, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -25,6 +26,8 @@ export default function MyRegistrationPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const params = useParams();
+	const searchParams = useSearchParams();
+	const isFromMyRegistrations = searchParams.get("h") != null;
 	const registrationId = params?.id as string;
 
 	const [loading, setLoading] = useState(true);
@@ -52,10 +55,20 @@ export default function MyRegistrationPage() {
 			"zh-Hans": "载入失败：",
 			en: "Failed to load: "
 		},
-		backToRegistrations: {
+		backToSuccessPage: {
 			"zh-Hant": "返回報名成功頁面",
 			"zh-Hans": "返回报名成功页面",
 			en: "Back to Registration Success Page"
+		},
+		goToSuccessPage: {
+			"zh-Hant": "前往報名成功頁面",
+			"zh-Hans": "前往报名成功页面",
+			en: "Go to Registration Success Page"
+		},
+		backToRegistrations: {
+			"zh-Hant": "返回我的報名列表",
+			"zh-Hans": "返回我的报名列表",
+			en: "Back to My Registrations"
 		},
 		eventInfo: {
 			"zh-Hant": "活動資訊",
@@ -178,9 +191,9 @@ export default function MyRegistrationPage() {
 			en: "Cancel Registration"
 		},
 		cancelConfirm: {
-			"zh-Hant": "確定要取消此報名嗎？",
-			"zh-Hans": "确定要取消此报名吗？",
-			en: "Are you sure you want to cancel this registration?"
+			"zh-Hant": "確定要取消此報名嗎？您將無法再次編輯或恢復此報名。",
+			"zh-Hans": "确定要取消此报名吗？您将无法再次编辑或恢复此报名。",
+			en: "Are you sure you want to cancel this registration? You will not be able to edit or recover this registration again."
 		},
 		cancelling: {
 			"zh-Hant": "取消中...",
@@ -400,10 +413,23 @@ export default function MyRegistrationPage() {
 		<>
 			<main>
 				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
-					<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
-						<ChevronLeft />
-						<p>{t.backToRegistrations}</p>
-					</Button>
+					{ isFromMyRegistrations ?
+						<div className="flex gap-4 mb-4">
+							<Button variant="secondary" onClick={() => router.push(`/my-registration`)}>
+								<ChevronLeft />
+								<p>{t.backToRegistrations}</p>
+							</Button>
+							<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
+								<p>{t.goToSuccessPage}</p>
+								<ChevronRight />
+							</Button>
+						</div>
+					:
+						<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
+							<ChevronLeft />
+							<p>{t.backToSuccessPage}</p>
+						</Button>
+					}
 					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>{" "}
 					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
@@ -423,7 +449,7 @@ export default function MyRegistrationPage() {
 					{!loading && !error && registration && (
 						<div className="flex flex-col gap-8">
 							{/* Event Information - Read Only */}
-							<div className="p-6 border border-(--border-color) rounded-lg bg-(--background-secondary)">
+							<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
 								<h2 className="mb-4 text-2xl">{t.eventInfo}</h2>
 								<div className="flex flex-col gap-3">
 									<div>
@@ -441,7 +467,7 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Ticket Information - Read Only */}
-							<div className="p-6 border border-(--border-color) rounded-lg bg-(--background-secondary)">
+							<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
 								<h2 className="mb-4 text-2xl">{t.ticketInfo}</h2>
 								<div className="flex flex-col gap-3">
 									<div>
@@ -468,18 +494,8 @@ export default function MyRegistrationPage() {
 								</div>
 							</div>
 
-							{/* Cancel Registration Button */}
-							{registration.canCancel && registration.status !== "cancelled" && (
-								<div className="flex justify-center">
-									<Button variant="destructive" onClick={handleCancelRegistration} disabled={isCancelling || isEditing}>
-										{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
-										{isCancelling ? t.cancelling : t.cancelRegistration}
-									</Button>
-								</div>
-							)}
-
 							{/* Registration Form Data - Editable */}
-							<div className="p-6 border border-(--border-color) rounded-lg">
+							<div className="p-6 border-2 border-gray-500 rounded-lg">
 								<div className="flex justify-between items-center mb-4">
 									<h2 className="text-2xl">{t.registrationInfo}</h2>
 									{!isEditing && registration.canEdit && (
@@ -543,6 +559,16 @@ export default function MyRegistrationPage() {
 									</div>
 								)}
 							</div>
+
+							{/* Cancel Registration Button */}
+							{registration.canCancel && registration.status !== "cancelled" && (
+								<div className="flex justify-center">
+									<Button variant="destructive" onClick={handleCancelRegistration} disabled={isCancelling || isEditing}>
+										{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
+										{isCancelling ? t.cancelling : t.cancelRegistration}
+									</Button>
+								</div>
+							)}
 						</div>
 					)}
 				</section>
