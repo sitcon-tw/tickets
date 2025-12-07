@@ -497,7 +497,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 	// Send invitation codes via email
 	fastify.post<{
-		Body: { email: string; code: string; message?: string};
+		Body: { email: string; code: string; message?: string };
 	}>(
 		"/invitation-codes/send-email",
 		{

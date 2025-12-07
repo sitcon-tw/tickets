@@ -3,30 +3,29 @@
 import { FormField } from "@/components/form/FormField";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { useSearchParams } from "next/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -420,7 +419,7 @@ export default function MyRegistrationPage() {
 		<>
 			<main>
 				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
-					{ isFromMyRegistrations ?
+					{isFromMyRegistrations ? (
 						<div className="flex gap-4 mb-4">
 							<Button variant="secondary" onClick={() => router.push(`/my-registration`)}>
 								<ChevronLeft />
@@ -431,12 +430,12 @@ export default function MyRegistrationPage() {
 								<ChevronRight />
 							</Button>
 						</div>
-					:
+					) : (
 						<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
 							<ChevronLeft />
 							<p>{t.backToSuccessPage}</p>
 						</Button>
-					}
+					)}
 					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>{" "}
 					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
@@ -515,7 +514,7 @@ export default function MyRegistrationPage() {
 								{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
 
 								<div className="flex flex-col gap-6">
-									{formFields.map((field) => {
+									{formFields.map(field => {
 										const fieldName = getLocalizedText(field.name, locale);
 										const fieldId = field.id;
 
@@ -580,15 +579,11 @@ export default function MyRegistrationPage() {
 										<AlertDialogContent>
 											<AlertDialogHeader>
 												<AlertDialogTitle>{t.cancelRegistration}</AlertDialogTitle>
-												<AlertDialogDescription>
-													{t.cancelConfirm}
-												</AlertDialogDescription>
+												<AlertDialogDescription>{t.cancelConfirm}</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
 												<AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-												<AlertDialogAction onClick={handleCancelRegistration}>
-													{t.cancelRegistration}
-												</AlertDialogAction>
+												<AlertDialogAction onClick={handleCancelRegistration}>{t.cancelRegistration}</AlertDialogAction>
 											</AlertDialogFooter>
 										</AlertDialogContent>
 									</AlertDialog>

@@ -276,7 +276,15 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 	}
 };
 
-export const sendInvitationCode = async (email: string, code: string, eventNameOrJson: string | any, ticketNameOrJson: string | any, ticketUrl: string, validUntil: string, message?: string): Promise<boolean> => {
+export const sendInvitationCode = async (
+	email: string,
+	code: string,
+	eventNameOrJson: string | any,
+	ticketNameOrJson: string | any,
+	ticketUrl: string,
+	validUntil: string,
+	message?: string
+): Promise<boolean> => {
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");

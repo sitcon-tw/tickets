@@ -13,10 +13,10 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
 import type { Event, User } from "@/lib/types/api";
+import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
-import { Search } from "lucide-react";
 
 export default function UsersPage() {
 	const locale = useLocale();

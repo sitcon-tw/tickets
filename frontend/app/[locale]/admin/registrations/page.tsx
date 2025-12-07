@@ -691,7 +691,11 @@ export default function RegistrationsPage() {
 								</Button>
 								<p className="text-xs opacity-60 text-center text-wrap">
 									⚠️{" "}
-									{locale === "zh-Hant" ? "此操作無法復原，符合個人資料保護法" : locale === "zh-Hans" ? "此操作无法复原，符合個人資料保護法" : "This action is irreversible and complies with privacy law"}
+									{locale === "zh-Hant"
+										? "此操作無法復原，符合個人資料保護法"
+										: locale === "zh-Hans"
+											? "此操作无法复原，符合個人資料保護法"
+											: "This action is irreversible and complies with privacy law"}
 								</p>
 							</>
 						)}

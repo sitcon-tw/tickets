@@ -344,7 +344,7 @@ export default function FormPage() {
 								/>
 							)}
 
-							{visibleFields.map((field) => (
+							{visibleFields.map(field => (
 								<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
 							))}
 

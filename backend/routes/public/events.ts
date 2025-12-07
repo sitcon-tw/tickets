@@ -26,11 +26,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-						{ id },
-						{ slug: id },
-						...(id.length === 6 ? [{ id: { endsWith: id } }] : [])
-					],
+						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 						isActive: true
 					},
 					select: {
@@ -77,11 +73,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-						{ id },
-						{ slug: id },
-						...(id.length === 6 ? [{ id: { endsWith: id } }] : [])
-					],
+						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 						isActive: true
 					}
 				});
@@ -294,11 +286,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-						{ id },
-						{ slug: id },
-						...(id.length === 6 ? [{ id: { endsWith: id } }] : [])
-					],
+						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 						isActive: true
 					},
 					select: {
@@ -513,11 +501,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [
-						{ id },
-						{ slug: id },
-						...(id.length === 6 ? [{ id: { endsWith: id } }] : [])
-					],
+						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 						isActive: true
 					}
 				});

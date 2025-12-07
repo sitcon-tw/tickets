@@ -128,13 +128,21 @@ export default function InvitesPage() {
 		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" },
 		bulkSendEmail: { "zh-Hant": "批次寄送 Email", "zh-Hans": "批量发送 Email", en: "Bulk Send Email" },
 		emailListLabel: { "zh-Hant": "Email 列表（每行一個）", "zh-Hans": "Email 列表（每行一个）", en: "Email List (one per line)" },
-		emailListPlaceholder: { "zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com", "zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com", en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com" },
+		emailListPlaceholder: {
+			"zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com",
+			"zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com",
+			en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com"
+		},
 		matchCodes: { "zh-Hant": "配對邀請碼", "zh-Hans": "配对邀请码", en: "Match Codes" },
 		messageLabel: { "zh-Hant": "訊息內容", "zh-Hans": "消息内容", en: "Message" },
 		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息 (支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息 (支持 HTML)", en: "Enter message to display in email (supports HTML)" },
 		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
 		matched: { "zh-Hant": "已配對", "zh-Hans": "已配对", en: "Matched" },
-		tooManyEmails: { "zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）", "zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）", en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})" },
+		tooManyEmails: {
+			"zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）",
+			"zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）",
+			en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})"
+		},
 		noEmails: { "zh-Hant": "請輸入至少一個 Email 地址", "zh-Hans": "请输入至少一个 Email 地址", en: "Please enter at least one email address" },
 		matchSuccess: { "zh-Hant": "成功配對 {count} 組郵件與邀請碼", "zh-Hans": "成功配对 {count} 组邮件与邀请码", en: "Successfully matched {count} pairs" },
 		sendAll: { "zh-Hant": "全部發送", "zh-Hans": "全部发送", en: "Send All" },

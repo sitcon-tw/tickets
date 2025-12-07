@@ -1,3 +1,4 @@
+import { fetchGravatarName } from "@/lib/gravatar";
 import type {
 	ApiResponse,
 	DashboardData,
@@ -26,7 +27,6 @@ import type {
 	User
 } from "@/lib/types/api";
 import { apiClient } from "./client";
-import { fetchGravatarName } from "@/lib/gravatar";
 
 // System
 export const healthAPI = {

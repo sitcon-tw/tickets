@@ -14,10 +14,10 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Mail, RotateCw } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createCampaignsColumns, type CampaignDisplay } from "./columns";
-import { Mail, RotateCw } from "lucide-react";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();
@@ -284,7 +284,9 @@ export default function EmailCampaignsPage() {
 			<AdminHeader title={t.title} />
 
 			<section className="flex gap-2 my-4">
-				<Button onClick={() => setShowCreateModal(true)}><Mail /> {t.createNew}</Button>
+				<Button onClick={() => setShowCreateModal(true)}>
+					<Mail /> {t.createNew}
+				</Button>
 				<Button variant="secondary" onClick={loadCampaigns}>
 					<RotateCw /> {t.refresh}
 				</Button>

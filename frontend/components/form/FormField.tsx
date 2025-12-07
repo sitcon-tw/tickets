@@ -152,8 +152,7 @@ export const FormField = React.memo(FormFieldComponent, (prevProps, nextProps) =
 
 	let valuesEqual = prevValue === nextValue;
 	if (Array.isArray(prevValue) && Array.isArray(nextValue)) {
-		valuesEqual = prevValue.length === nextValue.length &&
-			prevValue.every((val, index) => val === nextValue[index]);
+		valuesEqual = prevValue.length === nextValue.length && prevValue.every((val, index) => val === nextValue[index]);
 	}
 
 	return (
