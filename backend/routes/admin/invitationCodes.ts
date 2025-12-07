@@ -6,6 +6,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
 import { invitationCodeSchemas } from "#schemas/invitationCode";
+import { sendInvitationCode } from "#utils/email.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
@@ -559,12 +560,10 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				// Build ticket URL
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
-				const ticketUrl = `${frontendUrl}/${invitationCode.ticket.event.slug}/tickets/${invitationCode.ticket.id}?inv=${code}`;
+				const ticketUrl = `${frontendUrl}/${invitationCode.ticket.event.slug}/ticket/${invitationCode.ticket.id}?inv=${code}`;
 
 				// Format valid until date
 				const validUntil = invitationCode.validUntil ? new Date(invitationCode.validUntil).toLocaleDateString("zh-TW") : "無期限";
-
-				const { sendInvitationCode } = await import("#utils/email.js");
 
 				await sendInvitationCode(email, code, invitationCode.ticket.event.name, invitationCode.ticket.name, ticketUrl, validUntil, message);
 

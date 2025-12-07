@@ -9,6 +9,7 @@ import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { sendRegistrationConfirmation, sendCancellationEmail } from "#utils/email.js";
 
 interface RegistrationCreateRequest {
 	eventId: string;
@@ -327,10 +328,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
-				const ticketUrl = `${frontendUrl}/${event.slug}/tickets/${result.id}`;
+				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
-				const { sendRegistrationConfirmation } = await import("#utils/email.js");
-				sendRegistrationConfirmation(
+				await sendRegistrationConfirmation(
 					{
 						id: result.id,
 						email: result.email,
@@ -347,16 +347,13 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			} catch (error) {
 				request.log.error({ err: error }, "Create registration error");
 
-				// Handle specific transaction errors
 				if ((error as Error).message === "TICKET_SOLD_OUT") {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
 				}
 
-				// If error is a known validation error, return 400/422
 				const prismaError = error as PrismaError;
 				if (prismaError.code === "P2002" && prismaError.meta?.target?.includes("email")) {
-					// Prisma unique constraint violation (e.g. duplicate email)
 					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
 					return reply.code(statusCode).send(response);
 				}
@@ -708,8 +705,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const buttonUrl = `${frontendUrl}/zh-Hant/my-registration/${registration.id}`;
 
-				const { sendCancellationEmail } = await import("#utils/email.js");
-				sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
+				await sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send cancellation email");
 				});
 

@@ -20,6 +20,16 @@
 				-webkit-text-fill-color: transparent;
 				color: transparent;
 			}
+			.invite-code {
+				font-weight: bold;
+				font-family: monospace;
+				font-size: x-large;
+				background: linear-gradient(#f3f4f6, #f3f4f6);
+				background-clip: text;
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				color: transparent;
+			}
 		</style>
 	</head>
 	<body style="background: linear-gradient(#e5e7eb, #e5e7eb); font-family: sans-serif; padding: 48px 32px">
@@ -43,36 +53,27 @@
 					class="description"
 					style="background: linear-gradient(#6b7280, #6b7280); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; line-height: 150%"
 				>
-					<p>毛哥EM 您好，感謝您於 SITCON 2024 擔任講者！</p>
-					<p>我是 SITCON 2025 議程組的蓋蓋，曾任 SITCON 2024 編輯組長及講者。</p>
-					<p>感謝您於 SITCON 2024 擔任講者，為所有與會者帶來精彩的ㄋㄟ。SITCON 2025 將於 3/8 在中研院人文社會科學館舉辦，我們誠摯地邀請您與您的親朋好友共襄盛舉！</p>
+					<p>{{message}}</p>
 				</div>
-				<a
-					href="{{ticketUrl}}"
+				<div
 					style="background: linear-gradient(#9ca3af, #9ca3af); padding: 12px 32px; text-decoration: none; margin: 32px auto; display: block; width: fit-content; border-radius: 12px"
 				>
-					<span
-						style="background: linear-gradient(#f3f4f6, #f3f4f6); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; font-weight: bold"
-					>
+					<span class="invite-code">
 						{{invitationCode}}
 					</span>
-				</a>
+				</div>
 				<div
 					class="description"
 					style="background: linear-gradient(#6b7280, #6b7280); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; line-height: 150%"
 				>
-					<p>{{validUntil}} 前使用邀請碼於「{{ticketName}}」票種完成兌換。邀請碼逾期將失效，歡迎提前轉贈使用。</p>
-					<p>
-						SITCON 2025 議程組
-						<br />
-						- Sky Hong
-					</p>
+					<p>您可以將邀請碼用於兌換票種「{{ticketName}}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
+					<p>請在 {{validUntil}} 前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
 				</div>
 				<a href="{{ticketUrl}}" style="background: linear-gradient(#6b7280, #6b7280); padding: 12px 32px; text-decoration: none; margin: auto; display: block; width: fit-content">
 					<span
 						style="font-weight: bold; background: linear-gradient(#f3f4f6, #f3f4f6); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent"
 					>
-						前往活動頁面
+						直接前往領票
 					</span>
 				</a>
 			</div>

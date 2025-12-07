@@ -1,6 +1,6 @@
 import prisma from "#config/database";
 import fs from "fs/promises";
-import type { MailtrapClient } from "mailtrap";
+import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
 import type { Event, Registration, Ticket } from "../types/database";
@@ -13,7 +13,6 @@ let client: MailtrapClient | null = null;
 
 async function getMailtrapClient(): Promise<MailtrapClient> {
 	if (!client) {
-		const { MailtrapClient } = await import("mailtrap");
 		client = new MailtrapClient({
 			token: process.env.MAILTRAP_TOKEN!
 		});
@@ -87,8 +86,80 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const formData = typeof registration.formData === "string" ? JSON.parse(registration.formData) : registration.formData || {};
 
+		const formFields = await prisma.eventFormFields.findMany({
+			where: { eventId: event.id },
+			orderBy: { order: "asc" }
+		});
+
+		const fieldMap = new Map(formFields.map(field => [field.id, field]));
+
+		const getLocalizedFieldName = (fieldId: string, locale: string = "zh-Hant"): string => {
+			const field = fieldMap.get(fieldId);
+			if (!field || !field.name) return fieldId;
+
+			if (typeof field.name === "string") return field.name;
+			if (typeof field.name === "object" && !Array.isArray(field.name)) {
+				const nameObj = field.name as Record<string, any>;
+				return nameObj[locale] || nameObj["en"] || Object.values(nameObj)[0] || fieldId;
+			}
+			return fieldId;
+		};
+
+		const formatFieldValue = (fieldId: string, value: any, locale: string = "zh-Hant"): string => {
+			const field = fieldMap.get(fieldId);
+			if (!field) return String(value);
+
+			if (field.type === "checkbox" && Array.isArray(value)) {
+				if (field.values) {
+					try {
+						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+						const localizedValues = value.map(v => {
+							const option = options.find((opt: string | Record<string, string>) => {
+								if (typeof opt === "object" && opt !== null) {
+									return Object.values(opt).includes(v) || ("value" in opt && opt.value === v);
+								}
+								return opt === v;
+							});
+
+							if (option && typeof option === "object") {
+								return option[locale] || option["en"] || Object.values(option)[0] || v;
+							}
+							return v;
+						});
+						return localizedValues.join(", ");
+					} catch (e) {
+						return value.join(", ");
+					}
+				}
+				return value.join(", ");
+			}
+
+			if ((field.type === "select" || field.type === "radio") && field.values) {
+				try {
+					const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+					const option = options.find((opt: string | Record<string, string>) => {
+						if (typeof opt === "object" && opt !== null) {
+							return Object.values(opt).includes(value) || ("value" in opt && opt.value === value);
+						}
+						return opt === value;
+					});
+
+					if (option && typeof option === "object") {
+						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
+					}
+				} catch (e) {
+					return String(value);
+				}
+			}
+
+			return String(value);
+		};
+
 		let formDataRows = "";
 		for (const [key, value] of Object.entries(formData)) {
+			const localizedName = getLocalizedFieldName(key);
+			const formattedValue = formatFieldValue(key, value);
+
 			formDataRows += `
 					<tr>
 						<td
@@ -102,9 +173,9 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 								font-weight: bold;
 							"
 						>
-							${key}：
+							${localizedName}：
 						</td>
-						<td style="padding: 8px 0">${value}</td>
+						<td style="padding: 8px 0">${formattedValue}</td>
 					</tr>`;
 		}
 
@@ -135,7 +206,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		await client.send({
 			from: sender,
 			to: recipients,
-			subject: `【${eventName}】報名成功 Registration Confirmation`,
+			subject: `【${eventName}】報名成功`,
 			html
 		});
 
@@ -147,7 +218,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 	}
 };
 
-export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, homeUrl: string): Promise<boolean> => {
+export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, buttonUrl: string): Promise<boolean> => {
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
@@ -187,7 +258,7 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template
 			.replace(/\{\{eventName\}\}/g, eventName)
-			.replace(/\{\{homeUrl\}\}/g, homeUrl)
+			.replace(/\{\{buttonUrl\}\}/g, buttonUrl)
 			.replace(/\{\{email\}\}/g, email);
 
 		await client.send({
