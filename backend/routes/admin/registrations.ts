@@ -5,7 +5,6 @@
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { registrationSchemas } from "#schemas/registration";
-import { sendDataDeletionNotification } from "#utils/email";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -424,13 +423,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				where: { id }
 			});
 
-			try {
-				await sendDataDeletionNotification({ id: registration.id, email: registration.email }, { name: String(registration.event.name) });
-			} catch (emailError) {
-				console.error("Failed to send deletion notification email:", emailError);
-			}
-
-			return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除，通知信已發送給活動主辦方"));
+			return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除"));
 		}
 	);
 

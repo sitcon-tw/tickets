@@ -37,7 +37,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			}
 		];
 
-		const templatePath = path.join(__dirname, "../email-templates/registration-confirmation.html");
+		const templatePath = path.join(__dirname, "../email-templates/registered.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template
 			.replace(/\{\{eventName\}\}/g, String(event.name))
@@ -52,39 +52,6 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			from: sender,
 			to: recipients,
 			subject: `【${event.name}】報名確認 Registration Confirmation`,
-			html
-		});
-		return true;
-	} catch (error) {
-		console.error("Email sending error:", error);
-		return false;
-	}
-};
-
-export const sendEditLink = async (email: string, editToken: string, event: Event): Promise<boolean> => {
-	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: email
-			}
-		];
-
-		const editUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/edit/${editToken}`;
-
-		const templatePath = path.join(__dirname, "../email-templates/edit-link.html");
-		let template = await fs.readFile(templatePath, "utf-8");
-		let html = template.replace(/\{\{eventName\}\}/g, String(event.name)).replace(/\{\{editUrl\}\}/g, editUrl);
-
-		await client.send({
-			from: sender,
-			to: recipients,
-			subject: `【${event.name}】報名資料編輯連結 Registration Edit Link`,
 			html
 		});
 		return true;
@@ -378,89 +345,5 @@ export const sendInvitationCodes = async (email: string, codes: string[], groupN
 	} catch (error) {
 		console.error("Send invitation codes error:", error);
 		throw error;
-	}
-};
-
-export const sendDataDeletionNotification = async (registration: Pick<Registration, "id" | "email">, event: Pick<Event, "name">): Promise<boolean> => {
-	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: "SITCON"
-		};
-
-		// Get organizer email from environment or use a default
-		const organizerEmail = process.env.ORGANIZER_EMAIL || "organizer@sitcon.org";
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: organizerEmail
-			}
-		];
-
-		// Get localized event name
-		const getLocalizedName = (nameObj: string | Record<string, string> | undefined): string => {
-			if (!nameObj) return "未命名活動";
-			if (typeof nameObj === "string") return nameObj;
-			if (typeof nameObj !== "object") return "未命名活動";
-			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "未命名活動";
-		};
-
-		const eventName = getLocalizedName(event.name);
-
-		await client.send({
-			from: sender,
-			to: recipients,
-			subject: `報名資料異動 - ${eventName}`,
-			html: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>報名資料異動</title>
-				</head>
-				<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<h2 style="color: #2c3e50;">報名資料異動</h2>
-					<p>Dear Sir,</p>
-
-					<p>您舉辦的活動中報名人 (詳見下列) 要求刪除在 SITCON 存放的個人資料。根據台灣政府的個人資料保護法規定，我們必須刪除該筆記錄，也應告知您不可以繼續保存或持有該筆個人資料。在 SITCON 上的所有帳務相關資料仍將依法保存。</p>
-
-					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-						<h3 style="color: #2c3e50; margin-top: 0;">刪除資料明細 Deletion Details</h3>
-						<p><strong>活動名稱 Event Name:</strong> ${eventName}</p>
-						<p><strong>報名編號 Registration ID:</strong> ${registration.id}</p>
-						<p><strong>電子郵件 Email:</strong> ${registration.email}</p>
-						<p><strong>刪除時間 Deletion Time:</strong> ${new Date().toLocaleString("zh-TW")}</p>
-					</div>
-
-					<p>若有任何疑問或建議，歡迎寄信到 <a href="mailto:ticket@sitcon.org">ticket@sitcon.org</a> 洽詢。</p>
-
-					<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-
-					<p>The registrants of your event has asked us to remove his/her personal information on SITCON. We list the serial numbers below.</p>
-
-					<p>According to Taiwan's Personal Information Protection Act, we have to remove the data from our service, and need to ask you to delete the related personal information that you might have been download from the service before. Also according to the law, we will still keep the information that related to transactions, include but now limited to the payments information of tickets.</p>
-
-					<p>Should you have any question, please feel free to contact <a href="mailto:ticket@sitcon.org">ticket@sitcon.org</a>.</p>
-
-					<p>Sincerely,</p>
-					<p><strong>SITCON Team</strong></p>
-
-					<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-						<p style="color: #666; font-size: 12px;">
-							此為系統自動發送信件，請勿直接回覆<br>
-							This is an automated email, please do not reply directly
-						</p>
-					</div>
-				</body>
-				</html>
-			`
-		});
-
-		return true;
-	} catch (error) {
-		console.error("Send data deletion notification error:", error);
-		return false;
 	}
 };
