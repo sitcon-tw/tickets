@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @fileoverview Admin registrations routes with modular types and schemas
  */
 
@@ -208,7 +208,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 
 			// Convert formData object to JSON string if present
-			const dataToUpdate = { ...updateData };
+			const dataToUpdate: Record<string, any> = { ...updateData };
 			if (dataToUpdate.formData && typeof dataToUpdate.formData === "object") {
 				dataToUpdate.formData = JSON.stringify(dataToUpdate.formData);
 			}
