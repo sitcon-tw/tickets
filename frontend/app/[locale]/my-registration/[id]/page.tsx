@@ -16,6 +16,17 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -282,10 +293,6 @@ export default function MyRegistrationPage() {
 	async function handleCancelRegistration() {
 		if (!registration || !registration.canCancel) {
 			showAlert(t.cannotCancel, "warning");
-			return;
-		}
-
-		if (!confirm(t.cancelConfirm)) {
 			return;
 		}
 
@@ -563,10 +570,28 @@ export default function MyRegistrationPage() {
 							{/* Cancel Registration Button */}
 							{registration.canCancel && registration.status !== "cancelled" && (
 								<div className="flex justify-center">
-									<Button variant="destructive" onClick={handleCancelRegistration} disabled={isCancelling || isEditing}>
-										{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
-										{isCancelling ? t.cancelling : t.cancelRegistration}
-									</Button>
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="destructive" disabled={isCancelling || isEditing}>
+												{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
+												{isCancelling ? t.cancelling : t.cancelRegistration}
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>{t.cancelRegistration}</AlertDialogTitle>
+												<AlertDialogDescription>
+													{t.cancelConfirm}
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+												<AlertDialogAction onClick={handleCancelRegistration}>
+													{t.cancelRegistration}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
 								</div>
 							)}
 						</div>
