@@ -126,13 +126,10 @@ export default function MyRegistrationsPage() {
     pending: t.pending,
   };
 
-  const statusVariants: Record<
-    string,
-    "default" | "secondary" | "destructive" | "outline"
-  > = {
-    confirmed: "default",
-    cancelled: "destructive",
-    pending: "secondary",
+  const statusClassnames: Record<string, string> = {
+    confirmed: "bg-green-300 dark:bg-blue-500/80",
+    cancelled: "bg-red-300 dark:bg-red-500/80",
+    pending: "bg-yellow-300 dark:bg-yellow-500/80",
   };
 
   const filteredRegistrations = registrations.filter((reg) => {
@@ -265,14 +262,12 @@ export default function MyRegistrationsPage() {
                       <div>
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <h2 className="text-2xl font-bold">{eventName}</h2>
-                          <Badge
-                            variant={
-                              statusVariants[registration.status] || "default"
-                            }
+                          <div
+                            className={`${statusClassnames[registration.status] || "bg-gray-100 text-gray-800"} rounded-md border-2 border-gray-300 dark:border-gray-800 px-4 py-2`}
                           >
                             {statusTranslations[registration.status] ||
                               registration.status}
-                          </Badge>
+                          </div>
                         </div>
 
                         <div className="space-y-2 mb-4">
