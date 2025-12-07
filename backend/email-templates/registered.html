@@ -41,7 +41,7 @@
 					<div style="font-size: 24px">SITCON 2026</div>
 					報名成功
 				</h1>
-				<a href="" style="background: linear-gradient(#6b7280, #6b7280); padding: 12px 32px; text-decoration: none; margin-bottom: 16px; display: inline-block">
+				<a href="{{ticketUrl}}" style="background: linear-gradient(#6b7280, #6b7280); padding: 12px 32px; text-decoration: none; margin-bottom: 16px; display: inline-block">
 					<span
 						style="font-weight: bold; background: linear-gradient(#f3f4f6, #f3f4f6); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent"
 					>
@@ -105,11 +105,11 @@
 							活動：
 						</td>
 						<td style="padding: 8px 0; vertical-align: top">
-							SITCON 2026
+							{{eventName}}
 							<br />
-							2026/12/31
+							{{eventDate}}
 							<br />
-							中央研究院 人文社會科學館
+							{{eventLocation}}
 						</td>
 					</tr>
 					<tr>
@@ -126,104 +126,9 @@
 						>
 							票種：
 						</td>
-						<td style="padding: 8px 0">講者邀請票</td>
+						<td style="padding: 8px 0">{{ticketName}}</td>
 					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							姓名：
-						</td>
-						<td style="padding: 8px 0">Nelson</td>
-					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							性別：
-						</td>
-						<td style="padding: 8px 0">Email</td>
-					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							姓名：
-						</td>
-						<td style="padding: 8px 0">Nelson</td>
-					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							姓名：
-						</td>
-						<td style="padding: 8px 0">Nelson</td>
-					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							姓名：
-						</td>
-						<td style="padding: 8px 0">Nelson</td>
-					</tr>
-					<tr>
-						<td
-							style="
-								padding: 8px 0;
-								background: linear-gradient(#6b7280, #6b7280);
-								background-clip: text;
-								-webkit-background-clip: text;
-								-webkit-text-fill-color: transparent;
-								color: transparent;
-								font-weight: bold;
-							"
-						>
-							姓名：
-						</td>
-						<td style="padding: 8px 0">Nelson</td>
-					</tr>
+					{{formDataRows}}
 				</table>
 				<p
 					style="

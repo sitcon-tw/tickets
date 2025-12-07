@@ -274,13 +274,17 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						include: {
 							event: {
 								select: {
+									id: true,
 									name: true,
 									startDate: true,
-									endDate: true
+									endDate: true,
+									location: true,
+									slug: true
 								}
 							},
 							ticket: {
 								select: {
+									id: true,
 									name: true,
 									price: true
 								}
@@ -320,6 +324,23 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						...registration,
 						formData: parsedFormData
 					};
+				});
+
+				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
+				const ticketUrl = `${frontendUrl}/${event.slug}/tickets/${result.id}`;
+
+				const { sendRegistrationConfirmation } = await import("#utils/email.js");
+				sendRegistrationConfirmation(
+					{
+						id: result.id,
+						email: result.email,
+						formData: result.formData
+					} as any,
+					event as any,
+					ticket as any,
+					ticketUrl
+				).catch(error => {
+					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 
 				return reply.code(201).send(successResponse(result, "報名成功"));
@@ -638,7 +659,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const userId = session?.user?.id;
 				const id = request.params.id;
 
-				// Check if registration exists and belongs to user
 				const registration = await prisma.registration.findFirst({
 					where: {
 						id,
@@ -647,6 +667,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					include: {
 						event: {
 							select: {
+								name: true,
 								startDate: true,
 								endDate: true
 							}
@@ -659,7 +680,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if registration can be cancelled
 				if (registration.status !== "confirmed") {
 					const { response, statusCode } = validationErrorResponse("只能取消已確認的報名");
 					return reply.code(statusCode).send(response);
@@ -670,9 +690,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Cancel registration and update ticket count
 				await prisma.$transaction(async tx => {
-					// Update registration status
 					await tx.registration.update({
 						where: { id },
 						data: {
@@ -681,11 +699,18 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						}
 					});
 
-					// Decrease ticket sold count
 					await tx.ticket.update({
 						where: { id: registration.ticketId },
 						data: { soldCount: { decrement: 1 } }
 					});
+				});
+
+				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
+				const buttonUrl = `${frontendUrl}/zh-Hant/my-registration/${registration.id}`;
+
+				const { sendCancellationEmail } = await import("#utils/email.js");
+				sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
+					request.log.error({ err: error }, "Failed to send cancellation email");
 				});
 
 				return reply.send(successResponse(null, "報名已取消"));

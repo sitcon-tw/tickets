@@ -21,7 +21,6 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 	return client;
 }
 
-// this already finished, only need to edit the template
 export const sendMagicLink = async (email: string, magicLink: string): Promise<boolean> => {
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -69,8 +68,7 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 	}
 };
 
-// please rewrite this
-export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
+export const sendRegistrationConfirmation = async (registration: Registration, event: Event, ticket: Ticket, ticketUrl: string): Promise<boolean> => {
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -86,40 +84,193 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const templatePath = path.join(__dirname, "../email-templates/registered.html");
 		let template = await fs.readFile(templatePath, "utf-8");
+
+		const formData = typeof registration.formData === "string" ? JSON.parse(registration.formData) : registration.formData || {};
+
+		let formDataRows = "";
+		for (const [key, value] of Object.entries(formData)) {
+			formDataRows += `
+					<tr>
+						<td
+							style="
+								padding: 8px 0;
+								background: linear-gradient(#6b7280, #6b7280);
+								background-clip: text;
+								-webkit-background-clip: text;
+								-webkit-text-fill-color: transparent;
+								color: transparent;
+								font-weight: bold;
+							"
+						>
+							${key}：
+						</td>
+						<td style="padding: 8px 0">${value}</td>
+					</tr>`;
+		}
+
+		const eventDate = new Date(event.startDate).toLocaleDateString("zh-TW");
+
+		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
+			if (!jsonField) return "";
+			if (typeof jsonField === "string") return jsonField;
+			if (typeof jsonField === "object") {
+				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
+			}
+			return String(jsonField);
+		};
+
+		const eventName = getLocalizedValue(event.name);
+		const ticketName = getLocalizedValue(ticket.name);
+		const eventLocation = event.location || "待公布 TBA";
+
 		let html = template
-			.replace(/\{\{eventName\}\}/g, String(event.name))
-			.replace(/\{\{eventStartDate\}\}/g, new Date(event.startDate).toLocaleDateString("zh-TW"))
-			.replace(/\{\{eventEndDate\}\}/g, new Date(event.endDate).toLocaleDateString("zh-TW"))
-			.replace(/\{\{eventLocation\}\}/g, event.location || "待公布 TBA")
-			.replace(/\{\{registrationId\}\}/g, registration.id)
-			.replace(/\{\{referralCode\}\}/g, "")
-			.replace(/\{\{qrCodeUrl\}\}/g, qrCodeUrl || "");
+			.replace(/\{\{eventName\}\}/g, eventName)
+			.replace(/\{\{eventDate\}\}/g, eventDate)
+			.replace(/\{\{eventLocation\}\}/g, eventLocation)
+			.replace(/\{\{ticketName\}\}/g, ticketName)
+			.replace(/\{\{ticketUrl\}\}/g, ticketUrl)
+			.replace(/\{\{formDataRows\}\}/g, formDataRows)
+			.replace(/\{\{email\}\}/g, registration.email);
 
 		await client.send({
 			from: sender,
 			to: recipients,
-			subject: `【${event.name}】報名確認 Registration Confirmation`,
+			subject: `【${eventName}】報名成功 Registration Confirmation`,
 			html
 		});
+
+		console.log(`Registration confirmation email sent successfully to ${registration.email}`);
 		return true;
 	} catch (error) {
 		console.error("Email sending error:", error);
-		return false;
+		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
 
-export const sendInvitationCodes = async (email: string, code: string[], message?: string): Promise<boolean> => {
-	// please rewrite this
+export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, homeUrl: string): Promise<boolean> => {
 	try {
-		console.log("hehe")
+		if (!email || typeof email !== "string" || !email.includes("@")) {
+			throw new Error("Invalid email address");
+		}
+		if (!process.env.MAILTRAP_TOKEN) {
+			throw new Error("MAILTRAP_TOKEN is not configured");
+		}
+		if (!process.env.MAILTRAP_SENDER_EMAIL) {
+			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
+		}
 
+		const client = await getMailtrapClient();
+		const sender: EmailSender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
+		};
+
+		const recipients: EmailRecipient[] = [
+			{
+				email: email
+			}
+		];
+
+		// Handle localized event name
+		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
+			if (!jsonField) return "";
+			if (typeof jsonField === "string") return jsonField;
+			if (typeof jsonField === "object") {
+				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
+			}
+			return String(jsonField);
+		};
+
+		const eventName = getLocalizedValue(eventNameOrJson);
+
+		const templatePath = path.join(__dirname, "../email-templates/canceled.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template
+			.replace(/\{\{eventName\}\}/g, eventName)
+			.replace(/\{\{homeUrl\}\}/g, homeUrl)
+			.replace(/\{\{email\}\}/g, email);
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: `【SITCONTIX】你已取消報名`,
+			html
+		});
+
+		console.log(`Cancellation email sent successfully to ${email}`);
+		return true;
 	} catch (error) {
-		console.error("Send invitation codes error:", error);
-		throw error;
+		console.error("Email sending error:", error);
+		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
 
-// please add cancel and invite code email functions here
+export const sendInvitationCode = async (email: string, code: string, eventNameOrJson: string | any, ticketNameOrJson: string | any, ticketUrl: string, validUntil: string, message?: string): Promise<boolean> => {
+	try {
+		if (!email || typeof email !== "string" || !email.includes("@")) {
+			throw new Error("Invalid email address");
+		}
+		if (!code || typeof code !== "string") {
+			throw new Error("Invalid invitation code");
+		}
+		if (!process.env.MAILTRAP_TOKEN) {
+			throw new Error("MAILTRAP_TOKEN is not configured");
+		}
+		if (!process.env.MAILTRAP_SENDER_EMAIL) {
+			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
+		}
+
+		const client = await getMailtrapClient();
+		const sender: EmailSender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
+		};
+
+		const recipients: EmailRecipient[] = [
+			{
+				email: email
+			}
+		];
+
+		const templatePath = path.join(__dirname, "../email-templates/invite-mail.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+
+		// Handle localized fields
+		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
+			if (!jsonField) return "";
+			if (typeof jsonField === "string") return jsonField;
+			if (typeof jsonField === "object") {
+				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
+			}
+			return String(jsonField);
+		};
+
+		const eventName = getLocalizedValue(eventNameOrJson);
+		const ticketName = getLocalizedValue(ticketNameOrJson);
+
+		let html = template
+			.replace(/\{\{eventName\}\}/g, eventName)
+			.replace(/\{\{invitationCode\}\}/g, code)
+			.replace(/\{\{ticketName\}\}/g, ticketName)
+			.replace(/\{\{ticketUrl\}\}/g, ticketUrl)
+			.replace(/\{\{validUntil\}\}/g, validUntil)
+			.replace(/\{\{message\}\}/g, message || "<p>感謝您！以下是您的邀請碼：</p>")
+			.replace(/\{\{email\}\}/g, email);
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: `【${eventName}】活動邀請碼`,
+			html
+		});
+
+		console.log(`Invitation code email sent successfully to ${email}`);
+		return true;
+	} catch (error) {
+		console.error("Email sending error:", error);
+		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`);
+	}
+};
 
 export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
 	try {

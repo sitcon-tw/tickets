@@ -529,9 +529,44 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { email, code, message } = request.body;
 
-				const { sendInvitationCodes } = await import("#utils/email.js");
+				// Fetch the invitation code details
+				const invitationCode = await prisma.invitationCode.findFirst({
+					where: {
+						code: code,
+						isActive: true
+					},
+					include: {
+						ticket: {
+							select: {
+								id: true,
+								name: true,
+								event: {
+									select: {
+										id: true,
+										name: true,
+										slug: true
+									}
+								}
+							}
+						}
+					}
+				});
 
-				await sendInvitationCodes(email, code, message);
+				if (!invitationCode) {
+					const { response, statusCode } = notFoundResponse("邀請碼不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Build ticket URL
+				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
+				const ticketUrl = `${frontendUrl}/${invitationCode.ticket.event.slug}/tickets/${invitationCode.ticket.id}?inv=${code}`;
+
+				// Format valid until date
+				const validUntil = invitationCode.validUntil ? new Date(invitationCode.validUntil).toLocaleDateString("zh-TW") : "無期限";
+
+				const { sendInvitationCode } = await import("#utils/email.js");
+
+				await sendInvitationCode(email, code, invitationCode.ticket.event.name, invitationCode.ticket.name, ticketUrl, validUntil, message);
 
 				return reply.send(successResponse(null, "成功寄送邀請碼"));
 			} catch (error) {

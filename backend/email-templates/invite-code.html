@@ -68,21 +68,21 @@
 			<h1>🎉 您收到一組邀請碼！</h1>
 		</div>
 
-		<p>親愛的用戶，您好！感謝你作為一個人類。這段文字是可以編輯的，他在body裡面，blabla總之這是您的邀請碼：</p>
+		<p>親愛的用戶，您好！{{message}}</p>
 
 		<div class="invite-code">
 			<p style="margin: 0; font-size: 14px; color: #666;">您的邀請碼</p>
-			<p class="code">XXXXXXXXXXXXXXXX</p>
+			<p class="code">{{invitationCode}}</p>
 		</div>
 
 		<div class="ticket-info">
 			<h3 style="margin-top: 0;">票種資訊</h3>
-			<p><strong>票種：</strong>一般票</p>
-			<p><strong>有效期限：</strong>2026年12月31日</p>
+			<p><strong>票種：</strong>{{ticketName}}</p>
+			<p><strong>有效期限：</strong>{{validUntil}}</p>
 		</div>
 
 		<div style="text-align: center;">
-			<a href="http://frontend-uri/localization/event-slug/ticket/ticket-id?inv=XXXXXXXXXXXXXXXX" class="btn">立即使用邀請碼購票</a>
+			<a href="{{ticketUrl}}" class="btn">立即使用邀請碼購票</a>
 		</div>
 
 		<p style="margin-top: 30px; font-size: 14px;">

@@ -36,33 +36,26 @@
 					text-align: center;
 				"
 			>
-				來自 SITCON 2026 的活動邀請碼
+				來自 {{eventName}} 的活動邀請碼
 			</h1>
 			<div
 				class="description"
 				style="background: linear-gradient(#6b7280, #6b7280); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; line-height: 150%"
 			>
-				<p>毛哥EM 您好，感謝您於 SITCON 2024 擔任講者！</p>
-				<p>我是 SITCON 2025 議程組的蓋蓋，曾任 SITCON 2024 編輯組長及講者。</p>
-				<p>感謝您於 SITCON 2024 擔任講者，為所有與會者帶來精彩的ㄋㄟ。SITCON 2025 將於 3/8 在中研院人文社會科學館舉辦，我們誠摯地邀請您與您的親朋好友共襄盛舉！</p>
+				{{message}}
 			</div>
-			<a href="" style="background: linear-gradient(#9ca3af, #9ca3af); padding: 12px 32px; text-decoration: none; margin: 32px auto; display: block; width: fit-content; border-radius: 12px">
+			<a href="{{ticketUrl}}" style="background: linear-gradient(#9ca3af, #9ca3af); padding: 12px 32px; text-decoration: none; margin: 32px auto; display: block; width: fit-content; border-radius: 12px">
 				<span style="background: linear-gradient(#f3f4f6, #f3f4f6); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; font-weight: bold">
-					NELSON4FREE
+					{{invitationCode}}
 				</span>
 			</a>
 			<div
 				class="description"
 				style="background: linear-gradient(#6b7280, #6b7280); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; line-height: 150%"
 			>
-				<p>請於 2025 年 2 月 1 日（六）23:59 前，至 https://sitcon.kktix.cc/events/sitcon2025 使用邀請碼於「邀請票」票種欄位完成兌換。兩份邀請碼逾期均將失效，歡迎提前轉贈使用。</p>
-				<p>
-					SITCON 2025 議程組
-					<br />
-					- Sky Hong
-				</p>
+				<p>請於 {{validUntil}} 前使用邀請碼於「{{ticketName}}」票種完成兌換。邀請碼逾期將失效，歡迎提前轉贈使用。</p>
 			</div>
-			<a href="" style="background: linear-gradient(#6b7280, #6b7280); padding: 12px 32px; text-decoration: none; margin: auto; display: block; width: fit-content">
+			<a href="{{ticketUrl}}" style="background: linear-gradient(#6b7280, #6b7280); padding: 12px 32px; text-decoration: none; margin: auto; display: block; width: fit-content">
 				<span style="font-weight: bold; background: linear-gradient(#f3f4f6, #f3f4f6); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent">
 					前往活動頁面
 				</span>
