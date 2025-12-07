@@ -580,7 +580,7 @@ export default function FormsPage() {
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-6">
+						<div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-6">
 							<Label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t.copyFrom}</Label>
 							<Select
 								value={copyFromEventId}
@@ -632,7 +632,7 @@ export default function FormsPage() {
 										onDragOver={e => handleDragOver(e, index)}
 										onDragLeave={handleDragLeave}
 										onDrop={e => handleDrop(e, index)}
-										className={`bg-white dark:bg-gray-800 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+										className={`bg-white dark:bg-gray-900 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
 											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
 										} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
 									>
