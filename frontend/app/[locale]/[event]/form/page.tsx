@@ -291,22 +291,9 @@ export default function FormPage() {
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
 
-		const filtered = formFields.filter(field => {
-			const shouldDisplay = shouldDisplayField(
-				field,
-				{
-					selectedTicketId: ticketId,
-					formData: formData,
-					currentTime: new Date()
-				},
-				formFields
-			);
-
-			return shouldDisplay;
-		});
-
-		return filtered;
-	}, [formFields, ticketId, formData]);
+		// Just return all fields - we'll handle conditional display differently if needed
+		return formFields;
+	}, [formFields, ticketId]);
 
 	return (
 		<>
@@ -348,11 +335,9 @@ export default function FormPage() {
 								/>
 							)}
 
-							{visibleFields.map((field, index) => {
-								return (
-									<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
-								);
-							})}
+							{visibleFields.map((field) => (
+								<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+							))}
 
 							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
 

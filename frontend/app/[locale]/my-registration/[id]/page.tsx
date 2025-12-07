@@ -515,7 +515,7 @@ export default function MyRegistrationPage() {
 								{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
 
 								<div className="flex flex-col gap-6">
-									{formFields.map((field, index) => {
+									{formFields.map((field) => {
 										const fieldName = getLocalizedText(field.name, locale);
 										const fieldId = field.id;
 

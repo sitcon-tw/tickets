@@ -1,6 +1,5 @@
 // Data Table Component Types
 import { Column, ColumnDef, Table } from "@tanstack/react-table";
-import * as React from "react";
 
 export interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
@@ -15,7 +14,9 @@ export interface DataTablePaginationProps<TData> {
 	table: Table<TData>;
 }
 
-export interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
+export interface DataTableColumnHeaderProps<TData, TValue> {
 	column: Column<TData, TValue>;
 	title: string;
+	className?: string;
+	style?: React.CSSProperties;
 }

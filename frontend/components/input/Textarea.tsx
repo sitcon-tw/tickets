@@ -16,7 +16,7 @@ export default function Textarea({ label, id, required = true, rows = 4, value, 
 	return (
 		<div className="space-y-2">
 			<Label htmlFor={id}>{label}</Label>
-			<TextareaUI id={id} name={id} aria-label={label} required={required} rows={rows} value={value} onChange={onChange} placeholder={placeholder} />
+			<TextareaUI id={id} name={id} aria-label={label} required={required} rows={rows} value={value} onChange={onChange} placeholder={placeholder} autoComplete="off" />
 		</div>
 	);
 }

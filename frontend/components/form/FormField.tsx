@@ -12,7 +12,19 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React from "react";
 
-export function FormField({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
+// Wrapper component defined outside to prevent recreation on every render
+const FieldWrapper = ({ children, description }: { children: React.ReactNode; description?: string }) => (
+	<div className="flex flex-col gap-1">
+		{children}
+		{description && (
+			<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+				<MarkdownContent content={description} className="text-sm" />
+			</div>
+		)}
+	</div>
+);
+
+function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
 	const locale = useLocale();
 	const requiredMark = field.required ? " *" : "";
 	const fieldLabel = getLocalizedText(field.name, locale);
@@ -26,36 +38,24 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 			label: getLocalizedText(opt, locale)
 		})) || [];
 
-	// Wrapper to add description to form fields
-	const FieldWrapper = ({ children }: { children: React.ReactNode }) => (
-		<div className="flex flex-col gap-1">
-			{children}
-			{fieldDescription && (
-				<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-					<MarkdownContent content={fieldDescription} className="text-sm" />
-				</div>
-			)}
-		</div>
-	);
-
 	switch (field.type) {
 		case "text":
 			return (
-				<FieldWrapper>
+				<FieldWrapper description={fieldDescription}>
 					<Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
 				</FieldWrapper>
 			);
 
 		case "textarea":
 			return (
-				<FieldWrapper>
+				<FieldWrapper description={fieldDescription}>
 					<Textarea label={label} id={fieldId} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
 				</FieldWrapper>
 			);
 
 		case "select":
 			return (
-				<FieldWrapper>
+				<FieldWrapper description={fieldDescription}>
 					<Select
 						label={label}
 						id={fieldId}
@@ -80,7 +80,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 
 		case "radio":
 			return (
-				<FieldWrapper>
+				<FieldWrapper description={fieldDescription}>
 					<Radio
 						label={fieldLabel}
 						name={fieldId}
@@ -106,7 +106,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 				// Ensure we filter out empty strings from the current values
 				const currentValues = Array.isArray(value) ? value.filter((v: string) => v && v.trim() !== "") : [];
 				return (
-					<FieldWrapper>
+					<FieldWrapper description={fieldDescription}>
 						<MultiCheckbox
 							label={label}
 							name={fieldId}
@@ -129,7 +129,7 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 				);
 			} else {
 				return (
-					<FieldWrapper>
+					<FieldWrapper description={fieldDescription}>
 						<Checkbox label={label} id={fieldId} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />
 					</FieldWrapper>
 				);
@@ -137,9 +137,30 @@ export function FormField({ field, value, onTextChange, onCheckboxChange, please
 
 		default:
 			return (
-				<FieldWrapper>
+				<FieldWrapper description={fieldDescription}>
 					<Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
 				</FieldWrapper>
 			);
 	}
 }
+
+export const FormField = React.memo(FormFieldComponent, (prevProps, nextProps) => {
+	// Return true if props are equal (skip re-render), false if props changed (re-render)
+	// Deep comparison for array values
+	const prevValue = prevProps.value;
+	const nextValue = nextProps.value;
+
+	let valuesEqual = prevValue === nextValue;
+	if (Array.isArray(prevValue) && Array.isArray(nextValue)) {
+		valuesEqual = prevValue.length === nextValue.length &&
+			prevValue.every((val, index) => val === nextValue[index]);
+	}
+
+	return (
+		prevProps.field === nextProps.field &&
+		valuesEqual &&
+		prevProps.onTextChange === nextProps.onTextChange &&
+		prevProps.onCheckboxChange === nextProps.onCheckboxChange &&
+		prevProps.pleaseSelectText === nextProps.pleaseSelectText
+	);
+});
