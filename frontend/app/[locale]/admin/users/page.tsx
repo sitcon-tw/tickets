@@ -16,6 +16,7 @@ import type { Event, User } from "@/lib/types/api";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
+import { Search } from "lucide-react";
 
 export default function UsersPage() {
 	const locale = useLocale();
@@ -184,9 +185,10 @@ export default function UsersPage() {
 	return (
 		<main>
 			<AdminHeader title={t.title} />
-			<section className="flex gap-2 mb-4">
-				<Input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-			</section>
+			<div className="relative w-fit mb-4">
+				<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+				<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+			</div>
 
 			<section>
 				{isLoading ? (

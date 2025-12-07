@@ -17,6 +17,7 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createCampaignsColumns, type CampaignDisplay } from "./columns";
+import { Mail, RotateCw } from "lucide-react";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();
@@ -283,9 +284,9 @@ export default function EmailCampaignsPage() {
 			<AdminHeader title={t.title} />
 
 			<section className="flex gap-2 my-4">
-				<Button onClick={() => setShowCreateModal(true)}>✉️ {t.createNew}</Button>
+				<Button onClick={() => setShowCreateModal(true)}><Mail /> {t.createNew}</Button>
 				<Button variant="secondary" onClick={loadCampaigns}>
-					↻ {t.refresh}
+					<RotateCw /> {t.refresh}
 				</Button>
 			</section>
 
