@@ -131,7 +131,7 @@ export default function InvitesPage() {
 		emailListPlaceholder: { "zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com", "zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com", en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com" },
 		matchCodes: { "zh-Hant": "配對邀請碼", "zh-Hans": "配对邀请码", en: "Match Codes" },
 		messageLabel: { "zh-Hant": "訊息內容", "zh-Hans": "消息内容", en: "Message" },
-		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息(支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息(支持 HTML)", en: "Enter message to display in email (supports HTML)" },
+		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息 (支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息 (支持 HTML)", en: "Enter message to display in email (supports HTML)" },
 		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
 		matched: { "zh-Hant": "已配對", "zh-Hans": "已配对", en: "Matched" },
 		tooManyEmails: { "zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）", "zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）", en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})" },
