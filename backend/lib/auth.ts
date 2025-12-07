@@ -1,4 +1,5 @@
 import { sendMagicLink } from "#utils/email";
+import { APIError } from "better-auth/api";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins";
@@ -41,7 +42,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 				});
 
 				if (recentAttempt) {
-					throw new Error("請稍後再試，登入信發送間隔需 30 秒");
+					throw new APIError("TOO_MANY_REQUESTS", {
+						message: "請稍後再試，登入信發送間隔需 30 秒"
+					});
 				}
 
 				const todayStart = new Date();
@@ -70,8 +73,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					}
 				});
 
-				if (failedAttemptsSinceSuccess >= 3) {
-					throw new Error("登入嘗試次數已達上限（3 次），請稍後再試或聯繫客服");
+				if (failedAttemptsSinceSuccess >= 5) {
+					throw new APIError("TOO_MANY_REQUESTS", {
+						message: "登入嘗試次數已達上限（5 次），請稍後再試或聯繫客服"
+					});
 				}
 
 				const successfulLoginsToday = await prisma.magicLinkAttempt.count({
@@ -86,7 +91,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 				});
 
 				if (successfulLoginsToday >= 20) {
-					throw new Error("今日登入次數已達上限（20 次），請明天再試");
+					throw new APIError("TOO_MANY_REQUESTS", {
+						message: "今日登入次數已達上限（20 次），請明天再試"
+					});
 				}
 
 				let ipAddress: string | null = null;
@@ -114,7 +121,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					});
 
 					if (ipAttempts >= 50) {
-						throw new Error("您今日已達到發送登入信的次數上限，請明天再試");
+						throw new APIError("TOO_MANY_REQUESTS", {
+							message: "您今日已達到發送登入信的次數上限，請明天再試"
+						});
 					}
 				}
 

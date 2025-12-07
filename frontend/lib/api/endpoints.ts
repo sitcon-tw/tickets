@@ -26,6 +26,7 @@ import type {
 	User
 } from "@/lib/types/api";
 import { apiClient } from "./client";
+import { fetchGravatarName } from "@/lib/gravatar";
 
 // System
 export const healthAPI = {
@@ -34,14 +35,18 @@ export const healthAPI = {
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
-	getMagicLink: (email: string, locale?: string, returnUrl?: string) =>
-		apiClient.post("/api/auth/sign-in/magic-link", {
+	getMagicLink: async (email: string, locale?: string, returnUrl?: string) => {
+		const gravatarName = await fetchGravatarName(email);
+		const name = gravatarName || email.split("@")[0];
+
+		return apiClient.post("/api/auth/sign-in/magic-link", {
 			email,
-			name: email.split("@")[0],
+			name,
 			callbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
 			newUserCallbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
 			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
-		}),
+		});
+	},
 	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),
 	getPermissions: () => apiClient.get<ApiResponse<PermissionsResponse>>("/api/auth/permissions"),
 	signOut: () => apiClient.post("/api/auth/sign-out")
