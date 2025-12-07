@@ -52,6 +52,10 @@ export default function InvitesPage() {
 	const [showEmailModal, setShowEmailModal] = useState(false);
 	const [emailAddress, setEmailAddress] = useState("");
 	const [isSendingEmail, setIsSendingEmail] = useState(false);
+	const [emailList, setEmailList] = useState("");
+	const [emailMessage, setEmailMessage] = useState("");
+	const [matchedPairs, setMatchedPairs] = useState<Array<{ email: string; code: string; codeId: string }>>([]);
+	const [showPreview, setShowPreview] = useState(false);
 	const [bulkImportCodes, setBulkImportCodes] = useState("");
 	const [isImporting, setIsImporting] = useState(false);
 	const [selectedTicketId, setSelectedTicketId] = useState("");
@@ -121,7 +125,24 @@ export default function InvitesPage() {
 		import: { "zh-Hant": "匯入", "zh-Hans": "导入", en: "Import" },
 		importSuccess: { "zh-Hant": "成功匯入 {count} 個邀請碼！", "zh-Hans": "成功导入 {count} 个邀请码！", en: "Successfully imported {count} invitation codes!" },
 		invalidFormat: { "zh-Hant": "格式錯誤：請確保每行一個邀請碼", "zh-Hans": "格式错误：请确保每行一个邀请码", en: "Invalid format: Please ensure one code per line" },
-		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" }
+		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" },
+		bulkSendEmail: { "zh-Hant": "批次寄送 Email", "zh-Hans": "批量发送 Email", en: "Bulk Send Email" },
+		emailListLabel: { "zh-Hant": "Email 列表（每行一個）", "zh-Hans": "Email 列表（每行一个）", en: "Email List (one per line)" },
+		emailListPlaceholder: { "zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com", "zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com", en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com" },
+		matchCodes: { "zh-Hant": "配對邀請碼", "zh-Hans": "配对邀请码", en: "Match Codes" },
+		messageLabel: { "zh-Hant": "訊息內容", "zh-Hans": "消息内容", en: "Message" },
+		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息(支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息(支持 HTML)", en: "Enter message to display in email (supports HTML)" },
+		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
+		matched: { "zh-Hant": "已配對", "zh-Hans": "已配对", en: "Matched" },
+		tooManyEmails: { "zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）", "zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）", en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})" },
+		noEmails: { "zh-Hant": "請輸入至少一個 Email 地址", "zh-Hans": "请输入至少一个 Email 地址", en: "Please enter at least one email address" },
+		matchSuccess: { "zh-Hant": "成功配對 {count} 組郵件與邀請碼", "zh-Hans": "成功配对 {count} 组邮件与邀请码", en: "Successfully matched {count} pairs" },
+		sendAll: { "zh-Hant": "全部發送", "zh-Hans": "全部发送", en: "Send All" },
+		sending: { "zh-Hant": "發送中...", "zh-Hans": "发送中...", en: "Sending..." },
+		sendAllSuccess: { "zh-Hant": "成功發送 {count} 封郵件！", "zh-Hans": "成功发送 {count} 封邮件！", en: "Successfully sent {count} emails!" },
+		sendPartialSuccess: { "zh-Hant": "成功發送 {success} 封，失敗 {failed} 封", "zh-Hans": "成功发送 {success} 封，失败 {failed} 封", en: "Sent {success} emails, {failed} failed" },
+		emailPreview: { "zh-Hant": "郵件預覽", "zh-Hans": "邮件预览", en: "Email Preview" },
+		closePreview: { "zh-Hant": "關閉預覽", "zh-Hans": "关闭预览", en: "Close Preview" }
 	});
 
 	const loadInvitationCodes = useCallback(async () => {
@@ -394,49 +415,140 @@ export default function InvitesPage() {
 		reader.readAsText(file);
 	}
 
-	async function sendCodesViaEmail() {
+	function handleMatchCodes() {
 		if (selectedCodes.size === 0) {
 			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
-		if (!emailAddress || !emailAddress.includes("@")) {
-			showAlert("請輸入有效的 Email 地址", "warning");
+		if (!currentType) return;
+
+		const emailsText = emailList.trim();
+		if (!emailsText) {
+			showAlert(t.noEmails, "warning");
 			return;
 		}
 
-		if (!currentType) return;
+		const emails = emailsText
+			.split("\n")
+			.map(e => e.trim())
+			.filter(e => e.length > 0 && e.includes("@"));
+
+		if (emails.length === 0) {
+			showAlert(t.noEmails, "warning");
+			return;
+		}
 
 		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
 
+		if (emails.length > selectedCodesList.length) {
+			showAlert(t.tooManyEmails.replace("{emailCount}", emails.length.toString()).replace("{codeCount}", selectedCodesList.length.toString()), "error");
+			return;
+		}
+
+		const pairs = emails.map((email, index) => ({
+			email,
+			code: selectedCodesList[index].code,
+			codeId: selectedCodesList[index].id
+		}));
+
+		setMatchedPairs(pairs);
+		showAlert(t.matchSuccess.replace("{count}", pairs.length.toString()), "success");
+	}
+
+	async function sendAllEmails() {
+		if (matchedPairs.length === 0) {
+			showAlert("請先配對郵件與邀請碼", "warning");
+			return;
+		}
+
+		if (!emailMessage.trim()) {
+			showAlert("請輸入郵件訊息", "warning");
+			return;
+		}
+
 		setIsSendingEmail(true);
 		try {
-			const response = await fetch("/api/admin/invitation-codes/send-email", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					email: emailAddress,
-					codes: selectedCodesList.map(c => c.code),
-					groupName: currentType.name
-				})
-			});
+			let successCount = 0;
+			let errorCount = 0;
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ error: { message: "Failed to send email" } }));
-				throw new Error(errorData.error?.message || errorData.message || "Failed to send email");
+			for (const pair of matchedPairs) {
+				try {
+					const response = await fetch("/api/admin/invitation-codes/send-email", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify({
+							email: pair.email,
+							code: pair.code,
+							message: emailMessage
+						})
+					});
+
+					if (!response.ok) {
+						throw new Error("Failed to send email");
+					}
+					successCount++;
+				} catch (error) {
+					console.error(`Failed to send email to ${pair.email}:`, error);
+					errorCount++;
+				}
 			}
 
-			showAlert(t.sendSuccess, "success");
+			if (errorCount > 0) {
+				showAlert(t.sendPartialSuccess.replace("{success}", successCount.toString()).replace("{failed}", errorCount.toString()), "warning");
+			} else {
+				showAlert(t.sendAllSuccess.replace("{count}", successCount.toString()), "success");
+			}
+
 			setShowEmailModal(false);
-			setEmailAddress("");
+			setEmailList("");
+			setEmailMessage("");
+			setMatchedPairs([]);
 		} catch (error) {
-			console.error("Error sending email:", error);
+			console.error("Error sending emails:", error);
 			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsSendingEmail(false);
 		}
+	}
+
+	function renderEmailPreview() {
+		if (matchedPairs.length === 0) {
+			return <div className="text-sm text-muted-foreground">請先配對郵件與邀請碼以查看預覽</div>;
+		}
+
+		const samplePair = matchedPairs[0];
+		const ticket = tickets.find(t => currentType?.codes.find(c => c.code === samplePair.code));
+
+		return (
+			<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
+				<div style={{ background: "linear-gradient(#e5e7eb, #e5e7eb)", fontFamily: "sans-serif", padding: "48px 32px" }}>
+					<div style={{ margin: "0 auto", maxWidth: "600px", padding: "24px calc((min(100%, 600px) - 32px) * 0.04) 0", boxSizing: "border-box" }}>
+						<div style={{ background: "linear-gradient(#f9fafb, #f9fafb)", padding: "48px 24px 0" }}>
+							<h1 style={{ fontSize: "24px", margin: "32px 0", textAlign: "center", color: "#374151" }}>來自 SITCONTIX 的活動邀請碼</h1>
+							<div className="description" style={{ color: "#6b7280", lineHeight: "150%" }} dangerouslySetInnerHTML={{ __html: emailMessage || "<p>（訊息預覽）</p>" }} />
+							<div style={{ background: "linear-gradient(#9ca3af, #9ca3af)", padding: "12px 32px", margin: "32px auto", display: "block", width: "fit-content", borderRadius: "12px" }}>
+								<span style={{ fontWeight: "bold", fontFamily: "monospace", fontSize: "x-large", color: "#f3f4f6" }}>{samplePair.code}</span>
+							</div>
+							<div style={{ color: "#6b7280", lineHeight: "150%" }}>
+								<p>您可以將邀請碼用於兌換票種「{ticket ? getLocalizedText(ticket.name, locale) : "票種名稱"}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
+								<p>請在有效期限前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
+							</div>
+							<a href="#" style={{ background: "linear-gradient(#6b7280, #6b7280)", padding: "12px 32px", textDecoration: "none", margin: "auto", display: "block", width: "fit-content" }}>
+								<span style={{ fontWeight: "bold", color: "#f3f4f6" }}>直接前往領票</span>
+							</a>
+						</div>
+					</div>
+					<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
+						©SITCON 2026
+						<br />
+						寄送給 {samplePair.email}
+					</div>
+				</div>
+			</div>
+		);
 	}
 
 	function toggleCodeSelection(codeId: string) {
@@ -789,23 +901,81 @@ export default function InvitesPage() {
 				</Dialog>
 
 				<Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-					<DialogContent className="max-w-md">
+					<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 						<DialogHeader>
-							<DialogTitle>{t.sendEmail}</DialogTitle>
+							<DialogTitle>{t.bulkSendEmail}</DialogTitle>
 						</DialogHeader>
-						<div className="space-y-4">
-							<p className="text-sm text-muted-foreground">將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
-							<div className="space-y-2">
-								<Label htmlFor="emailAddress">{t.emailAddress}</Label>
-								<Input id="emailAddress" type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} required />
+						<div className="space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="emailList">{t.emailListLabel}</Label>
+									<Textarea id="emailList" value={emailList} onChange={e => setEmailList(e.target.value)} placeholder={t.emailListPlaceholder} rows={8} className="font-mono text-sm" />
+									<p className="text-xs text-muted-foreground">已選擇 {selectedCodes.size} 個邀請碼</p>
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor="emailMessage">{t.messageLabel}</Label>
+									<Textarea id="emailMessage" value={emailMessage} onChange={e => setEmailMessage(e.target.value)} placeholder={t.messagePlaceholder} rows={8} />
+								</div>
 							</div>
+
+							<div className="flex gap-2">
+								<Button type="button" onClick={handleMatchCodes} variant="secondary" disabled={isSendingEmail}>
+									{t.matchCodes}
+								</Button>
+								{matchedPairs.length > 0 && (
+									<>
+										<Button type="button" onClick={() => setShowPreview(!showPreview)} variant="outline" disabled={isSendingEmail}>
+											{showPreview ? t.closePreview : t.preview}
+										</Button>
+										<div className="text-sm text-muted-foreground flex items-center">
+											{t.matched}: {matchedPairs.length} 組
+										</div>
+									</>
+								)}
+							</div>
+
+							{matchedPairs.length > 0 && (
+								<div className="space-y-2">
+									<Label>配對結果</Label>
+									<div className="border rounded-lg p-4 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+										<div className="space-y-1 font-mono text-sm">
+											{matchedPairs.map((pair, index) => (
+												<div key={index} className="flex justify-between items-center py-1 border-b last:border-b-0">
+													<span className="text-blue-600 dark:text-blue-400">{pair.email}</span>
+													<span className="text-gray-400">→</span>
+													<span className="text-green-600 dark:text-green-400">{pair.code}</span>
+												</div>
+											))}
+										</div>
+									</div>
+								</div>
+							)}
+
+							{showPreview && (
+								<div className="space-y-2">
+									<Label>{t.emailPreview}</Label>
+									{renderEmailPreview()}
+								</div>
+							)}
 						</div>
 						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => {
+									setShowEmailModal(false);
+									setEmailList("");
+									setEmailMessage("");
+									setMatchedPairs([]);
+									setShowPreview(false);
+								}}
+								disabled={isSendingEmail}
+							>
 								{t.cancel}
 							</Button>
-							<Button type="button" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
-								{isSendingEmail ? "發送中..." : t.send}
+							<Button type="button" onClick={sendAllEmails} disabled={isSendingEmail || matchedPairs.length === 0}>
+								{isSendingEmail ? t.sending : t.sendAll}
 							</Button>
 						</DialogFooter>
 					</DialogContent>
