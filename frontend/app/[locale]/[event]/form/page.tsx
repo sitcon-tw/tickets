@@ -291,9 +291,18 @@ export default function FormPage() {
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
 
-		// Just return all fields - we'll handle conditional display differently if needed
-		return formFields;
-	}, [formFields, ticketId]);
+		return formFields.filter(field =>
+			shouldDisplayField(
+				field,
+				{
+					selectedTicketId: ticketId,
+					formData,
+					currentTime: new Date()
+				},
+				formFields
+			)
+		);
+	}, [formFields, ticketId, formData]);
 
 	return (
 		<>
