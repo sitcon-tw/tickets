@@ -324,7 +324,7 @@ export default function VerifyPage() {
 
 	return (
 		<>
-			<div className="flex items-center justify-center p-4 h-full">
+			<div className="flex items-center justify-center p-4 h-screen">
 				<div className="w-full max-w-md">
 					<div className="p-8">
 						{step === "phone" && !isVerified && (
