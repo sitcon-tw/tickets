@@ -2,7 +2,7 @@ import { ChangeEvent, forwardRef } from "react";
 import styled from "styled-components";
 
 type CheckboxProps = {
-	label: string;
+	label?: string;
 	id: string;
 	question?: string;
 	required?: boolean;
@@ -12,35 +12,36 @@ type CheckboxProps = {
 	inputRef?: React.Ref<HTMLInputElement>;
 };
 
+const HiddenCheckbox = styled.input.attrs({ type: "checkbox" })`
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+`;
+
 const StyledLabel = styled.label`
 	display: flex;
 	align-items: center;
 	cursor: pointer;
 	user-select: none;
+	color: rgb(17 24 39);
 
-	position: relative;
-
-	input[type="checkbox"] {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 1.5em;
-		height: 1.5em;
-		opacity: 0;
-		z-index: 2;
-		margin: 0;
-		cursor: pointer;
+	:is(.dark, .dark *) & {
+		color: rgb(243 244 246);
 	}
 
 	svg {
 		overflow: visible;
 		margin-right: 0.5rem;
 		flex-shrink: 0;
+		width: 1.25em;
+		height: 1.25em;
 	}
 
 	.path {
 		fill: none;
-		stroke: var(--color-gray-100);
+		stroke: rgb(156 163 175);
 		stroke-width: 6;
 		stroke-linecap: round;
 		stroke-linejoin: round;
@@ -51,33 +52,36 @@ const StyledLabel = styled.label`
 		stroke-dashoffset: 0;
 	}
 
-	input:checked ~ svg .path {
+	:is(.dark, .dark *) & .path {
+		stroke: rgb(156 163 175);
+	}
+
+	${HiddenCheckbox}:checked ~ svg .path {
 		stroke-dasharray: 70.5096664428711 9999999;
 		stroke-dashoffset: -262.2723388671875;
+		stroke: rgb(55 65 81);
 	}
 
 	&:hover .path {
-		stroke: var(--color-gray-300);
+		stroke: rgb(107 114 128);
+	}
+
+	:is(.dark, .dark *) &:hover .path {
+		stroke: rgb(209 213 219);
+	}
+
+	:is(.dark, .dark *) & ${HiddenCheckbox}:checked ~ svg .path {
+		stroke: rgb(229 231 235);
 	}
 `;
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = true, value, checked, onChange, inputRef }, ref) => {
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = false, value, checked, onChange, inputRef }, ref) => {
 	return (
 		<div>
-			{question ? <p style={{ marginBottom: "1rem" }}>{question}</p> : null}
+			{question ? <p style={{ marginBottom: "1rem", color: "inherit" }}>{question}</p> : null}
 			<StyledLabel htmlFor={id}>
-				<input
-					type="checkbox"
-					id={id}
-					name={id}
-					aria-label={label}
-					required={required}
-					value={typeof value === "string" ? value : "true"}
-					checked={checked}
-					onChange={onChange}
-					ref={inputRef || ref}
-				/>
-				<svg viewBox="0 0 64 64" height="1.5em" width="1.5em">
+				<HiddenCheckbox id={id} name={id} aria-label={label} required={required} value={typeof value === "string" ? value : "true"} checked={checked} onChange={onChange} ref={inputRef || ref} />
+				<svg viewBox="0 0 64 64">
 					<path
 						d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
 						pathLength="575.0541381835938"

@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 		const eventsData = await response.json();
 
 		if (eventsData?.success && Array.isArray(eventsData.data)) {
-			const foundEvent = eventsData.data.find((e: { id: string }) => e.id.slice(-6) === eventSlug);
+			// Match by slug first, then fallback to last 6 chars of ID
+			const foundEvent = eventsData.data.find((e: { id: string; slug?: string }) => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 			if (foundEvent) {
 				const getLocalizedText = (text: Record<string, string> | string | undefined, fallback: string): string => {

@@ -10,6 +10,7 @@ type RadioProps = {
 	required?: boolean;
 	value?: string;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+	onValueChange?: (value: string) => void;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -21,7 +22,11 @@ const StyledWrapper = styled.fieldset`
 		display: block;
 		margin-bottom: 0.5rem;
 		font-weight: bold;
-		color: white;
+		color: rgb(17 24 39);
+	}
+
+	:is(.dark, .dark *) & .legend {
+		color: rgb(243 244 246);
 	}
 
 	.radio-buttons {
@@ -37,16 +42,26 @@ const StyledWrapper = styled.fieldset`
 	}
 
 	.radio-button input[type="radio"] {
-		display: none;
+		position: absolute;
+		opacity: 0;
+		width: 20px;
+		height: 20px;
+		margin: 0;
+		cursor: pointer;
 	}
 
 	.radio-circle {
 		width: 20px;
 		height: 20px;
 		border-radius: 50%;
-		border: 2px solid #aaa;
+		border: 2px solid rgb(156 163 175);
 		position: relative;
 		margin-right: 10px;
+		flex-shrink: 0;
+	}
+
+	:is(.dark, .dark *) & .radio-circle {
+		border-color: rgb(209 213 219);
 	}
 
 	.radio-circle::before {
@@ -55,7 +70,7 @@ const StyledWrapper = styled.fieldset`
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background-color: #ddd;
+		background-color: rgb(55 65 81);
 		position: absolute;
 		top: 50%;
 		left: 50%;
@@ -63,23 +78,43 @@ const StyledWrapper = styled.fieldset`
 		transition: all 0.2s ease-in-out;
 	}
 
+	:is(.dark, .dark *) & .radio-circle::before {
+		background-color: rgb(229 231 235);
+	}
+
 	.radio-button input[type="radio"]:checked + .radio-circle::before {
 		transform: translate(-50%, -50%) scale(1);
-		background-color: var(--color-gray-200);
 	}
 
 	.radio-label {
 		font-size: 16px;
 		font-weight: bold;
-		color: white;
+		color: rgb(17 24 39);
+	}
+
+	:is(.dark, .dark *) & .radio-label {
+		color: rgb(243 244 246);
 	}
 
 	.radio-button:hover .radio-circle {
-		border-color: #555;
+		border-color: rgb(75 85 99);
+	}
+
+	:is(.dark, .dark *) & .radio-button:hover .radio-circle {
+		border-color: rgb(229 231 235);
 	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange }: RadioProps) {
+export default function Radio({ label, name, options, required = true, value, onChange, onValueChange }: RadioProps) {
+	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+		if (onChange) {
+			onChange(e);
+		}
+		if (onValueChange) {
+			onValueChange(e.target.value);
+		}
+	};
+
 	return (
 		<StyledWrapper>
 			<legend className="legend">{label}</legend>
@@ -88,9 +123,11 @@ export default function Radio({ label, name, options, required = true, value, on
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
 					const optionId = `${name}-${optionValue}`;
+					const isChecked = value === optionValue;
+
 					return (
 						<label key={optionId} className="radio-button">
-							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={value === optionValue} onChange={onChange} />
+							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleChange} />
 							<div className="radio-circle" />
 							<span className="radio-label">{optionLabel}</span>
 						</label>

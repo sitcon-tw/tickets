@@ -74,6 +74,7 @@ export type LocalizedText = Record<string, string>; // e.g., { "en": "SITCON 202
 // Event Types
 export interface Event {
 	id: string;
+	slug?: string;
 	name: LocalizedText;
 	description?: LocalizedText;
 	plainDescription?: LocalizedText;
@@ -82,6 +83,7 @@ export interface Event {
 	endDate: string;
 	ogImage?: string;
 	landingPage?: string;
+	googleSheetsUrl?: string;
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
@@ -153,7 +155,7 @@ export interface EventFormField {
 	type: "text" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
 	name: LocalizedText;
-	description?: string;
+	description?: LocalizedText; // Localized description with markdown support
 	placeholder?: string;
 	required: boolean;
 	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
@@ -203,7 +205,7 @@ export interface Registration {
 		location?: string;
 		startDate: string;
 		endDate: string;
-		ogImage?: string | null;
+		slug?: string;
 	};
 	ticket?: {
 		id: string;

@@ -1,14 +1,20 @@
 "use client";
 
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { routing } from "@/i18n/routing";
 import { Globe, Heart } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useRouter as useNextRouter, usePathname } from "next/navigation";
+import { useMemo } from "react";
 
 export default function Footer() {
-	const locale = useLocale();
 	const pathname = usePathname();
-	const router = useRouter();
+	const router = useNextRouter();
+
+	// Detect locale from pathname since we're outside NextIntlClientProvider
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
 
 	const localeNames: Record<string, string> = {
 		en: "English",
@@ -17,47 +23,51 @@ export default function Footer() {
 	};
 
 	const handleLocaleChange = (newLocale: string) => {
-		router.replace(pathname, { locale: newLocale });
+		// Replace the locale part in the pathname
+		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 
-	if (pathname.includes("/admin") || pathname.includes("/magic-link")) {
+	// const isAdminPage = pathname.includes("/admin");
+	const isMagicLinkPage = pathname.includes("/magic-link");
+
+	if (isMagicLinkPage) {
 		return null;
 	}
 
 	return (
-		<footer className="text-center" style={{ padding: "0rem", marginTop: "2rem" }}>
-			<div className="flex justify-center items-center" style={{ gap: "0.5rem", marginBottom: "0.75rem" }}>
-				<Globe size={16} className="text-gray-500" />
-				<select
-					value={locale}
-					onChange={e => handleLocaleChange(e.target.value)}
-					className="bg-transparent text-gray-600 border border-gray-500 rounded text-sm cursor-pointer hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400"
-					style={{ padding: "0.25rem 0.5rem" }}
-				>
-					{routing.locales.map(loc => (
-						<option key={loc} value={loc}>
-							{localeNames[loc]}
-						</option>
-					))}
-				</select>
+		<footer className="text-center p-6 mt-8 text-gray-600 dark:text-gray-400">
+			<div className="flex justify-center items-center gap-2 mb-3">
+				<Globe size={16} className="text-muted-foreground" />
+				<Select value={locale} onValueChange={handleLocaleChange}>
+					<SelectTrigger className="w-[140px] h-8 text-sm">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{routing.locales.map(loc => (
+							<SelectItem key={loc} value={loc}>
+								{localeNames[loc]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			</div>
 			<div className="flex justify-center items-center gap-1">
-				<p className="text-gray-400">
-					Made by EM & Nelson from{" "}
-					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="underline">
+				<p className="text-muted-foreground">
+					Made by{" "}
+					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
 						SITCON
 					</a>{" "}
 					with{" "}
 				</p>
-				<Heart size={16} className="text-red-700" />
+				<Heart size={16} className="text-red-700 hover:text-blue-600 transition-colors cursor-pointer" />
 			</div>
-			<p className="text-sm text-gray-500">
-				This project is open-sourced on{" "}
-				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="underline">
-					GitHub
+			<p className="text-sm text-muted-foreground mt-1">
+				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
+					View on GitHub
 				</a>
-				.
-				<a href={`/${locale}/terms`} className="underline" style={{ marginLeft: "0.5rem" }}>
+				・
+				<a href={`/${locale}/terms`} className="hover:text-blue-600 transition-colors">
 					ToS & PP
 				</a>
 			</p>

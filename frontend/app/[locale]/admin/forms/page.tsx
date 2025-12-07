@@ -1,5 +1,11 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -22,6 +28,9 @@ type Question = {
 	type: string;
 	required: boolean;
 	description?: string;
+	descriptionEn?: string;
+	descriptionZhHant?: string;
+	descriptionZhHans?: string;
 	validater?: string;
 	options?: Array<{
 		en: string;
@@ -76,7 +85,7 @@ export default function FormsPage() {
 		fieldOptional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
 		deleteField: { "zh-Hant": "刪除欄位", "zh-Hans": "删除栏位", en: "Delete Field" },
 		additionalSettings: { "zh-Hant": "其他設定", "zh-Hans": "其他设定", en: "Additional Settings" },
-		fieldDescription: { "zh-Hant": "說明文字（僅管理員可見）", "zh-Hans": "说明文字（仅管理员可见）", en: "Description (Admin Only)" },
+		fieldDescription: { "zh-Hant": "說明文字（使用者可見，支援 Markdown）", "zh-Hans": "说明文字（使用者可见，支援 Markdown）", en: "Description (User-visible, Markdown supported)" },
 		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
@@ -203,18 +212,23 @@ export default function FormsPage() {
 					}
 
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+
+					// Parse description as localized object
+					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: field.id,
-						label: field.description || fieldName,
+						label: fieldName,
 						labelEn: nameObj.en || "",
 						labelZhHant: nameObj["zh-Hant"] || "",
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						description: field.description || "",
+						description: typeof field.description === "string" ? field.description : "",
+						descriptionEn: descriptionObj.en || "",
+						descriptionZhHant: descriptionObj["zh-Hant"] || "",
+						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						options,
 						filters: field.filters || undefined
@@ -281,6 +295,9 @@ export default function FormsPage() {
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
+					// Parse description as localized object
+					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+
 					return {
 						id: "temp-" + crypto.randomUUID(),
 						label: fieldName,
@@ -289,7 +306,10 @@ export default function FormsPage() {
 						labelZhHans: nameObj["zh-Hans"] || "",
 						type: field.type,
 						required: field.required || false,
-						description: field.description || "",
+						description: typeof field.description === "string" ? field.description : "",
+						descriptionEn: descriptionObj.en || "",
+						descriptionZhHant: descriptionObj["zh-Hant"] || "",
+						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						filters: field.filters || undefined,
 						options
@@ -320,7 +340,11 @@ export default function FormsPage() {
 					"zh-Hant": q.labelZhHant || "",
 					"zh-Hans": q.labelZhHans || ""
 				},
-				description: q.description,
+				description: {
+					en: q.descriptionEn || "",
+					"zh-Hant": q.descriptionZhHant || "",
+					"zh-Hans": q.descriptionZhHans || ""
+				},
 				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 				required: q.required,
 				validater: q.validater || "",
@@ -538,15 +562,10 @@ export default function FormsPage() {
 		return (
 			<>
 				<main>
-					<h1 className="text-3xl font-bold">{t.title}</h1>
-					<div className="h-8" />
-					<div className="admin-empty" style={{ padding: "4rem 2rem" }}>
-						{t.noTicket}
-					</div>
-					<div style={{ textAlign: "center", marginTop: "1rem" }}>
-						<button className="admin-button primary" onClick={() => (window.location.href = `/${locale}/admin/events`)}>
-							{t.backToTickets}
-						</button>
+					<AdminHeader title={t.title} />
+					<div className="admin-empty p-16">{t.noTicket}</div>
+					<div className="text-center mt-4">
+						<Button onClick={() => (window.location.href = `/${locale}/admin/events`)}>{t.backToTickets}</Button>
 					</div>
 				</main>
 			</>
@@ -555,160 +574,51 @@ export default function FormsPage() {
 
 	return (
 		<>
-			<main style={{ minHeight: "100vh", padding: "1.5rem 1rem" }}>
-				<div
-					id="form-editor"
-					style={{
-						maxWidth: "900px",
-						margin: "0 auto"
-					}}
-				>
-					{/* Header Section */}
-					<div
-						style={{
-							marginBottom: "1.5rem",
-							paddingBottom: "1rem",
-							borderBottom: "1px solid var(--color-gray-700)"
-						}}
-					>
-						<h1
-							style={{
-								fontSize: "1.5rem",
-								fontWeight: "600",
-								marginBottom: "0.25rem",
-								color: "var(--color-gray-100)"
-							}}
-						>
-							{t.title}
-						</h1>
-						<p
-							style={{
-								fontSize: "0.875rem",
-								color: "var(--color-gray-400)",
-								margin: 0
-							}}
-						>
-							{t.formInfo}
-						</p>
-					</div>
+			<main className="p-6 md:p-4">
+				<div id="form-editor" className="max-w-[900px] mx-auto">
+					<AdminHeader title={t.title} description={t.formInfo} />
 
 					{/* Copy From Event Section */}
 					{allEvents.length > 0 && (
-						<div
-							style={{
-								background: "var(--color-gray-800)",
-								border: "1px solid var(--color-gray-700)",
-								borderRadius: "8px",
-								padding: "1rem",
-								marginBottom: "1.5rem"
-							}}
-						>
-							<label
-								style={{
-									display: "block",
-									fontSize: "0.9rem",
-									fontWeight: "600",
-									color: "var(--color-gray-300)",
-									marginBottom: "0.75rem"
-								}}
-							>
-								{t.copyFrom}
-							</label>
-							<select
+						<div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-6">
+							<Label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t.copyFrom}</Label>
+							<Select
 								value={copyFromEventId}
-								onChange={e => {
-									const eventId = e.target.value;
-									if (eventId && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
-										copyFormFromEvent(eventId);
+								onValueChange={value => {
+									if (value && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
+										copyFormFromEvent(value);
 									} else {
 										setCopyFromEventId("");
 									}
 								}}
-								className="admin-select"
-								style={{
-									width: "100%",
-									maxWidth: "400px"
-								}}
 							>
-								<option value="">{t.selectEvent}</option>
-								{allEvents.map(event => (
-									<option key={event.id} value={event.id}>
-										{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
-									</option>
-								))}
-							</select>
+								<SelectTrigger className="w-full max-w-[400px]">
+									<SelectValue placeholder={t.selectEvent} />
+								</SelectTrigger>
+								<SelectContent>
+									{allEvents.map(event => (
+										<SelectItem key={event.id} value={event.id}>
+											{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
 					)}
 					{/* Questions List */}
-					<div style={{ marginBottom: "1.5rem" }}>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginBottom: "1rem"
-							}}
-						>
-							<h2
-								style={{
-									fontSize: "1rem",
-									fontWeight: "600",
-									color: "var(--color-gray-200)",
-									margin: 0
-								}}
-							>
-								{t.formFields}
-							</h2>
-							<span
-								style={{
-									fontSize: "0.8rem",
-									color: "var(--color-gray-400)",
-									background: "var(--color-gray-800)",
-									padding: "0.25rem 0.6rem",
-									borderRadius: "4px",
-									border: "1px solid var(--color-gray-700)"
-								}}
-							>
+					<div className="mb-6">
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-base font-semibold text-gray-800 dark:text-gray-400 m-0">{t.formFields}</h2>
+							<span className="text-xs text-gray-400 bg-gray-800 py-1 px-2.5 rounded border border-gray-700">
 								{questions.length} {t.howManyFields}
 							</span>
 						</div>
 
-						<div
-							id="questions"
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "12px"
-							}}
-						>
+						<div id="questions" className="flex flex-col gap-3">
 							{questions.length === 0 && (
-								<div
-									style={{
-										textAlign: "center",
-										padding: "2rem 1.5rem",
-										border: "1px dashed var(--color-gray-700)",
-										borderRadius: "8px",
-										background: "var(--color-gray-800)"
-									}}
-								>
-									<p
-										style={{
-											fontSize: "0.9rem",
-											color: "var(--color-gray-400)",
-											margin: "0 0 0.5rem 0"
-										}}
-									>
-										{t.currentlyNoFormFields}
-									</p>
-									<p
-										style={{
-											fontSize: "0.8rem",
-											color: "var(--color-gray-500)",
-											margin: 0
-										}}
-									>
-										{t.clickNewToAdd}
-									</p>
+								<div className="text-center py-8 px-6 border border-dashed border-gray-400 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+									<p className="text-sm text-gray-600 dark:text-gray-400 m-0 mb-2">{t.currentlyNoFormFields}</p>
+									<p className="text-xs text-gray-500 dark:text-gray-500 m-0">{t.clickNewToAdd}</p>
 								</div>
 							)}
 							{questions.map((q, index) => {
@@ -722,38 +632,18 @@ export default function FormsPage() {
 										onDragOver={e => handleDragOver(e, index)}
 										onDragLeave={handleDragLeave}
 										onDrop={e => handleDrop(e, index)}
-										style={{
-											background: isDragging ? "var(--color-gray-800)" : "var(--color-gray-800)",
-											border: isDropTarget ? "2px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-											borderRadius: "8px",
-											padding: "1rem",
-											display: "flex",
-											gap: "0.75rem",
-											position: "relative",
-											transition: "all 0.2s ease",
-											boxShadow: isDragging ? "0 4px 12px rgba(0, 0, 0, 0.3)" : isDropTarget ? "0 4px 12px rgba(var(--color-primary-rgb, 99, 102, 241), 0.3)" : "none",
-											opacity: isDragging ? 0.6 : 1,
-											transform: isDragging ? "scale(1.01)" : "scale(1)",
-											cursor: "default"
-										}}
+										className={`bg-white dark:bg-gray-900 border rounded-lg p-4 flex gap-3 relative transition-all duration-200 ${
+											isDragging ? "opacity-60 scale-[1.01] shadow-[0_4px_12px_rgba(0,0,0,0.3)]" : ""
+										} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
 									>
 										{/* Drag Handle */}
 										<div
 											draggable
 											onDragStart={e => handleDragStart(e, index)}
 											onDragEnd={handleDragEnd}
-											style={{
-												cursor: "grab",
-												userSelect: "none",
-												display: "flex",
-												alignItems: "flex-start",
-												justifyContent: "center",
-												color: isDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-												transition: "color 0.2s ease",
-												padding: "0.5rem 0.25rem",
-												touchAction: "none",
-												flexShrink: 0
-											}}
+											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
+												isDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"
+											}`}
 											title="拖曳以重新排序"
 											onMouseDown={e => {
 												e.currentTarget.style.cursor = "grabbing";
@@ -763,128 +653,43 @@ export default function FormsPage() {
 											}}
 										>
 											<GripVertical size={20} />
-										</div>
-
+										</div>{" "}
 										{/* Field Number Badge */}
-										<div
-											style={{
-												position: "absolute",
-												top: "0.75rem",
-												right: "0.75rem",
-												background: "var(--color-gray-700)",
-												color: "var(--color-gray-400)",
-												fontSize: "0.7rem",
-												fontWeight: "600",
-												padding: "0.2rem 0.5rem",
-												borderRadius: "4px"
-											}}
-										>
-											#{index + 1}
-										</div>
+										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Main Content Area */}
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												gap: "1rem",
-												flex: 1,
-												paddingRight: "3rem"
-											}}
-										>
+										<div className="flex flex-col gap-4 flex-1 pr-12">
 											{/* Field Names Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.fieldName}
-												</div>
-												<div
-													style={{
-														display: "grid",
-														gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-														gap: "0.6rem"
-													}}
-												>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
+												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															EN
-														</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</Label>
+														<Input
 															type="text"
 															value={q.labelEn || ""}
 															placeholder="English Label"
 															onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="w-full text-sm"
 														/>
 													</div>
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															繁體中文
-														</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</Label>
+														<Input
 															type="text"
 															value={q.labelZhHant || ""}
 															placeholder="繁體中文標籤"
 															onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="w-full text-sm"
 														/>
 													</div>
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															简体中文
-														</label>
-														<input
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</Label>
+														<Input
 															type="text"
 															value={q.labelZhHans || ""}
 															placeholder="简体中文标签"
 															onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
+															className="w-full text-sm"
 														/>
 													</div>
 												</div>
@@ -892,200 +697,94 @@ export default function FormsPage() {
 
 											{/* Field Configuration Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.fieldSettings}
-												</div>
-												<div
-													style={{
-														display: "flex",
-														gap: "0.6rem",
-														flexWrap: "wrap",
-														alignItems: "flex-end"
-													}}
-												>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
+												<div className="flex gap-2.5 flex-wrap items-end">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															{t.fieldType}
-														</label>
-														<select
-															value={q.type}
-															onChange={e => updateQuestion(q.id, { type: e.target.value })}
-															className="admin-select"
-															style={{
-																minWidth: "140px",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
-														>
-															{fieldTypes.map(ft => (
-																<option key={ft.value} value={ft.value}>
-																	{ft.label}
-																</option>
-															))}
-														</select>
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</Label>
+														<Select value={q.type} onValueChange={value => updateQuestion(q.id, { type: value })}>
+															<SelectTrigger className="min-w-[140px] text-sm">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent>
+																{fieldTypes.map(ft => (
+																	<SelectItem key={ft.value} value={ft.value}>
+																		{ft.label}
+																	</SelectItem>
+																))}
+															</SelectContent>
+														</Select>
 													</div>
 
-													<div style={{ display: "flex", gap: "0.4rem", alignItems: "flex-end" }}>
-														<button
-															type="button"
-															onClick={() => updateQuestion(q.id, { required: !q.required })}
-															className="admin-button"
-															style={{
-																background: q.required ? "var(--color-primary)" : "var(--color-gray-700)",
-																border: `1px solid ${q.required ? "var(--color-primary)" : "var(--color-gray-600)"}`,
-																color: q.required ? "white" : "var(--color-gray-300)",
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																fontWeight: q.required ? "600" : "500",
-																transition: "all 0.2s ease"
-															}}
-														>
+													<div className="flex gap-1.5 items-end">
+														<Button type="button" onClick={() => updateQuestion(q.id, { required: !q.required })} variant={q.required ? "default" : "secondary"} className="text-xs py-2 px-3">
 															{q.required ? t.fieldRequired : t.fieldOptional}
-														</button>
-														<button
-															type="button"
-															onClick={() => deleteQuestion(q.id)}
-															className="admin-button danger"
-															style={{
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																background: "var(--color-gray-700)",
-																border: "1px solid var(--color-gray-600)",
-																color: "var(--color-red-400)"
-															}}
-															title={t.deleteField}
-														>
+														</Button>
+														<Button type="button" onClick={() => deleteQuestion(q.id)} className="text-xs py-2 px-3" variant="destructive" title={t.deleteField}>
 															{t.deleteField}
-														</button>
+														</Button>
 													</div>
 												</div>
 											</div>
 
 											{/* Additional Settings Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.additionalSettings}
-												</div>
-												<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
+												<div className="flex flex-col gap-2.5">
 													<div>
-														<label
-															style={{
-																display: "block",
-																fontSize: "0.7rem",
-																color: "var(--color-gray-500)",
-																marginBottom: "0.3rem",
-																fontWeight: "500"
-															}}
-														>
-															{t.fieldDescription}
-														</label>
-														<input
-															type="text"
-															value={q.description || ""}
-															placeholder="給自己或其他管理員加上註記..."
-															onChange={e => updateQuestion(q.id, { description: e.target.value })}
-															className="admin-input"
-															style={{
-																width: "100%",
-																fontSize: "0.875rem",
-																padding: "0.5rem 0.65rem"
-															}}
-														/>
+														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</Label>
+														<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionEn || ""}
+																	placeholder="English description (Markdown supported)"
+																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionZhHant || ""}
+																	placeholder="繁體中文描述（支援 Markdown）"
+																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+															<div>
+																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
+																<Input
+																	type="text"
+																	value={q.descriptionZhHans || ""}
+																	placeholder="简体中文描述（支持 Markdown）"
+																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
+																	className="w-full text-sm"
+																/>
+															</div>
+														</div>
 													</div>
 
 													{(q.type === "text" || q.type === "textarea") && (
 														<div>
-															<label
-																style={{
-																	display: "block",
-																	fontSize: "0.7rem",
-																	color: "var(--color-gray-500)",
-																	marginBottom: "0.3rem",
-																	fontWeight: "500"
-																}}
-															>
-																{t.validator}
-															</label>
-															<input
+															<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</Label>
+															<Input
 																type="text"
 																value={q.validater || ""}
 																placeholder={t.validatorPlaceholder}
 																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-																className="admin-input"
-																style={{
-																	width: "100%",
-																	fontSize: "0.8rem",
-																	padding: "0.5rem 0.65rem",
-																	fontFamily: "monospace",
-																	background: "var(--color-gray-900)",
-																	border: "1px solid var(--color-gray-700)"
-																}}
+																className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
 															/>
-															<p
-																style={{
-																	fontSize: "0.7rem",
-																	color: "var(--color-gray-500)",
-																	marginTop: "0.3rem",
-																	marginBottom: 0
-																}}
-															>
-																{t.useValidator}
-															</p>
+															<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
 														</div>
 													)}
 												</div>
 											</div>
 											{["select", "radio", "checkbox"].includes(q.type) && (
 												<div>
-													<div
-														style={{
-															fontSize: "0.75rem",
-															fontWeight: "600",
-															color: "var(--color-gray-500)",
-															marginBottom: "0.5rem",
-															textTransform: "uppercase",
-															letterSpacing: "0.05em"
-														}}
-													>
-														{t.optionSettings}
-													</div>
-													<div
-														style={{
-															padding: "0.75rem",
-															border: "1px solid var(--color-gray-700)",
-															borderRadius: "8px",
-															background: "var(--color-gray-900)",
-															display: "flex",
-															flexDirection: "column",
-															gap: "0.6rem"
-														}}
-													>
+													<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.optionSettings}</div>
+													<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-2.5">
 														{(q.options || []).map((opt, i) => {
 															const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
 															const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
@@ -1096,38 +795,20 @@ export default function FormsPage() {
 																	onDragOver={e => handleOptionDragOver(e, i)}
 																	onDragLeave={handleOptionDragLeave}
 																	onDrop={e => handleOptionDrop(e, q.id, i)}
-																	style={{
-																		display: "flex",
-																		gap: "0.5rem",
-																		alignItems: "stretch",
-																		padding: "0.5rem",
-																		borderRadius: "6px",
-																		background: isOptionDragging ? "var(--color-gray-800)" : isOptionDropTarget ? "var(--color-gray-750)" : "var(--color-gray-800)",
-																		border: isOptionDropTarget ? "1px solid var(--color-primary)" : "1px solid var(--color-gray-700)",
-																		opacity: isOptionDragging ? 0.6 : 1,
-																		transition: "all 0.2s ease",
-																		boxShadow: isOptionDropTarget ? "0 0 0 2px rgba(var(--color-primary-rgb, 99, 102, 241), 0.1)" : "none"
-																	}}
+																	className={`flex gap-2 items-stretch p-2 rounded-md transition-all ${
+																		isOptionDragging
+																			? "bg-gray-200 dark:bg-gray-800 opacity-60"
+																			: isOptionDropTarget
+																				? "bg-gray-100 dark:bg-(--color-gray-750) border border-primary shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
+																				: "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+																	}`}
 																>
-																	<div
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: "0.5rem"
-																		}}
-																	>
+																	<div className="flex items-center gap-2">
 																		<span
 																			draggable
 																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
 																			onDragEnd={handleOptionDragEnd}
-																			style={{
-																				cursor: "grab",
-																				color: isOptionDragging ? "var(--color-primary)" : "var(--color-gray-600)",
-																				userSelect: "none",
-																				padding: "0.25rem",
-																				display: "flex",
-																				alignItems: "center"
-																			}}
+																			className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
 																			title="拖曳以重新排序選項"
 																			onMouseDown={e => {
 																				e.currentTarget.style.cursor = "grabbing";
@@ -1138,26 +819,10 @@ export default function FormsPage() {
 																		>
 																			⋮⋮
 																		</span>
-																		<span
-																			style={{
-																				fontSize: "0.75rem",
-																				color: "var(--color-gray-500)",
-																				fontWeight: "600",
-																				minWidth: "1.5rem"
-																			}}
-																		>
-																			{i + 1}
-																		</span>
+																		<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
 																	</div>
-																	<div
-																		style={{
-																			display: "grid",
-																			gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-																			gap: "0.5rem",
-																			flex: 1
-																		}}
-																	>
-																		<input
+																	<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt.en || "" : opt}
 																			placeholder="English"
@@ -1170,14 +835,9 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
-																		<input
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
 																			placeholder="繁體中文"
@@ -1190,14 +850,9 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
-																		<input
+																		<Input
 																			type="text"
 																			value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
 																			placeholder="简体中文"
@@ -1210,257 +865,128 @@ export default function FormsPage() {
 																				}
 																				updateQuestion(q.id, { options: newOptions });
 																			}}
-																			className="admin-input"
-																			style={{
-																				fontSize: "0.8rem",
-																				padding: "0.45rem 0.6rem",
-																				background: "var(--color-gray-950)"
-																			}}
+																			className="text-xs bg-gray-100 dark:bg-gray-950"
 																		/>
 																	</div>
-																	<button
+																	<Button
 																		type="button"
 																		onClick={() => {
 																			const newOptions = [...(q.options || [])];
 																			newOptions.splice(i, 1);
 																			updateQuestion(q.id, { options: newOptions });
 																		}}
-																		className="admin-button"
-																		style={{
-																			fontSize: "0.75rem",
-																			padding: "0.45rem 0.65rem",
-																			background: "var(--color-gray-950)",
-																			border: "1px solid var(--color-gray-800)",
-																			color: "var(--color-red-400)",
-																			flexShrink: 0
-																		}}
+																		className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0"
 																		title="刪除此選項"
 																	>
 																		<X />
-																	</button>
+																	</Button>
 																</div>
 															);
 														})}
-														<button
+														<Button
 															type="button"
 															onClick={() => {
 																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
 																updateQuestion(q.id, { options: newOptions });
 															}}
-															className="admin-button"
-															style={{
-																fontSize: "0.8rem",
-																padding: "0.5rem 0.75rem",
-																background: "var(--color-gray-800)",
-																border: "1px dashed var(--color-gray-700)",
-																color: "var(--color-gray-400)",
-																width: "100%",
-																justifyContent: "center",
-																display: "flex",
-																alignItems: "center",
-																gap: "0.4rem"
-															}}
+															className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
 														>
-															<span style={{ fontSize: "1rem" }}>
+															<span className="text-base">
 																<Plus />
 															</span>{" "}
 															{t.newOption}
-														</button>
+														</Button>
 													</div>
 												</div>
 											)}
 
 											{/* Display Filters Section */}
 											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														fontWeight: "600",
-														color: "var(--color-gray-500)",
-														marginBottom: "0.5rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em"
-													}}
-												>
-													{t.displayFilters}
-												</div>
-												<div
-													style={{
-														padding: "0.75rem",
-														border: "1px solid var(--color-gray-700)",
-														borderRadius: "8px",
-														background: "var(--color-gray-900)",
-														display: "flex",
-														flexDirection: "column",
-														gap: "0.75rem"
-													}}
-												>
+												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
+												<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
 													{/* Enable filters toggle */}
-													<label
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "0.5rem",
-															cursor: "pointer",
-															userSelect: "none"
-														}}
-													>
-														<input
-															type="checkbox"
+													<label className="flex items-center gap-2 cursor-pointer select-none">
+														<Checkbox
 															checked={q.filters?.enabled || false}
-															onChange={e => {
+															onCheckedChange={checked => {
 																updateQuestion(q.id, {
 																	filters: {
-																		enabled: e.target.checked,
+																		enabled: checked === true,
 																		action: q.filters?.action || "display",
 																		operator: q.filters?.operator || "and",
 																		conditions: q.filters?.conditions || []
 																	}
 																});
 															}}
-															style={{
-																width: "1rem",
-																height: "1rem",
-																cursor: "pointer"
-															}}
 														/>
-														<span
-															style={{
-																fontSize: "0.85rem",
-																fontWeight: "500",
-																color: "var(--color-gray-300)"
-															}}
-														>
-															{t.enableFilters}
-														</span>
+														<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
 													</label>
 
 													{q.filters?.enabled && (
 														<>
 															{/* Filter action and operator */}
-															<div
-																style={{
-																	display: "flex",
-																	gap: "0.6rem",
-																	flexWrap: "wrap"
-																}}
-															>
-																<div style={{ flex: "1", minWidth: "200px" }}>
-																	<label
-																		style={{
-																			display: "block",
-																			fontSize: "0.7rem",
-																			color: "var(--color-gray-500)",
-																			marginBottom: "0.3rem",
-																			fontWeight: "500"
-																		}}
-																	>
-																		{t.filterAction}
-																	</label>
-																	<select
+															<div className="flex gap-2.5 flex-wrap">
+																<div className="flex-1 min-w-[200px]">
+																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</Label>
+																	<Select
 																		value={q.filters.action}
-																		onChange={e => {
+																		onValueChange={value => {
 																			updateQuestion(q.id, {
 																				filters: {
 																					...q.filters!,
-																					action: e.target.value as "display" | "hide"
+																					action: value as "display" | "hide"
 																				}
 																			});
 																		}}
-																		className="admin-select"
-																		style={{
-																			width: "100%",
-																			fontSize: "0.875rem",
-																			padding: "0.5rem 0.65rem"
-																		}}
 																	>
-																		<option value="display">{t.actionDisplay}</option>
-																		<option value="hide">{t.actionHide}</option>
-																	</select>
+																		<SelectTrigger className="w-full text-sm">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="display">{t.actionDisplay}</SelectItem>
+																			<SelectItem value="hide">{t.actionHide}</SelectItem>
+																		</SelectContent>
+																	</Select>
 																</div>
 
-																<div style={{ flex: "1", minWidth: "200px" }}>
-																	<label
-																		style={{
-																			display: "block",
-																			fontSize: "0.7rem",
-																			color: "var(--color-gray-500)",
-																			marginBottom: "0.3rem",
-																			fontWeight: "500"
-																		}}
-																	>
-																		{t.filterOperator}
-																	</label>
-																	<select
+																<div className="flex-1 min-w-[200px]">
+																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</Label>
+																	<Select
 																		value={q.filters.operator}
-																		onChange={e => {
+																		onValueChange={value => {
 																			updateQuestion(q.id, {
 																				filters: {
 																					...q.filters!,
-																					operator: e.target.value as "and" | "or"
+																					operator: value as "and" | "or"
 																				}
 																			});
 																		}}
-																		className="admin-select"
-																		style={{
-																			width: "100%",
-																			fontSize: "0.875rem",
-																			padding: "0.5rem 0.65rem"
-																		}}
 																	>
-																		<option value="and">{t.operatorAnd}</option>
-																		<option value="or">{t.operatorOr}</option>
-																	</select>
+																		<SelectTrigger className="w-full text-sm">
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="and">{t.operatorAnd}</SelectItem>
+																			<SelectItem value="or">{t.operatorOr}</SelectItem>
+																		</SelectContent>
+																	</Select>
 																</div>
 															</div>
 
 															{/* Conditions list */}
-															<div
-																style={{
-																	display: "flex",
-																	flexDirection: "column",
-																	gap: "0.6rem"
-																}}
-															>
+															<div className="flex flex-col gap-2.5">
 																{(q.filters.conditions || []).map((condition, condIndex) => (
-																	<div
-																		key={condIndex}
-																		style={{
-																			padding: "0.6rem",
-																			background: "var(--color-gray-800)",
-																			border: "1px solid var(--color-gray-700)",
-																			borderRadius: "6px",
-																			display: "flex",
-																			flexDirection: "column",
-																			gap: "0.5rem"
-																		}}
-																	>
+																	<div key={condIndex} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md flex flex-col gap-2">
 																		{/* Condition type selector */}
-																		<div
-																			style={{
-																				display: "flex",
-																				gap: "0.5rem",
-																				alignItems: "flex-start"
-																			}}
-																		>
-																			<div style={{ flex: 1 }}>
-																				<label
-																					style={{
-																						display: "block",
-																						fontSize: "0.7rem",
-																						color: "var(--color-gray-500)",
-																						marginBottom: "0.3rem",
-																						fontWeight: "500"
-																					}}
-																				>
-																					{t.conditionType}
-																				</label>
-																				<select
+																		<div className="flex gap-2 items-start">
+																			<div className="flex-1">
+																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</Label>
+																				<Select
 																					value={condition.type}
-																					onChange={e => {
+																					onValueChange={value => {
 																						const newConditions = [...(q.filters!.conditions || [])];
 																						newConditions[condIndex] = {
-																							type: e.target.value as "ticket" | "field" | "time"
+																							type: value as "ticket" | "field" | "time"
 																						};
 																						updateQuestion(q.id, {
 																							filters: {
@@ -1469,20 +995,19 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select"
-																					style={{
-																						width: "100%",
-																						fontSize: "0.8rem",
-																						padding: "0.45rem 0.6rem"
-																					}}
 																				>
-																					<option value="ticket">{t.typeTicket}</option>
-																					<option value="field">{t.typeField}</option>
-																					<option value="time">{t.typeTime}</option>
-																				</select>
+																					<SelectTrigger className="w-full text-xs">
+																						<SelectValue />
+																					</SelectTrigger>
+																					<SelectContent>
+																						<SelectItem value="ticket">{t.typeTicket}</SelectItem>
+																						<SelectItem value="field">{t.typeField}</SelectItem>
+																						<SelectItem value="time">{t.typeTime}</SelectItem>
+																					</SelectContent>
+																				</Select>
 																			</div>
 
-																			<button
+																			<Button
 																				type="button"
 																				onClick={() => {
 																					const newConditions = [...(q.filters!.conditions || [])];
@@ -1494,43 +1019,24 @@ export default function FormsPage() {
 																						}
 																					});
 																				}}
-																				className="admin-button"
-																				style={{
-																					fontSize: "0.75rem",
-																					padding: "0.45rem 0.65rem",
-																					background: "var(--color-gray-950)",
-																					border: "1px solid var(--color-gray-800)",
-																					color: "var(--color-red-400)",
-																					flexShrink: 0,
-																					marginTop: "1.4rem"
-																				}}
+																				className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0 mt-[1.4rem]"
 																				title={t.deleteCondition}
 																			>
 																				<X size={14} />
-																			</button>
+																			</Button>
 																		</div>
 
 																		{/* Condition-specific fields */}
 																		{condition.type === "ticket" && (
 																			<div>
-																				<label
-																					style={{
-																						display: "block",
-																						fontSize: "0.7rem",
-																						color: "var(--color-gray-500)",
-																						marginBottom: "0.3rem",
-																						fontWeight: "500"
-																					}}
-																				>
-																					{t.selectTicket}
-																				</label>
-																				<select
+																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</Label>
+																				<Select
 																					value={condition.ticketId || ""}
-																					onChange={e => {
+																					onValueChange={value => {
 																						const newConditions = [...(q.filters!.conditions || [])];
 																						newConditions[condIndex] = {
 																							...condition,
-																							ticketId: e.target.value
+																							ticketId: value
 																						};
 																						updateQuestion(q.id, {
 																							filters: {
@@ -1539,44 +1045,32 @@ export default function FormsPage() {
 																							}
 																						});
 																					}}
-																					className="admin-select"
-																					style={{
-																						width: "100%",
-																						fontSize: "0.8rem",
-																						padding: "0.45rem 0.6rem"
-																					}}
 																				>
-																					<option value="">{t.selectTicket}...</option>
-																					{eventTickets.map(ticket => (
-																						<option key={ticket.id} value={ticket.id}>
-																							{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-																						</option>
-																					))}
-																				</select>
+																					<SelectTrigger className="w-full text-xs">
+																						<SelectValue placeholder={`${t.selectTicket}...`} />
+																					</SelectTrigger>
+																					<SelectContent>
+																						{eventTickets.map(ticket => (
+																							<SelectItem key={ticket.id} value={ticket.id}>
+																								{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																							</SelectItem>
+																						))}
+																					</SelectContent>
+																				</Select>
 																			</div>
 																		)}
 
 																		{condition.type === "field" && (
 																			<>
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.selectField}
-																					</label>
-																					<select
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</Label>
+																					<Select
 																						value={condition.fieldId || ""}
-																						onChange={e => {
+																						onValueChange={value => {
 																							const newConditions = [...(q.filters!.conditions || [])];
 																							newConditions[condIndex] = {
 																								...condition,
-																								fieldId: e.target.value
+																								fieldId: value
 																							};
 																							updateQuestion(q.id, {
 																								filters: {
@@ -1585,49 +1079,32 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-select"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
 																					>
-																						<option value="">{t.selectField}...</option>
-																						{questions
-																							.filter(field => field.id !== q.id)
-																							.map(field => (
-																								<option key={field.id} value={field.id}>
-																									{field.labelEn || field.label}
-																								</option>
-																							))}
-																					</select>
+																						<SelectTrigger className="w-full text-xs">
+																							<SelectValue placeholder={`${t.selectField}...`} />
+																						</SelectTrigger>
+																						<SelectContent>
+																							{questions
+																								.filter(field => field.id !== q.id)
+																								.map(field => (
+																									<SelectItem key={field.id} value={field.id}>
+																										{field.labelEn || field.label}
+																									</SelectItem>
+																								))}
+																						</SelectContent>
+																					</Select>
 																				</div>
 
-																				<div
-																					style={{
-																						display: "flex",
-																						gap: "0.5rem"
-																					}}
-																				>
-																					<div style={{ flex: 1 }}>
-																						<label
-																							style={{
-																								display: "block",
-																								fontSize: "0.7rem",
-																								color: "var(--color-gray-500)",
-																								marginBottom: "0.3rem",
-																								fontWeight: "500"
-																							}}
-																						>
-																							{t.fieldOperator}
-																						</label>
-																						<select
+																				<div className="flex gap-2">
+																					<div className="flex-1">
+																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</Label>
+																						<Select
 																							value={condition.operator || "equals"}
-																							onChange={e => {
+																							onValueChange={value => {
 																								const newConditions = [...(q.filters!.conditions || [])];
 																								newConditions[condIndex] = {
 																									...condition,
-																									operator: e.target.value as "equals" | "filled" | "notFilled"
+																									operator: value as "equals" | "filled" | "notFilled"
 																								};
 																								updateQuestion(q.id, {
 																									filters: {
@@ -1636,33 +1113,22 @@ export default function FormsPage() {
 																									}
 																								});
 																							}}
-																							className="admin-select"
-																							style={{
-																								width: "100%",
-																								fontSize: "0.8rem",
-																								padding: "0.45rem 0.6rem"
-																							}}
 																						>
-																							<option value="equals">{t.operatorEquals}</option>
-																							<option value="filled">{t.operatorFilled}</option>
-																							<option value="notFilled">{t.operatorNotFilled}</option>
-																						</select>
+																							<SelectTrigger className="w-full text-xs">
+																								<SelectValue />
+																							</SelectTrigger>
+																							<SelectContent>
+																								<SelectItem value="equals">{t.operatorEquals}</SelectItem>
+																								<SelectItem value="filled">{t.operatorFilled}</SelectItem>
+																								<SelectItem value="notFilled">{t.operatorNotFilled}</SelectItem>
+																							</SelectContent>
+																						</Select>
 																					</div>
 
 																					{condition.operator === "equals" && (
-																						<div style={{ flex: 1 }}>
-																							<label
-																								style={{
-																									display: "block",
-																									fontSize: "0.7rem",
-																									color: "var(--color-gray-500)",
-																									marginBottom: "0.3rem",
-																									fontWeight: "500"
-																								}}
-																							>
-																								{t.fieldValue}
-																							</label>
-																							<input
+																						<div className="flex-1">
+																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</Label>
+																							<Input
 																								type="text"
 																								value={condition.value || ""}
 																								placeholder={t.fieldValue}
@@ -1679,12 +1145,7 @@ export default function FormsPage() {
 																										}
 																									});
 																								}}
-																								className="admin-input"
-																								style={{
-																									width: "100%",
-																									fontSize: "0.8rem",
-																									padding: "0.45rem 0.6rem"
-																								}}
+																								className="w-full text-xs"
 																							/>
 																						</div>
 																					)}
@@ -1695,18 +1156,8 @@ export default function FormsPage() {
 																		{condition.type === "time" && (
 																			<>
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.startTime}
-																					</label>
-																					<input
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
+																					<Input
 																						type="datetime-local"
 																						value={condition.startTime || ""}
 																						onChange={e => {
@@ -1722,28 +1173,13 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
+																						className="w-full text-xs"
 																					/>
 																				</div>
 
 																				<div>
-																					<label
-																						style={{
-																							display: "block",
-																							fontSize: "0.7rem",
-																							color: "var(--color-gray-500)",
-																							marginBottom: "0.3rem",
-																							fontWeight: "500"
-																						}}
-																					>
-																						{t.endTime}
-																					</label>
-																					<input
+																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
+																					<Input
 																						type="datetime-local"
 																						value={condition.endTime || ""}
 																						onChange={e => {
@@ -1759,12 +1195,7 @@ export default function FormsPage() {
 																								}
 																							});
 																						}}
-																						className="admin-input"
-																						style={{
-																							width: "100%",
-																							fontSize: "0.8rem",
-																							padding: "0.45rem 0.6rem"
-																						}}
+																						className="w-full text-xs"
 																					/>
 																				</div>
 																			</>
@@ -1773,7 +1204,7 @@ export default function FormsPage() {
 																))}
 
 																{/* Add condition button */}
-																<button
+																<Button
 																	type="button"
 																	onClick={() => {
 																		const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
@@ -1784,25 +1215,13 @@ export default function FormsPage() {
 																			}
 																		});
 																	}}
-																	className="admin-button"
-																	style={{
-																		fontSize: "0.8rem",
-																		padding: "0.5rem 0.75rem",
-																		background: "var(--color-gray-800)",
-																		border: "1px dashed var(--color-gray-700)",
-																		color: "var(--color-gray-400)",
-																		width: "100%",
-																		justifyContent: "center",
-																		display: "flex",
-																		alignItems: "center",
-																		gap: "0.4rem"
-																	}}
+																	className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
 																>
-																	<span style={{ fontSize: "1rem" }}>
+																	<span className="text-base">
 																		<Plus />
 																	</span>{" "}
 																	{t.addCondition}
-																</button>
+																</Button>
 															</div>
 														</>
 													)}
@@ -1816,57 +1235,23 @@ export default function FormsPage() {
 					</div>
 
 					{/* Action Buttons */}
-					<div
-						style={{
-							position: "sticky",
-							bottom: 0,
-							background: "var(--color-gray-900)",
-							padding: "1rem 0",
-							marginTop: "1.5rem",
-							display: "flex",
-							gap: "0.75rem",
-							justifyContent: "center",
-							borderTop: "1px solid var(--color-gray-700)"
-						}}
-					>
-						<button
+					<div className="sticky bottom-0 bg-white dark:bg-gray-900 py-4 mt-6 flex gap-3 justify-center border-t border-gray-300 dark:border-gray-700">
+						<Button
 							id="add-question"
 							type="button"
 							onClick={addQuestion}
-							className="admin-button"
-							style={{
-								fontSize: "0.9rem",
-								padding: "0.65rem 1.25rem",
-								background: "var(--color-gray-700)",
-								border: "1px solid var(--color-gray-600)",
-								color: "var(--color-gray-200)",
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								fontWeight: "500"
-							}}
+							className="text-[0.9rem] py-2.5 px-5 bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 flex items-center gap-2 font-medium"
 						>
 							<Plus size={18} /> {t.addQuestion}
-						</button>
-						<button
+						</Button>
+						<Button
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="admin-button"
-							style={{
-								fontSize: "0.9rem",
-								padding: "0.65rem 1.25rem",
-								border: "1px solid var(--color-primary)",
-								color: "white",
-								display: "flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								fontWeight: "600",
-								boxShadow: "0 2px 8px rgba(var(--color-primary-rgb, 99, 102, 241), 0.25)"
-							}}
+							className="text-[0.9rem] py-2.5 px-5 border border-primary text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
-						</button>
+						</Button>
 					</div>
 				</div>
 			</main>

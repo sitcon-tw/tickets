@@ -1,15 +1,12 @@
 "use client";
 
 import { eventsAPI } from "@/lib/api/endpoints";
+import { InfoProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import MarkdownContent from "../MarkdownContent";
 import PageSpinner from "../PageSpinner";
-
-interface InfoProps {
-	eventId: string;
-}
 
 export default function Info({ eventId }: InfoProps) {
 	const locale = useLocale();
@@ -40,16 +37,9 @@ export default function Info({ eventId }: InfoProps) {
 	}, [eventId, locale]);
 
 	return (
-		<section
-			className="content"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "2rem"
-			}}
-		>
-			{isLoading && <PageSpinner size={48} />}
-			{loadError && <p>Error: {loadError}</p>}
+		<section className="content flex flex-col gap-8">
+			{isLoading && <PageSpinner />}
+			{loadError && <p className="text-red-600 dark:text-red-400">Error: {loadError}</p>}
 			{eventDescription && <MarkdownContent content={eventDescription} />}
 		</section>
 	);

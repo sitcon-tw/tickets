@@ -3,20 +3,17 @@
 import Confirm from "@/components/Confirm";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
-import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
+import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-
-interface TicketsProps {
-	eventId: string;
-	eventSlug: string;
-}
+import { createPortal } from "react-dom";
 
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const locale = useLocale();
@@ -24,11 +21,6 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const { showAlert } = useAlert();
 
 	const t = getTranslations(locale, {
-		description: {
-			"zh-Hant": "毛哥EM 的網站起始模板，使用 Astro 和 Fastify 構建。",
-			"zh-Hans": "毛哥EM 的网站起始模板，使用 Astro 和 Fastify 构建。",
-			en: "Elvis Mao's Website starter template using Astro and Fastify."
-		},
 		time: {
 			"zh-Hant": "報名時間：",
 			"zh-Hans": "报名时间：",
@@ -59,6 +51,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			"zh-Hans": "此票种报名时间已结束",
 			en: "This ticket's registration period has ended"
 		},
+		ticketNotYetAvailable: {
+			"zh-Hant": "此票種尚未開放報名",
+			"zh-Hans": "此票种尚未开放报名",
+			en: "This ticket is not yet available for registration"
+		},
 		soldOut: {
 			"zh-Hant": "已售完",
 			"zh-Hans": "已售完",
@@ -77,6 +74,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [canRegister, setCanRegister] = useState(true);
+	const [isMounted, setIsMounted] = useState(false);
 
 	const ticketAnimationRef = useRef<HTMLDivElement>(null);
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -89,6 +87,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		return saleEndDate < new Date();
 	}
 
+	function isTicketNotYetAvailable(ticket: Ticket): boolean {
+		if (!ticket.saleStart) return false;
+		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
+		if (!saleStartDate) return false;
+		return saleStartDate > new Date();
+	}
+
 	function isTicketSoldOut(ticket: Ticket): boolean {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}
@@ -96,6 +101,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
+			return;
+		}
+
+		if (isTicketNotYetAvailable(ticket)) {
+			showAlert(t.ticketNotYetAvailable, "warning");
 			return;
 		}
 
@@ -117,40 +127,65 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			console.warn("Unable to access localStorage", error);
 		}
 
+		// Store reference to the original ticket element
 		hiddenTicketRef.current = element;
 
+		// Start animation after a frame to ensure refs are ready
 		requestAnimationFrame(() => {
 			const ticketAnimation = ticketAnimationRef.current;
 			const ticketConfirm = ticketConfirmRef.current;
 
-			if (!ticketAnimation || !ticketConfirm) return;
+			if (!ticketAnimation || !ticketConfirm) {
+				// If refs aren't ready, just show the popup
+				setIsConfirming(true);
+				return;
+			}
 
-			const { top, left } = element.getBoundingClientRect();
-			const transform = window.getComputedStyle(element).transform;
+			// Step 1: Clone styling and position to original position
+			const rect = element.getBoundingClientRect();
 
-			ticketAnimation.style.top = `${top}px`;
-			ticketAnimation.style.left = `${left}px`;
-			ticketAnimation.style.transform = transform;
+			// Position the animation ticket at the original ticket's position
+			ticketAnimation.style.top = `${rect.top}px`;
+			ticketAnimation.style.left = `${rect.left}px`;
+			ticketAnimation.style.width = `${rect.width}px`;
+			ticketAnimation.style.height = `${rect.height}px`;
+			ticketAnimation.style.transform = "rotate(0deg)";
+			ticketAnimation.style.opacity = "1";
 			ticketAnimation.style.display = "block";
 
+			// Step 2: Hide original ticket
 			element.style.visibility = "hidden";
-			ticketConfirm.style.visibility = "hidden";
 
+			// Step 3: Show the confirm popup (popup ticket is initially hidden)
+			ticketConfirm.style.opacity = "0";
+			ticketConfirm.style.visibility = "hidden";
 			setIsConfirming(true);
 
+			// Step 4: Wait for popup to render in DOM, then get its position
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => {
 					const confirmRect = ticketConfirm.getBoundingClientRect();
-					const confirmTransform = window.getComputedStyle(ticketConfirm).transform;
 
-					ticketAnimation.style.top = `${confirmRect.top}px`;
+					// Step 5: Animate to popup position and rotation simultaneously
+					ticketAnimation.style.top = `${confirmRect.top - 10}px`;
 					ticketAnimation.style.left = `${confirmRect.left}px`;
-					ticketAnimation.style.transform = confirmTransform;
+					ticketAnimation.style.width = `${confirmRect.width}px`;
+					ticketAnimation.style.height = `${confirmRect.height}px`;
+					ticketAnimation.style.transform = "rotate(2deg)";
 
-					setTimeout(() => {
-						ticketAnimation.style.display = "none";
+					// Step 6: After animation completes, swap to real popup ticket
+					const handleTransitionEnd = () => {
+						ticketAnimation.removeEventListener("transitionend", handleTransitionEnd);
+						ticketAnimation.style.opacity = "0";
 						ticketConfirm.style.visibility = "visible";
-					}, 300);
+						ticketConfirm.style.opacity = "1";
+						// Hide animation ticket after fade completes
+						setTimeout(() => {
+							ticketAnimation.style.display = "none";
+						}, 200);
+					};
+
+					ticketAnimation.addEventListener("transitionend", handleTransitionEnd, { once: true });
 				});
 			});
 		});
@@ -180,13 +215,21 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		setIsConfirming(false);
 		setSelectedTicket(null);
 
+		// Restore the original ticket visibility
 		if (hiddenTicketRef.current) {
 			hiddenTicketRef.current.style.visibility = "visible";
 			hiddenTicketRef.current = null;
 		}
 
+		// Hide the animation ticket
 		if (ticketAnimationRef.current) {
 			ticketAnimationRef.current.style.display = "none";
+		}
+
+		// Reset the popup ticket opacity and visibility
+		if (ticketConfirmRef.current) {
+			ticketConfirmRef.current.style.opacity = "0";
+			ticketConfirmRef.current.style.visibility = "hidden";
 		}
 	}
 
@@ -236,6 +279,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			if (await checkAuth()) {
 				await checkRegistrationStatus();
 			}
+
+			setIsMounted(true);
 		}
 
 		init();
@@ -254,66 +299,110 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	return (
 		<>
-			<div className="tickets-container">
-				{isLoading && tickets.length === 0 ? (
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "1rem",
-							padding: "3rem",
-							opacity: 0.7,
-							height: "500px"
-						}}
-					>
-						<PageSpinner size={48} />
-					</div>
-				) : null}
-				{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
-				{tickets.map(ticket => {
-					const isExpired = isTicketExpired(ticket);
-					const isSoldOut = isTicketSoldOut(ticket);
-					const isUnavailable = isExpired || isSoldOut;
-					return (
-						<div
-							key={ticket.id}
-							className="ticket"
-							role="button"
-							tabIndex={0}
-							onClick={e => handleTicketSelect(ticket, e.currentTarget)}
-							onKeyDown={event => {
-								if (event.key === "Enter" || event.key === " ") {
-									event.preventDefault();
-									handleTicketSelect(ticket, event.currentTarget);
-								}
-							}}
-							style={{
-								opacity: isUnavailable ? 0.5 : 1,
-								cursor: isUnavailable ? "not-allowed" : "pointer",
-								filter: isUnavailable ? "grayscale(1)" : "none"
-							}}
-						>
-							<h3>{getLocalizedText(ticket.name, locale)}</h3>
-							<p>
-								{t.time}
-								{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
-							</p>
-							<p className="remain">
-								{t.remaining} {ticket.available} / {ticket.quantity}
-								{isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.registrationEnded})</span>}
-								{isSoldOut && !isExpired && <span style={{ color: "#dc2626", fontWeight: "bold", marginLeft: "0.5rem" }}>({t.soldOut})</span>}
-							</p>
+			<div className="max-w-4xl mx-auto w-full">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+					{isLoading && tickets.length === 0 && (
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
+							<PageSpinner />
 						</div>
-					);
-				})}
-			</div>
-
-			<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
-				{selectedTicket ? (
-					<div className="about">
-						<div className="ticket ticketConfirm" ref={ticketConfirmRef}>
+					)}
+					{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
+					{tickets.map(ticket => {
+						const isExpired = isTicketExpired(ticket);
+						const isSoldOut = isTicketSoldOut(ticket);
+						const isNotYetAvailable = isTicketNotYetAvailable(ticket);
+						const isUnavailable = isExpired || isSoldOut || isNotYetAvailable;
+						return (
+							<div
+								key={ticket.id}
+								className={`ticket ${isUnavailable ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer"}`}
+								role="button"
+								tabIndex={0}
+								onClick={e => handleTicketSelect(ticket, e.currentTarget)}
+								onKeyDown={event => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										handleTicketSelect(ticket, event.currentTarget);
+									}
+								}}
+							>
+								<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(ticket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {ticket.available} / {ticket.quantity}
+											{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
+											{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
+										</p>
+									</div>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+				<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
+					{selectedTicket ? (
+						<div className="p-8 pt-12">
+							<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
+								<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+										</p>
+									</div>
+								</div>
+							</div>
+							<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
+								<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
+								<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
+								{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
+							</div>
+							<Button className={`inline-flex items-center gap-2`} disabled={!canRegister} isLoading={isSubmitting} onClick={() => handleConfirmRegistration()}>
+								{canRegister ? t.confirm : t.cannotRegister}
+							</Button>
+						</div>
+					) : null}
+				</Confirm>
+				{/* Animation ticket - rendered at body level via portal */}
+				{isMounted &&
+					typeof window !== "undefined" &&
+					createPortal(
+						<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+							{selectedTicket ? (
+								<div className="space-y-2">
+									<h3 className="text-xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h3>
+									<div className="border-t-2 border-gray-500 max-w-32" />
+									<div>
+										<p>
+											{t.time}
+											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+										</p>
+										<p className="remain">
+											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+										</p>
+									</div>
+								</div>
+							) : null}
+						</div>,
+						document.body
+					)}
+				{/* Animation ticket */}
+				<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
+					{selectedTicket ? (
+						<>
 							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
 							<p>
 								{t.time}
@@ -322,46 +411,9 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<p className="remain">
 								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
 							</p>
-						</div>
-						<div className="content">
-							<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
-							<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
-							{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
-						</div>
-					</div>
-				) : null}
-				<button
-					className="button"
-					onClick={() => handleConfirmRegistration()}
-					style={{
-						opacity: isSubmitting ? 0.7 : 1,
-						cursor: !canRegister || isSubmitting ? "not-allowed" : "pointer",
-						pointerEvents: isSubmitting ? "none" : "auto",
-						transition: "opacity 0.2s",
-						display: "inline-flex",
-						alignItems: "center",
-						gap: "0.5rem"
-					}}
-				>
-					{isSubmitting && <Spinner size="sm" color="currentColor" />}
-					{canRegister ? t.confirm : t.cannotRegister}
-				</button>
-			</Confirm>
-
-			{/* Animation ticket */}
-			<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
-				{selectedTicket ? (
-					<>
-						<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
-						<p>
-							{t.time}
-							{selectedTicket.saleStart} - {selectedTicket.saleEnd}
-						</p>
-						<p className="remain">
-							{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-						</p>
-					</>
-				) : null}
+						</>
+					) : null}
+				</div>
 			</div>
 		</>
 	);

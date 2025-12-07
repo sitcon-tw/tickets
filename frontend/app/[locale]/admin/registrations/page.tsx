@@ -1,14 +1,23 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminRegistrationsAPI } from "@/lib/api/endpoints";
+import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Download, FileSpreadsheet, RotateCw, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -18,24 +27,32 @@ export default function RegistrationsPage() {
 	const { showAlert } = useAlert();
 
 	const [registrations, setRegistrations] = useState<Registration[]>([]);
-	const [filtered, setFiltered] = useState<Registration[]>([]);
+	const [, setFiltered] = useState<Registration[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
-	const [activeColumns, setActiveColumns] = useState(new Set(["email", "status", "ticket", "event", "createdAt"]));
 	const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
 	const [showDetailModal, setShowDetailModal] = useState(false);
 	const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
-	const [sortField, setSortField] = useState<SortField>("createdAt");
-	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(50);
+	const [sortField] = useState<SortField>("createdAt");
+	const [sortDirection] = useState<SortDirection>("desc");
+	const [page] = useState(1);
+	const [pageSize] = useState(50);
 	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
+	const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
+	const [googleSheetsUrl, setGoogleSheetsUrl] = useState("");
+	const [serviceAccountEmail, setServiceAccountEmail] = useState("");
+	const [isExporting, setIsExporting] = useState(false);
+	const [exportSuccess, setExportSuccess] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const [editedFormData, setEditedFormData] = useState<Record<string, unknown>>({});
+	const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "cancelled">("pending");
+	const [isSaving, setIsSaving] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
-		search: { "zh-Hant": "搜尋電子郵件、ID", "zh-Hans": "搜索电子邮件、ID", en: "Search Email, ID" },
+		search: { "zh-Hant": "搜尋電子郵件、ID、票種、活動名稱、表單資料...", "zh-Hans": "搜索电子邮件、ID、票种、活动名称、表单资料...", en: "Search Email, ID, Ticket Type, Event Name, Form Data..." },
 		allStatus: { "zh-Hant": "全部狀態", "zh-Hans": "全部状态", en: "All statuses" },
 		confirmed: { "zh-Hant": "已確認", "zh-Hans": "已确认", en: "Confirmed" },
 		pending: { "zh-Hant": "待處理", "zh-Hans": "待处理", en: "Pending" },
@@ -70,7 +87,27 @@ export default function RegistrationsPage() {
 		page: { "zh-Hant": "頁", "zh-Hans": "页", en: "Page" },
 		of: { "zh-Hant": "共", "zh-Hans": "共", en: "of" },
 		perPage: { "zh-Hant": "每頁筆數", "zh-Hans": "每页笔数", en: "Per Page" },
-		stats: { "zh-Hant": "統計", "zh-Hans": "统计", en: "Statistics" }
+		stats: { "zh-Hant": "統計", "zh-Hans": "统计", en: "Statistics" },
+		exportToSheets: { "zh-Hant": "匯出到 Google Sheets", "zh-Hans": "导出到 Google Sheets", en: "Export to Google Sheets" },
+		exportToSheetsTitle: { "zh-Hant": "匯出到 Google Sheets", "zh-Hans": "导出到 Google Sheets", en: "Export to Google Sheets" },
+		exportToSheetsDesc: {
+			"zh-Hant": "請將以下服務帳號加入您的 Google Sheets 編輯權限：",
+			"zh-Hans": "请将以下服务帐号加入您的 Google Sheets 编辑权限：",
+			en: "Please invite the following service account to your Google Sheets:"
+		},
+		sheetsUrlLabel: { "zh-Hant": "Sheets URL", "zh-Hans": "Sheets URL", en: "Sheets URL" },
+		openSheets: { "zh-Hant": "開啟 Sheets", "zh-Hans": "打开 Sheets", en: "Open Sheets" },
+		confirm: { "zh-Hant": "確認", "zh-Hans": "确认", en: "Confirm" },
+		exporting: { "zh-Hant": "匯出中...", "zh-Hans": "导出中...", en: "Exporting..." },
+		exportSuccessMsg: { "zh-Hant": "成功匯出到 Google Sheets", "zh-Hans": "成功导出到 Google Sheets", en: "Successfully exported to Google Sheets" },
+		exportErrorMsg: { "zh-Hant": "匯出失敗", "zh-Hans": "导出失败", en: "Export failed" },
+		noEventSelected: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Please select an event first" },
+		edit: { "zh-Hant": "編輯", "zh-Hans": "编辑", en: "Edit" },
+		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
+		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
+		saving: { "zh-Hant": "儲存中...", "zh-Hans": "保存中...", en: "Saving..." },
+		saveSuccess: { "zh-Hant": "報名資料已成功更新", "zh-Hans": "报名资料已成功更新", en: "Registration updated successfully" },
+		saveError: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" }
 	});
 
 	const columnDefs = [
@@ -169,49 +206,128 @@ export default function RegistrationsPage() {
 		return filtered;
 	}, [searchTerm, registrations, statusFilter, locale, sortField, sortDirection]);
 
-	const paginatedData = useMemo(() => {
-		const start = (page - 1) * pageSize;
-		const end = start + pageSize;
-		return sortedAndFiltered.slice(start, end);
-	}, [sortedAndFiltered, page, pageSize]);
+	// const paginatedData = useMemo(() => {
+	// 	const start = (page - 1) * pageSize;
+	// 	const end = start + pageSize;
+	// 	return sortedAndFiltered.slice(start, end);
+	// }, [sortedAndFiltered, page, pageSize]);
 
-	const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
+	const displayData = useMemo((): RegistrationDisplay[] => {
+		return sortedAndFiltered.map(r => ({
+			...r,
+			displayId: r.id.slice(0, 8) + "...",
+			displayTicket: getLocalizedText(r.ticket?.name, locale) || r.ticketId || "",
+			displayEvent: getLocalizedText(r.event?.name, locale) || r.eventId || "",
+			displayReferredBy: r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-",
+			formattedCreatedAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : "",
+			formattedUpdatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "",
+			statusClass: r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : ""
+		}));
+	}, [sortedAndFiltered, locale]);
 
-	function handleSort(field: SortField) {
-		if (sortField === field) {
-			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-		} else {
-			setSortField(field);
-			setSortDirection("asc");
-		}
-	}
+	const columns = useMemo(
+		() =>
+			createRegistrationsColumns({
+				onViewDetails: openDetailModal,
+				t: { viewDetails: t.viewDetails }
+			}),
+		[t.viewDetails]
+	);
 
-	function toggleSelectAll() {
-		if (selectedRegistrations.size === paginatedData.length) {
-			setSelectedRegistrations(new Set());
-		} else {
-			setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
-		}
-	}
+	// const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
 
-	function toggleSelect(id: string) {
-		const newSet = new Set(selectedRegistrations);
-		if (newSet.has(id)) {
-			newSet.delete(id);
-		} else {
-			newSet.add(id);
-		}
-		setSelectedRegistrations(newSet);
-	}
+	// function handleSort(field: SortField) {
+	// 	if (sortField === field) {
+	// 		setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+	// 	} else {
+	// 		setSortField(field);
+	// 		setSortDirection("asc");
+	// 	}
+	// }
+
+	// function toggleSelectAll() {
+	// 	if (selectedRegistrations.size === paginatedData.length) {
+	// 		setSelectedRegistrations(new Set());
+	// 	} else {
+	// 		setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
+	// 	}
+	// }
+
+	// function toggleSelect(id: string) {
+	// 	const newSet = new Set(selectedRegistrations);
+	// 	if (newSet.has(id)) {
+	// 		newSet.delete(id);
+	// 	} else {
+	// 		newSet.add(id);
+	// 	}
+	// 	setSelectedRegistrations(newSet);
+	// }
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
+		setEditedFormData(registration.formData || {});
+		setEditedStatus(registration.status);
+		setIsEditing(false);
 		setShowDetailModal(true);
 	}
 
 	function closeDetailModal() {
 		setSelectedRegistration(null);
+		setIsEditing(false);
 		setShowDetailModal(false);
+	}
+
+	function toggleEditMode() {
+		if (isEditing) {
+			// Reset to original values when canceling edit
+			if (selectedRegistration) {
+				setEditedFormData(selectedRegistration.formData || {});
+				setEditedStatus(selectedRegistration.status);
+			}
+		}
+		setIsEditing(!isEditing);
+	}
+
+	async function saveChanges() {
+		if (!selectedRegistration) return;
+
+		setIsSaving(true);
+		try {
+			const response = await adminRegistrationsAPI.update(selectedRegistration.id, {
+				formData: editedFormData,
+				status: editedStatus
+			});
+
+			if (response.success) {
+				showAlert(t.saveSuccess, "success");
+				setIsEditing(false);
+				await loadRegistrations();
+				// Update the selected registration with new data
+				if (response.data) {
+					// Parse formData if it's a string
+					const updatedRegistration = {
+						...response.data,
+						formData: typeof response.data.formData === "string" ? JSON.parse(response.data.formData) : response.data.formData
+					};
+					setSelectedRegistration(updatedRegistration);
+					setEditedFormData(updatedRegistration.formData || {});
+				}
+			} else {
+				showAlert(`${t.saveError}: ${response.message || "Unknown error"}`, "error");
+			}
+		} catch (error) {
+			console.error("Failed to update registration:", error);
+			showAlert(`${t.saveError}: ${error instanceof Error ? error.message : String(error)}`, "error");
+		} finally {
+			setIsSaving(false);
+		}
+	}
+
+	function updateFormDataField(key: string, value: unknown) {
+		setEditedFormData(prev => ({
+			...prev,
+			[key]: value
+		}));
 	}
 
 	async function syncToSheets() {
@@ -241,6 +357,81 @@ export default function RegistrationsPage() {
 			return;
 		}
 		showAlert(`Exporting ${selectedRegistrations.size} selected registrations`, "info");
+	}
+
+	async function openGoogleSheetsExport() {
+		if (!currentEventId) {
+			showAlert(t.noEventSelected, "warning");
+			return;
+		}
+
+		setExportSuccess(false);
+
+		// Fetch both event data and service account email before opening modal
+		const fetchPromises = [
+			adminEventsAPI
+				.getById(currentEventId)
+				.then(eventResponse => {
+					if (eventResponse.success && eventResponse.data?.googleSheetsUrl) {
+						return eventResponse.data.googleSheetsUrl;
+					}
+					return "";
+				})
+				.catch(error => {
+					console.error("Failed to load event data:", error);
+					return "";
+				}),
+			adminRegistrationsAPI
+				.getServiceAccountEmail()
+				.then(response => {
+					if (response.success && response.data) {
+						return response.data.email;
+					}
+					return "";
+				})
+				.catch(error => {
+					console.error("Failed to get service account email:", error);
+					return "";
+				})
+		];
+
+		const [sheetsUrl, email] = await Promise.all(fetchPromises);
+
+		setGoogleSheetsUrl(sheetsUrl);
+		setServiceAccountEmail(email);
+		setShowGoogleSheetsModal(true);
+	}
+
+	async function exportToGoogleSheets() {
+		if (!currentEventId) {
+			showAlert(t.noEventSelected, "warning");
+			return;
+		}
+
+		if (!googleSheetsUrl.trim()) {
+			showAlert("Please enter a Google Sheets URL", "warning");
+			return;
+		}
+
+		setIsExporting(true);
+		try {
+			const response = await adminRegistrationsAPI.syncToGoogleSheets({
+				eventId: currentEventId,
+				sheetsUrl: googleSheetsUrl
+			});
+
+			if (response.success) {
+				showAlert(response.message || t.exportSuccessMsg, "success");
+				setExportSuccess(true);
+			} else {
+				showAlert(response.message || t.exportErrorMsg, "error");
+			}
+		} catch (error) {
+			console.error("Failed to export to Google Sheets:", error);
+			showAlert(`${t.exportErrorMsg}: ${error instanceof Error ? error.message : String(error)}`, "error");
+		} finally {
+			setIsExporting(false);
+		}
 	}
 
 	const deleteRegistration = async (registration: Registration) => {
@@ -290,338 +481,292 @@ export default function RegistrationsPage() {
 	return (
 		<>
 			<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
-
+				<AdminHeader title={t.title} />
 				{/* Statistics Section */}
-				<section style={{ margin: "1.5rem 0" }}>
-					<h3 style={{ marginBottom: "0.75rem", fontSize: "0.9rem", opacity: 0.8 }}>{t.stats}</h3>
-					<div className="admin-stats-grid">
-						<div className="admin-stat-card">
-							<div className="admin-stat-label">{t.total}</div>
-							<div className="admin-stat-value">{stats.total}</div>
+				<section className="my-6">
+					<h3 className="mb-3 text-sm opacity-80">{t.stats}</h3>
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-800 dark:border-gray-300 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.total}</div>
+							<div className="text-3xl font-bold">{stats.total}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#22c55e" }}>
-							<div className="admin-stat-label">{t.confirmed}</div>
-							<div className="admin-stat-value" style={{ color: "#22c55e" }}>
-								{stats.confirmed}
-							</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.confirmed}</div>
+							<div className="text-3xl font-bold text-green-600 dark:text-green-500">{stats.confirmed}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#f59e0b" }}>
-							<div className="admin-stat-label">{t.pending}</div>
-							<div className="admin-stat-value" style={{ color: "#f59e0b" }}>
-								{stats.pending}
-							</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.pending}</div>
+							<div className="text-3xl font-bold text-amber-600 dark:text-amber-500">{stats.pending}</div>
 						</div>
-						<div className="admin-stat-card" style={{ borderColor: "#ef4444" }}>
-							<div className="admin-stat-label">{t.cancelled}</div>
-							<div className="admin-stat-value" style={{ color: "#ef4444" }}>
-								{stats.cancelled}
-							</div>
+						<div className="flex flex-col p-4 rounded-lg border-2 border-gray-500 dark:bg-gray-900">
+							<div className="text-xs uppercase tracking-wider opacity-70 mb-1">{t.cancelled}</div>
+							<div className="text-3xl font-bold text-red-600 dark:text-red-500">{stats.cancelled}</div>
 						</div>
 					</div>
 				</section>
-
-				<section className="admin-controls" style={{ margin: "1rem 0" }}>
-					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
-					<select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select">
-						<option value="">{t.allStatus}</option>
-						<option value="confirmed">{t.confirmed}</option>
-						<option value="pending">{t.pending}</option>
-						<option value="cancelled">{t.cancelled}</option>
-					</select>
-					<button onClick={loadRegistrations} className="admin-button secondary">
-						↻ {t.refresh}
-					</button>
-					<button onClick={syncToSheets} className="admin-button primary">
-						📥 {t.syncSheets}
-					</button>
+				<section className="flex gap-2 my-4">
+					<div className="relative w-fit">
+						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+					</div>
+					<Select value={statusFilter || "all"} onValueChange={value => setStatusFilter(value === "all" ? "" : value)}>
+						<SelectTrigger className="w-[180px] min-h-11">
+							<SelectValue placeholder={t.allStatus} />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">{t.allStatus}</SelectItem>
+							<SelectItem value="confirmed">{t.confirmed}</SelectItem>
+							<SelectItem value="pending">{t.pending}</SelectItem>
+							<SelectItem value="cancelled">{t.cancelled}</SelectItem>
+						</SelectContent>
+					</Select>
+					<Button onClick={loadRegistrations} variant="secondary">
+						<RotateCw /> {t.refresh}
+					</Button>
+					<Button onClick={syncToSheets} variant="secondary">
+						<Download /> {t.syncSheets}
+					</Button>
+					<Button onClick={openGoogleSheetsExport} variant="secondary">
+						<FileSpreadsheet /> {t.exportToSheets}
+					</Button>
 					{selectedRegistrations.size > 0 && (
 						<>
-							<button onClick={exportSelected} className="admin-button success">
-								📤 {t.exportSelected} ({selectedRegistrations.size})
-							</button>
-							<button onClick={() => setSelectedRegistrations(new Set())} className="admin-button danger">
+							<Button onClick={exportSelected} variant="default">
+								<Download /> {t.exportSelected} ({selectedRegistrations.size})
+							</Button>
+							<Button onClick={() => setSelectedRegistrations(new Set())} variant="destructive">
 								✕ {t.deselectAll}
-							</button>
+							</Button>
 						</>
 					)}
 				</section>
-
-				<section className="admin-controls" style={{ marginBottom: "1rem" }}>
-					<label style={{ fontSize: "0.9rem", fontWeight: 500 }}>{t.columns}</label>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-						{columnDefs.map(col => (
-							<button
-								key={col.id}
-								data-on={activeColumns.has(col.id) ? "true" : "false"}
-								onClick={() => {
-									const newCols = new Set(activeColumns);
-									if (newCols.has(col.id)) newCols.delete(col.id);
-									else newCols.add(col.id);
-									setActiveColumns(newCols);
-								}}
-								className="admin-button small"
-								style={{
-									background: activeColumns.has(col.id) ? "var(--color-gray-600)" : "var(--color-gray-800)",
-									borderRadius: "999px",
-									opacity: activeColumns.has(col.id) ? 1 : 0.5,
-									fontSize: "0.7rem",
-									padding: "0.3rem 0.7rem"
-								}}
-							>
-								{col.label}
-							</button>
-						))}
-					</div>
-				</section>
-
 				<section>
-					<div className="admin-table-container">
-						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner size={48} />
-								<p>{t.loading}</p>
-							</div>
-						)}
-						{!isLoading && filtered.length === 0 && <div className="admin-empty">{t.empty}</div>}
-						{!isLoading && filtered.length > 0 && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th style={{ width: "40px", textAlign: "center" }}>
-											<input type="checkbox" checked={selectedRegistrations.size === paginatedData.length && paginatedData.length > 0} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
-										</th>
-										{[...activeColumns].map(cid => {
-											const col = columnDefs.find(c => c.id === cid);
-											return col ? (
-												<th
-													key={cid}
-													onClick={() => col.sortable && handleSort(cid as SortField)}
-													style={{
-														cursor: col.sortable ? "pointer" : "default",
-														userSelect: "none"
-													}}
-												>
-													{col.label}
-													{col.sortable && sortField === cid && <span style={{ marginLeft: "0.25rem" }}>{sortDirection === "asc" ? "↑" : "↓"}</span>}
-												</th>
-											) : null;
-										})}
-										<th style={{ width: "100px", textAlign: "center" }}>Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{paginatedData.map(r => (
-										<tr
-											key={r.id}
-											style={{
-												backgroundColor: selectedRegistrations.has(r.id) ? "var(--color-gray-750)" : "transparent"
-											}}
-										>
-											<td style={{ textAlign: "center" }}>
-												<input type="checkbox" checked={selectedRegistrations.has(r.id)} onChange={() => toggleSelect(r.id)} style={{ cursor: "pointer" }} />
-											</td>
-											{[...activeColumns].map(cid => {
-												const col = columnDefs.find(c => c.id === cid);
-												if (!col) return null;
-												const val = col.accessor(r);
-												const statusClass = r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : "";
-												return <td key={cid}>{cid === "status" ? <span className={`status-badge ${statusClass}`}>{val}</span> : <div className="admin-truncate">{val}</div>}</td>;
-											})}
-											<td style={{ textAlign: "center" }}>
-												<button onClick={() => openDetailModal(r)} className="admin-button small primary">
-													👁 {t.viewDetails}
-												</button>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						)}
-					</div>
-				</section>
-
-				{/* Pagination Section */}
-				<section>
-					<div
-						style={{
-							margin: "1rem 0",
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexWrap: "wrap",
-							gap: "0.75rem"
-						}}
-					>
-						<div style={{ fontSize: "0.85rem", opacity: "0.75" }}>
-							{sortedAndFiltered.length} {t.total} {selectedRegistrations.size > 0 && `• ${selectedRegistrations.size} ${t.selected}`}
+					{isLoading ? (
+						<div className="flex flex-col items-center justify-center py-8">
+							<PageSpinner />
+							<p>{t.loading}</p>
 						</div>
-						{totalPages > 1 && (
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-								<button
-									onClick={() => setPage(Math.max(1, page - 1))}
-									disabled={page === 1}
-									className="admin-button small secondary"
-									style={{
-										opacity: page === 1 ? 0.5 : 1,
-										cursor: page === 1 ? "not-allowed" : "pointer"
-									}}
-								>
-									←
-								</button>
-								<span style={{ fontSize: "0.85rem" }}>
-									{t.page} {page} {t.of} {totalPages}
-								</span>
-								<button
-									onClick={() => setPage(Math.min(totalPages, page + 1))}
-									disabled={page === totalPages}
-									className="admin-button small secondary"
-									style={{
-										opacity: page === totalPages ? 0.5 : 1,
-										cursor: page === totalPages ? "not-allowed" : "pointer"
-									}}
-								>
-									→
-								</button>
-								<select
-									value={pageSize}
-									onChange={e => {
-										setPageSize(Number(e.target.value));
-										setPage(1);
-									}}
-									className="admin-select"
-									style={{
-										padding: "0.35rem 0.7rem",
-										fontSize: "0.75rem",
-										marginLeft: "0.5rem"
-									}}
-								>
-									<option value="25">25 {t.perPage}</option>
-									<option value="50">50 {t.perPage}</option>
-									<option value="100">100 {t.perPage}</option>
-									<option value="200">200 {t.perPage}</option>
-								</select>
-							</div>
-						)}
-					</div>
+					) : (
+						<DataTable columns={columns} data={displayData} />
+					)}
 				</section>
 			</main>
 
 			{/* Detail Modal */}
-			{showDetailModal && selectedRegistration && (
-				<div className="admin-modal-overlay" onClick={closeDetailModal}>
-					<div className="admin-modal" onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.registrationDetails}</h2>
-							<button className="admin-modal-close" onClick={closeDetailModal}>
-								✕
-							</button>
+			<Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+				<DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center justify-between">
+							<span>{t.registrationDetails}</span>
+							{!isEditing && (
+								<Button size="sm" variant="outline" onClick={toggleEditMode}>
+									{t.edit}
+								</Button>
+							)}
+						</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-4">
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Ticket ID</Label>
+							<div className="font-mono text-sm break-all">{selectedRegistration && ticketHashes[selectedRegistration.id]}</div>
 						</div>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-							<div>
-								<div className="admin-stat-label">Ticket ID</div>
-								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{ticketHashes[selectedRegistration.id]}</div>
-							</div>
-
-							<div>
-								<div className="admin-stat-label">ID</div>
-								<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{selectedRegistration.id}</div>
-							</div>
-
-							<div>
-								<div className="admin-stat-label">Email</div>
-								<div style={{ fontSize: "0.95rem" }}>{selectedRegistration.email}</div>
-							</div>
-
-							<div>
-								<div className="admin-stat-label">Status</div>
-								<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
-									{selectedRegistration.status}
-								</span>
-							</div>
-
-							{selectedRegistration.event && (
-								<div>
-									<div className="admin-stat-label">Event</div>
-									<div style={{ fontSize: "0.95rem" }}>{getLocalizedText(selectedRegistration.event.name, locale)}</div>
-									{selectedRegistration.event.startDate && (
-										<div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: "0.25rem" }}>
-											{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
-										</div>
-									)}
-								</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">ID</Label>
+							<div className="font-mono text-sm break-all">{selectedRegistration?.id}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Email</Label>
+							<div className="text-[0.95rem] break-all">{selectedRegistration?.email}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Status</Label>
+							{isEditing ? (
+								<Select value={editedStatus} onValueChange={value => setEditedStatus(value as "pending" | "confirmed" | "cancelled")}>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="pending">{t.pending}</SelectItem>
+										<SelectItem value="confirmed">{t.confirmed}</SelectItem>
+										<SelectItem value="cancelled">{t.cancelled}</SelectItem>
+									</SelectContent>
+								</Select>
+							) : (
+								selectedRegistration && (
+									<span className={`status-badge ${selectedRegistration.status === "confirmed" ? "active" : selectedRegistration.status === "pending" ? "pending" : "ended"}`}>
+										{selectedRegistration.status}
+									</span>
+								)
 							)}
-
-							{selectedRegistration.ticket && (
-								<div>
-									<div className="admin-stat-label">Ticket</div>
-									<div style={{ fontSize: "0.95rem" }}>{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
-									{selectedRegistration.ticket.price !== undefined && <div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: "0.25rem" }}>Price: ${selectedRegistration.ticket.price}</div>}
-								</div>
-							)}
-
-							{selectedRegistration.referredBy && (
-								<div>
-									<div className="admin-stat-label">{t.referredBy}</div>
-									<div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>{selectedRegistration.referredBy}</div>
-								</div>
-							)}
-
+						</div>
+						{selectedRegistration?.event && (
 							<div>
-								<div className="admin-stat-label">Created At</div>
-								<div style={{ fontSize: "0.95rem" }}>{new Date(selectedRegistration.createdAt).toLocaleString()}</div>
-							</div>
-
-							<div>
-								<div className="admin-stat-label">Updated At</div>
-								<div style={{ fontSize: "0.95rem" }}>{new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
-							</div>
-
-							{selectedRegistration.formData && Object.keys(selectedRegistration.formData).length > 0 && (
-								<div>
-									<div className="admin-stat-label" style={{ marginBottom: "0.5rem" }}>
-										{t.formData}
+								<Label className="text-xs uppercase tracking-wider opacity-70">Event</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
+								{selectedRegistration.event.startDate && (
+									<div className="text-[0.85rem] opacity-70 mt-1">
+										{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
 									</div>
-									<div
-										style={{
-											backgroundColor: "var(--color-gray-900)",
-											border: "2px solid var(--color-gray-700)",
-											borderRadius: "8px",
-											padding: "0.75rem",
-											fontFamily: "monospace",
-											fontSize: "0.85rem"
-										}}
-									>
-										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
-											<div key={key} style={{ marginBottom: "0.5rem" }}>
-												<span style={{ color: "#a78bfa", fontWeight: 600 }}>{key}:</span>{" "}
-												<span style={{ color: "var(--color-gray-100)" }}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+								)}
+							</div>
+						)}
+						{selectedRegistration?.ticket && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">Ticket</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
+								{selectedRegistration.ticket.price !== undefined && <div className="text-[0.85rem] opacity-70 mt-1">Price: ${selectedRegistration.ticket.price}</div>}
+							</div>
+						)}
+						{selectedRegistration?.referredBy && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">{t.referredBy}</Label>
+								<div className="font-mono text-[0.9rem]">{selectedRegistration.referredBy}</div>
+							</div>
+						)}
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Created At</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">Updated At</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+						</div>
+						{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70 mb-2">{t.formData}</Label>
+								{isEditing ? (
+									<div className="space-y-3">
+										{Object.entries(editedFormData).map(([key, value]) => (
+											<div key={key}>
+												<Label className="text-sm mb-1 block">{key}</Label>
+												<Input
+													value={typeof value === "object" ? JSON.stringify(value) : String(value)}
+													onChange={e => {
+														try {
+															// Try to parse as JSON if it looks like JSON
+															const newValue = e.target.value;
+															if (newValue.startsWith("{") || newValue.startsWith("[")) {
+																updateFormDataField(key, JSON.parse(newValue));
+															} else {
+																updateFormDataField(key, newValue);
+															}
+														} catch {
+															// If JSON parse fails, just use the string value
+															updateFormDataField(key, e.target.value);
+														}
+													}}
+												/>
 											</div>
 										))}
 									</div>
-								</div>
-							)}
+								) : (
+									<div className="bg-gray-900 dark:bg-gray-950 border-2 border-gray-700 dark:border-gray-800 rounded-lg p-3 font-mono text-[0.85rem]">
+										{Object.entries(selectedRegistration.formData).map(([key, value]) => (
+											<div key={key} className="mb-2">
+												<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
+												<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						)}
+					</div>
 
-							{/* Delete Personal Data Button */}
-							<div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "2px solid var(--color-gray-700)" }}>
-								<button onClick={() => deleteRegistration(selectedRegistration)} className="admin-button danger" style={{ width: "100%" }}>
+					<DialogFooter className="flex flex-col gap-2 sm:flex-col">
+						{isEditing ? (
+							<div className="flex gap-2 w-full">
+								<Button variant="outline" onClick={toggleEditMode} className="flex-1" disabled={isSaving}>
+									{t.cancel}
+								</Button>
+								<Button variant="default" onClick={saveChanges} className="flex-1" disabled={isSaving}>
+									{isSaving ? t.saving : t.save}
+								</Button>
+							</div>
+						) : (
+							<>
+								<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full whitespace-normal h-auto py-2">
 									🗑️ {t.deleteData}
-								</button>
-								<p style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem", textAlign: "center" }}>
+								</Button>
+								<p className="text-xs opacity-60 text-center text-wrap">
 									⚠️{" "}
 									{locale === "zh-Hant"
 										? "此操作無法復原，符合個人資料保護法"
 										: locale === "zh-Hans"
-											? "此操作无法复原，符合个人资料保护法"
+											? "此操作无法复原，符合個人資料保護法"
 											: "This action is irreversible and complies with privacy law"}
 								</p>
-							</div>
+							</>
+						)}
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Google Sheets Export Modal */}
+			<Dialog open={showGoogleSheetsModal} onOpenChange={setShowGoogleSheetsModal}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>{t.exportToSheetsTitle}</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-4">
+						<div>
+							<p className="text-sm mb-2">{t.exportToSheetsDesc}</p>
+							<div className="bg-gray-100 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg p-3 font-mono text-sm break-all">{serviceAccountEmail || "Loading..."}</div>
 						</div>
+
+						<div>
+							<Label htmlFor="sheetsUrl" className="text-sm font-medium mb-2">
+								{t.sheetsUrlLabel}
+							</Label>
+							<Input
+								id="sheetsUrl"
+								type="url"
+								placeholder="https://docs.google.com/spreadsheets/d/..."
+								value={googleSheetsUrl}
+								onChange={e => setGoogleSheetsUrl(e.target.value)}
+								disabled={isExporting}
+							/>
+						</div>
+
+						{exportSuccess && <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-3 text-sm text-green-700 dark:text-green-300">✅ {t.exportSuccessMsg}</div>}
 					</div>
-				</div>
-			)}
+
+					<DialogFooter className="flex flex-row gap-2 justify-end">
+						{exportSuccess ? (
+							<>
+								<Button variant="secondary" onClick={() => setShowGoogleSheetsModal(false)}>
+									{t.close}
+								</Button>
+								<Button
+									variant="default"
+									onClick={() => {
+										if (googleSheetsUrl) window.open(googleSheetsUrl, "_blank");
+									}}
+								>
+									{t.openSheets}
+								</Button>
+							</>
+						) : (
+							<>
+								<Button
+									variant="secondary"
+									onClick={() => {
+										if (googleSheetsUrl) window.open(googleSheetsUrl, "_blank");
+									}}
+									disabled={!googleSheetsUrl || isExporting}
+								>
+									{t.openSheets}
+								</Button>
+								<Button variant="default" onClick={exportToGoogleSheets} disabled={isExporting || !googleSheetsUrl}>
+									{isExporting ? t.exporting : t.confirm}
+								</Button>
+							</>
+						)}
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

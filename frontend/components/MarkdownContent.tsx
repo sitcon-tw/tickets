@@ -1,12 +1,8 @@
 "use client";
 
+import { MarkdownContentProps } from "@/lib/types/components";
 import { marked } from "marked";
 import { useMemo } from "react";
-
-interface MarkdownContentProps {
-	content: string;
-	className?: string;
-}
 
 export default function MarkdownContent({ content, className = "" }: MarkdownContentProps) {
 	const html = useMemo(() => {

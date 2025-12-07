@@ -1,13 +1,23 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
+import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Mail, RotateCw } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createCampaignsColumns, type CampaignDisplay } from "./columns";
 
 export default function EmailCampaignsPage() {
 	const locale = useLocale();
@@ -245,276 +255,221 @@ export default function EmailCampaignsPage() {
 		}
 	};
 
+	const displayCampaigns = useMemo((): CampaignDisplay[] => {
+		return campaigns.map(campaign => ({
+			...campaign,
+			statusClass: getStatusBadgeClass(campaign.status),
+			statusLabel: (t[campaign.status as keyof typeof t] as string) || campaign.status,
+			recipientsDisplay: `${campaign.sentCount || 0} / ${campaign.totalCount || 0}`,
+			formattedCreatedAt: new Date(campaign.createdAt).toLocaleString()
+		}));
+	}, [campaigns, t]);
+
+	const columns = useMemo(
+		() =>
+			createCampaignsColumns({
+				onPreview: handlePreview,
+				onSend: handleSend,
+				onCancel: handleCancel,
+				t: {
+					preview: t.preview,
+					send: t.send,
+					cancel: t.cancel
+				}
+			}),
+		[t.preview, t.send, t.cancel, handlePreview, handleSend, handleCancel]
+	);
 	return (
-		<>
-			<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
+		<main>
+			<AdminHeader title={t.title} />
 
-				<section className="admin-controls" style={{ margin: "1rem 0" }}>
-					<button onClick={() => setShowCreateModal(true)} className="admin-button primary">
-						✉️ {t.createNew}
-					</button>
-					<button onClick={loadCampaigns} className="admin-button secondary">
-						↻ {t.refresh}
-					</button>
-				</section>
+			<section className="flex gap-2 my-4">
+				<Button onClick={() => setShowCreateModal(true)}>
+					<Mail /> {t.createNew}
+				</Button>
+				<Button variant="secondary" onClick={loadCampaigns}>
+					<RotateCw /> {t.refresh}
+				</Button>
+			</section>
 
-				<section>
-					<div className="admin-table-container">
-						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner size={48} />
-								<p>{t.loading}</p>
-							</div>
-						)}
-						{!isLoading && campaigns.length === 0 && <div className="admin-empty">{t.empty}</div>}
-						{!isLoading && campaigns.length > 0 && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th>{t.name}</th>
-										<th>{t.subject}</th>
-										<th>{t.status}</th>
-										<th>{t.recipients}</th>
-										<th>{t.createdAt}</th>
-										<th style={{ width: "200px" }}>{t.actions}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{campaigns.map(campaign => (
-										<tr key={campaign.id}>
-											<td>
-												<div className="admin-truncate">{campaign.name}</div>
-											</td>
-											<td>
-												<div className="admin-truncate">{campaign.subject}</div>
-											</td>
-											<td>
-												<span className={`status-badge ${getStatusBadgeClass(campaign.status)}`}>{t[campaign.status as keyof typeof t] || campaign.status}</span>
-											</td>
-											<td>
-												{campaign.sentCount || 0} / {campaign.totalCount || 0}
-											</td>
-											<td>{new Date(campaign.createdAt).toLocaleString()}</td>
-											<td>
-												<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-													<button onClick={() => handlePreview(campaign)} className="admin-button small secondary" disabled={campaign.status === "cancelled"}>
-														👁 {t.preview}
-													</button>
-													{campaign.status === "draft" && (
-														<button onClick={() => handleSend(campaign)} className="admin-button small primary">
-															📤 {t.send}
-														</button>
-													)}
-													{(campaign.status === "draft" || campaign.status === "scheduled") && (
-														<button onClick={() => handleCancel(campaign)} className="admin-button small danger">
-															✕ {t.cancel}
-														</button>
-													)}
-												</div>
-											</td>
-										</tr>
+			<section>
+				{isLoading ? (
+					<div className="flex flex-col items-center justify-center py-8">
+						<PageSpinner />
+						<p>{t.loading}</p>
+					</div>
+				) : (
+					<DataTable columns={columns} data={displayCampaigns} />
+				)}
+			</section>
+
+			{/* Create Campaign Modal */}
+			<Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+				<DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>{t.createNew}</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-4">
+						<div className="space-y-2">
+							<Label>{t.name}</Label>
+							<Input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full" />
+						</div>
+						<div className="space-y-2">
+							<Label>{t.subject}</Label>
+							<Input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="w-full" />
+						</div>
+						<div className="space-y-2">
+							<Label>{t.content}</Label>
+							<Textarea
+								value={formData.content}
+								onChange={e => setFormData({ ...formData, content: e.target.value })}
+								className="w-full min-h-[200px] font-mono"
+								placeholder="<h1>Hello {{name}}!</h1>"
+							/>
+							<small className="text-xs opacity-70">{t.templateVars}</small>
+						</div>
+						<div className="space-y-2">
+							<Label>{t.targetAudience}</Label>
+
+							<div className="space-y-2">
+								<Label className="text-sm">{t.selectEvents}</Label>
+								<div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800">
+									{events.map(event => (
+										<Label key={event.id} className="flex items-center gap-2 cursor-pointer">
+											<Checkbox
+												checked={formData.targetAudience.eventIds.includes(event.id)}
+												onCheckedChange={checked => {
+													const eventIds = formData.targetAudience.eventIds;
+													if (checked) {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, eventIds: [...eventIds, event.id] }
+														});
+													} else {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, eventIds: eventIds.filter(id => id !== event.id) }
+														});
+													}
+												}}
+											/>
+											<span className="text-sm">{getLocalizedText(event.name, locale)}</span>
+										</Label>
 									))}
-								</tbody>
-							</table>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label className="text-sm">{t.selectTickets}</Label>
+								<div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-white dark:bg-gray-800">
+									{tickets.map(ticket => (
+										<Label key={ticket.id} className="flex items-center gap-2 cursor-pointer">
+											<Checkbox
+												checked={formData.targetAudience.ticketIds.includes(ticket.id)}
+												onCheckedChange={checked => {
+													const ticketIds = formData.targetAudience.ticketIds;
+													if (checked) {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, ticketIds: [...ticketIds, ticket.id] }
+														});
+													} else {
+														setFormData({
+															...formData,
+															targetAudience: { ...formData.targetAudience, ticketIds: ticketIds.filter(id => id !== ticket.id) }
+														});
+													}
+												}}
+											/>
+											<span className="text-sm">{getLocalizedText(ticket.name, locale)}</span>
+										</Label>
+									))}
+								</div>
+							</div>
+
+							<div className="mt-2 flex gap-4">
+								<Label className="flex items-center gap-2">
+									<Checkbox
+										checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
+										onCheckedChange={checked => {
+											const statuses = formData.targetAudience.registrationStatuses;
+											if (checked) {
+												setFormData({
+													...formData,
+													targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
+												});
+											} else {
+												setFormData({
+													...formData,
+													targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
+												});
+											}
+										}}
+									/>
+									{t.confirmed}
+								</Label>
+								<Label className="flex items-center gap-2">
+									<Checkbox
+										checked={formData.targetAudience.registrationStatuses.includes("pending")}
+										onCheckedChange={checked => {
+											const statuses = formData.targetAudience.registrationStatuses;
+											if (checked) {
+												setFormData({
+													...formData,
+													targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
+												});
+											} else {
+												setFormData({
+													...formData,
+													targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
+												});
+											}
+										}}
+									/>
+									{t.pending}
+								</Label>
+							</div>
+						</div>
+						{recipientCount !== null && (
+							<div className="p-4 bg-gray-800 dark:bg-gray-900 rounded-lg border-2 border-gray-600 dark:border-gray-700">
+								<strong>{t.recipientCountLabel}:</strong> {recipientCount}
+							</div>
 						)}
 					</div>
-				</section>
-			</main>
 
-			{/* Create Modal */}
-			{showCreateModal && (
-				<div className="admin-modal-overlay" onClick={() => setShowCreateModal(false)}>
-					<div className="admin-modal" style={{ maxWidth: "800px" }} onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">{t.createNew}</h2>
-							<button className="admin-modal-close" onClick={() => setShowCreateModal(false)}>
-								✕
-							</button>
-						</div>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-							<div>
-								<label className="admin-stat-label">{t.name}</label>
-								<input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="admin-input" style={{ width: "100%" }} />
-							</div>
-
-							<div>
-								<label className="admin-stat-label">{t.subject}</label>
-								<input type="text" value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} className="admin-input" style={{ width: "100%" }} />
-							</div>
-
-							<div>
-								<label className="admin-stat-label">{t.content}</label>
-								<textarea
-									value={formData.content}
-									onChange={e => setFormData({ ...formData, content: e.target.value })}
-									className="admin-input"
-									style={{ width: "100%", minHeight: "200px", fontFamily: "monospace" }}
-									placeholder="<h1>Hello {{name}}!</h1>"
-								/>
-								<small style={{ fontSize: "0.75rem", opacity: 0.7 }}>{t.templateVars}</small>
-							</div>
-
-							<div>
-								<label className="admin-stat-label">{t.targetAudience}</label>
-
-								<div style={{ marginTop: "0.5rem" }}>
-									<label style={{ fontSize: "0.85rem" }}>{t.selectEvents}</label>
-									<select
-										multiple
-										value={formData.targetAudience.eventIds}
-										onChange={e => {
-											const selected = Array.from(e.target.selectedOptions, option => option.value);
-											setFormData({
-												...formData,
-												targetAudience: { ...formData.targetAudience, eventIds: selected }
-											});
-										}}
-										className="admin-select"
-										style={{ width: "100%", minHeight: "80px" }}
-									>
-										{events.map(event => (
-											<option key={event.id} value={event.id}>
-												{getLocalizedText(event.name, locale)}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div style={{ marginTop: "0.5rem" }}>
-									<label style={{ fontSize: "0.85rem" }}>{t.selectTickets}</label>
-									<select
-										multiple
-										value={formData.targetAudience.ticketIds}
-										onChange={e => {
-											const selected = Array.from(e.target.selectedOptions, option => option.value);
-											setFormData({
-												...formData,
-												targetAudience: { ...formData.targetAudience, ticketIds: selected }
-											});
-										}}
-										className="admin-select"
-										style={{ width: "100%", minHeight: "80px" }}
-									>
-										{tickets.map(ticket => (
-											<option key={ticket.id} value={ticket.id}>
-												{getLocalizedText(ticket.name, locale)}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div style={{ marginTop: "0.5rem", display: "flex", gap: "1rem" }}>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<input
-											type="checkbox"
-											checked={formData.targetAudience.registrationStatuses.includes("confirmed")}
-											onChange={e => {
-												const statuses = formData.targetAudience.registrationStatuses;
-												if (e.target.checked) {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "confirmed"] }
-													});
-												} else {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "confirmed") }
-													});
-												}
-											}}
-										/>
-										{t.confirmed}
-									</label>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-										<input
-											type="checkbox"
-											checked={formData.targetAudience.registrationStatuses.includes("pending")}
-											onChange={e => {
-												const statuses = formData.targetAudience.registrationStatuses;
-												if (e.target.checked) {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: [...statuses, "pending"] }
-													});
-												} else {
-													setFormData({
-														...formData,
-														targetAudience: { ...formData.targetAudience, registrationStatuses: statuses.filter(s => s !== "pending") }
-													});
-												}
-											}}
-										/>
-										{t.pending}
-									</label>
-								</div>
-							</div>
-
-							{recipientCount !== null && (
-								<div
-									style={{
-										padding: "1rem",
-										background: "var(--color-gray-800)",
-										borderRadius: "8px",
-										border: "2px solid var(--color-gray-600)"
-									}}
-								>
-									<strong>{t.recipientCountLabel}:</strong> {recipientCount}
-								</div>
-							)}
-
-							<div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-								<button onClick={handleCalculateRecipients} className="admin-button secondary">
-									🔢 {t.calculateRecipients}
-								</button>
-								<button onClick={handleCreate} className="admin-button primary">
-									💾 {t.save}
-								</button>
-								<button onClick={() => setShowCreateModal(false)} className="admin-button danger">
-									{t.close}
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
+					<DialogFooter>
+						<Button variant="secondary" onClick={handleCalculateRecipients}>
+							🔢 {t.calculateRecipients}
+						</Button>
+						<Button onClick={handleCreate}>💾 {t.save}</Button>
+						<Button variant="destructive" onClick={() => setShowCreateModal(false)}>
+							{t.close}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			{/* Preview Modal */}
-			{showPreviewModal && selectedCampaign && (
-				<div className="admin-modal-overlay" onClick={() => setShowPreviewModal(false)}>
-					<div className="admin-modal" style={{ maxWidth: "900px" }} onClick={e => e.stopPropagation()}>
-						<div className="admin-modal-header">
-							<h2 className="admin-modal-title">
-								{t.preview}: {selectedCampaign.subject}
-							</h2>
-							<button className="admin-modal-close" onClick={() => setShowPreviewModal(false)}>
-								✕
-							</button>
-						</div>
+			<Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+				<DialogContent className="max-w-4xl">
+					<DialogHeader>
+						<DialogTitle>
+							{t.preview}: {selectedCampaign?.subject}
+						</DialogTitle>
+					</DialogHeader>
 
-						<div
-							style={{
-								padding: "1rem",
-								background: "white",
-								color: "black",
-								borderRadius: "8px",
-								maxHeight: "70vh",
-								overflow: "auto"
-							}}
-						>
-							<div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-						</div>
-
-						<div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "1rem" }}>
-							<button onClick={() => setShowPreviewModal(false)} className="admin-button secondary">
-								{t.close}
-							</button>
-						</div>
+					<div className="p-4 bg-white text-black rounded-lg max-h-[70vh] overflow-auto">
+						<div dangerouslySetInnerHTML={{ __html: previewHtml }} />
 					</div>
-				</div>
-			)}
-		</>
+
+					<DialogFooter>
+						<Button variant="secondary" onClick={() => setShowPreviewModal(false)}>
+							{t.close}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</main>
 	);
 }

@@ -1,0 +1,65 @@
+---
+title: 快速開始
+description: 安裝環境、初始化資料庫與開發模式流程
+---
+
+## 必要環境
+
+- Node.js 20.x（與部署環境一致避免版本差異）
+- pnpm 10.x：`npm install -g pnpm`
+- PostgreSQL 14+（提供 `POSTGRES_URI`）
+- Redis 6+（選用，用於快取與速率限制）
+- Mailtrap 帳號（魔術連結與通知信使用）
+
+> 提醒：前端與後端各自讀取 `.env`。若要共用變數請使用 shell script 同步。
+
+## 一次安裝全部套件
+
+```bash
+pnpm install
+```
+
+pnpm 會依 `pnpm-workspace.yaml` 對 `backend/`、`frontend/`、`docs/` 各自建立互相連結的 node_modules。
+
+## 初始化資料庫
+
+1. 設定 `backend/.env`，至少包含 `POSTGRES_URI`。
+2. 產生 Prisma Client 與資料表：
+
+   ```bash
+   pnpm --filter backend prisma generate
+   pnpm --filter backend db:migrate -- --name init
+   ```
+
+3. 若需要預設資料，執行 `pnpm --filter backend start` 或 `pnpm --filter backend dev` 會先呼叫 `scripts/db-init.js`。
+
+## 開發模式
+
+- 同時啟動前後端（推薦）：
+
+  ```bash
+  pnpm dev
+  ```
+
+- 單獨開啟前端或後端：
+
+  ```bash
+  pnpm dev:frontend
+  pnpm dev:backend
+  ```
+
+| 服務         | 埠號                    | 說明                                                     |
+| ------------ | ----------------------- | -------------------------------------------------------- |
+| 前端 Next.js | `http://localhost:4322` | 使用 Turbopack；由 `frontend/middleware.ts` 處理多語導向 |
+| 後端 Fastify | `http://localhost:3000` | 內建 Swagger `/docs`、Prometheus `/metrics`              |
+
+## 文件與觀測工具
+
+- 文檔 (`docs` 專案) 使用 Fumadocs，開發時可執行 `pnpm --filter docs dev`
+- Prometheus、Tempo 相關設定示例請參考根目錄的 `grafana.yaml`
+
+## 推薦檢查
+
+1. 透過 `pnpm format` 確認 Prettier 設定
+2. 若有改 Prisma schema，記得重新 `prisma generate`
+3. 新增 API/頁面時更新相對應的文件（本資料夾）

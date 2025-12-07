@@ -1,13 +1,16 @@
 packages:
   - frontend
-  - frontend-new
   - backend
+  - docs
 
 onlyBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"
+  - "@tailwindcss/oxide"
   - better-sqlite3
   - esbuild
+  - msw
   - prisma
   - protobufjs
   - sharp
+  - unrs-resolver

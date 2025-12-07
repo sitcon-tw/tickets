@@ -1,141 +1,42 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
-
-const StyledMain = styled.main`
-	section {
-		position: relative;
-		height: 100vh;
-	}
-`;
-
-const Container = styled.div<{ isActive: boolean }>`
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	max-width: 100%;
-	padding: 1rem;
-	opacity: ${props => (props.isActive ? 1 : 0)};
-	pointer-events: ${props => (props.isActive ? "all" : "none")};
-	transition: opacity 0.3s ease-in-out;
-`;
-
-const Title = styled.h1`
-	margin-block: 1rem;
-	text-align: center;
-`;
-
-const Label = styled.label`
-	display: block;
-	margin-bottom: 0.5rem;
-	font-weight: bold;
-`;
-
-const EmailInput = styled.input`
-	border: 2px solid var(--color-gray-900);
-	width: 20rem;
-	padding: 0.5rem;
-	max-width: 100%;
-	border-radius: 8px;
-`;
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
-		<StyledButton disabled={disabled}>
-			<button onClick={onClick} disabled={disabled}>
+		<div className="my-4 mx-auto">
+			<Button onClick={onClick} disabled={disabled} size="lg" className="group relative overflow-hidden bg-primary hover:bg-primary/90 border-2 border-primary/50 dark:border-primary/30">
 				<div className="svg-wrapper-1">
-					<div className="svg-wrapper">
+					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 						{isLoading ? (
 							<Spinner size="sm" />
 						) : (
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={24} height={24}>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								width={24}
+								height={24}
+								className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110"
+							>
 								<path fill="none" d="M0 0h24v24H0z" />
 								<path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z" />
 							</svg>
 						)}
 					</div>
 				</div>
-				<span>{children}</span>
-			</button>
-		</StyledButton>
+				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{children}</span>
+			</Button>
+		</div>
 	);
 };
-
-const StyledButton = styled.div<{ disabled: boolean }>`
-	button {
-		font-family: inherit;
-		font-size: 18px;
-		background: var(--color-gray-800);
-		color: white;
-		padding: 0.6em 1em;
-		display: flex;
-		align-items: center;
-		border: var(--color-gray-600) 2px solid;
-		border-radius: 8px;
-		overflow: hidden;
-		transition: all 0.2s;
-		cursor: ${props => (props.disabled ? "not-allowed" : "pointer")};
-		margin: 1rem auto;
-		opacity: ${props => (props.disabled ? 0.7 : 1)};
-
-		span {
-			display: block;
-			margin-left: 0.3em;
-			transition: all 0.3s ease-in-out;
-		}
-
-		svg {
-			display: block;
-			transform-origin: center center;
-			transition: transform 0.3s ease-in-out;
-		}
-
-		&:hover:not(:disabled) {
-			.svg-wrapper {
-				animation: fly-1 0.8s ease-in-out infinite alternate;
-			}
-
-			svg {
-				transform: translateX(3.5em) rotate(45deg) scale(1.1);
-			}
-
-			span {
-				transform: translateX(9em);
-			}
-		}
-
-		&:active:not(:disabled) {
-			transform: scale(0.95);
-		}
-	}
-
-	@keyframes fly-1 {
-		from {
-			transform: translateY(0.1em);
-		}
-		to {
-			transform: translateY(-0.1em);
-		}
-	}
-`;
-
-const MessageContainer = styled.div`
-	h2 {
-		margin-bottom: 1rem;
-	}
-
-	p {
-		line-height: 1.6;
-	}
-`;
 
 export default function Login() {
 	const locale = useLocale();
@@ -211,29 +112,30 @@ export default function Login() {
 			en: "Link has expired. Please request a new login link"
 		},
 		acceptTermsAsLoggedIn: {
-			"zh-Hant": "登入即代表您同意我們的服務條款與隱私政策。",
-			"zh-Hans": "登录即代表您同意我们的服务条款与隐私政策。",
-			en: "By logging in, you agree to our Terms of Service and Privacy Policy."
+			"zh-Hant": "登入即代表您同意我們的",
+			"zh-Hans": "登录即代表您同意我们的",
+			en: "By logging in, you agree to our "
 		},
 		termsLink: {
-			"zh-Hant": "服務條款與隱私政策連結",
-			"zh-Hans": "服务条款与隐私政策链接",
-			en: "Terms of Service and Privacy Policy Link"
+			"zh-Hant": "服務條款與隱私政策",
+			"zh-Hans": "服务条款与隐私政策",
+			en: "Terms of Service and Privacy Policy"
+		},
+		reenterEmail: {
+			"zh-Hant": "重新輸入電子郵件",
+			"zh-Hans": "重新输入电子邮件",
+			en: "Re-enter Email"
 		}
 	});
 
-	// Check if user is already logged in and redirect to home
 	useEffect(() => {
 		const checkAuthAndRedirect = async () => {
 			try {
 				const session = await authAPI.getSession();
 				if (session && session.user) {
-					// User is already logged in, redirect to home
 					router.push(`/${locale}`);
 				}
-			} catch (error) {
-				// User is not logged in, stay on login page
-				console.log("User not logged in");
+			} catch {
 			} finally {
 				setIsCheckingAuth(false);
 			}
@@ -305,49 +207,54 @@ export default function Login() {
 		}
 	};
 
-	// Show loading spinner while checking auth
 	if (isCheckingAuth) {
 		return (
-			<StyledMain>
-				<section>
-					<Container isActive={true} style={{ textAlign: "center" }}>
-						<Spinner />
-					</Container>
-				</section>
-			</StyledMain>
+			<div className="flex flex-col items-center justify-center h-full">
+				<Spinner />
+			</div>
 		);
 	}
 
 	return (
-		<>
-			<StyledMain>
-				<section>
-					<Container isActive={viewState === "login"}>
-						<Title>{t.login}</Title>
-						<Label htmlFor="email">Email</Label>
-						<EmailInput type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} />
-						<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
-							{t.continue}
-						</SendButton>
-						<p style={{ fontSize: "0.9rem", marginTop: "5rem", color: "var(--color-gray-700)" }}>
-							{t.acceptTermsAsLoggedIn}{" "}
-							<a href="/terms" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
-								{t.termsLink}
-							</a>
-						</p>
-					</Container>
-
-					<Container isActive={viewState === "sent"}>
-						<MessageContainer>
-							<h2>
-								{t.sent}
-								{email}
-							</h2>
-							<p>{t.message}</p>
-						</MessageContainer>
-					</Container>
-				</section>
-			</StyledMain>
-		</>
+		<div className="flex flex-col items-center justify-center h-screen">
+			{viewState === "login" ? (
+				<>
+					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
+					<label htmlFor="email" className="block mb-2 font-bold">
+						Email
+					</label>
+					<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
+					<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
+						{t.continue}
+					</SendButton>
+					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
+						{t.acceptTermsAsLoggedIn}
+						<a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+							{t.termsLink}
+						</a>
+					</p>
+				</>
+			) : (
+				<div className="w-full max-w-md">
+					<div className="text-center">
+						<h2 className="mb-4 text-xl font-semibold">
+							{t.sent}
+							<span className="text-primary">{email}</span>
+						</h2>
+						<p className="leading-relaxed mb-6">{t.message}</p>
+						<Button
+							onClick={() => {
+								setViewState("login");
+								setEmail("");
+							}}
+							variant="outline"
+							size="lg"
+						>
+							{t.reenterEmail}
+						</Button>
+					</div>
+				</div>
+			)}
+		</div>
 	);
 }

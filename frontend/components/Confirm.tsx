@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogOverlay, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { X } from "lucide-react";
 import { ReactNode } from "react";
 
 type ConfirmProps = {
@@ -11,61 +15,17 @@ type ConfirmProps = {
 
 export default function Confirm({ isOpen, onClose, children, isConfirming = false }: ConfirmProps) {
 	return (
-		<div
-			className={isConfirming ? "confirm confirming" : "confirm"}
-			role="dialog"
-			aria-modal="true"
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				width: "100%",
-				height: "100%",
-				backgroundColor: "#00000029",
-				backdropFilter: "blur(20px)",
-				WebkitBackdropFilter: "blur(20px)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: "2rem",
-				opacity: isOpen && isConfirming ? 1 : 0,
-				pointerEvents: isOpen && isConfirming ? "all" : "none",
-				transition: "opacity 0.3s ease-in-out",
-				zIndex: 1001,
-				overflowY: "auto"
-			}}
-		>
-			<div
-				style={{
-					maxWidth: "800px",
-					width: "100%",
-					maxHeight: "90vh",
-					display: "flex",
-					flexDirection: "column",
-					position: "relative"
-				}}
-			>
-				<button
-					type="button"
-					aria-label="close"
-					onClick={onClose}
-					style={{
-						position: "absolute",
-						right: "0.5rem",
-						top: "0.5rem",
-						cursor: "pointer",
-						fontSize: "2rem",
-						background: "transparent",
-						border: "none",
-						color: "inherit",
-						lineHeight: 1,
-						zIndex: 10
-					}}
-				>
-					×
-				</button>
-				{children}
-			</div>
-		</div>
+		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+			<DialogOverlay className="backdrop-blur-lg" />
+			<DialogContent className="max-w-[900px] w-full max-h-[90vh] overflow-y-auto p-0 gap-0 mt-20 md:mt-0" onPointerDownOutside={onClose} showCloseButton={false}>
+				<VisuallyHidden>
+					<DialogTitle>Ticket Confirmation</DialogTitle>
+				</VisuallyHidden>
+				<Button type="button" variant="ghost" size="icon" aria-label="close" onClick={onClose} className="absolute right-2 top-2 z-10">
+					<X className="h-6 w-6" />
+				</Button>
+				<div className={isConfirming ? "confirming" : ""}>{children}</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

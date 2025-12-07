@@ -1,11 +1,20 @@
 "use client";
 
+import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { Download, Import, Mail, Plus, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
 
@@ -43,8 +52,21 @@ export default function InvitesPage() {
 	const [showEmailModal, setShowEmailModal] = useState(false);
 	const [emailAddress, setEmailAddress] = useState("");
 	const [isSendingEmail, setIsSendingEmail] = useState(false);
+	const [emailList, setEmailList] = useState("");
+	const [emailMessage, setEmailMessage] = useState("");
+	const [matchedPairs, setMatchedPairs] = useState<Array<{ email: string; code: string; codeId: string }>>([]);
+	const [showPreview, setShowPreview] = useState(false);
 	const [bulkImportCodes, setBulkImportCodes] = useState("");
 	const [isImporting, setIsImporting] = useState(false);
+	const [selectedTicketId, setSelectedTicketId] = useState("");
+	const [bulkTicketId, setBulkTicketId] = useState("");
+	const [formData, setFormData] = useState({
+		name: "",
+		amount: 10,
+		usageLimit: 1,
+		validFrom: "",
+		validUntil: ""
+	});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -103,7 +125,32 @@ export default function InvitesPage() {
 		import: { "zh-Hant": "匯入", "zh-Hans": "导入", en: "Import" },
 		importSuccess: { "zh-Hant": "成功匯入 {count} 個邀請碼！", "zh-Hans": "成功导入 {count} 个邀请码！", en: "Successfully imported {count} invitation codes!" },
 		invalidFormat: { "zh-Hant": "格式錯誤：請確保每行一個邀請碼", "zh-Hans": "格式错误：请确保每行一个邀请码", en: "Invalid format: Please ensure one code per line" },
-		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" }
+		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" },
+		bulkSendEmail: { "zh-Hant": "批次寄送 Email", "zh-Hans": "批量发送 Email", en: "Bulk Send Email" },
+		emailListLabel: { "zh-Hant": "Email 列表（每行一個）", "zh-Hans": "Email 列表（每行一个）", en: "Email List (one per line)" },
+		emailListPlaceholder: {
+			"zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com",
+			"zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com",
+			en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com"
+		},
+		matchCodes: { "zh-Hant": "配對邀請碼", "zh-Hans": "配对邀请码", en: "Match Codes" },
+		messageLabel: { "zh-Hant": "訊息內容", "zh-Hans": "消息内容", en: "Message" },
+		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息 (支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息 (支持 HTML)", en: "Enter message to display in email (supports HTML)" },
+		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
+		matched: { "zh-Hant": "已配對", "zh-Hans": "已配对", en: "Matched" },
+		tooManyEmails: {
+			"zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）",
+			"zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）",
+			en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})"
+		},
+		noEmails: { "zh-Hant": "請輸入至少一個 Email 地址", "zh-Hans": "请输入至少一个 Email 地址", en: "Please enter at least one email address" },
+		matchSuccess: { "zh-Hant": "成功配對 {count} 組郵件與邀請碼", "zh-Hans": "成功配对 {count} 组邮件与邀请码", en: "Successfully matched {count} pairs" },
+		sendAll: { "zh-Hant": "全部發送", "zh-Hans": "全部发送", en: "Send All" },
+		sending: { "zh-Hant": "發送中...", "zh-Hans": "发送中...", en: "Sending..." },
+		sendAllSuccess: { "zh-Hant": "成功發送 {count} 封郵件！", "zh-Hans": "成功发送 {count} 封邮件！", en: "Successfully sent {count} emails!" },
+		sendPartialSuccess: { "zh-Hant": "成功發送 {success} 封，失敗 {failed} 封", "zh-Hans": "成功发送 {success} 封，失败 {failed} 封", en: "Sent {success} emails, {failed} failed" },
+		emailPreview: { "zh-Hant": "郵件預覽", "zh-Hans": "邮件预览", en: "Email Preview" },
+		closePreview: { "zh-Hant": "關閉預覽", "zh-Hans": "关闭预览", en: "Close Preview" }
 	});
 
 	const loadInvitationCodes = useCallback(async () => {
@@ -111,30 +158,28 @@ export default function InvitesPage() {
 
 		setIsLoading(true);
 		try {
-			const response = await adminInvitationCodesAPI.getAll();
+			const response = await adminInvitationCodesAPI.getAll({ eventId: currentEventId });
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
 					const ticket = tickets.find(t => t.id === code.ticketId);
-					if (ticket && ticket.eventId === currentEventId) {
-						const typeName = code.name || "Default";
-						if (!codesByType[typeName]) {
-							codesByType[typeName] = {
-								id: typeName,
-								name: typeName,
-								createdAt: code.createdAt,
-								codes: []
-							};
-						}
-						codesByType[typeName].codes.push({
-							id: code.id,
-							code: code.code,
-							usedCount: code.usedCount || 0,
-							usageLimit: code.usageLimit || 1,
-							usedBy: "",
-							active: code.isActive !== false
-						});
+					const typeName = code.name || "Default";
+					if (!codesByType[typeName]) {
+						codesByType[typeName] = {
+							id: typeName,
+							name: typeName,
+							createdAt: code.createdAt,
+							codes: []
+						};
 					}
+					codesByType[typeName].codes.push({
+						id: code.id,
+						code: code.code,
+						usedCount: code.usedCount || 0,
+						usageLimit: code.usageLimit || 1,
+						usedBy: "",
+						active: code.isActive !== false
+					});
 				});
 				setInviteTypes(Object.values(codesByType));
 				setFilteredTypes(Object.values(codesByType));
@@ -161,17 +206,11 @@ export default function InvitesPage() {
 
 	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const ticketId = formData.get("ticketId") as string;
 
-		if (!ticketId) {
+		if (!selectedTicketId) {
 			showAlert(t.pleaseSelectTicket, "warning");
 			return;
 		}
-
-		const count = parseInt(formData.get("amount") as string);
-		const validFromStr = formData.get("validFrom") as string;
-		const validUntilStr = formData.get("validUntil") as string;
 
 		const data: {
 			ticketId: string;
@@ -181,17 +220,17 @@ export default function InvitesPage() {
 			validFrom?: string;
 			validUntil?: string;
 		} = {
-			ticketId,
-			prefix: formData.get("name") as string,
-			count,
-			usageLimit: parseInt(formData.get("usageLimit") as string) || 1
+			ticketId: selectedTicketId,
+			prefix: formData.name,
+			count: formData.amount,
+			usageLimit: formData.usageLimit
 		};
 
-		if (validFromStr) {
-			data.validFrom = new Date(validFromStr).toISOString();
+		if (formData.validFrom) {
+			data.validFrom = new Date(formData.validFrom).toISOString();
 		}
-		if (validUntilStr) {
-			data.validUntil = new Date(validUntilStr).toISOString();
+		if (formData.validUntil) {
+			data.validUntil = new Date(formData.validUntil).toISOString();
 		}
 
 		try {
@@ -199,7 +238,15 @@ export default function InvitesPage() {
 			await loadTickets();
 			await loadInvitationCodes();
 			setShowModal(false);
-			showAlert(t.createSuccess.replace("{count}", count.toString()), "success");
+			setSelectedTicketId("");
+			setFormData({
+				name: "",
+				amount: 10,
+				usageLimit: 1,
+				validFrom: "",
+				validUntil: ""
+			});
+			showAlert(t.createSuccess.replace("{count}", formData.amount.toString()), "success");
 		} catch (error) {
 			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
@@ -376,49 +423,140 @@ export default function InvitesPage() {
 		reader.readAsText(file);
 	}
 
-	async function sendCodesViaEmail() {
+	function handleMatchCodes() {
 		if (selectedCodes.size === 0) {
 			showAlert(t.pleaseSelectCodes, "warning");
 			return;
 		}
 
-		if (!emailAddress || !emailAddress.includes("@")) {
-			showAlert("請輸入有效的 Email 地址", "warning");
+		if (!currentType) return;
+
+		const emailsText = emailList.trim();
+		if (!emailsText) {
+			showAlert(t.noEmails, "warning");
 			return;
 		}
 
-		if (!currentType) return;
+		const emails = emailsText
+			.split("\n")
+			.map(e => e.trim())
+			.filter(e => e.length > 0 && e.includes("@"));
+
+		if (emails.length === 0) {
+			showAlert(t.noEmails, "warning");
+			return;
+		}
 
 		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
 
+		if (emails.length > selectedCodesList.length) {
+			showAlert(t.tooManyEmails.replace("{emailCount}", emails.length.toString()).replace("{codeCount}", selectedCodesList.length.toString()), "error");
+			return;
+		}
+
+		const pairs = emails.map((email, index) => ({
+			email,
+			code: selectedCodesList[index].code,
+			codeId: selectedCodesList[index].id
+		}));
+
+		setMatchedPairs(pairs);
+		showAlert(t.matchSuccess.replace("{count}", pairs.length.toString()), "success");
+	}
+
+	async function sendAllEmails() {
+		if (matchedPairs.length === 0) {
+			showAlert("請先配對郵件與邀請碼", "warning");
+			return;
+		}
+
+		if (!emailMessage.trim()) {
+			showAlert("請輸入郵件訊息", "warning");
+			return;
+		}
+
 		setIsSendingEmail(true);
 		try {
-			const response = await fetch("/api/admin/invitation-codes/send-email", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					email: emailAddress,
-					codes: selectedCodesList.map(c => c.code),
-					groupName: currentType.name
-				})
-			});
+			let successCount = 0;
+			let errorCount = 0;
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ error: { message: "Failed to send email" } }));
-				throw new Error(errorData.error?.message || errorData.message || "Failed to send email");
+			for (const pair of matchedPairs) {
+				try {
+					const response = await fetch("/api/admin/invitation-codes/send-email", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify({
+							email: pair.email,
+							code: pair.code,
+							message: emailMessage
+						})
+					});
+
+					if (!response.ok) {
+						throw new Error("Failed to send email");
+					}
+					successCount++;
+				} catch (error) {
+					console.error(`Failed to send email to ${pair.email}:`, error);
+					errorCount++;
+				}
 			}
 
-			showAlert(t.sendSuccess, "success");
+			if (errorCount > 0) {
+				showAlert(t.sendPartialSuccess.replace("{success}", successCount.toString()).replace("{failed}", errorCount.toString()), "warning");
+			} else {
+				showAlert(t.sendAllSuccess.replace("{count}", successCount.toString()), "success");
+			}
+
 			setShowEmailModal(false);
-			setEmailAddress("");
+			setEmailList("");
+			setEmailMessage("");
+			setMatchedPairs([]);
 		} catch (error) {
-			console.error("Error sending email:", error);
+			console.error("Error sending emails:", error);
 			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			setIsSendingEmail(false);
 		}
+	}
+
+	function renderEmailPreview() {
+		if (matchedPairs.length === 0) {
+			return <div className="text-sm text-muted-foreground">請先配對郵件與邀請碼以查看預覽</div>;
+		}
+
+		const samplePair = matchedPairs[0];
+		const ticket = tickets.find(t => currentType?.codes.find(c => c.code === samplePair.code));
+
+		return (
+			<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
+				<div style={{ background: "linear-gradient(#e5e7eb, #e5e7eb)", fontFamily: "sans-serif", padding: "48px 32px" }}>
+					<div style={{ margin: "0 auto", maxWidth: "600px", padding: "24px calc((min(100%, 600px) - 32px) * 0.04) 0", boxSizing: "border-box" }}>
+						<div style={{ background: "linear-gradient(#f9fafb, #f9fafb)", padding: "48px 24px 0" }}>
+							<h1 style={{ fontSize: "24px", margin: "32px 0", textAlign: "center", color: "#374151" }}>來自 SITCONTIX 的活動邀請碼</h1>
+							<div className="description" style={{ color: "#6b7280", lineHeight: "150%" }} dangerouslySetInnerHTML={{ __html: emailMessage || "<p>（訊息預覽）</p>" }} />
+							<div style={{ background: "linear-gradient(#9ca3af, #9ca3af)", padding: "12px 32px", margin: "32px auto", display: "block", width: "fit-content", borderRadius: "12px" }}>
+								<span style={{ fontWeight: "bold", fontFamily: "monospace", fontSize: "x-large", color: "#f3f4f6" }}>{samplePair.code}</span>
+							</div>
+							<div style={{ color: "#6b7280", lineHeight: "150%" }}>
+								<p>您可以將邀請碼用於兌換票種「{ticket ? getLocalizedText(ticket.name, locale) : "票種名稱"}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
+								<p>請在有效期限前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
+							</div>
+							<a href="#" style={{ background: "linear-gradient(#6b7280, #6b7280)", padding: "12px 32px", textDecoration: "none", margin: "auto", display: "block", width: "fit-content" }}>
+								<span style={{ fontWeight: "bold", color: "#f3f4f6" }}>直接前往領票</span>
+							</a>
+						</div>
+					</div>
+					<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
+						©SITCON 2026
+						<br />
+						寄送給 {samplePair.email}
+					</div>
+				</div>
+			</div>
+		);
 	}
 
 	function toggleCodeSelection(codeId: string) {
@@ -491,311 +629,365 @@ export default function InvitesPage() {
 	return (
 		<>
 			<main>
-				<h1 className="text-3xl font-bold">{t.title}</h1>
-				<div className="h-8" />
-				<section className="admin-controls">
-					<button onClick={() => setShowModal(true)} className="admin-button primary">
-						➕ {t.add}
-					</button>
-					<button onClick={() => setShowBulkImportModal(true)} className="admin-button secondary">
-						📥 {t.bulkImport}
-					</button>
-					<input type="text" placeholder={"🔍 " + t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="admin-input" />
+				<AdminHeader title={t.title} />
+				<section className="flex gap-2 mb-4">
+					<Button onClick={() => setShowModal(true)}>
+						<Plus /> {t.add}
+					</Button>
+					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
+						<Import /> {t.bulkImport}
+					</Button>
+					<div className="relative max-w-xs">
+						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+					</div>
 				</section>
 
 				<section>
-					<div className="admin-table-container">
+					<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
 						{isLoading && (
-							<div className="admin-loading">
-								<PageSpinner size={48} />
+							<div className="flex justify-center py-8">
+								<PageSpinner />
 							</div>
 						)}
 						{!isLoading && (
-							<table className="admin-table">
-								<thead>
-									<tr>
-										<th>{t.name}</th>
-										<th>{t.total}</th>
-										<th>{t.used}</th>
-										<th>{t.remaining}</th>
-										<th>{t.created}</th>
-										<th>{t.actions}</th>
-									</tr>
-								</thead>
-								<tbody>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t.name}</TableHead>
+										<TableHead>{t.total}</TableHead>
+										<TableHead>{t.used}</TableHead>
+										<TableHead>{t.remaining}</TableHead>
+										<TableHead>{t.created}</TableHead>
+										<TableHead>{t.actions}</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
 									{filteredTypes.map(type => {
 										const used = type.codes.filter(c => c.usedCount > 0).length;
 										const total = type.codes.length;
 										return (
-											<tr key={type.id}>
-												<td>{type.name}</td>
-												<td>{total}</td>
-												<td>{used}</td>
-												<td>{total - used}</td>
-												<td>{new Date(type.createdAt).toLocaleString()}</td>
-												<td>
-													<button className="admin-button small secondary" onClick={() => openCodesModal(type.id)}>
+											<TableRow key={type.id}>
+												<TableCell>{type.name}</TableCell>
+												<TableCell>{total}</TableCell>
+												<TableCell>{used}</TableCell>
+												<TableCell>{total - used}</TableCell>
+												<TableCell>{new Date(type.createdAt).toLocaleString()}</TableCell>
+												<TableCell>
+													<Button variant="secondary" size="sm" onClick={() => openCodesModal(type.id)}>
 														檢視
-													</button>
-												</td>
-											</tr>
+													</Button>
+												</TableCell>
+											</TableRow>
 										);
 									})}
-								</tbody>
-							</table>
+								</TableBody>
+							</Table>
 						)}
 					</div>
 				</section>
 
-				{showModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.add}</h2>
-								<button className="admin-modal-close" onClick={() => setShowModal(false)}>
-									✕
-								</button>
+				<Dialog open={showModal} onOpenChange={setShowModal}>
+					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>{t.add}</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={createInvitationCodes} className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="ticketId">{t.ticketType}</Label>
+								<Select name="ticketId" value={selectedTicketId} onValueChange={setSelectedTicketId} required>
+									<SelectTrigger>
+										<SelectValue placeholder={t.pleaseSelectTicket} />
+									</SelectTrigger>
+									<SelectContent>
+										{tickets.map(ticket => (
+											<SelectItem key={ticket.id} value={ticket.id}>
+												{getLocalizedText(ticket.name, locale)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
-							<form onSubmit={createInvitationCodes}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="admin-select">
-											<option value="">{t.pleaseSelectTicket}</option>
-											{tickets.map(ticket => (
-												<option key={ticket.id} value={ticket.id}>
-													{getLocalizedText(ticket.name, locale)}
-												</option>
-											))}
-										</select>
-									</div>
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.name}</label>
-										<input name="name" type="text" required placeholder="e.g. VIP Media" className="admin-input" />
-									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.amount}</label>
-											<input name="amount" type="number" min="1" max="1000" defaultValue="10" required className="admin-input" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
-										</div>
-									</div>
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-										<div className="admin-form-group">
-											<label className="admin-form-label">
-												{t.validFrom} ({t.optional})
-											</label>
-											<input name="validFrom" type="datetime-local" className="admin-input" />
-										</div>
-										<div className="admin-form-group">
-											<label className="admin-form-label">
-												{t.validUntil} ({t.optional})
-											</label>
-											<input name="validUntil" type="datetime-local" className="admin-input" />
-										</div>
-									</div>
-								</div>
-								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button success">
-										{t.save}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={() => setShowModal(false)}>
-										{t.cancel}
-									</button>
-								</div>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{showBulkImportModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowBulkImportModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.bulkImportTitle}</h2>
-								<button className="admin-modal-close" onClick={() => setShowBulkImportModal(false)}>
-									✕
-								</button>
+							<div className="space-y-2">
+								<Label htmlFor="name">{t.name}</Label>
+								<Input id="name" name="name" type="text" required placeholder="e.g. VIP Media" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
 							</div>
-							<form onSubmit={handleBulkImport}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-									<p style={{ fontSize: "0.9rem", opacity: 0.8 }}>{t.bulkImportDescription}</p>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.ticketType}</label>
-										<select name="ticketId" required className="admin-select">
-											<option value="">{t.pleaseSelectTicket}</option>
-											{tickets.map(ticket => (
-												<option key={ticket.id} value={ticket.id}>
-													{getLocalizedText(ticket.name, locale)}
-												</option>
-											))}
-										</select>
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">
-											{t.name} ({t.optional})
-										</label>
-										<input name="name" type="text" placeholder="e.g. VIP Media" className="admin-input" />
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.uploadFile}</label>
-										<input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="admin-input" />
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">{t.pasteOrType}</label>
-										<textarea
-											value={bulkImportCodes}
-											onChange={e => setBulkImportCodes(e.target.value)}
-											placeholder={t.codesPlaceholder}
-											rows={10}
-											className="admin-input"
-											style={{ fontFamily: "monospace", resize: "vertical" }}
-										/>
-									</div>
-
-									<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-										<div className="admin-form-group">
-											<label className="admin-form-label">{t.usageLimit}</label>
-											<input name="usageLimit" type="number" min="1" max="100" defaultValue="1" required className="admin-input" />
-										</div>
-										<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-											<div className="admin-form-group">
-												<label className="admin-form-label">
-													{t.validFrom} ({t.optional})
-												</label>
-												<input name="validFrom" type="datetime-local" className="admin-input" />
-											</div>
-										</div>
-									</div>
-
-									<div className="admin-form-group">
-										<label className="admin-form-label">
-											{t.validUntil} ({t.optional})
-										</label>
-										<input name="validUntil" type="datetime-local" className="admin-input" />
-									</div>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="amount">{t.amount}</Label>
+									<Input id="amount" name="amount" type="number" min="1" max="1000" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseInt(e.target.value) })} />
 								</div>
-								<div className="admin-modal-actions">
-									<button type="submit" className="admin-button success" disabled={isImporting}>
-										{isImporting ? "匯入中..." : t.import}
-									</button>
-									<button type="button" className="admin-button secondary" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
-										{t.cancel}
-									</button>
+								<div className="space-y-2">
+									<Label htmlFor="usageLimit">{t.usageLimit}</Label>
+									<Input
+										id="usageLimit"
+										name="usageLimit"
+										type="number"
+										min="1"
+										max="100"
+										required
+										value={formData.usageLimit}
+										onChange={e => setFormData({ ...formData, usageLimit: parseInt(e.target.value) })}
+									/>
 								</div>
-							</form>
-						</div>
-					</div>
-				)}
-
-				{showCodesModal && currentType && (
-					<div className="admin-modal-overlay" onClick={() => setShowCodesModal(false)}>
-						<div className="admin-modal" style={{ maxWidth: "900px" }} onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">
-									{t.codes} - {currentType.name}
-									{selectedCodes.size > 0 && <span style={{ fontSize: "0.85rem", opacity: 0.7, marginLeft: "0.5rem" }}>({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
-								</h2>
-								<button className="admin-modal-close" onClick={() => setShowCodesModal(false)}>
-									✕
-								</button>
 							</div>
-							<div className="admin-controls">
-								<button className="admin-button small secondary" onClick={toggleSelectAll}>
-									{selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
-								</button>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="validFrom">
+										{t.validFrom} ({t.optional})
+									</Label>
+									<Input id="validFrom" name="validFrom" type="datetime-local" value={formData.validFrom} onChange={e => setFormData({ ...formData, validFrom: e.target.value })} />
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="validUntil">
+										{t.validUntil} ({t.optional})
+									</Label>
+									<Input id="validUntil" name="validUntil" type="datetime-local" value={formData.validUntil} onChange={e => setFormData({ ...formData, validUntil: e.target.value })} />
+								</div>
+							</div>
+							<DialogFooter>
+								<Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+									{t.cancel}
+								</Button>
+								<Button type="submit">{t.save}</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={showBulkImportModal} onOpenChange={setShowBulkImportModal}>
+					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>{t.bulkImportTitle}</DialogTitle>
+						</DialogHeader>
+						<form onSubmit={handleBulkImport} className="space-y-4">
+							<p className="text-sm text-muted-foreground">{t.bulkImportDescription}</p>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkTicketId">{t.ticketType}</Label>
+								<Select name="ticketId" value={bulkTicketId} onValueChange={setBulkTicketId} required>
+									<SelectTrigger>
+										<SelectValue placeholder={t.pleaseSelectTicket} />
+									</SelectTrigger>
+									<SelectContent>
+										{tickets.map(ticket => (
+											<SelectItem key={ticket.id} value={ticket.id}>
+												{getLocalizedText(ticket.name, locale)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkName">
+									{t.name} ({t.optional})
+								</Label>
+								<Input id="bulkName" name="name" type="text" placeholder="e.g. VIP Media" />
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkFile">{t.uploadFile}</Label>
+								<Input id="bulkFile" type="file" accept=".txt,.csv" onChange={handleFileUpload} />
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkCodes">{t.pasteOrType}</Label>
+								<Textarea id="bulkCodes" value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="font-mono" />
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="bulkUsageLimit">{t.usageLimit}</Label>
+									<Input id="bulkUsageLimit" name="usageLimit" type="number" min="1" max="100" defaultValue="1" required />
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="bulkValidFrom">
+										{t.validFrom} ({t.optional})
+									</Label>
+									<Input id="bulkValidFrom" name="validFrom" type="datetime-local" />
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="bulkValidUntil">
+									{t.validUntil} ({t.optional})
+								</Label>
+								<Input id="bulkValidUntil" name="validUntil" type="datetime-local" />
+							</div>
+
+							<DialogFooter>
+								<Button type="button" variant="outline" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
+									{t.cancel}
+								</Button>
+								<Button type="submit" disabled={isImporting}>
+									{isImporting ? "匯入中..." : t.import}
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog open={showCodesModal} onOpenChange={setShowCodesModal}>
+					<DialogContent className="sm:max-w-2xl max-w-2xl max-h-[85vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>
+								{currentType && (
+									<>
+										{t.codes} - {currentType.name}
+										{selectedCodes.size > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
+									</>
+								)}
+							</DialogTitle>
+						</DialogHeader>
+						<div className="space-y-4">
+							<div className="flex flex-wrap gap-2">
+								<Button variant="outline" size="sm" onClick={toggleSelectAll}>
+									{currentType && selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
+								</Button>
 								{selectedCodes.size > 0 && (
 									<>
-										<button className="admin-button small primary" onClick={downloadSelectedCodesAsTxt}>
-											📥 {t.downloadTxt} ({selectedCodes.size})
-										</button>
-										<button className="admin-button small primary" onClick={() => setShowEmailModal(true)}>
-											📧 {t.sendEmail} ({selectedCodes.size})
-										</button>
-										<button className="admin-button small danger" onClick={bulkDeleteInvitationCodes}>
+										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsTxt}>
+											<Download size={20} /> {t.downloadTxt} ({selectedCodes.size})
+										</Button>
+										<Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
+											<Mail size={20} /> {t.sendEmail} ({selectedCodes.size})
+										</Button>
+										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
 											{t.bulkDelete} ({selectedCodes.size})
-										</button>
+										</Button>
 									</>
 								)}
 							</div>
-							<div className="admin-table-container">
-								<table className="admin-table">
-									<thead>
-										<tr>
-											<th style={{ width: "50px", textAlign: "center" }}>
-												<input type="checkbox" checked={selectedCodes.size === currentType.codes.length && currentType.codes.length > 0} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
-											</th>
-											<th>{t.code}</th>
-											<th>{t.usage}</th>
-											<th>{t.limit}</th>
-											<th>{t.status}</th>
-											<th>{t.actions}</th>
-										</tr>
-									</thead>
-									<tbody>
-										{currentType.codes.map(code => {
+							<div className="overflow-x-auto rounded-lg border">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className="w-[50px] text-center">
+												<input
+													type="checkbox"
+													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
+													onChange={toggleSelectAll}
+													className="cursor-pointer"
+												/>
+											</TableHead>
+											<TableHead>{t.code}</TableHead>
+											<TableHead className="w-[100px] whitespace-nowrap">{t.usage}</TableHead>
+											<TableHead className="w-[100px] whitespace-nowrap">{t.limit}</TableHead>
+											<TableHead className="whitespace-nowrap">{t.status}</TableHead>
+											<TableHead className="whitespace-nowrap">{t.actions}</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{currentType?.codes.map(code => {
 											const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
 											const statusClass = status === "active" ? "active" : "ended";
 											return (
-												<tr key={code.id}>
-													<td style={{ textAlign: "center" }}>
-														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} style={{ cursor: "pointer" }} />
-													</td>
-													<td>{code.code}</td>
-													<td>{code.usedCount}</td>
-													<td>{code.usageLimit}</td>
-													<td>
+												<TableRow key={code.id}>
+													<TableCell className="text-center">
+														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
+													</TableCell>
+													<TableCell className="font-mono text-sm">{code.code}</TableCell>
+													<TableCell className="whitespace-nowrap">{code.usedCount}</TableCell>
+													<TableCell className="whitespace-nowrap">{code.usageLimit}</TableCell>
+													<TableCell>
 														<span className={`status-badge ${statusClass}`}>{status}</span>
-													</td>
-													<td>
-														<button className="admin-button small danger" onClick={() => deleteInvitationCode(code.id)}>
+													</TableCell>
+													<TableCell>
+														<Button variant="destructive" size="sm" onClick={() => deleteInvitationCode(code.id)}>
 															{t.delete}
-														</button>
-													</td>
-												</tr>
+														</Button>
+													</TableCell>
+												</TableRow>
 											);
 										})}
-									</tbody>
-								</table>
+									</TableBody>
+								</Table>
 							</div>
 						</div>
-					</div>
-				)}
+					</DialogContent>
+				</Dialog>
 
-				{showEmailModal && (
-					<div className="admin-modal-overlay" onClick={() => setShowEmailModal(false)}>
-						<div className="admin-modal" onClick={e => e.stopPropagation()}>
-							<div className="admin-modal-header">
-								<h2 className="admin-modal-title">{t.sendEmail}</h2>
-								<button className="admin-modal-close" onClick={() => setShowEmailModal(false)}>
-									✕
-								</button>
-							</div>
-							<div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
-								<p>將寄送 {selectedCodes.size} 個邀請碼至指定的 Email 地址</p>
-								<div className="admin-form-group">
-									<label className="admin-form-label">{t.emailAddress}</label>
-									<input type="email" value={emailAddress} onChange={e => setEmailAddress(e.target.value)} placeholder={t.emailPlaceholder} className="admin-input" required />
+				<Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+					<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>{t.bulkSendEmail}</DialogTitle>
+						</DialogHeader>
+						<div className="space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label htmlFor="emailList">{t.emailListLabel}</Label>
+									<Textarea id="emailList" value={emailList} onChange={e => setEmailList(e.target.value)} placeholder={t.emailListPlaceholder} rows={8} className="font-mono text-sm" />
+									<p className="text-xs text-muted-foreground">已選擇 {selectedCodes.size} 個邀請碼</p>
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor="emailMessage">{t.messageLabel}</Label>
+									<Textarea id="emailMessage" value={emailMessage} onChange={e => setEmailMessage(e.target.value)} placeholder={t.messagePlaceholder} rows={8} />
 								</div>
 							</div>
-							<div className="admin-modal-actions">
-								<button type="button" className="admin-button success" onClick={sendCodesViaEmail} disabled={isSendingEmail}>
-									{isSendingEmail ? "發送中..." : t.send}
-								</button>
-								<button type="button" className="admin-button secondary" onClick={() => setShowEmailModal(false)} disabled={isSendingEmail}>
-									{t.cancel}
-								</button>
+
+							<div className="flex gap-2">
+								<Button type="button" onClick={handleMatchCodes} variant="secondary" disabled={isSendingEmail}>
+									{t.matchCodes}
+								</Button>
+								{matchedPairs.length > 0 && (
+									<>
+										<Button type="button" onClick={() => setShowPreview(!showPreview)} variant="outline" disabled={isSendingEmail}>
+											{showPreview ? t.closePreview : t.preview}
+										</Button>
+										<div className="text-sm text-muted-foreground flex items-center">
+											{t.matched}: {matchedPairs.length} 組
+										</div>
+									</>
+								)}
 							</div>
+
+							{matchedPairs.length > 0 && (
+								<div className="space-y-2">
+									<Label>配對結果</Label>
+									<div className="border rounded-lg p-4 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+										<div className="space-y-1 font-mono text-sm">
+											{matchedPairs.map((pair, index) => (
+												<div key={index} className="flex justify-between items-center py-1 border-b last:border-b-0">
+													<span className="text-blue-600 dark:text-blue-400">{pair.email}</span>
+													<span className="text-gray-400">→</span>
+													<span className="text-green-600 dark:text-green-400">{pair.code}</span>
+												</div>
+											))}
+										</div>
+									</div>
+								</div>
+							)}
+
+							{showPreview && (
+								<div className="space-y-2">
+									<Label>{t.emailPreview}</Label>
+									{renderEmailPreview()}
+								</div>
+							)}
 						</div>
-					</div>
-				)}
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => {
+									setShowEmailModal(false);
+									setEmailList("");
+									setEmailMessage("");
+									setMatchedPairs([]);
+									setShowPreview(false);
+								}}
+								disabled={isSendingEmail}
+							>
+								{t.cancel}
+							</Button>
+							<Button type="button" onClick={sendAllEmails} disabled={isSendingEmail || matchedPairs.length === 0}>
+								{isSendingEmail ? t.sending : t.sendAll}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</main>
 		</>
 	);

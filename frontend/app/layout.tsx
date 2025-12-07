@@ -1,17 +1,10 @@
+import LayoutWrapper from "@/components/LayoutWrapper";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from "@next/third-parties/google";
+
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"]
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"]
-});
 
 export const metadata: Metadata = {
 	title: "SITCONTIX",
@@ -35,15 +28,21 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html>
+		<html lang="en" suppressHydrationWarning className="h-full">
 			<head>
 				<meta charSet="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 				<meta name="generator" content="Next.js" />
-				<meta name="theme-color" content="#000" />
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link href="https://font.emtech.cc/css/GenKiGothicTW" rel="stylesheet" />
 			</head>
 
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+			<body suppressHydrationWarning>
+				<ThemeProvider>
+					<LayoutWrapper>{children}</LayoutWrapper>
+					<Toaster richColors position="bottom-center" />
+				</ThemeProvider>
+			</body>
 
 			{/* Google Tag Manager */}
 			<GoogleTagManager gtmId="GTM-NPVBCDZ" />

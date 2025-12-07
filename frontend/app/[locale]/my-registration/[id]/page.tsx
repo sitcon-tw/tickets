@@ -3,16 +3,28 @@
 import { FormField } from "@/components/form/FormField";
 import PageSpinner from "@/components/PageSpinner";
 import Spinner from "@/components/Spinner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { Registration, TicketFormField } from "@/lib/types/api";
+import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { ChevronLeft, Save, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
 type FormDataType = {
@@ -24,6 +36,8 @@ export default function MyRegistrationPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const params = useParams();
+	const searchParams = useSearchParams();
+	const isFromMyRegistrations = searchParams.get("h") != null;
 	const registrationId = params?.id as string;
 
 	const [loading, setLoading] = useState(true);
@@ -33,6 +47,7 @@ export default function MyRegistrationPage() {
 	const [formData, setFormData] = useState<FormDataType>({});
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isCancelling, setIsCancelling] = useState(false);
 
 	const t = getTranslations(locale, {
 		myRegistration: {
@@ -50,10 +65,20 @@ export default function MyRegistrationPage() {
 			"zh-Hans": "载入失败：",
 			en: "Failed to load: "
 		},
-		backToRegistrations: {
+		backToSuccessPage: {
 			"zh-Hant": "返回報名成功頁面",
 			"zh-Hans": "返回报名成功页面",
 			en: "Back to Registration Success Page"
+		},
+		goToSuccessPage: {
+			"zh-Hant": "前往報名成功頁面",
+			"zh-Hans": "前往报名成功页面",
+			en: "Go to Registration Success Page"
+		},
+		backToRegistrations: {
+			"zh-Hant": "返回我的報名列表",
+			"zh-Hans": "返回我的报名列表",
+			en: "Back to My Registrations"
 		},
 		eventInfo: {
 			"zh-Hant": "活動資訊",
@@ -169,6 +194,36 @@ export default function MyRegistrationPage() {
 			"zh-Hant": "免費",
 			"zh-Hans": "免费",
 			en: "Free"
+		},
+		cancelRegistration: {
+			"zh-Hant": "取消報名",
+			"zh-Hans": "取消报名",
+			en: "Cancel Registration"
+		},
+		cancelConfirm: {
+			"zh-Hant": "確定要取消此報名嗎？您將無法再次編輯或恢復此報名。",
+			"zh-Hans": "确定要取消此报名吗？您将无法再次编辑或恢复此报名。",
+			en: "Are you sure you want to cancel this registration? You will not be able to edit or recover this registration again."
+		},
+		cancelling: {
+			"zh-Hant": "取消中...",
+			"zh-Hans": "取消中...",
+			en: "Cancelling..."
+		},
+		cancelSuccess: {
+			"zh-Hant": "報名已成功取消",
+			"zh-Hans": "报名已成功取消",
+			en: "Registration cancelled successfully"
+		},
+		cancelFailed: {
+			"zh-Hant": "取消失敗：",
+			"zh-Hans": "取消失败：",
+			en: "Failed to cancel: "
+		},
+		cannotCancel: {
+			"zh-Hant": "此報名無法取消",
+			"zh-Hans": "此报名无法取消",
+			en: "This registration cannot be cancelled"
 		}
 	});
 
@@ -181,8 +236,16 @@ export default function MyRegistrationPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
+			// Single checkbox (boolean value)
 			setFormData(prev => ({ ...prev, [name]: checked }));
+		} else if (checked && value !== "true") {
+			// Multi-checkbox with comma-separated values
+			// When checked is true and value is not "true", this is from MultiCheckbox
+			// The value contains the comma-separated list (or empty string if all unchecked)
+			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
+			setFormData(prev => ({ ...prev, [name]: values }));
 		} else {
+			// Single checkbox with a specific value (legacy support)
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -226,6 +289,30 @@ export default function MyRegistrationPage() {
 		setIsEditing(false);
 	}
 
+	async function handleCancelRegistration() {
+		if (!registration || !registration.canCancel) {
+			showAlert(t.cannotCancel, "warning");
+			return;
+		}
+
+		setIsCancelling(true);
+		try {
+			const result = await registrationsAPI.cancel(registrationId);
+
+			if (result.success) {
+				showAlert(t.cancelSuccess, "success");
+				setRegistration({ ...registration, status: "cancelled", canEdit: false, canCancel: false });
+			} else {
+				throw new Error(result.message || "Failed to cancel registration");
+			}
+		} catch (error) {
+			console.error("Cancel error:", error);
+			showAlert(t.cancelFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+		} finally {
+			setIsCancelling(false);
+		}
+	}
+
 	function formatDate(dateString: string) {
 		const date = new Date(dateString);
 		return date.toLocaleString(locale, {
@@ -265,9 +352,9 @@ export default function MyRegistrationPage() {
 					const fieldsResponse = await ticketsAPI.getFormFields(regData.ticketId);
 					if (fieldsResponse.success) {
 						const processedFields = (fieldsResponse.data || []).map(field => {
-							let name = field.name;
+							let name: LocalizedText = field.name;
 							if (typeof name === "string" && name === "[object Object]") {
-								name = { en: field.description || "field" };
+								name = { en: typeof field.description === "string" ? field.description : "field" };
 							} else if (typeof name === "string") {
 								try {
 									name = JSON.parse(name);
@@ -276,12 +363,16 @@ export default function MyRegistrationPage() {
 								}
 							}
 
-							let description = field.description;
+							let description: LocalizedText | string | undefined = field.description as any;
+							const originalStr = typeof description === "string" ? description : "";
 							if (typeof description === "string" && description.startsWith("{")) {
 								try {
-									const parsed = JSON.parse(description);
-									description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-								} catch {}
+									description = JSON.parse(description);
+								} catch {
+									description = { en: originalStr };
+								}
+							} else if (typeof description === "string") {
+								description = { en: description };
 							}
 
 							const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
@@ -302,7 +393,7 @@ export default function MyRegistrationPage() {
 							return {
 								...field,
 								name,
-								description,
+								description: description as LocalizedText | undefined,
 								options
 							};
 						});
@@ -327,78 +418,46 @@ export default function MyRegistrationPage() {
 	return (
 		<>
 			<main>
-				<section
-					style={{
-						marginTop: "6rem",
-						maxWidth: "900px",
-						marginLeft: "auto",
-						marginRight: "auto",
-						padding: "0 1rem",
-						marginBottom: "4rem"
-					}}
-				>
-					<button onClick={() => router.back()} className="button" style={{ marginBottom: "2rem" }}>
-						<div className="flex items-center">
-							<ChevronLeft />
-							<p>{t.backToRegistrations}</p>
+				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
+					{isFromMyRegistrations ? (
+						<div className="flex gap-4 mb-4">
+							<Button variant="secondary" onClick={() => router.push(`/my-registration`)}>
+								<ChevronLeft />
+								<p>{t.backToRegistrations}</p>
+							</Button>
+							<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
+								<p>{t.goToSuccessPage}</p>
+								<ChevronRight />
+							</Button>
 						</div>
-					</button>
-
-					<h1
-						style={{
-							marginBlock: "1rem",
-							fontSize: "2.5rem"
-						}}
-					>
-						{t.myRegistration}
-					</h1>
-
+					) : (
+						<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
+							<ChevronLeft />
+							<p>{t.backToSuccessPage}</p>
+						</Button>
+					)}
+					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>{" "}
 					{loading && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "1rem",
-								padding: "3rem",
-								opacity: 0.7
-							}}
-						>
-							<PageSpinner size={48} />
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
+							<PageSpinner />
 							<p>{t.loading}</p>
 						</div>
 					)}
-
 					{error && (
-						<div style={{ textAlign: "center", padding: "2rem" }}>
-							<p style={{ color: "red" }}>
+						<div className="text-center p-8">
+							<p className="text-red-500">
 								{t.loadFailed}
 								{error}
 							</p>
 							<Link href="/">{t.backToRegistrations}</Link>
 						</div>
 					)}
-
 					{!loading && !error && registration && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "2rem"
-							}}
-						>
+						<div className="flex flex-col gap-8">
 							{/* Event Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.eventInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
+								<h2 className="mb-4 text-2xl">{t.eventInfo}</h2>
+								<div className="flex flex-col gap-3">
 									<div>
 										<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
 									</div>
@@ -414,16 +473,9 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Ticket Information - Read Only */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px",
-									backgroundColor: "var(--background-secondary)"
-								}}
-							>
-								<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>{t.ticketInfo}</h2>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+							<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
+								<h2 className="mb-4 text-2xl">{t.ticketInfo}</h2>
+								<div className="flex flex-col gap-3">
 									<div>
 										<strong>{t.ticketType}:</strong> {getLocalizedText(registration.ticket?.name || {}, locale)}
 									</div>
@@ -432,11 +484,7 @@ export default function MyRegistrationPage() {
 									</div>
 									<div>
 										<strong>{t.registrationStatus}:</strong>{" "}
-										<span
-											style={{
-												color: registration.status === "confirmed" ? "green" : registration.status === "cancelled" ? "red" : "orange"
-											}}
-										>
+										<span className={registration.status === "confirmed" ? "text-green-500" : registration.status === "cancelled" ? "text-red-500" : "text-orange-500"}>
 											{registration.status === "confirmed"
 												? t.statusConfirmed
 												: registration.status === "cancelled"
@@ -453,40 +501,29 @@ export default function MyRegistrationPage() {
 							</div>
 
 							{/* Registration Form Data - Editable */}
-							<div
-								style={{
-									padding: "1.5rem",
-									border: "1px solid var(--border-color)",
-									borderRadius: "8px"
-								}}
-							>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-									<h2 style={{ fontSize: "1.5rem" }}>{t.registrationInfo}</h2>
+							<div className="p-6 border-2 border-gray-500 rounded-lg">
+								<div className="flex justify-between items-center mb-4">
+									<h2 className="text-2xl">{t.registrationInfo}</h2>
 									{!isEditing && registration.canEdit && (
-										<button onClick={() => setIsEditing(true)} className="button" style={{ padding: "0.5rem 1rem" }}>
+										<Button onClick={() => setIsEditing(true)} size="sm">
 											{t.edit}
-										</button>
+										</Button>
 									)}
 								</div>
 
-								{!registration.canEdit && <p style={{ color: "var(--text-secondary)", marginBottom: "1rem", fontSize: "0.9rem" }}>{t.cannotEdit}</p>}
+								{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
 
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "1.5rem"
-									}}
-								>
-									{formFields.map((field, index) => {
+								<div className="flex flex-col gap-6">
+									{formFields.map(field => {
 										const fieldName = getLocalizedText(field.name, locale);
+										const fieldId = field.id;
 
 										if (isEditing) {
 											return (
 												<FormField
-													key={index}
+													key={fieldId}
 													field={field}
-													value={formData[fieldName] || ""}
+													value={formData[fieldId] || ""}
 													onTextChange={handleTextChange}
 													onCheckboxChange={handleCheckboxChange}
 													pleaseSelectText={t.pleaseSelect}
@@ -494,7 +531,7 @@ export default function MyRegistrationPage() {
 											);
 										} else {
 											// Display as read-only
-											const value = formData[fieldName];
+											const value = formData[fieldId];
 											let displayValue: string;
 
 											if (Array.isArray(value)) {
@@ -506,20 +543,9 @@ export default function MyRegistrationPage() {
 											}
 
 											return (
-												<div key={index}>
-													<div style={{ fontWeight: "bold", marginBottom: "0.25rem" }}>{fieldName}</div>
-													<div
-														style={{
-															padding: "0.5rem",
-															backgroundColor: "var(--background-secondary)",
-															borderRadius: "4px",
-															minHeight: "2.5rem",
-															display: "flex",
-															alignItems: "center"
-														}}
-													>
-														{displayValue}
-													</div>
+												<div key={fieldId}>
+													<div className="font-bold mb-1">{fieldName}</div>
+													<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
 												</div>
 											);
 										}
@@ -527,47 +553,42 @@ export default function MyRegistrationPage() {
 								</div>
 
 								{isEditing && (
-									<div
-										style={{
-											display: "flex",
-											gap: "1rem",
-											marginTop: "2rem",
-											justifyContent: "center"
-										}}
-									>
-										<button
-											onClick={handleSave}
-											disabled={isSaving}
-											className="button"
-											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
-												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
-											}}
-										>
+									<div className="flex gap-4 mt-8 justify-center">
+										<Button onClick={handleSave} disabled={isSaving}>
 											{isSaving ? <Spinner size="sm" /> : <Save size={18} />}
 											{isSaving ? t.saving : t.save}
-										</button>
-										<button
-											onClick={handleCancelEdit}
-											disabled={isSaving}
-											className="button"
-											style={{
-												cursor: isSaving ? "not-allowed" : "pointer",
-												opacity: isSaving ? 0.7 : 1,
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "0.5rem"
-											}}
-										>
+										</Button>
+										<Button variant="secondary" onClick={handleCancelEdit} disabled={isSaving}>
 											<X size={18} />
 											{t.cancel}
-										</button>
+										</Button>
 									</div>
 								)}
 							</div>
+
+							{/* Cancel Registration Button */}
+							{registration.canCancel && registration.status !== "cancelled" && (
+								<div className="flex justify-center">
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button variant="destructive" disabled={isCancelling || isEditing}>
+												{isCancelling ? <Spinner size="sm" /> : <X size={18} />}
+												{isCancelling ? t.cancelling : t.cancelRegistration}
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>{t.cancelRegistration}</AlertDialogTitle>
+												<AlertDialogDescription>{t.cancelConfirm}</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+												<AlertDialogAction onClick={handleCancelRegistration}>{t.cancelRegistration}</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
+								</div>
+							)}
 						</div>
 					)}
 				</section>

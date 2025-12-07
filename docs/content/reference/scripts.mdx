@@ -1,0 +1,46 @@
+---
+title: 指令速查
+description: 常用 pnpm 指令與腳本彙整
+---
+
+## 根目錄
+
+| 指令                  | 說明                                    |
+| --------------------- | --------------------------------------- |
+| `pnpm install`        | 安裝全部工作區套件                      |
+| `pnpm dev`            | 同時啟動前端與後端（使用 concurrently） |
+| `pnpm dev:frontend`   | 啟動 Next.js 開發伺服器（4322）         |
+| `pnpm dev:backend`    | 執行 Fastify + nodemon（3000）          |
+| `pnpm format`         | 以 Prettier 套用格式                    |
+| `pnpm check-format`   | 檢查格式是否符合 Prettier               |
+| `pnpm build:frontend` | 建置前端，供 Cloudflare/CI 使用         |
+
+## 後端（`pnpm --filter backend <command>`）
+
+| 指令              | 說明                                                                   |
+| ----------------- | ---------------------------------------------------------------------- |
+| `dev`             | `node scripts/db-init.js && nodemon app.js`                            |
+| `start`           | `node scripts/db-init.js && node app.js`，生產環境可再搭配 PM2/systemd |
+| `db:sync`         | `prisma db push`，快速同步 schema（非 migration）                      |
+| `db:migrate`      | `prisma migrate dev`，開發時建立 migration                             |
+| `prisma generate` | 建立 Prisma Client，postinstall 也會執行                               |
+
+## 前端（`pnpm --filter frontend <command>`）
+
+| 指令    | 說明                                       |
+| ------- | ------------------------------------------ |
+| `dev`   | `next dev`（Turbopack）                    |
+| `build` | `next build --turbopack`                   |
+| `start` | `next start`（一般部署模式）               |
+| `lint`  | `eslint`，檢查 TypeScript/React 風格與錯誤 |
+
+## 文件（`pnpm --filter docs <command>`）
+
+若要獨立部署/開發 Fumadocs，可在 `docs` 資料夾建立 scripts，例如：
+
+```bash
+pnpm --filter docs dev
+pnpm --filter docs build
+```
+
+> 如需新增自訂腳本，優先在對應子專案的 `package.json` 補上，再更新本文件。

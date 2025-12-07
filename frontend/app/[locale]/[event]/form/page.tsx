@@ -1,18 +1,17 @@
 "use client";
 
-import PageSpinner from "@/components/PageSpinner";
-import Spinner from "@/components/Spinner";
 import { FormField } from "@/components/form/FormField";
 import Checkbox from "@/components/input/Checkbox";
 import Text from "@/components/input/Text";
+import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { TicketFormField } from "@/lib/types/api";
+import { LocalizedText, TicketFormField } from "@/lib/types/api";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { getLocalizedText } from "@/lib/utils/localization";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -21,6 +20,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
+	const pathname = usePathname();
 	const { showAlert } = useAlert();
 
 	const [loading, setLoading] = useState(true);
@@ -108,13 +108,8 @@ export default function FormPage() {
 		},
 		agreeToTerms: {
 			"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
-			"zh-Hans": "我已阅读并同意服务条款",
-			en: "I have read and agree to the terms"
-		},
-		termsLink: {
-			"zh-Hant": "服務條款與隱私政策連結",
-			"zh-Hans": "服务条款与隐私政策链接",
-			en: "Terms and Privacy Policy link"
+			"zh-Hans": "我已阅读并同意服务条款与隐私政策",
+			en: "I have read and agree to the Terms and Privacy Policy"
 		}
 	});
 
@@ -127,8 +122,16 @@ export default function FormPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
+			// Single checkbox (boolean value)
 			setFormData(prev => ({ ...prev, [name]: checked }));
+		} else if (checked && value !== "true") {
+			// Multi-checkbox with comma-separated values
+			// When checked is true and value is not "true", this is from MultiCheckbox
+			// The value contains the comma-separated list (or empty string if all unchecked)
+			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
+			setFormData(prev => ({ ...prev, [name]: values }));
 		} else {
+			// Single checkbox with a specific value (legacy support)
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -215,9 +218,9 @@ export default function FormPage() {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
 				const processedFields = (formFieldsData.data || []).map(field => {
-					let name = field.name;
+					let name: LocalizedText = field.name;
 					if (typeof name === "string" && name === "[object Object]") {
-						name = { en: field.description || "field" };
+						name = { en: typeof field.description === "string" ? field.description : "field" };
 					} else if (typeof name === "string") {
 						try {
 							name = JSON.parse(name);
@@ -226,12 +229,18 @@ export default function FormPage() {
 						}
 					}
 
-					let description = field.description;
+					let description: LocalizedText | string | undefined = field.description as any;
 					if (typeof description === "string" && description.startsWith("{")) {
+						const originalStr = description;
 						try {
-							const parsed = JSON.parse(description);
-							description = parsed.en || parsed[Object.keys(parsed)[0]] || description;
-						} catch {}
+							description = JSON.parse(description);
+						} catch {
+							// If parsing fails, convert string to LocalizedText
+							description = { en: originalStr };
+						}
+					} else if (typeof description === "string") {
+						// Convert plain string to LocalizedText
+						description = { en: description };
 					}
 
 					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
@@ -249,7 +258,6 @@ export default function FormPage() {
 						return { en: String(opt) };
 					});
 
-					// Parse filters if they're a string
 					let filters = field.filters;
 					if (typeof filters === "string") {
 						try {
@@ -262,7 +270,7 @@ export default function FormPage() {
 					return {
 						...field,
 						name,
-						description,
+						description: description as LocalizedText | undefined,
 						options,
 						filters
 					};
@@ -280,85 +288,42 @@ export default function FormPage() {
 		initForm();
 	}, [router, showAlert, t.noTicketAlert]);
 
-	// Filter visible fields based on conditions
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
 
-		const filtered = formFields.filter(field => {
-			const shouldDisplay = shouldDisplayField(
+		return formFields.filter(field =>
+			shouldDisplayField(
 				field,
 				{
 					selectedTicketId: ticketId,
-					formData: formData,
+					formData,
 					currentTime: new Date()
 				},
-				formFields // Pass all fields for field-based condition evaluation
-			);
-
-			// Debug logging
-			if (field.filters?.enabled) {
-				console.log("Field filter evaluation:", {
-					fieldName: typeof field.name === "object" ? field.name.en : field.name,
-					filters: field.filters,
-					shouldDisplay,
-					ticketId,
-					formData
-				});
-			}
-
-			return shouldDisplay;
-		});
-
-		return filtered;
+				formFields
+			)
+		);
 	}, [formFields, ticketId, formData]);
 
 	return (
 		<>
-			<main>
-				<section
-					style={{
-						marginTop: "6rem",
-						maxWidth: "800px",
-						marginLeft: "auto",
-						marginRight: "auto",
-						padding: "0 1rem"
-					}}
-				>
-					<button onClick={() => router.back()} className="button" style={{ marginBottom: "2rem" }}>
-						<div className="flex items-center">
-							<ChevronLeft />
-							<p>{t.reselectTicket}</p>
-						</div>
-					</button>
-					<h1
-						style={{
-							marginBlock: "1rem",
-							fontSize: "2.5rem"
-						}}
-					>
-						{t.fillForm}
-					</h1>
+			<main className="mt-32">
+				<section className="max-w-3xl mx-auto p-16 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+					<Button variant="secondary" onClick={() => router.push(pathname.replace("/form", ""))}>
+						<ChevronLeft />
+						<p>{t.reselectTicket}</p>
+					</Button>
+					<h1 className="my-8 text-4xl">{t.fillForm}</h1>
 
 					{loading && (
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "1rem",
-								padding: "3rem",
-								opacity: 0.7
-							}}
-						>
-							<PageSpinner size={48} />
+						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
+							<PageSpinner />
 							<p>{t.loadingForm}</p>
 						</div>
 					)}
 
 					{error && (
-						<div style={{ textAlign: "center", padding: "2rem" }}>
-							<p style={{ color: "red" }}>
+						<div className="text-center p-8">
+							<p className="text-red-600">
 								{t.loadFormFailed}
 								{error}
 							</p>
@@ -367,15 +332,7 @@ export default function FormPage() {
 					)}
 
 					{!loading && !error && (
-						<form
-							onSubmit={handleSubmit}
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "1.5rem"
-							}}
-						>
-							{/* Invitation code field - shown if ticket requires it */}
+						<form onSubmit={handleSubmit} className="flex flex-col gap-6">
 							{requiresInviteCode && (
 								<Text
 									label={`${t.invitationCode} *`}
@@ -387,52 +344,25 @@ export default function FormPage() {
 								/>
 							)}
 
-							{/* Dynamic form fields from API - filtered by display conditions */}
-							{visibleFields.map((field, index) => {
-								const fieldName = getLocalizedText(field.name, locale);
-								return (
-									<FormField key={index} field={field} value={formData[fieldName] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
-								);
-							})}
+							{visibleFields.map(field => (
+								<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+							))}
 
-							{/* Referral code field - always shown and editable */}
 							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
 
-							{/* Terms and conditions checkbox */}
 							<div>
-								<Checkbox
-									label={t.agreeToTerms}
-									question={t.agreeToTermsQuestion}
-									value={agreeToTerms}
-									required
-									id="agreeToTerms"
-									checked={agreeToTerms}
-									onChange={e => setAgreeToTerms(e.target.checked)}
-								/>
-								<a href={`/${locale}/terms`} target="_blank" rel="noreferrer" className="underline" style={{ marginTop: "0.5rem", marginLeft: "2rem" }}>
-									{t.termsLink}
-								</a>
+								<div className="flex items-center space-x-2">
+									<Checkbox id="agreeToTerms" required checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} label={t.agreeToTerms} />
+								</div>
 							</div>
 
-							<button
-								type="submit"
-								className="button"
-								disabled={isSubmitting}
-								style={{
-									cursor: isSubmitting ? "not-allowed" : "pointer",
-									marginTop: "2rem",
-									alignSelf: "center",
-									opacity: isSubmitting ? 0.7 : 1,
-									transition: "opacity 0.2s",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "0.5rem",
-									pointerEvents: isSubmitting ? "none" : "auto"
-								}}
-							>
-								{isSubmitting && <Spinner size="sm" />}
-								{t.submitRegistration}
-							</button>
+							<div className="justify-between flex">
+								<div />
+								<Button type="submit" isLoading={isSubmitting} size={"lg"}>
+									{t.submitRegistration}
+								</Button>
+								<div />
+							</div>
 						</form>
 					)}
 				</section>

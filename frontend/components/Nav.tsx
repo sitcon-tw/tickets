@@ -1,17 +1,17 @@
 "use client";
 
 import Spinner from "@/components/Spinner";
-import { buildLocalizedLink, getTranslations } from "@/i18n/helpers";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { getTranslations } from "@/i18n/helpers";
+import { routing } from "@/i18n/routing";
 import { authAPI } from "@/lib/api/endpoints";
-import { useLocale } from "next-intl";
+import { cn } from "@/lib/utils";
+import crypto from "crypto";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useMemo, useState } from "react";
-
-type NavProps = {
-	children?: ReactNode;
-};
-
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -20,19 +20,34 @@ type SessionUser = {
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
 
-export default function Nav({ children }: NavProps) {
-	const locale = useLocale();
-	const linkBuilder = useMemo(() => buildLocalizedLink(locale), [locale]);
-	const pathname = usePathname();
+function getGravatarUrl(email: string, size = 40): string {
+	const hash = crypto.createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+	return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
+}
 
-	const [isScrolled, setIsScrolled] = useState(false);
+export default function Nav() {
+	const pathname = usePathname();
+	const router = useRouter();
+
+	const locale = useMemo(() => {
+		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
+		return detectedLocale || routing.defaultLocale;
+	}, [pathname]);
+
+	const localizedPath = (path: string) => `/${locale}${path}`;
+
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
-	const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+	const [isMobile, setIsMobile] = useState(false);
+	const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
+	const [isScrolled, setIsScrolled] = useState(false);
+	const [isDarkMode, setIsDarkMode] = useState(false);
+
+	const isAdminPage = pathname.includes("/admin");
 
 	const t = getTranslations(locale, {
-		user: { "zh-Hant": "使用者", "zh-Hans": "用户", en: "User" },
-		adminPage: { "zh-Hant": "管理員頁面", "zh-Hans": "管理员页面", en: "Admin Panel" },
+		adminPanel: { "zh-Hant": "管理員介面", "zh-Hans": "管理员介面", en: "Admin Panel" },
+		myRegistrations: { "zh-Hant": "我的報名", "zh-Hans": "我的报名", en: "My Registrations" },
 		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
 		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
 	});
@@ -42,35 +57,38 @@ export default function Nav({ children }: NavProps) {
 		setIsLoggingOut(true);
 		try {
 			await authAPI.signOut();
+			setSession({ status: "anonymous" });
+			router.push(localizedPath("/"));
 		} catch (error) {
 			console.error("Logout failed", error);
 		} finally {
-			if (typeof window !== "undefined") {
-				window.location.reload();
-			}
+			setIsLoggingOut(false);
 		}
 	}
 
 	const hasAdminAccess = useMemo(() => {
 		if (session.status !== "authenticated" || !session.user.role) return false;
 		const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
-		return roles.some(role => role === "admin");
+		const hasAccess = roles.some(role => role === "admin" || role === "eventAdmin");
+		return hasAccess;
 	}, [session]);
 
-	const userDisplayName =
-		session.status === "authenticated" ? (session.user.name ? session.user.name + (session.user.email ? ` (${session.user.email})` : "") : session.user.email ? session.user.email : t.user) : "";
+	useEffect(() => {
+		if (session.status === "authenticated" && session.user.email) {
+			setGravatarUrl(getGravatarUrl(session.user.email));
+		} else {
+			setGravatarUrl(null);
+		}
+	}, [session]);
 
 	useEffect(() => {
-		function handleScroll() {
-			setIsScrolled(window.scrollY > 5);
-		}
-
-		handleScroll();
-		window.addEventListener("scroll", handleScroll);
-
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth <= 768);
 		};
+
+		checkMobile();
+		window.addEventListener("resize", checkMobile);
+		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
 	useEffect(() => {
@@ -81,7 +99,23 @@ export default function Nav({ children }: NavProps) {
 				const data = await authAPI.getSession();
 				if (!cancelled) {
 					if (data && data.user) {
-						setSession({ status: "authenticated", user: data.user });
+						try {
+							const permissionsData = await authAPI.getPermissions();
+							if (permissionsData?.data?.role) {
+								setSession({
+									status: "authenticated",
+									user: {
+										...data.user,
+										role: permissionsData.data.role
+									}
+								});
+							} else {
+								setSession({ status: "authenticated", user: data.user });
+							}
+						} catch (permError) {
+							console.error("Failed to fetch permissions:", permError);
+							setSession({ status: "authenticated", user: data.user });
+						}
 					} else {
 						setSession({ status: "anonymous" });
 					}
@@ -99,129 +133,92 @@ export default function Nav({ children }: NavProps) {
 		};
 	}, []);
 
-	if (pathname.includes("/admin")) {
+	useEffect(() => {
+		function handleScroll() {
+			setIsScrolled(window.scrollY > 5);
+		}
+
+		handleScroll();
+		window.addEventListener("scroll", handleScroll);
+
+		return () => {
+			window.removeEventListener("scroll", handleScroll);
+		};
+	}, []);
+
+	useEffect(() => {
+		function updateDarkMode() {
+			const darkModeCheck = localStorage.getItem("sitcontix-theme");
+			setIsDarkMode(darkModeCheck === "dark");
+		}
+
+		updateDarkMode();
+
+		function handleThemeChange(event: CustomEvent) {
+			setIsDarkMode(event.detail.newTheme === "dark");
+		}
+
+		window.addEventListener("systemThemeChanged", handleThemeChange as EventListener);
+		return () => {
+			window.removeEventListener("systemThemeChanged", handleThemeChange as EventListener);
+		};
+	}, []);
+
+	if (isMobile && isAdminPage) {
 		return null;
 	}
 
 	return (
 		<nav
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				zIndex: 1000,
-				backgroundColor: isScrolled ? "var(--color-gray-900)" : "transparent",
-				width: "100%",
-				transition: "border-color 0.3s ease-in-out",
-				borderBottom: `${isScrolled ? "var(--color-gray-500)" : "transparent"} solid 1px`
-			}}
+			className={`fixed top-0 left-0 z-1000 w-full ${isScrolled ? "bg-gray-600 dark:bg-gray-900/50 backdrop-blur-sm text-gray-200" : "dark:bg-transparent text-gray-600"} border-b border-gray-700 dark:border-gray-800 transition-colors duration-250 dark:text-gray-300`}
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					width: "100%",
-					padding: isScrolled ? "1rem" : "1.5rem",
-					transition: "padding 0.3s ease-in-out"
-				}}
-			>
-				<a
-					href={linkBuilder("/")}
-					aria-label="SITCON Home"
-					onMouseEnter={() => setHoveredLink("logo")}
-					onMouseLeave={() => setHoveredLink(null)}
-					style={{
-						fontWeight: 700,
-						letterSpacing: "0.2em",
-						textDecoration: hoveredLink === "logo" ? "underline" : "none",
-						border: "none",
-						background: "none",
-						color: "inherit",
-						font: "inherit",
-						cursor: "pointer"
-					}}
-				>
-					<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCON Logo" />
-				</a>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "1.5rem"
-					}}
-				>
+			<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
+				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
+					{isDarkMode || isScrolled ? (
+						<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" />
+					) : (
+						<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" />
+					)}
+				</Link>
+				<div className="flex items-center space-x-4">
 					{session.status === "authenticated" ? (
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "1rem"
-							}}
-						>
-							<span className="text-blue-400">{userDisplayName}</span>
+						<>
 							{hasAdminAccess && (
-								<a
-									href={linkBuilder("/admin/")}
-									onMouseEnter={() => setHoveredLink("admin")}
-									onMouseLeave={() => setHoveredLink(null)}
-									style={{
-										textDecoration: hoveredLink === "admin" ? "underline" : "none",
-										border: "none",
-										background: "none",
-										color: "inherit",
-										font: "inherit",
-										cursor: "pointer"
-									}}
-								>
-									{t.adminPage}
-								</a>
+								<Link href={localizedPath("/admin/events")} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
+									{t.adminPanel}
+								</Link>
 							)}
-							<button
-								type="button"
+							<Link href={localizedPath("/my-registration")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								{t.myRegistrations}
+							</Link>
+							<Button
+								variant="ghost"
+								size="sm"
 								onClick={handleLogout}
-								onMouseEnter={() => setHoveredLink("logout")}
-								onMouseLeave={() => setHoveredLink(null)}
 								disabled={isLoggingOut}
-								style={{
-									textDecoration: hoveredLink === "logout" ? "underline" : "none",
-									border: "none",
-									background: "none",
-									color: "inherit",
-									font: "inherit",
-									cursor: isLoggingOut ? "not-allowed" : "pointer",
-									padding: 0,
-									opacity: isLoggingOut ? 0.7 : 1,
-									transition: "opacity 0.2s",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "0.5rem"
-								}}
+								className={cn(
+									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2",
+									isLoggingOut && "opacity-50 cursor-not-allowed"
+								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
-							</button>
-						</div>
+							</Button>
+							{gravatarUrl && <Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />}
+						</>
+					) : session.status === "loading" ? (
+						<Spinner size="sm" />
 					) : (
-						<a
-							href={`${linkBuilder("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							onMouseEnter={() => setHoveredLink("login")}
-							onMouseLeave={() => setHoveredLink(null)}
-							style={{
-								textDecoration: hoveredLink === "login" ? "underline" : "none",
-								border: "none",
-								background: "none",
-								color: "inherit",
-								font: "inherit",
-								cursor: "pointer"
-							}}
+						<Link
+							href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+							className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 						>
 							{t.login}
-						</a>
+						</Link>
 					)}
+					<ThemeToggle />
 				</div>
 			</div>
-			{children}
 		</nav>
 	);
 }

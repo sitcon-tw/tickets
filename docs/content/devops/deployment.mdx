@@ -1,0 +1,65 @@
+---
+title: 部署指引
+description: 前後端與文件的部署流程與建議
+---
+
+## 前端（Next.js）
+
+1. 建置：`pnpm --filter frontend build`
+2. 若部署至 Cloudflare Pages/Workers：
+   - `wrangler.jsonc` 已設定 `build.command = "pnpm run build:frontend"`
+   - 產出位於 `frontend/.next`，靜態匯出資產放在 `frontend/dist`
+   - 執行 `wrangler publish` 或 CI 上使用同指令
+3. 需設定的環境變數：
+   - `NEXT_PUBLIC_API_BASE`（若前端使用，請在程式碼中確認）
+   - `NEXT_INTL_LOCALE_COOKIE` 等 next-intl 相關設定可依需求加入
+
+## 後端（Fastify）
+
+1. 確保伺服器具備 Node.js 20 並已安裝 pnpm
+2. 部署流程：
+
+   ```bash
+   pnpm install --frozen-lockfile
+   pnpm --filter backend prisma generate
+   pnpm --filter backend db:migrate
+   pnpm --filter backend start
+   ```
+
+3. 建議以 `pm2`, `systemd`, `docker` 等方式常駐執行，並設定：
+   - `PORT`：對外服務埠
+   - `BETTER_AUTH_SECRET`, `POSTGRES_URI`, `REDIS_URI`, `MAILTRAP_*`
+   - `FRONTEND_URI`, `BACKEND_URI`：供 CORS 與郵件連結使用
+4. 監控/健康檢查：
+   - `/health`（位於 `routes/system.js`）
+   - `/metrics`（Prometheus 指標）
+   - `/docs`（Swagger UI，可加上驗證或於反向代理層限制）
+
+## 文檔（Fumadocs）
+
+- `docs` 專案可獨立部署於 Vercel/Cloudflare Pages：
+
+  ```bash
+  pnpm --filter docs install
+  pnpm --filter docs build
+  pnpm --filter docs start
+  ```
+
+- 若要與前端同站部署，可改為將 `docs` output 作為子路由
+
+## CI/CD 建議
+
+1. Pipeline 共用 `pnpm i --frozen-lockfile`
+2. 依服務使用 `pnpm --filter <target> ...` 降低建置時間
+3. Pull Request 阶段執行：
+   - Lint / Format：`pnpm --filter frontend lint`, `pnpm check-format`
+   - 測試（若未來新增）
+4. Deploy 階段：
+   - 前端建置完成後上傳 `.next` 或 `dist`
+   - 後端執行 `db:migrate` 再啟動服務
+
+## 反向代理
+
+- 若部署在 Nginx/Cloudflare 前面，記得傳遞 `X-Forwarded-*` 標頭，Fastify `trustProxy: true` 已開啟
+- 針對 `/api/auth/magic-link/verify` 需允許 302 redirect
+- 開放 `/_next/static`, `/assets`, `/fonts` 等靜態路徑快取

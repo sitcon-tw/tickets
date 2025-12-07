@@ -19,8 +19,8 @@ export default function TermsPage() {
 	function TermsPageLayout({ children }: { children: React.ReactNode }) {
 		return (
 			<>
-				<main style={{ maxWidth: 800, margin: "2rem auto", marginTop: "8rem", padding: "0 1rem" }}>
-					<h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>{t.termsOfService}</h1>
+				<main className="max-w-3xl mx-auto mt-32 mb-8 px-4">
+					<h1 className="text-xl font-bold mb-8 text-gray-900 dark:text-gray-100">{t.termsOfService}</h1>
 					{children}
 				</main>
 			</>
