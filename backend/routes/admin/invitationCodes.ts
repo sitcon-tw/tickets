@@ -496,7 +496,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 	// Send invitation codes via email
 	fastify.post<{
-		Body: { email: string; codes: string[]; groupName?: string };
+		Body: { email: string; code: string; message?: string};
 	}>(
 		"/invitation-codes/send-email",
 		{
@@ -511,27 +511,27 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 							format: "email",
 							description: "收件者 Email"
 						},
-						codes: {
-							type: "array",
-							items: { type: "string" },
-							description: "邀請碼列表"
-						},
-						groupName: {
+						code: {
 							type: "string",
-							description: "邀請碼組名稱"
+							description: "邀請碼"
+						},
+						message: {
+							type: "string",
+							description: "附加訊息",
+							default: ""
 						}
 					},
-					required: ["email", "codes"]
+					required: ["email", "code"]
 				}
 			}
 		},
-		async (request: FastifyRequest<{ Body: { email: string; codes: string[]; groupName?: string } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Body: { email: string; code: string; message?: string } }>, reply: FastifyReply) => {
 			try {
-				const { email, codes, groupName } = request.body;
+				const { email, code, message } = request.body;
 
 				const { sendInvitationCodes } = await import("#utils/email.js");
 
-				await sendInvitationCodes(email, codes, groupName);
+				await sendInvitationCodes(email, code, message);
 
 				return reply.send(successResponse(null, "成功寄送邀請碼"));
 			} catch (error) {

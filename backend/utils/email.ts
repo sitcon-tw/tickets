@@ -4,11 +4,11 @@ import type { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
 import type { Event, Registration, Ticket } from "../types/database";
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Lazy-load MailtrapClient only when needed
 let client: MailtrapClient | null = null;
 
 async function getMailtrapClient(): Promise<MailtrapClient> {
@@ -21,46 +21,7 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 	return client;
 }
 
-import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
-
-export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
-	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: registration.email
-			}
-		];
-
-		const templatePath = path.join(__dirname, "../email-templates/registered.html");
-		let template = await fs.readFile(templatePath, "utf-8");
-		let html = template
-			.replace(/\{\{eventName\}\}/g, String(event.name))
-			.replace(/\{\{eventStartDate\}\}/g, new Date(event.startDate).toLocaleDateString("zh-TW"))
-			.replace(/\{\{eventEndDate\}\}/g, new Date(event.endDate).toLocaleDateString("zh-TW"))
-			.replace(/\{\{eventLocation\}\}/g, event.location || "待公布 TBA")
-			.replace(/\{\{registrationId\}\}/g, registration.id)
-			.replace(/\{\{referralCode\}\}/g, "")
-			.replace(/\{\{qrCodeUrl\}\}/g, qrCodeUrl || "");
-
-		await client.send({
-			from: sender,
-			to: recipients,
-			subject: `【${event.name}】報名確認 Registration Confirmation`,
-			html
-		});
-		return true;
-	} catch (error) {
-		console.error("Email sending error:", error);
-		return false;
-	}
-};
-
+// this already finished, only need to edit the template
 export const sendMagicLink = async (email: string, magicLink: string): Promise<boolean> => {
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -107,6 +68,58 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
+
+// please rewrite this
+export const sendRegistrationConfirmation = async (registration: Registration, event: Event, qrCodeUrl: string): Promise<boolean> => {
+	try {
+		const client = await getMailtrapClient();
+		const sender: EmailSender = {
+			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
+			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
+		};
+
+		const recipients: EmailRecipient[] = [
+			{
+				email: registration.email
+			}
+		];
+
+		const templatePath = path.join(__dirname, "../email-templates/registered.html");
+		let template = await fs.readFile(templatePath, "utf-8");
+		let html = template
+			.replace(/\{\{eventName\}\}/g, String(event.name))
+			.replace(/\{\{eventStartDate\}\}/g, new Date(event.startDate).toLocaleDateString("zh-TW"))
+			.replace(/\{\{eventEndDate\}\}/g, new Date(event.endDate).toLocaleDateString("zh-TW"))
+			.replace(/\{\{eventLocation\}\}/g, event.location || "待公布 TBA")
+			.replace(/\{\{registrationId\}\}/g, registration.id)
+			.replace(/\{\{referralCode\}\}/g, "")
+			.replace(/\{\{qrCodeUrl\}\}/g, qrCodeUrl || "");
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: `【${event.name}】報名確認 Registration Confirmation`,
+			html
+		});
+		return true;
+	} catch (error) {
+		console.error("Email sending error:", error);
+		return false;
+	}
+};
+
+export const sendInvitationCodes = async (email: string, code: string[], message?: string): Promise<boolean> => {
+	// please rewrite this
+	try {
+		console.log("hehe")
+
+	} catch (error) {
+		console.error("Send invitation codes error:", error);
+		throw error;
+	}
+};
+
+// please add cancel and invite code email functions here
 
 export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
 	try {
@@ -265,85 +278,6 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 		};
 	} catch (error) {
 		console.error("Campaign email sending error:", error);
-		throw error;
-	}
-};
-
-export const sendInvitationCodes = async (email: string, codes: string[], groupName?: string): Promise<boolean> => {
-	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: email
-			}
-		];
-
-		const codesHtml = codes.map(code => `<li style="font-family: monospace; font-size: 16px; padding: 8px; background-color: #f8f9fa; margin: 5px 0; border-radius: 4px;">${code}</li>`).join("");
-
-		await client.send({
-			from: sender,
-			to: recipients,
-			subject: `【SITCONTIX】邀請碼 Invitation Codes${groupName ? ` - ${groupName}` : ""}`,
-			html: `
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<meta charset="utf-8">
-					<meta name="viewport" content="width=device-width, initial-scale=1.0">
-					<title>邀請碼</title>
-				</head>
-				<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-					<div style="text-align: center; margin-bottom: 30px;">
-						<h1 style="color: #2c3e50;">SITCONTIX 邀請碼</h1>
-						<h2 style="color: #2c3e50;">Invitation Codes</h2>
-					</div>
-
-					${
-						groupName
-							? `
-					<div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-						<h3 style="color: #2c3e50; margin-top: 0;">邀請碼組別 Group Name</h3>
-						<p><strong>${groupName}</strong></p>
-					</div>
-					`
-							: ""
-					}
-
-					<div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-						<h3 style="color: #2c3e50; margin-top: 0;">邀請碼列表 Invitation Codes (${codes.length} 個)</h3>
-						<ul style="list-style: none; padding: 0; margin: 10px 0;">
-							${codesHtml}
-						</ul>
-					</div>
-
-					<div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
-						<p style="margin: 0;"><strong>使用說明 Instructions:</strong></p>
-						<ul style="margin: 10px 0 0 20px; padding: 0;">
-							<li>請將邀請碼分享給需要的人員</li>
-							<li>每個邀請碼僅限使用一次（除非另有設定）</li>
-							<li>請妥善保管邀請碼，避免外流</li>
-						</ul>
-					</div>
-
-					<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-						<p style="color: #666; font-size: 12px;">
-							此為系統自動發送信件，請勿直接回覆<br>
-							This is an automated email, please do not reply directly
-						</p>
-					</div>
-				</body>
-				</html>
-			`
-		});
-
-		return true;
-	} catch (error) {
-		console.error("Send invitation codes error:", error);
 		throw error;
 	}
 };
