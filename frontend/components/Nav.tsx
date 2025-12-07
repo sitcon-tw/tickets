@@ -188,9 +188,9 @@ export default function Nav() {
 									{t.adminPanel}
 								</Link>
 							)}
-							<Link href={localizedPath("/my-registration/")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+							{/* <Link href={localizedPath("/my-registration/")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 								{t.myTickets}
-							</Link>
+							</Link> */}
 							<Button
 								variant="ghost"
 								size="sm"
