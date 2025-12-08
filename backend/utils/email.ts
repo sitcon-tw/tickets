@@ -194,7 +194,13 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		const ticketName = getLocalizedValue(ticket.name);
 		const eventLocation = event.location || "待公布 TBA";
 
+		const userName = await prisma.user.findFirst({
+			where: { id: registration.userId },
+			select: { name: true }
+		}).then(user => user?.name || "");
+
 		let html = template
+			.replace(/\{\{userName\}\}/g, userName)
 			.replace(/\{\{eventName\}\}/g, eventName)
 			.replace(/\{\{eventDate\}\}/g, eventDate)
 			.replace(/\{\{eventLocation\}\}/g, eventLocation)
