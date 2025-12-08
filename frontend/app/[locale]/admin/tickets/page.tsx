@@ -49,7 +49,7 @@ function LanguageFields({ ticketName, description, plainDescription, language, l
 				<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
 				{description && (
 					<div className="mt-2 p-3 border rounded-md bg-muted">
-						<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
+						<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
 						<MarkdownContent content={description} />
 					</div>
 				)}
@@ -124,7 +124,9 @@ export default function TicketsPage() {
 		generatedLink: { "zh-Hant": "產生的連結", "zh-Hans": "生成的链接", en: "Generated Link" },
 		copyLink: { "zh-Hant": "複製連結", "zh-Hans": "复制链接", en: "Copy Link" },
 		copied: { "zh-Hant": "已複製！", "zh-Hans": "已复制！", en: "Copied!" },
-		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" }
+		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
+		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
+		linkDescription: { "zh-Hant": "產生此票種的直接連結，可選擇性加入邀請碼和推薦碼。", "zh-Hans": "生成此票种的直接链接，可选择性加入邀请码和推荐码。", en: "Generate a direct link to this ticket with optional invite and referral codes." }
 	});
 
 	const loadTickets = useCallback(async () => {
@@ -450,15 +452,16 @@ export default function TicketsPage() {
 									language="en"
 									languageLabel="English"
 									onNameChange={setNameEn}
-									onDescriptionChange={setDescEn}
-									onPlainDescriptionChange={setPlainDescEn}
-									required={true}
-									t={{
-										ticketName: t.ticketName,
-										description: t.description,
-										plainDescription: t.plainDescription
-									}}
-								/>
+								onDescriptionChange={setDescEn}
+								onPlainDescriptionChange={setPlainDescEn}
+								required={true}
+								t={{
+									ticketName: t.ticketName,
+									description: t.description,
+									plainDescription: t.plainDescription,
+									preview: t.preview
+								}}
+							/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hant" className="space-y-4">
@@ -469,14 +472,15 @@ export default function TicketsPage() {
 									language="zh-Hant"
 									languageLabel="繁體中文"
 									onNameChange={setNameZhHant}
-									onDescriptionChange={setDescZhHant}
-									onPlainDescriptionChange={setPlainDescZhHant}
-									t={{
-										ticketName: t.ticketName,
-										description: t.description,
-										plainDescription: t.plainDescription
-									}}
-								/>
+								onDescriptionChange={setDescZhHant}
+								onPlainDescriptionChange={setPlainDescZhHant}
+								t={{
+									ticketName: t.ticketName,
+									description: t.description,
+									plainDescription: t.plainDescription,
+									preview: t.preview
+								}}
+							/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hans" className="space-y-4">
@@ -487,14 +491,15 @@ export default function TicketsPage() {
 									language="zh-Hans"
 									languageLabel="简体中文"
 									onNameChange={setNameZhHans}
-									onDescriptionChange={setDescZhHans}
-									onPlainDescriptionChange={setPlainDescZhHans}
-									t={{
-										ticketName: t.ticketName,
-										description: t.description,
-										plainDescription: t.plainDescription
-									}}
-								/>
+								onDescriptionChange={setDescZhHans}
+								onPlainDescriptionChange={setPlainDescZhHans}
+								t={{
+									ticketName: t.ticketName,
+									description: t.description,
+									plainDescription: t.plainDescription,
+									preview: t.preview
+								}}
+							/>
 							</TabsContent>
 						</Tabs>
 
