@@ -19,51 +19,6 @@ import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
 
-function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, t }: LanguageFieldsProps) {
-	const placeholders = {
-		en: {
-			plainDesc: "Plain text description without markdown formatting"
-		},
-		"zh-Hant": {
-			plainDesc: "純文字描述，不含 Markdown 格式"
-		},
-		"zh-Hans": {
-			plainDesc: "纯文字描述，不含 Markdown 格式"
-		}
-	};
-
-	const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
-
-	return (
-		<div className="space-y-4">
-			<div className="space-y-2">
-				<Label htmlFor={`name-${language}`}>
-					{t.ticketName} ({languageLabel}) {required && "*"}
-				</Label>
-				<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
-			</div>
-			<div className="space-y-2">
-				<Label htmlFor={`desc-${language}`}>
-					{t.description} ({languageLabel}, Markdown)
-				</Label>
-				<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
-				{description && (
-					<div className="mt-2 p-3 border rounded-md bg-muted">
-						<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
-						<MarkdownContent content={description} />
-					</div>
-				)}
-			</div>
-			<div className="space-y-2">
-				<Label htmlFor={`plainDesc-${language}`}>
-					{t.plainDescription} ({languageLabel})
-				</Label>
-				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
-			</div>
-		</div>
-	);
-}
-
 export default function TicketsPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
@@ -87,6 +42,10 @@ export default function TicketsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [ticketPrice, setTicketPrice] = useState(0);
+	const [ticketQuantity, setTicketQuantity] = useState(0);
+	const [ticketSaleStart, setTicketSaleStart] = useState<Date | null>(null);
+	const [ticketSaleEnd, setTicketSaleEnd] = useState<Date | null>(null);
 	const [requireInviteCode, setRequireInviteCode] = useState(false);
 	const [requireSmsVerification, setRequireSmsVerification] = useState(false);
 	const [hidden, setHidden] = useState(false);
@@ -128,6 +87,51 @@ export default function TicketsPage() {
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
 		linkDescription: { "zh-Hant": "產生此票種的直接連結，可選擇性加入邀請碼和推薦碼。", "zh-Hans": "生成此票种的直接链接，可选择性加入邀请码和推荐码。", en: "Generate a direct link to this ticket with optional invite and referral codes." }
 	});
+
+	function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, tt }: LanguageFieldsProps) {
+		const placeholders = {
+			en: {
+				plainDesc: "Plain text description without markdown formatting"
+			},
+			"zh-Hant": {
+				plainDesc: "純文字描述，不含 Markdown 格式"
+			},
+			"zh-Hans": {
+				plainDesc: "纯文字描述，不含 Markdown 格式"
+			}
+		};
+
+		const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
+
+		return (
+			<div className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor={`name-${language}`}>
+						{tt.ticketName} ({languageLabel}) {required && "*"}
+					</Label>
+					<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={`desc-${language}`}>
+						{tt.description} ({languageLabel}, Markdown)
+					</Label>
+					<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
+					{description && (
+						<div className="mt-2 p-3 border rounded-md bg-muted">
+							<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
+							<MarkdownContent content={description} />
+						</div>
+					)}
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={`plainDesc-${language}`}>
+						{tt.plainDescription} ({languageLabel})
+					</Label>
+					<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
+				</div>
+			</div>
+		);
+}
 
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
@@ -193,9 +197,8 @@ export default function TicketsPage() {
 		e.preventDefault();
 		if (!currentEventId) return;
 
-		const formData = new FormData(e.currentTarget);
-		const saleStartStr = formData.get("saleStart") as string;
-		const saleEndStr = formData.get("saleEnd") as string;
+		const saleStartStr = ticketSaleStart ? ticketSaleStart.toISOString() : "";
+		const saleEndStr = ticketSaleEnd ? ticketSaleEnd.toISOString() : "";
 
 		const data: {
 			eventId: string;
@@ -226,8 +229,8 @@ export default function TicketsPage() {
 				"zh-Hant": plainDescZhHant,
 				"zh-Hans": plainDescZhHans
 			},
-			price: parseInt(formData.get("price") as string) || 0,
-			quantity: parseInt(formData.get("quantity") as string) || 0,
+			price: ticketPrice,
+			quantity: ticketQuantity,
 			requireInviteCode: requireInviteCode,
 			requireSmsVerification: requireSmsVerification,
 			hidden: hidden
@@ -403,22 +406,22 @@ export default function TicketsPage() {
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="price">{t.price}</Label>
-										<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} />
+										<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || ticketPrice} onChange={e => setTicketPrice(parseInt(e.target.value) || 0)} />
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="quantity">{t.quantity}</Label>
-										<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
+										<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || ticketQuantity} onChange={e => setTicketQuantity(parseInt(e.target.value) || 0)} />
 									</div>
 								</div>
 
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="saleStart">{t.startTime}</Label>
-										<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} />
+										<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} onChange={e => setTicketSaleStart(e.target.value ? new Date(e.target.value) : null)} />
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="saleEnd">{t.endTime}</Label>
-										<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} />
+										<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} onChange={e => setTicketSaleEnd(e.target.value ? new Date(e.target.value) : null)} />
 									</div>
 								</div>
 
@@ -452,16 +455,15 @@ export default function TicketsPage() {
 									language="en"
 									languageLabel="English"
 									onNameChange={setNameEn}
-								onDescriptionChange={setDescEn}
-								onPlainDescriptionChange={setPlainDescEn}
-								required={true}
-								t={{
-									ticketName: t.ticketName,
-									description: t.description,
-									plainDescription: t.plainDescription,
-									preview: t.preview
-								}}
-							/>
+									onDescriptionChange={setDescEn}
+									onPlainDescriptionChange={setPlainDescEn}
+									required={true}
+									tt={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription,
+									}}
+								/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hant" className="space-y-4">
@@ -472,15 +474,14 @@ export default function TicketsPage() {
 									language="zh-Hant"
 									languageLabel="繁體中文"
 									onNameChange={setNameZhHant}
-								onDescriptionChange={setDescZhHant}
-								onPlainDescriptionChange={setPlainDescZhHant}
-								t={{
-									ticketName: t.ticketName,
-									description: t.description,
-									plainDescription: t.plainDescription,
-									preview: t.preview
-								}}
-							/>
+									onDescriptionChange={setDescZhHant}
+									onPlainDescriptionChange={setPlainDescZhHant}
+									tt={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription,
+									}}
+								/>
 							</TabsContent>
 
 							<TabsContent value="zh-Hans" className="space-y-4">
@@ -491,15 +492,14 @@ export default function TicketsPage() {
 									language="zh-Hans"
 									languageLabel="简体中文"
 									onNameChange={setNameZhHans}
-								onDescriptionChange={setDescZhHans}
-								onPlainDescriptionChange={setPlainDescZhHans}
-								t={{
-									ticketName: t.ticketName,
-									description: t.description,
-									plainDescription: t.plainDescription,
-									preview: t.preview
-								}}
-							/>
+									onDescriptionChange={setDescZhHans}
+									onPlainDescriptionChange={setPlainDescZhHans}
+									tt={{
+										ticketName: t.ticketName,
+										description: t.description,
+										plainDescription: t.plainDescription,
+									}}
+								/>
 							</TabsContent>
 						</Tabs>
 
