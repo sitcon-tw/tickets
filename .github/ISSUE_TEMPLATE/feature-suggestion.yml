@@ -1,0 +1,89 @@
+name: 💡 功能建議
+description: 提出新功能或改善建議
+title: "[建議] "
+labels: ["enhancement", "待評估"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您提出功能建議！請詳細說明您的想法。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 問題或需求
+      description: 這個建議要解決什麼問題？或滿足什麼需求？
+      placeholder: 描述目前遇到的問題或使用情境...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建議的解決方案
+      description: 您希望如何實作這個功能？
+      placeholder: 描述您期望的功能如何運作...
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: 預期效益
+      description: 這個功能會帶來什麼好處？
+      placeholder: |
+        - 提升使用者體驗
+        - 增加效率
+        - 解決特定痛點
+        - ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先級建議
+      description: 您認為這個功能的優先級？
+      options:
+        - 🔥 高 - 非常需要
+        - 🔶 中 - 重要但不急
+        - 🔵 低 - 錦上添花
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 是否考慮過其他解決方案？
+      placeholder: 描述其他可能的實作方式...
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: 參考範例
+      description: 有沒有類似的實作範例或參考？
+      placeholder: 提供連結或描述...
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: 設計稿或示意圖
+      description: 如果有相關的設計稿、流程圖或示意圖，請提供
+      placeholder: 貼上圖片或連結...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他補充
+      description: 任何其他想補充的資訊
+    validations:
+      required: false

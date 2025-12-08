@@ -1,0 +1,94 @@
+name: 🐛 Bug 回報
+description: 回報系統中發現的錯誤或問題
+title: "[Bug] "
+labels: ["bug", "待處理"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您回報 Bug！請詳細描述問題，幫助我們更快修復。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 問題描述
+      description: 請清楚描述遇到的問題
+      placeholder: 描述發生了什麼問題...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      description: 如何重現這個問題？
+      placeholder: |
+        1. 前往 '...'
+        2. 點擊 '...'
+        3. 捲動到 '...'
+        4. 看到錯誤
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期行為
+      description: 您預期應該發生什麼？
+      placeholder: 描述預期的正常行為...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際行為
+      description: 實際上發生了什麼？
+      placeholder: 描述實際發生的情況...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 嚴重程度
+      description: 這個問題的影響程度？
+      options:
+        - 🔴 緊急 - 系統無法使用
+        - 🟠 高 - 重要功能受影響
+        - 🟡 中 - 部分功能受影響
+        - 🟢 低 - 輕微問題或建議改善
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境資訊
+      description: 請提供相關的環境資訊
+      placeholder: |
+        - 瀏覽器: Chrome 120
+        - 作業系統: macOS 14.0
+        - Node.js 版本: v20.0.0
+        - 其他相關資訊...
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截圖或錯誤訊息
+      description: 如有相關截圖或錯誤訊息，請貼上
+      placeholder: 貼上截圖或錯誤訊息...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他資訊
+      description: 任何其他有助於解決問題的資訊
+    validations:
+      required: false
