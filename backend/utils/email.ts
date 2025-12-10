@@ -201,8 +201,8 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 	const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 	const eventSlugOrId = event.slug || event.id;
-	const calendarIcsUrl = `${frontendUrl}/api/${eventSlugOrId}/calendar.ics`;
-	const calendarGoogleUrl = `https://calendar.google.com/calendar/r?cid=webcal://${frontendUrl.replace(/^https?:\/\//, '')}/api/${eventSlugOrId}/calendar.ics`;
+	const calendarIcsUrl = `${frontendUrl}/api/events/${eventSlugOrId}/calendar.ics`;
+	const calendarGoogleUrl = `https://calendar.google.com/calendar/r?cid=webcal://${frontendUrl.replace(/^https?:\/\//, '')}/api/events/${eventSlugOrId}/calendar.ics`;
 	let html = template
 		.replace(/\{\{userName\}\}/g, userName)
 		.replace(/\{\{eventName\}\}/g, eventName)
