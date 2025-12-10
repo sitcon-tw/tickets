@@ -13,6 +13,10 @@ export const ticketProperties = {
 		type: "string",
 		description: "活動 ID"
 	},
+	order: {
+		type: "integer",
+		description: "顯示順序"
+	},
 	name: {
 		type: "object",
 		additionalProperties: true,
@@ -83,6 +87,10 @@ export const ticketCreateBody = {
 			type: "string",
 			description: "活動 ID"
 		},
+		order: {
+			type: "integer",
+			description: "顯示順序"
+		},
 		name: {
 			type: "object",
 			additionalProperties: true,
@@ -135,6 +143,10 @@ export const ticketCreateBody = {
 export const ticketUpdateBody = {
 	type: "object",
 	properties: {
+		order: {
+			type: "integer",
+			description: "顯示順序"
+		},
 		name: {
 			type: "object",
 			additionalProperties: true,

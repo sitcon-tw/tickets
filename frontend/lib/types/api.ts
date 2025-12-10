@@ -112,6 +112,7 @@ export interface EventStats {
 export interface Ticket {
 	id: string;
 	eventId?: string;
+	order?: number;
 	name: LocalizedText;
 	description?: LocalizedText;
 	plainDescription?: LocalizedText;
@@ -129,6 +130,13 @@ export interface Ticket {
 	updatedAt?: string;
 	requireInviteCode?: boolean;
 	requireSmsVerification?: boolean;
+}
+
+export interface TicketReorder {
+	tickets: Array<{
+		id: string;
+		order: number;
+	}>;
 }
 
 export interface FilterCondition {

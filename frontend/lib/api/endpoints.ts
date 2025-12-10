@@ -24,6 +24,7 @@ import type {
 	Ticket,
 	TicketAnalytics,
 	TicketFormField,
+	TicketReorder,
 	User
 } from "@/lib/types/api";
 import { apiClient } from "./client";
@@ -144,7 +145,9 @@ export const adminTicketsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/tickets/${id}`),
 
-	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`)
+	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
+
+	reorder: (data: TicketReorder) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
 };
 
 // Admin - Event Form Fields

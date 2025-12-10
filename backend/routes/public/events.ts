@@ -102,7 +102,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						requireInviteCode: true,
 						requireSmsVerification: true
 					},
-					orderBy: { createdAt: "asc" }
+					orderBy: { order: "asc" }
 				});
 
 				const formFieldsRaw = await prisma.eventFormFields.findMany({

@@ -1,7 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
-import { DataTable } from "@/components/data-table/data-table";
+import { SortableDataTable } from "@/components/data-table/sortable-data-table";
 import Checkbox from "@/components/input/Checkbox";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import { LanguageFieldsProps } from "@/lib/types/pages";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 export default function TicketsPage() {
 	const locale = useLocale();
@@ -32,6 +35,14 @@ export default function TicketsPage() {
 	const [selectedTicketForLink, setSelectedTicketForLink] = useState<Ticket | null>(null);
 	const [inviteCode, setInviteCode] = useState("");
 	const [refCode, setRefCode] = useState("");
+	const [isSorting, setIsSorting] = useState(false);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates
+		})
+	);
 
 	const [nameEn, setNameEn] = useState("");
 	const [nameZhHant, setNameZhHant] = useState("");
@@ -282,6 +293,43 @@ export default function TicketsPage() {
 		}
 	}
 
+	async function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+
+		if (!over || active.id === over.id) {
+			return;
+		}
+
+		const oldIndex = tickets.findIndex(t => t.id === active.id);
+		const newIndex = tickets.findIndex(t => t.id === over.id);
+
+		if (oldIndex === -1 || newIndex === -1) {
+			return;
+		}
+
+		// Optimistically update the UI
+		const newTickets = arrayMove(tickets, oldIndex, newIndex);
+		setTickets(newTickets);
+
+		// Update order values and send to backend
+		const reorderedTickets = newTickets.map((ticket, index) => ({
+			id: ticket.id,
+			order: index
+		}));
+
+		try {
+			setIsSorting(true);
+			await adminTicketsAPI.reorder({ tickets: reorderedTickets });
+			showAlert("票種順序已更新", "success");
+		} catch (error) {
+			// Revert on error
+			showAlert("更新順序失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+			await loadTickets();
+		} finally {
+			setIsSorting(false);
+		}
+	}
+
 	function computeStatus(ticket: Ticket) {
 		const now = new Date();
 		if (ticket.saleStart && new Date(ticket.saleStart) > now) {
@@ -396,11 +444,17 @@ export default function TicketsPage() {
 			<AdminHeader title={t.title} />
 
 			<section>
-				<DataTable columns={columns} data={ticketsWithStatus} />
+				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
+					<SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+						<SortableDataTable columns={columns} data={ticketsWithStatus} />
+					</SortableContext>
+				</DndContext>
 			</section>
 
 			<section className="mt-8 text-center">
-				<Button onClick={() => openModal()}>+ {t.addTicket}</Button>
+				<Button onClick={() => openModal()} disabled={isSorting}>
+					+ {t.addTicket}
+				</Button>
 			</section>
 
 			<Dialog open={showModal} onOpenChange={setShowModal}>

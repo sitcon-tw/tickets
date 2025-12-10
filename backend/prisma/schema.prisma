@@ -109,6 +109,7 @@ model Event {
 model Ticket {
   id          String   @id @default(cuid())
   eventId     String
+  order       Int      @default(0) // display order of the ticket
   name        Json     // Localized: {"en": "Ticket Name", "zh": "票券名稱"}
   description Json?    // Localized: {"en": "Description", "zh": "描述"}
   plainDescription Json? // Localized plain text: {"en": "Plain description", "zh": "純文字描述"}

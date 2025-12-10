@@ -70,6 +70,7 @@ export interface RegistrationUpdateRequest {
 
 export interface TicketCreateRequest {
 	eventId: string;
+	order?: number;
 	name: string;
 	description?: string;
 	price: number;
@@ -81,6 +82,7 @@ export interface TicketCreateRequest {
 }
 
 export interface TicketUpdateRequest {
+	order?: number;
 	name?: string;
 	description?: string;
 	price?: number;
@@ -89,6 +91,10 @@ export interface TicketUpdateRequest {
 	saleEnd?: string;
 	isActive?: boolean;
 	requireInviteCode?: boolean;
+}
+
+export interface TicketReorderRequest {
+	tickets: { id: string; order: number }[];
 }
 
 export interface InvitationCodeCreateRequest {
