@@ -48,8 +48,16 @@ export default function EventsPage() {
 		description: { "zh-Hant": "描述", "zh-Hans": "描述", en: "Description" },
 		plainDescription: { "zh-Hant": "Metadata 純文字描述", "zh-Hans": "Metadata 纯文字描述", en: "Plaintext Description for Metadata" },
 		slug: { "zh-Hant": "自訂網址 Slug", "zh-Hans": "自定义网址 Slug", en: "Custom URL Slug" },
-		slugHint: { "zh-Hant": "選填。僅可使用小寫字母、數字和連字號。留空則使用活動 ID。", "zh-Hans": "选填。仅可使用小写字母、数字和连字号。留空则使用活动 ID。", en: "Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID." },
-		slugTitle: { "zh-Hant": "僅可使用小寫字母、數字和連字號（例如：sitcon-2026）", "zh-Hans": "仅可使用小写字母、数字和连字号（例如：sitcon-2026）", en: "Only lowercase letters, numbers, and hyphens (e.g., sitcon-2026)" },
+		slugHint: {
+			"zh-Hant": "選填。僅可使用小寫字母、數字和連字號。留空則使用活動 ID。",
+			"zh-Hans": "选填。仅可使用小写字母、数字和连字号。留空则使用活动 ID。",
+			en: "Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID."
+		},
+		slugTitle: {
+			"zh-Hant": "僅可使用小寫字母、數字和連字號（例如：sitcon-2026）",
+			"zh-Hans": "仅可使用小写字母、数字和连字号（例如：sitcon-2026）",
+			en: "Only lowercase letters, numbers, and hyphens (e.g., sitcon-2026)"
+		},
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
 		ogImage: { "zh-Hant": "封面圖片網址（建議尺寸：1800x300）", "zh-Hans": "封面图片网址（建议尺寸：1800x300）", en: "Cover Image URL (Recommended size: 1800x300)" },
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
@@ -277,12 +285,12 @@ export default function EventsPage() {
 									<div className="space-y-2">
 										<Label htmlFor="descEn">{t.description} (English, Markdown)</Label>
 										<Textarea id="descEn" value={descEn} onChange={e => setDescEn(e.target.value)} rows={6} />
-									{descEn && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
-											<MarkdownContent content={descEn} />
-										</div>
-									)}
+										{descEn && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
+												<MarkdownContent content={descEn} />
+											</div>
+										)}
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="plainDescEn">{t.plainDescription} (English)</Label>
@@ -298,12 +306,12 @@ export default function EventsPage() {
 									<div className="space-y-2">
 										<Label htmlFor="descZhHant">{t.description} (繁體中文，Markdown)</Label>
 										<Textarea id="descZhHant" value={descZhHant} onChange={e => setDescZhHant(e.target.value)} rows={6} />
-									{descZhHant && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
-											<MarkdownContent content={descZhHant} />
-										</div>
-									)}
+										{descZhHant && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
+												<MarkdownContent content={descZhHant} />
+											</div>
+										)}
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="plainDescZhHant">{t.plainDescription} (繁體中文)</Label>
@@ -319,12 +327,12 @@ export default function EventsPage() {
 									<div className="space-y-2">
 										<Label htmlFor="descZhHans">{t.description} (简体中文，Markdown)</Label>
 										<Textarea id="descZhHans" value={descZhHans} onChange={e => setDescZhHans(e.target.value)} rows={6} />
-									{descZhHans && (
-										<div className="mt-2 p-3 border rounded-md bg-muted">
-											<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
-											<MarkdownContent content={descZhHans} />
-										</div>
-									)}
+										{descZhHans && (
+											<div className="mt-2 p-3 border rounded-md bg-muted">
+												<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
+												<MarkdownContent content={descZhHans} />
+											</div>
+										)}
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="plainDescZhHans">{t.plainDescription} (简体中文)</Label>
@@ -333,19 +341,11 @@ export default function EventsPage() {
 								</TabsContent>
 							</Tabs>
 
-						<div className="space-y-2">
-							<Label htmlFor="slug">{t.slug}</Label>
-							<Input
-								id="slug"
-								type="text"
-								value={slug}
-								onChange={e => setSlug(e.target.value)}
-								placeholder="sitcon-2026"
-								pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-								title={t.slugTitle}
-							/>
-							<p className="text-xs text-muted-foreground">{t.slugHint}</p>
-						</div>
+							<div className="space-y-2">
+								<Label htmlFor="slug">{t.slug}</Label>
+								<Input id="slug" type="text" value={slug} onChange={e => setSlug(e.target.value)} placeholder="sitcon-2026" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" title={t.slugTitle} />
+								<p className="text-xs text-muted-foreground">{t.slugHint}</p>
+							</div>
 							<div className="space-y-2">
 								<Label htmlFor="ogImage">{t.ogImage}</Label>
 								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://example.com/image.jpg" />

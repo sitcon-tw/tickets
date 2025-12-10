@@ -85,10 +85,25 @@ export default function TicketsPage() {
 		copied: { "zh-Hant": "已複製！", "zh-Hans": "已复制！", en: "Copied!" },
 		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
-		linkDescription: { "zh-Hant": "產生此票種的直接連結，可選擇性加入邀請碼和推薦碼。", "zh-Hans": "生成此票种的直接链接，可选择性加入邀请码和推荐码。", en: "Generate a direct link to this ticket with optional invite and referral codes." }
+		linkDescription: {
+			"zh-Hant": "產生此票種的直接連結，可選擇性加入邀請碼和推薦碼。",
+			"zh-Hans": "生成此票种的直接链接，可选择性加入邀请码和推荐码。",
+			en: "Generate a direct link to this ticket with optional invite and referral codes."
+		}
 	});
 
-	function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, tt }: LanguageFieldsProps) {
+	function LanguageFields({
+		ticketName,
+		description,
+		plainDescription,
+		language,
+		languageLabel,
+		onNameChange,
+		onDescriptionChange,
+		onPlainDescriptionChange,
+		required = false,
+		tt
+	}: LanguageFieldsProps) {
 		const placeholders = {
 			en: {
 				plainDesc: "Plain text description without markdown formatting"
@@ -131,7 +146,7 @@ export default function TicketsPage() {
 				</div>
 			</div>
 		);
-}
+	}
 
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
@@ -410,18 +425,37 @@ export default function TicketsPage() {
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="quantity">{t.quantity}</Label>
-										<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || ticketQuantity} onChange={e => setTicketQuantity(parseInt(e.target.value) || 0)} />
+										<Input
+											id="quantity"
+											name="quantity"
+											type="number"
+											min="0"
+											defaultValue={editingTicket?.quantity || ticketQuantity}
+											onChange={e => setTicketQuantity(parseInt(e.target.value) || 0)}
+										/>
 									</div>
 								</div>
 
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="saleStart">{t.startTime}</Label>
-										<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} onChange={e => setTicketSaleStart(e.target.value ? new Date(e.target.value) : null)} />
+										<Input
+											id="saleStart"
+											name="saleStart"
+											type="datetime-local"
+											defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""}
+											onChange={e => setTicketSaleStart(e.target.value ? new Date(e.target.value) : null)}
+										/>
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="saleEnd">{t.endTime}</Label>
-										<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} onChange={e => setTicketSaleEnd(e.target.value ? new Date(e.target.value) : null)} />
+										<Input
+											id="saleEnd"
+											name="saleEnd"
+											type="datetime-local"
+											defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""}
+											onChange={e => setTicketSaleEnd(e.target.value ? new Date(e.target.value) : null)}
+										/>
 									</div>
 								</div>
 
@@ -461,7 +495,7 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription,
+										plainDescription: t.plainDescription
 									}}
 								/>
 							</TabsContent>
@@ -479,7 +513,7 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription,
+										plainDescription: t.plainDescription
 									}}
 								/>
 							</TabsContent>
@@ -497,7 +531,7 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription,
+										plainDescription: t.plainDescription
 									}}
 								/>
 							</TabsContent>

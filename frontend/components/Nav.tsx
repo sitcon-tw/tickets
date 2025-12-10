@@ -174,7 +174,7 @@ export default function Nav() {
 		>
 			<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
 				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
-					{isDarkMode || !isDarkMode && isScrolled ? (
+					{isDarkMode || (!isDarkMode && isScrolled) ? (
 						<>
 							<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
 							<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />

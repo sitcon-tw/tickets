@@ -114,31 +114,28 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 
 const publicCalendarRoutes: FastifyPluginAsync = async fastify => {
 	// Get iCalendar file for an event
-	fastify.get<{ Params: CalendarParams }>(
-		"/events/:eventSlug/calendar.ics",
-		async (request: FastifyRequest<{ Params: CalendarParams }>, reply: FastifyReply) => {
-			try {
-				const { eventSlug } = request.params;
+	fastify.get<{ Params: CalendarParams }>("/events/:eventSlug/calendar.ics", async (request: FastifyRequest<{ Params: CalendarParams }>, reply: FastifyReply) => {
+		try {
+			const { eventSlug } = request.params;
 
-				const icalString = await generateEventCalendar(eventSlug);
+			const icalString = await generateEventCalendar(eventSlug);
 
-				// Set headers for calendar download
-				reply.header("Content-Type", "text/calendar; charset=utf-8");
-				reply.header("Content-Disposition", `attachment; filename="${eventSlug}.ics"`);
-				reply.header("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+			// Set headers for calendar download
+			reply.header("Content-Type", "text/calendar; charset=utf-8");
+			reply.header("Content-Disposition", `attachment; filename="${eventSlug}.ics"`);
+			reply.header("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
 
-				return reply.send(icalString);
-			} catch (error) {
-				console.error("Generate calendar error:", error);
-				if (error instanceof Error && error.message === "Event not found") {
-					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
-					return reply.code(statusCode).send(response);
-				}
-				const { response, statusCode } = serverErrorResponse("生成行事曆失敗");
+			return reply.send(icalString);
+		} catch (error) {
+			console.error("Generate calendar error:", error);
+			if (error instanceof Error && error.message === "Event not found") {
+				const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 				return reply.code(statusCode).send(response);
 			}
+			const { response, statusCode } = serverErrorResponse("生成行事曆失敗");
+			return reply.code(statusCode).send(response);
 		}
-	);
+	});
 };
 
 export default publicCalendarRoutes;

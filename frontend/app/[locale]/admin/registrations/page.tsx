@@ -608,10 +608,10 @@ export default function RegistrationsPage() {
 								)
 							)}
 						</div>
-					{selectedRegistration?.event && (
-						<div>
-							<Label className="text-xs uppercase tracking-wider opacity-70">{t.event}</Label>
-							<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
+						{selectedRegistration?.event && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">{t.event}</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
 								{selectedRegistration.event.startDate && (
 									<div className="text-[0.85rem] opacity-70 mt-1">
 										{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
@@ -619,28 +619,32 @@ export default function RegistrationsPage() {
 								)}
 							</div>
 						)}
-					{selectedRegistration?.ticket && (
-						<div>
-							<Label className="text-xs uppercase tracking-wider opacity-70">{t.ticket}</Label>
-							<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
-							{selectedRegistration.ticket.price !== undefined && <div className="text-[0.85rem] opacity-70 mt-1">{t.priceLabel}${selectedRegistration.ticket.price}</div>}
-						</div>
-					)}
+						{selectedRegistration?.ticket && (
+							<div>
+								<Label className="text-xs uppercase tracking-wider opacity-70">{t.ticket}</Label>
+								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.ticket.name, locale)}</div>
+								{selectedRegistration.ticket.price !== undefined && (
+									<div className="text-[0.85rem] opacity-70 mt-1">
+										{t.priceLabel}${selectedRegistration.ticket.price}
+									</div>
+								)}
+							</div>
+						)}
 						{selectedRegistration?.referredBy && (
 							<div>
 								<Label className="text-xs uppercase tracking-wider opacity-70">{t.referredBy}</Label>
 								<div className="font-mono text-[0.9rem]">{selectedRegistration.referredBy}</div>
 							</div>
 						)}
-					<div>
-						<Label className="text-xs uppercase tracking-wider opacity-70">{t.createdAt}</Label>
-						<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.createdAt).toLocaleString()}</div>
-					</div>
-					<div>
-						<Label className="text-xs uppercase tracking-wider opacity-70">{t.updatedAt}</Label>
-						<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
-					</div>
-					{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">{t.createdAt}</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+						</div>
+						<div>
+							<Label className="text-xs uppercase tracking-wider opacity-70">{t.updatedAt}</Label>
+							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+						</div>
+						{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
 							<div>
 								<Label className="text-xs uppercase tracking-wider opacity-70 mb-2">{t.formData}</Label>
 								{isEditing ? (

@@ -179,43 +179,45 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 					</tr>`;
 		}
 
-	const eventDate = new Date(event.startDate).toLocaleDateString("zh-TW");
+		const eventDate = new Date(event.startDate).toLocaleDateString("zh-TW");
 
-	const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
-		if (!jsonField) return "";
-		if (typeof jsonField === "string") return jsonField;
-		if (typeof jsonField === "object") {
-			return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
-		}
-		return String(jsonField);
-	};
+		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
+			if (!jsonField) return "";
+			if (typeof jsonField === "string") return jsonField;
+			if (typeof jsonField === "object") {
+				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
+			}
+			return String(jsonField);
+		};
 
-	const eventName = getLocalizedValue(event.name);
-	const ticketName = getLocalizedValue(ticket.name);
-	const eventLocation = event.location || "待公布 TBA";
+		const eventName = getLocalizedValue(event.name);
+		const ticketName = getLocalizedValue(ticket.name);
+		const eventLocation = event.location || "待公布 TBA";
 
-	const userName = await prisma.user.findFirst({
-		where: { id: registration.userId },
-		select: { name: true }
-	}).then(user => user?.name || "");
+		const userName = await prisma.user
+			.findFirst({
+				where: { id: registration.userId },
+				select: { name: true }
+			})
+			.then(user => user?.name || "");
 
-	const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
-	const eventSlugOrId = event.slug || event.id;
-	const calendarIcsUrl = `${frontendUrl}/api/events/${eventSlugOrId}/calendar.ics`;
-	const calendarGoogleUrl = `https://calendar.google.com/calendar/r?cid=webcal://${frontendUrl.replace(/^https?:\/\//, '')}/api/events/${eventSlugOrId}/calendar.ics`;
-	let html = template
-		.replace(/\{\{userName\}\}/g, userName)
-		.replace(/\{\{eventName\}\}/g, eventName)
-		.replace(/\{\{eventDate\}\}/g, eventDate)
-		.replace(/\{\{eventLocation\}\}/g, eventLocation)
-		.replace(/\{\{ticketName\}\}/g, ticketName)
-		.replace(/\{\{ticketUrl\}\}/g, ticketUrl)
-		.replace(/\{\{formDataRows\}\}/g, formDataRows)
-		.replace(/\{\{email\}\}/g, registration.email)
-		.replace(/\{\{calendarIcsUrl\}\}/g, calendarIcsUrl)
-		.replace(/\{\{calendarGoogleUrl\}\}/g, calendarGoogleUrl);
+		const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
+		const eventSlugOrId = event.slug || event.id;
+		const calendarIcsUrl = `${frontendUrl}/api/events/${eventSlugOrId}/calendar.ics`;
+		const calendarGoogleUrl = `https://calendar.google.com/calendar/r?cid=webcal://${frontendUrl.replace(/^https?:\/\//, "")}/api/events/${eventSlugOrId}/calendar.ics`;
+		let html = template
+			.replace(/\{\{userName\}\}/g, userName)
+			.replace(/\{\{eventName\}\}/g, eventName)
+			.replace(/\{\{eventDate\}\}/g, eventDate)
+			.replace(/\{\{eventLocation\}\}/g, eventLocation)
+			.replace(/\{\{ticketName\}\}/g, ticketName)
+			.replace(/\{\{ticketUrl\}\}/g, ticketUrl)
+			.replace(/\{\{formDataRows\}\}/g, formDataRows)
+			.replace(/\{\{email\}\}/g, registration.email)
+			.replace(/\{\{calendarIcsUrl\}\}/g, calendarIcsUrl)
+			.replace(/\{\{calendarGoogleUrl\}\}/g, calendarGoogleUrl);
 
-	await client.send({
+		await client.send({
 			from: sender,
 			to: recipients,
 			subject: `【${eventName}】報名成功`,
