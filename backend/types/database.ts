@@ -17,6 +17,7 @@ export interface User {
 
 export interface Event {
 	id: string;
+	slug?: string | null;
 	name: string;
 	description: string | null;
 	location: string | null;

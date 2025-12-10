@@ -37,6 +37,7 @@
 		"fastify": "^5.6.2",
 		"fastify-metrics": "^12.1.0",
 		"googleapis": "^166.0.0",
+		"ical-generator": "^10.0.0",
 		"ioredis": "^5.8.1",
 		"isomorphic-dompurify": "^2.28.0",
 		"mailtrap": "^4.2.0",
