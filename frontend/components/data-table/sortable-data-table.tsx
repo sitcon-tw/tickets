@@ -18,9 +18,9 @@ import * as React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DataTableProps } from "@/lib/types/data-table";
 
-import { DataTablePagination } from "./data-table-pagination";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DataTablePagination } from "./data-table-pagination";
 
 interface SortableRowProps {
 	row: any;

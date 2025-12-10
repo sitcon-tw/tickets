@@ -15,12 +15,12 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { LanguageFieldsProps } from "@/lib/types/pages";
+import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 export default function TicketsPage() {
 	const locale = useLocale();
