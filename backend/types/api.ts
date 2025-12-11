@@ -181,6 +181,7 @@ export interface EventFormFieldCreateRequest {
 	required?: boolean;
 	values?: string;
 	filters?: string;
+	prompts?: string;
 }
 
 export interface EventFormFieldUpdateRequest {
@@ -193,6 +194,7 @@ export interface EventFormFieldUpdateRequest {
 	required?: boolean;
 	values?: string;
 	filters?: string;
+	prompts?: string;
 }
 
 export interface InvitationCodeVerifyRequest {

@@ -145,6 +145,7 @@ model EventFormFields {
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]
   filters     Json?    // Display conditions filter: {enabled: true, action: "display", operator: "and", conditions: [...]}
+  prompts     Json?    // Autocomplete prompts for text inputs: {"en": ["Prompt 1", "Prompt 2"], "zh-Hant": ["提示 1", "提示 2"], ...}
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 

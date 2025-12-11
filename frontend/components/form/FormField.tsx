@@ -5,6 +5,7 @@ import MultiCheckbox, { CheckboxOption } from "@/components/input/MultiCheckbox"
 import Radio, { RadioOption } from "@/components/input/Radio";
 import Select, { SelectOption } from "@/components/input/Select";
 import Text from "@/components/input/Text";
+import TextWithAutocomplete from "@/components/input/TextWithAutocomplete";
 import Textarea from "@/components/input/Textarea";
 import MarkdownContent from "@/components/MarkdownContent";
 import { FormFieldProps } from "@/lib/types/components";
@@ -38,8 +39,19 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			label: getLocalizedText(opt, locale)
 		})) || [];
 
+	// Get prompts for the current locale and filter out empty strings
+	const localizedPrompts = (field.prompts?.[locale] || field.prompts?.["en"] || []).filter(p => p && p.trim() !== "");
+
 	switch (field.type) {
 		case "text":
+			// Use autocomplete component if prompts are available
+			if (localizedPrompts.length > 0) {
+				return (
+					<FieldWrapper description={fieldDescription}>
+						<TextWithAutocomplete label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} prompts={localizedPrompts} />
+					</FieldWrapper>
+				);
+			}
 			return (
 				<FieldWrapper description={fieldDescription}>
 					<Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
