@@ -1,4 +1,4 @@
-import type { TicketCreateRequest, TicketUpdateRequest } from "#types/api";
+import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "#types/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
@@ -46,9 +46,19 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
+				// Get the highest order for this event to set new ticket order
+				const maxOrderTicket = await prisma.ticket.findFirst({
+					where: { eventId },
+					orderBy: { order: "desc" },
+					select: { order: true }
+				});
+
+				const nextOrder = (maxOrderTicket?.order ?? -1) + 1;
+
 				const ticket = await prisma.ticket.create({
 					data: {
 						eventId,
+						order: request.body.order ?? nextOrder,
 						name,
 						description,
 						price,
@@ -287,7 +297,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 							}
 						}
 					},
-					orderBy: { createdAt: "desc" }
+					orderBy: { order: "asc" }
 				});
 
 				const ticketsWithAvailability = tickets.map(ticket => {
@@ -401,6 +411,103 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			} catch (error) {
 				console.error("Get ticket analytics error:", error);
 				const { response, statusCode } = serverErrorResponse("取得票券分析失敗");
+				return reply.code(statusCode).send(response);
+			}
+		}
+	);
+
+	// Reorder tickets
+	fastify.put<{ Body: TicketReorderRequest }>(
+		"/tickets/reorder",
+		{
+			preHandler: requireEventAccess,
+			schema: {
+				description: "重新排序票券",
+				tags: ["admin/tickets"],
+				body: {
+					type: "object",
+					properties: {
+						tickets: {
+							type: "array",
+							items: {
+								type: "object",
+								properties: {
+									id: { type: "string" },
+									order: { type: "number" }
+								},
+								required: ["id", "order"]
+							}
+						}
+					},
+					required: ["tickets"]
+				},
+				response: {
+					200: {
+						type: "object",
+						properties: {
+							success: { type: "boolean" },
+							message: { type: "string" },
+							data: { type: "null" }
+						}
+					}
+				}
+			}
+		},
+		async (request: FastifyRequest<{ Body: TicketReorderRequest }>, reply: FastifyReply) => {
+			try {
+				const { tickets } = request.body;
+
+				if (!tickets || tickets.length === 0) {
+					const { response, statusCode } = validationErrorResponse("票券列表不能為空");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate all tickets exist
+				const ticketIds = tickets.map(t => t.id);
+				const existingTickets = await prisma.ticket.findMany({
+					where: { id: { in: ticketIds } },
+					select: { id: true, eventId: true }
+				});
+
+				if (existingTickets.length !== tickets.length) {
+					const { response, statusCode } = notFoundResponse("部分票券不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate all tickets belong to the same event
+				const eventIds = [...new Set(existingTickets.map(t => t.eventId))];
+				if (eventIds.length > 1) {
+					const { response, statusCode } = validationErrorResponse("所有票券必須屬於同一個活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Validate no duplicate orders
+				const orders = tickets.map(t => t.order);
+				const uniqueOrders = new Set(orders);
+				if (uniqueOrders.size !== orders.length) {
+					const { response, statusCode } = validationErrorResponse("票券順序不能重複");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Update all tickets in a transaction
+				await prisma.$transaction(
+					tickets.map(ticket =>
+						prisma.ticket.update({
+							where: { id: ticket.id },
+							data: { order: ticket.order },
+							// @ts-expect-error - uncache is added by prisma-extension-redis
+							uncache: {
+								uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
+								hasPattern: true
+							}
+						})
+					)
+				);
+
+				return reply.send(successResponse(null, "票券順序更新成功"));
+			} catch (error) {
+				console.error("Reorder tickets error:", error);
+				const { response, statusCode } = serverErrorResponse("重新排序票券失敗");
 				return reply.code(statusCode).send(response);
 			}
 		}

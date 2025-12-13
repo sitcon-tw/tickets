@@ -150,7 +150,9 @@ export default function InvitesPage() {
 		sendAllSuccess: { "zh-Hant": "成功發送 {count} 封郵件！", "zh-Hans": "成功发送 {count} 封邮件！", en: "Successfully sent {count} emails!" },
 		sendPartialSuccess: { "zh-Hant": "成功發送 {success} 封，失敗 {failed} 封", "zh-Hans": "成功发送 {success} 封，失败 {failed} 封", en: "Sent {success} emails, {failed} failed" },
 		emailPreview: { "zh-Hant": "郵件預覽", "zh-Hans": "邮件预览", en: "Email Preview" },
-		closePreview: { "zh-Hant": "關閉預覽", "zh-Hans": "关闭预览", en: "Close Preview" }
+		closePreview: { "zh-Hant": "關閉預覽", "zh-Hans": "关闭预览", en: "Close Preview" },
+		importing: { "zh-Hant": "匯入中...", "zh-Hans": "导入中...", en: "Importing..." },
+		namePlaceholder: { "zh-Hant": "例如：VIP Media", "zh-Hans": "例如：VIP Media", en: "e.g. VIP Media" }
 	});
 
 	const loadInvitationCodes = useCallback(async () => {
@@ -783,7 +785,7 @@ export default function InvitesPage() {
 								<Label htmlFor="bulkName">
 									{t.name} ({t.optional})
 								</Label>
-								<Input id="bulkName" name="name" type="text" placeholder="e.g. VIP Media" />
+								<Input id="bulkName" name="name" type="text" placeholder={t.namePlaceholder} />
 							</div>
 
 							<div className="space-y-2">
@@ -821,7 +823,7 @@ export default function InvitesPage() {
 									{t.cancel}
 								</Button>
 								<Button type="submit" disabled={isImporting}>
-									{isImporting ? "匯入中..." : t.import}
+									{isImporting ? t.importing : t.import}
 								</Button>
 							</DialogFooter>
 						</form>

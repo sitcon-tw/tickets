@@ -109,6 +109,7 @@ model Event {
 model Ticket {
   id          String   @id @default(cuid())
   eventId     String
+  order       Int      @default(0) // display order of the ticket
   name        Json     // Localized: {"en": "Ticket Name", "zh": "票券名稱"}
   description Json?    // Localized: {"en": "Description", "zh": "描述"}
   plainDescription Json? // Localized plain text: {"en": "Plain description", "zh": "純文字描述"}
@@ -144,6 +145,7 @@ model EventFormFields {
   required    Boolean  @default(false)
   values      Json?    // Localized options: [{"en": "Option 1", "zh": "選項 1"}, ...]
   filters     Json?    // Display conditions filter: {enabled: true, action: "display", operator: "and", conditions: [...]}
+  prompts     Json?    // Autocomplete prompts for text inputs: {"en": ["Prompt 1", "Prompt 2"], "zh-Hant": ["提示 1", "提示 2"], ...}
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 

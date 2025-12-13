@@ -182,7 +182,7 @@ export default function SetTicket() {
 					</div>
 				</main>
 			) : (
-				<main className="h-full flex flex-col items-center justify-center">
+				<main className="h-screen flex flex-col items-center justify-center">
 					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{t.eventNotFound}</h1>
 					<p className="text-center text-muted-foreground">{t.tryToDebug}</p>
 				</main>

@@ -39,25 +39,29 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-			<div className="relative bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4" onClick={e => e.stopPropagation()}>
+			<div className="relative bg-white/80 dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4" onClick={e => e.stopPropagation()}>
 				<Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4" aria-label="Close">
 					<X size={24} />
 				</Button>
 
 				<div className="flex flex-col items-center gap-4">
-					<h2 className="text-2xl font-bold">{t.title}</h2>
-					<p className="text-md text-gray-200 text-center flex items-center gap-1">
+					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
+					<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
 						{t.downloadOpass}{" "}
 						<a href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
 							opass.app
 							<ExternalLink size={16} />
 						</a>
 					</p>
-					<p className="text-md text-gray-200 text-center">{t.or}</p>
-					<h3 className="text-xl font-semibold">{t.useQrCode}</h3>
+					<div className="flex w-full space-x-4 px-8 items-start">
+						<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
+						<p className="text-md text-gray-700 dark:text-gray-200 text-center">{t.or}</p>
+						<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
+					</div>
+					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t.useQrCode}</h3>
 
 					{qrValue ? (
-						<div className="rounded-lg p-4">
+						<div className="rounded-lg border-16 border-gray-800">
 							<QRCodeSVG
 								value={qrValue}
 								size={256}
@@ -79,8 +83,8 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 						</div>
 					)}
 
-					<p className="text-md text-gray-200 text-center">{t.scanInfo}</p>
-					<p className="text-xs text-yellow-200 flex items-center text-center gap-1">
+					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{t.scanInfo}</p>
+					<p className="text-xs text-yellow-600 dark:text-yellow-200 flex items-center text-center gap-1">
 						<TriangleAlert size={20} />
 						{t.qrAlert}
 					</p>

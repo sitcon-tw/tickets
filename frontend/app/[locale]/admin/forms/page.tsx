@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
@@ -37,6 +38,7 @@ type Question = {
 		"zh-Hant"?: string;
 		"zh-Hans"?: string;
 	}>;
+	prompts?: Record<string, string[]>; // { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
 	showIf?: ShowIf;
 	filters?: FieldFilter;
 };
@@ -88,6 +90,12 @@ export default function FormsPage() {
 		fieldDescription: { "zh-Hant": "說明文字（使用者可見，支援 Markdown）", "zh-Hans": "说明文字（使用者可见，支援 Markdown）", en: "Description (User-visible, Markdown supported)" },
 		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
+		promptSettings: { "zh-Hant": "自動完成提示設定", "zh-Hans": "自动完成提示设定", en: "Autocomplete Prompts" },
+		promptDescription: {
+			"zh-Hant": "設定文字輸入框的自動完成提示，每行一個提示（使用者輸入時會顯示建議）",
+			"zh-Hans": "设定文字输入框的自动完成提示，每行一个提示（使用者输入时会显示建议）",
+			en: "Configure autocomplete prompts for text input, one per line (suggestions shown as user types)"
+		},
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
 		currentlyNoFormFields: { "zh-Hant": "目前尚無表單欄位", "zh-Hans": "目前尚无表单栏位", en: "There are currently no form fields" },
 		clickNewToAdd: { "zh-Hant": "點擊下方「新增問題」按鈕開始建立表單", "zh-Hans": "点击下方「新增问题」按钮开始建立表单", en: "Click the button below to add a new question" },
@@ -173,6 +181,7 @@ export default function FormsPage() {
 			if (response.success) {
 				const loadedFields = (response.data || []).map((field: EventFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let prompts: Record<string, string[]> = {};
 
 					const fieldWithOptions = field as EventFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
@@ -211,6 +220,21 @@ export default function FormsPage() {
 						}
 					}
 
+					// Parse prompts - new format: { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
+					const rawPrompts = field.prompts;
+					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
+						prompts = rawPrompts as Record<string, string[]>;
+					} else if (rawPrompts && typeof rawPrompts === "string") {
+						try {
+							const parsed = JSON.parse(rawPrompts);
+							if (typeof parsed === "object" && !Array.isArray(parsed)) {
+								prompts = parsed as Record<string, string[]>;
+							}
+						} catch {
+							console.warn("Failed to parse field prompts as JSON:", rawPrompts);
+						}
+					}
+
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
@@ -231,6 +255,7 @@ export default function FormsPage() {
 						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						options,
+						prompts,
 						filters: field.filters || undefined
 					};
 				});
@@ -349,6 +374,7 @@ export default function FormsPage() {
 				required: q.required,
 				validater: q.validater || "",
 				values: q.options,
+				prompts: q.prompts,
 				filters: q.filters || null,
 				order: index
 			}));
@@ -372,6 +398,7 @@ export default function FormsPage() {
 					required: fieldData.required,
 					validater: fieldData.validater || "",
 					values: fieldData.values,
+					prompts: fieldData.prompts,
 					filters: fieldData.filters || undefined
 				};
 
@@ -609,7 +636,7 @@ export default function FormsPage() {
 					<div className="mb-6">
 						<div className="flex justify-between items-center mb-4">
 							<h2 className="text-base font-semibold text-gray-800 dark:text-gray-400 m-0">{t.formFields}</h2>
-							<span className="text-xs text-gray-400 bg-gray-800 py-1 px-2.5 rounded border border-gray-700">
+							<span className="text-xs text-gray-800 dark:text-gray-400 bg-gray-200 dark:bg-gray-800 py-1 px-2.5 rounded border dark:border-gray-700">
 								{questions.length} {t.howManyFields}
 							</span>
 						</div>
@@ -735,32 +762,29 @@ export default function FormsPage() {
 														<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionEn || ""}
 																	placeholder="English description (Markdown supported)"
 																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionZhHant || ""}
 																	placeholder="繁體中文描述（支援 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionZhHans || ""}
 																	placeholder="简体中文描述（支持 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 														</div>
@@ -896,6 +920,63 @@ export default function FormsPage() {
 															</span>{" "}
 															{t.newOption}
 														</Button>
+													</div>
+												</div>
+											)}
+
+											{/* Prompts Section for text inputs */}
+											{q.type === "text" && (
+												<div>
+													<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.promptSettings}</div>
+													<p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t.promptDescription}</p>
+													<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
+														<div className="grid grid-cols-3 gap-3">
+															<div>
+																<Label htmlFor={`prompts-en-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																	English
+																</Label>
+																<Textarea
+																	id={`prompts-en-${q.id}`}
+																	value={(q.prompts?.en || []).join("\n")}
+																	onChange={e => {
+																		const lines = e.target.value.split("\n");
+																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), en: lines } });
+																	}}
+																	placeholder="Option 1&#10;Option 2&#10;Option 3"
+																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																/>
+															</div>
+															<div>
+																<Label htmlFor={`prompts-zh-hant-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																	繁體中文
+																</Label>
+																<Textarea
+																	id={`prompts-zh-hant-${q.id}`}
+																	value={(q.prompts?.["zh-Hant"] || []).join("\n")}
+																	onChange={e => {
+																		const lines = e.target.value.split("\n");
+																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hant": lines } });
+																	}}
+																	placeholder="選項 1&#10;選項 2&#10;選項 3"
+																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																/>
+															</div>
+															<div>
+																<Label htmlFor={`prompts-zh-hans-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																	简体中文
+																</Label>
+																<Textarea
+																	id={`prompts-zh-hans-${q.id}`}
+																	value={(q.prompts?.["zh-Hans"] || []).join("\n")}
+																	onChange={e => {
+																		const lines = e.target.value.split("\n");
+																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hans": lines } });
+																	}}
+																	placeholder="选项 1&#10;选项 2&#10;选项 3"
+																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																/>
+															</div>
+														</div>
 													</div>
 												</div>
 											)}
@@ -1248,7 +1329,7 @@ export default function FormsPage() {
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="text-[0.9rem] py-2.5 px-5 border border-primary text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							className="text-[0.9rem] py-2.5 px-5 border border-primary text-black dark:text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
 						</Button>

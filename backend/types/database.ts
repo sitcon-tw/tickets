@@ -17,6 +17,7 @@ export interface User {
 
 export interface Event {
 	id: string;
+	slug?: string | null;
 	name: string;
 	description: string | null;
 	location: string | null;
@@ -125,6 +126,7 @@ export interface EventFormFields {
 	placeholder: string | null;
 	required: boolean;
 	values: string | null;
+	prompts: string | null;
 }
 
 /**

@@ -5,14 +5,23 @@ import Welcome from "@/components/home/Welcome";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
-import { eventsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { EventListItem, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+const isURL = (str: string): boolean => {
+	try {
+		const url = new URL(str);
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
 
 export default function Main() {
 	const params = useParams();
@@ -26,6 +35,7 @@ export default function Main() {
 	const [eventDescription, setEventDescription] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [locationTitle, setLocationTitle] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		eventNotFound: {
@@ -86,6 +96,20 @@ export default function Main() {
 						if (ticketsData.success && Array.isArray(ticketsData.data)) {
 							setTickets(ticketsData.data);
 						}
+
+						// Fetch OpenGraph title if location is a URL (async, non-blocking)
+						if (foundEvent.location && isURL(foundEvent.location)) {
+							opengraphAPI
+								.getTitle(foundEvent.location)
+								.then(result => {
+									if (result?.success && result.data?.title) {
+										setLocationTitle(result.data.title);
+									}
+								})
+								.catch(() => {
+									// Silently fail, will use the URL as fallback
+								});
+						}
 					} else {
 						setError(t.eventNotFound);
 					}
@@ -127,7 +151,7 @@ export default function Main() {
 	if (error || !event) {
 		return (
 			<>
-				<main className="h-full flex flex-col items-center justify-center">
+				<main className="h-screen flex flex-col items-center justify-center">
 					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{error || t.eventNotFound}</h1>
 					<p className="text-center text-muted-foreground">{t.tryToDebug}</p>
 				</main>
@@ -171,7 +195,14 @@ export default function Main() {
 									{event.location && (
 										<div className="flex items-center gap-3">
 											<MapPin size={20} className="shrink-0" />
-											<span className="text-base">{event.location}</span>
+											{isURL(event.location) ? (
+												<a href={event.location} target="_blank" rel="noopener noreferrer" className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center">
+													{locationTitle || event.location}
+													<ExternalLink size={16} className="ml-1" />
+												</a>
+											) : (
+												<span className="text-base">{event.location}</span>
+											)}
 										</div>
 									)}
 

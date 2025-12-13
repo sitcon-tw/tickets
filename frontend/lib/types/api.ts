@@ -112,6 +112,7 @@ export interface EventStats {
 export interface Ticket {
 	id: string;
 	eventId?: string;
+	order?: number;
 	name: LocalizedText;
 	description?: LocalizedText;
 	plainDescription?: LocalizedText;
@@ -129,6 +130,13 @@ export interface Ticket {
 	updatedAt?: string;
 	requireInviteCode?: boolean;
 	requireSmsVerification?: boolean;
+}
+
+export interface TicketReorder {
+	tickets: Array<{
+		id: string;
+		order: number;
+	}>;
 }
 
 export interface FilterCondition {
@@ -161,6 +169,7 @@ export interface EventFormField {
 	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
 	options?: LocalizedText[]; // Parsed options for frontend use
 	filters?: FieldFilter; // Display conditions filter
+	prompts?: Record<string, string[]>; // Autocomplete prompts: { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
 }
 
 export interface EventFormFieldReorder {

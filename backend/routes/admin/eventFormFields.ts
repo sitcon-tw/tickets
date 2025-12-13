@@ -21,7 +21,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		async function (this: FastifyInstance, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
 			try {
 				await requireEventAccess.call(this, request, reply, () => {});
-				const { eventId, order, type, validater, name, description, placeholder, required, values, filters } = request.body;
+				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body;
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
@@ -55,7 +55,8 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
 						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
-						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull)
+						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull),
+						prompts: prompts === "" ? Prisma.DbNull : (prompts ?? Prisma.DbNull)
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: CacheInvalidation.eventFormFields()
@@ -184,6 +185,14 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						data.filters = null;
 					} else if (typeof updateData.filters === "object") {
 						data.filters = JSON.parse(JSON.stringify(updateData.filters));
+					}
+				}
+
+				if ("prompts" in updateData) {
+					if (updateData.prompts === "" || updateData.prompts === null || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
+						data.prompts = null;
+					} else if (Array.isArray(updateData.prompts)) {
+						data.prompts = JSON.parse(JSON.stringify(updateData.prompts));
 					}
 				}
 

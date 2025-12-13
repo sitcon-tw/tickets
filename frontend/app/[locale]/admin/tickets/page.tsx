@@ -1,7 +1,7 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
-import { DataTable } from "@/components/data-table/data-table";
+import { SortableDataTable } from "@/components/data-table/sortable-data-table";
 import Checkbox from "@/components/input/Checkbox";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
@@ -15,54 +15,12 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { LanguageFieldsProps } from "@/lib/types/pages";
+import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
-
-function LanguageFields({ ticketName, description, plainDescription, language, languageLabel, onNameChange, onDescriptionChange, onPlainDescriptionChange, required = false, t }: LanguageFieldsProps) {
-	const placeholders = {
-		en: {
-			plainDesc: "Plain text description without markdown formatting"
-		},
-		"zh-Hant": {
-			plainDesc: "純文字描述，不含 Markdown 格式"
-		},
-		"zh-Hans": {
-			plainDesc: "纯文字描述，不含 Markdown 格式"
-		}
-	};
-
-	const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
-
-	return (
-		<div className="space-y-4">
-			<div className="space-y-2">
-				<Label htmlFor={`name-${language}`}>
-					{t.ticketName} ({languageLabel}) {required && "*"}
-				</Label>
-				<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
-			</div>
-			<div className="space-y-2">
-				<Label htmlFor={`desc-${language}`}>
-					{t.description} ({languageLabel}, Markdown)
-				</Label>
-				<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
-				{description && (
-					<div className="mt-2 p-3 border rounded-md bg-muted">
-						<div className="text-xs font-semibold mb-2 text-muted-foreground">Preview:</div>
-						<MarkdownContent content={description} />
-					</div>
-				)}
-			</div>
-			<div className="space-y-2">
-				<Label htmlFor={`plainDesc-${language}`}>
-					{t.plainDescription} ({languageLabel})
-				</Label>
-				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
-			</div>
-		</div>
-	);
-}
 
 export default function TicketsPage() {
 	const locale = useLocale();
@@ -77,6 +35,14 @@ export default function TicketsPage() {
 	const [selectedTicketForLink, setSelectedTicketForLink] = useState<Ticket | null>(null);
 	const [inviteCode, setInviteCode] = useState("");
 	const [refCode, setRefCode] = useState("");
+	const [isSorting, setIsSorting] = useState(false);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates
+		})
+	);
 
 	const [nameEn, setNameEn] = useState("");
 	const [nameZhHant, setNameZhHant] = useState("");
@@ -87,6 +53,10 @@ export default function TicketsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [ticketPrice, setTicketPrice] = useState(0);
+	const [ticketQuantity, setTicketQuantity] = useState(0);
+	const [ticketSaleStart, setTicketSaleStart] = useState<Date | null>(null);
+	const [ticketSaleEnd, setTicketSaleEnd] = useState<Date | null>(null);
 	const [requireInviteCode, setRequireInviteCode] = useState(false);
 	const [requireSmsVerification, setRequireSmsVerification] = useState(false);
 	const [hidden, setHidden] = useState(false);
@@ -124,8 +94,70 @@ export default function TicketsPage() {
 		generatedLink: { "zh-Hant": "產生的連結", "zh-Hans": "生成的链接", en: "Generated Link" },
 		copyLink: { "zh-Hant": "複製連結", "zh-Hans": "复制链接", en: "Copy Link" },
 		copied: { "zh-Hant": "已複製！", "zh-Hans": "已复制！", en: "Copied!" },
-		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" }
+		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
+		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
+		linkDescription: {
+			"zh-Hant": "產生此票種的直接連結，可選擇性加入邀請碼和推薦碼。",
+			"zh-Hans": "生成此票种的直接链接，可选择性加入邀请码和推荐码。",
+			en: "Generate a direct link to this ticket with optional invite and referral codes."
+		}
 	});
+
+	function LanguageFields({
+		ticketName,
+		description,
+		plainDescription,
+		language,
+		languageLabel,
+		onNameChange,
+		onDescriptionChange,
+		onPlainDescriptionChange,
+		required = false,
+		tt
+	}: LanguageFieldsProps) {
+		const placeholders = {
+			en: {
+				plainDesc: "Plain text description without markdown formatting"
+			},
+			"zh-Hant": {
+				plainDesc: "純文字描述，不含 Markdown 格式"
+			},
+			"zh-Hans": {
+				plainDesc: "纯文字描述，不含 Markdown 格式"
+			}
+		};
+
+		const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
+
+		return (
+			<div className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor={`name-${language}`}>
+						{tt.ticketName} ({languageLabel}) {required && "*"}
+					</Label>
+					<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={`desc-${language}`}>
+						{tt.description} ({languageLabel}, Markdown)
+					</Label>
+					<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
+					{description && (
+						<div className="mt-2 p-3 border rounded-md bg-muted">
+							<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
+							<MarkdownContent content={description} />
+						</div>
+					)}
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={`plainDesc-${language}`}>
+						{tt.plainDescription} ({languageLabel})
+					</Label>
+					<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
+				</div>
+			</div>
+		);
+	}
 
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
@@ -191,9 +223,8 @@ export default function TicketsPage() {
 		e.preventDefault();
 		if (!currentEventId) return;
 
-		const formData = new FormData(e.currentTarget);
-		const saleStartStr = formData.get("saleStart") as string;
-		const saleEndStr = formData.get("saleEnd") as string;
+		const saleStartStr = ticketSaleStart ? ticketSaleStart.toISOString() : "";
+		const saleEndStr = ticketSaleEnd ? ticketSaleEnd.toISOString() : "";
 
 		const data: {
 			eventId: string;
@@ -224,8 +255,8 @@ export default function TicketsPage() {
 				"zh-Hant": plainDescZhHant,
 				"zh-Hans": plainDescZhHans
 			},
-			price: parseInt(formData.get("price") as string) || 0,
-			quantity: parseInt(formData.get("quantity") as string) || 0,
+			price: ticketPrice,
+			quantity: ticketQuantity,
 			requireInviteCode: requireInviteCode,
 			requireSmsVerification: requireSmsVerification,
 			hidden: hidden
@@ -259,6 +290,43 @@ export default function TicketsPage() {
 			await loadTickets();
 		} catch (error) {
 			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		}
+	}
+
+	async function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+
+		if (!over || active.id === over.id) {
+			return;
+		}
+
+		const oldIndex = tickets.findIndex(t => t.id === active.id);
+		const newIndex = tickets.findIndex(t => t.id === over.id);
+
+		if (oldIndex === -1 || newIndex === -1) {
+			return;
+		}
+
+		// Optimistically update the UI
+		const newTickets = arrayMove(tickets, oldIndex, newIndex);
+		setTickets(newTickets);
+
+		// Update order values and send to backend
+		const reorderedTickets = newTickets.map((ticket, index) => ({
+			id: ticket.id,
+			order: index
+		}));
+
+		try {
+			setIsSorting(true);
+			await adminTicketsAPI.reorder({ tickets: reorderedTickets });
+			showAlert("票種順序已更新", "success");
+		} catch (error) {
+			// Revert on error
+			showAlert("更新順序失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+			await loadTickets();
+		} finally {
+			setIsSorting(false);
 		}
 	}
 
@@ -376,11 +444,17 @@ export default function TicketsPage() {
 			<AdminHeader title={t.title} />
 
 			<section>
-				<DataTable columns={columns} data={ticketsWithStatus} />
+				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
+					<SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+						<SortableDataTable columns={columns} data={ticketsWithStatus} />
+					</SortableContext>
+				</DndContext>
 			</section>
 
 			<section className="mt-8 text-center">
-				<Button onClick={() => openModal()}>+ {t.addTicket}</Button>
+				<Button onClick={() => openModal()} disabled={isSorting}>
+					+ {t.addTicket}
+				</Button>
 			</section>
 
 			<Dialog open={showModal} onOpenChange={setShowModal}>
@@ -401,22 +475,41 @@ export default function TicketsPage() {
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="price">{t.price}</Label>
-										<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || 0} />
+										<Input id="price" name="price" type="number" min="0" defaultValue={editingTicket?.price || ticketPrice} onChange={e => setTicketPrice(parseInt(e.target.value) || 0)} />
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="quantity">{t.quantity}</Label>
-										<Input id="quantity" name="quantity" type="number" min="0" defaultValue={editingTicket?.quantity || 0} />
+										<Input
+											id="quantity"
+											name="quantity"
+											type="number"
+											min="0"
+											defaultValue={editingTicket?.quantity || ticketQuantity}
+											onChange={e => setTicketQuantity(parseInt(e.target.value) || 0)}
+										/>
 									</div>
 								</div>
 
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="saleStart">{t.startTime}</Label>
-										<Input id="saleStart" name="saleStart" type="datetime-local" defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""} />
+										<Input
+											id="saleStart"
+											name="saleStart"
+											type="datetime-local"
+											defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""}
+											onChange={e => setTicketSaleStart(e.target.value ? new Date(e.target.value) : null)}
+										/>
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="saleEnd">{t.endTime}</Label>
-										<Input id="saleEnd" name="saleEnd" type="datetime-local" defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""} />
+										<Input
+											id="saleEnd"
+											name="saleEnd"
+											type="datetime-local"
+											defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""}
+											onChange={e => setTicketSaleEnd(e.target.value ? new Date(e.target.value) : null)}
+										/>
 									</div>
 								</div>
 
@@ -453,7 +546,7 @@ export default function TicketsPage() {
 									onDescriptionChange={setDescEn}
 									onPlainDescriptionChange={setPlainDescEn}
 									required={true}
-									t={{
+									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
 										plainDescription: t.plainDescription
@@ -471,7 +564,7 @@ export default function TicketsPage() {
 									onNameChange={setNameZhHant}
 									onDescriptionChange={setDescZhHant}
 									onPlainDescriptionChange={setPlainDescZhHant}
-									t={{
+									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
 										plainDescription: t.plainDescription
@@ -489,7 +582,7 @@ export default function TicketsPage() {
 									onNameChange={setNameZhHans}
 									onDescriptionChange={setDescZhHans}
 									onPlainDescriptionChange={setPlainDescZhHans}
-									t={{
+									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
 										plainDescription: t.plainDescription

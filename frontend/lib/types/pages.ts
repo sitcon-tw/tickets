@@ -10,7 +10,7 @@ export interface LanguageFieldsProps {
 	onDescriptionChange: (value: string) => void;
 	onPlainDescriptionChange: (value: string) => void;
 	required?: boolean;
-	t: {
+	tt: {
 		ticketName: string;
 		description: string;
 		plainDescription: string;

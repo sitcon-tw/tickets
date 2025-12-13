@@ -194,14 +194,28 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		const ticketName = getLocalizedValue(ticket.name);
 		const eventLocation = event.location || "待公布 TBA";
 
+		const userName = await prisma.user
+			.findFirst({
+				where: { id: registration.userId },
+				select: { name: true }
+			})
+			.then(user => user?.name || "");
+
+		const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
+		const eventSlugOrId = event.slug || event.id;
+		const calendarIcsUrl = `${frontendUrl}/api/events/${eventSlugOrId}/calendar.ics`;
+		const calendarGoogleUrl = `https://calendar.google.com/calendar/r?cid=webcal://${frontendUrl.replace(/^https?:\/\//, "")}/api/events/${eventSlugOrId}/calendar.ics`;
 		let html = template
+			.replace(/\{\{userName\}\}/g, userName)
 			.replace(/\{\{eventName\}\}/g, eventName)
 			.replace(/\{\{eventDate\}\}/g, eventDate)
 			.replace(/\{\{eventLocation\}\}/g, eventLocation)
 			.replace(/\{\{ticketName\}\}/g, ticketName)
 			.replace(/\{\{ticketUrl\}\}/g, ticketUrl)
 			.replace(/\{\{formDataRows\}\}/g, formDataRows)
-			.replace(/\{\{email\}\}/g, registration.email);
+			.replace(/\{\{email\}\}/g, registration.email)
+			.replace(/\{\{calendarIcsUrl\}\}/g, calendarIcsUrl)
+			.replace(/\{\{calendarGoogleUrl\}\}/g, calendarGoogleUrl);
 
 		await client.send({
 			from: sender,
@@ -311,7 +325,7 @@ export const sendInvitationCode = async (
 			}
 		];
 
-		const templatePath = path.join(__dirname, "../email-templates/invite-mail.html");
+		const templatePath = path.join(__dirname, "../email-templates/invitation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 
 		// Handle localized fields

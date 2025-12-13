@@ -54,11 +54,16 @@
 					style="background: linear-gradient(#6b7280, #6b7280); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; line-height: 150%"
 					class="description"
 				>
-					<p>你會收到此封電子郵件是因為你成功搶到 {{eventName}} 的門票。</p>
+					<p>{{userName}} 您好，</p>
+					<p>
+						您已成功完成報名 {{eventName}}。
+						<br />
+						您可以查看下方報名內容是否正確；若有誤，可點選上方按鈕編輯報名。
+					</p>
 					<p>容我們提醒您：</p>
 					<ul>
-						<li>每張電子票券限一人單次，無法重複使用。</li>
-						<li>活動當天報到方式請參考到時候發送的行前通知書。</li>
+						<li>每張電子票券限使用乙次，無法重複使用；</li>
+						<li>票券使用方式請見活動前寄送之行前通知。</li>
 					</ul>
 				</div>
 			</div>
@@ -108,6 +113,20 @@
 							{{eventName}}
 							<br />
 							{{eventDate}}
+							<br />
+							<a
+								href="{{calendarIcsUrl}}"
+								style="background: linear-gradient(#0090ff, #0090ff); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; font-size: 14px"
+							>
+								iCal/Outlook
+							</a>
+							|
+							<a
+								href="{{calendarGoogleUrl}}"
+								style="background: linear-gradient(#0090ff, #0090ff); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; font-size: 14px"
+							>
+								Google Calendar
+							</a>
 							<br />
 							{{eventLocation}}
 						</td>

@@ -102,7 +102,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						requireInviteCode: true,
 						requireSmsVerification: true
 					},
-					orderBy: { createdAt: "asc" }
+					orderBy: { order: "asc" }
 				});
 
 				const formFieldsRaw = await prisma.eventFormFields.findMany({
@@ -377,7 +377,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 										validater: { type: "string" },
 										placeholder: { type: "string" },
 										order: { type: "integer" },
-										filters: { type: "object", additionalProperties: true }
+										filters: { type: "object", additionalProperties: true },
+										prompts: { type: "object", additionalProperties: true }
 									}
 								}
 							}
@@ -424,7 +425,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						placeholder: true,
 						values: true,
 						order: true,
-						filters: true
+						filters: true,
+						prompts: true
 					},
 					orderBy: { order: "asc" }
 				});
@@ -439,7 +441,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					placeholder: field.placeholder,
 					options: field.values || [],
 					order: field.order,
-					filters: field.filters || {}
+					filters: field.filters || {},
+					prompts: field.prompts || {}
 				}));
 
 				return reply.send(successResponse(transformedFields));

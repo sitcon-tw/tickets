@@ -20,12 +20,11 @@ export function getLocalizedText(obj: LocalizedText | string | undefined | null,
 	// Try to get the requested locale
 	if (obj[locale]) return obj[locale];
 
-	// Fallback to English
-	if (obj["en"]) return obj["en"];
-
-	// Fallback to first available locale
-	const firstValue = Object.values(obj)[0];
-	if (firstValue) return firstValue;
+	// Fallback to other languages if available
+	const localePriority = ["en", "zh-Hant", "zh-Hans"];
+	for (const lang of localePriority) {
+		if (obj[lang]) return obj[lang];
+	}
 
 	// Final fallback
 	return fallback;

@@ -24,6 +24,7 @@ import type {
 	Ticket,
 	TicketAnalytics,
 	TicketFormField,
+	TicketReorder,
 	User
 } from "@/lib/types/api";
 import { apiClient } from "./client";
@@ -144,7 +145,9 @@ export const adminTicketsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/tickets/${id}`),
 
-	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`)
+	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
+
+	reorder: (data: TicketReorder) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
 };
 
 // Admin - Event Form Fields
@@ -272,6 +275,11 @@ export const smsVerificationAPI = {
 	verify: (data: { phoneNumber: string; code: string }) => apiClient.post<ApiResponse<{ verified: boolean }>>("/api/sms-verification/verify", data),
 
 	getStatus: () => apiClient.get<ApiResponse<{ phoneNumber?: string; phoneVerified: boolean }>>("/api/sms-verification/status")
+};
+
+// OpenGraph - Public
+export const opengraphAPI = {
+	getTitle: (url: string) => apiClient.get<ApiResponse<{ title: string }>>("/api/opengraph/title", { url })
 };
 
 // Admin - SMS Verification Logs
