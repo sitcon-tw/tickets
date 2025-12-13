@@ -632,7 +632,7 @@ export default function FormsPage() {
 					<div className="mb-6">
 						<div className="flex justify-between items-center mb-4">
 							<h2 className="text-base font-semibold text-gray-800 dark:text-gray-400 m-0">{t.formFields}</h2>
-							<span className="text-xs text-gray-400 bg-gray-800 py-1 px-2.5 rounded border border-gray-700">
+							<span className="text-xs text-gray-800 dark:text-gray-400 bg-gray-200 dark:bg-gray-800 py-1 px-2.5 rounded border dark:border-gray-700">
 								{questions.length} {t.howManyFields}
 							</span>
 						</div>
@@ -1325,7 +1325,7 @@ export default function FormsPage() {
 							id="save-form"
 							type="button"
 							onClick={saveForm}
-							className="text-[0.9rem] py-2.5 px-5 border border-primary text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							className="text-[0.9rem] py-2.5 px-5 border border-primary text-black dark:text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
 						>
 							<Save size={18} /> {t.save}
 						</Button>
