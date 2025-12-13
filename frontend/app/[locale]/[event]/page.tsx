@@ -8,7 +8,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { EventListItem, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { Calendar, MapPin, Users, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -99,7 +99,8 @@ export default function Main() {
 
 						// Fetch OpenGraph title if location is a URL (async, non-blocking)
 						if (foundEvent.location && isURL(foundEvent.location)) {
-							opengraphAPI.getTitle(foundEvent.location)
+							opengraphAPI
+								.getTitle(foundEvent.location)
 								.then(result => {
 									if (result?.success && result.data?.title) {
 										setLocationTitle(result.data.title);
@@ -195,12 +196,7 @@ export default function Main() {
 										<div className="flex items-center gap-3">
 											<MapPin size={20} className="shrink-0" />
 											{isURL(event.location) ? (
-												<a
-													href={event.location}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center"
-												>
+												<a href={event.location} target="_blank" rel="noopener noreferrer" className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center">
 													{locationTitle || event.location}
 													<ExternalLink size={16} className="ml-1" />
 												</a>

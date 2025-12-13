@@ -91,7 +91,11 @@ export default function FormsPage() {
 		optionSettings: { "zh-Hant": "選項設定", "zh-Hans": "选项设定", en: "Option Settings" },
 		newOption: { "zh-Hant": "新選項", "zh-Hans": "新选项", en: "New Option" },
 		promptSettings: { "zh-Hant": "自動完成提示設定", "zh-Hans": "自动完成提示设定", en: "Autocomplete Prompts" },
-		promptDescription: { "zh-Hant": "設定文字輸入框的自動完成提示，每行一個提示（使用者輸入時會顯示建議）", "zh-Hans": "设定文字输入框的自动完成提示，每行一个提示（使用者输入时会显示建议）", en: "Configure autocomplete prompts for text input, one per line (suggestions shown as user types)" },
+		promptDescription: {
+			"zh-Hant": "設定文字輸入框的自動完成提示，每行一個提示（使用者輸入時會顯示建議）",
+			"zh-Hans": "设定文字输入框的自动完成提示，每行一个提示（使用者输入时会显示建议）",
+			en: "Configure autocomplete prompts for text input, one per line (suggestions shown as user types)"
+		},
 		howManyFields: { "zh-Hant": "個欄位", "zh-Hans": "个栏位", en: "fields" },
 		currentlyNoFormFields: { "zh-Hant": "目前尚無表單欄位", "zh-Hans": "目前尚无表单栏位", en: "There are currently no form fields" },
 		clickNewToAdd: { "zh-Hant": "點擊下方「新增問題」按鈕開始建立表單", "zh-Hans": "点击下方「新增问题」按钮开始建立表单", en: "Click the button below to add a new question" },

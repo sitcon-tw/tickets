@@ -5,8 +5,8 @@ import MultiCheckbox, { CheckboxOption } from "@/components/input/MultiCheckbox"
 import Radio, { RadioOption } from "@/components/input/Radio";
 import Select, { SelectOption } from "@/components/input/Select";
 import Text from "@/components/input/Text";
-import TextWithAutocomplete from "@/components/input/TextWithAutocomplete";
 import Textarea from "@/components/input/Textarea";
+import TextWithAutocomplete from "@/components/input/TextWithAutocomplete";
 import MarkdownContent from "@/components/MarkdownContent";
 import { FormFieldProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -48,7 +48,15 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			if (localizedPrompts.length > 0) {
 				return (
 					<FieldWrapper description={fieldDescription}>
-						<TextWithAutocomplete label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} prompts={localizedPrompts} />
+						<TextWithAutocomplete
+							label={label}
+							id={fieldId}
+							placeholder={field.placeholder || ""}
+							required={field.required}
+							value={(value as string) || ""}
+							onChange={onTextChange}
+							prompts={localizedPrompts}
+						/>
 					</FieldWrapper>
 				);
 			}

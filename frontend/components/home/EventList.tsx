@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { Calendar, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, MapPin } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useEffect, useState } from "react";

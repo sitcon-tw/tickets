@@ -66,7 +66,7 @@ export const eventFormFieldProperties = {
 				type: "string"
 			}
 		},
-		description: "自動完成提示（localized object with arrays，用於 text 類型）格式：{\"en\": [\"option1\", \"option2\"], \"zh-Hant\": [\"選項1\", \"選項2\"]}"
+		description: '自動完成提示（localized object with arrays，用於 text 類型）格式：{"en": ["option1", "option2"], "zh-Hant": ["選項1", "選項2"]}'
 	}
 } as const;
 
@@ -131,7 +131,7 @@ export const eventFormFieldCreateBody = {
 					type: "string"
 				}
 			},
-			description: "自動完成提示（localized object with arrays，用於 text 類型）格式：{\"en\": [\"option1\", \"option2\"], \"zh-Hant\": [\"選項1\", \"選項2\"]}"
+			description: '自動完成提示（localized object with arrays，用於 text 類型）格式：{"en": ["option1", "option2"], "zh-Hant": ["選項1", "選項2"]}'
 		}
 	},
 	required: ["eventId", "order", "type", "name"]
@@ -193,7 +193,7 @@ export const eventFormFieldUpdateBody = {
 					type: "string"
 				}
 			},
-			description: "自動完成提示（localized object with arrays，用於 text 類型）格式：{\"en\": [\"option1\", \"option2\"], \"zh-Hant\": [\"選項1\", \"選項2\"]}"
+			description: '自動完成提示（localized object with arrays，用於 text 類型）格式：{"en": ["option1", "option2"], "zh-Hant": ["選項1", "選項2"]}'
 		}
 	}
 } as const;

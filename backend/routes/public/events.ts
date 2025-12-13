@@ -378,7 +378,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 										placeholder: { type: "string" },
 										order: { type: "integer" },
 										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true },
+										prompts: { type: "object", additionalProperties: true }
 									}
 								}
 							}
@@ -426,7 +426,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						values: true,
 						order: true,
 						filters: true,
-						prompts: true,
+						prompts: true
 					},
 					orderBy: { order: "asc" }
 				});
