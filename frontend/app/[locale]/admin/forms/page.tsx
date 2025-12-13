@@ -758,32 +758,29 @@ export default function FormsPage() {
 														<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionEn || ""}
 																	placeholder="English description (Markdown supported)"
 																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionZhHant || ""}
 																	placeholder="繁體中文描述（支援 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 															<div>
 																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
-																<Input
-																	type="text"
+																<Textarea
 																	value={q.descriptionZhHans || ""}
 																	placeholder="简体中文描述（支持 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
-																	className="w-full text-sm"
+																	className="w-full text-sm min-h-[80px]"
 																/>
 															</div>
 														</div>
