@@ -49,8 +49,8 @@ export default function EventsPage() {
 		plainDescription: { "zh-Hant": "Metadata 純文字描述", "zh-Hans": "Metadata 纯文字描述", en: "Plaintext Description for Metadata" },
 		slug: { "zh-Hant": "自訂網址 Slug", "zh-Hans": "自定义网址 Slug", en: "Custom URL Slug" },
 		slugHint: {
-			"zh-Hant": "選填。僅可使用小寫字母、數字和連字號。留空則使用活動 ID。",
-			"zh-Hans": "选填。仅可使用小写字母、数字和连字号。留空则使用活动 ID。",
+			"zh-Hant": "僅可使用小寫字母、數字和連字號。留空則使用活動 ID。",
+			"zh-Hans": "仅可使用小写字母、数字和连字号。留空则使用活动 ID。",
 			en: "Optional. Use lowercase letters, numbers, and hyphens only. Leave empty to use event ID."
 		},
 		slugTitle: {
@@ -59,8 +59,18 @@ export default function EventsPage() {
 			en: "Only lowercase letters, numbers, and hyphens (e.g., sitcon-2026)"
 		},
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
-		ogImage: { "zh-Hant": "封面圖片網址（建議尺寸：1800x300）", "zh-Hans": "封面图片网址（建议尺寸：1800x300）", en: "Cover Image URL (Recommended size: 1800x300)" },
+		ogImage: { "zh-Hant": "封面圖片網址", "zh-Hans": "封面图片网址", en: "Cover Image URL" },
+		ogImageHint: {
+			"zh-Hant": "請將圖片上傳至 Imgur，並將圖片連結貼於此處。建議尺寸: 1800x300。",
+			"zh-Hans": "请将图片上传至 Imgur，并将图片链接贴于此处。建议尺寸: 1800x300。",
+			en: "Please upload the image to Imgur and paste the image link here. Recommended size: 1800x300."
+		},
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
+		locationHint: {
+			"zh-Hant": "可以貼上 Google Maps 連結，系統會自動抓取地點名稱。請使用「分享」功能取得連結。若填寫的不是 Google Maps 連結，則會原樣顯示。",
+			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示。",
+			en: "You can paste the Google Maps link, and the system will automatically fetch the location name. Please use the 'Share' feature to obtain the link. If the input is not a Google Maps link, it will be displayed as is."
+		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
@@ -348,11 +358,13 @@ export default function EventsPage() {
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="ogImage">{t.ogImage}</Label>
-								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://example.com/image.jpg" />
+								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://i.imgur.com/example.jpg" pattern="https://i\.imgur\.com/.+\.(jpg|jpeg|png|gif|webp)" />
+								<p className="text-xs text-muted-foreground">{t.ogImageHint}</p>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="location">{t.location}</Label>
-								<Input id="location" name="location" type="text" defaultValue={editingEvent?.location || ""} />
+								<Input id="location" name="location" type="text" defaultValue={editingEvent?.location || ""} placeholder="https://maps.app.goo.gl/z3Kyzeu1dK29DLfv6" />
+								<p className="text-xs text-muted-foreground">{t.locationHint}</p>
 							</div>
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div className="space-y-2">

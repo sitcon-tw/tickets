@@ -277,6 +277,11 @@ export const smsVerificationAPI = {
 	getStatus: () => apiClient.get<ApiResponse<{ phoneNumber?: string; phoneVerified: boolean }>>("/api/sms-verification/status")
 };
 
+// OpenGraph - Public
+export const opengraphAPI = {
+	getTitle: (url: string) => apiClient.get<ApiResponse<{ title: string }>>("/api/opengraph/title", { url })
+};
+
 // Admin - SMS Verification Logs
 export const adminSmsVerificationAPI = {
 	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-logs", params),

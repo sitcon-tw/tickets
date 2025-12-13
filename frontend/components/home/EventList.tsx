@@ -4,19 +4,29 @@ import PageSpinner from "@/components/PageSpinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link } from "@/i18n/navigation";
-import { eventsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+
+const isURL = (str: string): boolean => {
+	try {
+		const url = new URL(str);
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
 
 export default function EventList() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [locationTitles, setLocationTitles] = useState<Record<string, string>>({});
 
 	const t = getTranslations(locale, {
 		title: {
@@ -61,10 +71,24 @@ export default function EventList() {
 					});
 
 					setEvents(sortedEvents);
+					setLoading(false);
+
+					// Fetch OpenGraph titles for locations that are URLs (async, non-blocking)
+					sortedEvents.forEach(async event => {
+						if (event.location && isURL(event.location)) {
+							try {
+								const result = await opengraphAPI.getTitle(event.location);
+								if (result?.success && result.data?.title) {
+									setLocationTitles(prev => ({ ...prev, [event.id]: result.data.title }));
+								}
+							} catch {
+								// Silently fail, will use the URL as fallback
+							}
+						}
+					});
 				}
 			} catch {
 				showAlert("Failed to fetch events.", "error");
-			} finally {
 				setLoading(false);
 			}
 		}
@@ -130,7 +154,20 @@ export default function EventList() {
 										{event.location && (
 											<div className="flex items-center gap-2">
 												<MapPin size={16} />
-												<span>{event.location}</span>
+												{isURL(event.location) ? (
+													<a
+														href={event.location}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="hover:underline text-blue-500 dark:text-blue-400 flex items-center"
+														onClick={e => e.stopPropagation()}
+													>
+														{locationTitles[event.id] || event.location}
+														<ExternalLink size={16} className="ml-1" />
+													</a>
+												) : (
+													<span>{event.location}</span>
+												)}
 											</div>
 										)}
 									</div>
