@@ -181,7 +181,7 @@ export default function Nav() {
 						</>
 					) : (
 						<>
-							<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" />
+							<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
 							<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
 						</>
 					)}
