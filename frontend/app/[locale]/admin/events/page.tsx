@@ -61,8 +61,8 @@ export default function EventsPage() {
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
 		ogImage: { "zh-Hant": "封面圖片網址", "zh-Hans": "封面图片网址", en: "Cover Image URL" },
 		ogImageHint: {
-			"zh-Hant": "請將圖片上傳至 Imgur，並將圖片連結貼於此處。建議尺寸: 1800x300。",
-			"zh-Hans": "请将图片上传至 Imgur，并将图片链接贴于此处。建议尺寸: 1800x300。",
+			"zh-Hant": "請將圖片上傳至 Imgur，並將圖片連結貼於此處。建議尺寸：1800x300。",
+			"zh-Hans": "请将图片上传至 Imgur，并将图片链接贴于此处。建议尺寸：1800x300。",
 			en: "Please upload the image to Imgur and paste the image link here. Recommended size: 1800x300."
 		},
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
