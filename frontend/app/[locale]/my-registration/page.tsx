@@ -9,6 +9,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { Registration } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { formatDate, formatTime, isSameDayUTC8 } from "@/lib/utils/timezone";
 import { Calendar, Clock, Eye, MapPin, Ticket } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -137,36 +138,18 @@ export default function MyRegistrationsPage() {
 	});
 
 	const formatEventDate = (startDate: string, endDate: string) => {
-		const start = new Date(startDate);
-		const end = new Date(endDate);
-
-		const formatDate = (date: Date) => {
-			return date.toLocaleDateString(locale, {
-				year: "numeric",
-				month: "short",
-				day: "numeric"
-			});
-		};
-
-		const formatTime = (date: Date) => {
-			return date.toLocaleTimeString(locale, {
-				hour: "2-digit",
-				minute: "2-digit"
-			});
-		};
-
-		const isSameDay = start.toDateString() === end.toDateString();
+		const isSameDay = isSameDayUTC8(startDate, endDate);
 
 		if (isSameDay) {
 			return {
-				date: formatDate(start),
-				time: `${formatTime(start)} - ${formatTime(end)}`
+				date: formatDate(startDate),
+				time: `${formatTime(startDate)} - ${formatTime(endDate)}`
 			};
 		}
 
 		return {
-			date: `${formatDate(start)} - ${formatDate(end)}`,
-			time: `${formatTime(start)} - ${formatTime(end)}`
+			date: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+			time: `${formatTime(startDate)} - ${formatTime(endDate)}`
 		};
 	};
 

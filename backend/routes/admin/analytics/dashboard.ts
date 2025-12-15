@@ -3,6 +3,7 @@
 import prisma from "#config/database";
 import type { AnalyticsData } from "#types/api";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
@@ -69,7 +70,7 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				// Total revenue calculation (not currently used in response)
 				// const _totalRevenue = revenueData.reduce((sum, reg) => sum + reg.ticket.price, 0);
 
-				const thirtyDaysAgo = new Date();
+				const thirtyDaysAgo = nowInUTC8();
 				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
 				const registrationsLast30Days = await prisma.registration.findMany({
@@ -84,10 +85,10 @@ const dashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				});
 
-				// Group by date
+				// Group by date in UTC+8
 				const dailyRegistrations = registrationsLast30Days.reduce(
 					(acc, reg) => {
-						const date = reg.createdAt.toISOString().split("T")[0];
+						const date = formatDateOnly(reg.createdAt);
 						if (!acc[date]) {
 							acc[date] = { date, count: 0, confirmed: 0 };
 						}

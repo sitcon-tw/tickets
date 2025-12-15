@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
+import { nowInUTC8 } from "./timezone";
 
 export type ValidationRule = (value: unknown) => true | string;
 
@@ -143,7 +144,7 @@ const shouldDisplayField = (field: FormField, ticketId: string, formData: Record
 	}
 
 	const filter = field.filters;
-	const now = new Date();
+	const now = nowInUTC8();
 
 	const results = filter.conditions.map(condition => {
 		switch (condition.type) {

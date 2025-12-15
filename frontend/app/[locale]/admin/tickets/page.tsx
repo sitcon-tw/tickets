@@ -15,6 +15,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Ticket } from "@/lib/types/api";
 import { LanguageFieldsProps } from "@/lib/types/pages";
+import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -223,6 +224,7 @@ export default function TicketsPage() {
 		e.preventDefault();
 		if (!currentEventId) return;
 
+		// ticketSaleStart and ticketSaleEnd are already Date objects in UTC from fromDateTimeLocalString
 		const saleStartStr = ticketSaleStart ? ticketSaleStart.toISOString() : "";
 		const saleEndStr = ticketSaleEnd ? ticketSaleEnd.toISOString() : "";
 
@@ -263,10 +265,10 @@ export default function TicketsPage() {
 		};
 
 		if (saleStartStr) {
-			data.saleStart = new Date(saleStartStr).toISOString();
+			data.saleStart = saleStartStr;
 		}
 		if (saleEndStr) {
-			data.saleEnd = new Date(saleEndStr).toISOString();
+			data.saleEnd = saleEndStr;
 		}
 
 		try {
@@ -344,8 +346,7 @@ export default function TicketsPage() {
 	function formatDateTime(dt?: string) {
 		if (!dt) return "";
 		try {
-			const d = new Date(dt);
-			return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+			return formatDateTimeUTC8(dt);
 		} catch {
 			return dt;
 		}
@@ -497,8 +498,8 @@ export default function TicketsPage() {
 											id="saleStart"
 											name="saleStart"
 											type="datetime-local"
-											defaultValue={editingTicket?.saleStart ? new Date(editingTicket.saleStart).toISOString().slice(0, 16) : ""}
-											onChange={e => setTicketSaleStart(e.target.value ? new Date(e.target.value) : null)}
+											defaultValue={editingTicket?.saleStart ? toDateTimeLocalString(editingTicket.saleStart) : ""}
+											onChange={e => setTicketSaleStart(e.target.value ? new Date(fromDateTimeLocalString(e.target.value)) : null)}
 										/>
 									</div>
 									<div className="space-y-2">
@@ -507,8 +508,8 @@ export default function TicketsPage() {
 											id="saleEnd"
 											name="saleEnd"
 											type="datetime-local"
-											defaultValue={editingTicket?.saleEnd ? new Date(editingTicket.saleEnd).toISOString().slice(0, 16) : ""}
-											onChange={e => setTicketSaleEnd(e.target.value ? new Date(e.target.value) : null)}
+											defaultValue={editingTicket?.saleEnd ? toDateTimeLocalString(editingTicket.saleEnd) : ""}
+											onChange={e => setTicketSaleEnd(e.target.value ? new Date(fromDateTimeLocalString(e.target.value)) : null)}
 										/>
 									</div>
 								</div>

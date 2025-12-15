@@ -3,6 +3,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import { nowInUTC8 } from "#utils/timezone";
 
 interface SmsLogsQuery {
 	userId?: string;
@@ -121,7 +122,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 
 				const successRate = totalSent > 0 ? ((totalVerified / totalSent) * 100).toFixed(2) : 0;
 
-				const sevenDaysAgo = new Date();
+				const sevenDaysAgo = nowInUTC8();
 				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
 				const recentCount = await prisma.smsVerification.count({

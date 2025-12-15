@@ -4,6 +4,7 @@
 
 import prisma from "#config/database";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import { formatDateOnly, formatMonthOnly, getWeekStartInUTC8, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationTrendsQuerystring {
@@ -51,11 +52,14 @@ const trendsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				// Note: groupByClause would be used in raw SQL queries for better performance
 				// Currently using Prisma's findMany with manual grouping for compatibility
 
+				const cutoffDate = nowInUTC8();
+				cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
 				const registrations = await prisma.registration.findMany({
 					where: {
 						...whereClause,
 						createdAt: {
-							gte: new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000)
+							gte: cutoffDate
 						}
 					},
 					select: {
@@ -69,18 +73,17 @@ const trendsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					let key: string;
 					switch (period) {
 						case "daily":
-							key = reg.createdAt.toISOString().split("T")[0];
+							key = formatDateOnly(reg.createdAt);
 							break;
 						case "weekly":
-							const weekStart = new Date(reg.createdAt);
-							weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-							key = weekStart.toISOString().split("T")[0];
+							const weekStart = getWeekStartInUTC8(reg.createdAt);
+							key = formatDateOnly(weekStart);
 							break;
 						case "monthly":
-							key = reg.createdAt.toISOString().substring(0, 7);
+							key = formatMonthOnly(reg.createdAt);
 							break;
 						default:
-							key = reg.createdAt.toISOString().split("T")[0];
+							key = formatDateOnly(reg.createdAt);
 					}
 
 					if (!trendsMap[key]) {

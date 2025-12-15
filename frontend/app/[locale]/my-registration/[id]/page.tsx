@@ -21,6 +21,7 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { formatDateTime } from "@/lib/utils/timezone";
 import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -314,14 +315,7 @@ export default function MyRegistrationPage() {
 	}
 
 	function formatDate(dateString: string) {
-		const date = new Date(dateString);
-		return date.toLocaleString(locale, {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit"
-		});
+		return formatDateTime(dateString);
 	}
 
 	useEffect(() => {

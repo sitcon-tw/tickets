@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { formatEventDateRange } from "@/lib/utils/timezone";
 import { Calendar, ExternalLink, MapPin } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -96,13 +97,8 @@ export default function EventList() {
 		fetchEvents();
 	}, [showAlert]);
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString(locale, {
-			year: "numeric",
-			month: "long",
-			day: "numeric"
-		});
+	const formatDate = (startDate: string, endDate: string) => {
+		return formatEventDateRange(startDate, endDate);
 	};
 
 	if (loading) {
@@ -148,7 +144,7 @@ export default function EventList() {
 									<div className="space-y-2 text-sm text-muted-foreground">
 										<div className="flex items-center gap-2">
 											<Calendar size={16} />
-											<span>{formatDate(event.startDate)}</span>
+											<span>{formatDate(event.startDate, event.endDate)}</span>
 										</div>
 
 										{event.location && (
