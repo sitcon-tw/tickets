@@ -15,10 +15,7 @@ const VALIDATION_TIMEOUT = 10000; // 10 seconds
  * @param options Validation options including remoteip, idempotency key, etc.
  * @returns Validation result with success status and details
  */
-export async function validateTurnstile(
-	token: string,
-	options: TurnstileValidationOptions = {}
-): Promise<TurnstileValidationResult> {
+export async function validateTurnstile(token: string, options: TurnstileValidationOptions = {}): Promise<TurnstileValidationResult> {
 	if (!token || typeof token !== "string") {
 		return {
 			valid: false,
@@ -140,11 +137,7 @@ export async function validateTurnstile(
  * @param maxRetries Maximum number of retry attempts (default: 3)
  * @returns Validation result
  */
-export async function validateTurnstileWithRetry(
-	token: string,
-	options: TurnstileValidationOptions = {},
-	maxRetries = 3
-): Promise<TurnstileValidationResult> {
+export async function validateTurnstileWithRetry(token: string, options: TurnstileValidationOptions = {}, maxRetries = 3): Promise<TurnstileValidationResult> {
 	const idempotencyKey = options.idempotencyKey || crypto.randomUUID();
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {

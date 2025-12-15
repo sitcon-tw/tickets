@@ -505,7 +505,6 @@ await fastify.register(routes);
 
 const port = Number(process.env.PORT) || 3000;
 
-
 fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 	if (err) {
 		fastify.log.error(err);
