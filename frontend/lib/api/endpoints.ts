@@ -270,7 +270,7 @@ export const adminEmailCampaignsAPI = {
 
 // SMS Verification - Requires Auth
 export const smsVerificationAPI = {
-	send: (data: { phoneNumber: string; locale?: string }) => apiClient.post<ApiResponse<{ expiresAt: string }>>("/api/sms-verification/send", data),
+	send: (data: { phoneNumber: string; locale?: string; turnstileToken: string }) => apiClient.post<ApiResponse<{ expiresAt: string }>>("/api/sms-verification/send", data),
 
 	verify: (data: { phoneNumber: string; code: string }) => apiClient.post<ApiResponse<{ verified: boolean }>>("/api/sms-verification/verify", data),
 

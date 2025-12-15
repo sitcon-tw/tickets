@@ -39,3 +39,20 @@ export interface SMSSendOptions {
  * Supported locales for verification codes
  */
 export type Locale = "zh-Hant" | "zh-Hans" | "en";
+
+/**
+ * SMS Verification send request
+ */
+export interface SendVerificationRequest {
+	phoneNumber: string;
+	locale?: Locale;
+	turnstileToken: string;
+}
+
+/**
+ * SMS Verification verify request
+ */
+export interface VerifyCodeRequest {
+	phoneNumber: string;
+	code: string;
+}

@@ -4,6 +4,7 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,6 +25,7 @@ export default function VerifyPage() {
 	const [error, setError] = useState("");
 	const [countdown, setCountdown] = useState(0);
 	const [isVerified, setIsVerified] = useState(false);
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		title: {
@@ -175,6 +177,11 @@ export default function VerifyPage() {
 			return;
 		}
 
+		if (!turnstileToken) {
+			setError("請完成驗證");
+			return;
+		}
+
 		setSendingCode(true);
 
 		try {
@@ -184,15 +191,18 @@ export default function VerifyPage() {
 
 			await smsVerificationAPI.send({
 				phoneNumber: formattedApiPhone,
-				locale
+				locale,
+				turnstileToken
 			});
 
 			setCountdown(60);
 			setStep("verify");
+			setTurnstileToken(null); // Reset token after use
 		} catch (err) {
 			const error = err as Error;
 			console.error("Failed to send SMS:", error);
 			setError(error.message || "Failed to send verification code");
+			setTurnstileToken(null); // Reset token on error
 		} finally {
 			setSendingCode(false);
 		}
@@ -283,6 +293,13 @@ export default function VerifyPage() {
 		setSendingCode(true);
 		setError("");
 
+		if (!turnstileToken) {
+			setError("請完成驗證");
+			setSendingCode(false);
+			setStep("phone"); // Go back to phone step to get new turnstile token
+			return;
+		}
+
 		try {
 			const rawPhone = phoneNumber.replace(/\D/g, "");
 			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
@@ -290,16 +307,19 @@ export default function VerifyPage() {
 
 			await smsVerificationAPI.send({
 				phoneNumber: formattedApiPhone,
-				locale
+				locale,
+				turnstileToken
 			});
 
 			setCountdown(60);
 			setVerificationCode(["", "", "", "", "", ""]);
 			codeInputRefs.current[0]?.focus();
+			setTurnstileToken(null); // Reset token after use
 		} catch (err) {
 			const error = err as Error;
 			console.error("Failed to resend SMS:", error);
 			setError(error.message || "Failed to resend verification code");
+			setTurnstileToken(null); // Reset token on error
 		} finally {
 			setSendingCode(false);
 		}
@@ -309,6 +329,7 @@ export default function VerifyPage() {
 		setStep("phone");
 		setVerificationCode(["", "", "", "", "", ""]);
 		setError("");
+		setTurnstileToken(null); // Reset turnstile when going back
 	}
 
 	const handleContinue = () => {
@@ -355,8 +376,22 @@ export default function VerifyPage() {
 									{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 								</div>
 
+								<div className="flex justify-center mb-6">
+									<Turnstile
+										siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+										onSuccess={token => setTurnstileToken(token)}
+										onError={() => setTurnstileToken(null)}
+										onExpire={() => setTurnstileToken(null)}
+										options={{
+											action: "sms-verification",
+											theme: "dark",
+											size: "normal"
+										}}
+									/>
+								</div>
+
 								<div className="flex justify-center">
-									<Button onClick={handleSendCode} disabled={sendingCode || !phoneNumber} size="lg" className="group relative overflow-hidden">
+									<Button onClick={handleSendCode} disabled={sendingCode || !phoneNumber || !turnstileToken} size="lg" className="group relative overflow-hidden">
 										<div className="svg-wrapper-1">
 											<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 												{sendingCode ? (

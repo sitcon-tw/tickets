@@ -1,20 +1,13 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
+import { getClientIP, validateTurnstile } from "#lib/turnstile";
 import { requireAuth } from "#middleware/auth.ts";
+import { smsVerificationSchemas } from "#schemas/smsVerification";
+import type { SendVerificationRequest, VerifyCodeRequest } from "#types/sms";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-interface SendVerificationRequest {
-	phoneNumber: string;
-	locale?: "zh-Hant" | "zh-Hans" | "en";
-}
-
-interface VerifyCodeRequest {
-	phoneNumber: string;
-	code: string;
-}
 
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -26,18 +19,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post(
 		"/sms-verification/send",
 		{
-			schema: {
-				description: "發送簡訊驗證碼",
-				tags: ["sms-verification"],
-				body: {
-					type: "object",
-					required: ["phoneNumber"],
-					properties: {
-						phoneNumber: { type: "string", pattern: "^09\\d{8}$" },
-						locale: { type: "string", enum: ["zh-Hant", "zh-Hans", "en"] }
-					}
-				}
-			}
+			schema: smsVerificationSchemas.send
 		},
 		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
 			try {
@@ -50,9 +32,29 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const { phoneNumber, locale = "zh-Hant" } = request.body;
+				const { phoneNumber, locale = "zh-Hant", turnstileToken } = request.body;
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const userId = session.user.id;
+
+				// Validate Turnstile token
+				const clientIP = getClientIP(request.headers);
+				const turnstileResult = await validateTurnstile(turnstileToken, {
+					remoteip: clientIP,
+					expectedAction: "sms-verification"
+				});
+
+				if (!turnstileResult.valid) {
+					request.log.warn(
+						{
+							reason: turnstileResult.reason,
+							errors: turnstileResult.errors,
+							ip: clientIP
+						},
+						"Turnstile validation failed"
+					);
+					const { response, statusCode } = validationErrorResponse("驗證失敗，請重新整理頁面再試");
+					return reply.code(statusCode).send(response);
+				}
 
 				if (!sanitizedPhoneNumber.match(/^09\d{8}$/)) {
 					const { response, statusCode } = validationErrorResponse("無效的手機號碼格式，請使用 09xxxxxxxx");
@@ -196,18 +198,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post(
 		"/sms-verification/verify",
 		{
-			schema: {
-				description: "驗證簡訊驗證碼",
-				tags: ["sms-verification"],
-				body: {
-					type: "object",
-					required: ["phoneNumber", "code"],
-					properties: {
-						phoneNumber: { type: "string", pattern: "^09\\d{8}$" },
-						code: { type: "string", pattern: "^\\d{6}$" }
-					}
-				}
-			}
+			schema: smsVerificationSchemas.verify
 		},
 		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
 			try {
@@ -305,10 +296,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/sms-verification/status",
 		{
-			schema: {
-				description: "取得用戶的手機驗證狀態",
-				tags: ["sms-verification"]
-			}
+			schema: smsVerificationSchemas.status
 		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
