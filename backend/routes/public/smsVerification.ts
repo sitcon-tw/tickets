@@ -82,7 +82,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const recentCode = await prisma.smsVerification.findFirst({
+				const recentCodePhone = await prisma.smsVerification.findFirst({
 					where: {
 						phoneNumber: sanitizedPhoneNumber,
 						createdAt: {
@@ -94,7 +94,24 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				if (recentCode) {
+				if (recentCodePhone) {
+					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼發送間隔需 30 秒");
+					return reply.code(statusCode).send(response);
+				}
+
+				const recentCodeSender = await prisma.smsVerification.findFirst({
+					where: {
+						userId,
+						createdAt: {
+							gt: new Date(Date.now() - 60000)
+						}
+					},
+					orderBy: {
+						createdAt: "desc"
+					}
+				});
+
+				if (recentCodeSender) {
 					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼發送間隔需 30 秒");
 					return reply.code(statusCode).send(response);
 				}
@@ -105,7 +122,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 				const todayEnd = new Date();
 				todayEnd.setHours(23, 59, 59, 999);
 
-				const todaySmsCount = await prisma.smsVerification.count({
+				const todaySmsCountPhone = await prisma.smsVerification.count({
 					where: {
 						phoneNumber: sanitizedPhoneNumber,
 						createdAt: {
@@ -115,8 +132,23 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				if (todaySmsCount >= 3) {
+				if (todaySmsCountPhone >= 3) {
 					const { response, statusCode } = validationErrorResponse("此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
+					return reply.code(statusCode).send(response);
+				}
+
+				const todaySmsCountUser = await prisma.smsVerification.count({
+					where: {
+						userId,
+						createdAt: {
+							gte: todayStart,
+							lte: todayEnd
+						}
+					}
+				});
+
+				if (todaySmsCountUser >= 3) {
+					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
 					return reply.code(statusCode).send(response);
 				}
 
