@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -54,6 +55,7 @@ export default function Login() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [email, setEmail] = useState("");
 	const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		login: {
@@ -185,10 +187,16 @@ export default function Login() {
 			return;
 		}
 
+		if (!turnstileToken) {
+			showAlert("請完成驗證", "error");
+			return;
+		}
+
 		setIsLoading(true);
 		try {
-			await authAPI.getMagicLink(email, locale, returnUrl || undefined);
+			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
 			setViewState("sent");
+			setTurnstileToken(null); // Reset token after use
 		} catch (error) {
 			console.error("Login error:", error);
 
@@ -207,6 +215,7 @@ export default function Login() {
 			}
 
 			showAlert(errorMessage, "error");
+			setTurnstileToken(null); // Reset token on error
 		} finally {
 			setIsLoading(false);
 		}
@@ -229,7 +238,20 @@ export default function Login() {
 						Email
 					</label>
 					<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
-					<SendButton onClick={login} disabled={isLoading} isLoading={isLoading}>
+					<div className="flex justify-center my-4">
+						<Turnstile
+							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+							onSuccess={token => setTurnstileToken(token)}
+							onError={() => setTurnstileToken(null)}
+							onExpire={() => setTurnstileToken(null)}
+							options={{
+								action: "magic-link",
+								theme: "auto",
+								size: "normal"
+							}}
+						/>
+					</div>
+					<SendButton onClick={login} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
 						{t.continue}
 					</SendButton>
 					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
@@ -251,6 +273,7 @@ export default function Login() {
 							onClick={() => {
 								setViewState("login");
 								setEmail("");
+								setTurnstileToken(null);
 							}}
 							variant="outline"
 							size="lg"
