@@ -20,6 +20,7 @@ import { DataTableProps } from "@/lib/types/data-table";
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination";
 
 interface SortableRowProps {
@@ -35,12 +36,16 @@ function SortableRow({ row, children }: SortableRowProps) {
 	const style = {
 		transform: CSS.Transform.toString(transform),
 		transition,
-		opacity: isDragging ? 0.5 : 1,
-		cursor: "grab"
+		opacity: isDragging ? 0.5 : 1
 	};
 
 	return (
-		<TableRow ref={setNodeRef} style={style} {...attributes} {...listeners} data-state={row.getIsSelected() && "selected"}>
+		<TableRow ref={setNodeRef} style={style} data-state={row.getIsSelected() && "selected"}>
+			<TableCell className="w-8 p-2">
+				<div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing hover:bg-muted rounded p-1 inline-flex">
+					<GripVertical className="h-4 w-4 text-muted-foreground" />
+				</div>
+			</TableCell>
 			{children}
 		</TableRow>
 	);
@@ -81,6 +86,7 @@ export function SortableDataTable<TData, TValue>({ columns, data }: DataTablePro
 					<TableHeader>
 						{table.getHeaderGroups().map(headerGroup => (
 							<TableRow key={headerGroup.id}>
+								<TableHead className="w-8"></TableHead>
 								{headerGroup.headers.map(header => {
 									return (
 										<TableHead key={header.id} colSpan={header.colSpan}>
