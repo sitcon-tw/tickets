@@ -15,6 +15,7 @@ import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
 import { auth } from "./lib/auth";
+import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
 
@@ -142,6 +143,124 @@ interface AuthQuerystring {
 	token?: string;
 	returnUrl?: string;
 }
+
+interface MagicLinkBody {
+	email: string;
+	name?: string;
+	callbackURL?: string;
+	newUserCallbackURL?: string;
+	errorCallbackURL?: string;
+	turnstileToken?: string;
+}
+
+// Custom route for magic link sending with Turnstile validation
+fastify.post<{ Body: MagicLinkBody }>(
+	"/api/auth/sign-in/magic-link",
+	{
+		schema: {
+			description: "Send magic link with Turnstile protection",
+			tags: ["auth"],
+			body: {
+				type: "object",
+				required: ["email"],
+				properties: {
+					email: { type: "string", format: "email" },
+					name: { type: "string" },
+					callbackURL: { type: "string" },
+					newUserCallbackURL: { type: "string" },
+					errorCallbackURL: { type: "string" },
+					turnstileToken: { type: "string" }
+				}
+			}
+		},
+		config: {
+			rateLimit: rateLimitConfig.auth
+		}
+	},
+	async (request: FastifyRequest<{ Body: MagicLinkBody }>, reply: FastifyReply) => {
+		try {
+			const { turnstileToken } = request.body;
+
+			// Validate Turnstile token
+			if (!turnstileToken) {
+				fastify.log.warn("Magic link request missing Turnstile token");
+				return reply.code(400).send({
+					success: false,
+					error: {
+						code: "BAD_REQUEST",
+						message: "驗證失敗，請重新整理頁面再試"
+					}
+				});
+			}
+
+			const clientIP = getClientIP(request.headers);
+			const turnstileResult = await validateTurnstile(turnstileToken, {
+				remoteip: clientIP,
+				expectedAction: "magic-link"
+			});
+
+			if (!turnstileResult.valid) {
+				fastify.log.warn(
+					{
+						reason: turnstileResult.reason,
+						errors: turnstileResult.errors,
+						ip: clientIP,
+						email: request.body.email
+					},
+					"Turnstile validation failed for magic link"
+				);
+				return reply.code(400).send({
+					success: false,
+					error: {
+						code: "BAD_REQUEST",
+						message: "驗證失敗，請重新整理頁面再試"
+					}
+				});
+			}
+
+			// Turnstile validation passed, forward to BetterAuth
+			const protocol = request.headers["x-forwarded-proto"] || "http";
+			const host = request.headers.host;
+			const url = `${protocol}://${host}/api/auth/sign-in/magic-link`;
+
+			// Remove turnstileToken from body before forwarding to BetterAuth
+			const { turnstileToken: _removed, ...bodyWithoutTurnstile } = request.body;
+
+			const webRequest = new Request(url, {
+				method: "POST",
+				headers: {
+					...(request.headers as Record<string, string>),
+					"content-type": "application/json"
+				},
+				body: JSON.stringify(bodyWithoutTurnstile)
+			});
+
+			const response = await auth.handler(webRequest);
+
+			reply.code(response.status);
+
+			// Set headers as-is
+			for (const [key, value] of response.headers) {
+				reply.header(key, value);
+			}
+
+			if (response.body) {
+				return await response.text();
+			}
+
+			return "";
+		} catch (error) {
+			fastify.log.error({ err: error }, "Magic link send error");
+			return reply.code(500).send({
+				success: false,
+				error: {
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Internal server error"
+				}
+			});
+		}
+	}
+);
 
 // Better Auth routes with rate limiting
 fastify.all(
@@ -386,13 +505,6 @@ await fastify.register(routes);
 
 const port = Number(process.env.PORT) || 3000;
 
-// // Initialize database with default data
-// try {
-// 	await initializeDatabase();
-// } catch (error) {
-// 	fastify.log.error('Failed to initialize database:', error);
-// 	process.exit(1);
-// }
 
 fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 	if (err) {
@@ -405,19 +517,6 @@ fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 // Graceful shutdown
 process.on("SIGINT", async () => {
 	fastify.log.info("Received SIGINT, shutting down gracefully...");
-	try {
-		await cleanup();
-		await closeRedis();
-		await fastify.close();
-		process.exit(0);
-	} catch (error) {
-		fastify.log.error({ err: error }, "Error during shutdown");
-		process.exit(1);
-	}
-});
-
-process.on("SIGTERM", async () => {
-	fastify.log.info("Received SIGTERM, shutting down gracefully...");
 	try {
 		await cleanup();
 		await closeRedis();

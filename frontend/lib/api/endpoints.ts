@@ -36,7 +36,7 @@ export const healthAPI = {
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
-	getMagicLink: async (email: string, locale?: string, returnUrl?: string) => {
+	getMagicLink: async (email: string, locale?: string, returnUrl?: string, turnstileToken?: string) => {
 		const gravatarName = await fetchGravatarName(email);
 		const name = gravatarName || email.split("@")[0];
 
@@ -45,7 +45,8 @@ export const authAPI = {
 			name,
 			callbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
 			newUserCallbackURL: returnUrl ? `${window.location.origin}${returnUrl}` : `${window.location.origin}/${locale || "zh-Hant"}/`,
-			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`
+			errorCallbackURL: `${window.location.origin}/${locale || "zh-Hant"}/login/${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`,
+			turnstileToken
 		});
 	},
 	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),

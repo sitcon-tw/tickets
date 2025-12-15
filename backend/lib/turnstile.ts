@@ -19,7 +19,6 @@ export async function validateTurnstile(
 	token: string,
 	options: TurnstileValidationOptions = {}
 ): Promise<TurnstileValidationResult> {
-	// Input validation
 	if (!token || typeof token !== "string") {
 		return {
 			valid: false,
@@ -44,8 +43,6 @@ export async function validateTurnstile(
 			errors: ["Turnstile is not properly configured"]
 		};
 	}
-
-	// Prepare request
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT);
 
@@ -73,7 +70,6 @@ export async function validateTurnstile(
 
 		const result = (await response.json()) as TurnstileResponse;
 
-		// Check basic validation success
 		if (!result.success) {
 			return {
 				valid: false,
@@ -81,8 +77,6 @@ export async function validateTurnstile(
 				errors: result["error-codes"] || ["unknown_error"]
 			};
 		}
-
-		// Additional validation: check action if specified
 		if (options.expectedAction && result.action !== options.expectedAction) {
 			return {
 				valid: false,
@@ -92,7 +86,6 @@ export async function validateTurnstile(
 			};
 		}
 
-		// Additional validation: check hostname if specified
 		if (options.expectedHostname && result.hostname !== options.expectedHostname) {
 			return {
 				valid: false,
@@ -102,14 +95,12 @@ export async function validateTurnstile(
 			};
 		}
 
-		// Calculate token age
 		let tokenAge: number | undefined;
 		if (result.challenge_ts) {
 			const challengeTime = new Date(result.challenge_ts);
 			const now = new Date();
-			tokenAge = (now.getTime() - challengeTime.getTime()) / (1000 * 60); // in minutes
+			tokenAge = (now.getTime() - challengeTime.getTime()) / (1000 * 60);
 
-			// Warn if token is old (>4 minutes, expires at 5)
 			if (tokenAge > 4) {
 				console.warn(`Turnstile token is ${tokenAge.toFixed(1)} minutes old (expires at 5 minutes)`);
 			}
@@ -162,21 +153,17 @@ export async function validateTurnstileWithRetry(
 			idempotencyKey
 		});
 
-		// If validation succeeded or it's a client error (not a network/timeout error), return immediately
 		if (result.valid || (result.reason !== "validation_timeout" && result.reason !== "internal_error")) {
 			return result;
 		}
 
-		// If this is the last attempt, return the error
 		if (attempt === maxRetries) {
 			return result;
 		}
 
-		// Wait before retrying (exponential backoff)
 		await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
 	}
 
-	// This should never be reached, but TypeScript needs it
 	return {
 		valid: false,
 		reason: "max_retries_exceeded",
@@ -189,26 +176,21 @@ export async function validateTurnstileWithRetry(
  * Checks Cloudflare-specific headers first, then fallbacks
  */
 export function getClientIP(headers: Record<string, string | string[] | undefined>): string {
-	// Try Cloudflare's CF-Connecting-IP header first
 	const cfConnectingIP = headers["cf-connecting-ip"];
 	if (cfConnectingIP && typeof cfConnectingIP === "string") {
 		return cfConnectingIP;
 	}
 
-	// Fallback to X-Forwarded-For
 	const xForwardedFor = headers["x-forwarded-for"];
 	if (xForwardedFor) {
 		const forwardedIP = typeof xForwardedFor === "string" ? xForwardedFor : xForwardedFor[0];
-		// X-Forwarded-For can contain multiple IPs, take the first one
 		return forwardedIP.split(",")[0].trim();
 	}
 
-	// Fallback to X-Real-IP
 	const xRealIP = headers["x-real-ip"];
 	if (xRealIP && typeof xRealIP === "string") {
 		return xRealIP;
 	}
 
-	// Last resort
 	return "unknown";
 }
