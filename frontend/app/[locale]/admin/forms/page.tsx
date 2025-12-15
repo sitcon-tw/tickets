@@ -664,20 +664,10 @@ export default function FormsPage() {
 							<div className="flex items-center gap-2">
 								{questions.length > 0 && (
 									<>
-										<Button
-											type="button"
-											onClick={expandAll}
-											variant="secondary"
-											className="text-xs py-1.5 px-3"
-										>
+										<Button type="button" onClick={expandAll} variant="secondary" className="text-xs py-1.5 px-3">
 											{t.expandAll}
 										</Button>
-										<Button
-											type="button"
-											onClick={collapseAll}
-											variant="secondary"
-											className="text-xs py-1.5 px-3"
-										>
+										<Button type="button" onClick={collapseAll} variant="secondary" className="text-xs py-1.5 px-3">
 											{t.collapseAll}
 										</Button>
 									</>
@@ -757,505 +747,387 @@ export default function FormsPage() {
 												<>
 													{/* Field Names Section */}
 													<div>
-												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
-												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
-													<div>
-														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</Label>
-														<Input
-															type="text"
-															value={q.labelEn || ""}
-															placeholder="English Label"
-															onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
-															className="w-full text-sm"
-														/>
-													</div>
-													<div>
-														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</Label>
-														<Input
-															type="text"
-															value={q.labelZhHant || ""}
-															placeholder="繁體中文標籤"
-															onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
-															className="w-full text-sm"
-														/>
-													</div>
-													<div>
-														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</Label>
-														<Input
-															type="text"
-															value={q.labelZhHans || ""}
-															placeholder="简体中文标签"
-															onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
-															className="w-full text-sm"
-														/>
-													</div>
-												</div>
-											</div>
-
-											{/* Field Configuration Section */}
-											<div>
-												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
-												<div className="flex gap-2.5 flex-wrap items-end">
-													<div>
-														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</Label>
-														<Select value={q.type} onValueChange={value => updateQuestion(q.id, { type: value })}>
-															<SelectTrigger className="min-w-[140px] text-sm">
-																<SelectValue />
-															</SelectTrigger>
-															<SelectContent>
-																{fieldTypes.map(ft => (
-																	<SelectItem key={ft.value} value={ft.value}>
-																		{ft.label}
-																	</SelectItem>
-																))}
-															</SelectContent>
-														</Select>
-													</div>
-
-													<div className="flex gap-1.5 items-end">
-														<Button type="button" onClick={() => updateQuestion(q.id, { required: !q.required })} variant={q.required ? "default" : "secondary"} className="text-xs py-2 px-3">
-															{q.required ? t.fieldRequired : t.fieldOptional}
-														</Button>
-														<Button type="button" onClick={() => deleteQuestion(q.id)} className="text-xs py-2 px-3" variant="destructive" title={t.deleteField}>
-															{t.deleteField}
-														</Button>
-													</div>
-												</div>
-											</div>
-
-											{/* Additional Settings Section */}
-											<div>
-												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
-												<div className="flex flex-col gap-2.5">
-													<div>
-														<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</Label>
+														<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
 														<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 															<div>
-																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
-																<Textarea
-																	value={q.descriptionEn || ""}
-																	placeholder="English description (Markdown supported)"
-																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
-																	className="w-full text-sm min-h-20"
+																<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">EN</Label>
+																<Input
+																	type="text"
+																	value={q.labelEn || ""}
+																	placeholder="English Label"
+																	onChange={e => updateQuestion(q.id, { labelEn: e.target.value, label: e.target.value })}
+																	className="w-full text-sm"
 																/>
 															</div>
 															<div>
-																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
-																<Textarea
-																	value={q.descriptionZhHant || ""}
-																	placeholder="繁體中文描述（支援 Markdown）"
-																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
-																	className="w-full text-sm min-h-20"
+																<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">繁體中文</Label>
+																<Input
+																	type="text"
+																	value={q.labelZhHant || ""}
+																	placeholder="繁體中文標籤"
+																	onChange={e => updateQuestion(q.id, { labelZhHant: e.target.value })}
+																	className="w-full text-sm"
 																/>
 															</div>
 															<div>
-																<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
-																<Textarea
-																	value={q.descriptionZhHans || ""}
-																	placeholder="简体中文描述（支持 Markdown）"
-																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
-																	className="w-full text-sm min-h-20"
+																<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">简体中文</Label>
+																<Input
+																	type="text"
+																	value={q.labelZhHans || ""}
+																	placeholder="简体中文标签"
+																	onChange={e => updateQuestion(q.id, { labelZhHans: e.target.value })}
+																	className="w-full text-sm"
 																/>
 															</div>
 														</div>
 													</div>
 
-													{(q.type === "text" || q.type === "textarea") && (
+													{/* Field Configuration Section */}
+													<div>
+														<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldSettings}</div>
+														<div className="flex gap-2.5 flex-wrap items-end">
+															<div>
+																<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldType}</Label>
+																<Select value={q.type} onValueChange={value => updateQuestion(q.id, { type: value })}>
+																	<SelectTrigger className="min-w-[140px] text-sm">
+																		<SelectValue />
+																	</SelectTrigger>
+																	<SelectContent>
+																		{fieldTypes.map(ft => (
+																			<SelectItem key={ft.value} value={ft.value}>
+																				{ft.label}
+																			</SelectItem>
+																		))}
+																	</SelectContent>
+																</Select>
+															</div>
+
+															<div className="flex gap-1.5 items-end">
+																<Button type="button" onClick={() => updateQuestion(q.id, { required: !q.required })} variant={q.required ? "default" : "secondary"} className="text-xs py-2 px-3">
+																	{q.required ? t.fieldRequired : t.fieldOptional}
+																</Button>
+																<Button type="button" onClick={() => deleteQuestion(q.id)} className="text-xs py-2 px-3" variant="destructive" title={t.deleteField}>
+																	{t.deleteField}
+																</Button>
+															</div>
+														</div>
+													</div>
+
+													{/* Additional Settings Section */}
+													<div>
+														<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.additionalSettings}</div>
+														<div className="flex flex-col gap-2.5">
+															<div>
+																<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldDescription}</Label>
+																<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
+																	<div>
+																		<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">EN</Label>
+																		<Textarea
+																			value={q.descriptionEn || ""}
+																			placeholder="English description (Markdown supported)"
+																			onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
+																			className="w-full text-sm min-h-20"
+																		/>
+																	</div>
+																	<div>
+																		<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">繁體中文</Label>
+																		<Textarea
+																			value={q.descriptionZhHant || ""}
+																			placeholder="繁體中文描述（支援 Markdown）"
+																			onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
+																			className="w-full text-sm min-h-20"
+																		/>
+																	</div>
+																	<div>
+																		<Label className="block text-[0.65rem] text-gray-500 dark:text-gray-600 mb-1 font-normal">简体中文</Label>
+																		<Textarea
+																			value={q.descriptionZhHans || ""}
+																			placeholder="简体中文描述（支持 Markdown）"
+																			onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
+																			className="w-full text-sm min-h-20"
+																		/>
+																	</div>
+																</div>
+															</div>
+
+															{(q.type === "text" || q.type === "textarea") && (
+																<div>
+																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</Label>
+																	<Input
+																		type="text"
+																		value={q.validater || ""}
+																		placeholder={t.validatorPlaceholder}
+																		onChange={e => updateQuestion(q.id, { validater: e.target.value })}
+																		className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
+																	/>
+																	<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
+																</div>
+															)}
+														</div>
+													</div>
+													{["select", "radio", "checkbox"].includes(q.type) && (
 														<div>
-															<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.validator}</Label>
-															<Input
-																type="text"
-																value={q.validater || ""}
-																placeholder={t.validatorPlaceholder}
-																onChange={e => updateQuestion(q.id, { validater: e.target.value })}
-																className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
-															/>
-															<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
-														</div>
-													)}
-												</div>
-											</div>
-											{["select", "radio", "checkbox"].includes(q.type) && (
-												<div>
-													<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.optionSettings}</div>
-													<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-2.5">
-														{(q.options || []).map((opt, i) => {
-															const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
-															const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
+															<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.optionSettings}</div>
+															<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-2.5">
+																{(q.options || []).map((opt, i) => {
+																	const isOptionDragging = draggedQuestionId === q.id && draggedOptionIndex === i;
+																	const isOptionDropTarget = draggedQuestionId === q.id && dragOverOptionIndex === i && draggedOptionIndex !== null && draggedOptionIndex !== i;
 
-															return (
-																<div
-																	key={i}
-																	onDragOver={e => handleOptionDragOver(e, i)}
-																	onDragLeave={handleOptionDragLeave}
-																	onDrop={e => handleOptionDrop(e, q.id, i)}
-																	className={`flex gap-2 items-stretch p-2 rounded-md transition-all ${
-																		isOptionDragging
-																			? "bg-gray-200 dark:bg-gray-800 opacity-60"
-																			: isOptionDropTarget
-																				? "bg-gray-100 dark:bg-(--color-gray-750) border border-primary shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
-																				: "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
-																	}`}
-																>
-																	<div className="flex items-center gap-2">
-																		<span
-																			draggable
-																			onDragStart={e => handleOptionDragStart(e, q.id, i)}
-																			onDragEnd={handleOptionDragEnd}
-																			className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
-																			title="拖曳以重新排序選項"
-																			onMouseDown={e => {
-																				e.currentTarget.style.cursor = "grabbing";
-																			}}
-																			onMouseUp={e => {
-																				e.currentTarget.style.cursor = "grab";
-																			}}
+																	return (
+																		<div
+																			key={i}
+																			onDragOver={e => handleOptionDragOver(e, i)}
+																			onDragLeave={handleOptionDragLeave}
+																			onDrop={e => handleOptionDrop(e, q.id, i)}
+																			className={`flex gap-2 items-stretch p-2 rounded-md transition-all ${
+																				isOptionDragging
+																					? "bg-gray-200 dark:bg-gray-800 opacity-60"
+																					: isOptionDropTarget
+																						? "bg-gray-100 dark:bg-(--color-gray-750) border border-primary shadow-[0_0_0_2px_rgba(99,102,241,0.1)]"
+																						: "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+																			}`}
 																		>
-																			⋮⋮
-																		</span>
-																		<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
-																	</div>
-																	<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
-																		<Input
-																			type="text"
-																			value={typeof opt === "object" ? opt.en || "" : opt}
-																			placeholder="English"
-																			onChange={e => {
-																				const newOptions = [...(q.options || [])];
-																				if (typeof newOptions[i] === "object") {
-																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
-																				} else {
-																					newOptions[i] = { en: e.target.value };
-																				}
-																				updateQuestion(q.id, { options: newOptions });
-																			}}
-																			className="text-xs bg-gray-100 dark:bg-gray-950"
-																		/>
-																		<Input
-																			type="text"
-																			value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
-																			placeholder="繁體中文"
-																			onChange={e => {
-																				const newOptions = [...(q.options || [])];
-																				if (typeof newOptions[i] === "object") {
-																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
-																				} else {
-																					newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
-																				}
-																				updateQuestion(q.id, { options: newOptions });
-																			}}
-																			className="text-xs bg-gray-100 dark:bg-gray-950"
-																		/>
-																		<Input
-																			type="text"
-																			value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
-																			placeholder="简体中文"
-																			onChange={e => {
-																				const newOptions = [...(q.options || [])];
-																				if (typeof newOptions[i] === "object") {
-																					newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
-																				} else {
-																					newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
-																				}
-																				updateQuestion(q.id, { options: newOptions });
-																			}}
-																			className="text-xs bg-gray-100 dark:bg-gray-950"
-																		/>
-																	</div>
-																	<Button
-																		type="button"
-																		onClick={() => {
-																			const newOptions = [...(q.options || [])];
-																			newOptions.splice(i, 1);
-																			updateQuestion(q.id, { options: newOptions });
-																		}}
-																		className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0"
-																		title="刪除此選項"
-																	>
-																		<X />
-																	</Button>
-																</div>
-															);
-														})}
-														<Button
-															type="button"
-															onClick={() => {
-																const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
-																updateQuestion(q.id, { options: newOptions });
-															}}
-															className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
-														>
-															<span className="text-base">
-																<Plus />
-															</span>{" "}
-															{t.newOption}
-														</Button>
-													</div>
-												</div>
-											)}
-
-											{/* Prompts Section for text inputs */}
-											{q.type === "text" && (
-												<div>
-													<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.promptSettings}</div>
-													<p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t.promptDescription}</p>
-													<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
-														<div className="grid grid-cols-3 gap-3">
-															<div>
-																<Label htmlFor={`prompts-en-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-																	English
-																</Label>
-																<Textarea
-																	id={`prompts-en-${q.id}`}
-																	value={(q.prompts?.en || []).join("\n")}
-																	onChange={e => {
-																		const lines = e.target.value.split("\n");
-																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), en: lines } });
-																	}}
-																	placeholder="Option 1&#10;Option 2&#10;Option 3"
-																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
-																/>
-															</div>
-															<div>
-																<Label htmlFor={`prompts-zh-hant-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-																	繁體中文
-																</Label>
-																<Textarea
-																	id={`prompts-zh-hant-${q.id}`}
-																	value={(q.prompts?.["zh-Hant"] || []).join("\n")}
-																	onChange={e => {
-																		const lines = e.target.value.split("\n");
-																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hant": lines } });
-																	}}
-																	placeholder="選項 1&#10;選項 2&#10;選項 3"
-																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
-																/>
-															</div>
-															<div>
-																<Label htmlFor={`prompts-zh-hans-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-																	简体中文
-																</Label>
-																<Textarea
-																	id={`prompts-zh-hans-${q.id}`}
-																	value={(q.prompts?.["zh-Hans"] || []).join("\n")}
-																	onChange={e => {
-																		const lines = e.target.value.split("\n");
-																		updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hans": lines } });
-																	}}
-																	placeholder="选项 1&#10;选项 2&#10;选项 3"
-																	className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
-																/>
-															</div>
-														</div>
-													</div>
-												</div>
-											)}
-
-											{/* Display Filters Section */}
-											<div>
-												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
-												<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
-													{/* Enable filters toggle */}
-													<label className="flex items-center gap-2 cursor-pointer select-none">
-														<Checkbox
-															checked={q.filters?.enabled || false}
-															onCheckedChange={checked => {
-																updateQuestion(q.id, {
-																	filters: {
-																		enabled: checked === true,
-																		action: q.filters?.action || "display",
-																		operator: q.filters?.operator || "and",
-																		conditions: q.filters?.conditions || []
-																	}
-																});
-															}}
-														/>
-														<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
-													</label>
-
-													{q.filters?.enabled && (
-														<>
-															{/* Filter action and operator */}
-															<div className="flex gap-2.5 flex-wrap">
-																<div className="flex-1 min-w-[200px]">
-																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</Label>
-																	<Select
-																		value={q.filters.action}
-																		onValueChange={value => {
-																			updateQuestion(q.id, {
-																				filters: {
-																					...q.filters!,
-																					action: value as "display" | "hide"
-																				}
-																			});
-																		}}
-																	>
-																		<SelectTrigger className="w-full text-sm">
-																			<SelectValue />
-																		</SelectTrigger>
-																		<SelectContent>
-																			<SelectItem value="display">{t.actionDisplay}</SelectItem>
-																			<SelectItem value="hide">{t.actionHide}</SelectItem>
-																		</SelectContent>
-																	</Select>
-																</div>
-
-																<div className="flex-1 min-w-[200px]">
-																	<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</Label>
-																	<Select
-																		value={q.filters.operator}
-																		onValueChange={value => {
-																			updateQuestion(q.id, {
-																				filters: {
-																					...q.filters!,
-																					operator: value as "and" | "or"
-																				}
-																			});
-																		}}
-																	>
-																		<SelectTrigger className="w-full text-sm">
-																			<SelectValue />
-																		</SelectTrigger>
-																		<SelectContent>
-																			<SelectItem value="and">{t.operatorAnd}</SelectItem>
-																			<SelectItem value="or">{t.operatorOr}</SelectItem>
-																		</SelectContent>
-																	</Select>
-																</div>
-															</div>
-
-															{/* Conditions list */}
-															<div className="flex flex-col gap-2.5">
-																{(q.filters.conditions || []).map((condition, condIndex) => (
-																	<div key={condIndex} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md flex flex-col gap-2">
-																		{/* Condition type selector */}
-																		<div className="flex gap-2 items-start">
-																			<div className="flex-1">
-																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</Label>
-																				<Select
-																					value={condition.type}
-																					onValueChange={value => {
-																						const newConditions = [...(q.filters!.conditions || [])];
-																						newConditions[condIndex] = {
-																							type: value as "ticket" | "field" | "time"
-																						};
-																						updateQuestion(q.id, {
-																							filters: {
-																								...q.filters!,
-																								conditions: newConditions
-																							}
-																						});
+																			<div className="flex items-center gap-2">
+																				<span
+																					draggable
+																					onDragStart={e => handleOptionDragStart(e, q.id, i)}
+																					onDragEnd={handleOptionDragEnd}
+																					className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
+																					title="拖曳以重新排序選項"
+																					onMouseDown={e => {
+																						e.currentTarget.style.cursor = "grabbing";
+																					}}
+																					onMouseUp={e => {
+																						e.currentTarget.style.cursor = "grab";
 																					}}
 																				>
-																					<SelectTrigger className="w-full text-xs">
-																						<SelectValue />
-																					</SelectTrigger>
-																					<SelectContent>
-																						<SelectItem value="ticket">{t.typeTicket}</SelectItem>
-																						<SelectItem value="field">{t.typeField}</SelectItem>
-																						<SelectItem value="time">{t.typeTime}</SelectItem>
-																					</SelectContent>
-																				</Select>
+																					⋮⋮
+																				</span>
+																				<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
 																			</div>
-
+																			<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
+																				<Input
+																					type="text"
+																					value={typeof opt === "object" ? opt.en || "" : opt}
+																					placeholder="English"
+																					onChange={e => {
+																						const newOptions = [...(q.options || [])];
+																						if (typeof newOptions[i] === "object") {
+																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
+																						} else {
+																							newOptions[i] = { en: e.target.value };
+																						}
+																						updateQuestion(q.id, { options: newOptions });
+																					}}
+																					className="text-xs bg-gray-100 dark:bg-gray-950"
+																				/>
+																				<Input
+																					type="text"
+																					value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
+																					placeholder="繁體中文"
+																					onChange={e => {
+																						const newOptions = [...(q.options || [])];
+																						if (typeof newOptions[i] === "object") {
+																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
+																						} else {
+																							newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
+																						}
+																						updateQuestion(q.id, { options: newOptions });
+																					}}
+																					className="text-xs bg-gray-100 dark:bg-gray-950"
+																				/>
+																				<Input
+																					type="text"
+																					value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
+																					placeholder="简体中文"
+																					onChange={e => {
+																						const newOptions = [...(q.options || [])];
+																						if (typeof newOptions[i] === "object") {
+																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
+																						} else {
+																							newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
+																						}
+																						updateQuestion(q.id, { options: newOptions });
+																					}}
+																					className="text-xs bg-gray-100 dark:bg-gray-950"
+																				/>
+																			</div>
 																			<Button
 																				type="button"
 																				onClick={() => {
-																					const newConditions = [...(q.filters!.conditions || [])];
-																					newConditions.splice(condIndex, 1);
+																					const newOptions = [...(q.options || [])];
+																					newOptions.splice(i, 1);
+																					updateQuestion(q.id, { options: newOptions });
+																				}}
+																				className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0"
+																				title="刪除此選項"
+																			>
+																				<X />
+																			</Button>
+																		</div>
+																	);
+																})}
+																<Button
+																	type="button"
+																	onClick={() => {
+																		const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
+																		updateQuestion(q.id, { options: newOptions });
+																	}}
+																	className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
+																>
+																	<span className="text-base">
+																		<Plus />
+																	</span>{" "}
+																	{t.newOption}
+																</Button>
+															</div>
+														</div>
+													)}
+
+													{/* Prompts Section for text inputs */}
+													{q.type === "text" && (
+														<div>
+															<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.promptSettings}</div>
+															<p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t.promptDescription}</p>
+															<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
+																<div className="grid grid-cols-3 gap-3">
+																	<div>
+																		<Label htmlFor={`prompts-en-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																			English
+																		</Label>
+																		<Textarea
+																			id={`prompts-en-${q.id}`}
+																			value={(q.prompts?.en || []).join("\n")}
+																			onChange={e => {
+																				const lines = e.target.value.split("\n");
+																				updateQuestion(q.id, { prompts: { ...(q.prompts || {}), en: lines } });
+																			}}
+																			placeholder="Option 1&#10;Option 2&#10;Option 3"
+																			className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																		/>
+																	</div>
+																	<div>
+																		<Label htmlFor={`prompts-zh-hant-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																			繁體中文
+																		</Label>
+																		<Textarea
+																			id={`prompts-zh-hant-${q.id}`}
+																			value={(q.prompts?.["zh-Hant"] || []).join("\n")}
+																			onChange={e => {
+																				const lines = e.target.value.split("\n");
+																				updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hant": lines } });
+																			}}
+																			placeholder="選項 1&#10;選項 2&#10;選項 3"
+																			className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																		/>
+																	</div>
+																	<div>
+																		<Label htmlFor={`prompts-zh-hans-${q.id}`} className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+																			简体中文
+																		</Label>
+																		<Textarea
+																			id={`prompts-zh-hans-${q.id}`}
+																			value={(q.prompts?.["zh-Hans"] || []).join("\n")}
+																			onChange={e => {
+																				const lines = e.target.value.split("\n");
+																				updateQuestion(q.id, { prompts: { ...(q.prompts || {}), "zh-Hans": lines } });
+																			}}
+																			placeholder="选项 1&#10;选项 2&#10;选项 3"
+																			className="text-xs bg-gray-100 dark:bg-gray-950 min-h-[120px]"
+																		/>
+																	</div>
+																</div>
+															</div>
+														</div>
+													)}
+
+													{/* Display Filters Section */}
+													<div>
+														<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
+														<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
+															{/* Enable filters toggle */}
+															<label className="flex items-center gap-2 cursor-pointer select-none">
+																<Checkbox
+																	checked={q.filters?.enabled || false}
+																	onCheckedChange={checked => {
+																		updateQuestion(q.id, {
+																			filters: {
+																				enabled: checked === true,
+																				action: q.filters?.action || "display",
+																				operator: q.filters?.operator || "and",
+																				conditions: q.filters?.conditions || []
+																			}
+																		});
+																	}}
+																/>
+																<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
+															</label>
+
+															{q.filters?.enabled && (
+																<>
+																	{/* Filter action and operator */}
+																	<div className="flex gap-2.5 flex-wrap">
+																		<div className="flex-1 min-w-[200px]">
+																			<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</Label>
+																			<Select
+																				value={q.filters.action}
+																				onValueChange={value => {
 																					updateQuestion(q.id, {
 																						filters: {
 																							...q.filters!,
-																							conditions: newConditions
+																							action: value as "display" | "hide"
 																						}
 																					});
 																				}}
-																				className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0 mt-[1.4rem]"
-																				title={t.deleteCondition}
 																			>
-																				<X size={14} />
-																			</Button>
+																				<SelectTrigger className="w-full text-sm">
+																					<SelectValue />
+																				</SelectTrigger>
+																				<SelectContent>
+																					<SelectItem value="display">{t.actionDisplay}</SelectItem>
+																					<SelectItem value="hide">{t.actionHide}</SelectItem>
+																				</SelectContent>
+																			</Select>
 																		</div>
 
-																		{/* Condition-specific fields */}
-																		{condition.type === "ticket" && (
-																			<div>
-																				<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</Label>
-																				<Select
-																					value={condition.ticketId || ""}
-																					onValueChange={value => {
-																						const newConditions = [...(q.filters!.conditions || [])];
-																						newConditions[condIndex] = {
-																							...condition,
-																							ticketId: value
-																						};
-																						updateQuestion(q.id, {
-																							filters: {
-																								...q.filters!,
-																								conditions: newConditions
-																							}
-																						});
-																					}}
-																				>
-																					<SelectTrigger className="w-full text-xs">
-																						<SelectValue placeholder={`${t.selectTicket}...`} />
-																					</SelectTrigger>
-																					<SelectContent>
-																						{eventTickets.map(ticket => (
-																							<SelectItem key={ticket.id} value={ticket.id}>
-																								{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
-																							</SelectItem>
-																						))}
-																					</SelectContent>
-																				</Select>
-																			</div>
-																		)}
+																		<div className="flex-1 min-w-[200px]">
+																			<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</Label>
+																			<Select
+																				value={q.filters.operator}
+																				onValueChange={value => {
+																					updateQuestion(q.id, {
+																						filters: {
+																							...q.filters!,
+																							operator: value as "and" | "or"
+																						}
+																					});
+																				}}
+																			>
+																				<SelectTrigger className="w-full text-sm">
+																					<SelectValue />
+																				</SelectTrigger>
+																				<SelectContent>
+																					<SelectItem value="and">{t.operatorAnd}</SelectItem>
+																					<SelectItem value="or">{t.operatorOr}</SelectItem>
+																				</SelectContent>
+																			</Select>
+																		</div>
+																	</div>
 
-																		{condition.type === "field" && (
-																			<>
-																				<div>
-																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</Label>
-																					<Select
-																						value={condition.fieldId || ""}
-																						onValueChange={value => {
-																							const newConditions = [...(q.filters!.conditions || [])];
-																							newConditions[condIndex] = {
-																								...condition,
-																								fieldId: value
-																							};
-																							updateQuestion(q.id, {
-																								filters: {
-																									...q.filters!,
-																									conditions: newConditions
-																								}
-																							});
-																						}}
-																					>
-																						<SelectTrigger className="w-full text-xs">
-																							<SelectValue placeholder={`${t.selectField}...`} />
-																						</SelectTrigger>
-																						<SelectContent>
-																							{questions
-																								.filter(field => field.id !== q.id)
-																								.map(field => (
-																									<SelectItem key={field.id} value={field.id}>
-																										{field.labelEn || field.label}
-																									</SelectItem>
-																								))}
-																						</SelectContent>
-																					</Select>
-																				</div>
-
-																				<div className="flex gap-2">
+																	{/* Conditions list */}
+																	<div className="flex flex-col gap-2.5">
+																		{(q.filters.conditions || []).map((condition, condIndex) => (
+																			<div key={condIndex} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md flex flex-col gap-2">
+																				{/* Condition type selector */}
+																				<div className="flex gap-2 items-start">
 																					<div className="flex-1">
-																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</Label>
+																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</Label>
 																						<Select
-																							value={condition.operator || "equals"}
+																							value={condition.type}
 																							onValueChange={value => {
 																								const newConditions = [...(q.filters!.conditions || [])];
 																								newConditions[condIndex] = {
-																									...condition,
-																									operator: value as "equals" | "filled" | "notFilled"
+																									type: value as "ticket" | "field" | "time"
 																								};
 																								updateQuestion(q.id, {
 																									filters: {
@@ -1269,25 +1141,171 @@ export default function FormsPage() {
 																								<SelectValue />
 																							</SelectTrigger>
 																							<SelectContent>
-																								<SelectItem value="equals">{t.operatorEquals}</SelectItem>
-																								<SelectItem value="filled">{t.operatorFilled}</SelectItem>
-																								<SelectItem value="notFilled">{t.operatorNotFilled}</SelectItem>
+																								<SelectItem value="ticket">{t.typeTicket}</SelectItem>
+																								<SelectItem value="field">{t.typeField}</SelectItem>
+																								<SelectItem value="time">{t.typeTime}</SelectItem>
 																							</SelectContent>
 																						</Select>
 																					</div>
 
-																					{condition.operator === "equals" && (
-																						<div className="flex-1">
-																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</Label>
+																					<Button
+																						type="button"
+																						onClick={() => {
+																							const newConditions = [...(q.filters!.conditions || [])];
+																							newConditions.splice(condIndex, 1);
+																							updateQuestion(q.id, {
+																								filters: {
+																									...q.filters!,
+																									conditions: newConditions
+																								}
+																							});
+																						}}
+																						className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0 mt-[1.4rem]"
+																						title={t.deleteCondition}
+																					>
+																						<X size={14} />
+																					</Button>
+																				</div>
+
+																				{/* Condition-specific fields */}
+																				{condition.type === "ticket" && (
+																					<div>
+																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</Label>
+																						<Select
+																							value={condition.ticketId || ""}
+																							onValueChange={value => {
+																								const newConditions = [...(q.filters!.conditions || [])];
+																								newConditions[condIndex] = {
+																									...condition,
+																									ticketId: value
+																								};
+																								updateQuestion(q.id, {
+																									filters: {
+																										...q.filters!,
+																										conditions: newConditions
+																									}
+																								});
+																							}}
+																						>
+																							<SelectTrigger className="w-full text-xs">
+																								<SelectValue placeholder={`${t.selectTicket}...`} />
+																							</SelectTrigger>
+																							<SelectContent>
+																								{eventTickets.map(ticket => (
+																									<SelectItem key={ticket.id} value={ticket.id}>
+																										{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																									</SelectItem>
+																								))}
+																							</SelectContent>
+																						</Select>
+																					</div>
+																				)}
+
+																				{condition.type === "field" && (
+																					<>
+																						<div>
+																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</Label>
+																							<Select
+																								value={condition.fieldId || ""}
+																								onValueChange={value => {
+																									const newConditions = [...(q.filters!.conditions || [])];
+																									newConditions[condIndex] = {
+																										...condition,
+																										fieldId: value
+																									};
+																									updateQuestion(q.id, {
+																										filters: {
+																											...q.filters!,
+																											conditions: newConditions
+																										}
+																									});
+																								}}
+																							>
+																								<SelectTrigger className="w-full text-xs">
+																									<SelectValue placeholder={`${t.selectField}...`} />
+																								</SelectTrigger>
+																								<SelectContent>
+																									{questions
+																										.filter(field => field.id !== q.id)
+																										.map(field => (
+																											<SelectItem key={field.id} value={field.id}>
+																												{field.labelEn || field.label}
+																											</SelectItem>
+																										))}
+																								</SelectContent>
+																							</Select>
+																						</div>
+
+																						<div className="flex gap-2">
+																							<div className="flex-1">
+																								<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</Label>
+																								<Select
+																									value={condition.operator || "equals"}
+																									onValueChange={value => {
+																										const newConditions = [...(q.filters!.conditions || [])];
+																										newConditions[condIndex] = {
+																											...condition,
+																											operator: value as "equals" | "filled" | "notFilled"
+																										};
+																										updateQuestion(q.id, {
+																											filters: {
+																												...q.filters!,
+																												conditions: newConditions
+																											}
+																										});
+																									}}
+																								>
+																									<SelectTrigger className="w-full text-xs">
+																										<SelectValue />
+																									</SelectTrigger>
+																									<SelectContent>
+																										<SelectItem value="equals">{t.operatorEquals}</SelectItem>
+																										<SelectItem value="filled">{t.operatorFilled}</SelectItem>
+																										<SelectItem value="notFilled">{t.operatorNotFilled}</SelectItem>
+																									</SelectContent>
+																								</Select>
+																							</div>
+
+																							{condition.operator === "equals" && (
+																								<div className="flex-1">
+																									<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</Label>
+																									<Input
+																										type="text"
+																										value={condition.value || ""}
+																										placeholder={t.fieldValue}
+																										onChange={e => {
+																											const newConditions = [...(q.filters!.conditions || [])];
+																											newConditions[condIndex] = {
+																												...condition,
+																												value: e.target.value
+																											};
+																											updateQuestion(q.id, {
+																												filters: {
+																													...q.filters!,
+																													conditions: newConditions
+																												}
+																											});
+																										}}
+																										className="w-full text-xs"
+																									/>
+																								</div>
+																							)}
+																						</div>
+																					</>
+																				)}
+
+																				{condition.type === "time" && (
+																					<>
+																						<div>
+																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
 																							<Input
-																								type="text"
-																								value={condition.value || ""}
-																								placeholder={t.fieldValue}
+																								type="datetime-local"
+																								value={condition.startTime || ""}
 																								onChange={e => {
 																									const newConditions = [...(q.filters!.conditions || [])];
 																									newConditions[condIndex] = {
 																										...condition,
-																										value: e.target.value
+																										startTime: e.target.value
 																									};
 																									updateQuestion(q.id, {
 																										filters: {
@@ -1299,85 +1317,57 @@ export default function FormsPage() {
 																								className="w-full text-xs"
 																							/>
 																						</div>
-																					)}
-																				</div>
-																			</>
-																		)}
 
-																		{condition.type === "time" && (
-																			<>
-																				<div>
-																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
-																					<Input
-																						type="datetime-local"
-																						value={condition.startTime || ""}
-																						onChange={e => {
-																							const newConditions = [...(q.filters!.conditions || [])];
-																							newConditions[condIndex] = {
-																								...condition,
-																								startTime: e.target.value
-																							};
-																							updateQuestion(q.id, {
-																								filters: {
-																									...q.filters!,
-																									conditions: newConditions
-																								}
-																							});
-																						}}
-																						className="w-full text-xs"
-																					/>
-																				</div>
+																						<div>
+																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
+																							<Input
+																								type="datetime-local"
+																								value={condition.endTime || ""}
+																								onChange={e => {
+																									const newConditions = [...(q.filters!.conditions || [])];
+																									newConditions[condIndex] = {
+																										...condition,
+																										endTime: e.target.value
+																									};
+																									updateQuestion(q.id, {
+																										filters: {
+																											...q.filters!,
+																											conditions: newConditions
+																										}
+																									});
+																								}}
+																								className="w-full text-xs"
+																							/>
+																						</div>
+																					</>
+																				)}
+																			</div>
+																		))}
 
-																				<div>
-																					<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
-																					<Input
-																						type="datetime-local"
-																						value={condition.endTime || ""}
-																						onChange={e => {
-																							const newConditions = [...(q.filters!.conditions || [])];
-																							newConditions[condIndex] = {
-																								...condition,
-																								endTime: e.target.value
-																							};
-																							updateQuestion(q.id, {
-																								filters: {
-																									...q.filters!,
-																									conditions: newConditions
-																								}
-																							});
-																						}}
-																						className="w-full text-xs"
-																					/>
-																				</div>
-																			</>
-																		)}
+																		{/* Add condition button */}
+																		<Button
+																			type="button"
+																			onClick={() => {
+																				const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
+																				updateQuestion(q.id, {
+																					filters: {
+																						...q.filters!,
+																						conditions: newConditions
+																					}
+																				});
+																			}}
+																			className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
+																		>
+																			<span className="text-base">
+																				<Plus />
+																			</span>{" "}
+																			{t.addCondition}
+																		</Button>
 																	</div>
-																))}
-
-																{/* Add condition button */}
-																<Button
-																	type="button"
-																	onClick={() => {
-																		const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
-																		updateQuestion(q.id, {
-																			filters: {
-																				...q.filters!,
-																				conditions: newConditions
-																			}
-																		});
-																	}}
-																	className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
-																>
-																	<span className="text-base">
-																		<Plus />
-																	</span>{" "}
-																	{t.addCondition}
-																</Button>
-															</div>
-														</>
-													)}
-												</div>
-											</div>
+																</>
+															)}
+														</div>
+													</div>
 												</>
 											)}
 										</div>
