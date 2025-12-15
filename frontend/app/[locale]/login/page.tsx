@@ -13,7 +13,7 @@ import React, { useEffect, useState } from "react";
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
 		<div className="my-4 mx-auto">
-			<Button onClick={onClick} disabled={disabled} size="lg" className="group relative overflow-hidden bg-primary hover:bg-primary/90 border-2 border-primary/50 dark:border-primary/30">
+			<Button onClick={onClick} disabled={disabled} size="lg" className="group relative overflow-hidden bg-gray-100 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-700">
 				<div className="svg-wrapper-1">
 					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
 						{isLoading ? (
