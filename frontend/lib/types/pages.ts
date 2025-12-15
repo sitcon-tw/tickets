@@ -14,5 +14,6 @@ export interface LanguageFieldsProps {
 		ticketName: string;
 		description: string;
 		plainDescription: string;
+		preview: string;
 	};
 }
