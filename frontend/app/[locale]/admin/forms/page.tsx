@@ -11,7 +11,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
-import { GripVertical, Plus, Save, X } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -59,6 +59,7 @@ export default function FormsPage() {
 	const [dragOverOptionIndex, setDragOverOptionIndex] = useState<number | null>(null);
 	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
 	const [eventTickets, setEventTickets] = useState<Ticket[]>([]);
+	const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -121,7 +122,9 @@ export default function FormsPage() {
 		fieldValue: { "zh-Hant": "欄位值", "zh-Hans": "栏位值", en: "Field Value" },
 		startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start Time" },
 		endTime: { "zh-Hant": "結束時間", "zh-Hans": "结束时间", en: "End Time" },
-		deleteCondition: { "zh-Hant": "刪除條件", "zh-Hans": "删除条件", en: "Delete Condition" }
+		deleteCondition: { "zh-Hant": "刪除條件", "zh-Hans": "删除条件", en: "Delete Condition" },
+		expandAll: { "zh-Hant": "展開全部", "zh-Hans": "展开全部", en: "Expand All" },
+		collapseAll: { "zh-Hant": "收起全部", "zh-Hans": "收起全部", en: "Collapse All" }
 	});
 
 	const fieldTypes = [
@@ -262,6 +265,8 @@ export default function FormsPage() {
 
 				setQuestions(loadedFields);
 				setOriginalFieldIds(loadedFields.map((f: Question) => f.id).filter((id: string) => !id.startsWith("temp-")));
+				// Default to collapsed state
+				setCollapsedItems(new Set(loadedFields.map((f: Question) => f.id)));
 			} else {
 				throw new Error(response.message || "Failed to load form fields");
 			}
@@ -439,6 +444,26 @@ export default function FormsPage() {
 
 	function deleteQuestion(id: string) {
 		setQuestions(questions.filter(q => q.id !== id));
+	}
+
+	function toggleCollapse(id: string) {
+		setCollapsedItems(prev => {
+			const newSet = new Set(prev);
+			if (newSet.has(id)) {
+				newSet.delete(id);
+			} else {
+				newSet.add(id);
+			}
+			return newSet;
+		});
+	}
+
+	function expandAll() {
+		setCollapsedItems(new Set());
+	}
+
+	function collapseAll() {
+		setCollapsedItems(new Set(questions.map(q => q.id)));
 	}
 
 	function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
@@ -634,11 +659,33 @@ export default function FormsPage() {
 					)}
 					{/* Questions List */}
 					<div className="mb-6">
-						<div className="flex justify-between items-center mb-4">
+						<div className="flex justify-between items-center mb-4 gap-3 flex-wrap">
 							<h2 className="text-base font-semibold text-gray-800 dark:text-gray-400 m-0">{t.formFields}</h2>
-							<span className="text-xs text-gray-800 dark:text-gray-400 bg-gray-200 dark:bg-gray-800 py-1 px-2.5 rounded border dark:border-gray-700">
-								{questions.length} {t.howManyFields}
-							</span>
+							<div className="flex items-center gap-2">
+								{questions.length > 0 && (
+									<>
+										<Button
+											type="button"
+											onClick={expandAll}
+											variant="secondary"
+											className="text-xs py-1.5 px-3"
+										>
+											{t.expandAll}
+										</Button>
+										<Button
+											type="button"
+											onClick={collapseAll}
+											variant="secondary"
+											className="text-xs py-1.5 px-3"
+										>
+											{t.collapseAll}
+										</Button>
+									</>
+								)}
+								<span className="text-xs text-gray-800 dark:text-gray-400 bg-gray-200 dark:bg-gray-800 py-1 px-2.5 rounded border dark:border-gray-700">
+									{questions.length} {t.howManyFields}
+								</span>
+							</div>
 						</div>
 
 						<div id="questions" className="flex flex-col gap-3">
@@ -651,6 +698,7 @@ export default function FormsPage() {
 							{questions.map((q, index) => {
 								const isDragging = draggedIndex === index;
 								const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
+								const isCollapsed = collapsedItems.has(q.id);
 
 								return (
 									<div
@@ -683,10 +731,32 @@ export default function FormsPage() {
 										</div>{" "}
 										{/* Field Number Badge */}
 										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
+										{/* Collapse/Expand Button */}
+										<button
+											type="button"
+											onClick={() => toggleCollapse(q.id)}
+											className="absolute top-3 right-12 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+											title={isCollapsed ? "Expand" : "Collapse"}
+										>
+											{isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+										</button>
 										{/* Main Content Area */}
 										<div className="flex flex-col gap-4 flex-1 pr-12">
-											{/* Field Names Section */}
-											<div>
+											{/* Summary Header - Always Visible */}
+											<div className="cursor-pointer" onClick={() => toggleCollapse(q.id)}>
+												<div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+													{(locale === "zh-Hant" && q.labelZhHant) || (locale === "zh-Hans" && q.labelZhHans) || q.labelEn || q.label || "Untitled Field"}
+												</div>
+												<div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+													{fieldTypes.find(ft => ft.value === q.type)?.label || q.type} • {q.required ? t.fieldRequired : t.fieldOptional}
+												</div>
+											</div>
+
+											{/* Collapsible Content */}
+											{!isCollapsed && (
+												<>
+													{/* Field Names Section */}
+													<div>
 												<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.fieldName}</div>
 												<div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2.5">
 													<div>
@@ -766,7 +836,7 @@ export default function FormsPage() {
 																	value={q.descriptionEn || ""}
 																	placeholder="English description (Markdown supported)"
 																	onChange={e => updateQuestion(q.id, { descriptionEn: e.target.value })}
-																	className="w-full text-sm min-h-[80px]"
+																	className="w-full text-sm min-h-20"
 																/>
 															</div>
 															<div>
@@ -775,7 +845,7 @@ export default function FormsPage() {
 																	value={q.descriptionZhHant || ""}
 																	placeholder="繁體中文描述（支援 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHant: e.target.value })}
-																	className="w-full text-sm min-h-[80px]"
+																	className="w-full text-sm min-h-20"
 																/>
 															</div>
 															<div>
@@ -784,7 +854,7 @@ export default function FormsPage() {
 																	value={q.descriptionZhHans || ""}
 																	placeholder="简体中文描述（支持 Markdown）"
 																	onChange={e => updateQuestion(q.id, { descriptionZhHans: e.target.value })}
-																	className="w-full text-sm min-h-[80px]"
+																	className="w-full text-sm min-h-20"
 																/>
 															</div>
 														</div>
@@ -1308,6 +1378,8 @@ export default function FormsPage() {
 													)}
 												</div>
 											</div>
+												</>
+											)}
 										</div>
 									</div>
 								);
