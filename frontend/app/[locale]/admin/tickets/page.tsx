@@ -23,6 +23,62 @@ import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
 
+function LanguageFields({
+	ticketName,
+	description,
+	plainDescription,
+	language,
+	languageLabel,
+	onNameChange,
+	onDescriptionChange,
+	onPlainDescriptionChange,
+	required = false,
+	tt
+}: LanguageFieldsProps) {
+	const placeholders = {
+		en: {
+			plainDesc: "Plain text description without markdown formatting"
+		},
+		"zh-Hant": {
+			plainDesc: "純文字描述，不含 Markdown 格式"
+		},
+		"zh-Hans": {
+			plainDesc: "纯文字描述，不含 Markdown 格式"
+		}
+	};
+
+	const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
+
+	return (
+		<div className="space-y-4">
+			<div className="space-y-2">
+				<Label htmlFor={`name-${language}`}>
+					{tt.ticketName} ({languageLabel}) {required && "*"}
+				</Label>
+				<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor={`desc-${language}`}>
+					{tt.description} ({languageLabel}, Markdown)
+				</Label>
+				<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
+				{description && (
+					<div className="mt-2 p-3 border rounded-md bg-muted">
+						<div className="text-xs font-semibold mb-2 text-muted-foreground">{tt.preview}</div>
+						<MarkdownContent content={description} />
+					</div>
+				)}
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor={`plainDesc-${language}`}>
+					{tt.plainDescription} ({languageLabel})
+				</Label>
+				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
+			</div>
+		</div>
+	);
+}
+
 export default function TicketsPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
@@ -103,62 +159,6 @@ export default function TicketsPage() {
 			en: "Generate a direct link to this ticket with optional invite and referral codes."
 		}
 	});
-
-	function LanguageFields({
-		ticketName,
-		description,
-		plainDescription,
-		language,
-		languageLabel,
-		onNameChange,
-		onDescriptionChange,
-		onPlainDescriptionChange,
-		required = false,
-		tt
-	}: LanguageFieldsProps) {
-		const placeholders = {
-			en: {
-				plainDesc: "Plain text description without markdown formatting"
-			},
-			"zh-Hant": {
-				plainDesc: "純文字描述，不含 Markdown 格式"
-			},
-			"zh-Hans": {
-				plainDesc: "纯文字描述，不含 Markdown 格式"
-			}
-		};
-
-		const placeholder = placeholders[language as keyof typeof placeholders] || placeholders.en;
-
-		return (
-			<div className="space-y-4">
-				<div className="space-y-2">
-					<Label htmlFor={`name-${language}`}>
-						{tt.ticketName} ({languageLabel}) {required && "*"}
-					</Label>
-					<Input id={`name-${language}`} type="text" required={required} value={ticketName} onChange={e => onNameChange(e.target.value)} />
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor={`desc-${language}`}>
-						{tt.description} ({languageLabel}, Markdown)
-					</Label>
-					<Textarea id={`desc-${language}`} value={description} onChange={e => onDescriptionChange(e.target.value)} rows={4} />
-					{description && (
-						<div className="mt-2 p-3 border rounded-md bg-muted">
-							<div className="text-xs font-semibold mb-2 text-muted-foreground">{t.preview}</div>
-							<MarkdownContent content={description} />
-						</div>
-					)}
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor={`plainDesc-${language}`}>
-						{tt.plainDescription} ({languageLabel})
-					</Label>
-					<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={3} placeholder={placeholder.plainDesc} />
-				</div>
-			</div>
-		);
-	}
 
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
@@ -550,7 +550,8 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription
+										plainDescription: t.plainDescription,
+										preview: t.preview
 									}}
 								/>
 							</TabsContent>
@@ -568,7 +569,8 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription
+										plainDescription: t.plainDescription,
+										preview: t.preview
 									}}
 								/>
 							</TabsContent>
@@ -586,7 +588,8 @@ export default function TicketsPage() {
 									tt={{
 										ticketName: t.ticketName,
 										description: t.description,
-										plainDescription: t.plainDescription
+										plainDescription: t.plainDescription,
+										preview: t.preview
 									}}
 								/>
 							</TabsContent>
