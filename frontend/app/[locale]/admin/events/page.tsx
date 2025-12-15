@@ -14,6 +14,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
 import type { Event } from "@/lib/types/api";
+import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createEventsColumns, type EventWithStatus } from "./columns";
@@ -101,8 +102,7 @@ export default function EventsPage() {
 	function formatDateTime(dt?: string) {
 		if (!dt) return "";
 		try {
-			const d = new Date(dt);
-			return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+			return formatDateTimeUTC8(dt);
 		} catch {
 			return dt;
 		}
@@ -199,8 +199,8 @@ export default function EventsPage() {
 			slug: slug || undefined,
 			ogImage: ogImage || undefined,
 			location: (formData.get("location") as string) || "",
-			startDate: startDateStr ? new Date(startDateStr).toISOString() : new Date().toISOString(),
-			endDate: endDateStr ? new Date(endDateStr).toISOString() : new Date().toISOString()
+			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
+			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString()
 		};
 
 		try {
@@ -376,11 +376,11 @@ export default function EventsPage() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label htmlFor="startDate">{t.startDate}</Label>
-									<Input id="startDate" name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? new Date(editingEvent.startDate).toISOString().slice(0, 16) : ""} />
+									<Input id="startDate" name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? toDateTimeLocalString(editingEvent.startDate) : ""} />
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="endDate">{t.endDate}</Label>
-									<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? new Date(editingEvent.endDate).toISOString().slice(0, 16) : ""} />
+									<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? toDateTimeLocalString(editingEvent.endDate) : ""} />
 								</div>
 							</div>
 

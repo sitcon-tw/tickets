@@ -14,6 +14,7 @@ import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
 import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { formatDateTime } from "@/lib/utils/timezone";
 import { Download, FileSpreadsheet, RotateCw, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -125,8 +126,8 @@ export default function RegistrationsPage() {
 		{ id: "ticket", label: "Ticket", accessor: (r: Registration) => getLocalizedText(r.ticket?.name, locale) || r.ticketId || "", sortable: false },
 		{ id: "event", label: "Event", accessor: (r: Registration) => getLocalizedText(r.event?.name, locale) || r.eventId || "", sortable: false },
 		{ id: "referredBy", label: "Referred By", accessor: (r: Registration) => (r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-"), sortable: false },
-		{ id: "createdAt", label: "Created", accessor: (r: Registration) => (r.createdAt ? new Date(r.createdAt).toLocaleString() : ""), sortable: true },
-		{ id: "updatedAt", label: "Updated", accessor: (r: Registration) => (r.updatedAt ? new Date(r.updatedAt).toLocaleString() : ""), sortable: false }
+		{ id: "createdAt", label: "Created", accessor: (r: Registration) => (r.createdAt ? formatDateTime(r.createdAt) : ""), sortable: true },
+		{ id: "updatedAt", label: "Updated", accessor: (r: Registration) => (r.updatedAt ? formatDateTime(r.updatedAt) : ""), sortable: false }
 	];
 
 	const loadRegistrations = useCallback(async () => {
@@ -227,8 +228,8 @@ export default function RegistrationsPage() {
 			displayTicket: getLocalizedText(r.ticket?.name, locale) || r.ticketId || "",
 			displayEvent: getLocalizedText(r.event?.name, locale) || r.eventId || "",
 			displayReferredBy: r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-",
-			formattedCreatedAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : "",
-			formattedUpdatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "",
+			formattedCreatedAt: r.createdAt ? formatDateTime(r.createdAt) : "",
+			formattedUpdatedAt: r.updatedAt ? formatDateTime(r.updatedAt) : "",
 			statusClass: r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : ""
 		}));
 	}, [sortedAndFiltered, locale]);
@@ -614,7 +615,7 @@ export default function RegistrationsPage() {
 								<div className="text-[0.95rem]">{getLocalizedText(selectedRegistration.event.name, locale)}</div>
 								{selectedRegistration.event.startDate && (
 									<div className="text-[0.85rem] opacity-70 mt-1">
-										{new Date(selectedRegistration.event.startDate).toLocaleString()} - {new Date(selectedRegistration.event.endDate).toLocaleString()}
+										{formatDateTime(selectedRegistration.event.startDate)} - {formatDateTime(selectedRegistration.event.endDate)}
 									</div>
 								)}
 							</div>
@@ -638,11 +639,11 @@ export default function RegistrationsPage() {
 						)}
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">{t.createdAt}</Label>
-							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.createdAt).toLocaleString()}</div>
+							<div className="text-[0.95rem]">{selectedRegistration && formatDateTime(selectedRegistration.createdAt)}</div>
 						</div>
 						<div>
 							<Label className="text-xs uppercase tracking-wider opacity-70">{t.updatedAt}</Label>
-							<div className="text-[0.95rem]">{selectedRegistration && new Date(selectedRegistration.updatedAt).toLocaleString()}</div>
+							<div className="text-[0.95rem]">{selectedRegistration && formatDateTime(selectedRegistration.updatedAt)}</div>
 						</div>
 						{selectedRegistration?.formData && Object.keys(selectedRegistration.formData).length > 0 && (
 							<div>

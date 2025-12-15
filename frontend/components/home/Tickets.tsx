@@ -11,6 +11,7 @@ import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/
 import { Ticket } from "@/lib/types/api";
 import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -82,16 +83,16 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	function isTicketExpired(ticket: Ticket): boolean {
 		if (!ticket.saleEnd) return false;
-		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
+		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? ticket.saleEnd : null;
 		if (!saleEndDate) return false;
-		return saleEndDate < new Date();
+		return isBeforeNowUTC8(saleEndDate);
 	}
 
 	function isTicketNotYetAvailable(ticket: Ticket): boolean {
 		if (!ticket.saleStart) return false;
-		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
+		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? ticket.saleStart : null;
 		if (!saleStartDate) return false;
-		return saleStartDate > new Date();
+		return isAfterNowUTC8(saleStartDate);
 	}
 
 	function isTicketSoldOut(ticket: Ticket): boolean {
@@ -332,7 +333,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									<div>
 										<p>
 											{t.time}
-											{ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(locale) : "N/A"} - {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(locale) : "N/A"}
+											{ticket.saleStart ? formatDateTime(ticket.saleStart) : "N/A"} - {ticket.saleEnd ? formatDateTime(ticket.saleEnd) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {ticket.available} / {ticket.quantity}
@@ -355,8 +356,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									<div>
 										<p>
 											{t.time}
-											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
-											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
@@ -387,8 +388,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									<div>
 										<p>
 											{t.time}
-											{selectedTicket.saleStart ? new Date(selectedTicket.saleStart).toLocaleDateString(locale) : "N/A"} -{" "}
-											{selectedTicket.saleEnd ? new Date(selectedTicket.saleEnd).toLocaleDateString(locale) : "N/A"}
+											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} -{" "}
+											{selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
