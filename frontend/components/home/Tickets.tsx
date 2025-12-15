@@ -356,8 +356,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									<div>
 										<p>
 											{t.time}
-											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} -{" "}
-											{selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
+											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
@@ -388,8 +387,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 									<div>
 										<p>
 											{t.time}
-											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} -{" "}
-											{selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
+											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
 										<p className="remain">
 											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
