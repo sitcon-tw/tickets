@@ -170,21 +170,12 @@ export default function Nav() {
 
 	return (
 		<nav
-			className={`fixed top-0 left-0 z-1000 w-full ${isScrolled ? "bg-gray-600 dark:bg-gray-900/50 backdrop-blur-sm text-gray-200" : "dark:bg-transparent text-gray-600"} border-b border-gray-700 dark:border-gray-800 transition-colors duration-250 dark:text-gray-300`}
+			className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:dark:bg-gray-900"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
 		>
 			<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
 				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
-					{isDarkMode || (!isDarkMode && isScrolled) ? (
-						<>
-							<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
-							<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
-						</>
-					) : (
-						<>
-							<Image src={"/assets/SITCONTIX_gray.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
-							<Image src={"/assets/SITCON.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
-						</>
-					)}
+					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
+					<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
 				</Link>
 				<div className="flex items-center space-x-4">
 					{session.status === "authenticated" ? (

@@ -62,14 +62,14 @@ export default function EventsPage() {
 		preview: { "zh-Hant": "預覽：", "zh-Hans": "预览：", en: "Preview:" },
 		ogImage: { "zh-Hant": "封面圖片網址", "zh-Hans": "封面图片网址", en: "Cover Image URL" },
 		ogImageHint: {
-			"zh-Hant": "請將圖片上傳至 Imgur，並將圖片連結貼於此處。建議尺寸：1800x300。",
-			"zh-Hans": "请将图片上传至 Imgur，并将图片链接贴于此处。建议尺寸：1800x300。",
-			en: "Please upload the image to Imgur and paste the image link here. Recommended size: 1800x300."
+			"zh-Hant": "請將圖片上傳至 Imgur 或 GitHub，並將圖片連結貼於此處。建議尺寸：2400x800。",
+			"zh-Hans": "请将图片上传至 Imgur 或 GitHub，并将图片链接贴于此处。建议尺寸：2400x800。",
+			en: "Please upload the image to Imgur or GitHub and paste the image link here. Recommended size: 2400x800."
 		},
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
 		locationHint: {
 			"zh-Hant": "可以貼上 Google Maps 連結，系統會自動抓取地點名稱。請使用「分享」功能取得連結。若填寫的不是 Google Maps 連結，則會原樣顯示。",
-			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示。",
+			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示.",
 			en: "You can paste the Google Maps link, and the system will automatically fetch the location name. Please use the 'Share' feature to obtain the link. If the input is not a Google Maps link, it will be displayed as is."
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
@@ -363,8 +363,8 @@ export default function EventsPage() {
 									type="url"
 									value={ogImage}
 									onChange={e => setOgImage(e.target.value)}
-									placeholder="https://i.imgur.com/example.jpg"
-									pattern="https://i\.imgur\.com/.+\.(jpg|jpeg|png|gif|webp)"
+									placeholder="https://raw.githubusercontent.com/sitcon-tw/...webp"
+									pattern="https?://.+"
 								/>
 								<p className="text-xs text-muted-foreground">{t.ogImageHint}</p>
 							</div>
