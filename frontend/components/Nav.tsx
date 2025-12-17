@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Menu, X } from "lucide-react";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -42,6 +43,7 @@ export default function Nav() {
 	const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isDarkMode, setIsDarkMode] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	const isAdminPage = pathname.includes("/admin");
 
@@ -90,6 +92,29 @@ export default function Nav() {
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
+
+	// Close mobile menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as HTMLElement;
+			if (isMobileMenuOpen && !target.closest(".mobile-menu") && !target.closest(".burger-button")) {
+				setIsMobileMenuOpen(false);
+			}
+		};
+
+		if (isMobileMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+			// Prevent body scroll when menu is open
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.body.style.overflow = "";
+		};
+	}, [isMobileMenuOpen]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -169,53 +194,140 @@ export default function Nav() {
 	}
 
 	return (
-		<nav
-			className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:dark:bg-gray-900"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
-		>
-			<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
-				<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
-					<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
-					<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
-				</Link>
-				<div className="flex items-center space-x-4">
+		<>
+			<nav
+				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:dark:bg-gray-900"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
+			>
+				<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
+					<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
+						<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
+						<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
+					</Link>
+					{/* Desktop Navigation */}
+					<div className="hidden sm:flex items-center space-x-4">
+						{session.status === "authenticated" ? (
+							<>
+								{hasAdminAccess && (
+									<Link href={localizedPath("/admin/events")} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
+										{t.adminPanel}
+									</Link>
+								)}
+								<Link href={localizedPath("/my-registration")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+									{t.myRegistrations}
+								</Link>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleLogout}
+									disabled={isLoggingOut}
+									className={cn(
+										"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2",
+										isLoggingOut && "opacity-50 cursor-not-allowed"
+									)}
+								>
+									{isLoggingOut && <Spinner size="sm" />}
+									{t.logout}
+								</Button>
+								{gravatarUrl && <Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />}
+							</>
+						) : session.status === "loading" ? (
+							<Spinner size="sm" />
+						) : (
+							<Link
+								href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+								className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+							>
+								{t.login}
+							</Link>
+						)}
+						<ThemeToggle />
+					</div>
+					{/* Mobile Burger Menu Button */}
+					<div className="flex sm:hidden items-center space-x-2">
+						<ThemeToggle />
+						<button
+							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+							className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+							aria-label="Toggle menu"
+						>
+							{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+						</button>
+					</div>
+				</div>
+			</nav>
+
+			{/* Mobile Menu Overlay */}
+			{isMobileMenuOpen && (
+				<div className="fixed inset-0 z-[999] bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+			)}
+
+			{/* Mobile Menu */}
+			<div
+				className={cn(
+					"mobile-menu fixed top-[73px] right-0 z-[1001] h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
+					isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+				)}
+			>
+				<div className="flex flex-col p-8 space-y-4 text-gray-300">
 					{session.status === "authenticated" ? (
 						<>
+							{gravatarUrl && (
+								<div className="flex items-center space-x-3 pb-4 border-b border-gray-700 dark:border-gray-800">
+									<Image src={gravatarUrl} alt="User Avatar" width={40} height={40} className="w-10 h-10 rounded-full" />
+									<div className="flex flex-col">
+										<span className="text-sm font-medium text-gray-200 dark:text-gray-300">{session.user.name}</span>
+										<span className="text-xs text-gray-400">{session.user.email}</span>
+									</div>
+								</div>
+							)}
 							{hasAdminAccess && (
-								<Link href={localizedPath("/admin/events")} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
+								<Link
+									href={localizedPath("/admin/events")}
+									onClick={() => setIsMobileMenuOpen(false)}
+									className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2"
+								>
 									{t.adminPanel}
 								</Link>
 							)}
-							<Link href={localizedPath("/my-registration")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+							<Link
+								href={localizedPath("/my-registration")}
+								onClick={() => setIsMobileMenuOpen(false)}
+								className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
+							>
 								{t.myRegistrations}
 							</Link>
 							<Button
 								variant="ghost"
 								size="sm"
-								onClick={handleLogout}
+								onClick={() => {
+									setIsMobileMenuOpen(false);
+									handleLogout();
+								}}
 								disabled={isLoggingOut}
 								className={cn(
-									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2",
+									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2 justify-start px-0",
 									isLoggingOut && "opacity-50 cursor-not-allowed"
 								)}
 							>
 								{isLoggingOut && <Spinner size="sm" />}
 								{t.logout}
 							</Button>
-							{gravatarUrl && <Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />}
 						</>
 					) : session.status === "loading" ? (
-						<Spinner size="sm" />
+						<div className="flex justify-center py-4">
+							<Spinner size="sm" />
+						</div>
 					) : (
 						<Link
 							href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+							onClick={() => setIsMobileMenuOpen(false)}
+							className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
 						>
 							{t.login}
 						</Link>
 					)}
-					<ThemeToggle />
 				</div>
 			</div>
-		</nav>
+		</>
 	);
 }
