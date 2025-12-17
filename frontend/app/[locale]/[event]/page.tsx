@@ -188,7 +188,7 @@ export default function Main() {
 						{/* Event Info & Welcome - Two containers with rounded bottom */}
 						<div className="flex flex-col lg:flex-row lg:gap-8 lg:px-16 sm:px-8">
 							{/* Left: Basic Info */}
-						<div className="p-6 md:p-8 m-4 mb-0  md:m-0 md:shadow-lg rounded-t-2xl md:rounded-b-4xl md:rounded-t-none bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 z-10">
+						<div className="p-6 md:p-8 m-4 mb-0  md:m-0 lg:shadow-lg rounded-t-2xl lg:rounded-b-4xl lg:rounded-t-none bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 z-10">
 								<h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{eventName}</h1>
 								<div className="space-y-3 text-muted-foreground">
 									<div className="flex items-center gap-3">
