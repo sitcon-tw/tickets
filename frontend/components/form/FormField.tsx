@@ -102,7 +102,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			return (
 				<FieldWrapper description={fieldDescription}>
 					<Radio
-						label={fieldLabel}
+						label={label}
 						name={fieldId}
 						options={localizedOptions as RadioOption[]}
 						required={field.required}
