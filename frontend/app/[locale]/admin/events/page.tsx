@@ -358,14 +358,7 @@ export default function EventsPage() {
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="ogImage">{t.ogImage}</Label>
-								<Input
-									id="ogImage"
-									type="url"
-									value={ogImage}
-									onChange={e => setOgImage(e.target.value)}
-									placeholder="https://raw.githubusercontent.com/sitcon-tw/...webp"
-									pattern="https?://.+"
-								/>
+								<Input id="ogImage" type="url" value={ogImage} onChange={e => setOgImage(e.target.value)} placeholder="https://raw.githubusercontent.com/sitcon-tw/...webp" pattern="https?://.+" />
 								<p className="text-xs text-muted-foreground">{t.ogImageHint}</p>
 							</div>
 							<div className="space-y-2">
