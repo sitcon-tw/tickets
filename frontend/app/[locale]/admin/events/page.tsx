@@ -69,7 +69,7 @@ export default function EventsPage() {
 		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
 		locationHint: {
 			"zh-Hant": "可以貼上 Google Maps 連結，系統會自動抓取地點名稱。請使用「分享」功能取得連結。若填寫的不是 Google Maps 連結，則會原樣顯示。",
-			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示.",
+			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示。",
 			en: "You can paste the Google Maps link, and the system will automatically fetch the location name. Please use the 'Share' feature to obtain the link. If the input is not a Google Maps link, it will be displayed as is."
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
