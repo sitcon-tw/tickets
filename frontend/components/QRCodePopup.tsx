@@ -8,6 +8,7 @@ import { ExternalLink, TriangleAlert, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime }: QRCodePopupProps) {
 	const locale = useLocale();
@@ -55,11 +56,11 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 				<div className="flex flex-col items-center gap-4">
 					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
 					<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
-						{t.downloadOpass}{" "}
-						<a href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+						<span>{t.downloadOpass}{" "}</span>
+						<Link href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
 							opass.app
 							<ExternalLink size={16} />
-						</a>
+						</Link>
 					</p>
 					<div className="flex w-full space-x-4 px-8 items-start">
 						<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
@@ -69,7 +70,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t.useQrCode}</h3>
 
 					{qrValue ? (
-						<div className="rounded-lg border-16 border-gray-800">
+						<div className="rounded-lg border-16 border-gray-800 flex flex-col items-center space-y-4">
 							<QRCodeSVG
 								value={qrValue}
 								size={256}
@@ -84,6 +85,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 									excavate: true
 								}}
 							/>
+						<p className="text-[10px]">{qrValue}</p>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">
