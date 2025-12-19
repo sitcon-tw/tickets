@@ -1,17 +1,19 @@
 "use client";
 
 import Confirm from "@/components/Confirm";
+import Text from "@/components/input/Text";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { authAPI, eventsAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
+import { authAPI, eventsAPI, invitationCodesAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -66,6 +68,36 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			"zh-Hant": "此票種已售完",
 			"zh-Hans": "此票种已售完",
 			en: "This ticket is sold out"
+		},
+		invitationCode: {
+			"zh-Hant": "邀請碼",
+			"zh-Hans": "邀请码",
+			en: "Invitation Code"
+		},
+		verifyCode: {
+			"zh-Hant": "驗證",
+			"zh-Hans": "验证",
+			en: "Verify"
+		},
+		verifying: {
+			"zh-Hant": "驗證中...",
+			"zh-Hans": "验证中...",
+			en: "Verifying..."
+		},
+		codeValid: {
+			"zh-Hant": "邀請碼有效",
+			"zh-Hans": "邀请码有效",
+			en: "Code is valid"
+		},
+		codeInvalid: {
+			"zh-Hant": "邀請碼無效或已過期",
+			"zh-Hans": "邀请码无效或已过期",
+			en: "Code is invalid or expired"
+		},
+		enterCodeFirst: {
+			"zh-Hant": "請先驗證邀請碼",
+			"zh-Hans": "请先验证邀请码",
+			en: "Please verify invitation code first"
 		}
 	});
 
@@ -76,6 +108,10 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [canRegister, setCanRegister] = useState(true);
 	const [isMounted, setIsMounted] = useState(false);
+	const [invitationCode, setInvitationCode] = useState<string>("");
+	const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+	const [codeVerificationStatus, setCodeVerificationStatus] = useState<"idle" | "valid" | "invalid">("idle");
+	const [verificationMessage, setVerificationMessage] = useState<string>("");
 
 	const ticketAnimationRef = useRef<HTMLDivElement>(null);
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -99,6 +135,36 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}
 
+	async function handleVerifyInvitationCode() {
+		if (!invitationCode.trim() || !selectedTicket) {
+			return;
+		}
+
+		setIsVerifyingCode(true);
+		setCodeVerificationStatus("idle");
+		setVerificationMessage("");
+
+		try {
+			const result = await invitationCodesAPI.verify({
+				code: invitationCode.trim(),
+				ticketId: selectedTicket.id
+			});
+
+			if (result.success && result.data?.valid) {
+				setCodeVerificationStatus("valid");
+				setVerificationMessage(t.codeValid);
+			} else {
+				setCodeVerificationStatus("invalid");
+				setVerificationMessage(t.codeInvalid);
+			}
+		} catch (error) {
+			setCodeVerificationStatus("invalid");
+			setVerificationMessage(t.codeInvalid);
+		} finally {
+			setIsVerifyingCode(false);
+		}
+	}
+
 	function handleTicketSelect(ticket: Ticket, element: HTMLDivElement) {
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
@@ -116,6 +182,10 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		}
 
 		setSelectedTicket(ticket);
+		// Reset invite code verification state
+		setInvitationCode("");
+		setCodeVerificationStatus("idle");
+		setVerificationMessage("");
 
 		try {
 			const formData = {
@@ -195,9 +265,23 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	async function handleConfirmRegistration() {
 		if (!canRegister) return;
 		if (!selectedTicket || typeof window === "undefined" || isSubmitting) return;
+
+		// Check if invitation code is required and verified
+		if (selectedTicket.requireInviteCode && codeVerificationStatus !== "valid") {
+			showAlert(t.enterCodeFirst, "warning");
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
+			// Store invitation code in localStorage if it was verified
+			if (selectedTicket.requireInviteCode && invitationCode.trim()) {
+				const formData = JSON.parse(localStorage.getItem("formData") || "{}");
+				formData.invitationCode = invitationCode.trim();
+				localStorage.setItem("formData", JSON.stringify(formData));
+			}
+
 			const verificationCheck = await smsVerificationAPI.getStatus();
 
 			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
@@ -369,6 +453,39 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								<MarkdownContent content={getLocalizedText(selectedTicket.description, locale)} />
 								{selectedTicket.price ? <p>NT$ {selectedTicket.price}</p> : null}
 							</div>
+
+							{selectedTicket.requireInviteCode && (
+								<div className="mb-4 space-y-2">
+									<div className="flex gap-2">
+										<div className="flex-1">
+											<Text
+												label={`${t.invitationCode} *`}
+												id="invitationCode"
+												value={invitationCode}
+												onChange={e => {
+													setInvitationCode(e.target.value);
+													setCodeVerificationStatus("idle");
+													setVerificationMessage("");
+												}}
+												required={true}
+												placeholder={t.invitationCode}
+											/>
+										</div>
+										<div className="flex items-end">
+											<Button type="button" onClick={handleVerifyInvitationCode} disabled={!invitationCode.trim() || isVerifyingCode} variant="secondary" className="whitespace-nowrap">
+												{isVerifyingCode ? t.verifying : t.verifyCode}
+											</Button>
+										</div>
+									</div>
+									{verificationMessage && (
+										<div className={`flex items-center gap-2 text-sm ${codeVerificationStatus === "valid" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+											{codeVerificationStatus === "valid" ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+											<span>{verificationMessage}</span>
+										</div>
+									)}
+								</div>
+							)}
+
 							<Button className={`inline-flex items-center gap-2`} disabled={!canRegister} isLoading={isSubmitting} onClick={() => handleConfirmRegistration()}>
 								{canRegister ? t.confirm : t.cannotRegister}
 							</Button>

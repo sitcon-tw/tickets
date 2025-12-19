@@ -31,7 +31,6 @@ export default function FormPage() {
 	const [eventId, setEventId] = useState<string | null>(null);
 	const [invitationCode, setInvitationCode] = useState<string>("");
 	const [referralCode, setReferralCode] = useState<string>("");
-	const [requiresInviteCode, setRequiresInviteCode] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [agreeToTerms, setAgreeToTerms] = useState(false);
 
@@ -210,9 +209,6 @@ export default function FormPage() {
 					throw new Error(ticketResponse.message || "Failed to load ticket information");
 				}
 
-				const ticket = ticketResponse.data;
-				setRequiresInviteCode(ticket.requireInviteCode || false);
-
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
@@ -333,17 +329,6 @@ export default function FormPage() {
 
 					{!loading && !error && (
 						<form onSubmit={handleSubmit} className="flex flex-col gap-6">
-							{requiresInviteCode && (
-								<Text
-									label={`${t.invitationCode} *`}
-									id="invitationCode"
-									value={invitationCode}
-									onChange={e => setInvitationCode(e.target.value)}
-									required={requiresInviteCode}
-									placeholder={t.invitationCode}
-								/>
-							)}
-
 							{visibleFields.map(field => (
 								<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
 							))}
