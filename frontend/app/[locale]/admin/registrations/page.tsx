@@ -39,8 +39,6 @@ export default function RegistrationsPage() {
 	const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
 	const [sortField] = useState<SortField>("createdAt");
 	const [sortDirection] = useState<SortDirection>("desc");
-	const [page] = useState(1);
-	const [pageSize] = useState(50);
 	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
 	const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
 	const [googleSheetsUrl, setGoogleSheetsUrl] = useState("");

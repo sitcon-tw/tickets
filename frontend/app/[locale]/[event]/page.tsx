@@ -105,8 +105,7 @@ export default function Main() {
 										setLocationTitle(result.data.title);
 									}
 								})
-								.catch(() => {
-								});
+								.catch(() => {});
 						}
 					} else {
 						setError(t.eventNotFound);
