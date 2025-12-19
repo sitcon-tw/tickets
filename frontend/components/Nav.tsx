@@ -93,7 +93,6 @@ export default function Nav() {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	// Close mobile menu when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as HTMLElement;
@@ -104,7 +103,6 @@ export default function Nav() {
 
 		if (isMobileMenuOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
-			// Prevent body scroll when menu is open
 			document.body.style.overflow = "hidden";
 		} else {
 			document.body.style.overflow = "";
@@ -196,7 +194,7 @@ export default function Nav() {
 	return (
 		<>
 			<nav
-				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:dark:bg-gray-900"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
+				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:bg-gray-900 sm:dark:bg-transparent"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
 			>
 				<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
 					<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
@@ -257,12 +255,12 @@ export default function Nav() {
 			</nav>
 
 			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && <div className="fixed inset-0 z-[999] bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+			{isMobileMenuOpen && <div className="fixed inset-0 z-200 bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
 			{/* Mobile Menu */}
 			<div
 				className={cn(
-					"mobile-menu fixed top-[73px] right-0 z-[1001] h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
+					"mobile-menu fixed top-[73px] right-0 z-300 h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
 					isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
 				)}
 			>
