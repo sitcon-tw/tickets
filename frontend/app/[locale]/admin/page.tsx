@@ -336,7 +336,7 @@ export default function AdminDashboard() {
 
 					{/* Charts */}
 					<section className="flex gap-8 mb-12 flex-wrap">
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-2 min-w-[300px] flex-1 border border-gray-200 dark:border-gray-700">
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md min-w-[300px] flex-1 border border-gray-200 dark:border-gray-700">
 							<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
 							<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
 						</div>

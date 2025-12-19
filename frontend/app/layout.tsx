@@ -1,4 +1,4 @@
-import LayoutWrapper from "@/components/LayoutWrapper";
+import IntlLayoutWrapper from "@/components/IntlLayoutWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from "@next/third-parties/google";
@@ -39,7 +39,7 @@ export default function RootLayout({
 
 			<body suppressHydrationWarning>
 				<ThemeProvider>
-					<LayoutWrapper>{children}</LayoutWrapper>
+					<IntlLayoutWrapper>{children}</IntlLayoutWrapper>
 					<Toaster richColors position="bottom-center" />
 				</ThemeProvider>
 			</body>
