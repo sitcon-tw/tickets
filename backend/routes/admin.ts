@@ -1,7 +1,7 @@
 import { requireAdminOrEventAdmin } from "#middleware/auth";
 import type { FastifyPluginAsync } from "fastify";
 
-import analyticsRoutes from "./admin/analytics";
+import eventDashboardRoutes from "./admin/eventDashboard";
 import emailCampaignsRoutes from "./admin/emailCampaigns";
 import eventFormFieldsRoutes from "./admin/eventFormFields";
 import eventsRoutes from "./admin/events";
@@ -15,7 +15,7 @@ import usersRoutes from "./admin/users";
 const adminRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAdminOrEventAdmin);
 
-	await fastify.register(analyticsRoutes);
+	await fastify.register(eventDashboardRoutes);
 	await fastify.register(usersRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);

@@ -1,46 +1,38 @@
 "use client";
 
 import AdminHeader from "@/components/AdminHeader";
+import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
-import { adminAnalyticsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { DashboardData, RegistrationTrend, Ticket } from "@/lib/types/api";
+import { adminAnalyticsAPI } from "@/lib/api/endpoints";
+import type { EventDashboardData } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Register Chart.js components
 if (typeof window !== "undefined") {
 	Chart.register(...registerables);
 }
 
 export default function AdminDashboard() {
 	const locale = useLocale();
+	const router = useRouter();
 	const { theme, resolvedTheme } = useTheme();
 
-	const [, setDashboardData] = useState<DashboardData | null>(null);
-	const [registrationTrends, setRegistrationTrends] = useState<RegistrationTrend[]>([]);
-	const [tickets, setTickets] = useState<Ticket[]>([]);
+	const [selectedEventId, setSelectedEventId] = useState<string>("");
+	const [dashboardData, setDashboardData] = useState<EventDashboardData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [mounted, setMounted] = useState(false);
 
-	// Chart refs
 	const trendsChartRef = useRef<HTMLCanvasElement | null>(null);
 	const distributionChartRef = useRef<HTMLCanvasElement | null>(null);
-	const studentChartRef = useRef<HTMLCanvasElement | null>(null);
-	const regularChartRef = useRef<HTMLCanvasElement | null>(null);
-	const distantChartRef = useRef<HTMLCanvasElement | null>(null);
-	const inviteChartRef = useRef<HTMLCanvasElement | null>(null);
-	const opensourceChartRef = useRef<HTMLCanvasElement | null>(null);
-
 	const chartsInstancesRef = useRef<Chart[]>([]);
 
-	// Track mounted state for theme
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
-	// Get theme-aware colors
 	const getThemeColors = useCallback(() => {
 		const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && theme === "dark"));
 
@@ -56,79 +48,76 @@ export default function AdminDashboard() {
 	}, [mounted, resolvedTheme, theme]);
 
 	const t = getTranslations(locale, {
-		title: { "zh-Hant": "管理後台總覽", "zh-Hans": "管理后台总览", en: "Admin Dashboard" },
+		title: { "zh-Hant": "活動管理後台", "zh-Hans": "活动管理后台", en: "Event Dashboard" },
+		noEventSelected: { "zh-Hant": "請在左側選擇活動", "zh-Hans": "请在左侧选择活动", en: "Please select an event from the sidebar" },
 		statistics: { "zh-Hant": "報名統計", "zh-Hans": "报名统计", en: "Statistics" },
-		totalTickets: { "zh-Hant": "總票券數", "zh-Hans": "总票券数", en: "Total Tickets" },
-		sold: { "zh-Hant": "已售出", "zh-Hans": "已售出", en: "Sold" },
-		remaining: { "zh-Hant": "剩餘票券", "zh-Hans": "剩余票券", en: "Remaining Tickets" },
-		salesRate: { "zh-Hant": "銷售率", "zh-Hans": "销售率", en: "Sales Rate" },
-		tickets: { "zh-Hant": "張票券", "zh-Hans": "张票券", en: "tickets" },
-		completion: { "zh-Hant": "完成度", "zh-Hans": "完成度", en: "Completion" },
-		salesTrend: { "zh-Hant": "票券銷售趨勢", "zh-Hans": "票券销售趋势", en: "Ticket Sales Trend" },
-		ticketDistribution: { "zh-Hant": "票券類型分布", "zh-Hans": "票券类型分布", en: "Ticket Type Distribution" },
-		progressTitle: { "zh-Hant": "票券銷售進度", "zh-Hans": "票券销售进度", en: "Ticket Sales Progress" },
-		remainingLabel: { "zh-Hant": "張剩餘", "zh-Hans": "张剩余", en: "remaining" },
+		totalRegistrations: { "zh-Hant": "總報名數", "zh-Hans": "总报名数", en: "Total Registrations" },
+		confirmed: { "zh-Hant": "已確認", "zh-Hans": "已确认", en: "Confirmed" },
+		pending: { "zh-Hant": "待確認", "zh-Hans": "待确认", en: "Pending" },
+		cancelled: { "zh-Hant": "已取消", "zh-Hans": "已取消", en: "Cancelled" },
+		totalRevenue: { "zh-Hant": "總收入", "zh-Hans": "总收入", en: "Total Revenue" },
+		registrations: { "zh-Hant": "筆", "zh-Hans": "笔", en: "" },
+		salesTrend: { "zh-Hant": "報名趨勢", "zh-Hans": "报名趋势", en: "Registration Trend" },
+		ticketDistribution: { "zh-Hant": "票券銷售分布", "zh-Hans": "票券销售分布", en: "Ticket Sales Distribution" },
+		ticketDetails: { "zh-Hant": "票券銷售詳情", "zh-Hans": "票券销售详情", en: "Ticket Sales Details" },
+		ticketName: { "zh-Hant": "票券名稱", "zh-Hans": "票券名称", en: "Ticket Name" },
+		price: { "zh-Hant": "價格", "zh-Hans": "价格", en: "Price" },
+		sold: { "zh-Hant": "已售", "zh-Hans": "已售", en: "Sold" },
+		available: { "zh-Hant": "剩餘", "zh-Hans": "剩余", en: "Available" },
 		total: { "zh-Hant": "總數", "zh-Hans": "总数", en: "Total" },
-		soldLabel: { "zh-Hant": "已售", "zh-Hans": "已售", en: "Sold" }
+		salesRate: { "zh-Hant": "銷售率", "zh-Hans": "销售率", en: "Sales Rate" },
+		revenue: { "zh-Hant": "收入", "zh-Hans": "收入", en: "Revenue" },
+		referralStats: { "zh-Hant": "推薦統計", "zh-Hans": "推荐统计", en: "Referral Stats" },
+		totalReferrals: { "zh-Hant": "總推薦數", "zh-Hans": "总推荐数", en: "Total Referrals" },
+		activeReferrers: { "zh-Hant": "活躍推薦者", "zh-Hans": "活跃推荐者", en: "Active Referrers" },
+		conversionRate: { "zh-Hant": "轉換率", "zh-Hans": "转换率", en: "Conversion Rate" },
+		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Loading..." },
+		quickActions: { "zh-Hant": "快速操作", "zh-Hans": "快速操作", en: "Quick Actions" },
+		manageTickets: { "zh-Hant": "管理票券", "zh-Hans": "管理票券", en: "Manage Tickets" },
+		viewRegistrations: { "zh-Hant": "查看報名", "zh-Hans": "查看报名", en: "View Registrations" },
+		exportData: { "zh-Hant": "匯出資料", "zh-Hans": "导出资料", en: "Export Data" }
 	});
 
-	// Initialize dashboard
-	const initializeDashboard = useCallback(async () => {
+	// Load dashboard data for selected event
+	const loadDashboardData = useCallback(async () => {
+		if (!selectedEventId) {
+			setLoading(false);
+			return;
+		}
+
+		setLoading(true);
 		try {
-			const [dashboardResponse, trendsResponse, ticketsResponse] = await Promise.all([
-				adminAnalyticsAPI.getDashboard(),
-				adminAnalyticsAPI.getRegistrationTrends({ period: "daily" }),
-				adminTicketsAPI.getAll()
-			]);
-
-			if (dashboardResponse.success && dashboardResponse.data) {
-				setDashboardData(dashboardResponse.data);
+			const response = await adminAnalyticsAPI.getEventDashboard(selectedEventId);
+			if (response.success && response.data) {
+				setDashboardData(response.data);
 			} else {
-				console.error("Failed to load dashboard data:", dashboardResponse.message);
-			}
-
-			if (trendsResponse.success && trendsResponse.data) {
-				const trends = trendsResponse.data || [];
-				setRegistrationTrends(trends);
-			} else {
-				console.error("Failed to load trends data:", trendsResponse.message);
-			}
-
-			if (ticketsResponse.success && ticketsResponse.data) {
-				setTickets(ticketsResponse.data);
-			} else {
-				console.error("Failed to load tickets data:", ticketsResponse.message);
+				console.error("Failed to load dashboard data:", response.message);
 			}
 		} catch (error) {
 			console.error("Dashboard initialization failed:", error);
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [selectedEventId]);
 
-	// Initialize charts
 	const initCharts = useCallback(() => {
-		// Clear existing charts
+		if (!dashboardData) return;
+
 		chartsInstancesRef.current.forEach(chart => chart.destroy());
 		chartsInstancesRef.current = [];
 
 		const themeColors = getThemeColors();
 		const colors = themeColors.chartColors;
 
-		// Line Chart - Registration Trends
-		if (trendsChartRef.current) {
+		if (trendsChartRef.current && dashboardData.registrationTrends.length > 0) {
 			const ctx = trendsChartRef.current.getContext("2d");
 			if (ctx) {
-				// Format dates and counts from registration trends
-				// If no trends data, show empty chart
-				const labels =
-					registrationTrends.length > 0
-						? registrationTrends.map(trend => {
-								const date = new Date(trend.date);
-								return `${date.getMonth() + 1}/${date.getDate()}`;
-							})
-						: [];
-				const counts = registrationTrends.length > 0 ? registrationTrends.map(trend => trend.count || 0) : [];
+				const labels = dashboardData.registrationTrends.map(trend => {
+					const date = new Date(trend.date);
+					return `${date.getMonth() + 1}/${date.getDate()}`;
+				});
+				const counts = dashboardData.registrationTrends.map(trend => trend.count);
+				const confirmed = dashboardData.registrationTrends.map(trend => trend.confirmed);
 
 				const chart = new Chart(ctx, {
 					type: "line",
@@ -136,10 +125,18 @@ export default function AdminDashboard() {
 						labels: labels,
 						datasets: [
 							{
-								label: locale === "zh-Hant" ? "註冊數" : locale === "zh-Hans" ? "注册数" : "Registrations",
+								label: locale === "zh-Hant" ? "總報名數" : locale === "zh-Hans" ? "总报名数" : "Total Registrations",
 								data: counts,
 								borderColor: colors[0],
 								backgroundColor: colors[0] + "20",
+								tension: 0.4,
+								fill: true
+							},
+							{
+								label: locale === "zh-Hant" ? "已確認" : locale === "zh-Hans" ? "已确认" : "Confirmed",
+								data: confirmed,
+								borderColor: colors[1],
+								backgroundColor: colors[1] + "20",
 								tension: 0.4,
 								fill: true
 							}
@@ -159,7 +156,7 @@ export default function AdminDashboard() {
 								beginAtZero: true,
 								title: {
 									display: true,
-									text: locale === "zh-Hant" ? "註冊數量" : locale === "zh-Hans" ? "注册数量" : "Registration Count",
+									text: locale === "zh-Hant" ? "報名數量" : locale === "zh-Hans" ? "报名数量" : "Registration Count",
 									color: themeColors.textColor
 								},
 								ticks: { color: themeColors.tickColor },
@@ -182,11 +179,11 @@ export default function AdminDashboard() {
 		}
 
 		// Doughnut Chart - Ticket Distribution
-		if (distributionChartRef.current && tickets.length > 0) {
+		if (distributionChartRef.current && dashboardData.tickets.length > 0) {
 			const ctx = distributionChartRef.current.getContext("2d");
 			if (ctx) {
-				const ticketLabels = tickets.map(ticket => ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown");
-				const soldCounts = tickets.map(ticket => ticket.soldCount || 0);
+				const ticketLabels = dashboardData.tickets.map(ticket => ticket.name[locale] || ticket.name["zh-Hant"] || ticket.name["en"] || "Unknown");
+				const soldCounts = dashboardData.tickets.map(ticket => ticket.soldCount);
 
 				const chart = new Chart(ctx, {
 					type: "doughnut",
@@ -196,7 +193,7 @@ export default function AdminDashboard() {
 							{
 								label: locale === "zh-Hant" ? "已售票券" : locale === "zh-Hans" ? "已售票券" : "Sold Tickets",
 								data: soldCounts,
-								backgroundColor: colors.slice(0, tickets.length),
+								backgroundColor: colors.slice(0, dashboardData.tickets.length),
 								borderWidth: 2,
 								borderColor: themeColors.tooltipBg
 							}
@@ -217,8 +214,8 @@ export default function AdminDashboard() {
 								borderColor: themeColors.tooltipBorder,
 								borderWidth: 1,
 								callbacks: {
-									label: function (context: TooltipItem<"pie">) {
-										const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+									label: function (context: TooltipItem<"doughnut">) {
+										const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
 										const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : "0";
 										const ticketLabel = locale === "zh-Hant" ? "張" : locale === "zh-Hans" ? "张" : " tickets";
 										return context.label + ": " + context.parsed + " " + ticketLabel + " (" + percentage + "%)";
@@ -231,93 +228,32 @@ export default function AdminDashboard() {
 				chartsInstancesRef.current.push(chart);
 			}
 		}
-
-		// Progress Charts (Half Doughnut) - Use real ticket data
-		const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
-
-		tickets.forEach((ticket, index) => {
-			const ref = chartRefs[index];
-			if (ref && ref.current && index < chartRefs.length) {
-				const ctx = ref.current.getContext("2d");
-				if (ctx) {
-					const soldCount = ticket.soldCount || 0;
-					const total = ticket.quantity || 0;
-					const percentage = total > 0 ? ((soldCount / total) * 100).toFixed(1) : "0";
-					const remaining = total - soldCount;
-					const color = colors[index % colors.length];
-
-					const chart = new Chart(ctx, {
-						type: "doughnut",
-						data: {
-							labels: [locale === "zh-Hant" ? "已售出" : locale === "zh-Hans" ? "已售出" : "Sold", locale === "zh-Hant" ? "剩餘" : locale === "zh-Hans" ? "剩余" : "Remaining"],
-							datasets: [
-								{
-									data: [soldCount, remaining],
-									backgroundColor: [color, themeColors.remainingColor],
-									borderWidth: 0
-								}
-							]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							// @ts-expect-error - Chart.js doughnut-specific options
-							circumference: 180,
-							rotation: 270,
-							cutout: "70%",
-							plugins: {
-								legend: { display: false },
-								tooltip: {
-									titleColor: themeColors.textColor,
-									bodyColor: themeColors.textColor,
-									backgroundColor: themeColors.tooltipBg,
-									borderColor: themeColors.tooltipBorder,
-									borderWidth: 1,
-									callbacks: {
-										label: function (context: TooltipItem<"doughnut">) {
-											const ticketLabel = locale === "zh-Hant" ? "張" : locale === "zh-Hans" ? "张" : " tickets";
-											return context.label + ": " + context.parsed + " " + ticketLabel;
-										}
-									}
-								}
-							}
-						},
-						plugins: [
-							{
-								id: "centerText",
-								afterDraw: function (chart: Chart) {
-									const ctx = chart.ctx;
-									const width = chart.width;
-									const height = chart.height;
-
-									ctx.restore();
-									const fontSize = (height / 100).toFixed(2);
-									ctx.font = `bold ${fontSize}em sans-serif`;
-									ctx.textBaseline = "middle";
-									ctx.fillStyle = color;
-
-									const text = percentage + "%";
-									const textX = Math.round((width - ctx.measureText(text).width) / 2);
-									const textY = height / 1.4;
-
-									ctx.fillText(text, textX, textY);
-									ctx.save();
-								}
-							}
-						]
-					});
-					chartsInstancesRef.current.push(chart);
-				}
-			}
-		});
-	}, [registrationTrends, tickets, locale, getThemeColors]);
+	}, [dashboardData, locale, getThemeColors]);
 
 	useEffect(() => {
-		initializeDashboard();
-	}, [initializeDashboard]);
+		const savedEventId = localStorage.getItem("selectedEventId");
+		if (savedEventId) {
+			setSelectedEventId(savedEventId);
+		}
+
+		const handleEventChange = (event: CustomEvent) => {
+			setSelectedEventId(event.detail.eventId);
+		};
+
+		window.addEventListener("selectedEventChanged" as any, handleEventChange);
+		return () => {
+			window.removeEventListener("selectedEventChanged" as any, handleEventChange);
+		};
+	}, []);
 
 	useEffect(() => {
-		if (!loading && mounted) {
+		if (selectedEventId) {
+			loadDashboardData();
+		}
+	}, [selectedEventId, loadDashboardData]);
+
+	useEffect(() => {
+		if (!loading && mounted && dashboardData) {
 			initCharts();
 		}
 
@@ -325,14 +261,12 @@ export default function AdminDashboard() {
 			chartsInstancesRef.current.forEach(chart => chart.destroy());
 			chartsInstancesRef.current = [];
 		};
-	}, [loading, initCharts, mounted]);
+	}, [loading, initCharts, mounted, dashboardData]);
 
-	// Handle window resize
 	useEffect(() => {
 		if (!mounted || loading) return;
 
 		const handleResize = () => {
-			// Debounce the resize to avoid too many re-renders
 			const timeoutId = setTimeout(() => {
 				initCharts();
 			}, 250);
@@ -344,101 +278,125 @@ export default function AdminDashboard() {
 		return () => window.removeEventListener("resize", handleResize);
 	}, [initCharts, mounted, loading]);
 
-	// Re-initialize charts when theme changes
 	useEffect(() => {
-		if (!loading && mounted) {
+		if (!loading && mounted && dashboardData) {
 			initCharts();
 		}
-	}, [resolvedTheme, theme, loading, mounted, initCharts]);
+	}, [resolvedTheme, theme, loading, mounted, dashboardData, initCharts]);
 
-	// Calculate actual ticket stats from tickets data
-	const totalTicketQuantity = tickets.reduce((sum, ticket) => sum + (ticket.quantity || 0), 0);
-	const totalSold = tickets.reduce((sum, ticket) => sum + (ticket.soldCount || 0), 0);
-	const remainingTickets = totalTicketQuantity - totalSold;
-	const salesRate = totalTicketQuantity > 0 ? ((totalSold / totalTicketQuantity) * 100).toFixed(1) : "0";
-
-	if (loading) {
+	if (loading && !dashboardData) {
 		return (
 			<main>
-				<h1>{t.statistics}</h1>
-				<div className="text-center p-12 text-gray-600 dark:text-gray-300">{locale === "zh-Hant" ? "載入中..." : locale === "zh-Hans" ? "加载中..." : "Loading..."}</div>
+				<AdminHeader title={t.statistics} />
+				<div className="text-center p-12">
+					<PageSpinner />
+					<p className="mt-4 text-gray-600 dark:text-gray-300">{t.loading}</p>
+				</div>
+			</main>
+		);
+	}
+
+	if (!selectedEventId) {
+		return (
+			<main>
+				<AdminHeader title={t.title} />
+				<div className="text-center p-12 text-gray-600 dark:text-gray-300">{t.noEventSelected}</div>
 			</main>
 		);
 	}
 
 	return (
 		<main>
-			<AdminHeader title={t.statistics} />
-			<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalTickets}</h3>
-					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalTicketQuantity}</div>
-					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
-				</div>
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.sold}</h3>
-					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{totalSold}</div>
-					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
-				</div>
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.remaining}</h3>
-					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{remainingTickets}</div>
-					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.tickets}</div>
-				</div>
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-					<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.salesRate}</h3>
-					<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{salesRate}%</div>
-					<div className="text-gray-800 dark:text-gray-100 text-xs">{t.completion}</div>
-				</div>
-			</div>
+			<AdminHeader title={t.title} />
 
-			<div className="flex gap-8 mb-12 flex-wrap">
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-2 max-w-full border border-gray-200 dark:border-gray-700">
-					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
-					<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
-				</div>
+			{dashboardData && (
+				<>
+					{/* Stats Grid */}
+					<section className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalRegistrations}</h3>
+							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.stats.totalRegistrations}</div>
+							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
+						</div>
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.confirmed}</h3>
+							<div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">{dashboardData.stats.confirmedRegistrations}</div>
+							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
+						</div>
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.pending}</h3>
+							<div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">{dashboardData.stats.pendingRegistrations}</div>
+							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
+						</div>
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalRevenue}</h3>
+							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">NT$ {dashboardData.stats.totalRevenue.toLocaleString()}</div>
+						</div>
+					</section>
 
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-1 max-w-full border border-gray-200 dark:border-gray-700">
-					<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDistribution}</h2>
-					<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
-				</div>
-			</div>
+					{/* Charts */}
+					<section className="flex gap-8 mb-12 flex-wrap">
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-2 min-w-[300px] flex-1 border border-gray-200 dark:border-gray-700">
+							<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
+							<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
+						</div>
 
-			<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-				<h2 className="m-0 mb-6 text-gray-900 dark:text-gray-100 text-xl">{t.progressTitle}</h2>
-				<div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
-					{tickets.slice(0, 5).map((ticket, idx) => {
-						const chartRefs = [studentChartRef, regularChartRef, distantChartRef, inviteChartRef, opensourceChartRef];
-						const ticketName = ticket.name?.[locale] || ticket.name?.["zh-Hant"] || "Unknown";
-						const soldCount = ticket.soldCount || 0;
-						const total = ticket.quantity || 0;
-						const remaining = total - soldCount;
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-1 min-w-[300px] border border-gray-200 dark:border-gray-700">
+							<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDistribution}</h2>
+							<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
+						</div>
+					</section>
 
-						return (
-							<div key={idx} className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-md text-center max-w-full border border-gray-200 dark:border-gray-600">
-								<h3 className="m-0 mb-6 text-gray-800 dark:text-gray-200 text-lg font-semibold">{ticketName}</h3>
-								<div className="flex justify-center mb-4">
-									<canvas ref={chartRefs[idx]} width="200" height="100"></canvas>
-								</div>
-								<div className="mb-6 p-4 bg-gray-100 dark:bg-gray-600 rounded-lg">
-									<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 leading-none">{remaining}</div>
-									<div className="text-sm text-gray-600 dark:text-gray-300 mt-1">{t.remainingLabel}</div>
-								</div>
-								<div className="flex justify-around gap-4">
-									<div className="flex flex-col items-center gap-1">
-										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.total}</span>
-										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{total}</span>
-									</div>
-									<div className="flex flex-col items-center gap-1">
-										<span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{t.soldLabel}</span>
-										<span className="font-semibold text-gray-800 dark:text-gray-200 text-lg">{soldCount}</span>
-									</div>
-								</div>
-							</div>
-						);
-					})}
-				</div>
-			</div>
+					{/* Ticket Details Table */}
+					<section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-12 border border-gray-200 dark:border-gray-700">
+						<h2 className="m-0 mb-6 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDetails}</h2>
+						<div className="overflow-x-auto">
+							<table className="w-full">
+								<thead>
+									<tr className="border-b border-gray-200 dark:border-gray-700">
+										<th className="text-left p-3 text-gray-700 dark:text-gray-300">{t.ticketName}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.price}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.sold}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.available}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.total}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.salesRate}</th>
+										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.revenue}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{dashboardData.tickets.map(ticket => (
+										<tr key={ticket.id} className="border-b border-gray-100 dark:border-gray-700">
+											<td className="p-3 text-gray-900 dark:text-gray-100">{ticket.name[locale] || ticket.name["zh-Hant"] || ticket.name["en"] || "Unknown"}</td>
+											<td className="text-right p-3 text-gray-700 dark:text-gray-300">NT$ {ticket.price.toLocaleString()}</td>
+											<td className="text-right p-3 text-green-600 dark:text-green-400 font-semibold">{ticket.soldCount}</td>
+											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.available}</td>
+											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.quantity}</td>
+											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.salesRate}%</td>
+											<td className="text-right p-3 text-gray-900 dark:text-gray-100 font-semibold">NT$ {ticket.revenue.toLocaleString()}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</section>
+
+					{/* Referral Stats */}
+					<section className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalReferrals}</h3>
+							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.totalReferrals}</div>
+						</div>
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.activeReferrers}</h3>
+							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.activeReferrers}</div>
+						</div>
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
+							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.conversionRate}</h3>
+							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.conversionRate}</div>
+						</div>
+					</section>
+				</>
+			)}
 		</main>
 	);
 }

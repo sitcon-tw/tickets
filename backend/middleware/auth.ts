@@ -110,7 +110,6 @@ export const requirePermission = (permission: string): preHandlerHookHandler => 
 };
 
 export const requireAdmin = requireRole(["admin"]);
-export const requireStaff = requireRole(["admin", "staff"]);
 export const requireAdminOrEventAdmin = requireRole(["admin", "eventAdmin"]);
 
 async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -314,4 +313,43 @@ export const requireEventAccessViaTicketId: preHandlerHookHandler = async (reque
 		}
 	}
 	await checkEventAccess(request, reply);
+};
+
+export const requireEventDashboardAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+	const authenticated = await ensureAuth(request, reply);
+	if (!authenticated || reply.sent) return;
+
+	const user = await prisma.user.findUnique({
+		where: { id: request.user!.id },
+		select: { role: true, permissions: true }
+	});
+	
+	const userRole = user?.role || "user";
+
+	if (userRole === "admin") {
+		return;
+	}
+
+	if (userRole === "eventAdmin") {
+		const url = request.url;
+		const eventIdMatch = url.match(/\/events\/([a-zA-Z0-9-_]+)\/dashboard/);
+		const eventId = eventIdMatch ? eventIdMatch[1] : null;
+		
+		if (!eventId) {
+			const { response, statusCode } = notFoundResponse("活動不存在");
+			return reply.code(statusCode).send(response);
+		}
+
+		const userPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
+
+		if (!userPermissions.includes(eventId)) {
+			const { response, statusCode } = notFoundResponse("活動不存在");
+			return reply.code(statusCode).send(response);
+		}
+
+		return;
+	}
+
+	const { response, statusCode } = forbiddenResponse("權限不足");
+	return reply.code(statusCode).send(response);
 };
