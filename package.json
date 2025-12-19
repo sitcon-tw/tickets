@@ -10,6 +10,9 @@
 		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
 		"dev:backend": "pnpm --filter backend dev",
 		"dev:frontend": "pnpm --filter frontend dev --port 4322",
+		"start": "concurrently \"pnpm start:frontend\" \"pnpm start:backend\"",
+		"start:backend": "pnpm --filter backend start",
+		"start:frontend": "pnpm --filter frontend start --port 4322",
 		"format": "prettier --write ."
 	},
 	"devDependencies": {

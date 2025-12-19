@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { useRouter } from "@/i18n/navigation";
 import { formatEventDateRange } from "@/lib/utils/timezone";
 import { Calendar, ExternalLink, MapPin } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -24,6 +25,7 @@ const isURL = (str: string): boolean => {
 
 export default function EventList() {
 	const locale = useLocale();
+	const router = useRouter();
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ export default function EventList() {
 						event.ogImage = event.ogImage || "/assets/default.webp";
 
 						return (
-							<Link key={event.id} href={`/${eventSlug}`} className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+							<div key={event.id} onClick={() => router.push(`/${eventSlug}`)} className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
 								<div className="relative w-full h-48 bg-muted overflow-hidden">
 									<Image
 										src={event.ogImage}
@@ -161,7 +163,7 @@ export default function EventList() {
 										)}
 									</div>
 								</div>
-							</Link>
+							</div>
 						);
 					})}
 				</div>
