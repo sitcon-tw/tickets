@@ -5,9 +5,10 @@
 	"type": "module",
 	"scripts": {
 		"build": "next build",
-		"dev": "next dev",
+		"dev": "next dev --inspect",
 		"lint": "eslint",
-		"start": "next start"
+		"start": "next start",
+		"analyze": "next experimental-analyze"
 	},
 	"overrides": {
 		"@types/react": "19.2.7",
@@ -40,11 +41,11 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"date-fns-tz": "^3.2.0",
-		"lucide-react": "^0.544.0",
-		"marked": "^16.3.0",
+		"lucide-react": "^0.562.0",
+		"marked": "^17.0.1",
 		"meshline": "^3.3.1",
 		"motion": "^12.23.22",
-		"next": "16.0.10",
+		"next": "16.1.0",
 		"next-intl": "^4.5.8",
 		"next-themes": "^0.4.6",
 		"nprogress": "^0.2.0",
