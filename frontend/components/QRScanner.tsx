@@ -41,13 +41,13 @@ export default function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Co
 					fps: 10,
 					qrbox: { width: 250, height: 250 }
 				},
-				(decodedText) => {
+				decodedText => {
 					// Successfully scanned
 					onScan(decodedText);
 					stopScanning();
 					onClose();
 				},
-				(errorMessage) => {
+				errorMessage => {
 					// Scanning error (not critical, happens frequently)
 					// Only log severe errors
 					if (!errorMessage.includes("NotFoundException")) {
@@ -95,21 +95,13 @@ export default function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Co
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4">
-					{error && (
-						<div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
-							{error}
-						</div>
-					)}
+					{error && <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
 
 					<div className="relative w-full aspect-square bg-gray-900 dark:bg-gray-950 rounded-lg overflow-hidden">
 						<div id={scannerIdRef.current} className="w-full h-full" />
 					</div>
 
-					{isScanning && (
-						<div className="text-center text-sm text-gray-600 dark:text-gray-400">
-							Position the QR code within the frame
-						</div>
-					)}
+					{isScanning && <div className="text-center text-sm text-gray-600 dark:text-gray-400">Position the QR code within the frame</div>}
 
 					<Button variant="secondary" onClick={handleClose} className="w-full">
 						<X size={16} />

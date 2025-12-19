@@ -4,16 +4,16 @@ import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
+import { useRouter } from "@/i18n/navigation";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import crypto from "crypto";
 import { Menu, X } from "lucide-react";
+import { useLocale } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRouter } from "@/i18n/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useLocale } from "next-intl";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -237,7 +237,7 @@ export default function Nav() {
 					</div>
 					{/* Mobile Burger Menu Button */}
 					<div className="flex sm:hidden items-center space-x-2">
-						{ session.status === "authenticated" ? (
+						{session.status === "authenticated" ? (
 							<button
 								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 								className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
@@ -285,11 +285,7 @@ export default function Nav() {
 									</div>
 								)}
 								{hasAdminAccess && (
-									<Link
-										href="/admin/events"
-										onClick={() => setIsMobileMenuOpen(false)}
-										className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2"
-									>
+									<Link href="/admin/events" onClick={() => setIsMobileMenuOpen(false)} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2">
 										{t.adminPanel}
 									</Link>
 								)}
@@ -315,10 +311,12 @@ export default function Nav() {
 							</div>
 							<ThemeToggle verbose />
 						</div>
-					) : session.status === "loading" && (
-						<div className="flex justify-center py-4">
-							<Spinner size="sm" />
-						</div>
+					) : (
+						session.status === "loading" && (
+							<div className="flex justify-center py-4">
+								<Spinner size="sm" />
+							</div>
+						)
 					)}
 				</div>
 			</div>

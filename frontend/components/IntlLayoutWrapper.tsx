@@ -1,6 +1,6 @@
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getLocale } from "next-intl/server";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 export default async function IntlLayoutWrapper({ children }: { children: React.ReactNode }) {
 	const locale = await getLocale();

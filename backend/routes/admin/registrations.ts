@@ -413,7 +413,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					},
 					ticket: {
 						select: {
-							id: true,
+							id: true
 						}
 					}
 				}

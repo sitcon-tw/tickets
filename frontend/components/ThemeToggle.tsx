@@ -1,17 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { getTranslations } from "@/i18n/helpers";
 import { Moon, Sun } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { getTranslations } from "@/i18n/helpers";
-import { useLocale } from "next-intl";
 
-export function ThemeToggle({
-	verbose = false
-}: {
-	verbose?: boolean;
-}) {
+export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
 	const [mounted, setMounted] = useState(false);
 	const { resolvedTheme, setTheme } = useTheme();
 	const locale = useLocale();
@@ -22,7 +18,7 @@ export function ThemeToggle({
 			"zh-Hans": "切换主题成",
 			en: "Toggle theme to"
 		}
-	})
+	});
 
 	useEffect(() => {
 		setMounted(true);
@@ -59,7 +55,8 @@ export function ThemeToggle({
 			title={`Current: ${resolvedTheme} | Click to switch to ${isDark ? "light" : "dark"}`}
 			className={`hover:bg-transparent hover:text-gray-900 dark:hover:text-gray-100 transition-colors ${verbose ? "w-full text-left justify-start" : ""}`}
 		>
-			{verbose && t.toggleTheme}{isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+			{verbose && t.toggleTheme}
+			{isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
 		</Button>
 	);
 }

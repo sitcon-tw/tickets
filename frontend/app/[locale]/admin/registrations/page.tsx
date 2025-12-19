@@ -3,6 +3,7 @@
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
+import QRScanner from "@/components/QRScanner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,6 @@ import { Download, FileSpreadsheet, QrCode, RotateCw, Search, Trash } from "luci
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
-import QRScanner from "@/components/QRScanner";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -122,7 +122,7 @@ export default function RegistrationsPage() {
 		scanQR: { "zh-Hant": "掃描 QR Code", "zh-Hans": "扫描 QR Code", en: "Scan QR Code" },
 		scanQRTitle: { "zh-Hant": "掃描報名 QR Code", "zh-Hans": "扫描报名 QR Code", en: "Scan Registration QR Code" },
 		registrationNotFound: { "zh-Hant": "找不到報名資料", "zh-Hans": "找不到报名资料", en: "Registration not found" },
-		registrationFound: { "zh-Hant": "已找到報名資料", "zh-Hans": "已找到报名资料", en: "Registration found" },
+		registrationFound: { "zh-Hant": "已找到報名資料", "zh-Hans": "已找到报名资料", en: "Registration found" }
 	});
 
 	const columnDefs = [
@@ -808,12 +808,7 @@ export default function RegistrationsPage() {
 			</Dialog>
 
 			{/* QR Scanner Modal */}
-			<QRScanner
-				isOpen={showQRScanner}
-				onClose={() => setShowQRScanner(false)}
-				onScan={handleQRScan}
-				title={t.scanQRTitle}
-			/>
+			<QRScanner isOpen={showQRScanner} onClose={() => setShowQRScanner(false)} onScan={handleQRScan} title={t.scanQRTitle} />
 		</>
 	);
 }
