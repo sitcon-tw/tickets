@@ -48,7 +48,6 @@ export default function EventList() {
 				const eventsData = await eventsAPI.getAll({ isActive: true });
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					// Sort events by start date (upcoming first, then past events)
 					const now = new Date();
 					const sortedEvents = eventsData.data.sort((a, b) => {
 						const aStart = new Date(a.startDate);
@@ -57,16 +56,12 @@ export default function EventList() {
 						const aIsUpcoming = aStart >= now;
 						const bIsUpcoming = bStart >= now;
 
-						// Prioritize upcoming events
 						if (aIsUpcoming && !bIsUpcoming) return -1;
 						if (!aIsUpcoming && bIsUpcoming) return 1;
 
-						// For events in the same category (both upcoming or both past)
 						if (aIsUpcoming) {
-							// For upcoming events, sort by nearest first
 							return aStart.getTime() - bStart.getTime();
 						} else {
-							// For past events, sort by most recent first
 							return bStart.getTime() - aStart.getTime();
 						}
 					});
@@ -74,7 +69,6 @@ export default function EventList() {
 					setEvents(sortedEvents);
 					setLoading(false);
 
-					// Fetch OpenGraph titles for locations that are URLs (async, non-blocking)
 					sortedEvents.forEach(async event => {
 						if (event.location && isURL(event.location)) {
 							try {
@@ -83,7 +77,6 @@ export default function EventList() {
 									setLocationTitles(prev => ({ ...prev, [event.id]: result.data.title }));
 								}
 							} catch {
-								// Silently fail, will use the URL as fallback
 							}
 						}
 					});
@@ -130,8 +123,8 @@ export default function EventList() {
 									<Image
 										src={event.ogImage}
 										alt={eventName}
-										width={800}
-										height={400}
+										width={600}
+										height={200}
 										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-300 text-transparent"
 									/>
 								</div>
