@@ -4,11 +4,11 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
+		"analyze": "next experimental-analyze",
 		"build": "next build",
 		"dev": "next dev --inspect",
 		"lint": "eslint",
-		"start": "next start",
-		"analyze": "next experimental-analyze"
+		"start": "next start"
 	},
 	"overrides": {
 		"@types/react": "19.2.7",
