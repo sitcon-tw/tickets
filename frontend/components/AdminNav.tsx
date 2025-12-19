@@ -106,6 +106,16 @@ function AdminNav() {
 		}
 	}, [loadPermissions, loadEvents]);
 
+	// Listen for event list changes (when events are created/updated/deleted)
+	useEffect(() => {
+		const handleEventListChanged = () => {
+			loadEvents();
+		};
+
+		window.addEventListener("eventListChanged", handleEventListChanged);
+		return () => window.removeEventListener("eventListChanged", handleEventListChanged);
+	}, [loadEvents]);
+
 	useEffect(() => {
 		const checkMobile = () => {
 			setIsMobile(window.innerWidth <= 768);

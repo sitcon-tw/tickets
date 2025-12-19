@@ -286,6 +286,7 @@ export default function EventsPage() {
 			}
 			await loadEvents();
 			closeModal();
+			window.dispatchEvent(new Event("eventListChanged"));
 		} catch (error) {
 			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}
@@ -297,6 +298,7 @@ export default function EventsPage() {
 		try {
 			await adminEventsAPI.delete(eventId);
 			await loadEvents();
+			window.dispatchEvent(new Event("eventListChanged"));
 		} catch (error) {
 			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		}

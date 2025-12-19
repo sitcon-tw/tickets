@@ -50,7 +50,6 @@ export default function InvitesPage() {
 	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 	const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
 	const [showEmailModal, setShowEmailModal] = useState(false);
-	const [emailAddress, setEmailAddress] = useState("");
 	const [isSendingEmail, setIsSendingEmail] = useState(false);
 	const [emailList, setEmailList] = useState("");
 	const [emailMessage, setEmailMessage] = useState("");
