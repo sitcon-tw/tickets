@@ -3,6 +3,7 @@ import type {
 	ApiResponse,
 	EmailCampaign,
 	Event,
+	EventDashboardData,
 	EventFormField,
 	EventFormFieldReorder,
 	EventInfo,
@@ -13,7 +14,6 @@ import type {
 	InvitationCodeInfo,
 	InvitationCodeVerification,
 	LocalizedText,
-	EventDashboardData,
 	PermissionsResponse,
 	ReferralLink,
 	ReferralValidation,
@@ -103,7 +103,7 @@ export const invitationCodesAPI = {
 
 // User // Admin - Analytics
 export const adminAnalyticsAPI = {
-	getEventDashboard: (eventId: string) => apiClient.get<ApiResponse<EventDashboardData>>(`/api/admin/events/${eventId}/dashboard`),
+	getEventDashboard: (eventId: string) => apiClient.get<ApiResponse<EventDashboardData>>(`/api/admin/events/${eventId}/dashboard`)
 };
 
 // Admin - Users

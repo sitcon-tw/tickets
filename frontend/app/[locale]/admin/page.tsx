@@ -7,8 +7,8 @@ import { adminAnalyticsAPI } from "@/lib/api/endpoints";
 import type { EventDashboardData } from "@/lib/types/api";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 if (typeof window !== "undefined") {

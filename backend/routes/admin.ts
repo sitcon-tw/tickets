@@ -1,8 +1,8 @@
 import { requireAdminOrEventAdmin } from "#middleware/auth";
 import type { FastifyPluginAsync } from "fastify";
 
-import eventDashboardRoutes from "./admin/eventDashboard";
 import emailCampaignsRoutes from "./admin/emailCampaigns";
+import eventDashboardRoutes from "./admin/eventDashboard";
 import eventFormFieldsRoutes from "./admin/eventFormFields";
 import eventsRoutes from "./admin/events";
 import invitationCodesRoutes from "./admin/invitationCodes";

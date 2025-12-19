@@ -8,11 +8,11 @@ import { routing } from "@/i18n/routing";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import crypto from "crypto";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -257,9 +257,7 @@ export default function Nav() {
 			</nav>
 
 			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && (
-				<div className="fixed inset-0 z-[999] bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />
-			)}
+			{isMobileMenuOpen && <div className="fixed inset-0 z-[999] bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
 			{/* Mobile Menu */}
 			<div
@@ -289,11 +287,7 @@ export default function Nav() {
 									{t.adminPanel}
 								</Link>
 							)}
-							<Link
-								href={localizedPath("/my-registration")}
-								onClick={() => setIsMobileMenuOpen(false)}
-								className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
-							>
+							<Link href={localizedPath("/my-registration")} onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2">
 								{t.myRegistrations}
 							</Link>
 							<Button

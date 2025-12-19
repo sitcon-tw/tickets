@@ -6,9 +6,9 @@ import { QRCodePopupProps } from "@/lib/types/components";
 import generateHash from "@/lib/utils/hash";
 import { ExternalLink, TriangleAlert, X } from "lucide-react";
 import { useLocale } from "next-intl";
+import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime }: QRCodePopupProps) {
 	const locale = useLocale();
@@ -56,7 +56,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 				<div className="flex flex-col items-center gap-4">
 					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
 					<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
-						<span>{t.downloadOpass}{" "}</span>
+						<span>{t.downloadOpass} </span>
 						<Link href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
 							opass.app
 							<ExternalLink size={16} />
@@ -85,7 +85,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 									excavate: true
 								}}
 							/>
-						<p className="text-[10px]">{qrValue}</p>
+							<p className="text-[10px]">{qrValue}</p>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">

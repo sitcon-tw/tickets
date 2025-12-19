@@ -323,7 +323,7 @@ export const requireEventDashboardAccess: preHandlerHookHandler = async (request
 		where: { id: request.user!.id },
 		select: { role: true, permissions: true }
 	});
-	
+
 	const userRole = user?.role || "user";
 
 	if (userRole === "admin") {
@@ -334,7 +334,7 @@ export const requireEventDashboardAccess: preHandlerHookHandler = async (request
 		const url = request.url;
 		const eventIdMatch = url.match(/\/events\/([a-zA-Z0-9-_]+)\/dashboard/);
 		const eventId = eventIdMatch ? eventIdMatch[1] : null;
-		
+
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
 			return reply.code(statusCode).send(response);
