@@ -373,7 +373,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: {
-				description: "刪除報名記錄與個人資料 (符合個人資料保護法)",
+				description: "刪除報名記錄",
 				tags: ["admin/registrations"],
 				params: {
 					type: "object",
@@ -410,6 +410,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 							startDate: true,
 							endDate: true
 						}
+					},
+					ticket: {
+						select: {
+							id: true,
+						}
 					}
 				}
 			});
@@ -423,7 +428,16 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				where: { id }
 			});
 
-			return reply.send(successResponse({ id, email: registration.email }, "個人資料已成功刪除"));
+			await prisma.ticket.update({
+				where: { id: registration.ticketId },
+				data: {
+					soldCount: {
+						increment: 1
+					}
+				}
+			});
+
+			return reply.send(successResponse({ id, email: registration.email }, "已刪除報名資料"));
 		}
 	);
 
