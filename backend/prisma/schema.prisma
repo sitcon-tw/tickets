@@ -94,6 +94,8 @@ model Event {
   landingPage String?  // JSON content
   googleSheetsUrl String? // Google Sheets URL for data export
   isActive    Boolean  @default(true)
+  hideEvent   Boolean  @default(false) // Hide from event list
+  useOpass    Boolean  @default(true)  // Show OPass link in QR code popup
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

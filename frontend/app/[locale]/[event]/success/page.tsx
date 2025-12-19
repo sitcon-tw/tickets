@@ -31,6 +31,7 @@ export default function Success() {
 	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [isCancelled, setIsCancelled] = useState(false);
+	const [useOpass, setUseOpass] = useState<boolean>(true);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -132,6 +133,7 @@ export default function Success() {
 					}
 
 					const currentEventId = foundEvent.id;
+					setUseOpass(foundEvent.useOpass ?? true);
 
 					const registrations = await registrationsAPI.getAll();
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
@@ -257,7 +259,7 @@ export default function Success() {
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
 				</div>
 			</div>
-			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}
+			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} />}
 		</>
 	);
 }

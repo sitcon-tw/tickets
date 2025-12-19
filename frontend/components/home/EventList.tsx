@@ -50,7 +50,8 @@ export default function EventList() {
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
 					const now = new Date();
-					const sortedEvents = eventsData.data.sort((a, b) => {
+					const visibleEvents = eventsData.data.filter(event => !event.hideEvent);
+					const sortedEvents = visibleEvents.sort((a, b) => {
 						const aStart = new Date(a.startDate);
 						const bStart = new Date(b.startDate);
 

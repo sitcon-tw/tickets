@@ -14,6 +14,7 @@ export interface QRCodePopupProps {
 	onClose: () => void;
 	registrationId: string;
 	registrationTime: string;
+	useOpass?: boolean;
 }
 
 // Markdown Content

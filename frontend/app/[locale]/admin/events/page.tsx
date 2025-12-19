@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,6 +115,8 @@ export default function EventsPage() {
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
 	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
+	const [hideEvent, setHideEvent] = useState(false);
+	const [useOpass, setUseOpass] = useState(true);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Event Management" },
@@ -149,6 +152,18 @@ export default function EventsPage() {
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
+		hideEvent: { "zh-Hant": "在活動列表中隱藏", "zh-Hans": "在活动列表中隐藏", en: "Hide in Event List" },
+		hideEventHint: {
+			"zh-Hant": "勾選後，此活動不會顯示在首頁活動列表中，但仍可透過網址直接存取",
+			"zh-Hans": "勾选后，此活动不会显示在首页活动列表中，但仍可透过网址直接访问",
+			en: "If checked, this event will not appear in the homepage event list, but can still be accessed directly via URL"
+		},
+		useOpass: { "zh-Hant": "顯示 OPass 連結", "zh-Hans": "显示 OPass 链接", en: "Show OPass Link" },
+		useOpassHint: {
+			"zh-Hant": "勾選後，報名成功頁面的 QR Code 彈窗會顯示 OPass APP 下載連結",
+			"zh-Hans": "勾选后，报名成功页面的 QR Code 弹窗会显示 OPass APP 下载链接",
+			en: "If checked, the QR code popup will show the OPass APP download link"
+		},
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },
 		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
@@ -216,6 +231,8 @@ export default function EventsPage() {
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
 			setSlug(event.slug || "");
 			setOgImage(event.ogImage || "");
+			setHideEvent(event.hideEvent || false);
+			setUseOpass(event.useOpass ?? true);
 		} else {
 			setNameEn("");
 			setNameZhHant("");
@@ -228,6 +245,8 @@ export default function EventsPage() {
 			setPlainDescZhHans("");
 			setSlug("");
 			setOgImage("");
+			setHideEvent(false);
+			setUseOpass(true);
 		}
 
 		setShowModal(true);
@@ -247,6 +266,8 @@ export default function EventsPage() {
 		setPlainDescZhHans("");
 		setSlug("");
 		setOgImage("");
+		setHideEvent(false);
+		setUseOpass(true);
 	};
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
@@ -275,7 +296,9 @@ export default function EventsPage() {
 			ogImage: ogImage || undefined,
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
-			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString()
+			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
+			hideEvent,
+			useOpass
 		};
 
 		try {
@@ -389,6 +412,26 @@ export default function EventsPage() {
 										<div className="space-y-2">
 											<Label htmlFor="endDate">{t.endDate}</Label>
 											<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? toDateTimeLocalString(editingEvent.endDate) : ""} />
+										</div>
+									</div>
+									<div className="space-y-4">
+										<div className="flex items-start space-x-2">
+											<Checkbox id="hideEvent" checked={hideEvent} onCheckedChange={(checked) => setHideEvent(checked === true)} />
+											<div className="grid gap-1.5 leading-none">
+												<Label htmlFor="hideEvent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+													{t.hideEvent}
+												</Label>
+												<p className="text-xs text-muted-foreground">{t.hideEventHint}</p>
+											</div>
+										</div>
+										<div className="flex items-start space-x-2">
+											<Checkbox id="useOpass" checked={useOpass} onCheckedChange={(checked) => setUseOpass(checked === true)} />
+											<div className="grid gap-1.5 leading-none">
+												<Label htmlFor="useOpass" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+													{t.useOpass}
+												</Label>
+												<p className="text-xs text-muted-foreground">{t.useOpassHint}</p>
+											</div>
 										</div>
 									</div>
 								</TabsContent>

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 
-export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime }: QRCodePopupProps) {
+export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime, useOpass = true }: QRCodePopupProps) {
 	const locale = useLocale();
 
 	const [qrValue, setQrValue] = useState<string>("");
@@ -28,6 +28,11 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 			"zh-Hant": "若無法使用 OPass 進行報到，請向服務台人員出示此 QR Code 以進行驗證",
 			"zh-Hans": "若无法使用 OPass 进行报到，请向服务台人员出示此 QR Code 以进行验证",
 			en: "If you cannot use OPass for check-in, please show this QR code to the service desk staff for verification"
+		},
+		scanInfoOpassDisabled: {
+			"zh-Hant": "請向服務台人員出示此 QR Code 以進行驗證",
+			"zh-Hans": "请向服务台人员出示此 QR Code 以进行验证",
+			en: "Please show this QR code to the service desk staff for verification"
 		},
 		qrAlert: {
 			"zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷你資料。",
@@ -55,37 +60,45 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 
 				<div className="flex flex-col items-center gap-4">
 					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
-					<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
-						<span>{t.downloadOpass} </span>
-						<Link href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
-							opass.app
-							<ExternalLink size={16} />
-						</Link>
-					</p>
-					<div className="flex w-full space-x-4 px-8 items-start">
-						<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
-						<p className="text-md text-gray-700 dark:text-gray-200 text-center">{t.or}</p>
-						<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
-					</div>
+					{useOpass && (
+						<>
+							<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
+								<span>{t.downloadOpass} </span>
+								<Link href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+									opass.app
+									<ExternalLink size={16} />
+								</Link>
+							</p>
+							<div className="flex w-full space-x-4 px-8 items-start">
+								<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
+								<p className="text-md text-gray-700 dark:text-gray-200 text-center">{t.or}</p>
+								<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
+							</div>
+						</>
+					)}
 					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t.useQrCode}</h3>
 
 					{qrValue ? (
-						<div className="rounded-lg border-16 border-gray-800 flex flex-col items-center space-y-4">
-							<QRCodeSVG
-								value={qrValue}
-								size={256}
-								level="H"
-								bgColor="var(--color-gray-800)"
-								fgColor="#ffffff"
-								imageSettings={{
-									src: "/assets/SITCON_WHITE.svg",
-									height: 80,
-									width: 64,
-									opacity: 1,
-									excavate: true
-								}}
-							/>
-							<p className="text-[10px]">{qrValue}</p>
+						<div className="flex flex-col items-center gap-2">
+							<div className="rounded-lg border-16 border-gray-800 w-fit">
+								<QRCodeSVG
+									value={qrValue}
+									size={256}
+									level="H"
+									bgColor="var(--color-gray-800)"
+									fgColor="#ffffff"
+									imageSettings={{
+										src: "/assets/SITCON_WHITE.svg",
+										height: 80,
+										width: 64,
+										opacity: 1,
+										excavate: true
+									}}
+								/>
+							</div>
+							<p className="text-xs">{
+								qrValue.slice(0, 10) + "..." + qrValue.slice(-10)
+								}</p>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">
@@ -93,7 +106,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 						</div>
 					)}
 
-					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{t.scanInfo}</p>
+					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{useOpass ? t.scanInfo : t.scanInfoOpassDisabled}</p>
 					<p className="text-xs text-yellow-600 dark:text-yellow-200 flex items-center text-center gap-1">
 						<TriangleAlert size={20} />
 						{t.qrAlert}

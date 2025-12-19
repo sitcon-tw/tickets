@@ -85,6 +85,8 @@ export interface Event {
 	landingPage?: string;
 	googleSheetsUrl?: string;
 	isActive: boolean;
+	hideEvent?: boolean;
+	useOpass?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
