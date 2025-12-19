@@ -39,7 +39,7 @@ export default function Footer() {
 		<footer className="text-center p-6 mt-8 text-gray-600 dark:text-gray-400">
 			<div className="flex justify-center items-center gap-2 mb-3">
 				<Globe size={16} className="text-muted-foreground" />
-				<Select value={locale} onValueChange={handleLocaleChange}>
+				<Select value={locale} onValueChange={handleLocaleChange} name="Locale-Selector">
 					<SelectTrigger className="w-[140px] h-8 text-sm">
 						<SelectValue />
 					</SelectTrigger>

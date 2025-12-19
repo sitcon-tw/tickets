@@ -237,16 +237,11 @@ export default function MyRegistrationPage() {
 		const { name, value, checked } = e.target;
 
 		if (value === "true") {
-			// Single checkbox (boolean value)
 			setFormData(prev => ({ ...prev, [name]: checked }));
 		} else if (checked && value !== "true") {
-			// Multi-checkbox with comma-separated values
-			// When checked is true and value is not "true", this is from MultiCheckbox
-			// The value contains the comma-separated list (or empty string if all unchecked)
 			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
 			setFormData(prev => ({ ...prev, [name]: values }));
 		} else {
-			// Single checkbox with a specific value (legacy support)
 			setFormData(prev => {
 				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
 				if (checked) {
@@ -524,7 +519,6 @@ export default function MyRegistrationPage() {
 												/>
 											);
 										} else {
-											// Display as read-only
 											const value = formData[fieldId];
 											let displayValue: string;
 
