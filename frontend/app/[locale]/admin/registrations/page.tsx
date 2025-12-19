@@ -15,10 +15,11 @@ import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import { Download, FileSpreadsheet, RotateCw, Search, Trash } from "lucide-react";
+import { Download, FileSpreadsheet, QrCode, RotateCw, Search, Trash } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
+import QRScanner from "@/components/QRScanner";
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -50,6 +51,7 @@ export default function RegistrationsPage() {
 	const [editedFormData, setEditedFormData] = useState<Record<string, unknown>>({});
 	const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "cancelled">("pending");
 	const [isSaving, setIsSaving] = useState(false);
+	const [showQRScanner, setShowQRScanner] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -117,6 +119,10 @@ export default function RegistrationsPage() {
 		saving: { "zh-Hant": "儲存中...", "zh-Hans": "保存中...", en: "Saving..." },
 		saveSuccess: { "zh-Hant": "報名資料已成功更新", "zh-Hans": "报名资料已成功更新", en: "Registration updated successfully" },
 		saveError: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" },
+		scanQR: { "zh-Hant": "掃描 QR Code", "zh-Hans": "扫描 QR Code", en: "Scan QR Code" },
+		scanQRTitle: { "zh-Hant": "掃描報名 QR Code", "zh-Hans": "扫描报名 QR Code", en: "Scan Registration QR Code" },
+		registrationNotFound: { "zh-Hant": "找不到報名資料", "zh-Hans": "找不到报名资料", en: "Registration not found" },
+		registrationFound: { "zh-Hant": "已找到報名資料", "zh-Hans": "已找到报名资料", en: "Registration found" },
 	});
 
 	const columnDefs = [
@@ -463,6 +469,31 @@ export default function RegistrationsPage() {
 		}
 	};
 
+	const handleQRScan = async (scannedHash: string) => {
+		try {
+			// Find the registration that matches the scanned hash
+			let foundRegistration: Registration | null = null;
+
+			for (const registration of registrations) {
+				const hash = await generateHash(registration.id, registration.createdAt);
+				if (hash === scannedHash) {
+					foundRegistration = registration;
+					break;
+				}
+			}
+
+			if (foundRegistration) {
+				showAlert(t.registrationFound, "success");
+				openDetailModal(foundRegistration);
+			} else {
+				showAlert(t.registrationNotFound, "error");
+			}
+		} catch (error) {
+			console.error("Failed to process QR code:", error);
+			showAlert(`Error: ${error instanceof Error ? error.message : String(error)}`, "error");
+		}
+	};
+
 	useEffect(() => {
 		const savedEventId = localStorage.getItem("selectedEventId");
 		if (savedEventId) {
@@ -529,6 +560,9 @@ export default function RegistrationsPage() {
 							<SelectItem value="cancelled">{t.cancelled}</SelectItem>
 						</SelectContent>
 					</Select>
+					<Button onClick={() => setShowQRScanner(true)} variant="default">
+						<QrCode /> {t.scanQR}
+					</Button>
 					<Button onClick={loadRegistrations} variant="secondary">
 						<RotateCw /> {t.refresh}
 					</Button>
@@ -772,6 +806,14 @@ export default function RegistrationsPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* QR Scanner Modal */}
+			<QRScanner
+				isOpen={showQRScanner}
+				onClose={() => setShowQRScanner(false)}
+				onScan={handleQRScan}
+				title={t.scanQRTitle}
+			/>
 		</>
 	);
 }
