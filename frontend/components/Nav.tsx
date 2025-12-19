@@ -227,7 +227,7 @@ export default function Nav() {
 							<Spinner size="sm" />
 						) : (
 							<Link
-								href={pathname.includes("/login") ? "/login/" : `"/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+								href={pathname.includes("/login") ? "/login/" : `/login/?returnUrl=${encodeURIComponent(pathname)}`}
 								className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 							>
 								{t.login}
@@ -248,7 +248,7 @@ export default function Nav() {
 						) : (
 							<div className="flex items-center space-x-4">
 								<Link
-									href={pathname.includes("/login") ? "/login/" : `"/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+									href={pathname.includes("/login") ? "/login/" : `/login/?returnUrl=${encodeURIComponent(pathname)}`}
 									onClick={() => setIsMobileMenuOpen(false)}
 									className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
 								>
