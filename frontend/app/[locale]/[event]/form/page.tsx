@@ -33,6 +33,7 @@ export default function FormPage() {
 	const [referralCode, setReferralCode] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [agreeToTerms, setAgreeToTerms] = useState(false);
+	const [ticketData, setTicketData] = useState<any | null>(null);
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -109,8 +110,41 @@ export default function FormPage() {
 			"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
 			"zh-Hans": "我已阅读并同意服务条款与隐私政策",
 			en: "I have read and agree to the Terms and Privacy Policy"
+		},
+		ticketSaleEnded: {
+			"zh-Hant": "此票種報名時間已結束",
+			"zh-Hans": "此票种报名时间已结束",
+			en: "This ticket's registration period has ended"
+		},
+		ticketNotYetAvailable: {
+			"zh-Hant": "此票種尚未開放報名，請先登入後再試",
+			"zh-Hans": "此票种尚未开放报名，请先登录后再试",
+			en: "This ticket is not yet available for registration. Please log in and try again later"
+		},
+		ticketSoldOut: {
+			"zh-Hant": "此票種已售完",
+			"zh-Hans": "此票种已售完",
+			en: "This ticket is sold out"
 		}
 	});
+
+	const isTicketExpired = useCallback((ticket: any): boolean => {
+		if (!ticket.saleEnd) return false;
+		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
+		if (!saleEndDate) return false;
+		return saleEndDate < new Date();
+	}, []);
+
+	const isTicketNotYetAvailable = useCallback((ticket: any): boolean => {
+		if (!ticket.saleStart) return false;
+		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
+		if (!saleStartDate) return false;
+		return saleStartDate > new Date();
+	}, []);
+
+	const isTicketSoldOut = useCallback((ticket: any): boolean => {
+		return ticket.available !== undefined && ticket.available <= 0;
+	}, []);
 
 	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
@@ -209,6 +243,28 @@ export default function FormPage() {
 					throw new Error(ticketResponse.message || "Failed to load ticket information");
 				}
 
+				const ticket = ticketResponse.data;
+				setTicketData(ticket);
+
+				// Verify ticket availability
+				if (isTicketExpired(ticket)) {
+					showAlert(t.ticketSaleEnded, "error");
+					router.push(pathname.replace("/form", ""));
+					return;
+				}
+
+				if (isTicketNotYetAvailable(ticket)) {
+					showAlert(t.ticketNotYetAvailable, "warning");
+					router.push(pathname.replace("/form", ""));
+					return;
+				}
+
+				if (isTicketSoldOut(ticket)) {
+					showAlert(t.ticketSoldOut, "error");
+					router.push(pathname.replace("/form", ""));
+					return;
+				}
+
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
@@ -282,7 +338,7 @@ export default function FormPage() {
 		}
 
 		initForm();
-	}, [router, showAlert, t.noTicketAlert]);
+	}, [router, showAlert, pathname, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
 
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;

@@ -1,12 +1,14 @@
 "use client";
 
 import PageSpinner from "@/components/PageSpinner";
+import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@/lib/types/api";
 import { useLocale } from "next-intl";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -18,12 +20,19 @@ export default function SetTicket() {
 
 	const [isLoading, setLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string>("");
+	const [isNotYetAvailable, setIsNotYetAvailable] = useState(false);
 
 	const t = getTranslations(locale, {
 		ticketSaleEnded: {
 			"zh-Hant": "票券銷售已結束。",
 			"zh-Hans": "票券销售已结束。",
 			en: "Ticket sale has ended."
+		},
+		ticketNotYetAvailable: {
+			"zh-Hant": "此票種尚未開放報名。您可以先登入，並在開放時間後再試。",
+			"zh-Hans": "此票种尚未开放报名。您可以先登录，并在开放时间后再试。",
+			en: "This ticket is not yet available for registration. You can log in first and try again after the sale starts."
 		},
 		ticketSoldOut: {
 			"zh-Hant": "票券已售完。",
@@ -64,6 +73,26 @@ export default function SetTicket() {
 			"zh-Hant": "找不到票券",
 			"zh-Hans": "找不到票券",
 			en: "Ticket not found"
+		},
+		pleaseLoginFirst: {
+			"zh-Hant": "請先登入以查看報名時間",
+			"zh-Hans": "请先登录以查看报名时间",
+			en: "Please log in first to view registration schedule"
+		},
+		goToLogin: {
+			"zh-Hant": "前往登入",
+			"zh-Hans": "前往登录",
+			en: "Go to Login"
+		},
+		ticketUnavailable: {
+			"zh-Hant": "票券暫時無法使用",
+			"zh-Hans": "票券暂时无法使用",
+			en: "Ticket Currently Unavailable"
+		},
+		backToEvent: {
+			"zh-Hant": "返回活動頁面",
+			"zh-Hans": "返回活动页面",
+			en: "Back to Event"
 		}
 	});
 
@@ -72,6 +101,13 @@ export default function SetTicket() {
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
 		if (!saleEndDate) return false;
 		return saleEndDate < new Date();
+	};
+
+	const isTicketNotYetAvailable = (ticket: Ticket): boolean => {
+		if (!ticket.saleStart) return false;
+		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
+		if (!saleStartDate) return false;
+		return saleStartDate > new Date();
 	};
 
 	const isTicketSoldOut = (ticket: Ticket): boolean => {
@@ -131,13 +167,28 @@ export default function SetTicket() {
 	const handleTicketSelect = useCallback(
 		(ticket: Ticket, eventId: string) => {
 			if (isTicketExpired(ticket)) {
-				showAlert(t.ticketSaleEnded, "warning");
-				return;
+				setErrorMessage(t.ticketSaleEnded);
+				showAlert(t.ticketSaleEnded, "error");
+				setHasError(true);
+				setLoading(false);
+				return false;
+			}
+
+			if (isTicketNotYetAvailable(ticket)) {
+				setErrorMessage(t.ticketNotYetAvailable);
+				showAlert(t.ticketNotYetAvailable, "warning");
+				setHasError(true);
+				setIsNotYetAvailable(true);
+				setLoading(false);
+				return false;
 			}
 
 			if (isTicketSoldOut(ticket)) {
-				showAlert(t.ticketSoldOut, "warning");
-				return;
+				setErrorMessage(t.ticketSoldOut);
+				showAlert(t.ticketSoldOut, "error");
+				setHasError(true);
+				setLoading(false);
+				return false;
 			}
 
 			const referralCode = new URLSearchParams(window.location.search).get("ref");
@@ -151,11 +202,13 @@ export default function SetTicket() {
 					invitationCode: invitationCode || localStorage.getItem("invitationCode") || undefined
 				};
 				localStorage.setItem("formData", JSON.stringify(formData));
+				return true;
 			} catch (error) {
 				console.warn("Unable to access localStorage", error);
+				return false;
 			}
 		},
-		[t.ticketSaleEnded, t.ticketSoldOut, showAlert]
+		[t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, showAlert]
 	);
 
 	useEffect(() => {
@@ -165,8 +218,10 @@ export default function SetTicket() {
 		Promise.all([event, ticket]).then(values => {
 			const [eventId, ticketData] = values;
 			if (eventId && ticketData) {
-				handleTicketSelect(ticketData, eventId);
-				router.push(`/${params.event}/form`);
+				const isValid = handleTicketSelect(ticketData, eventId);
+				if (isValid) {
+					router.push(`/${params.event}/form`);
+				}
 			} else {
 				setLoading(false);
 			}
@@ -182,9 +237,20 @@ export default function SetTicket() {
 					</div>
 				</main>
 			) : (
-				<main className="h-screen flex flex-col items-center justify-center">
-					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{t.eventNotFound}</h1>
-					<p className="text-center text-muted-foreground">{t.tryToDebug}</p>
+				<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">
+					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{errorMessage ? t.ticketUnavailable : t.eventNotFound}</h1>
+					<p className="text-center text-muted-foreground max-w-md">{errorMessage || t.tryToDebug}</p>
+
+					<div className="flex gap-4 mt-4">
+						{isNotYetAvailable && (
+							<Link href={`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`}>
+								<Button variant="default">{t.goToLogin}</Button>
+							</Link>
+						)}
+						<Link href={`/${params.event}`}>
+							<Button variant="secondary">{t.backToEvent}</Button>
+						</Link>
+					</div>
 				</main>
 			)}
 		</>
