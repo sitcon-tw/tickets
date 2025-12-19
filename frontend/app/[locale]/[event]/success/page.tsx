@@ -124,7 +124,6 @@ export default function Success() {
 			try {
 				try {
 					const eventsData = await eventsAPI.getAll();
-					// Match by slug first, then fallback to last 6 chars of ID
 					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (!foundEvent) {
@@ -141,10 +140,9 @@ export default function Success() {
 						setRegistrationTime(eventRegistration.createdAt);
 						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
 
-						// Check if cancelled first to avoid fetching referral data
 						if (eventRegistration.status === "cancelled") {
 							setIsCancelled(true);
-							setReferralCode(t.loadFailed); // Set to failed so UI doesn't show loading
+							setReferralCode(t.loadFailed);
 						} else {
 							setIsCancelled(false);
 							const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;

@@ -309,11 +309,9 @@ export default function TicketsPage() {
 			return;
 		}
 
-		// Optimistically update the UI
 		const newTickets = arrayMove(tickets, oldIndex, newIndex);
 		setTickets(newTickets);
 
-		// Update order values and send to backend
 		const reorderedTickets = newTickets.map((ticket, index) => ({
 			id: ticket.id,
 			order: index
@@ -324,7 +322,6 @@ export default function TicketsPage() {
 			await adminTicketsAPI.reorder({ tickets: reorderedTickets });
 			showAlert("票種順序已更新", "success");
 		} catch (error) {
-			// Revert on error
 			showAlert("更新順序失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 			await loadTickets();
 		} finally {

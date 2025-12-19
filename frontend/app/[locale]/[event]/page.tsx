@@ -77,7 +77,6 @@ export default function Main() {
 				const eventsData = await eventsAPI.getAll();
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					// Match by slug first, then fallback to last 6 chars of ID
 					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (foundEvent) {
@@ -98,7 +97,6 @@ export default function Main() {
 							setTickets(ticketsData.data);
 						}
 
-						// Fetch OpenGraph title if location is a URL (async, non-blocking)
 						if (foundEvent.location && isURL(foundEvent.location)) {
 							opengraphAPI
 								.getTitle(foundEvent.location)
@@ -108,7 +106,6 @@ export default function Main() {
 									}
 								})
 								.catch(() => {
-									// Silently fail, will use the URL as fallback
 								});
 						}
 					} else {

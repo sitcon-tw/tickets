@@ -221,12 +221,6 @@ export default function RegistrationsPage() {
 		return filtered;
 	}, [searchTerm, registrations, statusFilter, locale, sortField, sortDirection]);
 
-	// const paginatedData = useMemo(() => {
-	// 	const start = (page - 1) * pageSize;
-	// 	const end = start + pageSize;
-	// 	return sortedAndFiltered.slice(start, end);
-	// }, [sortedAndFiltered, page, pageSize]);
-
 	const displayData = useMemo((): RegistrationDisplay[] => {
 		return sortedAndFiltered.map(r => ({
 			...r,
@@ -248,35 +242,6 @@ export default function RegistrationsPage() {
 			}),
 		[t.viewDetails]
 	);
-
-	// const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
-
-	// function handleSort(field: SortField) {
-	// 	if (sortField === field) {
-	// 		setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-	// 	} else {
-	// 		setSortField(field);
-	// 		setSortDirection("asc");
-	// 	}
-	// }
-
-	// function toggleSelectAll() {
-	// 	if (selectedRegistrations.size === paginatedData.length) {
-	// 		setSelectedRegistrations(new Set());
-	// 	} else {
-	// 		setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
-	// 	}
-	// }
-
-	// function toggleSelect(id: string) {
-	// 	const newSet = new Set(selectedRegistrations);
-	// 	if (newSet.has(id)) {
-	// 		newSet.delete(id);
-	// 	} else {
-	// 		newSet.add(id);
-	// 	}
-	// 	setSelectedRegistrations(newSet);
-	// }
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
@@ -382,7 +347,6 @@ export default function RegistrationsPage() {
 
 		setExportSuccess(false);
 
-		// Fetch both event data and service account email before opening modal
 		const fetchPromises = [
 			adminEventsAPI
 				.getById(currentEventId)
@@ -471,7 +435,6 @@ export default function RegistrationsPage() {
 
 	const handleQRScan = async (scannedHash: string) => {
 		try {
-			// Find the registration that matches the scanned hash
 			let foundRegistration: Registration | null = null;
 
 			for (const registration of registrations) {
@@ -691,7 +654,6 @@ export default function RegistrationsPage() {
 													value={typeof value === "object" ? JSON.stringify(value) : String(value)}
 													onChange={e => {
 														try {
-															// Try to parse as JSON if it looks like JSON
 															const newValue = e.target.value;
 															if (newValue.startsWith("{") || newValue.startsWith("[")) {
 																updateFormDataField(key, JSON.parse(newValue));
@@ -699,7 +661,6 @@ export default function RegistrationsPage() {
 																updateFormDataField(key, newValue);
 															}
 														} catch {
-															// If JSON parse fails, just use the string value
 															updateFormDataField(key, e.target.value);
 														}
 													}}

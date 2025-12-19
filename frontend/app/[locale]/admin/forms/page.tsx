@@ -38,7 +38,7 @@ type Question = {
 		"zh-Hant"?: string;
 		"zh-Hans"?: string;
 	}>;
-	prompts?: Record<string, string[]>; // { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
+	prompts?: Record<string, string[]>;
 	showIf?: ShowIf;
 	filters?: FieldFilter;
 };
@@ -223,7 +223,6 @@ export default function FormsPage() {
 						}
 					}
 
-					// Parse prompts - new format: { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
 					const rawPrompts = field.prompts;
 					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
 						prompts = rawPrompts as Record<string, string[]>;
@@ -241,7 +240,6 @@ export default function FormsPage() {
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
-					// Parse description as localized object
 					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
@@ -265,7 +263,6 @@ export default function FormsPage() {
 
 				setQuestions(loadedFields);
 				setOriginalFieldIds(loadedFields.map((f: Question) => f.id).filter((id: string) => !id.startsWith("temp-")));
-				// Default to collapsed state
 				setCollapsedItems(new Set(loadedFields.map((f: Question) => f.id)));
 			} else {
 				throw new Error(response.message || "Failed to load form fields");

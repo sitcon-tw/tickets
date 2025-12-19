@@ -78,7 +78,6 @@ export default function AdminDashboard() {
 		exportData: { "zh-Hant": "匯出資料", "zh-Hans": "导出资料", en: "Export Data" }
 	});
 
-	// Load dashboard data for selected event
 	const loadDashboardData = useCallback(async () => {
 		if (!selectedEventId) {
 			setLoading(false);
