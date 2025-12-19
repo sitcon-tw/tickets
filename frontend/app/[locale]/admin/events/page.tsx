@@ -85,7 +85,7 @@ export default function EventsPage() {
 		upcoming: { "zh-Hant": "尚未開始", "zh-Hans": "尚未开始", en: "Upcoming" },
 		ended: { "zh-Hant": "已結束", "zh-Hans": "已结束", en: "Ended" },
 		createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" },
-		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Loading..." }
+		loading: { "zh-Hant": "載入中...", "zh-Hans": "载入中...", en: "Loading..." },
 	});
 
 	function computeStatus(event: Event) {
@@ -236,7 +236,7 @@ export default function EventsPage() {
 				statusClass: status.class,
 				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
 				formattedStartDate: formatDateTime(event.startDate),
-				formattedEndDate: formatDateTime(event.endDate)
+				formattedEndDate: formatDateTime(event.endDate),
 			};
 		});
 	}, [events, locale, computeStatus]);

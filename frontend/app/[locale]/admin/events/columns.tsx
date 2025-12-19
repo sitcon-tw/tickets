@@ -44,7 +44,8 @@ export const createEventsColumns = (actions: EventColumnActions): ColumnDef<Even
 		accessorKey: "location",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Location" />,
 		cell: ({ row }) => {
-			return <div>{row.getValue("location") || "-"}</div>;
+			const location = row.getValue("location") as string | undefined;
+			return <div className={location?.startsWith("https://") ? "text-muted-foreground italic" : ""}>{location ? (location.startsWith("https://") ? "(Google Map Link)" : location) : "-"}</div>;
 		}
 	},
 	{
