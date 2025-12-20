@@ -416,7 +416,7 @@ export default function EventsPage() {
 									</div>
 									<div className="space-y-4">
 										<div className="flex items-start space-x-2">
-											<Checkbox id="hideEvent" checked={hideEvent} onCheckedChange={(checked) => setHideEvent(checked === true)} />
+											<Checkbox id="hideEvent" checked={hideEvent} onCheckedChange={checked => setHideEvent(checked === true)} />
 											<div className="grid gap-1.5 leading-none">
 												<Label htmlFor="hideEvent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
 													{t.hideEvent}
@@ -425,7 +425,7 @@ export default function EventsPage() {
 											</div>
 										</div>
 										<div className="flex items-start space-x-2">
-											<Checkbox id="useOpass" checked={useOpass} onCheckedChange={(checked) => setUseOpass(checked === true)} />
+											<Checkbox id="useOpass" checked={useOpass} onCheckedChange={checked => setUseOpass(checked === true)} />
 											<div className="grid gap-1.5 leading-none">
 												<Label htmlFor="useOpass" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
 													{t.useOpass}

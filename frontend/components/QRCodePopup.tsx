@@ -96,9 +96,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 									}}
 								/>
 							</div>
-							<p className="text-xs">{
-								qrValue.slice(0, 10) + "..." + qrValue.slice(-10)
-								}</p>
+							<p className="text-xs">{qrValue.slice(0, 10) + "..." + qrValue.slice(-10)}</p>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">

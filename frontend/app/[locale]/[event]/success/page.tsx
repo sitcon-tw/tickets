@@ -259,7 +259,9 @@ export default function Success() {
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
 				</div>
 			</div>
-			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} />}
+			{registrationId && registrationTime && (
+				<QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} />
+			)}
 		</>
 	);
 }
