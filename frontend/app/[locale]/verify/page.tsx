@@ -354,18 +354,18 @@ export default function VerifyPage() {
 									<div className="inline-flex items-center justify-center mb-6">
 										<MessageSquare size={32} />
 									</div>
-									<h2 className="text-2xl font-bold text-white mb-2">{t.title}</h2>
+									<h2 className="text-2xl font-bold text-gray-800 ark:text-white mb-2">{t.title}</h2>
 									<p className="text-gray-400 text-sm">{t.description}</p>
 								</div>
 
 								<div className="mb-6">
-									<label className="block text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
+									<label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
 									<input
 										type="tel"
 										value={phoneNumber}
 										onChange={handlePhoneChange}
 										placeholder="09XX-XXX-XXX"
-										className={`w-full bg-gray-700/50 border-2 rounded-md text-white text-lg p-3
+										className={`w-full bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-lg p-3
 											transition-all duration-200 outline-none
 											${error ? "border-red-500" : "border-gray-600"}
 											focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
@@ -424,9 +424,9 @@ export default function VerifyPage() {
 									<div className="inline-flex items-center justify-center mb-6">
 										<MessageSquareMore size={32} />
 									</div>
-									<h2 className="text-2xl font-bold text-white mb-2">{t.codeLabel}</h2>
-									<p className="text-gray-400 text-sm">
-										{t.codeSent} <span className="text-white font-medium">{phoneNumber}</span>
+									<h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t.codeLabel}</h2>
+									<p className="text-gray-700 dark:text-gray-400 text-sm">
+										{t.codeSent} <span className="text-gray-800 dark:text-white font-medium">{phoneNumber}</span>
 									</p>
 								</div>
 
@@ -446,11 +446,11 @@ export default function VerifyPage() {
 												onKeyDown={e => handleCodeKeyDown(index, e)}
 												onPaste={handlePaste}
 												disabled={loading}
-												className={`w-12 h-14 text-center text-2xl font-semibold bg-gray-700/50 border-2 rounded-md
+												className={`w-12 h-14 text-center text-2xl font-semibold bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md
 													transition-all duration-200 outline-none
-													${digit ? "border-gray-200 text-white" : "border-gray-600 text-gray-400"}
+													${digit ? "border-gray-700 dark:border-gray-200 text-gray-800 dark:text-white" : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-400"}
 													${error ? "border-red-500 shake" : ""}
-													${loading ? "opacity-50 cursor-not-allowed" : "hover:border-gray-500"}
+													${loading ? "opacity-50 cursor-not-allowed" : "hover:border-gray-200 dark:hover:border-gray-500"}
 													focus:border-gray-200 focus:ring-2 focus:ring-gray-200/20`}
 												autoFocus={index === 0}
 											/>
@@ -468,7 +468,7 @@ export default function VerifyPage() {
 								</div>
 
 								<div className="text-center mb-4">
-									<p className="text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
+									<p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{t.didntReceiveCode}</p>
 									{countdown > 0 ? (
 										<p className="text-gray-500 text-sm">
 											{t.resendIn}{" "}
@@ -478,13 +478,13 @@ export default function VerifyPage() {
 											</span>
 										</p>
 									) : (
-										<Button variant="link" onClick={handleResend} disabled={sendingCode} className="text-blue-400 hover:text-blue-300 underline h-auto p-0">
+										<Button variant="link" onClick={handleResend} disabled={sendingCode} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline h-auto p-0">
 											{sendingCode ? "Sending..." : t.resendCode}
 										</Button>
 									)}
 								</div>
 
-								<Button variant="ghost" onClick={handleBack} className="w-full text-gray-400 hover:text-white">
+								<Button variant="ghost" onClick={handleBack} className="w-full text-gray-700 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
 									<ArrowLeft size={16} />
 									{t.changePhoneNumber}
 								</Button>
@@ -495,8 +495,8 @@ export default function VerifyPage() {
 								<div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full animate-scale mb-4">
 									<Check className="w-10 h-10 text-green-400" />
 								</div>
-								<h2 className="text-2xl font-bold text-white mb-2">{t.verified}</h2>
-								<p className="text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
+								<h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t.verified}</h2>
+								<p className="text-gray-800 dark:text-gray-400 text-sm mb-6">{t.verificationSuccess}</p>
 								<Button onClick={handleContinue} className="w-full">
 									{t.continue}
 									<ArrowRight className="w-5 h-5" />
