@@ -39,7 +39,9 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						startDate: true,
 						endDate: true,
 						ogImage: true,
-						landingPage: true
+						landingPage: true,
+						hideEvent: true,
+						useOpass: true
 					}
 				});
 
@@ -214,6 +216,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						startDate: true,
 						endDate: true,
 						ogImage: true,
+						hideEvent: true,
+						useOpass: true,
 						tickets: {
 							select: {
 								id: true,
@@ -255,6 +259,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						startDate: event.startDate,
 						endDate: event.endDate,
 						ogImage: event.ogImage,
+						hideEvent: event.hideEvent,
+						useOpass: event.useOpass,
 						ticketCount: event.tickets.length,
 						registrationCount: event._count.registrations,
 						hasAvailableTickets: activeTickets.length > 0

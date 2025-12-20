@@ -1,9 +1,9 @@
 import { fetchGravatarName } from "@/lib/gravatar";
 import type {
 	ApiResponse,
-	DashboardData,
 	EmailCampaign,
 	Event,
+	EventDashboardData,
 	EventFormField,
 	EventFormFieldReorder,
 	EventInfo,
@@ -19,7 +19,6 @@ import type {
 	ReferralValidation,
 	Registration,
 	RegistrationStats,
-	RegistrationTrend,
 	SessionResponse,
 	Ticket,
 	TicketAnalytics,
@@ -104,11 +103,7 @@ export const invitationCodesAPI = {
 
 // User // Admin - Analytics
 export const adminAnalyticsAPI = {
-	getDashboard: () => apiClient.get<ApiResponse<DashboardData>>("/api/admin/dashboard"),
-
-	getReferralSources: () => apiClient.get<ApiResponse<unknown>>("/api/admin/referral-sources"),
-
-	getRegistrationTrends: (params?: { period?: "daily" | "weekly" | "monthly"; eventId?: string }) => apiClient.get<ApiResponse<RegistrationTrend[]>>("/api/admin/registration-trends", params)
+	getEventDashboard: (eventId: string) => apiClient.get<ApiResponse<EventDashboardData>>(`/api/admin/events/${eventId}/dashboard`)
 };
 
 // Admin - Users

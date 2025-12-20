@@ -1,4 +1,4 @@
-import LayoutWrapper from "@/components/LayoutWrapper";
+import IntlLayoutWrapper from "@/components/IntlLayoutWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from "@next/third-parties/google";
@@ -33,13 +33,11 @@ export default function RootLayout({
 				<meta charSet="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 				<meta name="generator" content="Next.js" />
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link href="https://font.emtech.cc/css/GenKiGothicTW" rel="stylesheet" />
 			</head>
 
 			<body suppressHydrationWarning>
 				<ThemeProvider>
-					<LayoutWrapper>{children}</LayoutWrapper>
+					<IntlLayoutWrapper>{children}</IntlLayoutWrapper>
 					<Toaster richColors position="bottom-center" />
 				</ThemeProvider>
 			</body>

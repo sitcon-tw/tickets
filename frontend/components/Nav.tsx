@@ -4,15 +4,16 @@ import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
-import { routing } from "@/i18n/routing";
+import { useRouter } from "@/i18n/navigation";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import crypto from "crypto";
+import { Menu, X } from "lucide-react";
+import { useLocale } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -29,13 +30,7 @@ function getGravatarUrl(email: string, size = 40): string {
 export default function Nav() {
 	const pathname = usePathname();
 	const router = useRouter();
-
-	const locale = useMemo(() => {
-		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
-		return detectedLocale || routing.defaultLocale;
-	}, [pathname]);
-
-	const localizedPath = (path: string) => `/${locale}${path}`;
+	const locale = useLocale();
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -60,7 +55,7 @@ export default function Nav() {
 		try {
 			await authAPI.signOut();
 			setSession({ status: "anonymous" });
-			router.push(localizedPath("/"));
+			router.push("/");
 		} catch (error) {
 			console.error("Logout failed", error);
 		} finally {
@@ -93,7 +88,6 @@ export default function Nav() {
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	// Close mobile menu when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as HTMLElement;
@@ -104,7 +98,6 @@ export default function Nav() {
 
 		if (isMobileMenuOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
-			// Prevent body scroll when menu is open
 			document.body.style.overflow = "hidden";
 		} else {
 			document.body.style.overflow = "";
@@ -196,10 +189,10 @@ export default function Nav() {
 	return (
 		<>
 			<nav
-				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:dark:bg-gray-900"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
+				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:bg-gray-900 sm:dark:bg-transparent"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
 			>
 				<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
-					<Link href={localizedPath("/")} aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
+					<Link href="/" aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
 						<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
 						<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
 					</Link>
@@ -208,11 +201,11 @@ export default function Nav() {
 						{session.status === "authenticated" ? (
 							<>
 								{hasAdminAccess && (
-									<Link href={localizedPath("/admin/events")} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
+									<Link href="/admin/events" className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
 										{t.adminPanel}
 									</Link>
 								)}
-								<Link href={localizedPath("/my-registration")} className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+								<Link href="/my-registration" className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
 									{t.myRegistrations}
 								</Link>
 								<Button
@@ -234,7 +227,7 @@ export default function Nav() {
 							<Spinner size="sm" />
 						) : (
 							<Link
-								href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
+								href={pathname.includes("/login") ? "/login/" : `/login/?returnUrl=${encodeURIComponent(pathname)}`}
 								className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 							>
 								{t.login}
@@ -244,87 +237,86 @@ export default function Nav() {
 					</div>
 					{/* Mobile Burger Menu Button */}
 					<div className="flex sm:hidden items-center space-x-2">
-						<ThemeToggle />
-						<button
-							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-							className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-							aria-label="Toggle menu"
-						>
-							{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-						</button>
+						{session.status === "authenticated" ? (
+							<button
+								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+								className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+								aria-label="Toggle menu"
+							>
+								{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+							</button>
+						) : (
+							<div className="flex items-center space-x-4">
+								<Link
+									href={pathname.includes("/login") ? "/login/" : `/login/?returnUrl=${encodeURIComponent(pathname)}`}
+									onClick={() => setIsMobileMenuOpen(false)}
+									className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
+								>
+									{t.login}
+								</Link>
+								<ThemeToggle />
+							</div>
+						)}
 					</div>
 				</div>
 			</nav>
 
 			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && (
-				<div className="fixed inset-0 z-[999] bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />
-			)}
+			{isMobileMenuOpen && <div className="fixed inset-0 z-200 bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
 			{/* Mobile Menu */}
 			<div
 				className={cn(
-					"mobile-menu fixed top-[73px] right-0 z-[1001] h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
+					"mobile-menu fixed top-[73px] right-0 z-300 h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
 					isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
 				)}
 			>
-				<div className="flex flex-col p-8 space-y-4 text-gray-300">
+				<div className="p-8 pb-4 space-y-4 text-gray-300 h-full">
 					{session.status === "authenticated" ? (
-						<>
-							{gravatarUrl && (
-								<div className="flex items-center space-x-3 pb-4 border-b border-gray-700 dark:border-gray-800">
-									<Image src={gravatarUrl} alt="User Avatar" width={40} height={40} className="w-10 h-10 rounded-full" />
-									<div className="flex flex-col">
-										<span className="text-sm font-medium text-gray-200 dark:text-gray-300">{session.user.name}</span>
-										<span className="text-xs text-gray-400">{session.user.email}</span>
+						<div className="flex flex-col justify-between h-full">
+							<div className="flex flex-col space-y-4">
+								{gravatarUrl && (
+									<div className="flex items-center space-x-3 pb-4 border-b border-gray-700 dark:border-gray-800">
+										<Image src={gravatarUrl} alt="User Avatar" width={40} height={40} className="w-10 h-10 rounded-full" />
+										<div className="flex flex-col">
+											<span className="text-sm font-medium text-gray-200 dark:text-gray-300">{session.user.name}</span>
+											<span className="text-xs text-gray-400">{session.user.email}</span>
+										</div>
 									</div>
-								</div>
-							)}
-							{hasAdminAccess && (
-								<Link
-									href={localizedPath("/admin/events")}
-									onClick={() => setIsMobileMenuOpen(false)}
-									className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2"
-								>
-									{t.adminPanel}
-								</Link>
-							)}
-							<Link
-								href={localizedPath("/my-registration")}
-								onClick={() => setIsMobileMenuOpen(false)}
-								className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
-							>
-								{t.myRegistrations}
-							</Link>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => {
-									setIsMobileMenuOpen(false);
-									handleLogout();
-								}}
-								disabled={isLoggingOut}
-								className={cn(
-									"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2 justify-start px-0",
-									isLoggingOut && "opacity-50 cursor-not-allowed"
 								)}
-							>
-								{isLoggingOut && <Spinner size="sm" />}
-								{t.logout}
-							</Button>
-						</>
-					) : session.status === "loading" ? (
-						<div className="flex justify-center py-4">
-							<Spinner size="sm" />
+								{hasAdminAccess && (
+									<Link href="/admin/events" onClick={() => setIsMobileMenuOpen(false)} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2">
+										{t.adminPanel}
+									</Link>
+								)}
+								<Link href="/my-registration" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2">
+									{t.myRegistrations}
+								</Link>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setIsMobileMenuOpen(false);
+										handleLogout();
+									}}
+									disabled={isLoggingOut}
+									className={cn(
+										"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2 justify-start px-0",
+										isLoggingOut && "opacity-50 cursor-not-allowed"
+									)}
+								>
+									{isLoggingOut && <Spinner size="sm" />}
+									{t.logout}
+								</Button>
+							</div>
+							<ThemeToggle verbose />
 						</div>
 					) : (
-						<Link
-							href={pathname.includes("/login") ? localizedPath("/login/") : `${localizedPath("/login/")}?returnUrl=${encodeURIComponent(pathname)}`}
-							onClick={() => setIsMobileMenuOpen(false)}
-							className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
-						>
-							{t.login}
-						</Link>
+						session.status === "loading" && (
+							<div className="flex justify-center py-4">
+								<Spinner size="sm" />
+							</div>
+						)
 					)}
 				</div>
 			</div>

@@ -31,6 +31,7 @@ export default function Success() {
 	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [isCancelled, setIsCancelled] = useState(false);
+	const [useOpass, setUseOpass] = useState<boolean>(true);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -124,7 +125,6 @@ export default function Success() {
 			try {
 				try {
 					const eventsData = await eventsAPI.getAll();
-					// Match by slug first, then fallback to last 6 chars of ID
 					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (!foundEvent) {
@@ -133,6 +133,7 @@ export default function Success() {
 					}
 
 					const currentEventId = foundEvent.id;
+					setUseOpass(foundEvent.useOpass ?? true);
 
 					const registrations = await registrationsAPI.getAll();
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
@@ -141,10 +142,9 @@ export default function Success() {
 						setRegistrationTime(eventRegistration.createdAt);
 						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
 
-						// Check if cancelled first to avoid fetching referral data
 						if (eventRegistration.status === "cancelled") {
 							setIsCancelled(true);
-							setReferralCode(t.loadFailed); // Set to failed so UI doesn't show loading
+							setReferralCode(t.loadFailed);
 						} else {
 							setIsCancelled(false);
 							const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
@@ -259,7 +259,9 @@ export default function Success() {
 					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
 				</div>
 			</div>
-			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} />}
+			{registrationId && registrationTime && (
+				<QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} />
+			)}
 		</>
 	);
 }

@@ -1,4 +1,5 @@
 "use client";
+
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
@@ -66,8 +67,6 @@ export default function MagicLinkVerify() {
 			setStatus("success");
 			showAlert(t.success, "success");
 			setTimeout(() => {
-				// Clean up returnUrl to prevent infinite loops
-				// If returnUrl contains /login, just redirect to home
 				let redirectTo = returnUrl || `/${locale}/`;
 				if (redirectTo && (redirectTo.includes("/login") || redirectTo.includes("/verify"))) {
 					redirectTo = `/${locale}/`;

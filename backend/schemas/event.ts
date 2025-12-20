@@ -52,6 +52,14 @@ export const eventProperties = {
 		type: "boolean",
 		description: "是否啟用"
 	},
+	hideEvent: {
+		type: "boolean",
+		description: "是否在活動列表中隱藏"
+	},
+	useOpass: {
+		type: "boolean",
+		description: "是否在 QR Code 彈窗顯示 OPass 連結"
+	},
 	createdAt: {
 		...dateTimeString,
 		description: "建立時間"
@@ -145,6 +153,14 @@ export const eventUpdateBody = {
 		isActive: {
 			type: "boolean",
 			description: "是否啟用"
+		},
+		hideEvent: {
+			type: "boolean",
+			description: "是否在活動列表中隱藏"
+		},
+		useOpass: {
+			type: "boolean",
+			description: "是否在 QR Code 彈窗顯示 OPass 連結"
 		}
 	}
 } as const;
@@ -295,6 +311,8 @@ export const publicEventsListResponse = {
 						startDate: { type: "string", format: "date-time" },
 						endDate: { type: "string", format: "date-time" },
 						ogImage: { type: "string" },
+						hideEvent: { type: "boolean" },
+						useOpass: { type: "boolean" },
 						ticketCount: { type: "integer" },
 						registrationCount: { type: "integer" },
 						hasAvailableTickets: { type: "boolean" }

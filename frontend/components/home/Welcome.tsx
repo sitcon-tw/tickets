@@ -91,9 +91,9 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			en: "Load failed"
 		},
 		promotionalText: {
-			"zh-Hant": "最後一個註冊的是 gay",
-			"zh-Hans": "最後一個註冊的是 gay",
-			en: "The last one who registered is gay!"
+			"zh-Hant": "選擇下方您的票種開始報名吧！",
+			"zh-Hans": "选择下方您的票种开始报名吧！",
+			en: "Choose your ticket type below to get started!"
 		},
 		friend: {
 			"zh-Hant": "朋友",

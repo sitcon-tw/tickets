@@ -196,7 +196,7 @@ export default function Login() {
 		try {
 			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
 			setViewState("sent");
-			setTurnstileToken(null); // Reset token after use
+			setTurnstileToken(null);
 		} catch (error) {
 			console.error("Login error:", error);
 
@@ -215,7 +215,7 @@ export default function Login() {
 			}
 
 			showAlert(errorMessage, "error");
-			setTurnstileToken(null); // Reset token on error
+			setTurnstileToken(null);
 		} finally {
 			setIsLoading(false);
 		}

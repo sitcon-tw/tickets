@@ -3,6 +3,7 @@
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
 import PageSpinner from "@/components/PageSpinner";
+import QRScanner from "@/components/QRScanner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import { Download, FileSpreadsheet, RotateCw, Search } from "lucide-react";
+import { Download, FileSpreadsheet, QrCode, RotateCw, Search, Trash } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
@@ -38,8 +39,6 @@ export default function RegistrationsPage() {
 	const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
 	const [sortField] = useState<SortField>("createdAt");
 	const [sortDirection] = useState<SortDirection>("desc");
-	const [page] = useState(1);
-	const [pageSize] = useState(50);
 	const [ticketHashes, setTicketHashes] = useState<{ [key: string]: string }>({});
 	const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
 	const [googleSheetsUrl, setGoogleSheetsUrl] = useState("");
@@ -50,6 +49,7 @@ export default function RegistrationsPage() {
 	const [editedFormData, setEditedFormData] = useState<Record<string, unknown>>({});
 	const [editedStatus, setEditedStatus] = useState<"pending" | "confirmed" | "cancelled">("pending");
 	const [isSaving, setIsSaving] = useState(false);
+	const [showQRScanner, setShowQRScanner] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
@@ -69,16 +69,16 @@ export default function RegistrationsPage() {
 		deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
 		exportSelected: { "zh-Hant": "匯出選取", "zh-Hans": "导出选取", en: "Export Selected" },
 		viewDetails: { "zh-Hant": "檢視詳情", "zh-Hans": "查看详情", en: "View Details" },
-		deleteData: { "zh-Hant": "刪除個人資料", "zh-Hans": "删除个人资料", en: "Delete Personal Data" },
+		deleteData: { "zh-Hant": "刪除報名資料", "zh-Hans": "删除报名资料", en: "Delete Registration Data" },
 		deleteConfirm: {
-			"zh-Hant": "確定要刪除此報名記錄的個人資料嗎？\n\n此操作無法復原，將會永久刪除該筆記錄及相關資料，並通知活動主辦方。",
-			"zh-Hans": "确定要删除此报名记录的个人资料吗？\n\n此操作无法复原，将会永久删除该笔记录及相关资料，并通知活动主办方。",
-			en: "Are you sure you want to delete this registration's personal data?\n\nThis action cannot be undone and will permanently delete the record and related data, and notify the event organizers."
+			"zh-Hant": "確定要刪除此報名記錄嗎？\n\n此操作無法復原，將會永久刪除該筆記錄及相關資料。",
+			"zh-Hans": "确定要删除此报名记录吗？\n\n此操作无法复原，将会永久删除该笔记录及相关资料。",
+			en: "Are you sure you want to delete this registration data?\n\nThis action cannot be undone and will permanently delete the record and related data."
 		},
 		deleteSuccess: {
-			"zh-Hant": "個人資料已成功刪除，通知信已發送給活動主辦方",
-			"zh-Hans": "个人资料已成功删除，通知信已发送给活动主办方",
-			en: "Personal data deleted successfully. Notification email sent to organizers."
+			"zh-Hant": "報名資料已成功刪除",
+			"zh-Hans": "报名资料已成功删除",
+			en: "Registration data deleted successfully."
 		},
 		deleteError: { "zh-Hant": "刪除失敗", "zh-Hans": "删除失败", en: "Delete failed" },
 		close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
@@ -116,7 +116,11 @@ export default function RegistrationsPage() {
 		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
 		saving: { "zh-Hant": "儲存中...", "zh-Hans": "保存中...", en: "Saving..." },
 		saveSuccess: { "zh-Hant": "報名資料已成功更新", "zh-Hans": "报名资料已成功更新", en: "Registration updated successfully" },
-		saveError: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" }
+		saveError: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" },
+		scanQR: { "zh-Hant": "掃描 QR Code", "zh-Hans": "扫描 QR Code", en: "Scan QR Code" },
+		scanQRTitle: { "zh-Hant": "掃描報名 QR Code", "zh-Hans": "扫描报名 QR Code", en: "Scan Registration QR Code" },
+		registrationNotFound: { "zh-Hant": "找不到報名資料", "zh-Hans": "找不到报名资料", en: "Registration not found" },
+		registrationFound: { "zh-Hant": "已找到報名資料", "zh-Hans": "已找到报名资料", en: "Registration found" }
 	});
 
 	const columnDefs = [
@@ -215,12 +219,6 @@ export default function RegistrationsPage() {
 		return filtered;
 	}, [searchTerm, registrations, statusFilter, locale, sortField, sortDirection]);
 
-	// const paginatedData = useMemo(() => {
-	// 	const start = (page - 1) * pageSize;
-	// 	const end = start + pageSize;
-	// 	return sortedAndFiltered.slice(start, end);
-	// }, [sortedAndFiltered, page, pageSize]);
-
 	const displayData = useMemo((): RegistrationDisplay[] => {
 		return sortedAndFiltered.map(r => ({
 			...r,
@@ -242,35 +240,6 @@ export default function RegistrationsPage() {
 			}),
 		[t.viewDetails]
 	);
-
-	// const totalPages = Math.ceil(sortedAndFiltered.length / pageSize);
-
-	// function handleSort(field: SortField) {
-	// 	if (sortField === field) {
-	// 		setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-	// 	} else {
-	// 		setSortField(field);
-	// 		setSortDirection("asc");
-	// 	}
-	// }
-
-	// function toggleSelectAll() {
-	// 	if (selectedRegistrations.size === paginatedData.length) {
-	// 		setSelectedRegistrations(new Set());
-	// 	} else {
-	// 		setSelectedRegistrations(new Set(paginatedData.map(r => r.id)));
-	// 	}
-	// }
-
-	// function toggleSelect(id: string) {
-	// 	const newSet = new Set(selectedRegistrations);
-	// 	if (newSet.has(id)) {
-	// 		newSet.delete(id);
-	// 	} else {
-	// 		newSet.add(id);
-	// 	}
-	// 	setSelectedRegistrations(newSet);
-	// }
 
 	function openDetailModal(registration: Registration) {
 		setSelectedRegistration(registration);
@@ -376,7 +345,6 @@ export default function RegistrationsPage() {
 
 		setExportSuccess(false);
 
-		// Fetch both event data and service account email before opening modal
 		const fetchPromises = [
 			adminEventsAPI
 				.getById(currentEventId)
@@ -463,6 +431,30 @@ export default function RegistrationsPage() {
 		}
 	};
 
+	const handleQRScan = async (scannedHash: string) => {
+		try {
+			let foundRegistration: Registration | null = null;
+
+			for (const registration of registrations) {
+				const hash = await generateHash(registration.id, registration.createdAt);
+				if (hash === scannedHash) {
+					foundRegistration = registration;
+					break;
+				}
+			}
+
+			if (foundRegistration) {
+				showAlert(t.registrationFound, "success");
+				openDetailModal(foundRegistration);
+			} else {
+				showAlert(t.registrationNotFound, "error");
+			}
+		} catch (error) {
+			console.error("Failed to process QR code:", error);
+			showAlert(`Error: ${error instanceof Error ? error.message : String(error)}`, "error");
+		}
+	};
+
 	useEffect(() => {
 		const savedEventId = localStorage.getItem("selectedEventId");
 		if (savedEventId) {
@@ -529,6 +521,9 @@ export default function RegistrationsPage() {
 							<SelectItem value="cancelled">{t.cancelled}</SelectItem>
 						</SelectContent>
 					</Select>
+					<Button onClick={() => setShowQRScanner(true)} variant="default">
+						<QrCode /> {t.scanQR}
+					</Button>
 					<Button onClick={loadRegistrations} variant="secondary">
 						<RotateCw /> {t.refresh}
 					</Button>
@@ -657,7 +652,6 @@ export default function RegistrationsPage() {
 													value={typeof value === "object" ? JSON.stringify(value) : String(value)}
 													onChange={e => {
 														try {
-															// Try to parse as JSON if it looks like JSON
 															const newValue = e.target.value;
 															if (newValue.startsWith("{") || newValue.startsWith("[")) {
 																updateFormDataField(key, JSON.parse(newValue));
@@ -665,7 +659,6 @@ export default function RegistrationsPage() {
 																updateFormDataField(key, newValue);
 															}
 														} catch {
-															// If JSON parse fails, just use the string value
 															updateFormDataField(key, e.target.value);
 														}
 													}}
@@ -700,16 +693,8 @@ export default function RegistrationsPage() {
 						) : (
 							<>
 								<Button variant="destructive" onClick={() => selectedRegistration && deleteRegistration(selectedRegistration)} className="w-full whitespace-normal h-auto py-2">
-									🗑️ {t.deleteData}
+									<Trash /> {t.deleteData}
 								</Button>
-								<p className="text-xs opacity-60 text-center text-wrap">
-									⚠️{" "}
-									{locale === "zh-Hant"
-										? "此操作無法復原，符合個人資料保護法"
-										: locale === "zh-Hans"
-											? "此操作无法复原，符合個人資料保護法"
-											: "This action is irreversible and complies with privacy law"}
-								</p>
 							</>
 						)}
 					</DialogFooter>
@@ -780,6 +765,9 @@ export default function RegistrationsPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* QR Scanner Modal */}
+			<QRScanner isOpen={showQRScanner} onClose={() => setShowQRScanner(false)} onScan={handleQRScan} title={t.scanQRTitle} />
 		</>
 	);
 }

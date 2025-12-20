@@ -13,7 +13,6 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React from "react";
 
-// Wrapper component defined outside to prevent recreation on every render
 const FieldWrapper = ({ children, description }: { children: React.ReactNode; description?: string }) => (
 	<div className="flex flex-col gap-1">
 		{children}
@@ -30,7 +29,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 	const requiredMark = field.required ? " *" : "";
 	const fieldLabel = getLocalizedText(field.name, locale);
 	const label = `${fieldLabel}${requiredMark}`;
-	const fieldId = field.id; // Use unique field ID instead of localized name
+	const fieldId = field.id;
 	const fieldDescription = field.description ? getLocalizedText(field.description, locale) : "";
 
 	const localizedOptions =
@@ -39,12 +38,10 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			label: getLocalizedText(opt, locale)
 		})) || [];
 
-	// Get prompts for the current locale and filter out empty strings
 	const localizedPrompts = (field.prompts?.[locale] || field.prompts?.["en"] || []).filter(p => p && p.trim() !== "");
 
 	switch (field.type) {
 		case "text":
-			// Use autocomplete component if prompts are available
 			if (localizedPrompts.length > 0) {
 				return (
 					<FieldWrapper description={fieldDescription}>
@@ -83,7 +80,6 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 						required={field.required}
 						value={(value as string) || ""}
 						onChange={newValue => {
-							// Create a synthetic event to match onTextChange signature
 							const syntheticEvent = {
 								target: {
 									name: fieldId,
@@ -102,13 +98,12 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			return (
 				<FieldWrapper description={fieldDescription}>
 					<Radio
-						label={fieldLabel}
+						label={label}
 						name={fieldId}
 						options={localizedOptions as RadioOption[]}
 						required={field.required}
 						value={(value as string) || ""}
 						onValueChange={newValue => {
-							// Create a synthetic event to match onTextChange signature
 							const syntheticEvent = {
 								target: {
 									name: fieldId,
@@ -123,7 +118,6 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {
-				// Ensure we filter out empty strings from the current values
 				const currentValues = Array.isArray(value) ? value.filter((v: string) => v && v.trim() !== "") : [];
 				return (
 					<FieldWrapper description={fieldDescription}>
@@ -133,8 +127,6 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 							options={localizedOptions as CheckboxOption[]}
 							values={currentValues}
 							onValueChange={newValues => {
-								// Create a synthetic event with comma-separated values
-								// Always set checked: true for multi-checkbox to identify it in the handler
 								const syntheticEvent = {
 									target: {
 										name: fieldId,
@@ -165,8 +157,6 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 }
 
 export const FormField = React.memo(FormFieldComponent, (prevProps, nextProps) => {
-	// Return true if props are equal (skip re-render), false if props changed (re-render)
-	// Deep comparison for array values
 	const prevValue = prevProps.value;
 	const nextValue = nextProps.value;
 

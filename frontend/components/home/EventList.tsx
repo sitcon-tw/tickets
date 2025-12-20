@@ -3,7 +3,7 @@
 import PageSpinner from "@/components/PageSpinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { Link } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
 import { Event } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -24,6 +24,7 @@ const isURL = (str: string): boolean => {
 
 export default function EventList() {
 	const locale = useLocale();
+	const router = useRouter();
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -48,25 +49,21 @@ export default function EventList() {
 				const eventsData = await eventsAPI.getAll({ isActive: true });
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					// Sort events by start date (upcoming first, then past events)
 					const now = new Date();
-					const sortedEvents = eventsData.data.sort((a, b) => {
+					const visibleEvents = eventsData.data.filter(event => !event.hideEvent);
+					const sortedEvents = visibleEvents.sort((a, b) => {
 						const aStart = new Date(a.startDate);
 						const bStart = new Date(b.startDate);
 
 						const aIsUpcoming = aStart >= now;
 						const bIsUpcoming = bStart >= now;
 
-						// Prioritize upcoming events
 						if (aIsUpcoming && !bIsUpcoming) return -1;
 						if (!aIsUpcoming && bIsUpcoming) return 1;
 
-						// For events in the same category (both upcoming or both past)
 						if (aIsUpcoming) {
-							// For upcoming events, sort by nearest first
 							return aStart.getTime() - bStart.getTime();
 						} else {
-							// For past events, sort by most recent first
 							return bStart.getTime() - aStart.getTime();
 						}
 					});
@@ -74,7 +71,6 @@ export default function EventList() {
 					setEvents(sortedEvents);
 					setLoading(false);
 
-					// Fetch OpenGraph titles for locations that are URLs (async, non-blocking)
 					sortedEvents.forEach(async event => {
 						if (event.location && isURL(event.location)) {
 							try {
@@ -82,9 +78,7 @@ export default function EventList() {
 								if (result?.success && result.data?.title) {
 									setLocationTitles(prev => ({ ...prev, [event.id]: result.data.title }));
 								}
-							} catch {
-								// Silently fail, will use the URL as fallback
-							}
+							} catch {}
 						}
 					});
 				}
@@ -125,13 +119,17 @@ export default function EventList() {
 						event.ogImage = event.ogImage || "/assets/default.webp";
 
 						return (
-							<Link key={event.id} href={`/${eventSlug}`} className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+							<div
+								key={event.id}
+								onClick={() => router.push(`/${eventSlug}`)}
+								className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+							>
 								<div className="relative w-full h-48 bg-muted overflow-hidden">
 									<Image
 										src={event.ogImage}
 										alt={eventName}
-										width={800}
-										height={400}
+										width={600}
+										height={200}
 										className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-300 text-transparent"
 									/>
 								</div>
@@ -168,7 +166,7 @@ export default function EventList() {
 										)}
 									</div>
 								</div>
-							</Link>
+							</div>
 						);
 					})}
 				</div>

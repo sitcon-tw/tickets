@@ -80,9 +80,9 @@ export function generateVerificationCode(): string {
 
 export async function sendVerificationCode(phoneNumber: string, code: string, locale: Locale = "zh-Hant"): Promise<SMSSendResult> {
 	const messages: Record<Locale, string> = {
-		"zh-Hant": `[SITCON] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(twsms)`,
-		"zh-Hans": `[SITCON] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(twsms)`,
-		en: `[SITCON] Your verification code is: ${code}\nThis code will expire in 10 minutes. (twsms)`
+		"zh-Hant": `[SITCONTIX] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。`,
+		"zh-Hans": `[SITCONTIX] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。`,
+		en: `[SITCONTIX] Your verification code is: ${code}\nThis code will expire in 10 minutes.`
 	};
 
 	const message = messages[locale] || messages["zh-Hant"];

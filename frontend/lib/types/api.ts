@@ -85,6 +85,8 @@ export interface Event {
 	landingPage?: string;
 	googleSheetsUrl?: string;
 	isActive: boolean;
+	hideEvent?: boolean;
+	useOpass?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -311,30 +313,41 @@ export interface InvitationCodeVerification {
 }
 
 // Analytics Types
-export interface DashboardData {
-	totalRegistrations: number;
-	confirmedRegistrations: number;
-	pendingRegistrations: number;
-	cancelledRegistrations: number;
-	checkedInCount: number;
-	totalRevenue: number;
-	registrationsByDate: Record<string, number>;
-	ticketSales: Record<string, number>;
-	referralStats: Record<string, unknown>;
-}
-
-export interface RegistrationTrend {
-	date: string;
-	count: number;
-	revenue?: number;
-	eventId?: string;
-	eventName?: string;
-}
-
-export interface ReferralSource {
-	source: string;
-	count: number;
-	percentage: number;
+export interface EventDashboardData {
+	event: {
+		id: string;
+		name: LocalizedText;
+		startDate: string;
+		endDate: string;
+		location: string | null;
+	};
+	stats: {
+		totalRegistrations: number;
+		confirmedRegistrations: number;
+		pendingRegistrations: number;
+		cancelledRegistrations: number;
+		totalRevenue: number;
+	};
+	tickets: Array<{
+		id: string;
+		name: LocalizedText;
+		price: number;
+		quantity: number;
+		soldCount: number;
+		revenue: number;
+		available: number;
+		salesRate: number;
+	}>;
+	registrationTrends: Array<{
+		date: string;
+		count: number;
+		confirmed: number;
+	}>;
+	referralStats: {
+		totalReferrals: number;
+		activeReferrers: number;
+		conversionRate: number;
+	};
 }
 
 // Email Campaign Types
