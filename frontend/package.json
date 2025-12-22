@@ -19,6 +19,7 @@
 		"@dnd-kit/modifiers": "^9.0.0",
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
+		"@hookform/resolvers": "^5.2.2",
 		"@marsidev/react-turnstile": "^1.4.0",
 		"@next/third-parties": "16.0.5",
 		"@radix-ui/react-alert-dialog": "^1.1.15",
@@ -36,6 +37,7 @@
 		"@react-three/fiber": "^9.4.2",
 		"@react-three/rapier": "^2.1.0",
 		"@tanstack/react-table": "^8.21.3",
+		"@tickets/shared": "workspace:*",
 		"@types/nprogress": "^0.2.3",
 		"chart.js": "^4.5.0",
 		"class-variance-authority": "^0.7.1",
@@ -57,7 +59,8 @@
 		"sonner": "^2.0.7",
 		"styled-components": "^6.1.19",
 		"tailwind-merge": "^3.3.1",
-		"three": "^0.167.1"
+		"three": "^0.167.1",
+		"zod": "^4.2.1"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",

@@ -2,6 +2,7 @@ packages:
   - frontend
   - backend
   - docs
+  - shared
 
 onlyBuiltDependencies:
   - '@prisma/client'
