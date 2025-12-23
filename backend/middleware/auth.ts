@@ -14,6 +14,18 @@ declare module "fastify" {
 	}
 }
 
+// Helper to convert Prisma User to SessionUser
+function toSessionUser(user: { id: string; name: string; email: string; role: string; permissions: string | null; isActive: boolean }): SessionUser {
+	return {
+		id: user.id,
+		name: user.name,
+		email: user.email,
+		role: user.role,
+		permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+		isActive: user.isActive,
+	};
+}
+
 async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
 	if (!request.user || !request.session) {
 		const session = await auth.api.getSession({
@@ -28,7 +40,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.user.id },
-			select: { isActive: true }
+			select: { id: true, name: true, email: true, role: true, permissions: true, isActive: true }
 		});
 
 		if (!user || user.isActive === false) {
@@ -37,7 +49,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 			return false;
 		}
 
-		request.user = session.user;
+		request.user = toSessionUser(user);
 		request.session = session;
 	}
 	return true;
@@ -56,7 +68,7 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.user.id },
-			select: { isActive: true }
+			select: { id: true, name: true, email: true, role: true, permissions: true, isActive: true }
 		});
 
 		if (!user || user.isActive === false) {
@@ -64,7 +76,7 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 			return reply.code(statusCode).send(response);
 		}
 
-		request.user = session.user;
+		request.user = toSessionUser(user);
 		request.session = session;
 	} catch (error) {
 		request.log.error({ err: error }, "Auth middleware error");

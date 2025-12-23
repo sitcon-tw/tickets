@@ -8,28 +8,20 @@ import { z } from "zod";
 // Locale enum
 export const localeSchema = z.enum(["zh-Hant", "zh-Hans", "en"]);
 
-// TwSMSResponse schema (Twilio SMS response)
+// TwSMSResponse schema (Taiwan SMS service response)
 export const twSMSResponseSchema = z.object({
-	sid: z.string(),
-	status: z.string(),
-	to: z.string(),
-	from: z.string(),
-	body: z.string(),
-	errorCode: z.number().nullable().optional(),
-	errorMessage: z.string().nullable().optional(),
+	code: z.string(),
+	text: z.string(),
+	msgid: z.string().optional(),
 });
 
-// TwSMSStatusResponse schema (Twilio SMS status response)
+// TwSMSStatusResponse schema (Taiwan SMS status response)
 export const twSMSStatusResponseSchema = z.object({
-	sid: z.string(),
-	status: z.string(),
-	to: z.string(),
-	from: z.string(),
-	dateCreated: z.string().optional(),
-	dateSent: z.string().optional(),
-	dateUpdated: z.string().optional(),
-	errorCode: z.number().nullable().optional(),
-	errorMessage: z.string().nullable().optional(),
+	code: z.string(),
+	text: z.string(),
+	statuscode: z.string(),
+	statustext: z.string(),
+	donetime: z.string().optional(),
 });
 
 // SMSSendResult schema
@@ -38,14 +30,14 @@ export const smsSendResultSchema = z.object({
 	messageId: z.string().optional(),
 	status: z.string().optional(),
 	error: z.string().optional(),
+	msgid: z.string().optional(),
+	code: z.string().optional(),
+	text: z.string().optional(),
 });
 
-// SMSSendOptions schema
+// SMSSendOptions schema (TwSMS options)
 export const smsSendOptionsSchema = z.object({
-	to: z.string(),
-	body: z.string(),
-	from: z.string().optional(),
-	statusCallback: z.string().url().optional(),
+	expirytime: z.number().optional(),
 });
 
 // SendVerificationRequest schema

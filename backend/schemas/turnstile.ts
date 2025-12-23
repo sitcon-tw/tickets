@@ -17,17 +17,33 @@ export const turnstileResponseSchema = z.object({
 
 // TurnstileValidationOptions schema
 export const turnstileValidationOptionsSchema = z.object({
-	token: z.string(),
 	remoteip: z.string().optional(),
 	idempotencyKey: z.string().optional(),
+	expectedAction: z.string().optional(),
+	expectedHostname: z.string().optional(),
 });
 
-// TurnstileValidationResult schema
-export const turnstileValidationResultSchema = z.object({
-	success: z.boolean(),
-	errorCodes: z.array(z.string()).optional(),
-	message: z.string().optional(),
+// TurnstileValidationResult schema - successful validation
+const turnstileValidationSuccessSchema = z.object({
+	valid: z.literal(true),
+	data: turnstileResponseSchema,
+	tokenAge: z.number().optional(),
 });
+
+// TurnstileValidationResult schema - failed validation
+const turnstileValidationFailureSchema = z.object({
+	valid: z.literal(false),
+	reason: z.string(),
+	errors: z.array(z.string()).optional(),
+	expected: z.string().optional(),
+	received: z.string().optional(),
+});
+
+// TurnstileValidationResult schema - union of success and failure
+export const turnstileValidationResultSchema = z.union([
+	turnstileValidationSuccessSchema,
+	turnstileValidationFailureSchema,
+]);
 
 /**
  * Type exports
