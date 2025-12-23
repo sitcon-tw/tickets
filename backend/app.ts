@@ -156,7 +156,7 @@ interface AuthQuerystring {
 
 // Zod schema for magic link request
 const magicLinkBodySchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	name: z.string().optional(),
 	callbackURL: z.string().optional(),
 	newUserCallbackURL: z.string().optional(),

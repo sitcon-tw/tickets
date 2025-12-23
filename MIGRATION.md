@@ -230,7 +230,7 @@ const addressSchema = z.object({
 
 const userProfileSchema = z.object({
   name: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   address: addressSchema, // Nested schema
 });
 ```

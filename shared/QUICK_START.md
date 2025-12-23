@@ -76,7 +76,7 @@ import { z } from "zod";
 
 export const myFeatureSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email(),
+  email: z.email(),
   age: z.number().int().positive().optional(),
 });
 

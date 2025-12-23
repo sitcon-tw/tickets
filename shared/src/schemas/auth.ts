@@ -8,7 +8,7 @@ import { z } from "zod";
 export const sessionUserSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	role: z.string(),
 	permissions: z.array(z.string()),
 	isActive: z.boolean(),
@@ -23,25 +23,25 @@ export const authContextSchema = z.object({
 
 // Request schemas
 export const loginRequestSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	password: z.string().min(1, "Password is required"),
 });
 
 export const registerRequestSchema = z.object({
 	name: z.string().min(1, "Name is required"),
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const magicLinkRequestSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 	locale: z.enum(["zh-Hant", "zh-Hans", "en"]).optional(),
 	returnUrl: z.string().optional(),
 	turnstileToken: z.string().min(1, "Turnstile token is required"),
 });
 
 export const resetPasswordRequestSchema = z.object({
-	email: z.string().email("Invalid email address"),
+	email: z.email("Invalid email address"),
 });
 
 export const changePasswordRequestSchema = z.object({
@@ -51,7 +51,7 @@ export const changePasswordRequestSchema = z.object({
 
 export const userUpdateRequestSchema = z.object({
 	name: z.string().optional(),
-	email: z.string().email().optional(),
+	email: z.email().optional(),
 	image: z.string().optional(),
 });
 

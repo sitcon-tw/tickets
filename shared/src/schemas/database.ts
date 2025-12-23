@@ -15,7 +15,7 @@ export const userRoleSchema = z.enum(["admin", "viewer", "eventAdmin"]);
 export const userSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	emailVerified: z.boolean(),
 	image: z.string().nullable(),
 	permissions: z.string().nullable(),
@@ -46,7 +46,7 @@ export const registrationSchema = z.object({
 	userId: z.string(),
 	eventId: z.string(),
 	ticketId: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	invitationCodeId: z.string().nullable(),
 	referralCodeId: z.string().nullable(),
 	formData: z.string(),

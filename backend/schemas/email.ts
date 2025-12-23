@@ -8,12 +8,12 @@ import { z } from "zod";
 // EmailSender schema
 export const emailSenderSchema = z.object({
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 });
 
 // EmailRecipient schema
 export const emailRecipientSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	name: z.string().optional(),
 });
 
@@ -41,7 +41,7 @@ export const targetAudienceFiltersSchema = z.object({
 
 // RecipientData schema
 export const recipientDataSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	name: z.string().optional(),
 	id: z.string().optional(),
 	formData: z.string().nullable().optional(),

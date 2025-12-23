@@ -8,14 +8,14 @@ export const roleSchema = z.enum(["admin", "viewer", "eventAdmin"]);
 
 export const userCreateSchema = z.object({
 	name: z.string().min(1),
-	email: z.string().email(),
+	email: z.email(),
 	role: roleSchema,
 	permissions: z.array(z.string()).optional(),
 });
 
 export const adminUserUpdateSchema = z.object({
 	name: z.string().min(1).optional(),
-	email: z.string().email().optional(),
+	email: z.email().optional(),
 	role: roleSchema.optional(),
 	permissions: z.array(z.string()).optional(),
 	isActive: z.boolean().optional(),
