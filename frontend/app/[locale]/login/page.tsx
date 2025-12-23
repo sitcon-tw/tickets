@@ -232,9 +232,8 @@ export default function Login() {
 							<FormItem>
 								<FormLabel>Email</FormLabel>
 								<FormControl>
-									<Input type="email" placeholder="your@email.com" {...field} className="max-w-xs" />
+									<Input type="email" placeholder="email@example.com" {...field} className="h-11 w-80" />
 								</FormControl>
-								<FormMessage />
 							</FormItem>
 						)}
 					/>

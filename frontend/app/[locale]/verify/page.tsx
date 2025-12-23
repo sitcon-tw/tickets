@@ -497,8 +497,8 @@ export default function VerifyPage() {
 											</span>
 										</p>
 									) : (
-										<Button variant="link" onClick={handleResend} disabled={sendingCode} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline h-auto p-0">
-											{sendingCode ? "Sending..." : t.resendCode}
+										<Button variant="link" onClick={handleResend} disabled={sendForm.formState.isSubmitting} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline h-auto p-0">
+											{sendForm.formState.isSubmitting ? t.sendingCode : t.resendCode}
 										</Button>
 									)}
 								</div>
