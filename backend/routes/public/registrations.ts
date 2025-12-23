@@ -2,7 +2,6 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth.ts";
-import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
@@ -10,18 +9,7 @@ import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-interface RegistrationCreateRequest {
-	eventId: string;
-	ticketId: string;
-	invitationCode?: string;
-	referralCode?: string;
-	formData: Record<string, any>;
-}
-
-interface RegistrationUpdateRequest {
-	formData: Record<string, any>;
-}
+import { registrationCreateSchema, registrationUpdateSchema, type RegistrationCreateRequest, type RegistrationUpdateRequest } from "@tickets/shared";
 
 interface PrismaError extends Error {
 	code?: string;
@@ -33,12 +21,16 @@ interface PrismaError extends Error {
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
 
-	fastify.post(
+	fastify.post<{ Body: RegistrationCreateRequest }>(
 		"/registrations",
 		{
-			schema: registrationSchemas.createRegistration
+			schema: {
+				description: "Create registration",
+				tags: ["registrations"],
+				body: registrationCreateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Body: RegistrationCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
 
@@ -373,12 +365,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		"/registrations",
 		{
 			schema: {
-				description: "取得用戶的報名記錄",
+				description: "Get user's registrations",
 				tags: ["registrations"],
-				response: userRegistrationsResponse
 			}
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -508,23 +499,22 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.put(
+	fastify.put<{ Params: { id: string }, Body: RegistrationUpdateRequest }>(
 		"/registrations/:id",
 		{
 			schema: {
-				description: "編輯報名記錄（僅限表單資料）",
+				description: "Update registration",
 				tags: ["registrations"],
-				body: registrationSchemas.updateRegistration.body,
-				response: registrationSchemas.updateRegistration.response
+				body: registrationUpdateSchema,
 			}
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
 				});
 				const userId = session?.user?.id;
-				const id = request.params.id;
+				const { id } = request.params;
 				const { formData } = request.body;
 
 				const sanitizedFormData = sanitizeObject(formData, false);
@@ -584,7 +574,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				// Validate form data with dynamic fields from database
 				// Pass ticketId to enable filter-aware validation (skip hidden fields)
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], registration.ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData || {}, formFields as unknown as FormField[], registration.ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);

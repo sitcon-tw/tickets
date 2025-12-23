@@ -1,111 +1,82 @@
 /**
  * API request/response type definitions
+ *
+ * Most request types are now imported from @tickets/shared
+ * This file only contains backend-specific response types
  */
 
-export interface ApiResponse<T = any> {
-	success: boolean;
-	message: string;
-	data: T;
-	pagination?: Pagination | null;
-}
+// Import all request types and common types from shared package
+import type {
+	// Common types
+	ApiResponse,
+	ApiErrorResponse,
+	ApiError,
+	Pagination,
+	PaginationQuery,
+	SortOrder,
+	SearchQuery,
+	FormFieldType,
+	// Event types
+	EventCreateRequest,
+	EventUpdateRequest,
+	EventFormFieldCreateRequest,
+	EventFormFieldUpdateRequest,
+	// Ticket types
+	TicketCreateRequest,
+	TicketUpdateRequest,
+	TicketReorderRequest,
+	// Registration types
+	RegistrationCreateRequest,
+	RegistrationUpdateRequest,
+	// Invitation code types
+	InvitationCodeCreateRequest,
+	InvitationCodeUpdateRequest,
+	InvitationCodeVerifyRequest,
+	// Email campaign types
+	EmailCampaignCreateRequest,
+	TargetAudience,
+	// Referral types
+	ReferralValidateRequest,
+} from "@tickets/shared";
 
-export interface ApiErrorResponse {
-	success: false;
-	error: ApiError;
-}
+// Re-export for backward compatibility
+export type {
+	// Common types
+	ApiResponse,
+	ApiErrorResponse,
+	ApiError,
+	Pagination,
+	PaginationQuery,
+	SortOrder,
+	SearchQuery,
+	FormFieldType,
+	// Event types
+	EventCreateRequest,
+	EventUpdateRequest,
+	EventFormFieldCreateRequest,
+	EventFormFieldUpdateRequest,
+	// Ticket types
+	TicketCreateRequest,
+	TicketUpdateRequest,
+	TicketReorderRequest,
+	// Registration types
+	RegistrationCreateRequest,
+	RegistrationUpdateRequest,
+	// Invitation code types
+	InvitationCodeCreateRequest,
+	InvitationCodeUpdateRequest,
+	InvitationCodeVerifyRequest,
+	// Email campaign types
+	EmailCampaignCreateRequest,
+	TargetAudience,
+	// Referral types
+	ReferralValidateRequest,
+};
 
-export interface ApiError {
-	code: string;
-	message: string;
-	details?: any;
-}
-
-export interface Pagination {
-	page: number;
-	limit: number;
-	total: number;
-	totalPages: number;
-	hasNext: boolean;
-	hasPrev: boolean;
-}
-
-export interface PaginationQuery {
-	page?: number;
-	limit?: number;
-}
-
-export interface EventCreateRequest {
-	name: string;
-	description?: string;
-	plainDescription?: string;
-	startDate: string;
-	endDate: string;
-	location?: string;
-	ogImage?: string;
-}
-
-export interface EventUpdateRequest {
-	name?: string;
-	description?: string;
-	plainDescription?: string;
-	startDate?: string;
-	endDate?: string;
-	location?: string;
-	ogImage?: string;
-	isActive?: boolean;
-}
-
-export interface RegistrationCreateRequest {
-	eventId: string;
-	ticketId: string;
-	invitationCode?: string;
-	referralCode?: string;
-	formData: Record<string, any>;
-}
-
-export interface RegistrationUpdateRequest {
-	formData?: Record<string, any>;
-	status?: import("./database.js").RegistrationStatus;
-}
-
-export interface TicketCreateRequest {
-	eventId: string;
-	order?: number;
-	name: string;
-	description?: string;
-	price: number;
-	quantity: number;
-	saleStart?: string;
-	saleEnd?: string;
-	requireInviteCode?: boolean;
-	hidden?: boolean;
-}
-
-export interface TicketUpdateRequest {
-	order?: number;
-	name?: string;
-	description?: string;
-	price?: number;
-	quantity?: number;
-	saleStart?: string;
-	saleEnd?: string;
-	isActive?: boolean;
-	requireInviteCode?: boolean;
-}
-
-export interface TicketReorderRequest {
-	tickets: { id: string; order: number }[];
-}
-
-export interface InvitationCodeCreateRequest {
-	eventId: string;
-	code: string;
-	name?: string;
-	usageLimit?: number;
-	validFrom?: string;
-	validUntil?: string;
-	ticketId?: string;
-}
+/**
+ * Backend-specific response types
+ * These are not in the shared package as they are only used by the backend
+ */
 
 export interface InvitationCodeResponse {
 	id: string;
@@ -122,41 +93,6 @@ export interface InvitationCodeResponse {
 	updatedAt: string;
 }
 
-export interface InvitationCodeUpdateRequest {
-	code?: string;
-	name?: string;
-	usageLimit?: number;
-	validFrom?: string;
-	validUntil?: string;
-	isActive?: boolean;
-	ticketId?: string;
-}
-
-export interface EmailCampaignCreateRequest {
-	name: string;
-	subject: string;
-	content: string;
-	eventId?: string;
-	targetAudience?: TargetAudience;
-	scheduledAt?: string;
-}
-
-export interface TargetAudience {
-	roles?: string[];
-	eventIds?: string[];
-	registrationStatuses?: string[];
-	tags?: string[];
-}
-
-export type SortOrder = "asc" | "desc";
-
-export interface SearchQuery {
-	q?: string;
-	sortBy?: string;
-	sortOrder?: SortOrder;
-	filters?: Record<string, any>;
-}
-
 export interface AnalyticsData {
 	totalRegistrations: number;
 	confirmedRegistrations: number;
@@ -166,43 +102,4 @@ export interface AnalyticsData {
 	registrationsByDate: Record<string, any>;
 	ticketSales: Record<string, any>;
 	referralStats: Record<string, any>;
-}
-
-export type FormFieldType = "text" | "textarea" | "select" | "checkbox" | "radio";
-
-export interface EventFormFieldCreateRequest {
-	eventId: string;
-	order: number;
-	type: FormFieldType;
-	validater?: string;
-	name: string;
-	description: string;
-	placeholder?: string;
-	required?: boolean;
-	values?: string;
-	filters?: string;
-	prompts?: string;
-}
-
-export interface EventFormFieldUpdateRequest {
-	order?: number;
-	type?: FormFieldType;
-	validater?: string;
-	name?: string;
-	description?: string;
-	placeholder?: string;
-	required?: boolean;
-	values?: string;
-	filters?: string;
-	prompts?: string;
-}
-
-export interface InvitationCodeVerifyRequest {
-	code: string;
-	ticketId: string;
-}
-
-export interface ReferralValidateRequest {
-	code: string;
-	eventId: string;
 }

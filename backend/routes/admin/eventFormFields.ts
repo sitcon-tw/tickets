@@ -1,27 +1,40 @@
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
 import type { EventFormFields } from "#types/database";
 import { Prisma } from "@prisma/client";
-import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
-import { eventFormFieldSchemas } from "#schemas/eventFormFields";
 import { CacheInvalidation } from "#utils/cache-keys.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { eventFormFieldCreateSchema, eventFormFieldUpdateSchema, eventFormFieldReorderSchema } from "@tickets/shared";
 
 const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event form field
-	fastify.post<{
-		Body: EventFormFieldCreateRequest;
-	}>(
+	fastify.post(
 		"/event-form-fields",
 		{
-			schema: eventFormFieldSchemas.createEventFormField
+			schema: {
+				description: "Create event form field",
+				tags: ["admin/event-form-fields"],
+				body: eventFormFieldCreateSchema,
+			},
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
+		async function (this: FastifyInstance, request, reply) {
 			try {
 				await requireEventAccess.call(this, request, reply, () => {});
-				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body;
+				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body as {
+					eventId: string;
+					order: number;
+					type: string;
+					validater?: string;
+					name: string | Record<string, string>;
+					description: string | Record<string, string>;
+					placeholder?: string | Record<string, string>;
+					required?: boolean;
+					values?: string;
+					filters?: string;
+					prompts?: string;
+				};
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
@@ -52,7 +65,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						validater: validater === "" ? null : (validater ?? null),
 						name,
 						description: description && typeof description === "object" ? description : {},
-						placeholder: placeholder === "" ? null : (placeholder ?? null),
+						placeholder: typeof placeholder === "string" ? placeholder : (placeholder && typeof placeholder === "object" ? null : null),
 						required: required || false,
 						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
 						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull),
@@ -72,17 +85,18 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Get event form field by ID
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.get(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
-			schema: eventFormFieldSchemas.getEventFormField
+			schema: {
+				description: "Get event form field by ID",
+				tags: ["admin/event-form-fields"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
+				const { id } = request.params as { id: string };
 
 				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id },
@@ -111,19 +125,31 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Update event form field
-	fastify.put<{
-		Params: { id: string };
-		Body: EventFormFieldUpdateRequest;
-	}>(
+	fastify.put(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
-			schema: eventFormFieldSchemas.updateEventFormField
+			schema: {
+				description: "Update event form field",
+				tags: ["admin/event-form-fields"],
+				body: eventFormFieldUpdateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: EventFormFieldUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
-				const updateData = request.body;
+				const { id } = request.params as { id: string };
+				const updateData = request.body as {
+					order?: number;
+					type?: string;
+					validater?: string;
+					name?: string | Record<string, string>;
+					description?: string | Record<string, string>;
+					placeholder?: string | Record<string, string>;
+					required?: boolean;
+					values?: string;
+					filters?: string;
+					prompts?: string;
+				};
 
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
@@ -216,17 +242,18 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Delete event form field
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.delete(
 		"/event-form-fields/:id",
 		{
 			preHandler: requireEventAccessViaFieldId,
-			schema: eventFormFieldSchemas.deleteEventFormField
+			schema: {
+				description: "Delete event form field",
+				tags: ["admin/event-form-fields"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
+				const { id } = request.params as { id: string };
 
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
@@ -256,15 +283,16 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// List event form fields
-	fastify.get<{
-		Querystring: { eventId?: string };
-	}>(
+	fastify.get(
 		"/event-form-fields",
 		{
-			schema: eventFormFieldSchemas.listEventFormFields
+			schema: {
+				description: "List event form fields",
+				tags: ["admin/event-form-fields"],
+			},
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
-			const { eventId } = request.query;
+		async function (this: FastifyInstance, request, reply) {
+			const { eventId } = request.query as { eventId?: string };
 
 			if (eventId) {
 				await requireEventAccess.call(this, request, reply, () => {});
@@ -307,75 +335,22 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 		}
 	);
 
-	fastify.put<{
-		Params: { eventId: string };
-		Body: { fieldOrders: Array<{ id: string; order: number }> };
-	}>(
+	fastify.put(
 		"/events/:eventId/form-fields/reorder",
 		{
 			schema: {
-				description: "重新排序活動表單欄位",
+				description: "Reorder event form fields",
 				tags: ["admin/events"],
-				params: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["eventId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						fieldOrders: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "integer", minimum: 0 }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["fieldOrders"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						},
-						required: ["success", "message"]
-					},
-					400: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
-				}
+				body: eventFormFieldReorderSchema,
 			}
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
-			const { eventId } = request.params;
+		async function (this: FastifyInstance, request, reply) {
+			const { eventId } = request.params as { eventId: string };
 
 			await requireEventAccess.call(this, request, reply, () => {});
 
 			try {
-				const { fieldOrders } = request.body;
+				const { fieldOrders } = request.body as { fieldOrders: Array<{ id: string; order: number }> };
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
@@ -386,7 +361,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				const fieldIds = fieldOrders.map(f => f.id);
+				const fieldIds = fieldOrders.map((f: { id: string; order: number }) => f.id);
 				const existingFields = await prisma.eventFormFields.findMany({
 					where: {
 						id: { in: fieldIds },
@@ -399,7 +374,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				const orders = fieldOrders.map(f => f.order);
+				const orders = fieldOrders.map((f: { id: string; order: number }) => f.order);
 				const uniqueOrders = new Set(orders);
 				if (orders.length !== uniqueOrders.size) {
 					const { response, statusCode } = validationErrorResponse("排序編號不能重複");

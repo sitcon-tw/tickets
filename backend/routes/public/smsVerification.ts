@@ -3,11 +3,10 @@ import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { getClientIP, validateTurnstile } from "#lib/turnstile";
 import { requireAuth } from "#middleware/auth.ts";
-import { smsVerificationSchemas } from "#schemas/smsVerification";
-import type { SendVerificationRequest, VerifyCodeRequest } from "#types/sms";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import { smsVerificationSendSchema, smsVerificationVerifySchema } from "@tickets/shared";
 
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -19,9 +18,13 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post(
 		"/sms-verification/send",
 		{
-			schema: smsVerificationSchemas.send
+			schema: {
+				description: "Send SMS verification code",
+				tags: ["sms-verification"],
+				body: smsVerificationSendSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -32,7 +35,11 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const { phoneNumber, locale = "zh-Hant", turnstileToken } = request.body;
+				const { phoneNumber, locale = "zh-Hant", turnstileToken } = request.body as {
+					phoneNumber: string;
+					locale?: string;
+					turnstileToken: string;
+				};
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const userId = session.user.id;
 
@@ -159,7 +166,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 				const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
 				try {
-					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
+					await sendVerificationCode(sanitizedPhoneNumber, code, locale as "zh-Hant" | "en");
 				} catch (smsError) {
 					request.log.error({ err: smsError }, "SMS send error");
 					const { response, statusCode } = serverErrorResponse("發送簡訊失敗，請稍後再試");
@@ -198,9 +205,13 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post(
 		"/sms-verification/verify",
 		{
-			schema: smsVerificationSchemas.verify
+			schema: {
+				description: "Verify SMS code",
+				tags: ["sms-verification"],
+				body: smsVerificationVerifySchema,
+			},
 		},
-		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -211,7 +222,10 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const { phoneNumber, code } = request.body;
+				const { phoneNumber, code } = request.body as {
+					phoneNumber: string;
+					code: string;
+				};
 				const sanitizedPhoneNumber = sanitizeText(phoneNumber);
 				const sanitizedCode = sanitizeText(code);
 				const userId = session.user.id;
@@ -296,9 +310,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/sms-verification/status",
 		{
-			schema: smsVerificationSchemas.status
+			schema: {
+				description: "Get phone verification status",
+				tags: ["sms-verification"],
+			},
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers

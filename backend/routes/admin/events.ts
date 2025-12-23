@@ -1,28 +1,37 @@
-import type { EventCreateRequest, EventUpdateRequest } from "#types/api";
 import type { Event } from "#types/database";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
-import { eventSchemas } from "#schemas/event";
 import { CacheInvalidation } from "#utils/cache-keys";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
+import { eventCreateSchema, eventUpdateSchema } from "@tickets/shared";
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
-	fastify.post<{
-		Body: EventCreateRequest;
-	}>(
+	fastify.post(
 		"/events",
 		{
 			preHandler: requireAdmin,
-			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
+			schema: {
+				description: "Create a new event",
+				tags: ["admin/events"],
+				body: eventCreateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Body: EventCreateRequest }>, reply: FastifyReply) => {
-			const rawBody = request.body;
+		async (request, reply) => {
+			const rawBody = request.body as Record<string, any>;
 
-			const sanitizedBody = sanitizeObject(rawBody, true);
+			const sanitizedBody = sanitizeObject(rawBody, true) as {
+				name: string | Record<string, string>;
+				description?: string | Record<string, string>;
+				plainDescription?: string | Record<string, string>;
+				startDate: string;
+				endDate: string;
+				location?: string;
+				ogImage?: string;
+			};
 			const { name, description, plainDescription, startDate, endDate, location, ogImage } = sanitizedBody;
 
 			const start = new Date(startDate);
@@ -58,16 +67,17 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Get event by ID - admin and eventAdmin (for their events) can access
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.get(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
-			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
+			schema: {
+				description: "Get event by ID",
+				tags: ["admin/events"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			const { id } = request.params;
+		async (request, reply) => {
+			const { id } = request.params as { id: string };
 
 			const event = (await prisma.event.findUnique({
 				where: { id },
@@ -94,18 +104,31 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Update event - admin and eventAdmin (for their events) can update
-	fastify.put<{
-		Params: { id: string };
-		Body: EventUpdateRequest;
-	}>(
+	fastify.put(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
-			schema: eventSchemas.updateEvent
+			schema: {
+				description: "Update event",
+				tags: ["admin/events"],
+				body: eventUpdateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: EventUpdateRequest }>, reply: FastifyReply) => {
-			const { id } = request.params;
-			const updateData = request.body;
+		async (request, reply) => {
+			const { id } = request.params as { id: string };
+			const updateData = request.body as {
+				slug?: string;
+				name?: string | Record<string, string>;
+				description?: string | Record<string, string>;
+				plainDescription?: string | Record<string, string>;
+				startDate?: string;
+				endDate?: string;
+				location?: string;
+				ogImage?: string;
+				isActive?: boolean;
+				hideEvent?: boolean;
+				useOpass?: boolean;
+			};
 
 			const existingEvent = await prisma.event.findUnique({
 				where: { id }
@@ -155,16 +178,17 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Delete event - only admin can delete events
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.delete(
 		"/events/:id",
 		{
 			preHandler: requireAdmin,
-			schema: eventSchemas.deleteEvent
+			schema: {
+				description: "Delete event",
+				tags: ["admin/events"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			const { id } = request.params;
+		async (request, reply) => {
+			const { id } = request.params as { id: string };
 
 			const existingEvent = await prisma.event.findUnique({
 				where: { id },
@@ -196,16 +220,17 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// List events - admin sees all, eventAdmin sees only their assigned events
-	fastify.get<{
-		Querystring: { isActive?: boolean };
-	}>(
+	fastify.get(
 		"/events",
 		{
 			preHandler: requireEventListAccess,
-			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
+			schema: {
+				description: "List events",
+				tags: ["admin/events"],
+			},
 		},
-		async (request: FastifyRequest<{ Querystring: { isActive?: boolean } }>, reply: FastifyReply) => {
-			const { isActive } = request.query;
+		async (request, reply) => {
+			const { isActive } = request.query as { isActive?: boolean };
 
 			const whereClause: any = {};
 			if (isActive !== undefined) {

@@ -1,27 +1,29 @@
-import type { AdminUserUpdateRequest } from "#types/auth";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { userSchemas } from "#schemas/user";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { userUpdateSchema, type UserUpdateRequest } from "@tickets/shared";
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
-	fastify.get<{ Querystring: { role?: string; isActive?: boolean } }>(
+	fastify.get(
 		"/users",
 		{
 			preHandler: requireAdmin,
-			schema: userSchemas.listUsers
+			schema: {
+				description: "List users",
+				tags: ["admin/users"],
+			},
 		},
-		async (request: FastifyRequest<{ Querystring: { role?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { role, isActive } = request.query;
+				const { role, isActive } = request.query as { role?: string; isActive?: string };
 
 				const where: any = {};
 				if (role) where.role = role;
-				if (isActive !== undefined) where.isActive = isActive;
+				if (isActive !== undefined) where.isActive = isActive === "true";
 
 				const users = await prisma.user.findMany({
 					where,
@@ -61,15 +63,18 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Get user by ID - admin only
-	fastify.get<{ Params: { id: string } }>(
+	fastify.get(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
-			schema: userSchemas.getUser
+			schema: {
+				description: "Get user by ID",
+				tags: ["admin/users"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
+				const { id } = request.params as { id: string };
 
 				const user = await prisma.user.findUnique({
 					where: { id },
@@ -122,16 +127,20 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Update user - admin only
-	fastify.put<{ Params: { id: string }; Body: AdminUserUpdateRequest }>(
+	fastify.put(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
-			schema: userSchemas.updateUser
+			schema: {
+				description: "Update user",
+				tags: ["admin/users"],
+				body: userUpdateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: AdminUserUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
-				const updateData = request.body;
+				const { id } = request.params as { id: string };
+				const updateData = request.body as UserUpdateRequest;
 
 				const existingUser = await prisma.user.findUnique({
 					where: { id }

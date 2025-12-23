@@ -1,27 +1,33 @@
-import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api";
 import type { InvitationCode } from "#types/database";
 import type { Prisma } from "@prisma/client";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
-import { invitationCodeSchemas } from "#schemas/invitationCode";
 import { sendInvitationCode } from "#utils/email.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import {
+	invitationCodeCreateSchema,
+	invitationCodeUpdateSchema,
+	type InvitationCodeCreateRequest,
+	type InvitationCodeUpdateRequest,
+} from "@tickets/shared";
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
-	fastify.post<{
-		Body: InvitationCodeCreateRequest;
-	}>(
+	fastify.post(
 		"/invitation-codes",
 		{
 			preHandler: requireEventAccessViaTicketBody,
-			schema: invitationCodeSchemas.createInvitationCode
+			schema: {
+				description: "Create a new invitation code",
+				tags: ["admin/invitation-codes"],
+				body: invitationCodeCreateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Body: InvitationCodeCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body;
+				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body as InvitationCodeCreateRequest;
 
 				const existingCode = await prisma.invitationCode.findFirst({
 					where: {
@@ -90,17 +96,18 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Get invitation code by ID
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.get(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
-			schema: invitationCodeSchemas.getInvitationCode
+			schema: {
+				description: "Get invitation code by ID",
+				tags: ["admin/invitation-codes"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
+				const { id } = request.params as { id: string };
 
 				const invitationCode: InvitationCode | null = await prisma.invitationCode.findUnique({
 					where: { id },
@@ -139,19 +146,20 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Update invitation code
-	fastify.put<{
-		Params: { id: string };
-		Body: InvitationCodeUpdateRequest;
-	}>(
+	fastify.put(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
-			schema: invitationCodeSchemas.updateInvitationCode
+			schema: {
+				description: "Update invitation code",
+				tags: ["admin/invitation-codes"],
+				body: invitationCodeUpdateSchema,
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: InvitationCodeUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
-				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body;
+				const { id } = request.params as { id: string };
+				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body as InvitationCodeUpdateRequest;
 
 				const existingCode = await prisma.invitationCode.findUnique({
 					where: { id }
@@ -238,17 +246,18 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Delete invitation code
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.delete(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
-			schema: invitationCodeSchemas.deleteInvitationCode
+			schema: {
+				description: "Delete invitation code",
+				tags: ["admin/invitation-codes"],
+			},
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { id } = request.params;
+				const { id } = request.params as { id: string };
 
 				const existingCode = await prisma.invitationCode.findUnique({
 					where: { id }
@@ -278,17 +287,18 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// List invitation codes
-	fastify.get<{
-		Querystring: { ticketId?: string; isActive?: boolean; eventId?: string };
-	}>(
+	fastify.get(
 		"/invitation-codes",
 		{
 			preHandler: requireEventListAccess,
-			schema: invitationCodeSchemas.listInvitationCodes
+			schema: {
+				description: "List invitation codes",
+				tags: ["admin/invitation-codes"],
+			},
 		},
-		async (request: FastifyRequest<{ Querystring: { ticketId?: string; isActive?: boolean; eventId?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
-				const { ticketId, isActive, eventId } = request.query;
+				const { ticketId, isActive, eventId } = request.query as { ticketId?: string; isActive?: string; eventId?: string };
 
 				const where: Record<string, unknown> = {};
 				if (ticketId) where.ticketId = ticketId;

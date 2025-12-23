@@ -1,17 +1,20 @@
-import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "#types/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
-import { ticketSchemas } from "#schemas/ticket";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { ticketCreateSchema, ticketUpdateSchema, ticketReorderSchema, type TicketCreateRequest, type TicketUpdateRequest, type TicketReorderRequest } from "@tickets/shared";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post<{ Body: TicketCreateRequest }>(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
-			schema: ticketSchemas.createTicket
+			schema: {
+				description: "Create a new ticket",
+				tags: ["admin/tickets"],
+				body: ticketCreateSchema,
+			},
 		},
 		async (request: FastifyRequest<{ Body: TicketCreateRequest }>, reply: FastifyReply) => {
 			try {
@@ -90,7 +93,10 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
-			schema: ticketSchemas.getTicket
+			schema: {
+				description: "Get ticket by ID",
+				tags: ["admin/tickets"],
+			},
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -133,7 +139,11 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
-			schema: ticketSchemas.updateTicket
+			schema: {
+				description: "Update ticket",
+				tags: ["admin/tickets"],
+				body: ticketUpdateSchema,
+			},
 		},
 		async (request: FastifyRequest<{ Params: { id: string }; Body: TicketUpdateRequest }>, reply: FastifyReply) => {
 			try {
@@ -222,7 +232,10 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
-			schema: ticketSchemas.deleteTicket
+			schema: {
+				description: "Delete ticket",
+				tags: ["admin/tickets"],
+			},
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -266,13 +279,16 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// List tickets
-	fastify.get<{ Querystring: { eventId?: string; isActive?: boolean } }>(
+	fastify.get<{ Querystring: { eventId?: string; isActive?: string } }>(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
-			schema: ticketSchemas.listTickets
+			schema: {
+				description: "List tickets",
+				tags: ["admin/tickets"],
+			},
 		},
-		async (request: FastifyRequest<{ Querystring: { eventId?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string; isActive?: string } }>, reply: FastifyReply) => {
 			try {
 				const { eventId, isActive } = request.query;
 
@@ -327,37 +343,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/:id/analytics",
 		{
 			schema: {
-				description: "取得票券銷售分析",
+				description: "Get ticket sales analytics",
 				tags: ["admin/tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									totalsoldCount: { type: "integer" },
-									totalRevenue: { type: "number" },
-									availableQuantity: { type: "integer" },
-									salesByStatus: { type: "object" },
-									dailySales: { type: "array" }
-								}
-							}
-						}
-					}
-				}
 			}
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
@@ -422,35 +409,9 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		{
 			preHandler: requireEventAccess,
 			schema: {
-				description: "重新排序票券",
+				description: "Reorder tickets",
 				tags: ["admin/tickets"],
-				body: {
-					type: "object",
-					properties: {
-						tickets: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "number" }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["tickets"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						}
-					}
-				}
+				body: ticketReorderSchema,
 			}
 		},
 		async (request: FastifyRequest<{ Body: TicketReorderRequest }>, reply: FastifyReply) => {

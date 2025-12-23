@@ -1,50 +1,29 @@
 import prisma from "#config/database";
-import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas/invitationCode";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { invitationCodeVerifySchema, type InvitationCodeVerifyRequest } from "@tickets/shared";
 
-// Custom param schemas for invitation code routes
-const codeParam = {
-	type: "object",
-	properties: {
-		code: {
-			type: "string",
-			description: "邀請碼"
-		}
-	},
-	required: ["code"]
-};
-
-const ticketIdQuery = {
-	type: "object",
-	properties: {
-		ticketId: {
-			type: "string",
-			description: "票券 ID"
-		}
-	},
-	required: ["ticketId"]
-};
-
-interface InvitationCodeVerifyRequest {
+interface CodeParams {
 	code: string;
+}
+
+interface TicketIdQuery {
 	ticketId: string;
 }
 
 const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
-	fastify.post(
+	fastify.post<{ Body: InvitationCodeVerifyRequest }>(
 		"/invitation-codes/verify",
 		{
 			schema: {
-				...invitationCodeSchemas.validateInvitationCode,
-				description: "驗證邀請碼並返回可用票種",
+				description: "Verify invitation code",
 				tags: ["invitation-codes"],
-				response: invitationCodeVerifyResponse
+				body: invitationCodeVerifySchema,
 			}
 		},
 		async (request: FastifyRequest<{ Body: InvitationCodeVerifyRequest }>, reply: FastifyReply) => {
 			try {
-				const { code, ticketId } = request.body;
+				const { code, ticketId } = request.body as { code: string; ticketId: string };
 
 				if (!code || !ticketId) {
 					const { response, statusCode } = validationErrorResponse("邀請碼和票券 ID 為必填");
@@ -168,20 +147,18 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get(
+	fastify.get<{ Params: CodeParams; Querystring: TicketIdQuery }>(
 		"/invitation-codes/:code/info",
 		{
 			schema: {
 				description: "獲取邀請碼資訊",
 				tags: ["invitation-codes"],
-				params: codeParam,
-				querystring: ticketIdQuery
 			}
 		},
-		async (request: FastifyRequest<{ Params: { code: string }; Querystring: { ticketId: string } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Params: CodeParams; Querystring: TicketIdQuery }>, reply: FastifyReply) => {
 			try {
-				const { code } = request.params;
-				const { ticketId } = request.query;
+				const { code } = request.params as { code: string };
+				const { ticketId } = request.query as { ticketId: string };
 
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {

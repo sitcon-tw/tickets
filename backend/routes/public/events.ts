@@ -1,5 +1,4 @@
 import prisma from "#config/database";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
@@ -16,8 +15,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		"/events/:id/info",
 		{
 			schema: {
-				...eventSchemas.getEvent,
-				description: "獲取活動公開資訊"
+				description: "Get public event information",
+				tags: ["events"],
 			}
 		},
 		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
@@ -63,10 +62,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		"/events/:id/tickets",
 		{
 			schema: {
-				description: "獲取活動可購買票券",
+				description: "Get event available tickets",
 				tags: ["events"],
-				params: eventSchemas.getEvent.params,
-				response: eventTicketsResponse
 			}
 		},
 		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
@@ -175,19 +172,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		"/events",
 		{
 			schema: {
-				...eventSchemas.listEvents,
-				description: "獲取所有活動列表",
-				querystring: {
-					type: "object",
-					properties: {
-						...eventSchemas.listEvents.querystring.properties,
-						upcoming: {
-							type: "boolean",
-							description: "僅顯示即將開始的活動"
-						}
-					}
-				},
-				response: publicEventsListResponse
+				description: "Get all active events",
+				tags: ["events"],
 			}
 		},
 		async (request: FastifyRequest<{ Querystring: UpcomingQuery }>, reply: FastifyReply) => {
@@ -280,10 +266,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		"/events/:id/stats",
 		{
 			schema: {
-				description: "獲取活動公開統計資訊",
+				description: "Get event public statistics",
 				tags: ["events"],
-				params: eventSchemas.getEvent.params,
-				response: eventStatsResponse
 			}
 		},
 		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {

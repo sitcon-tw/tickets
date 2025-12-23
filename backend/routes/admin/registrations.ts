@@ -4,27 +4,33 @@
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
-import { registrationSchemas } from "#schemas/registration";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
+import type { RegistrationUpdateRequest } from "#types/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { registrationUpdateSchema } from "@tickets/shared";
 
 /**
  * Admin registrations routes with modular schemas and types
  */
 const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.get<{
-		Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string };
+		Querystring: { page?: string | number; limit?: string | number; eventId?: string; status?: string; userId?: string };
 	}>(
 		"/registrations",
 		{
 			preHandler: requireEventAccess,
-			schema: registrationSchemas.listRegistrations
+			schema: {
+				description: "List registrations",
+				tags: ["admin/registrations"],
+			},
 		},
-		async (request: FastifyRequest<{ Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string } }>, reply: FastifyReply) => {
-			const { page = 1, limit = 20, eventId, status, userId } = request.query;
+		async (request: FastifyRequest<{ Querystring: { page?: string | number; limit?: string | number; eventId?: string; status?: string; userId?: string } }>, reply: FastifyReply) => {
+			const query = request.query as { page?: string | number; limit?: string | number; eventId?: string; status?: string; userId?: string };
+			const page = Number(query.page) || 1;
+			const limit = Number(query.limit) || 20;
+			const { eventId, status, userId } = query;
 
 			const where: any = {};
 			if (eventId) where.eventId = eventId;
@@ -113,10 +119,13 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
-			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
+			schema: {
+				description: "Get registration by ID",
+				tags: ["admin/registrations"],
+			},
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			const { id } = request.params;
+			const { id } = request.params as { id: string };
 
 			/** @type {Registration | null} */
 			const registration = await prisma.registration.findUnique({
@@ -178,11 +187,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
-			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
+			schema: {
+				description: "Update registration",
+				tags: ["admin/registrations"],
+				body: registrationUpdateSchema,
+			},
 		},
 		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
-			const { id } = request.params;
-			const updateData = request.body;
+			const { id } = request.params as { id: string };
+			const updateData = request.body as RegistrationUpdateRequest;
 
 			const existingRegistration = await prisma.registration.findUnique({
 				where: { id },
@@ -398,7 +411,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-			const { id } = request.params;
+			const { id } = request.params as { id: string };
 
 			const registration = await prisma.registration.findUnique({
 				where: { id },
@@ -513,7 +526,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			}
 		},
 		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
-			const { eventId, sheetsUrl } = request.body;
+			const { eventId, sheetsUrl } = request.body as { eventId: string; sheetsUrl: string };
 
 			const spreadsheetId = extractSpreadsheetId(sheetsUrl);
 			if (!spreadsheetId) {

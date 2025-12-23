@@ -1,46 +1,25 @@
-import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas } from "#schemas/emailCampaign";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { emailCampaignCreateSchema, paginationQuerySchema } from "@tickets/shared";
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
 
-	fastify.get<{
-		Querystring: PaginationQuery;
-	}>(
+	fastify.get(
 		"/email-campaigns",
 		{
 			schema: {
-				...emailCampaignSchemas.listEmailCampaigns,
-				description: "獲取郵件發送記錄",
-				querystring: {
-					type: "object",
-					properties: {
-						...emailCampaignSchemas.listEmailCampaigns.querystring.properties,
-						page: {
-							type: "integer",
-							minimum: 1,
-							default: 1,
-							description: "頁碼"
-						},
-						limit: {
-							type: "integer",
-							minimum: 1,
-							maximum: 100,
-							default: 20,
-							description: "每頁筆數"
-						}
-					}
-				}
+				description: "List email campaigns",
+				tags: ["admin/email-campaigns"],
+				querystring: paginationQuerySchema,
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
-			const { page = 1, limit = 20 } = request.query;
+		async (request, reply) => {
+			const { page = 1, limit = 20 } = request.query as { page?: number; limit?: number };
 			const skip = (page - 1) * limit;
 
 			const campaigns = await prisma.emailCampaign.findMany({
@@ -68,15 +47,23 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 		}
 	);
 
-	fastify.post<{
-		Body: EmailCampaignCreateRequest;
-	}>(
+	fastify.post(
 		"/email-campaigns",
 		{
-			schema: emailCampaignSchemas.createEmailCampaign
+			schema: {
+				description: "Create email campaign",
+				tags: ["admin/email-campaigns"],
+				body: emailCampaignCreateSchema,
+			}
 		},
-		async (request: FastifyRequest<{ Body: EmailCampaignCreateRequest }>, reply: FastifyReply) => {
-			const { name, subject, content, targetAudience, scheduledAt } = request.body;
+		async (request, reply) => {
+			const { name, subject, content, targetAudience, scheduledAt } = request.body as {
+				name: string;
+				subject: string;
+				content: string;
+				targetAudience?: any;
+				scheduledAt?: string;
+			};
 
 			if (!content) {
 				const { response, statusCode } = validationErrorResponse("必須提供郵件內容");
