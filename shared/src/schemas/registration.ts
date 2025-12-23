@@ -12,8 +12,8 @@ export const registrationStatusSchema = z.enum([
 ]);
 
 export const registrationCreateSchema = z.object({
-	eventId: z.string().uuid(),
-	ticketId: z.string().uuid(),
+	eventId: z.cuid(),
+	ticketId: z.cuid(),
 	invitationCode: z.string().optional(),
 	referralCode: z.string().optional(),
 	formData: z.record(z.string(), z.any()),

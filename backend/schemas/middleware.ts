@@ -18,27 +18,27 @@ export const sessionSchema = z.object({
 
 // EventAccessRequest schema (route params/query for event access)
 export const eventAccessRequestSchema = z.object({
-	eventId: z.string().uuid(),
+	eventId: z.cuid(),
 });
 
 // TicketBody schema
 export const ticketBodySchema = z.object({
-	ticketId: z.string().uuid(),
+	ticketId: z.cuid(),
 });
 
 // TicketIdParams schema
 export const ticketIdParamsSchema = z.object({
-	ticketId: z.string().uuid(),
+	ticketId: z.cuid(),
 });
 
 // TicketIdQuery schema
 export const ticketIdQuerySchema = z.object({
-	ticketId: z.string().uuid().optional(),
+	ticketId: z.cuid().optional(),
 });
 
 // IdParams schema
 export const idParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.cuid(),
 });
 
 /**

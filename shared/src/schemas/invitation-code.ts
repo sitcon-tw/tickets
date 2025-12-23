@@ -5,13 +5,13 @@ import { z } from "zod";
  */
 
 export const invitationCodeCreateSchema = z.object({
-	eventId: z.string().uuid(),
+	eventId: z.cuid(),
 	code: z.string().min(1),
 	name: z.string().optional(),
 	usageLimit: z.number().int().positive().default(1).optional(),
 	validFrom: z.string().datetime().optional(),
 	validUntil: z.string().datetime().optional(),
-	ticketId: z.string().uuid().optional(),
+	ticketId: z.cuid().optional(),
 });
 
 export const invitationCodeUpdateSchema = z.object({
@@ -21,12 +21,12 @@ export const invitationCodeUpdateSchema = z.object({
 	validFrom: z.string().datetime().optional(),
 	validUntil: z.string().datetime().optional(),
 	isActive: z.boolean().optional(),
-	ticketId: z.string().uuid().optional(),
+	ticketId: z.cuid().optional(),
 });
 
 export const invitationCodeVerifySchema = z.object({
 	code: z.string().min(1),
-	ticketId: z.string().uuid(),
+	ticketId: z.cuid(),
 });
 
 /**

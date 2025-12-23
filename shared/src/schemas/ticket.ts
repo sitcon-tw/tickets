@@ -6,7 +6,7 @@ import { localizedTextSchema } from "./common";
  */
 
 export const ticketCreateSchema = z.object({
-	eventId: z.string().uuid(),
+	eventId: z.cuid(),
 	order: z.number().int().nonnegative().default(0).optional(),
 	name: z.union([z.string(), localizedTextSchema]),
 	description: z.union([z.string(), localizedTextSchema]).optional(),
@@ -33,7 +33,7 @@ export const ticketUpdateSchema = z.object({
 export const ticketReorderSchema = z.object({
 	tickets: z.array(
 		z.object({
-			id: z.string().uuid(),
+			id: z.cuid(),
 			order: z.number().int().nonnegative(),
 		})
 	),

@@ -6,7 +6,7 @@ import { z } from "zod";
 
 export const referralValidateSchema = z.object({
 	code: z.string().min(1),
-	eventId: z.string().uuid(),
+	eventId: z.cuid(),
 });
 
 /**

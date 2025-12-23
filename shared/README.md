@@ -224,8 +224,8 @@ export interface RegistrationCreateRequest {  // Duplicate!
 ```typescript
 // shared/src/schemas/registration.ts
 export const registrationCreateSchema = z.object({
-  eventId: z.string().uuid(),
-  ticketId: z.string().uuid(),
+  eventId: z.cuid(),
+  ticketId: z.cuid(),
   formData: z.record(z.any()),
 });
 

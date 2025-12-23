@@ -43,7 +43,7 @@ export const formFieldTypeSchema = z.enum([
 ]);
 
 export const eventFormFieldCreateSchema = z.object({
-	eventId: z.string().uuid(),
+	eventId: z.cuid(),
 	order: z.number().int().nonnegative(),
 	type: formFieldTypeSchema,
 	validater: z.string().optional(),
@@ -72,7 +72,7 @@ export const eventFormFieldUpdateSchema = z.object({
 export const eventFormFieldReorderSchema = z.object({
 	fieldOrders: z.array(
 		z.object({
-			id: z.string().uuid(),
+			id: z.cuid(),
 			order: z.number().int().nonnegative(),
 		})
 	),
