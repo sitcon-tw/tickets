@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { localizedTextSchema } from "./common.js";
+import { localizedTextSchema } from "./common";
 
 /**
  * Ticket schemas

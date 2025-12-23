@@ -3,10 +3,13 @@
  * Used by both backend (Fastify) and frontend (react-hook-form)
  */
 
-export * from "./common.js";
-export * from "./event.js";
-export * from "./ticket.js";
-export * from "./registration.js";
-export * from "./invitation-code.js";
-export * from "./referral.js";
-export * from "./email-campaign.js";
+export * from "./auth";
+export * from "./common";
+export * from "./event";
+export * from "./ticket";
+export * from "./registration";
+export * from "./invitation-code";
+export * from "./referral";
+export * from "./email-campaign";
+export * from "./user";
+export * from "./sms-verification";

@@ -4,7 +4,7 @@
  */
 
 // Export all schemas
-export * from "./schemas/index.js";
+export * from "./schemas/index";
 
 // Export Prisma-generated types
-export * from "./types/prisma/index.js";
+export * from "./types/prisma/index";

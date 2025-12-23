@@ -1,29 +1,33 @@
 import { z } from "zod";
-import { localizedTextSchema } from "./common.js";
+import { localizedTextSchema } from "./common";
 
 /**
  * Event schemas
  */
 
 export const eventCreateSchema = z.object({
+	slug: z.string().optional(),
 	name: z.union([z.string(), localizedTextSchema]),
 	description: z.union([z.string(), localizedTextSchema]).optional(),
 	plainDescription: z.union([z.string(), localizedTextSchema]).optional(),
 	startDate: z.string().datetime(),
 	endDate: z.string().datetime(),
-	location: z.union([z.string(), localizedTextSchema]).optional(),
+	location: z.string().optional(),
 	ogImage: z.string().url().optional(),
 });
 
 export const eventUpdateSchema = z.object({
+	slug: z.string().optional(),
 	name: z.union([z.string(), localizedTextSchema]).optional(),
 	description: z.union([z.string(), localizedTextSchema]).optional(),
 	plainDescription: z.union([z.string(), localizedTextSchema]).optional(),
 	startDate: z.string().datetime().optional(),
 	endDate: z.string().datetime().optional(),
-	location: z.union([z.string(), localizedTextSchema]).optional(),
+	location: z.string().optional(),
 	ogImage: z.string().url().optional(),
 	isActive: z.boolean().optional(),
+	hideEvent: z.boolean().optional(),
+	useOpass: z.boolean().optional(),
 });
 
 /**
@@ -65,6 +69,15 @@ export const eventFormFieldUpdateSchema = z.object({
 	prompts: z.string().optional(),
 });
 
+export const eventFormFieldReorderSchema = z.object({
+	fieldOrders: z.array(
+		z.object({
+			id: z.string().uuid(),
+			order: z.number().int().nonnegative(),
+		})
+	),
+});
+
 /**
  * Type exports
  */
@@ -76,4 +89,7 @@ export type EventFormFieldCreateRequest = z.infer<
 >;
 export type EventFormFieldUpdateRequest = z.infer<
 	typeof eventFormFieldUpdateSchema
+>;
+export type EventFormFieldReorderRequest = z.infer<
+	typeof eventFormFieldReorderSchema
 >;
