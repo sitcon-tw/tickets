@@ -179,8 +179,8 @@ export default function TicketsPage() {
 
 		if (ticket) {
 			const name = typeof ticket.name === "object" ? ticket.name : { en: ticket.name };
-			const desc = typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
-			const plainDesc = typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
+			const desc = typeof ticket.description === "object" && ticket.description !== null ? ticket.description : { en: ticket.description || "" };
+			const plainDesc = typeof ticket.plainDescription === "object" && ticket.plainDescription !== null ? ticket.plainDescription : { en: ticket.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
