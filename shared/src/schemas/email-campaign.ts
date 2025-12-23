@@ -17,7 +17,7 @@ export const emailCampaignCreateSchema = z.object({
 	content: z.string().min(1),
 	eventId: z.cuid().optional(),
 	targetAudience: targetAudienceSchema.optional(),
-	scheduledAt: z.iso.datetime().optional(),
+	scheduledAt: z.string().optional(),
 });
 
 /**

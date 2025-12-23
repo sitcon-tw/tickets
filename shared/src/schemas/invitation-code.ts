@@ -9,8 +9,8 @@ export const invitationCodeCreateSchema = z.object({
 	code: z.string().min(1),
 	name: z.string().optional(),
 	usageLimit: z.number().int().positive().default(1).optional(),
-	validFrom: z.iso.datetime().optional(),
-	validUntil: z.iso.datetime().optional(),
+	validFrom: z.string().optional(),
+	validUntil: z.string().optional(),
 	ticketId: z.cuid().optional(),
 });
 
@@ -18,8 +18,8 @@ export const invitationCodeUpdateSchema = z.object({
 	code: z.string().min(1).optional(),
 	name: z.string().optional(),
 	usageLimit: z.number().int().positive().optional(),
-	validFrom: z.iso.datetime().optional(),
-	validUntil: z.iso.datetime().optional(),
+	validFrom: z.string().optional(),
+	validUntil: z.string().optional(),
 	isActive: z.boolean().optional(),
 	ticketId: z.cuid().optional(),
 });
@@ -27,6 +27,21 @@ export const invitationCodeUpdateSchema = z.object({
 export const invitationCodeVerifySchema = z.object({
 	code: z.string().min(1),
 	ticketId: z.cuid(),
+});
+
+export const invitationCodeBulkCreateSchema = z.object({
+	ticketId: z.string(),
+	prefix: z.string().min(1),
+	count: z.number().int().min(1).max(100),
+	usageLimit: z.number().int().min(1).optional(),
+	validFrom: z.string().optional(),
+	validUntil: z.string().optional(),
+});
+
+export const invitationCodeSendEmailSchema = z.object({
+	email: z.string().email(),
+	code: z.string(),
+	message: z.string().optional(),
 });
 
 /**
@@ -40,4 +55,10 @@ export type InvitationCodeUpdateRequest = z.infer<
 >;
 export type InvitationCodeVerifyRequest = z.infer<
 	typeof invitationCodeVerifySchema
+>;
+export type InvitationCodeBulkCreateRequest = z.infer<
+	typeof invitationCodeBulkCreateSchema
+>;
+export type InvitationCodeSendEmailRequest = z.infer<
+	typeof invitationCodeSendEmailSchema
 >;

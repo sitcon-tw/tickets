@@ -9,8 +9,12 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
 import {
 	invitationCodeCreateSchema,
 	invitationCodeUpdateSchema,
+	invitationCodeBulkCreateSchema,
+	invitationCodeSendEmailSchema,
 	type InvitationCodeCreateRequest,
 	type InvitationCodeUpdateRequest,
+	type InvitationCodeBulkCreateRequest,
+	type InvitationCodeSendEmailRequest,
 } from "@tickets/shared";
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
@@ -368,14 +372,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 	// Bulk create invitation codes
 	fastify.post<{
-		Body: {
-			ticketId: string;
-			prefix: string;
-			count: number;
-			usageLimit?: number;
-			validFrom?: string;
-			validUntil?: string;
-		};
+		Body: InvitationCodeBulkCreateRequest;
 	}>(
 		"/invitation-codes/bulk",
 		{
@@ -383,54 +380,12 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: {
 				description: "批量創建邀請碼",
 				tags: ["admin/invitation-codes"],
-				body: {
-					type: "object",
-					properties: {
-						ticketId: {
-							type: "string",
-							description: "票券 ID"
-						},
-						prefix: {
-							type: "string",
-							description: "邀請碼前綴",
-							minLength: 1
-						},
-						count: {
-							type: "integer",
-							minimum: 1,
-							maximum: 100,
-							description: "生成數量"
-						},
-						usageLimit: {
-							type: "integer",
-							minimum: 1,
-							description: "使用次數限制"
-						},
-						validFrom: {
-							type: "string",
-							format: "date-time",
-							description: "開始時間"
-						},
-						validUntil: {
-							type: "string",
-							format: "date-time",
-							description: "結束時間"
-						}
-					},
-					required: ["ticketId", "prefix", "count"]
-				}
+				body: invitationCodeBulkCreateSchema,
 			}
 		},
 		async (
 			request: FastifyRequest<{
-				Body: {
-					ticketId: string;
-					prefix: string;
-					count: number;
-					usageLimit?: number;
-					validFrom?: string;
-					validUntil?: string;
-				};
+				Body: InvitationCodeBulkCreateRequest;
 			}>,
 			reply: FastifyReply
 		) => {
@@ -507,36 +462,17 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 	// Send invitation codes via email
 	fastify.post<{
-		Body: { email: string; code: string; message?: string };
+		Body: InvitationCodeSendEmailRequest;
 	}>(
 		"/invitation-codes/send-email",
 		{
 			schema: {
 				description: "透過 Email 寄送邀請碼",
 				tags: ["admin/invitation-codes"],
-				body: {
-					type: "object",
-					properties: {
-						email: {
-							type: "string",
-							format: "email",
-							description: "收件者 Email"
-						},
-						code: {
-							type: "string",
-							description: "邀請碼"
-						},
-						message: {
-							type: "string",
-							description: "附加訊息",
-							default: ""
-						}
-					},
-					required: ["email", "code"]
-				}
+				body: invitationCodeSendEmailSchema,
 			}
 		},
-		async (request: FastifyRequest<{ Body: { email: string; code: string; message?: string } }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Body: InvitationCodeSendEmailRequest }>, reply: FastifyReply) => {
 			try {
 				const { email, code, message } = request.body;
 

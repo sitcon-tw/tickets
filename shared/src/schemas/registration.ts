@@ -24,6 +24,21 @@ export const registrationUpdateSchema = z.object({
 	status: registrationStatusSchema.optional(),
 });
 
+export const registrationExportQuerySchema = z.object({
+	eventId: z.string().optional(),
+	status: z.enum(["confirmed", "cancelled", "pending"]).optional(),
+	format: z.enum(["csv", "excel"]).default("csv").optional(),
+});
+
+export const registrationDeleteParamsSchema = z.object({
+	id: z.string(),
+});
+
+export const registrationGoogleSheetsSyncSchema = z.object({
+	eventId: z.string(),
+	sheetsUrl: z.string(),
+});
+
 /**
  * Type exports
  */
@@ -33,4 +48,13 @@ export type RegistrationCreateRequest = z.infer<
 >;
 export type RegistrationUpdateRequest = z.infer<
 	typeof registrationUpdateSchema
+>;
+export type RegistrationExportQuery = z.infer<
+	typeof registrationExportQuerySchema
+>;
+export type RegistrationDeleteParams = z.infer<
+	typeof registrationDeleteParamsSchema
+>;
+export type RegistrationGoogleSheetsSync = z.infer<
+	typeof registrationGoogleSheetsSyncSchema
 >;
