@@ -2,41 +2,17 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
 import { nowInUTC8 } from "./timezone";
 
-export type ValidationRule = (value: unknown) => true | string;
-
-export interface ValidationSchema {
-	[field: string]: ValidationRule[];
-}
-
-export interface ValidationErrors {
-	[field: string]: string[];
-}
-
-export interface FormField {
-	id: string;
-	type: "text" | "textarea" | "select" | "radio" | "checkbox";
-	name?: string | Record<string, string>;
-	description: string;
-	required: boolean;
-	validater?: string;
-	values?: string | Array<string | Record<string, string>>;
-	filters?: {
-		enabled: boolean;
-		operator?: "and" | "or";
-		action?: "display" | "hide";
-		conditions: FilterCondition[];
-	};
-}
-
-export interface FilterCondition {
-	type: "ticket" | "field" | "time";
-	ticketId?: string;
-	fieldId?: string;
-	operator?: "filled" | "notFilled" | "equals";
-	value?: string;
-	startTime?: string;
-	endTime?: string;
-}
+/**
+ * Validation utilities
+ * Types are imported from backend schemas
+ */
+export type {
+	ValidationRule,
+	ValidationSchema,
+	ValidationErrors,
+	FormField,
+	FilterCondition,
+} from "../schemas/validation";
 
 export const rules = {
 	required: (value: unknown): true | string => {

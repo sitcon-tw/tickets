@@ -1,34 +1,10 @@
-export interface Pagination {
-	page: number;
-	limit: number;
-	total: number;
-	totalPages: number;
-	hasNext: boolean;
-	hasPrev: boolean;
-}
+/**
+ * API Response utilities
+ * Types are imported from shared package
+ */
+import type { Pagination, ApiResponse, ApiError, ApiErrorResponse, ErrorResponseWithStatus } from "@tickets/shared";
 
-export interface ApiResponse<T = unknown> {
-	success: true;
-	message: string;
-	data: T;
-	pagination?: Pagination;
-}
-
-export interface ApiError {
-	code: string;
-	message: string;
-	details?: unknown;
-}
-
-export interface ApiErrorResponse {
-	success: false;
-	error: ApiError;
-}
-
-export interface ErrorResponseWithStatus {
-	response: ApiErrorResponse;
-	statusCode: number;
-}
+export type { Pagination, ApiResponse, ApiError, ApiErrorResponse, ErrorResponseWithStatus };
 
 export const successResponse = <T = unknown>(data: T = null as T, message: string = "操作成功", pagination: Pagination | null = null): ApiResponse<T> => {
 	const response: ApiResponse<T> = {

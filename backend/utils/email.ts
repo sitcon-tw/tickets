@@ -3,8 +3,8 @@ import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { Event, Registration, Ticket } from "../types/database";
-import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
+import type { Event, Registration, Ticket } from "@tickets/shared";
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../schemas/email";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

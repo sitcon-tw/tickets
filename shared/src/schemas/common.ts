@@ -51,6 +51,12 @@ export const searchQuerySchema = z.object({
  */
 export const localizedTextSchema = z.record(z.string(), z.string());
 
+// ErrorResponseWithStatus schema (used in backend response utilities)
+export const errorResponseWithStatusSchema = z.object({
+	response: apiErrorResponseSchema,
+	statusCode: z.number().int(),
+});
+
 /**
  * Infer TypeScript types from schemas
  */
@@ -61,6 +67,7 @@ export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
 export type SortOrder = z.infer<typeof sortOrderSchema>;
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
 export type LocalizedText = z.infer<typeof localizedTextSchema>;
+export type ErrorResponseWithStatus = z.infer<typeof errorResponseWithStatusSchema>;
 
 export type ApiResponse<T> = {
 	success: boolean;

@@ -5,6 +5,7 @@
 
 export * from "./auth";
 export * from "./common";
+export * from "./database";
 export * from "./event";
 export * from "./ticket";
 export * from "./registration";

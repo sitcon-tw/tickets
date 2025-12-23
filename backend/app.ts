@@ -15,6 +15,7 @@ import {
 	validatorCompiler,
 	type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import { z } from "zod";
 
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
@@ -153,42 +154,31 @@ interface AuthQuerystring {
 	returnUrl?: string;
 }
 
-interface MagicLinkBody {
-	email: string;
-	name?: string;
-	callbackURL?: string;
-	newUserCallbackURL?: string;
-	errorCallbackURL?: string;
-	turnstileToken?: string;
-}
+// Zod schema for magic link request
+const magicLinkBodySchema = z.object({
+	email: z.string().email(),
+	name: z.string().optional(),
+	callbackURL: z.string().optional(),
+	newUserCallbackURL: z.string().optional(),
+	errorCallbackURL: z.string().optional(),
+	turnstileToken: z.string().optional()
+});
+
+type MagicLinkBody = z.infer<typeof magicLinkBodySchema>;
 
 // Custom route for magic link sending with Turnstile validation
 fastify.post<{ Body: MagicLinkBody }>(
-	"/api/auth/sign-in/magic-link",
-	{
-		schema: {
-			description: "Send magic link with Turnstile protection",
-			tags: ["auth"],
-			body: {
-				type: "object",
-				required: ["email"],
-				properties: {
-					email: { type: "string", format: "email" },
-					name: { type: "string" },
-					callbackURL: { type: "string" },
-					newUserCallbackURL: { type: "string" },
-					errorCallbackURL: { type: "string" },
-					turnstileToken: { type: "string" }
-				}
+		"/api/auth/sign-in/magic-link",
+		{
+			schema: {
+				description: "Send magic link with Turnstile protection",
+				tags: ["auth"],
+				body: magicLinkBodySchema
 			}
 		},
-		config: {
-			rateLimit: rateLimitConfig.auth
-		}
-	},
-	async (request: FastifyRequest<{ Body: MagicLinkBody }>, reply: FastifyReply) => {
-		try {
-			const { turnstileToken } = request.body;
+		async (request: FastifyRequest<{ Body: MagicLinkBody }>, reply: FastifyReply) => {
+			try {
+				const { turnstileToken } = request.body;
 
 			// Validate Turnstile token
 			if (!turnstileToken) {
@@ -278,9 +268,6 @@ fastify.all(
 		schema: {
 			description: "send auth link: POST /api/auth/sign-in/magic-link; get session: GET /api/auth/get-session",
 			tags: ["auth"]
-		},
-		config: {
-			rateLimit: rateLimitConfig.auth
 		}
 	},
 	async (request: FastifyRequest, reply: FastifyReply) => {
@@ -460,6 +447,14 @@ interface FastifyValidationError extends Error {
 // Global error handler to format errors according to API response structure
 fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest, reply: FastifyReply) => {
 	const { log } = fastify;
+	
+	// Log full error details for debugging
+	console.error("=== ERROR HANDLER CALLED ===");
+	console.error("Error message:", error.message);
+	console.error("Error stack:", error.stack);
+	console.error("Request URL:", request.url);
+	console.error("Request method:", request.method);
+	console.error("============================");
 
 	// Handle Fastify validation errors (FST_ERR_VALIDATION)
 	if (error.validation) {

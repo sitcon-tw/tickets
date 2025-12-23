@@ -1,6 +1,10 @@
 import prisma from "#config/database";
+import { publicFormFieldResponseSchema } from "#schemas/api";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { createApiResponseSchema, createFastifySchema } from "#utils/zod-schemas";
+import { apiErrorResponseSchema } from "@tickets/shared";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 
 interface EventIdParams {
 	id: string;
@@ -334,48 +338,17 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
-			schema: {
+			schema: createFastifySchema({
 				description: "獲取活動報名表單欄位（透過票券 ID）",
 				tags: ["events"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string().describe("票券 ID"),
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "object", additionalProperties: true },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" },
-										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true }
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+					200: createApiResponseSchema(z.array(publicFormFieldResponseSchema)),
+					404: apiErrorResponseSchema,
+				},
+			}),
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -423,16 +396,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
-					name: field.name,
-					description: field.description,
+					name: field.name as Record<string, string>,
+					description: field.description as Record<string, string>,
 					type: field.type,
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [],
+					options: (field.values as any[]) || [],
 					order: field.order,
-					filters: field.filters || {},
-					prompts: field.prompts || {}
+					filters: (field.filters as Record<string, any>) || {},
+					prompts: (field.prompts as Record<string, any>) || {}
 				}));
 
 				return reply.send(successResponse(transformedFields));

@@ -1,67 +1,27 @@
 import prisma from "#config/database";
+import { publicTicketResponseSchema } from "#schemas/api";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { createApiResponseSchema, createFastifySchema } from "#utils/zod-schemas";
+import { apiErrorResponseSchema } from "@tickets/shared";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 
 const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Get single ticket information (public)
 	fastify.get(
 		"/tickets/:id",
 		{
-			schema: {
+			schema: createFastifySchema({
 				description: "獲取票券公開資訊",
 				tags: ["tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string().describe("票券 ID"),
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									name: { type: "object", additionalProperties: true },
-									description: { type: "object", additionalProperties: true },
-									plainDescription: { type: "object", additionalProperties: true },
-									price: { type: "number" },
-									quantity: { type: "integer" },
-									soldCount: { type: "integer" },
-									available: { type: "integer" },
-									saleStart: { type: "string" },
-									saleEnd: { type: "string" },
-									isOnSale: { type: "boolean" },
-									isSoldOut: { type: "boolean" },
-									requireInviteCode: { type: "boolean" },
-									requireSmsVerification: { type: "boolean" }
-								}
-							}
-						}
-					},
-					404: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
+					200: createApiResponseSchema(publicTicketResponseSchema),
+					404: apiErrorResponseSchema,
+				},
+			}),
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -99,10 +59,15 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const ticketWithStatus = {
 					...ticket,
+					name: ticket.name as Record<string, string>,
+					description: ticket.description as Record<string, string> | null,
+					plainDescription: ticket.plainDescription as Record<string, string> | null,
 					available,
 					isOnSale,
 					isSoldOut
 				};
+
+				console.log(ticketWithStatus);
 
 				return reply.send(successResponse(ticketWithStatus));
 			} catch (error) {

@@ -6,7 +6,28 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
+import { createApiResponseSchema } from "#utils/zod-schemas";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+
+/**
+ * Zod schemas for permissions endpoint
+ */
+const capabilitiesSchema = z.object({
+	canManageUsers: z.boolean(),
+	canManageAllEvents: z.boolean(),
+	canViewAnalytics: z.boolean(),
+	canManageEmailCampaigns: z.boolean(),
+	canManageReferrals: z.boolean(),
+	canManageSmsLogs: z.boolean(),
+	managedEventIds: z.array(z.string())
+});
+
+const permissionsDataSchema = z.object({
+	role: z.string(),
+	permissions: z.array(z.string()),
+	capabilities: capabilitiesSchema
+});
 
 /**
  * Auth routes
@@ -23,38 +44,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 				description: "取得當前用戶的權限資訊",
 				tags: ["auth"],
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									role: { type: "string" },
-									permissions: {
-										type: "array",
-										items: { type: "string" }
-									},
-									capabilities: {
-										type: "object",
-										properties: {
-											canManageUsers: { type: "boolean" },
-											canManageAllEvents: { type: "boolean" },
-											canViewAnalytics: { type: "boolean" },
-											canManageEmailCampaigns: { type: "boolean" },
-											canManageReferrals: { type: "boolean" },
-											canManageSmsLogs: { type: "boolean" },
-											managedEventIds: {
-												type: "array",
-												items: { type: "string" }
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+					200: createApiResponseSchema(permissionsDataSchema)
 				}
 			}
 		},
