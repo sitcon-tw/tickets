@@ -11,7 +11,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { useZodForm } from "@/lib/hooks/useZodForm";
-import { LocalizedText, TicketFormField } from "@/lib/types/api";
+import { LocalizedText, TicketFormField } from "@tickets/shared";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { registrationCreateSchema, type RegistrationCreateRequest } from "@tickets/shared";

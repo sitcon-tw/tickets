@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
-import type { RegistrationStats } from "@/lib/types/api";
+import type { RegistrationStats } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";

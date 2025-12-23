@@ -4,7 +4,7 @@ import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI } from "@/lib/api/endpoints";
-import type { EventDashboardData } from "@/lib/types/api";
+import type { EventDashboardData } from "@tickets/shared";
 import { Chart, registerables, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
-import type { Event, User } from "@/lib/types/api";
+import type { Event, User } from "@tickets/shared";
 import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";

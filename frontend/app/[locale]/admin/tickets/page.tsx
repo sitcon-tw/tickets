@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Ticket } from "@/lib/types/api";
+import type { Ticket } from "@tickets/shared";
 import { LanguageFieldsProps } from "@/lib/types/pages";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";

@@ -5,7 +5,7 @@ import type {
 	Event,
 	EventDashboardData,
 	EventFormField,
-	EventFormFieldReorder,
+	EventFormFieldReorderRequest,
 	EventInfo,
 	EventListItem,
 	EventStats,
@@ -23,9 +23,9 @@ import type {
 	Ticket,
 	TicketAnalytics,
 	TicketFormField,
-	TicketReorder,
+	TicketReorderRequest,
 	User
-} from "@/lib/types/api";
+} from "@tickets/shared";
 import { apiClient } from "./client";
 
 // System
@@ -143,7 +143,7 @@ export const adminTicketsAPI = {
 
 	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
 
-	reorder: (data: TicketReorder) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
+	reorder: (data: TicketReorderRequest) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
 };
 
 // Admin - Event Form Fields
@@ -168,7 +168,7 @@ export const adminEventFormFieldsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/event-form-fields/${id}`),
 
-	reorder: (eventId: string, data: EventFormFieldReorder) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
+	reorder: (eventId: string, data: EventFormFieldReorderRequest) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
 };
 
 // Admin - Registrations

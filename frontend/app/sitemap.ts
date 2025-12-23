@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import type { ApiResponse, EventListItem } from "@/lib/types/api";
+import type { ApiResponse, EventListItem } from "@tickets/shared";
 
 const BASE_URL = process.env.FRONTEND_URI || "https://tickets.sitcon.org";
 const API_URL = process.env.BACKEND_URI || "http://localhost:8000";

@@ -19,7 +19,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
+import { LocalizedText, Registration, TicketFormField } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";

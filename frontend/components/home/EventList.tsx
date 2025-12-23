@@ -5,7 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
-import { Event } from "@/lib/types/api";
+import { Event } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatEventDateRange } from "@/lib/utils/timezone";
 import { Calendar, ExternalLink, MapPin } from "lucide-react";

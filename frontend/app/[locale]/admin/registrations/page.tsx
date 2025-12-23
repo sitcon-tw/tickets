@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
-import type { Registration } from "@/lib/types/api";
+import type { Registration } from "@tickets/shared";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";

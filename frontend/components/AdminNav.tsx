@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
-import type { Event, UserCapabilities } from "@/lib/types/api";
+import type { Event, UserCapabilities } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Globe, Menu, X } from "lucide-react";
 import { useRouter as useNextRouter, usePathname } from "next/navigation";

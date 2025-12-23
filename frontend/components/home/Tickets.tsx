@@ -9,7 +9,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, eventsAPI, invitationCodesAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
-import { Ticket } from "@/lib/types/api";
+import { Ticket } from "@tickets/shared";
 import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";

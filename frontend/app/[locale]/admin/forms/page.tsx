@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
+import type { Event, EventFormField, FieldFilter, Ticket } from "@tickets/shared";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";

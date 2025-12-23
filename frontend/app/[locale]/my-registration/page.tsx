@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
-import { Registration } from "@/lib/types/api";
+import { Registration } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDate, formatTime, isSameDayUTC8 } from "@/lib/utils/timezone";
 import { Calendar, Clock, Eye, MapPin, Ticket } from "lucide-react";

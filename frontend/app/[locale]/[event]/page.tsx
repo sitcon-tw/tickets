@@ -6,7 +6,7 @@ import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
-import { EventListItem, Ticket } from "@/lib/types/api";
+import { EventListItem, Ticket } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";

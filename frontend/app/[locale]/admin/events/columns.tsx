@@ -2,7 +2,7 @@
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import type { Event } from "@/lib/types/api";
+import type { Event } from "@tickets/shared";
 import { ColumnActions } from "@/lib/types/columns";
 import { ColumnDef } from "@tanstack/react-table";
 

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
+import type { InvitationCodeInfo, Ticket } from "@tickets/shared";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Download, Import, Mail, Plus, Search } from "lucide-react";
 import { useLocale } from "next-intl";

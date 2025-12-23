@@ -2,7 +2,7 @@
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import type { User } from "@/lib/types/api";
+import type { User } from "@tickets/shared";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type UserDisplay = User & {

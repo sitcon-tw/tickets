@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
-import type { Event } from "@/lib/types/api";
+import type { Event } from "@tickets/shared";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
