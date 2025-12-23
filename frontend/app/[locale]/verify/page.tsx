@@ -2,8 +2,11 @@
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
+import { useZodForm } from "@/lib/hooks/useZodForm";
+import { smsVerificationSendSchema, smsVerificationVerifySchema } from "@tickets/shared";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -18,14 +21,29 @@ export default function VerifyPage() {
 	const redirectUrl = searchParams.get("redirect") || `/${locale}/`;
 
 	const [step, setStep] = useState<"phone" | "verify">("phone");
-	const [phoneNumber, setPhoneNumber] = useState("");
 	const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
 	const [loading, setLoading] = useState(false);
-	const [sendingCode, setSendingCode] = useState(false);
 	const [error, setError] = useState("");
 	const [countdown, setCountdown] = useState(0);
 	const [isVerified, setIsVerified] = useState(false);
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+	const sendForm = useZodForm({
+		schema: smsVerificationSendSchema,
+		defaultValues: {
+			phoneNumber: "",
+			locale: locale as "zh-Hant" | "zh-Hans" | "en",
+			turnstileToken: "",
+		},
+	});
+
+	const verifyForm = useZodForm({
+		schema: smsVerificationVerifySchema,
+		defaultValues: {
+			phoneNumber: "",
+			code: "",
+		},
+	});
 
 	const t = getTranslations(locale, {
 		title: {
@@ -160,7 +178,7 @@ export default function VerifyPage() {
 	function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const input = e.target.value;
 		const formatted = formatPhoneNumber(input);
-		setPhoneNumber(formatted);
+		sendForm.setValue("phoneNumber", formatted);
 		setError("");
 	}
 
@@ -169,31 +187,27 @@ export default function VerifyPage() {
 		return (digits.startsWith("09") && digits.length === 10) || (digits.startsWith("886") && digits.length === 12);
 	}
 
-	async function handleSendCode() {
+	const handleSendCode = sendForm.handleSubmit(async (data) => {
 		setError("");
 
-		if (!isValidPhone(phoneNumber)) {
+		if (!isValidPhone(data.phoneNumber)) {
 			setError(t.invalidPhoneNumber);
 			return;
 		}
 
-		if (!turnstileToken) {
-			setError("請完成驗證");
-			return;
-		}
-
-		setSendingCode(true);
-
 		try {
-			const rawPhone = phoneNumber.replace(/\D/g, "");
+			const rawPhone = data.phoneNumber.replace(/\D/g, "");
 			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
 			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
 
 			await smsVerificationAPI.send({
 				phoneNumber: formattedApiPhone,
-				locale,
-				turnstileToken
+				locale: data.locale,
+				turnstileToken: data.turnstileToken,
 			});
+
+			// Set verifyForm phoneNumber for next step
+			verifyForm.setValue("phoneNumber", formattedApiPhone);
 
 			setCountdown(60);
 			setStep("verify");
@@ -203,10 +217,8 @@ export default function VerifyPage() {
 			console.error("Failed to send SMS:", error);
 			setError(error.message || "Failed to send verification code");
 			setTurnstileToken(null);
-		} finally {
-			setSendingCode(false);
 		}
-	}
+	});
 
 	function handleCodeChange(index: number, value: string) {
 		if (!/^\d*$/.test(value)) return;
@@ -264,13 +276,12 @@ export default function VerifyPage() {
 		}
 
 		try {
-			const rawPhone = phoneNumber.replace(/\D/g, "");
-			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
-			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
+			verifyForm.setValue("code", codeStr);
+			const phoneNumber = verifyForm.getValues("phoneNumber");
 
 			await smsVerificationAPI.verify({
-				phoneNumber: formattedApiPhone,
-				code: codeStr
+				phoneNumber,
+				code: codeStr,
 			});
 
 			setIsVerified(true);
@@ -290,25 +301,24 @@ export default function VerifyPage() {
 	}
 
 	async function handleResend() {
-		setSendingCode(true);
 		setError("");
 
 		if (!turnstileToken) {
 			setError("請完成驗證");
-			setSendingCode(false);
 			setStep("phone");
 			return;
 		}
 
+		const isValid = await sendForm.trigger();
+		if (!isValid) return;
+
 		try {
-			const rawPhone = phoneNumber.replace(/\D/g, "");
-			const apiPhone = rawPhone.startsWith("886") ? rawPhone.slice(3) : rawPhone;
-			const formattedApiPhone = apiPhone.startsWith("0") ? apiPhone : `0${apiPhone}`;
+			const phoneNumber = verifyForm.getValues("phoneNumber");
 
 			await smsVerificationAPI.send({
-				phoneNumber: formattedApiPhone,
-				locale,
-				turnstileToken
+				phoneNumber,
+				locale: sendForm.getValues("locale"),
+				turnstileToken,
 			});
 
 			setCountdown(60);
@@ -320,8 +330,6 @@ export default function VerifyPage() {
 			console.error("Failed to resend SMS:", error);
 			setError(error.message || "Failed to resend verification code");
 			setTurnstileToken(null);
-		} finally {
-			setSendingCode(false);
 		}
 	}
 
@@ -358,30 +366,41 @@ export default function VerifyPage() {
 									<p className="text-gray-400 text-sm">{t.description}</p>
 								</div>
 
-								<div className="mb-6">
-									<label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
-									<input
-										type="tel"
-										value={phoneNumber}
-										onChange={handlePhoneChange}
-										placeholder="09XX-XXX-XXX"
-										className={`w-full bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-lg p-3
-											transition-all duration-200 outline-none
-											${error ? "border-red-500" : "border-gray-600"}
-											focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
-											placeholder-gray-500`}
-										autoFocus
-										onKeyDown={e => e.key === "Enter" && handleSendCode()}
-									/>
-									{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-								</div>
+								<Form {...sendForm}>
+									<div className="mb-6">
+										<label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
+										<input
+											type="tel"
+											value={sendForm.watch("phoneNumber")}
+											onChange={handlePhoneChange}
+											placeholder="09XX-XXX-XXX"
+											className={`w-full bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-lg p-3
+												transition-all duration-200 outline-none
+												${error ? "border-red-500" : "border-gray-600"}
+												focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
+												placeholder-gray-500`}
+											autoFocus
+											onKeyDown={e => e.key === "Enter" && handleSendCode()}
+										/>
+										{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+									</div>
+								</Form>
 
 								<div className="flex justify-center mb-6">
 									<Turnstile
 										siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
-										onSuccess={token => setTurnstileToken(token)}
-										onError={() => setTurnstileToken(null)}
-										onExpire={() => setTurnstileToken(null)}
+										onSuccess={token => {
+											setTurnstileToken(token);
+											sendForm.setValue("turnstileToken", token);
+										}}
+										onError={() => {
+											setTurnstileToken(null);
+											sendForm.setValue("turnstileToken", "");
+										}}
+										onExpire={() => {
+											setTurnstileToken(null);
+											sendForm.setValue("turnstileToken", "");
+										}}
 										options={{
 											action: "sms-verification",
 											theme: "dark",
@@ -391,10 +410,10 @@ export default function VerifyPage() {
 								</div>
 
 								<div className="flex justify-center">
-									<Button onClick={handleSendCode} disabled={sendingCode || !phoneNumber || !turnstileToken} size="lg" className="group relative overflow-hidden">
+									<Button onClick={handleSendCode} disabled={sendForm.formState.isSubmitting || !sendForm.watch("phoneNumber") || !turnstileToken} size="lg" className="group relative overflow-hidden">
 										<div className="svg-wrapper-1">
 											<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
-												{sendingCode ? (
+												{sendForm.formState.isSubmitting ? (
 													<Spinner size="sm" />
 												) : (
 													<svg
@@ -413,7 +432,7 @@ export default function VerifyPage() {
 												)}
 											</div>
 										</div>
-										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{sendingCode ? t.sendingCode : t.sendCode}</span>
+										<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{sendForm.formState.isSubmitting ? t.sendingCode : t.sendCode}</span>
 									</Button>
 								</div>
 							</>
@@ -426,7 +445,7 @@ export default function VerifyPage() {
 									</div>
 									<h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t.codeLabel}</h2>
 									<p className="text-gray-700 dark:text-gray-400 text-sm">
-										{t.codeSent} <span className="text-gray-800 dark:text-white font-medium">{phoneNumber}</span>
+										{t.codeSent} <span className="text-gray-800 dark:text-white font-medium">{sendForm.watch("phoneNumber")}</span>
 									</p>
 								</div>
 

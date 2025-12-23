@@ -2,10 +2,13 @@
 
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
+import { useZodForm } from "@/lib/hooks/useZodForm";
+import { magicLinkRequestSchema } from "@tickets/shared";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -52,10 +55,18 @@ export default function Login() {
 	const returnUrl = searchParams.get("returnUrl");
 	const errorParam = searchParams.get("error");
 	const [viewState, setViewState] = useState<"login" | "sent">("login");
-	const [isLoading, setIsLoading] = useState(false);
-	const [email, setEmail] = useState("");
 	const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+	const form = useZodForm({
+		schema: magicLinkRequestSchema,
+		defaultValues: {
+			email: "",
+			locale: locale as "zh-Hant" | "zh-Hans" | "en",
+			returnUrl: returnUrl || undefined,
+			turnstileToken: "",
+		},
+	});
 
 	const t = getTranslations(locale, {
 		login: {
@@ -174,27 +185,9 @@ export default function Login() {
 		}
 	}, [errorParam, showAlert, t.error, t.invalidToken, t.serverError, t.tokenExpired, t.verificationFailed]);
 
-	const validateEmail = (email: string): boolean => {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
-	};
-
-	const login = async () => {
-		if (!email || isLoading) return;
-
-		if (!validateEmail(email)) {
-			showAlert(t.invalidEmail, "error");
-			return;
-		}
-
-		if (!turnstileToken) {
-			showAlert("請完成驗證", "error");
-			return;
-		}
-
-		setIsLoading(true);
+	const onSubmit = form.handleSubmit(async (data) => {
 		try {
-			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
+			await authAPI.getMagicLink(data.email, data.locale || locale, data.returnUrl, data.turnstileToken);
 			setViewState("sent");
 			setTurnstileToken(null);
 		} catch (error) {
@@ -216,10 +209,8 @@ export default function Login() {
 
 			showAlert(errorMessage, "error");
 			setTurnstileToken(null);
-		} finally {
-			setIsLoading(false);
 		}
-	};
+	});
 
 	if (isCheckingAuth) {
 		return (
@@ -232,18 +223,36 @@ export default function Login() {
 	return (
 		<div className="flex flex-col items-center justify-center h-screen">
 			{viewState === "login" ? (
-				<>
+				<Form {...form}>
 					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
-					<label htmlFor="email" className="block mb-2 font-bold">
-						Email
-					</label>
-					<Input type="email" name="email" id="email" onChange={e => setEmail(e.target.value)} className="max-w-xs" />
+					<FormField
+						control={form.control}
+						name="email"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Email</FormLabel>
+								<FormControl>
+									<Input type="email" placeholder="your@email.com" {...field} className="max-w-xs" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 					<div className="flex justify-center my-4">
 						<Turnstile
 							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
-							onSuccess={token => setTurnstileToken(token)}
-							onError={() => setTurnstileToken(null)}
-							onExpire={() => setTurnstileToken(null)}
+							onSuccess={token => {
+								setTurnstileToken(token);
+								form.setValue("turnstileToken", token);
+							}}
+							onError={() => {
+								setTurnstileToken(null);
+								form.setValue("turnstileToken", "");
+							}}
+							onExpire={() => {
+								setTurnstileToken(null);
+								form.setValue("turnstileToken", "");
+							}}
 							options={{
 								action: "magic-link",
 								theme: "auto",
@@ -251,7 +260,7 @@ export default function Login() {
 							}}
 						/>
 					</div>
-					<SendButton onClick={login} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
+					<SendButton onClick={onSubmit} disabled={form.formState.isSubmitting || !turnstileToken} isLoading={form.formState.isSubmitting}>
 						{t.continue}
 					</SendButton>
 					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
@@ -260,19 +269,19 @@ export default function Login() {
 							{t.termsLink}
 						</a>
 					</p>
-				</>
+				</Form>
 			) : (
 				<div className="w-full max-w-md">
 					<div className="text-center">
 						<h2 className="mb-4 text-xl font-semibold">
 							{t.sent}
-							<span className="text-primary">{email}</span>
+							<span className="text-primary">{form.getValues("email")}</span>
 						</h2>
 						<p className="leading-relaxed mb-6">{t.message}</p>
 						<Button
 							onClick={() => {
 								setViewState("login");
-								setEmail("");
+								form.reset();
 								setTurnstileToken(null);
 							}}
 							variant="outline"

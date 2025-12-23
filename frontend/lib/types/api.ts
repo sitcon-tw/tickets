@@ -1,18 +1,23 @@
-// Base API Response Types
-export interface ApiResponse<T> {
-	success: boolean;
-	message: string;
-	data: T;
-}
+/**
+ * Frontend API type definitions
+ *
+ * Common request types are imported from @tickets/shared
+ * This file contains frontend-specific response and UI types
+ */
 
-export interface ApiError {
-	success: false;
-	error: {
-		code: string;
-		message: string;
-		details?: unknown;
-	};
-}
+// Import common types from shared package
+import type {
+	ApiResponse,
+	ApiError,
+	LocalizedText,
+} from "@tickets/shared";
+
+// Re-export for convenience
+export type { ApiResponse, ApiError, LocalizedText };
+
+/**
+ * Frontend-specific response and UI types
+ */
 
 export interface PaginatedResponse<T> {
 	success: boolean;
@@ -67,9 +72,6 @@ export interface User {
 	createdAt: string;
 	updatedAt: string;
 }
-
-// Localized Text Type
-export type LocalizedText = Record<string, string>; // e.g., { "en": "SITCON 2026", "zh-Hant": "學生計算機年會 2026" }
 
 // Event Types
 export interface Event {

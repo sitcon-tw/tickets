@@ -5,13 +5,16 @@ import Checkbox from "@/components/input/Checkbox";
 import Text from "@/components/input/Text";
 import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { useZodForm } from "@/lib/hooks/useZodForm";
 import { LocalizedText, TicketFormField } from "@/lib/types/api";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
+import { registrationCreateSchema, type RegistrationCreateRequest } from "@tickets/shared";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -26,14 +29,21 @@ export default function FormPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [formFields, setFormFields] = useState<TicketFormField[]>([]);
-	const [formData, setFormData] = useState<FormDataType>({});
 	const [ticketId, setTicketId] = useState<string | null>(null);
 	const [eventId, setEventId] = useState<string | null>(null);
-	const [invitationCode, setInvitationCode] = useState<string>("");
-	const [referralCode, setReferralCode] = useState<string>("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [agreeToTerms, setAgreeToTerms] = useState(false);
 	const [ticketData, setTicketData] = useState<any | null>(null);
+
+	const form = useZodForm({
+		schema: registrationCreateSchema,
+		defaultValues: {
+			eventId: "",
+			ticketId: "",
+			formData: {},
+			invitationCode: undefined,
+			referralCode: undefined,
+		},
+	});
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -146,57 +156,53 @@ export default function FormPage() {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}, []);
 
+	const formData = form.watch("formData");
+
 	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-	}, []);
+		const currentFormData = form.getValues("formData");
+		form.setValue("formData", { ...currentFormData, [name]: value });
+	}, [form]);
 
 	const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value, checked } = e.target;
+		const currentFormData = form.getValues("formData");
 
 		if (value === "true") {
 			// Single checkbox (boolean value)
-			setFormData(prev => ({ ...prev, [name]: checked }));
+			form.setValue("formData", { ...currentFormData, [name]: checked });
 		} else if (checked && value !== "true") {
 			// Multi-checkbox with comma-separated values
 			// When checked is true and value is not "true", this is from MultiCheckbox
 			// The value contains the comma-separated list (or empty string if all unchecked)
 			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
-			setFormData(prev => ({ ...prev, [name]: values }));
+			form.setValue("formData", { ...currentFormData, [name]: values });
 		} else {
 			// Single checkbox with a specific value (legacy support)
-			setFormData(prev => {
-				const currentValues = Array.isArray(prev[name]) ? (prev[name] as string[]) : [];
-				if (checked) {
-					return { ...prev, [name]: [...currentValues, value] };
-				} else {
-					return { ...prev, [name]: currentValues.filter(v => v !== value) };
-				}
-			});
-		}
-	}, []);
-
-	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault();
-
-		if (!ticketId || !eventId || isSubmitting) {
-			if (!ticketId || !eventId) {
-				showAlert(t.incompleteFormAlert, "warning");
-				router.push("/");
+			const currentValues = Array.isArray(currentFormData[name]) ? (currentFormData[name] as string[]) : [];
+			if (checked) {
+				form.setValue("formData", { ...currentFormData, [name]: [...currentValues, value] });
+			} else {
+				form.setValue("formData", { ...currentFormData, [name]: currentValues.filter(v => v !== value) });
 			}
+		}
+	}, [form]);
+
+	const onSubmit = form.handleSubmit(async (data) => {
+		if (!ticketId || !eventId) {
+			showAlert(t.incompleteFormAlert, "warning");
+			router.push("/");
 			return;
 		}
 
-		setIsSubmitting(true);
 		try {
-			const registrationData = {
-				eventId,
-				ticketId,
-				formData: {
-					...formData
-				},
-				invitationCode: invitationCode.trim() || undefined,
-				referralCode: referralCode.trim() || undefined
+			// Clean up optional fields
+			const registrationData: RegistrationCreateRequest = {
+				eventId: data.eventId,
+				ticketId: data.ticketId,
+				formData: data.formData,
+				invitationCode: data.invitationCode?.trim() || undefined,
+				referralCode: data.referralCode?.trim() || undefined,
 			};
 
 			const result = await registrationsAPI.create(registrationData);
@@ -211,9 +217,8 @@ export default function FormPage() {
 			}
 		} catch (error) {
 			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
-			setIsSubmitting(false);
 		}
-	}
+	});
 
 	useEffect(() => {
 		async function initForm() {
@@ -235,8 +240,12 @@ export default function FormPage() {
 				const parsedData = JSON.parse(storedData);
 				setTicketId(parsedData.ticketId);
 				setEventId(parsedData.eventId);
-				setReferralCode(parsedData.referralCode || "");
-				setInvitationCode(parsedData.invitationCode || "");
+
+				// Set form values
+				form.setValue("eventId", parsedData.eventId);
+				form.setValue("ticketId", parsedData.ticketId);
+				form.setValue("referralCode", parsedData.referralCode || "");
+				form.setValue("invitationCode", parsedData.invitationCode || "");
 
 				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
 				if (!ticketResponse.success) {
@@ -338,7 +347,7 @@ export default function FormPage() {
 		}
 
 		initForm();
-	}, [router, showAlert, pathname, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
+	}, [router, showAlert, pathname, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut, form]);
 
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
@@ -384,27 +393,36 @@ export default function FormPage() {
 					)}
 
 					{!loading && !error && (
-						<form onSubmit={handleSubmit} className="flex flex-col gap-6">
-							{visibleFields.map(field => (
-								<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
-							))}
+						<Form {...form}>
+							<form onSubmit={onSubmit} className="flex flex-col gap-6">
+								{visibleFields.map(field => (
+									<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={handleTextChange} onCheckboxChange={handleCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+								))}
 
-							<Text label={t.referralCodeOptional} id="referralCode" value={referralCode} required={false} onChange={e => setReferralCode(e.target.value)} placeholder={t.referralCode} />
+								<Text
+									label={t.referralCodeOptional}
+									id="referralCode"
+									value={form.watch("referralCode") || ""}
+									required={false}
+									onChange={e => form.setValue("referralCode", e.target.value)}
+									placeholder={t.referralCode}
+								/>
 
-							<div>
-								<div className="flex items-center space-x-2">
-									<Checkbox id="agreeToTerms" required checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} label={t.agreeToTerms} />
+								<div>
+									<div className="flex items-center space-x-2">
+										<Checkbox id="agreeToTerms" required checked={agreeToTerms} onChange={e => setAgreeToTerms(e.target.checked)} label={t.agreeToTerms} />
+									</div>
 								</div>
-							</div>
 
-							<div className="justify-between flex">
-								<div />
-								<Button type="submit" isLoading={isSubmitting} size={"lg"}>
-									{t.submitRegistration}
-								</Button>
-								<div />
-							</div>
-						</form>
+								<div className="justify-between flex">
+									<div />
+									<Button type="submit" isLoading={form.formState.isSubmitting} size={"lg"}>
+										{t.submitRegistration}
+									</Button>
+									<div />
+								</div>
+							</form>
+						</Form>
 					)}
 				</section>
 			</main>
