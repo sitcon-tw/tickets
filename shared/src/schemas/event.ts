@@ -51,9 +51,9 @@ export const eventFormFieldCreateSchema = z.object({
 	description: z.union([z.string(), localizedTextSchema]),
 	placeholder: z.union([z.string(), localizedTextSchema]).optional(),
 	required: z.boolean().default(false).optional(),
-	values: z.string().optional(),
-	filters: z.string().optional(),
-	prompts: z.string().optional(),
+	values: z.array(z.object()).optional(),
+	filters: z.object().optional(),
+	prompts: z.object().optional(),
 });
 
 export const eventFormFieldUpdateSchema = z.object({
@@ -64,9 +64,9 @@ export const eventFormFieldUpdateSchema = z.object({
 	description: z.union([z.string(), localizedTextSchema]).optional(),
 	placeholder: z.union([z.string(), localizedTextSchema]).optional(),
 	required: z.boolean().optional(),
-	values: z.string().optional(),
-	filters: z.string().optional(),
-	prompts: z.string().optional(),
+	values: z.array(z.object()).optional(),
+	filters: z.object().optional(),
+	prompts: z.object().optional(),
 });
 
 export const eventFormFieldReorderSchema = z.object({

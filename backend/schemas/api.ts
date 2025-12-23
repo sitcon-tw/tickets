@@ -71,11 +71,3 @@ export const publicFormFieldResponseSchema = z.object({
 	filters: z.record(z.string(), z.any()),
 	prompts: z.record(z.string(), z.any()),
 });
-
-/**
- * Type exports
- */
-export type PublicTicketResponse = z.infer<typeof publicTicketResponseSchema>;
-export type InvitationCodeResponse = z.infer<typeof invitationCodeResponseSchema>;
-export type AnalyticsData = z.infer<typeof analyticsDataSchema>;
-export type PublicFormFieldResponse = z.infer<typeof publicFormFieldResponseSchema>;
