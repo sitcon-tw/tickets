@@ -516,6 +516,8 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 
 		return {
 			success: true,
+			sent: sentCount,
+			failed: failedCount,
 			sentCount,
 			failedCount,
 			totalRecipients: recipients.length

@@ -6,6 +6,12 @@ import { nowInUTC8 } from "./timezone";
  * Validation utilities
  * Types are imported from backend schemas
  */
+import type {
+	ValidationSchema,
+	ValidationErrors,
+	FormField,
+} from "../schemas/validation";
+
 export type {
 	ValidationRule,
 	ValidationSchema,

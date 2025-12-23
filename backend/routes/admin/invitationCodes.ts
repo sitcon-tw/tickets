@@ -1,4 +1,4 @@
-import type { InvitationCode } from "#types/database";
+import type { InvitationCode } from "@tickets/shared";
 import type { Prisma } from "@prisma/client";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

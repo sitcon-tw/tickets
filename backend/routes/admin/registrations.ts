@@ -7,7 +7,7 @@ import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middle
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-import type { RegistrationUpdateRequest } from "#types/api";
+import type { RegistrationUpdateRequest } from "@tickets/shared";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { registrationUpdateSchema } from "@tickets/shared";
 

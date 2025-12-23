@@ -13,7 +13,7 @@ export const userCreateSchema = z.object({
 	permissions: z.array(z.string()).optional(),
 });
 
-export const userUpdateSchema = z.object({
+export const adminUserUpdateSchema = z.object({
 	name: z.string().min(1).optional(),
 	email: z.string().email().optional(),
 	role: roleSchema.optional(),
@@ -26,7 +26,7 @@ export const profileUpdateSchema = z.object({
 	image: z.string().url().optional(),
 });
 
-export const changePasswordSchema = z.object({
+export const adminChangePasswordSchema = z.object({
 	currentPassword: z.string(),
 	newPassword: z.string().min(6),
 });
@@ -36,6 +36,6 @@ export const changePasswordSchema = z.object({
  */
 export type Role = z.infer<typeof roleSchema>;
 export type UserCreateRequest = z.infer<typeof userCreateSchema>;
-export type UserUpdateRequest = z.infer<typeof userUpdateSchema>;
+export type AdminUserUpdateRequest = z.infer<typeof adminUserUpdateSchema>;
 export type ProfileUpdateRequest = z.infer<typeof profileUpdateSchema>;
-export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;
+export type AdminChangePasswordRequest = z.infer<typeof adminChangePasswordSchema>;

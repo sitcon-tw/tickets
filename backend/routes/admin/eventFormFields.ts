@@ -1,4 +1,4 @@
-import type { EventFormFields } from "#types/database";
+import type { EventFormFields } from "@tickets/shared";
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 

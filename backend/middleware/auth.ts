@@ -1,15 +1,18 @@
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
 import { auth } from "../lib/auth";
-import type { EventAccessRequest, IdParams, Session, TicketBody, TicketIdParams, TicketIdQuery } from "../schemas/middleware";
+import type { EventAccessRequest, IdParams, TicketBody, TicketIdParams, TicketIdQuery } from "../schemas/middleware";
 import type { SessionUser } from "@tickets/shared";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 
+// Better-auth session type
+type BetterAuthSession = Awaited<ReturnType<typeof auth.api.getSession>>;
+
 declare module "fastify" {
 	interface FastifyRequest {
 		user?: SessionUser;
-		session?: Session;
+		session?: BetterAuthSession;
 		userEventPermissions?: string[];
 	}
 }
@@ -113,7 +116,7 @@ export const requirePermission = (permission: string): preHandlerHookHandler => 
 		const authenticated = await ensureAuth(request, reply);
 		if (!authenticated || reply.sent) return;
 
-		const userPermissions = safeJsonParse<string[]>(request.user!.permissions, [], "user permissions");
+		const userPermissions = request.user!.permissions;
 
 		if (!userPermissions.includes(permission) && request.user!.role !== "admin") {
 			const { response, statusCode } = forbiddenResponse("權限不足 [P]");
@@ -142,9 +145,9 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
 
 	if (userRole === "eventAdmin") {
 		const query = request.query as EventAccessRequest;
-		const params = request.params as EventAccessRequest;
+		const params = request.params as { eventId?: string; id?: string };
 		const body = request.body as EventAccessRequest;
-		const eventId = query?.eventId || params?.id || body?.eventId;
+		const eventId = query?.eventId || params?.eventId || params?.id || body?.eventId;
 
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");

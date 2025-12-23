@@ -3,8 +3,5 @@
  * This file exports all type definitions used throughout the application
  */
 
-// Re-export all type modules
-export * from "./api";
-export * from "./auth";
-export * from "./database";
-export * from "./validation";
+// Types have been migrated to @tickets/shared and #schemas
+// This file is kept for backwards compatibility with the prisma-redis type definitions

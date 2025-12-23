@@ -3,8 +3,8 @@
  * Shared types and schemas for the tickets application
  */
 
-// Export all schemas
+// Export all schemas (these are the primary types used in the application)
 export * from "./schemas/index";
 
-// Export Prisma-generated types
-export * from "./types/prisma/index";
+// Prisma-generated types are not re-exported to avoid conflicts
+// Import them directly from "@tickets/shared/types/prisma" if needed

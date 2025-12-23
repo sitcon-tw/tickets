@@ -4,7 +4,7 @@ import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
-import { userUpdateSchema, type UserUpdateRequest } from "@tickets/shared";
+import { adminUserUpdateSchema, type AdminUserUpdateRequest } from "@tickets/shared";
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
@@ -134,13 +134,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "Update user",
 				tags: ["admin/users"],
-				body: userUpdateSchema,
+				body: adminUserUpdateSchema,
 			},
 		},
 		async (request, reply) => {
 			try {
 				const { id } = request.params as { id: string };
-				const updateData = request.body as UserUpdateRequest;
+				const updateData = request.body as AdminUserUpdateRequest;
 
 				const existingUser = await prisma.user.findUnique({
 					where: { id }

@@ -1,4 +1,4 @@
-import type { Event } from "#types/database";
+import type { Event } from "@tickets/shared";
 import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";

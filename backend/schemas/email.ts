@@ -28,19 +28,33 @@ export const targetAudienceFiltersSchema = z.object({
 		end: z.date(),
 	}).optional(),
 	hasRegistered: z.boolean().optional(),
+	eventIds: z.array(z.string()).optional(),
+	ticketIds: z.array(z.string()).optional(),
+	registrationStatuses: z.array(z.enum(["pending", "confirmed", "cancelled", "waitlisted"])).optional(),
+	hasReferrals: z.boolean().optional(),
+	registeredAfter: z.string().optional(),
+	registeredBefore: z.string().optional(),
+	emailDomains: z.array(z.string()).optional(),
+	roles: z.array(z.string()).optional(),
+	isReferrer: z.boolean().optional(),
 });
 
 // RecipientData schema
 export const recipientDataSchema = z.object({
 	email: z.string().email(),
-	name: z.string(),
+	name: z.string().optional(),
+	id: z.string().optional(),
+	formData: z.string().nullable().optional(),
 	variables: z.record(z.string(), z.string()).optional(),
 	metadata: z.record(z.string(), z.any()).optional(),
+	event: z.any().optional(),
+	ticket: z.any().optional(),
 });
 
 // EmailCampaignContent schema
 export const emailCampaignContentSchema = z.object({
 	subject: z.string(),
+	content: z.string(),
 	html: z.string().optional(),
 	text: z.string().optional(),
 });
@@ -50,6 +64,9 @@ export const campaignResultSchema = z.object({
 	success: z.boolean(),
 	sent: z.number().int(),
 	failed: z.number().int(),
+	sentCount: z.number().int().optional(),
+	failedCount: z.number().int().optional(),
+	totalRecipients: z.number().int().optional(),
 	errors: z.array(z.object({
 		recipient: z.string(),
 		error: z.string(),

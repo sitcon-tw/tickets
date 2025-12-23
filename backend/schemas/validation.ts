@@ -6,15 +6,13 @@ import { eventFormFieldTypeSchema } from "@tickets/shared";
  * Backend-only types for form and data validation
  */
 
-// ValidationRule type - function that returns boolean or error string
-export const validationRuleSchema = z.function()
-	.args(z.unknown())
-	.returns(z.union([z.boolean(), z.string()]));
+// ValidationRule type - function that returns true or error string
+// Note: z.function is not used for validation, this is just a type placeholder
+export type ValidationRule = (value: unknown) => true | string;
+export const validationRuleSchema: z.ZodType<ValidationRule> = z.any();
 
-// ValidationSchema
-export const validationSchemaSchema = z.object({
-	fields: z.record(z.string(), z.array(validationRuleSchema)),
-});
+// ValidationSchema - record of field names to arrays of validation rules
+export const validationSchemaSchema = z.record(z.string(), z.array(validationRuleSchema));
 
 // ValidationResult
 export const validationResultSchema = z.object({
@@ -44,6 +42,17 @@ export const fieldValidationErrorSchema = z.object({
 // ValidationErrors - from backend/utils/validation.ts
 export const validationErrorsSchema = z.record(z.string(), z.array(z.string()));
 
+// FilterCondition - from backend/utils/validation.ts (defined before FormField)
+export const filterConditionSchema = z.object({
+	type: z.enum(["ticket", "field", "time"]),
+	ticketId: z.string().optional(),
+	fieldId: z.string().optional(),
+	operator: z.enum(["equals", "filled", "notFilled"]).optional(),
+	value: z.unknown().optional(),
+	startTime: z.string().optional(),
+	endTime: z.string().optional(),
+});
+
 // FormField - from backend/utils/validation.ts
 export const formFieldSchema = z.object({
 	id: z.string(),
@@ -57,19 +66,18 @@ export const formFieldSchema = z.object({
 	required: z.boolean(),
 	values: z.string().nullable(),
 	prompts: z.string().nullable(),
-});
-
-// FilterCondition - from backend/utils/validation.ts
-export const filterConditionSchema = z.object({
-	field: z.string(),
-	operator: z.enum(["eq", "ne", "gt", "gte", "lt", "lte", "in", "nin", "contains", "startsWith", "endsWith"]),
-	value: z.unknown(),
+	filters: z.object({
+		enabled: z.boolean(),
+		operator: z.enum(["and", "or"]),
+		action: z.enum(["display", "hide"]),
+		conditions: z.array(filterConditionSchema),
+	}).optional(),
 });
 
 /**
  * Type exports
  */
-export type ValidationRule = z.infer<typeof validationRuleSchema>;
+// ValidationRule is already exported above
 export type ValidationSchema = z.infer<typeof validationSchemaSchema>;
 export type ValidationResult = z.infer<typeof validationResultSchema>;
 export type FormValidationRules = z.infer<typeof formValidationRulesSchema>;

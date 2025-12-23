@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { userRoleSchema } from "./database";
 
 /**
  * Authentication schemas
@@ -56,13 +55,7 @@ export const userUpdateRequestSchema = z.object({
 	image: z.string().optional(),
 });
 
-export const adminUserUpdateRequestSchema = z.object({
-	name: z.string().optional(),
-	email: z.string().email().optional(),
-	role: userRoleSchema.optional(),
-	permissions: z.array(z.string()).optional(),
-	isActive: z.boolean().optional(),
-});
+// Note: AdminUserUpdateRequest is now exported from user.ts to avoid duplication
 
 // Permission type
 export const permissionSchema = z.string();
@@ -86,6 +79,5 @@ export type MagicLinkRequestInput = z.infer<typeof magicLinkRequestSchema>;
 export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
 export type UserUpdateRequest = z.infer<typeof userUpdateRequestSchema>;
-export type AdminUserUpdateRequest = z.infer<typeof adminUserUpdateRequestSchema>;
 export type Permission = z.infer<typeof permissionSchema>;
 export type RolePermissions = z.infer<typeof rolePermissionsSchema>;

@@ -349,8 +349,8 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					where: { id: campaignId },
 					data: {
 						status: "sent",
-						sentCount: result.sentCount,
-						totalCount: result.totalRecipients,
+						sentCount: result.sent,
+						totalCount: recipients.length,
 						sentAt: new Date(),
 						updatedAt: new Date()
 					}
