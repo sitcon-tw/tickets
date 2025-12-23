@@ -1,39 +1,61 @@
 /**
  * Frontend API type definitions
  *
- * Common request types are imported from @tickets/shared
- * This file contains frontend-specific response and UI types
+ * REQUEST TYPES: Imported from @tickets/shared (validated with Zod)
+ * RESPONSE TYPES: Defined here (API responses with serialized data)
  */
 
-// Import common types from shared package
-import type {
+// ====================
+// Re-export Common Types & Request Schemas from Shared
+// ====================
+
+export type {
+	// Common utilities
 	ApiResponse,
 	ApiError,
 	LocalizedText,
+	Pagination,
+	PaginationQuery,
+	SearchQuery,
+	SortOrder,
+
+	// Enums
+	RegistrationStatus,
+	Role,
+
+	// Request schemas (for forms/API calls)
+	EventCreateRequest,
+	EventUpdateRequest,
+	TicketCreateRequest,
+	TicketUpdateRequest,
+	TicketReorderRequest,
+	EventFormFieldCreateRequest,
+	EventFormFieldUpdateRequest,
+	EventFormFieldReorderRequest,
+	RegistrationCreateRequest,
+	RegistrationUpdateRequest,
+	InvitationCodeCreateRequest,
+	InvitationCodeUpdateRequest,
+	InvitationCodeVerifyRequest,
+	InvitationCodeBulkCreateRequest,
+	InvitationCodeSendEmailRequest,
+	EmailCampaignCreateRequest,
+	UserCreateRequest,
+	AdminUserUpdateRequest,
+	ProfileUpdateRequest,
+	ReferralValidateRequest,
 } from "@tickets/shared";
 
-// Re-export for convenience
-export type { ApiResponse, ApiError, LocalizedText };
+import type { LocalizedText } from "@tickets/shared";
 
-/**
- * Frontend-specific response and UI types
- */
+// ====================
+// System & Health Response Types
+// ====================
 
-export interface PaginatedResponse<T> {
-	success: boolean;
-	message: string;
-	data: T[];
-	pagination?: {
-		page: number;
-		limit: number;
-		total: number;
-		totalPages: number;
-	};
-}
-
-export interface SessionResponse {
-	session: object | null;
-	user: User | null;
+export interface HealthStatus {
+	status: "ok" | "error";
+	timestamp: string;
+	version?: string;
 }
 
 export interface UserCapabilities {
@@ -52,14 +74,15 @@ export interface PermissionsResponse {
 	capabilities: UserCapabilities;
 }
 
-// System
-export interface HealthStatus {
-	status: "ok" | "error";
-	timestamp: string;
-	version?: string;
+export interface SessionResponse {
+	session: object | null;
+	user: User | null;
 }
 
-// User Types
+// ====================
+// User Response Types
+// ====================
+
 export interface User {
 	id: string;
 	name: string;
@@ -73,7 +96,10 @@ export interface User {
 	updatedAt: string;
 }
 
-// Event Types
+// ====================
+// Event Response Types
+// ====================
+
 export interface Event {
 	id: string;
 	slug?: string;
@@ -112,7 +138,10 @@ export interface EventStats {
 	registrationRate: number;
 }
 
-// Ticket Types
+// ====================
+// Ticket Response Types
+// ====================
+
 export interface Ticket {
 	id: string;
 	eventId?: string;
@@ -136,12 +165,21 @@ export interface Ticket {
 	requireSmsVerification?: boolean;
 }
 
-export interface TicketReorder {
-	tickets: Array<{
-		id: string;
-		order: number;
+export interface TicketAnalytics {
+	totalsoldCount: number;
+	totalRevenue: number;
+	availableQuantity: number;
+	salesByStatus: Record<string, number>;
+	dailySales: Array<{
+		date: string;
+		count: number;
+		revenue: number;
 	}>;
 }
+
+// ====================
+// Form Field Response Types
+// ====================
 
 export interface FilterCondition {
 	type: "ticket" | "field" | "time";
@@ -167,39 +205,22 @@ export interface EventFormField {
 	type: "text" | "textarea" | "select" | "checkbox" | "radio";
 	validater?: string;
 	name: LocalizedText;
-	description?: LocalizedText; // Localized description with markdown support
+	description?: LocalizedText;
 	placeholder?: string;
 	required: boolean;
-	values?: LocalizedText[]; // Array of localized objects, e.g., [{ "en": "Option 1" }, { "en": "Option 2" }]
-	options?: LocalizedText[]; // Parsed options for frontend use
-	filters?: FieldFilter; // Display conditions filter
-	prompts?: Record<string, string[]>; // Autocomplete prompts: { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
+	values?: LocalizedText[];
+	options?: LocalizedText[];
+	filters?: FieldFilter;
+	prompts?: Record<string, string[]>;
 }
 
-export interface EventFormFieldReorder {
-	fieldOrders: Array<{
-		id: string;
-		order: number;
-	}>;
-}
-
-// Backward compatibility alias
+/** @deprecated Use EventFormField instead */
 export type TicketFormField = EventFormField;
-export type TicketFormFieldReorder = EventFormFieldReorder;
 
-export interface TicketAnalytics {
-	totalsoldCount: number;
-	totalRevenue: number;
-	availableQuantity: number;
-	salesByStatus: Record<string, number>;
-	dailySales: Array<{
-		date: string;
-		count: number;
-		revenue: number;
-	}>;
-}
+// ====================
+// Registration Response Types
+// ====================
 
-// Registration Types
 export interface Registration {
 	id: string;
 	eventId: string;
@@ -233,15 +254,10 @@ export interface Registration {
 	canCancel?: boolean;
 }
 
-export interface RegistrationCreate {
-	eventId: string;
-	ticketId: string;
-	invitationCode?: string;
-	referralCode?: string;
-	formData: Record<string, unknown>;
-}
+// ====================
+// Referral Response Types
+// ====================
 
-// Referral Types
 export interface ReferralLink {
 	id: string;
 	referralLink: string;
@@ -271,131 +287,6 @@ export interface RegistrationStats {
 	};
 }
 
-// Invitation Code Types
-export interface InvitationCode {
-	id: string;
-	ticketId: string;
-	code: string;
-	name?: string;
-	usageLimit?: number;
-	usedCount: number;
-	validFrom?: string;
-	validUntil?: string;
-	isActive: boolean;
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface InvitationCodeInfo extends InvitationCode {
-	description?: string;
-	expiresAt?: string;
-}
-
-export interface InvitationCodeVerification {
-	valid: boolean;
-	invitationCode: {
-		id: string;
-		code: string;
-		description?: string;
-		usedCount: number;
-		usageLimit?: number;
-		expiresAt?: string;
-	};
-	availableTickets: Array<{
-		id: string;
-		name: LocalizedText;
-		description?: LocalizedText;
-		plainDescription?: LocalizedText;
-		price: number;
-		quantity: number;
-		soldCount: number;
-		available: number;
-		isOnSale: boolean;
-	}>;
-}
-
-// Analytics Types
-export interface EventDashboardData {
-	event: {
-		id: string;
-		name: LocalizedText;
-		startDate: string;
-		endDate: string;
-		location: string | null;
-	};
-	stats: {
-		totalRegistrations: number;
-		confirmedRegistrations: number;
-		pendingRegistrations: number;
-		cancelledRegistrations: number;
-		totalRevenue: number;
-	};
-	tickets: Array<{
-		id: string;
-		name: LocalizedText;
-		price: number;
-		quantity: number;
-		soldCount: number;
-		revenue: number;
-		available: number;
-		salesRate: number;
-	}>;
-	registrationTrends: Array<{
-		date: string;
-		count: number;
-		confirmed: number;
-	}>;
-	referralStats: {
-		totalReferrals: number;
-		activeReferrers: number;
-		conversionRate: number;
-	};
-}
-
-// Email Campaign Types
-export interface EmailCampaign {
-	id: string;
-	userId: string;
-	name: string;
-	subject: string;
-	content: string;
-	recipientFilter?: string;
-	targetAudience?: {
-		roles?: string[];
-		eventIds?: string[];
-		ticketIds?: string[];
-		registrationStatuses?: string[];
-		hasReferrals?: boolean;
-		isReferrer?: boolean;
-		registeredAfter?: string;
-		registeredBefore?: string;
-		tags?: string[];
-		emailDomains?: string[];
-	};
-	status: "draft" | "sent" | "scheduled" | "sending" | "cancelled";
-	sentCount: number;
-	totalCount: number;
-	scheduledAt?: string;
-	sentAt?: string;
-	createdAt: string;
-	updatedAt: string;
-	user?: {
-		name: string;
-		email: string;
-	};
-}
-
-export interface EmailCampaignStatus {
-	id: string;
-	status: "draft" | "sent" | "scheduled" | "sending" | "failed";
-	totalRecipients: number;
-	sentCount: number;
-	failedCount: number;
-	openCount?: number;
-	clickCount?: number;
-}
-
-// Referral Admin Types
 export interface ReferralOverview {
 	totalReferrals: number;
 	successfulReferrals: number;
@@ -450,14 +341,153 @@ export interface DrawResult {
 	totalParticipants: number;
 }
 
-// Export Data Types
+// ====================
+// Invitation Code Response Types
+// ====================
+
+export interface InvitationCode {
+	id: string;
+	ticketId: string;
+	code: string;
+	name?: string;
+	usageLimit?: number;
+	usedCount: number;
+	validFrom?: string;
+	validUntil?: string;
+	isActive: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface InvitationCodeInfo extends InvitationCode {
+	description?: string;
+	expiresAt?: string;
+}
+
+export interface InvitationCodeVerification {
+	valid: boolean;
+	invitationCode: {
+		id: string;
+		code: string;
+		description?: string;
+		usedCount: number;
+		usageLimit?: number;
+		expiresAt?: string;
+	};
+	availableTickets: Array<{
+		id: string;
+		name: LocalizedText;
+		description?: LocalizedText;
+		plainDescription?: LocalizedText;
+		price: number;
+		quantity: number;
+		soldCount: number;
+		available: number;
+		isOnSale: boolean;
+	}>;
+}
+
+// ====================
+// Analytics & Dashboard Response Types
+// ====================
+
+export interface EventDashboardData {
+	event: {
+		id: string;
+		name: LocalizedText;
+		startDate: string;
+		endDate: string;
+		location: string | null;
+	};
+	stats: {
+		totalRegistrations: number;
+		confirmedRegistrations: number;
+		pendingRegistrations: number;
+		cancelledRegistrations: number;
+		totalRevenue: number;
+	};
+	tickets: Array<{
+		id: string;
+		name: LocalizedText;
+		price: number;
+		quantity: number;
+		soldCount: number;
+		revenue: number;
+		available: number;
+		salesRate: number;
+	}>;
+	registrationTrends: Array<{
+		date: string;
+		count: number;
+		confirmed: number;
+	}>;
+	referralStats: {
+		totalReferrals: number;
+		activeReferrers: number;
+		conversionRate: number;
+	};
+}
+
+// ====================
+// Email Campaign Response Types
+// ====================
+
+export interface EmailCampaign {
+	id: string;
+	userId: string;
+	name: string;
+	subject: string;
+	content: string;
+	recipientFilter?: string;
+	targetAudience?: {
+		roles?: string[];
+		eventIds?: string[];
+		ticketIds?: string[];
+		registrationStatuses?: string[];
+		hasReferrals?: boolean;
+		isReferrer?: boolean;
+		registeredAfter?: string;
+		registeredBefore?: string;
+		tags?: string[];
+		emailDomains?: string[];
+	};
+	status: "draft" | "sent" | "scheduled" | "sending" | "cancelled";
+	sentCount: number;
+	totalCount: number;
+	scheduledAt?: string;
+	sentAt?: string;
+	createdAt: string;
+	updatedAt: string;
+	user?: {
+		name: string;
+		email: string;
+	};
+}
+
+export interface EmailCampaignStatus {
+	id: string;
+	status: "draft" | "sent" | "scheduled" | "sending" | "failed";
+	totalRecipients: number;
+	sentCount: number;
+	failedCount: number;
+	openCount?: number;
+	clickCount?: number;
+}
+
+// ====================
+// Export Data Response Types
+// ====================
+
 export interface ExportData {
 	downloadUrl: string;
 	filename: string;
 	count: number;
 }
 
-// Form Validation
+// ====================
+// Validation Error Types
+// ====================
+
 export interface ValidationError {
 	statusCode: number;
 	code: string;
@@ -468,4 +498,32 @@ export interface ValidationError {
 		message: string;
 	}>;
 	validationContext?: string;
+}
+
+// ====================
+// Legacy/Compatibility Types
+// ====================
+
+/** @deprecated Use RegistrationCreateRequest from @tickets/shared instead */
+export interface RegistrationCreate {
+	eventId: string;
+	ticketId: string;
+	invitationCode?: string;
+	referralCode?: string;
+	formData: Record<string, unknown>;
+}
+
+/** @deprecated Use ApiResponse<T[]> with pagination instead */
+export interface PaginatedResponse<T> {
+	success: boolean;
+	message: string;
+	data: T[];
+	pagination?: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasNext?: boolean;
+		hasPrev?: boolean;
+	};
 }
