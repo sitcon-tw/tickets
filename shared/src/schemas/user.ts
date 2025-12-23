@@ -23,7 +23,7 @@ export const adminUserUpdateSchema = z.object({
 
 export const profileUpdateSchema = z.object({
 	name: z.string().min(1).optional(),
-	image: z.string().url().optional(),
+	image: z.url().optional(),
 });
 
 export const adminChangePasswordSchema = z.object({

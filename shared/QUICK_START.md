@@ -147,7 +147,7 @@ z.record(z.string(), z.any())
 
 // Transformations
 z.string().transform(s => s.toUpperCase())
-z.string().datetime().transform(s => new Date(s))
+z.iso.datetime().transform(s => new Date(s))
 
 // Refinements (custom validation)
 z.string().refine(

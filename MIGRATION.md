@@ -255,8 +255,8 @@ const ticketSchema = z.object({
 import { z } from "zod";
 
 const eventCreateSchema = z.object({
-  startDate: z.string().datetime().transform((str) => new Date(str)),
-  endDate: z.string().datetime().transform((str) => new Date(str)),
+  startDate: z.iso.datetime().transform((str) => new Date(str)),
+  endDate: z.iso.datetime().transform((str) => new Date(str)),
 });
 ```
 

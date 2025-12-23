@@ -9,8 +9,8 @@ export const invitationCodeCreateSchema = z.object({
 	code: z.string().min(1),
 	name: z.string().optional(),
 	usageLimit: z.number().int().positive().default(1).optional(),
-	validFrom: z.string().datetime().optional(),
-	validUntil: z.string().datetime().optional(),
+	validFrom: z.iso.datetime().optional(),
+	validUntil: z.iso.datetime().optional(),
 	ticketId: z.cuid().optional(),
 });
 
@@ -18,8 +18,8 @@ export const invitationCodeUpdateSchema = z.object({
 	code: z.string().min(1).optional(),
 	name: z.string().optional(),
 	usageLimit: z.number().int().positive().optional(),
-	validFrom: z.string().datetime().optional(),
-	validUntil: z.string().datetime().optional(),
+	validFrom: z.iso.datetime().optional(),
+	validUntil: z.iso.datetime().optional(),
 	isActive: z.boolean().optional(),
 	ticketId: z.cuid().optional(),
 });

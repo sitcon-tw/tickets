@@ -12,8 +12,8 @@ export const ticketCreateSchema = z.object({
 	description: z.union([z.string(), localizedTextSchema]).optional(),
 	price: z.number().nonnegative(),
 	quantity: z.number().int().nonnegative(),
-	saleStart: z.string().datetime().optional(),
-	saleEnd: z.string().datetime().optional(),
+	saleStart: z.iso.datetime().optional(),
+	saleEnd: z.iso.datetime().optional(),
 	requireInviteCode: z.boolean().default(false).optional(),
 	hidden: z.boolean().default(false).optional(),
 });
@@ -24,8 +24,8 @@ export const ticketUpdateSchema = z.object({
 	description: z.union([z.string(), localizedTextSchema]).optional(),
 	price: z.number().nonnegative().optional(),
 	quantity: z.number().int().nonnegative().optional(),
-	saleStart: z.string().datetime().optional(),
-	saleEnd: z.string().datetime().optional(),
+	saleStart: z.iso.datetime().optional(),
+	saleEnd: z.iso.datetime().optional(),
 	isActive: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 });
