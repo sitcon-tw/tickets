@@ -51,6 +51,7 @@ export interface FormFieldProps {
 	onTextChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 	onCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	pleaseSelectText: string;
+	otherText?: string;
 }
 
 // Home Components

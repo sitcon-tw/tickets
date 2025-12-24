@@ -1,5 +1,9 @@
-import { ChangeEvent } from "react";
+import MarkdownContent from "@/components/MarkdownContent";
+import { getTranslations } from "@/i18n/helpers";
+import { useLocale } from "next-intl";
+import { ChangeEvent, useEffect, useState } from "react";
 import styled from "styled-components";
+import { Input } from "../ui/input";
 
 export type RadioOption = string | { value: string; label: string };
 
@@ -11,6 +15,10 @@ type RadioProps = {
 	value?: string;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	onValueChange?: (value: string) => void;
+	enableOther?: boolean;
+	otherLabel?: string;
+	otherPlaceholder?: string;
+	description?: string;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -103,21 +111,101 @@ const StyledWrapper = styled.fieldset`
 	:is(.dark, .dark *) & .radio-button:hover .radio-circle {
 		border-color: rgb(229 231 235);
 	}
+
+	.other-input-wrapper {
+		margin-left: 30px;
+		margin-top: 8px;
+	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange, onValueChange }: RadioProps) {
-	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherPlaceholder = "", description }: RadioProps) {
+	const OTHER_VALUE = "__other__";
+	const locale = useLocale();
+
+	const t = getTranslations(locale, {
+		other: {
+			"zh-Hant": "其他",
+			"zh-Hans": "其他",
+			en: "Other"
+		}
+	});
+
+	const defaultOtherLabel = t.other;
+
+	const optionValues = options.map(opt => (typeof opt === "object" && opt !== null && "value" in opt ? opt.value : String(opt)));
+
+	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
+	const [isOtherRadioSelected, setIsOtherRadioSelected] = useState(!valueIsAPredefinedOption && enableOther && value !== undefined);
+	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : value || "");
+
+	useEffect(() => {
+		const isPredefined = value !== undefined && value !== "" && optionValues.includes(value);
+		if (isPredefined) {
+			setIsOtherRadioSelected(false);
+		} else if (value !== undefined && value !== "" && enableOther) {
+			setIsOtherRadioSelected(true);
+			setOtherText(value);
+		}
+	}, [value, optionValues, enableOther]);
+
+	const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const selectedValue = e.target.value;
+
+		if (selectedValue === OTHER_VALUE) {
+			setIsOtherRadioSelected(true);
+			const newValue = otherText || "";
+			const syntheticEvent = {
+				...e,
+				target: {
+					...e.target,
+					value: newValue
+				}
+			} as ChangeEvent<HTMLInputElement>;
+
+			if (onChange) {
+				onChange(syntheticEvent);
+			}
+			if (onValueChange) {
+				onValueChange(newValue);
+			}
+		} else {
+			setIsOtherRadioSelected(false);
+			if (onChange) {
+				onChange(e);
+			}
+			if (onValueChange) {
+				onValueChange(selectedValue);
+			}
+		}
+	};
+
+	const handleOtherTextChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const newText = e.target.value;
+		setOtherText(newText);
+
+		const syntheticEvent = {
+			target: {
+				name: name,
+				value: newText
+			}
+		} as ChangeEvent<HTMLInputElement>;
+
 		if (onChange) {
-			onChange(e);
+			onChange(syntheticEvent);
 		}
 		if (onValueChange) {
-			onValueChange(e.target.value);
+			onValueChange(newText);
 		}
 	};
 
 	return (
 		<StyledWrapper>
 			<legend className="legend">{label}</legend>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<div className="radio-buttons">
 				{options.map((option, i) => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
@@ -127,12 +215,22 @@ export default function Radio({ label, name, options, required = true, value, on
 
 					return (
 						<label key={optionId} className="radio-button">
-							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleChange} />
+							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleRadioChange} />
 							<div className="radio-circle" />
 							<span className="radio-label">{optionLabel}</span>
 						</label>
 					);
 				})}
+				{enableOther && (
+					<>
+						<label className="radio-button">
+							<input type="radio" id={`${name}-other`} name={name} value={OTHER_VALUE} required={required && options.length === 0} checked={isOtherRadioSelected} onChange={handleRadioChange} />
+							<div className="radio-circle" />
+							<span className="radio-label">{defaultOtherLabel}</span>
+						</label>
+						{isOtherRadioSelected && <Input type="text" className="max-w-64" placeholder={otherPlaceholder} value={otherText} onChange={handleOtherTextChange} required={required} />}
+					</>
+				)}
 			</div>
 		</StyledWrapper>
 	);

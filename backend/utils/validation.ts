@@ -26,6 +26,7 @@ export interface FormField {
 		action?: "display" | "hide";
 		conditions: FilterCondition[];
 	};
+	enableOther?: boolean;
 }
 
 export interface FilterCondition {
@@ -252,8 +253,25 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 							})
 							.flat();
 
+						// For radio fields with enableOther, allow custom values
+						const isOtherValue = field.type === "radio" && field.enableOther && !validValues.includes(value);
+
 						if (!validValues.includes(value)) {
-							fieldErrors.push(`${field.description}選項無效，可選值：${validValues.join(", ")}`);
+							if (isOtherValue) {
+								// If "Other" is enabled, validate custom value with regex if provided
+								if (field.validater && typeof value === "string") {
+									try {
+										const regex = new RegExp(field.validater);
+										if (!regex.test(value)) {
+											fieldErrors.push(`${field.description}格式不正確`);
+										}
+									} catch (e) {
+										fieldErrors.push(`${field.description}驗證規則配置錯誤`);
+									}
+								}
+							} else {
+								fieldErrors.push(`${field.description}選項無效，可選值：${validValues.join(", ")}`);
+							}
 						}
 					} catch (e) {
 						fieldErrors.push(`${field.description}選項配置錯誤`);

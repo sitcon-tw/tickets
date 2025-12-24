@@ -41,6 +41,7 @@ type Question = {
 	prompts?: Record<string, string[]>;
 	showIf?: ShowIf;
 	filters?: FieldFilter;
+	enableOther?: boolean;
 };
 
 export default function FormsPage() {
@@ -80,6 +81,8 @@ export default function FormsPage() {
 		validator: { "zh-Hant": "驗證正規表達式", "zh-Hans": "验证正则表达式", en: "Validation Regex" },
 		validatorPlaceholder: { "zh-Hant": "例如：^[A-Z0-9]+$ (選填)", "zh-Hans": "例如：^[A-Z0-9]+$ (选填)", en: "e.g., ^[A-Z0-9]+$ (optional)" },
 		useValidator: { "zh-Hant": "使用此正規表達式驗證輸入內容", "zh-Hans": "使用此正则表达式验证输入内容", en: "Use this regex to validate input" },
+		enableOther: { "zh-Hant": "允許「其他」選項", "zh-Hans": "允许「其他」选项", en: "Enable 'Other' Option" },
+		enableOtherDescription: { "zh-Hant": "使用者可選擇「其他」並輸入自訂內容", "zh-Hans": "使用者可选择「其他」并输入自订内容", en: "Users can select 'Other' and enter custom text" },
 		formFields: { "zh-Hant": "表單欄位", "zh-Hans": "表单栏位", en: "Form Fields" },
 		fieldName: { "zh-Hant": "欄位名稱", "zh-Hans": "栏位名称", en: "Field Name" },
 		fieldSettings: { "zh-Hant": "欄位設定", "zh-Hans": "栏位设定", en: "Field Settings" },
@@ -257,7 +260,8 @@ export default function FormsPage() {
 						validater: field.validater || "",
 						options,
 						prompts,
-						filters: field.filters || undefined
+						filters: field.filters || undefined,
+						enableOther: field.enableOther || false
 					};
 				});
 
@@ -281,6 +285,7 @@ export default function FormsPage() {
 			if (response.success && response.data) {
 				const copiedQuestions = response.data.map((field: EventFormField) => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let prompts: Record<string, string[]> = {};
 
 					const fieldWithOptions = field as EventFormField & { options?: unknown };
 					const rawOptions = fieldWithOptions.options || field.values;
@@ -319,6 +324,20 @@ export default function FormsPage() {
 						}
 					}
 
+					const rawPrompts = field.prompts;
+					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
+						prompts = rawPrompts as Record<string, string[]>;
+					} else if (rawPrompts && typeof rawPrompts === "string") {
+						try {
+							const parsed = JSON.parse(rawPrompts);
+							if (typeof parsed === "object" && !Array.isArray(parsed)) {
+								prompts = parsed as Record<string, string[]>;
+							}
+						} catch {
+							console.warn("Failed to parse field prompts as JSON:", rawPrompts);
+						}
+					}
+
 					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
 					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
 
@@ -339,7 +358,9 @@ export default function FormsPage() {
 						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
 						filters: field.filters || undefined,
-						options
+						options,
+						prompts,
+						enableOther: field.enableOther || false
 					};
 				});
 
@@ -378,6 +399,7 @@ export default function FormsPage() {
 				values: q.options,
 				prompts: q.prompts,
 				filters: q.filters || null,
+				enableOther: q.type === "radio" ? q.enableOther || false : undefined,
 				order: index
 			}));
 
@@ -401,7 +423,8 @@ export default function FormsPage() {
 					validater: fieldData.validater || "",
 					values: fieldData.values,
 					prompts: fieldData.prompts,
-					filters: fieldData.filters || undefined
+					filters: fieldData.filters || undefined,
+					enableOther: fieldData.enableOther
 				};
 
 				if (fieldData.id) {
@@ -858,6 +881,22 @@ export default function FormsPage() {
 																		className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700"
 																	/>
 																	<p className="text-[0.7rem] text-gray-600 dark:text-gray-500 mt-1.5 mb-0">{t.useValidator}</p>
+																</div>
+															)}
+															{q.type === "radio" && (
+																<div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+																	<Checkbox
+																		id={`enableOther-${q.id}`}
+																		checked={q.enableOther || false}
+																		onCheckedChange={checked => updateQuestion(q.id, { enableOther: !!checked })}
+																		className="mt-0.5"
+																	/>
+																	<div className="flex-1">
+																		<Label htmlFor={`enableOther-${q.id}`} className="text-xs font-semibold text-blue-900 dark:text-blue-100 cursor-pointer">
+																			{t.enableOther}
+																		</Label>
+																		<p className="text-[0.7rem] text-blue-700 dark:text-blue-300 mt-1">{t.enableOtherDescription}</p>
+																	</div>
 																</div>
 															)}
 														</div>

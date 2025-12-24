@@ -3,6 +3,7 @@ import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth.ts";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
+import type { Event, Registration, Ticket } from "#types/database.ts";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
@@ -330,16 +331,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
-				await sendRegistrationConfirmation(
-					{
-						id: result.id,
-						email: result.email,
-						formData: result.formData
-					} as any,
-					event as any,
-					ticket as any,
-					ticketUrl
-				).catch(error => {
+				await sendRegistrationConfirmation(result as unknown as Registration, event as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 

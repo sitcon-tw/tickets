@@ -46,6 +46,36 @@ export const userProperties = {
 	updatedAt: {
 		...dateTimeString,
 		description: "更新時間"
+	},
+	smsVerifications: {
+		type: "array",
+		items: {
+			type: "object",
+			properties: {
+				id: {
+					type: "string",
+					description: "SMS 驗證記錄 ID"
+				},
+				phoneNumber: {
+					type: "string",
+					description: "電話號碼"
+				},
+				verified: {
+					type: "boolean",
+					description: "是否已驗證"
+				},
+				createdAt: {
+					...dateTimeString,
+					description: "建立時間"
+				},
+				updatedAt: {
+					...dateTimeString,
+					description: "更新時間"
+				}
+			},
+			required: ["id", "phoneNumber", "verified", "createdAt", "updatedAt"]
+		},
+		description: "用戶的 SMS 驗證記錄列表"
 	}
 } as const;
 

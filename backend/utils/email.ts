@@ -160,7 +160,30 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			const localizedName = getLocalizedFieldName(key);
 			const formattedValue = formatFieldValue(key, value);
 
-			formDataRows += `
+			const shouldBreak = formattedValue.length > 50;
+
+			if (shouldBreak) {
+				formDataRows += `
+					<tr>
+						<td
+							style="
+								padding: 8px 0;
+								background: linear-gradient(#6b7280, #6b7280);
+								background-clip: text;
+								-webkit-background-clip: text;
+								-webkit-text-fill-color: transparent;
+								color: transparent;
+								font-weight: bold;
+							"
+						>
+							${localizedName}：
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0" colspan="2">${formattedValue}</td>
+					</tr>`;
+			} else {
+				formDataRows += `
 					<tr>
 						<td
 							style="
@@ -177,6 +200,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 						</td>
 						<td style="padding: 8px 0">${formattedValue}</td>
 					</tr>`;
+			}
 		}
 
 		const eventDate = new Date(event.startDate).toLocaleDateString("zh-TW");

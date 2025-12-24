@@ -1,3 +1,4 @@
+import MarkdownContent from "@/components/MarkdownContent";
 import styled from "styled-components";
 
 export type CheckboxOption = string | { value: string; label: string };
@@ -8,6 +9,7 @@ type MultiCheckboxProps = {
 	options: CheckboxOption[];
 	values?: string[];
 	onValueChange?: (values: string[]) => void;
+	description?: string;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -24,12 +26,6 @@ const StyledWrapper = styled.fieldset`
 
 	:is(.dark, .dark *) & .legend {
 		color: rgb(243 244 246);
-	}
-
-	.checkbox-items {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
 	}
 `;
 
@@ -96,7 +92,7 @@ const StyledLabel = styled.label`
 	}
 `;
 
-export default function MultiCheckbox({ label, name, options, values = [], onValueChange }: MultiCheckboxProps) {
+export default function MultiCheckbox({ label, name, options, values = [], onValueChange, description }: MultiCheckboxProps) {
 	const handleCheckedChange = (optionValue: string, checked: boolean) => {
 		if (!onValueChange) return;
 
@@ -110,7 +106,12 @@ export default function MultiCheckbox({ label, name, options, values = [], onVal
 	return (
 		<StyledWrapper>
 			<legend className="legend">{label}</legend>
-			<div className="checkbox-items">
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
+			<div className={`grid gap-3 ${options.length > 10 ? "grid-cols-2" : "grid-cols-1"}`}>
 				{options.map(option => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);

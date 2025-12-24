@@ -215,14 +215,14 @@ export default function InvitesPage() {
 
 		const data: {
 			ticketId: string;
-			prefix: string;
+			name: string;
 			count: number;
 			usageLimit: number;
 			validFrom?: string;
 			validUntil?: string;
 		} = {
 			ticketId: selectedTicketId,
-			prefix: formData.name,
+			name: formData.name,
 			count: formData.amount,
 			usageLimit: formData.usageLimit
 		};
@@ -551,7 +551,7 @@ export default function InvitesPage() {
 						</div>
 					</div>
 					<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
-						©SITCON 2026
+						©SITCON
 						<br />
 						寄送給 {samplePair.email}
 					</div>

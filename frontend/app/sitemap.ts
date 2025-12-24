@@ -1,5 +1,5 @@
-import type { MetadataRoute } from "next";
 import type { ApiResponse, EventListItem } from "@/lib/types/api";
+import type { MetadataRoute } from "next";
 
 const BASE_URL = process.env.FRONTEND_URI || "https://tickets.sitcon.org";
 const API_URL = process.env.BACKEND_URI || "http://localhost:8000";
@@ -27,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		console.error("Failed to fetch events for sitemap:", error);
 	}
 
-	locales.forEach((locale) => {
+	locales.forEach(locale => {
 		sitemap.push({
 			url: `${BASE_URL}/${locale}`,
 			lastModified: new Date(),
@@ -36,12 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		});
 	});
 
-	events.forEach((event) => {
+	events.forEach(event => {
 		if (event.slug) {
 			const lastModified = event.updatedAt ? new Date(event.updatedAt) : new Date();
 			const validLastModified = isNaN(lastModified.getTime()) ? new Date() : lastModified;
 
-			locales.forEach((locale) => {
+			locales.forEach(locale => {
 				sitemap.push({
 					url: `${BASE_URL}/${locale}/${event.slug}`,
 					lastModified: validLastModified,
@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		}
 	});
 
-	locales.forEach((locale) => {
+	locales.forEach(locale => {
 		sitemap.push({
 			url: `${BASE_URL}/${locale}/login`,
 			lastModified: new Date(),
@@ -61,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		});
 	});
 
-	locales.forEach((locale) => {
+	locales.forEach(locale => {
 		sitemap.push({
 			url: `${BASE_URL}/${locale}/my-registration`,
 			lastModified: new Date(),

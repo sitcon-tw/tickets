@@ -66,6 +66,11 @@ export interface User {
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
+	smsVerifications?: Array<{
+		id: string;
+		phoneNumber: string;
+		verified: boolean;
+	}>;
 }
 
 // Localized Text Type
@@ -172,6 +177,7 @@ export interface EventFormField {
 	options?: LocalizedText[]; // Parsed options for frontend use
 	filters?: FieldFilter; // Display conditions filter
 	prompts?: Record<string, string[]>; // Autocomplete prompts: { "en": ["a", "b"], "zh-Hant": ["甲", "乙"] }
+	enableOther?: boolean; // Allow "Other" option for radio fields
 }
 
 export interface EventFormFieldReorder {

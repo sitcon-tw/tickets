@@ -384,7 +384,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 										placeholder: { type: "string" },
 										order: { type: "integer" },
 										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true }
+										prompts: { type: "object", additionalProperties: true },
+										enableOther: { type: "boolean" }
 									}
 								}
 							}
@@ -432,7 +433,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						values: true,
 						order: true,
 						filters: true,
-						prompts: true
+						prompts: true,
+						enableOther: true
 					},
 					orderBy: { order: "asc" }
 				});
@@ -448,106 +450,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					options: field.values || [],
 					order: field.order,
 					filters: field.filters || {},
-					prompts: field.prompts || {}
-				}));
-
-				return reply.send(successResponse(transformedFields));
-			} catch (error) {
-				console.error("Get event form fields error:", error);
-				const { response, statusCode } = serverErrorResponse("取得表單欄位失敗");
-				return reply.code(statusCode).send(response);
-			}
-		}
-	);
-
-	fastify.get<{ Params: EventIdParams }>(
-		"/events/:id/form-fields",
-		{
-			schema: {
-				description: "獲取活動報名表單欄位",
-				tags: ["events"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "活動 ID 或 slug"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "object", additionalProperties: true },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" }
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
-			try {
-				const { id } = request.params;
-
-				const event = await prisma.event.findFirst({
-					where: {
-						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
-						isActive: true
-					}
-				});
-
-				if (!event) {
-					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
-					return reply.code(statusCode).send(response);
-				}
-
-				const formFields = await prisma.eventFormFields.findMany({
-					where: {
-						eventId: event.id
-					},
-					select: {
-						id: true,
-						name: true,
-						description: true,
-						type: true,
-						required: true,
-						validater: true,
-						placeholder: true,
-						values: true,
-						order: true
-					},
-					orderBy: { order: "asc" }
-				});
-
-				const transformedFields = formFields.map(field => ({
-					id: field.id,
-					name: field.name,
-					description: field.description,
-					type: field.type,
-					required: field.required,
-					validater: field.validater,
-					placeholder: field.placeholder,
-					options: field.values || [],
-					order: field.order
+					prompts: field.prompts || {},
+					enableOther: field.enableOther || false
 				}));
 
 				return reply.send(successResponse(transformedFields));

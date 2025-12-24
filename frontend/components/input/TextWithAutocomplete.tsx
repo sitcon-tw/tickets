@@ -1,5 +1,6 @@
 "use client";
 
+import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChangeEvent, memo, useCallback, useEffect, useRef, useState } from "react";
@@ -12,17 +13,17 @@ type TextWithAutocompleteProps = {
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	placeholder?: string;
 	readOnly?: boolean;
-	prompts?: string[]; // List of autocomplete prompts/suggestions
+	prompts?: string[];
+	description?: string;
 };
 
-function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = [] }: TextWithAutocompleteProps) {
+function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = [], description }: TextWithAutocompleteProps) {
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [filteredPrompts, setFilteredPrompts] = useState<string[]>([]);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const suggestionsRef = useRef<HTMLDivElement>(null);
 
-	// Filter prompts based on input value
 	const updateFilteredPrompts = useCallback(() => {
 		if (!value || value.trim() === "" || prompts.length === 0) {
 			setFilteredPrompts([]);
@@ -42,7 +43,6 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 		updateFilteredPrompts();
 	}, [updateFilteredPrompts]);
 
-	// Close suggestions when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) && inputRef.current && !inputRef.current.contains(event.target as Node)) {
@@ -103,6 +103,11 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 	return (
 		<div className="space-y-2 relative">
 			<Label htmlFor={id}>{label}</Label>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 -mt-1 mb-1">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<div className="relative">
 				<Input
 					ref={inputRef}

@@ -36,12 +36,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						isActive: true,
 						createdAt: true,
 						updatedAt: true,
-						_count: {
-							select: {
-								sessions: true,
-								registrations: true
-							}
-						}
+						smsVerifications: true
 					},
 					orderBy: { createdAt: "desc" }
 				});

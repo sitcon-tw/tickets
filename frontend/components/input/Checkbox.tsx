@@ -1,3 +1,4 @@
+import MarkdownContent from "@/components/MarkdownContent";
 import { ChangeEvent, forwardRef } from "react";
 import styled from "styled-components";
 
@@ -10,6 +11,7 @@ type CheckboxProps = {
 	checked?: boolean;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	inputRef?: React.Ref<HTMLInputElement>;
+	description?: string;
 };
 
 const HiddenCheckbox = styled.input.attrs({ type: "checkbox" })`
@@ -75,7 +77,7 @@ const StyledLabel = styled.label`
 	}
 `;
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = false, value, checked, onChange, inputRef }, ref) => {
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = false, value, checked, onChange, inputRef, description }, ref) => {
 	return (
 		<div>
 			{question ? <p style={{ marginBottom: "1rem", color: "inherit" }}>{question}</p> : null}
@@ -90,6 +92,11 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, quest
 				</svg>
 				{label}
 			</StyledLabel>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 ml-7 mt-1">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 		</div>
 	);
 });
