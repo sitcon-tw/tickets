@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import type { Event, Registration, Ticket } from "../types/database";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
+import { username } from "better-auth/plugins";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

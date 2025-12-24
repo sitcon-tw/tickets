@@ -10,6 +10,7 @@ import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { Registration, Event, Ticket } from "#types/database.ts";
 
 interface RegistrationCreateRequest {
 	eventId: string;
@@ -331,13 +332,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
 				await sendRegistrationConfirmation(
-					{
-						id: result.id,
-						email: result.email,
-						formData: result.formData
-					} as any,
-					event as any,
-					ticket as any,
+					result as unknown as Registration,
+					event as Event,
+					ticket as unknown as Ticket,
 					ticketUrl
 				).catch(error => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
