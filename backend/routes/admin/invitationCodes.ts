@@ -360,7 +360,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.post<{
 		Body: {
 			ticketId: string;
-			prefix: string;
+			name: string;
 			count: number;
 			usageLimit?: number;
 			validFrom?: string;
@@ -380,7 +380,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 							type: "string",
 							description: "票券 ID"
 						},
-						prefix: {
+						name: {
 							type: "string",
 							description: "邀請碼前綴",
 							minLength: 1
@@ -407,7 +407,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 							description: "結束時間"
 						}
 					},
-					required: ["ticketId", "prefix", "count"]
+					required: ["ticketId", "name", "count"]
 				}
 			}
 		},
@@ -415,7 +415,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			request: FastifyRequest<{
 				Body: {
 					ticketId: string;
-					prefix: string;
+					name: string;
 					count: number;
 					usageLimit?: number;
 					validFrom?: string;
@@ -425,7 +425,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			reply: FastifyReply
 		) => {
 			try {
-				const { ticketId, prefix, count, usageLimit, validFrom, validUntil } = request.body;
+				const { ticketId, name, count, usageLimit, validFrom, validUntil } = request.body;
 
 				const ticket = await prisma.ticket.findUnique({
 					where: { id: ticketId }
@@ -447,8 +447,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					let code;
 					let attempts = 0;
 					do {
-						const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-						code = `${prefix}-${randomSuffix}`;
+						code = Math.random().toString(36).substring(2, 8).toUpperCase();
 						attempts++;
 					} while (existingCodeSet.has(code) && attempts < 100);
 
@@ -460,7 +459,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					codes.push({
 						ticket: { connect: { id: ticketId } },
 						code,
-						name: `批量生成的邀請碼 - ${prefix}`,
+						name: `批量生成的邀請碼 - ${name}`,
 						usageLimit,
 						usedCount: 0,
 						validFrom: validFrom ? new Date(validFrom) : null,

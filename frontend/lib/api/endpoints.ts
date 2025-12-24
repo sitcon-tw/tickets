@@ -209,7 +209,7 @@ export const adminInvitationCodesAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/invitation-codes/${id}`),
 
-	bulkCreate: (data: { ticketId: string; prefix: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
+	bulkCreate: (data: { ticketId: string; name: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
 		apiClient.post<ApiResponse<InvitationCodeInfo[]>>("/api/admin/invitation-codes/bulk", data)
 };
 

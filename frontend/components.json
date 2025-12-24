@@ -8,7 +8,7 @@
 		"css": "app/globals.css",
 		"baseColor": "gray",
 		"cssVariables": true,
-		"prefix": ""
+		"name": ""
 	},
 	"iconLibrary": "lucide",
 	"aliases": {
