@@ -85,7 +85,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const { id } = request.params;
 
 				const formField = (await prisma.eventFormFields.findUnique({
-					where: { id },
+					where: { id }
 				})) as EventFormFields | null;
 
 				if (!formField) {

@@ -47,7 +47,18 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} description={fieldDescription} />;
 
 		case "textarea":
-			return <Textarea label={label} id={fieldId} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} description={fieldDescription} />;
+			return (
+				<Textarea
+					label={label}
+					id={fieldId}
+					rows={3}
+					placeholder={field.placeholder || ""}
+					required={field.required}
+					value={(value as string) || ""}
+					onChange={onTextChange}
+					description={fieldDescription}
+				/>
+			);
 
 		case "select":
 			return (

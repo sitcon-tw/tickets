@@ -1,8 +1,8 @@
 "use client";
 
+import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import MarkdownContent from "@/components/MarkdownContent";
 import { ChangeEvent, memo, useCallback, useEffect, useRef, useState } from "react";
 
 type TextWithAutocompleteProps = {

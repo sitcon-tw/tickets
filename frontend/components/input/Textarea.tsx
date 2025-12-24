@@ -1,6 +1,6 @@
+import MarkdownContent from "@/components/MarkdownContent";
 import { Label } from "@/components/ui/label";
 import { Textarea as TextareaUI } from "@/components/ui/textarea";
-import MarkdownContent from "@/components/MarkdownContent";
 import { ChangeEvent } from "react";
 
 type TextareaProps = {

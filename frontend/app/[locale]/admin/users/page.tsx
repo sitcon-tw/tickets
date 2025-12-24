@@ -220,7 +220,7 @@ export default function UsersPage() {
 											<span key={sms.id}>
 												{t.phone}: {sms.phoneNumber} - {sms.verified ? t.emailVerified : t.emailNotVerified}
 											</span>
-									  ))
+										))
 									: null}
 							</p>
 						</div>

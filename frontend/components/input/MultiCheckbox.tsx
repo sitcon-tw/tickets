@@ -1,5 +1,5 @@
-import styled from "styled-components";
 import MarkdownContent from "@/components/MarkdownContent";
+import styled from "styled-components";
 
 export type CheckboxOption = string | { value: string; label: string };
 
