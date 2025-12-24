@@ -66,6 +66,11 @@ export interface User {
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
+	smsVerifications?: Array<{
+		id: string;
+		phoneNumber: string;
+		verified: boolean;
+	}>;
 }
 
 // Localized Text Type

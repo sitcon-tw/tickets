@@ -56,7 +56,8 @@ export default function UsersPage() {
 		emailNotVerified: { "zh-Hant": "未驗證", "zh-Hans": "未验证", en: "Not Verified" },
 		manageableEvents: { "zh-Hant": "可管理的活動", "zh-Hans": "可管理的活动", en: "Manageable Events" },
 		selectEvents: { "zh-Hant": "選擇活動", "zh-Hans": "选择活动", en: "Select Events" },
-		noEventsSelected: { "zh-Hant": "未選擇任何活動", "zh-Hans": "未选择任何活动", en: "No events selected" }
+		noEventsSelected: { "zh-Hant": "未選擇任何活動", "zh-Hans": "未选择任何活动", en: "No events selected" },
+		phone: { "zh-Hant": "電話號碼", "zh-Hans": "电话号码", en: "Phone Number" }
 	});
 
 	const loadUsers = useCallback(async () => {
@@ -212,6 +213,15 @@ export default function UsersPage() {
 							</p>
 							<p className="m-0 mb-2 text-sm opacity-70">
 								{t.email}: <strong>{editingUser?.email}</strong>
+							</p>
+							<p className="m-0 text-sm opacity-70">
+								{editingUser?.smsVerifications && editingUser.smsVerifications.length > 0
+									? editingUser.smsVerifications.map(sms => (
+											<span key={sms.id}>
+												{t.phone}: {sms.phoneNumber} - {sms.verified ? t.emailVerified : t.emailNotVerified}
+											</span>
+									  ))
+									: null}
 							</p>
 						</div>
 						<div className="mb-4">
