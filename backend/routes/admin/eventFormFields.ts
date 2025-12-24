@@ -51,7 +51,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						type,
 						validater: validater === "" ? null : (validater ?? null),
 						name,
-						description: description && typeof description === "object" ? description : {},
+						description: description,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
 						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),

@@ -27,12 +27,6 @@ const StyledWrapper = styled.fieldset`
 	:is(.dark, .dark *) & .legend {
 		color: rgb(243 244 246);
 	}
-
-	.checkbox-items {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
 `;
 
 const HiddenCheckbox = styled.input.attrs({ type: "checkbox" })`
@@ -117,7 +111,7 @@ export default function MultiCheckbox({ label, name, options, values = [], onVal
 					<MarkdownContent content={description} className="text-sm" />
 				</div>
 			)}
-			<div className="checkbox-items">
+			<div className={`grid gap-3 ${options.length > 10 ? "grid-cols-2" : "grid-cols-1"}`}>
 				{options.map(option => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
