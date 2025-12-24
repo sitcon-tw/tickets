@@ -151,7 +151,7 @@ export default function Success() {
 							setReferralCode(code);
 						}
 					} else {
-						setReferralCode(t.loadFailed);
+						router.push(`/${eventSlug}`);
 					}
 				} catch (error) {
 					console.error("Failed to load registrations:", error);
