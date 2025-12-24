@@ -127,6 +127,7 @@ export interface EventFormFields {
 	required: boolean;
 	values: string | null;
 	prompts: string | null;
+	enableOther: boolean | null;
 }
 
 /**

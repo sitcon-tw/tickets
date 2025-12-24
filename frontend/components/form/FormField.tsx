@@ -112,6 +112,8 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 							} as React.ChangeEvent<HTMLInputElement>;
 							onTextChange(syntheticEvent);
 						}}
+						enableOther={field.enableOther}
+						otherPlaceholder={field.placeholder}
 					/>
 				</FieldWrapper>
 			);

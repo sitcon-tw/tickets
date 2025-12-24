@@ -67,6 +67,10 @@ export const eventFormFieldProperties = {
 			}
 		},
 		description: '自動完成提示（localized object with arrays，用於 text 類型）格式：{"en": ["option1", "option2"], "zh-Hant": ["選項 1", "選項 2"]}'
+	},
+	enableOther: {
+		type: "boolean",
+		description: "是否啟用「其他」選項（僅用於 select、radio、checkbox 類型）"
 	}
 } as const;
 

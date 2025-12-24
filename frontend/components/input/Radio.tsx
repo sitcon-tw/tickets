@@ -1,5 +1,6 @@
-import { ChangeEvent } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import styled from "styled-components";
+import { Input } from "../ui/input";
 
 export type RadioOption = string | { value: string; label: string };
 
@@ -11,6 +12,9 @@ type RadioProps = {
 	value?: string;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	onValueChange?: (value: string) => void;
+	enableOther?: boolean;
+	otherLabel?: string;
+	otherPlaceholder?: string;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -103,15 +107,87 @@ const StyledWrapper = styled.fieldset`
 	:is(.dark, .dark *) & .radio-button:hover .radio-circle {
 		border-color: rgb(229 231 235);
 	}
+
+	.other-input-wrapper {
+		margin-left: 30px;
+		margin-top: 8px;
+	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange, onValueChange }: RadioProps) {
-	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherLabel = "Other", otherPlaceholder = "" }: RadioProps) {
+	const OTHER_VALUE = "__other__";
+
+	// Check if current value is one of the predefined options
+	const optionValues = options.map(opt =>
+		typeof opt === "object" && opt !== null && "value" in opt ? opt.value : String(opt)
+	);
+
+	// Track whether "Other" radio is selected (separate from the text value)
+	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
+	const [isOtherRadioSelected, setIsOtherRadioSelected] = useState(!valueIsAPredefinedOption && enableOther && value !== undefined);
+	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : (value || ""));
+
+	// Sync state when value prop changes from outside (e.g., form reset or load from saved data)
+	useEffect(() => {
+		const isPredefined = value !== undefined && value !== "" && optionValues.includes(value);
+		if (isPredefined) {
+			setIsOtherRadioSelected(false);
+		} else if (value !== undefined && value !== "" && enableOther) {
+			setIsOtherRadioSelected(true);
+			setOtherText(value);
+		}
+	}, [value, optionValues, enableOther]);
+
+	const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const selectedValue = e.target.value;
+
+		if (selectedValue === OTHER_VALUE) {
+			// When "Other" radio is selected, show the input and use current otherText
+			setIsOtherRadioSelected(true);
+			const newValue = otherText || "";
+			const syntheticEvent = {
+				...e,
+				target: {
+					...e.target,
+					value: newValue
+				}
+			} as ChangeEvent<HTMLInputElement>;
+
+			if (onChange) {
+				onChange(syntheticEvent);
+			}
+			if (onValueChange) {
+				onValueChange(newValue);
+			}
+		} else {
+			// Regular option selected - hide "Other" input
+			setIsOtherRadioSelected(false);
+			if (onChange) {
+				onChange(e);
+			}
+			if (onValueChange) {
+				onValueChange(selectedValue);
+			}
+		}
+	};
+
+	const handleOtherTextChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const newText = e.target.value;
+		setOtherText(newText);
+
+		// Create a synthetic radio change event with the text value
+		const syntheticEvent = {
+			target: {
+				name: name,
+				value: newText
+			}
+		} as ChangeEvent<HTMLInputElement>;
+
 		if (onChange) {
-			onChange(e);
+			onChange(syntheticEvent);
 		}
 		if (onValueChange) {
-			onValueChange(e.target.value);
+			onValueChange(newText);
 		}
 	};
 
@@ -127,12 +203,39 @@ export default function Radio({ label, name, options, required = true, value, on
 
 					return (
 						<label key={optionId} className="radio-button">
-							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleChange} />
+							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleRadioChange} />
 							<div className="radio-circle" />
 							<span className="radio-label">{optionLabel}</span>
 						</label>
 					);
 				})}
+				{enableOther && (
+					<>
+						<label className="radio-button">
+							<input
+								type="radio"
+								id={`${name}-other`}
+								name={name}
+								value={OTHER_VALUE}
+								required={required && options.length === 0}
+								checked={isOtherRadioSelected}
+								onChange={handleRadioChange}
+							/>
+							<div className="radio-circle" />
+							<span className="radio-label">{otherLabel}</span>
+						</label>
+						{isOtherRadioSelected && (
+							<Input
+								type="text"
+								className="max-w-64"
+								placeholder={otherPlaceholder}
+								value={otherText}
+								onChange={handleOtherTextChange}
+								required={required}
+							/>
+						)}
+					</>
+				)}
 			</div>
 		</StyledWrapper>
 	);

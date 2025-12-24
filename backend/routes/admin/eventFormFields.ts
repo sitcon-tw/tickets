@@ -86,14 +86,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id },
-					include: {
-						event: {
-							select: {
-								id: true,
-								name: true
-							}
-						}
-					}
 				})) as EventFormFields | null;
 
 				if (!formField) {
@@ -287,14 +279,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const formFields = (await prisma.eventFormFields.findMany({
 					where,
-					include: {
-						event: {
-							select: {
-								id: true,
-								name: true
-							}
-						}
-					},
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
 				})) as EventFormFields[];
 

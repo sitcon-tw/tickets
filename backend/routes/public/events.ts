@@ -384,7 +384,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 										placeholder: { type: "string" },
 										order: { type: "integer" },
 										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true }
+										prompts: { type: "object", additionalProperties: true },
+										enableOther: { type: "boolean" }
 									}
 								}
 							}
@@ -432,7 +433,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						values: true,
 						order: true,
 						filters: true,
-						prompts: true
+						prompts: true,
+						enableOther: true
 					},
 					orderBy: { order: "asc" }
 				});
@@ -448,7 +450,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					options: field.values || [],
 					order: field.order,
 					filters: field.filters || {},
-					prompts: field.prompts || {}
+					prompts: field.prompts || {},
+					enableOther: field.enableOther || false
 				}));
 
 				return reply.send(successResponse(transformedFields));
