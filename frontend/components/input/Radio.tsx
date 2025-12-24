@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Input } from "../ui/input";
 import { useLocale } from "next-intl";
 import { getTranslations } from "@/i18n/helpers";
+import MarkdownContent from "@/components/MarkdownContent";
 
 export type RadioOption = string | { value: string; label: string };
 
@@ -17,6 +18,7 @@ type RadioProps = {
 	enableOther?: boolean;
 	otherLabel?: string;
 	otherPlaceholder?: string;
+	description?: string;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -116,11 +118,10 @@ const StyledWrapper = styled.fieldset`
 	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherPlaceholder = "" }: RadioProps) {
+export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherPlaceholder = "", description }: RadioProps) {
 	const OTHER_VALUE = "__other__";
 	const locale = useLocale();
 
-	// Get localized "Other" text
 	const t = getTranslations(locale, {
 		other: {
 			"zh-Hant": "其他",
@@ -131,17 +132,14 @@ export default function Radio({ label, name, options, required = true, value, on
 
 	const defaultOtherLabel = t.other;
 
-	// Check if current value is one of the predefined options
 	const optionValues = options.map(opt =>
 		typeof opt === "object" && opt !== null && "value" in opt ? opt.value : String(opt)
 	);
 
-	// Track whether "Other" radio is selected (separate from the text value)
 	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
 	const [isOtherRadioSelected, setIsOtherRadioSelected] = useState(!valueIsAPredefinedOption && enableOther && value !== undefined);
 	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : (value || ""));
 
-	// Sync state when value prop changes from outside (e.g., form reset or load from saved data)
 	useEffect(() => {
 		const isPredefined = value !== undefined && value !== "" && optionValues.includes(value);
 		if (isPredefined) {
@@ -156,7 +154,6 @@ export default function Radio({ label, name, options, required = true, value, on
 		const selectedValue = e.target.value;
 
 		if (selectedValue === OTHER_VALUE) {
-			// When "Other" radio is selected, show the input and use current otherText
 			setIsOtherRadioSelected(true);
 			const newValue = otherText || "";
 			const syntheticEvent = {
@@ -174,7 +171,6 @@ export default function Radio({ label, name, options, required = true, value, on
 				onValueChange(newValue);
 			}
 		} else {
-			// Regular option selected - hide "Other" input
 			setIsOtherRadioSelected(false);
 			if (onChange) {
 				onChange(e);
@@ -189,7 +185,6 @@ export default function Radio({ label, name, options, required = true, value, on
 		const newText = e.target.value;
 		setOtherText(newText);
 
-		// Create a synthetic radio change event with the text value
 		const syntheticEvent = {
 			target: {
 				name: name,
@@ -208,6 +203,11 @@ export default function Radio({ label, name, options, required = true, value, on
 	return (
 		<StyledWrapper>
 			<legend className="legend">{label}</legend>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<div className="radio-buttons">
 				{options.map((option, i) => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);

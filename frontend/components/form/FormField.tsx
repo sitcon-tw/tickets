@@ -7,22 +7,10 @@ import Select, { SelectOption } from "@/components/input/Select";
 import Text from "@/components/input/Text";
 import Textarea from "@/components/input/Textarea";
 import TextWithAutocomplete from "@/components/input/TextWithAutocomplete";
-import MarkdownContent from "@/components/MarkdownContent";
 import { FormFieldProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { useLocale } from "next-intl";
 import React from "react";
-
-const FieldWrapper = ({ children, description }: { children: React.ReactNode; description?: string }) => (
-	<div className="flex flex-col gap-1">
-		{children}
-		{description && (
-			<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-				<MarkdownContent content={description} className="text-sm" />
-			</div>
-		)}
-	</div>
-);
 
 function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, pleaseSelectText }: FormFieldProps) {
 	const locale = useLocale();
@@ -44,117 +32,97 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 		case "text":
 			if (localizedPrompts.length > 0) {
 				return (
-					<FieldWrapper description={fieldDescription}>
-						<TextWithAutocomplete
-							label={label}
-							id={fieldId}
-							placeholder={field.placeholder || ""}
-							required={field.required}
-							value={(value as string) || ""}
-							onChange={onTextChange}
-							prompts={localizedPrompts}
-						/>
-					</FieldWrapper>
+					<TextWithAutocomplete
+						label={label}
+						id={fieldId}
+						placeholder={field.placeholder || ""}
+						required={field.required}
+						value={(value as string) || ""}
+						onChange={onTextChange}
+						prompts={localizedPrompts}
+						description={fieldDescription}
+					/>
 				);
 			}
-			return (
-				<FieldWrapper description={fieldDescription}>
-					<Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
-				</FieldWrapper>
-			);
+			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} description={fieldDescription} />;
 
 		case "textarea":
-			return (
-				<FieldWrapper description={fieldDescription}>
-					<Textarea label={label} id={fieldId} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
-				</FieldWrapper>
-			);
+			return <Textarea label={label} id={fieldId} rows={3} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} description={fieldDescription} />;
 
 		case "select":
 			return (
-				<FieldWrapper description={fieldDescription}>
-					<Select
-						label={label}
-						id={fieldId}
-						options={localizedOptions as SelectOption[]}
-						required={field.required}
-						value={(value as string) || ""}
-						onChange={newValue => {
-							const syntheticEvent = {
-								target: {
-									name: fieldId,
-									value: newValue
-								}
-							} as React.ChangeEvent<HTMLSelectElement>;
-							onTextChange(syntheticEvent);
-						}}
-						pleaseSelectText={pleaseSelectText}
-						searchable
-					/>
-				</FieldWrapper>
+				<Select
+					label={label}
+					id={fieldId}
+					options={localizedOptions as SelectOption[]}
+					required={field.required}
+					value={(value as string) || ""}
+					onChange={newValue => {
+						const syntheticEvent = {
+							target: {
+								name: fieldId,
+								value: newValue
+							}
+						} as React.ChangeEvent<HTMLSelectElement>;
+						onTextChange(syntheticEvent);
+					}}
+					pleaseSelectText={pleaseSelectText}
+					searchable
+					description={fieldDescription}
+				/>
 			);
 
 		case "radio":
 			return (
-				<FieldWrapper description={fieldDescription}>
-					<Radio
-						label={label}
-						name={fieldId}
-						options={localizedOptions as RadioOption[]}
-						required={field.required}
-						value={(value as string) || ""}
-						onValueChange={newValue => {
-							const syntheticEvent = {
-								target: {
-									name: fieldId,
-									value: newValue
-								}
-							} as React.ChangeEvent<HTMLInputElement>;
-							onTextChange(syntheticEvent);
-						}}
-						enableOther={field.enableOther}
-						otherPlaceholder={field.placeholder}
-					/>
-				</FieldWrapper>
+				<Radio
+					label={label}
+					name={fieldId}
+					options={localizedOptions as RadioOption[]}
+					required={field.required}
+					value={(value as string) || ""}
+					onValueChange={newValue => {
+						const syntheticEvent = {
+							target: {
+								name: fieldId,
+								value: newValue
+							}
+						} as React.ChangeEvent<HTMLInputElement>;
+						onTextChange(syntheticEvent);
+					}}
+					enableOther={field.enableOther}
+					otherPlaceholder={field.placeholder}
+					description={fieldDescription}
+				/>
 			);
 
 		case "checkbox":
 			if (field.options && Array.isArray(field.options) && field.options.length > 0) {
 				const currentValues = Array.isArray(value) ? value.filter((v: string) => v && v.trim() !== "") : [];
 				return (
-					<FieldWrapper description={fieldDescription}>
-						<MultiCheckbox
-							label={label}
-							name={fieldId}
-							options={localizedOptions as CheckboxOption[]}
-							values={currentValues}
-							onValueChange={newValues => {
-								const syntheticEvent = {
-									target: {
-										name: fieldId,
-										value: newValues.join(","),
-										checked: true
-									}
-								} as React.ChangeEvent<HTMLInputElement>;
-								onCheckboxChange(syntheticEvent);
-							}}
-						/>
-					</FieldWrapper>
+					<MultiCheckbox
+						label={label}
+						name={fieldId}
+						options={localizedOptions as CheckboxOption[]}
+						values={currentValues}
+						onValueChange={newValues => {
+							const syntheticEvent = {
+								target: {
+									name: fieldId,
+									value: newValues.join(","),
+									checked: true
+								}
+							} as React.ChangeEvent<HTMLInputElement>;
+							onCheckboxChange(syntheticEvent);
+						}}
+						description={fieldDescription}
+					/>
 				);
 			} else {
-				return (
-					<FieldWrapper description={fieldDescription}>
-						<Checkbox label={label} id={fieldId} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} />
-					</FieldWrapper>
-				);
+				return <Checkbox label={label} id={fieldId} required={field.required} value="true" checked={!!value} onChange={onCheckboxChange} description={fieldDescription} />;
 			}
 
 		default:
-			return (
-				<FieldWrapper description={fieldDescription}>
-					<Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} />
-				</FieldWrapper>
-			);
+			return <Text label={label} id={fieldId} placeholder={field.placeholder || ""} required={field.required} value={(value as string) || ""} onChange={onTextChange} description={fieldDescription} />;
 	}
 }
 

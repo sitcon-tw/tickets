@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem } from "@/components/ui/select";
+import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "lucide-react";
@@ -18,9 +19,10 @@ type SelectProps = {
 	pleaseSelectText?: string;
 	searchable?: boolean;
 	searchPlaceholder?: string;
+	description?: string;
 };
 
-export default function Select({ label, id, options, required = true, value, onChange, pleaseSelectText, searchable = false, searchPlaceholder }: SelectProps) {
+export default function Select({ label, id, options, required = true, value, onChange, pleaseSelectText, searchable = false, searchPlaceholder, description }: SelectProps) {
 	const locale = useLocale();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
@@ -80,6 +82,11 @@ export default function Select({ label, id, options, required = true, value, onC
 		return (
 			<div className="space-y-2">
 				<Label htmlFor={id}>{label}</Label>
+				{description && (
+					<div className="text-sm text-gray-600 dark:text-gray-400 -mt-1 mb-1">
+						<MarkdownContent content={description} className="text-sm" />
+					</div>
+				)}
 				<SelectUI value={value} onValueChange={onChange} required={required}>
 					<SelectTrigger id={id} className="max-w-60" aria-label={label}>
 						<SelectValue placeholder={placeholder} />
@@ -103,6 +110,11 @@ export default function Select({ label, id, options, required = true, value, onC
 	return (
 		<div className="space-y-2" ref={containerRef}>
 			<Label htmlFor={id}>{label}</Label>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 -mt-1 mb-1">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<div className="relative">
 				<div className="relative w-full max-w-60">
 					<input

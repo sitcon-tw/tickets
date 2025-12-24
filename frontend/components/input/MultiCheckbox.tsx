@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import MarkdownContent from "@/components/MarkdownContent";
 
 export type CheckboxOption = string | { value: string; label: string };
 
@@ -8,6 +9,7 @@ type MultiCheckboxProps = {
 	options: CheckboxOption[];
 	values?: string[];
 	onValueChange?: (values: string[]) => void;
+	description?: string;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -96,7 +98,7 @@ const StyledLabel = styled.label`
 	}
 `;
 
-export default function MultiCheckbox({ label, name, options, values = [], onValueChange }: MultiCheckboxProps) {
+export default function MultiCheckbox({ label, name, options, values = [], onValueChange, description }: MultiCheckboxProps) {
 	const handleCheckedChange = (optionValue: string, checked: boolean) => {
 		if (!onValueChange) return;
 
@@ -110,6 +112,11 @@ export default function MultiCheckbox({ label, name, options, values = [], onVal
 	return (
 		<StyledWrapper>
 			<legend className="legend">{label}</legend>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<div className="checkbox-items">
 				{options.map(option => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);

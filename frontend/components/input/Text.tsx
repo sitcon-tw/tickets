@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import MarkdownContent from "@/components/MarkdownContent";
 import { ChangeEvent, memo } from "react";
 
 type TextProps = {
@@ -10,12 +11,18 @@ type TextProps = {
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	placeholder?: string;
 	readOnly?: boolean;
+	description?: string;
 };
 
-function TextComponent({ label, id, required = true, value, onChange, placeholder, readOnly }: TextProps) {
+function TextComponent({ label, id, required = true, value, onChange, placeholder, readOnly, description }: TextProps) {
 	return (
 		<div className="space-y-2">
 			<Label htmlFor={id}>{label}</Label>
+			{description && (
+				<div className="text-sm text-gray-600 dark:text-gray-400 -mt-1 mb-1">
+					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
 			<Input
 				type="text"
 				id={id}
