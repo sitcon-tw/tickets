@@ -1,6 +1,8 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import styled from "styled-components";
 import { Input } from "../ui/input";
+import { useLocale } from "next-intl";
+import { getTranslations } from "@/i18n/helpers";
 
 export type RadioOption = string | { value: string; label: string };
 
@@ -114,8 +116,20 @@ const StyledWrapper = styled.fieldset`
 	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherLabel = "Other", otherPlaceholder = "" }: RadioProps) {
+export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherPlaceholder = "" }: RadioProps) {
 	const OTHER_VALUE = "__other__";
+	const locale = useLocale();
+
+	// Get localized "Other" text
+	const t = getTranslations(locale, {
+		other: {
+			"zh-Hant": "其他",
+			"zh-Hans": "其他",
+			en: "Other"
+		}
+	});
+
+	const defaultOtherLabel = t.other;
 
 	// Check if current value is one of the predefined options
 	const optionValues = options.map(opt =>
@@ -222,7 +236,7 @@ export default function Radio({ label, name, options, required = true, value, on
 								onChange={handleRadioChange}
 							/>
 							<div className="radio-circle" />
-							<span className="radio-label">{otherLabel}</span>
+							<span className="radio-label">{defaultOtherLabel}</span>
 						</label>
 						{isOtherRadioSelected && (
 							<Input
