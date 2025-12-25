@@ -1,9 +1,9 @@
-import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api";
+import type { EmailCampaignCreateRequest, PaginationQuery } from "#schemas-and-types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas } from "#schemas/emailCampaign";
+import { emailCampaignSchemas } from "#schemas-and-types";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

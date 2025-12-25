@@ -1,11 +1,11 @@
-import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#types/api";
-import type { InvitationCode } from "#types/database";
+import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#schemas-and-types";
+import type { InvitationCode } from "#schemas-and-types";
 import type { Prisma } from "@prisma/client";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
-import { invitationCodeSchemas } from "#schemas/invitationCode";
+import { invitationCodeSchemas } from "#schemas-and-types";
 import { sendInvitationCode } from "#utils/email.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

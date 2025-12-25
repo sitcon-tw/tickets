@@ -4,11 +4,11 @@
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
-import { registrationSchemas } from "#schemas/registration";
+import { registrationSchemas } from "#schemas-and-types";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
+import type { PaginationQuery, RegistrationUpdateRequest } from "#schemas-and-types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**

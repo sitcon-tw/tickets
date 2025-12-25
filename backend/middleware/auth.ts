@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
 import { auth } from "../lib/auth";
-import type { EventAccessRequest, IdParams, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "../types/middleware";
+import type { EventAccessRequest, IdParams, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "../schemas-and-types";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 
