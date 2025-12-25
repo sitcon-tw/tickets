@@ -1,5 +1,5 @@
 import prisma from "#config/database";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
+import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas-and-types";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

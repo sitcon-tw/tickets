@@ -1,10 +1,10 @@
-import type { EventCreateRequest, EventUpdateRequest } from "#types/api";
-import type { Event } from "#types/database";
+import type { EventCreateRequest, EventUpdateRequest } from "#schemas-and-types";
+import type { Event } from "#schemas-and-types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
-import { eventSchemas } from "#schemas/event";
+import { eventSchemas } from "#schemas-and-types";
 import { CacheInvalidation } from "#utils/cache-keys";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";

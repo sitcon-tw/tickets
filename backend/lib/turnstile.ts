@@ -3,7 +3,7 @@
  * Server-side validation for Turnstile tokens
  */
 
-import type { TurnstileResponse, TurnstileValidationOptions, TurnstileValidationResult } from "#types/turnstile";
+import type { TurnstileResponse, TurnstileValidationOptions, TurnstileValidationResult } from "#schemas-and-types";
 
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
