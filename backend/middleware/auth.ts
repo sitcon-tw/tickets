@@ -27,7 +27,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.user.id },
-			select: { isActive: true }
+			select: { isActive: true, role: true, permissions: true }
 		});
 
 		if (!user || user.isActive === false) {
@@ -36,7 +36,14 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 			return false;
 		}
 
-		request.user = session.user;
+		const userPermissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
+
+		request.user = {
+			...session.user,
+			role: user.role,
+			permissions: userPermissions,
+			isActive: user.isActive
+		};
 		request.session = session;
 	}
 	return true;
@@ -55,7 +62,7 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.user.id },
-			select: { isActive: true }
+			select: { isActive: true, role: true, permissions: true }
 		});
 
 		if (!user || user.isActive === false) {
@@ -63,7 +70,14 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 			return reply.code(statusCode).send(response);
 		}
 
-		request.user = session.user;
+		const userPermissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
+
+		request.user = {
+			...session.user,
+			role: user.role,
+			permissions: userPermissions,
+			isActive: user.isActive
+		};
 		request.session = session;
 	} catch (error) {
 		request.log.error({ err: error }, "Auth middleware error");
@@ -100,7 +114,7 @@ export const requirePermission = (permission: string): preHandlerHookHandler => 
 		const authenticated = await ensureAuth(request, reply);
 		if (!authenticated || reply.sent) return;
 
-		const userPermissions = safeJsonParse<string[]>(request.user!.permissions, [], "user permissions");
+		const userPermissions = request.user!.permissions;
 
 		if (!userPermissions.includes(permission) && request.user!.role !== "admin") {
 			const { response, statusCode } = forbiddenResponse("權限不足 [P]");

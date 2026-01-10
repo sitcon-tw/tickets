@@ -492,9 +492,19 @@ export interface CampaignResult {
 // ----------------------------------------------------------------------------
 
 export interface Session {
-	user: SessionUser;
+	user: {
+		id: string;
+		createdAt: Date;
+		updatedAt: Date;
+		email: string;
+		emailVerified: boolean;
+		name: string;
+		image?: string | null;
+	};
 	session: {
 		id: string;
+		createdAt: Date;
+		updatedAt: Date;
 		userId: string;
 		expiresAt: Date;
 		token: string;
