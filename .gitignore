@@ -7,6 +7,7 @@ node_modules
 .idea
 package-lock.json
 yarn.lock
+/packages/types/dist
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
