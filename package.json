@@ -4,7 +4,6 @@
 	"license": "Apache-2.0",
 	"author": "Nelson & Elvis Mao",
 	"scripts": {
-		"build:docs": "pnpm --filter docs build",
 		"build:frontend": "pnpm --filter frontend build",
 		"check-format": "prettier --check .",
 		"dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:backend\"",
