@@ -1,11 +1,10 @@
-import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "#schemas-and-types";
-import type { InvitationCode } from "#schemas-and-types";
+import type { InvitationCodeCreateRequest, InvitationCodeUpdateRequest, InvitationCode } from "@sitcontix/types";
 import type { Prisma } from "@prisma/client";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
-import { invitationCodeSchemas } from "#schemas-and-types";
+import { invitationCodeSchemas } from "#schemas";
 import { sendInvitationCode } from "#utils/email.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

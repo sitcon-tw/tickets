@@ -1,9 +1,9 @@
-import type { EmailCampaignCreateRequest, PaginationQuery } from "#schemas-and-types";
+import type { EmailCampaignCreateRequest, PaginationQuery } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas } from "#schemas-and-types";
+import { emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

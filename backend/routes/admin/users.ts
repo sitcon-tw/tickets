@@ -1,9 +1,9 @@
-import type { AdminUserUpdateRequest } from "#schemas-and-types";
+import type { AdminUserUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { userSchemas } from "#schemas-and-types";
+import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

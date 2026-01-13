@@ -1,4 +1,4 @@
-import type { EventFormField, FilterCondition } from "@/lib/types/api";
+import type { EventFormField, FilterCondition } from "@sitcontix/types";
 import type { FormDataType } from "@/lib/types/data";
 
 /**

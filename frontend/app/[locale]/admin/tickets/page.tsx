@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Ticket } from "@/lib/types/api";
+import type { Ticket } from "@sitcontix/types";
 import { LanguageFieldsProps } from "@/lib/types/pages";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -178,9 +178,9 @@ export default function TicketsPage() {
 		setEditingTicket(ticket);
 
 		if (ticket) {
-			const name = typeof ticket.name === "object" ? ticket.name : { en: ticket.name };
-			const desc = typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
-			const plainDesc = typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
+			const name = ticket.name && typeof ticket.name === "object" ? ticket.name : { en: ticket.name || "" };
+			const desc = ticket.description && typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
+			const plainDesc = ticket.plainDescription && typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -340,7 +340,7 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: string) {
+	function formatDateTime(dt?: string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
@@ -354,7 +354,7 @@ export default function TicketsPage() {
 			const status = computeStatus(ticket);
 			return {
 				...ticket,
-				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
+				displayName: ticket.name && typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || "",
 				formattedSaleStart: formatDateTime(ticket.saleStart),
 				formattedSaleEnd: formatDateTime(ticket.saleEnd),
 				statusLabel: status.label,

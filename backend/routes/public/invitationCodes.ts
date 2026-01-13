@@ -1,5 +1,5 @@
 import prisma from "#config/database";
-import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas-and-types";
+import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

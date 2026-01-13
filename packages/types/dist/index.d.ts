@@ -590,6 +590,7 @@ export declare const EventFormFieldSchema: z.ZodObject<{
     placeholder: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     required: z.ZodBoolean;
     values: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodString>>>>;
+    options: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodRecord<z.ZodString, z.ZodString>>>>;
     filters: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         enabled: z.ZodBoolean;
         action: z.ZodEnum<{
@@ -957,6 +958,25 @@ export declare const InvitationCodeSchema: z.ZodObject<{
     updatedAt: z.ZodString;
 }, z.core.$strip>;
 export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
+/**
+ * Invitation code with extra info
+ */
+export declare const InvitationCodeInfoSchema: z.ZodObject<{
+    id: z.ZodString;
+    ticketId: z.ZodString;
+    code: z.ZodString;
+    name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    usageLimit: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    usedCount: z.ZodNumber;
+    validFrom: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    isActive: z.ZodBoolean;
+    createdAt: z.ZodString;
+    updatedAt: z.ZodString;
+    description: z.ZodOptional<z.ZodString>;
+    expiresAt: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type InvitationCodeInfo = z.infer<typeof InvitationCodeInfoSchema>;
 /**
  * Invitation code create request
  */
@@ -1453,3 +1473,58 @@ export declare const RedisClientConfigSchema: z.ZodObject<{
     db: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export type RedisClientConfig = z.infer<typeof RedisClientConfigSchema>;
+/**
+ * SMS send options
+ */
+export interface SMSSendOptions {
+    expirytime?: number;
+    [key: string]: string | number | undefined;
+}
+/**
+ * Event access request (for middleware)
+ */
+export interface EventAccessRequest {
+    eventId?: string;
+    id?: string;
+}
+/**
+ * ID params (for route parameters)
+ */
+export interface IdParams {
+    id: string;
+}
+/**
+ * Ticket body (for ticket-related requests)
+ */
+export interface TicketBody {
+    ticketId: string;
+    [key: string]: unknown;
+}
+/**
+ * Ticket ID params (for route parameters)
+ */
+export interface TicketIdParams {
+    ticketId: string;
+}
+/**
+ * Ticket ID query (for query parameters)
+ */
+export interface TicketIdQuery {
+    ticketId: string;
+}
+/**
+ * Email campaign content
+ */
+export interface EmailCampaignContent {
+    subject: string;
+    content: string;
+    html?: string;
+}
+/**
+ * Target audience filters (alias for backwards compatibility)
+ */
+export type TargetAudienceFilters = TargetAudience;
+/**
+ * Event form fields (alias for backwards compatibility)
+ */
+export type EventFormFields = EventFormField;

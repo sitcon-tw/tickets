@@ -435,6 +435,7 @@ export const EventFormFieldSchema = z.object({
     placeholder: z.string().nullable().optional(),
     required: z.boolean(),
     values: z.array(LocalizedTextSchema).nullable().optional(),
+    options: z.array(LocalizedTextSchema).nullable().optional(), // Parsed options for frontend use
     filters: FieldFilterSchema.nullable().optional(),
     prompts: z.record(z.string(), z.array(z.string())).nullable().optional(),
     enableOther: z.boolean().nullable().optional(),
@@ -692,6 +693,13 @@ export const InvitationCodeSchema = z.object({
     isActive: z.boolean(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
+});
+/**
+ * Invitation code with extra info
+ */
+export const InvitationCodeInfoSchema = InvitationCodeSchema.extend({
+    description: z.string().optional(),
+    expiresAt: z.string().datetime().optional(),
 });
 /**
  * Invitation code create request

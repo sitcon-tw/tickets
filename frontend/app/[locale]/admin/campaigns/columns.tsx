@@ -2,7 +2,7 @@
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import type { EmailCampaign } from "@/lib/types/api";
+import type { EmailCampaign } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CampaignDisplay = EmailCampaign & {

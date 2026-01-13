@@ -5,8 +5,7 @@ import type {
 	Event,
 	EventDashboardData,
 	EventFormField,
-	EventFormFieldReorder,
-	EventInfo,
+	EventFormFieldReorderRequest,
 	EventListItem,
 	EventStats,
 	ExportData,
@@ -19,13 +18,13 @@ import type {
 	ReferralValidation,
 	Registration,
 	RegistrationStats,
-	SessionResponse,
+	Session,
 	Ticket,
 	TicketAnalytics,
 	TicketFormField,
-	TicketReorder,
+	TicketReorderRequest,
 	User
-} from "@/lib/types/api";
+} from "@sitcontix/types";
 import { apiClient } from "./client";
 
 // System
@@ -48,7 +47,7 @@ export const authAPI = {
 			turnstileToken
 		});
 	},
-	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),
+	getSession: () => apiClient.get<Session>("/api/auth/get-session"),
 	getPermissions: () => apiClient.get<ApiResponse<PermissionsResponse>>("/api/auth/permissions"),
 	signOut: () => apiClient.post("/api/auth/sign-out")
 };
@@ -57,7 +56,7 @@ export const authAPI = {
 export const eventsAPI = {
 	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get<ApiResponse<EventListItem[]>>("/api/events", params),
 
-	getInfo: (id: string) => apiClient.get<ApiResponse<EventInfo>>(`/api/events/${id}/info`),
+	getInfo: (id: string) => apiClient.get<ApiResponse<Event>>(`/api/events/${id}/info`),
 
 	getTickets: (id: string) => apiClient.get<ApiResponse<Ticket[]>>(`/api/events/${id}/tickets`),
 
@@ -143,7 +142,7 @@ export const adminTicketsAPI = {
 
 	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
 
-	reorder: (data: TicketReorder) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
+	reorder: (data: TicketReorderRequest) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
 };
 
 // Admin - Event Form Fields
@@ -168,7 +167,7 @@ export const adminEventFormFieldsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/event-form-fields/${id}`),
 
-	reorder: (eventId: string, data: EventFormFieldReorder) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
+	reorder: (eventId: string, data: EventFormFieldReorderRequest) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
 };
 
 // Admin - Registrations

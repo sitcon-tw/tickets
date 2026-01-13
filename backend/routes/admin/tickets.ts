@@ -1,9 +1,9 @@
-import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "#schemas-and-types";
+import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
-import { ticketSchemas } from "#schemas-and-types";
+import { ticketSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {

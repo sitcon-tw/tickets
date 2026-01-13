@@ -1,6 +1,6 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
-import { referralSchemas, referralStatsResponse } from "#schemas-and-types";
+import { referralSchemas, referralStatsResponse } from "#schemas";
 import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

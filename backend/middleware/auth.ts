@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
 import { auth } from "../lib/auth";
-import type { EventAccessRequest, IdParams, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "../schemas-and-types";
+import type { EventAccessRequest, IdParams, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "@sitcontix/types";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 
@@ -40,11 +40,23 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 
 		request.user = {
 			...session.user,
-			role: user.role,
+			role: user.role as "admin" | "viewer" | "eventAdmin",
 			permissions: userPermissions,
 			isActive: user.isActive
 		};
-		request.session = session;
+		request.session = {
+			user: {
+				...session.user,
+				createdAt: session.user.createdAt instanceof Date ? session.user.createdAt.toISOString() : session.user.createdAt,
+				updatedAt: session.user.updatedAt instanceof Date ? session.user.updatedAt.toISOString() : session.user.updatedAt
+			},
+			session: {
+				...session.session,
+				createdAt: session.session.createdAt instanceof Date ? session.session.createdAt.toISOString() : session.session.createdAt,
+				updatedAt: session.session.updatedAt instanceof Date ? session.session.updatedAt.toISOString() : session.session.updatedAt,
+				expiresAt: session.session.expiresAt instanceof Date ? session.session.expiresAt.toISOString() : session.session.expiresAt
+			}
+		};
 	}
 	return true;
 }
@@ -74,11 +86,23 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 
 		request.user = {
 			...session.user,
-			role: user.role,
+			role: user.role as "admin" | "viewer" | "eventAdmin",
 			permissions: userPermissions,
 			isActive: user.isActive
 		};
-		request.session = session;
+		request.session = {
+			user: {
+				...session.user,
+				createdAt: session.user.createdAt instanceof Date ? session.user.createdAt.toISOString() : session.user.createdAt,
+				updatedAt: session.user.updatedAt instanceof Date ? session.user.updatedAt.toISOString() : session.user.updatedAt
+			},
+			session: {
+				...session.session,
+				createdAt: session.session.createdAt instanceof Date ? session.session.createdAt.toISOString() : session.session.createdAt,
+				updatedAt: session.session.updatedAt instanceof Date ? session.session.updatedAt.toISOString() : session.session.updatedAt,
+				expiresAt: session.session.expiresAt instanceof Date ? session.session.expiresAt.toISOString() : session.session.expiresAt
+			}
+		};
 	} catch (error) {
 		request.log.error({ err: error }, "Auth middleware error");
 		const { response, statusCode } = unauthorizedResponse("認證失敗");

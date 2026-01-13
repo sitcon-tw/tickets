@@ -6,7 +6,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { Ticket } from "@/lib/types/api";
+import { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";

@@ -536,6 +536,7 @@ export const EventFormFieldSchema = z.object({
 	placeholder: z.string().nullable().optional(),
 	required: z.boolean(),
 	values: z.array(LocalizedTextSchema).nullable().optional(),
+	options: z.array(LocalizedTextSchema).nullable().optional(), // Parsed options for frontend use
 	filters: FieldFilterSchema.nullable().optional(),
 	prompts: z.record(z.string(), z.array(z.string())).nullable().optional(),
 	enableOther: z.boolean().nullable().optional(),
@@ -850,6 +851,15 @@ export const InvitationCodeSchema = z.object({
 	updatedAt: z.string().datetime(),
 });
 export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
+
+/**
+ * Invitation code with extra info
+ */
+export const InvitationCodeInfoSchema = InvitationCodeSchema.extend({
+	description: z.string().optional(),
+	expiresAt: z.string().datetime().optional(),
+});
+export type InvitationCodeInfo = z.infer<typeof InvitationCodeInfoSchema>;
 
 /**
  * Invitation code create request
@@ -1319,3 +1329,71 @@ export const RedisClientConfigSchema = z.object({
 	db: z.number().int().min(0).optional(),
 });
 export type RedisClientConfig = z.infer<typeof RedisClientConfigSchema>;
+
+// ============================================================================
+// HELPER TYPES FOR BACKEND
+// ============================================================================
+
+/**
+ * SMS send options
+ */
+export interface SMSSendOptions {
+	expirytime?: number;
+	[key: string]: string | number | undefined;
+}
+
+/**
+ * Event access request (for middleware)
+ */
+export interface EventAccessRequest {
+	eventId?: string;
+	id?: string;
+}
+
+/**
+ * ID params (for route parameters)
+ */
+export interface IdParams {
+	id: string;
+}
+
+/**
+ * Ticket body (for ticket-related requests)
+ */
+export interface TicketBody {
+	ticketId: string;
+	[key: string]: unknown;
+}
+
+/**
+ * Ticket ID params (for route parameters)
+ */
+export interface TicketIdParams {
+	ticketId: string;
+}
+
+/**
+ * Ticket ID query (for query parameters)
+ */
+export interface TicketIdQuery {
+	ticketId: string;
+}
+
+/**
+ * Email campaign content
+ */
+export interface EmailCampaignContent {
+	subject: string;
+	content: string;
+	html?: string;
+}
+
+/**
+ * Target audience filters (alias for backwards compatibility)
+ */
+export type TargetAudienceFilters = TargetAudience;
+
+/**
+ * Event form fields (alias for backwards compatibility)
+ */
+export type EventFormFields = EventFormField;

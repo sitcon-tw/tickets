@@ -1,11 +1,10 @@
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#schemas-and-types";
-import type { EventFormFields } from "#schemas-and-types";
+import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest, EventFormFields } from "@sitcontix/types";
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
-import { eventFormFieldSchemas } from "#schemas-and-types";
+import { eventFormFieldSchemas } from "#schemas";
 import { CacheInvalidation } from "#utils/cache-keys.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

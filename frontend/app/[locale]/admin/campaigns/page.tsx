@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { EmailCampaign, Event, Ticket } from "@/lib/types/api";
+import type { EmailCampaign, Event, Ticket } from "@sitcontix/types";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { Mail, RotateCw } from "lucide-react";
 import { useLocale } from "next-intl";
