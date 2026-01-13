@@ -2,7 +2,7 @@
  * Unified types and schemas for SITCON tickets system
  * This package provides Zod schemas and TypeScript types for both frontend and backend
  */
-import { z } from "zod";
+import { z } from "zod/v4";
 // ============================================================================
 // COMMON TYPES
 // ============================================================================
