@@ -46,7 +46,7 @@
 		"mailtrap": "^4.2.0",
 		"prisma": "^6.19.0",
 		"prisma-extension-redis": "^2.1.1",
-		"zod": "^4.2.0"
+		"zod": "^4.3.5"
 	},
 	"devDependencies": {
 		"@types/better-sqlite3": "^7.6.13",
