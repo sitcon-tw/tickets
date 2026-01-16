@@ -20,7 +20,7 @@ export type AuthContext = z.infer<typeof AuthContextSchema>;
  * Login request
  */
 export const LoginRequestSchema = z.object({
-	email: z.string().email(),
+	email: z.email(),
 	password: z.string().min(6)
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
@@ -30,7 +30,7 @@ export type LoginRequest = z.infer<typeof LoginRequestSchema>;
  */
 export const RegisterRequestSchema = z.object({
 	name: z.string().min(1),
-	email: z.string().email(),
+	email: z.email(),
 	password: z.string().min(6)
 });
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
@@ -39,7 +39,7 @@ export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
  * Magic link request
  */
 export const MagicLinkRequestSchema = z.object({
-	email: z.string().email()
+	email: z.email()
 });
 export type MagicLinkRequest = z.infer<typeof MagicLinkRequestSchema>;
 
@@ -47,7 +47,7 @@ export type MagicLinkRequest = z.infer<typeof MagicLinkRequestSchema>;
  * Reset password request
  */
 export const ResetPasswordRequestSchema = z.object({
-	email: z.string().email()
+	email: z.email()
 });
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
 
@@ -65,7 +65,7 @@ export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
  */
 export const UserUpdateRequestSchema = z.object({
 	name: z.string().min(1).optional(),
-	email: z.string().email().optional(),
+	email: z.email().optional(),
 	image: z.string().optional()
 });
 export type UserUpdateRequest = z.infer<typeof UserUpdateRequestSchema>;
@@ -75,7 +75,7 @@ export type UserUpdateRequest = z.infer<typeof UserUpdateRequestSchema>;
  */
 export const AdminUserUpdateRequestSchema = z.object({
 	name: z.string().min(1).optional(),
-	email: z.string().email().optional(),
+	email: z.email().optional(),
 	role: UserRoleSchema.optional(),
 	permissions: z.array(z.string()).optional(),
 	isActive: z.boolean().optional()
@@ -87,11 +87,11 @@ export type AdminUserUpdateRequest = z.infer<typeof AdminUserUpdateRequestSchema
  */
 export const MagicLinkAttemptSchema = z.object({
 	id: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	ipAddress: z.string().nullable().optional(),
 	success: z.boolean(),
 	sessionId: z.string().nullable().optional(),
-	createdAt: z.string().datetime()
+	createdAt: z.iso.datetime()
 });
 export type MagicLinkAttempt = z.infer<typeof MagicLinkAttemptSchema>;
 
@@ -101,19 +101,19 @@ export type MagicLinkAttempt = z.infer<typeof MagicLinkAttemptSchema>;
 export const SessionSchema = z.object({
 	user: z.object({
 		id: z.string(),
-		createdAt: z.string().datetime(),
-		updatedAt: z.string().datetime(),
-		email: z.string().email(),
+		createdAt: z.iso.datetime(),
+		updatedAt: z.iso.datetime(),
+		email: z.email(),
 		emailVerified: z.boolean(),
 		name: z.string(),
 		image: z.string().nullable().optional()
 	}),
 	session: z.object({
 		id: z.string(),
-		createdAt: z.string().datetime(),
-		updatedAt: z.string().datetime(),
+		createdAt: z.iso.datetime(),
+		updatedAt: z.iso.datetime(),
 		userId: z.string(),
-		expiresAt: z.string().datetime(),
+		expiresAt: z.iso.datetime(),
 		token: z.string(),
 		ipAddress: z.string().nullable().optional(),
 		userAgent: z.string().nullable().optional()

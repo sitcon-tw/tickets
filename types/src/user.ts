@@ -14,9 +14,9 @@ export const SmsVerificationSchema = z.object({
 	phoneNumber: z.string(),
 	code: z.string(),
 	verified: z.boolean(),
-	expiresAt: z.string().datetime(),
-	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime()
+	expiresAt: z.iso.datetime(),
+	createdAt: z.iso.datetime(),
+	updatedAt: z.iso.datetime()
 });
 export type SmsVerification = z.infer<typeof SmsVerificationSchema>;
 
@@ -26,7 +26,7 @@ export type SmsVerification = z.infer<typeof SmsVerificationSchema>;
 export const UserSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	emailVerified: z.boolean(),
 	image: z.string().nullable().optional(),
 	role: UserRoleSchema,
@@ -34,8 +34,8 @@ export const UserSchema = z.object({
 	isActive: z.boolean(),
 	phoneNumber: z.string().nullable().optional(),
 	phoneVerified: z.boolean(),
-	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime(),
+	createdAt: z.iso.datetime(),
+	updatedAt: z.iso.datetime(),
 	smsVerifications: z.array(SmsVerificationSchema).optional()
 });
 export type User = z.infer<typeof UserSchema>;
@@ -46,7 +46,7 @@ export type User = z.infer<typeof UserSchema>;
 export const SessionUserSchema = z.object({
 	id: z.string(),
 	name: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	role: UserRoleSchema,
 	permissions: z.array(z.string()),
 	isActive: z.boolean()

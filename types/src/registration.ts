@@ -13,12 +13,12 @@ export const RegistrationSchema = z.object({
 	userId: z.string(),
 	eventId: z.string(),
 	ticketId: z.string(),
-	email: z.string().email(),
+	email: z.email(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime(),
+	createdAt: z.iso.datetime(),
+	updatedAt: z.iso.datetime(),
 	event: z
 		.object({
 			id: z.string(),
@@ -26,8 +26,8 @@ export const RegistrationSchema = z.object({
 			description: LocalizedTextSchema.nullable().optional(),
 			plainDescription: LocalizedTextSchema.nullable().optional(),
 			location: z.string().nullable().optional(),
-			startDate: z.string().datetime(),
-			endDate: z.string().datetime(),
+			startDate: z.iso.datetime(),
+			endDate: z.iso.datetime(),
 			slug: z.string().nullable().optional()
 		})
 		.optional(),
@@ -80,13 +80,13 @@ export const RegistrationStatsSchema = z.object({
 			id: z.string(),
 			status: z.string(),
 			ticketName: LocalizedTextSchema,
-			registeredAt: z.string().datetime(),
-			email: z.string().email()
+			registeredAt: z.iso.datetime(),
+			email: z.email()
 		})
 	),
 	referrerInfo: z.object({
 		id: z.string(),
-		email: z.string().email()
+		email: z.email()
 	})
 });
 export type RegistrationStats = z.infer<typeof RegistrationStatsSchema>;

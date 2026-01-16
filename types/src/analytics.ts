@@ -27,8 +27,8 @@ export const EventDashboardDataSchema = z.object({
 	event: z.object({
 		id: z.string(),
 		name: LocalizedTextSchema,
-		startDate: z.string().datetime(),
-		endDate: z.string().datetime(),
+		startDate: z.iso.datetime(),
+		endDate: z.iso.datetime(),
 		location: z.string().nullable()
 	}),
 	stats: z.object({

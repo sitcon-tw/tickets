@@ -15,16 +15,16 @@ export const EventSchema = z.object({
 	description: LocalizedTextSchema.nullable().optional(),
 	plainDescription: LocalizedTextSchema.nullable().optional(),
 	location: z.string().nullable().optional(),
-	startDate: z.string().datetime(),
-	endDate: z.string().datetime(),
+	startDate: z.iso.datetime(),
+	endDate: z.iso.datetime(),
 	ogImage: z.string().nullable().optional(),
 	landingPage: z.string().nullable().optional(),
 	googleSheetsUrl: z.string().nullable().optional(),
 	isActive: z.boolean(),
 	hideEvent: z.boolean().optional(),
 	useOpass: z.boolean().optional(),
-	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime()
+	createdAt: z.iso.datetime(),
+	updatedAt: z.iso.datetime()
 });
 export type Event = z.infer<typeof EventSchema>;
 
@@ -46,8 +46,8 @@ export const EventCreateRequestSchema = z.object({
 	name: LocalizedTextSchema,
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),
-	startDate: z.string().datetime(),
-	endDate: z.string().datetime(),
+	startDate: z.iso.datetime(),
+	endDate: z.iso.datetime(),
 	location: z.string().optional(),
 	ogImage: z.string().optional()
 });
@@ -61,8 +61,8 @@ export const EventUpdateRequestSchema = z.object({
 	name: LocalizedTextSchema.optional(),
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),
-	startDate: z.string().datetime().optional(),
-	endDate: z.string().datetime().optional(),
+	startDate: z.iso.datetime().optional(),
+	endDate: z.iso.datetime().optional(),
 	location: z.string().optional(),
 	ogImage: z.string().optional(),
 	isActive: z.boolean().optional(),

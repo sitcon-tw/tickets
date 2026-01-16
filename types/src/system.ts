@@ -9,7 +9,7 @@ import { z } from "zod/v4";
  */
 export const HealthStatusSchema = z.object({
 	status: z.enum(["ok", "error"]),
-	timestamp: z.string().datetime(),
+	timestamp: z.iso.datetime(),
 	version: z.string().optional()
 });
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;
@@ -30,7 +30,7 @@ export type RedisClientConfig = z.infer<typeof RedisClientConfigSchema>;
  * Export data response
  */
 export const ExportDataSchema = z.object({
-	downloadUrl: z.string().url(),
+	downloadUrl: z.url(),
 	filename: z.string(),
 	count: z.number().int().min(0)
 });
