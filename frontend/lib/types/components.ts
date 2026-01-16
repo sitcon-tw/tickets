@@ -1,6 +1,6 @@
 // Component Props Types
-import React from "react";
 import { TicketFormField } from "@sitcontix/types";
+import React from "react";
 
 // Spinner
 export interface SpinnerProps {

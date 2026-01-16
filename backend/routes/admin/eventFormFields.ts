@@ -1,5 +1,5 @@
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest, EventFormField } from "@sitcontix/types";
 import { Prisma } from "@prisma/client";
+import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";

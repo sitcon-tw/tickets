@@ -1,5 +1,5 @@
-import type { EventFormField, FilterCondition } from "@sitcontix/types";
 import type { FormDataType } from "@/lib/types/data";
+import type { EventFormField, FilterCondition } from "@sitcontix/types";
 
 /**
  * Evaluates whether a form field should be displayed based on its filter conditions

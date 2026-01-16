@@ -13,7 +13,7 @@ export const SmsVerificationSchema = z.object({
 	phoneNumber: z.string(),
 	verified: z.boolean(),
 	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime(),
+	updatedAt: z.string().datetime()
 });
 export type SmsVerification = z.infer<typeof SmsVerificationSchema>;
 
@@ -31,7 +31,7 @@ export const UserSchema = z.object({
 	isActive: z.boolean(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime(),
-	smsVerifications: z.array(SmsVerificationSchema).optional(),
+	smsVerifications: z.array(SmsVerificationSchema).optional()
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -44,7 +44,7 @@ export const SessionUserSchema = z.object({
 	email: z.string().email(),
 	role: UserRoleSchema,
 	permissions: z.array(z.string()),
-	isActive: z.boolean(),
+	isActive: z.boolean()
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;
 
@@ -58,7 +58,7 @@ export const UserCapabilitiesSchema = z.object({
 	canManageEmailCampaigns: z.boolean(),
 	canManageReferrals: z.boolean(),
 	canManageSmsLogs: z.boolean(),
-	managedEventIds: z.array(z.string()),
+	managedEventIds: z.array(z.string())
 });
 export type UserCapabilities = z.infer<typeof UserCapabilitiesSchema>;
 
@@ -68,6 +68,6 @@ export type UserCapabilities = z.infer<typeof UserCapabilitiesSchema>;
 export const PermissionsResponseSchema = z.object({
 	role: UserRoleSchema,
 	permissions: z.array(z.string()),
-	capabilities: UserCapabilitiesSchema,
+	capabilities: UserCapabilitiesSchema
 });
 export type PermissionsResponse = z.infer<typeof PermissionsResponseSchema>;

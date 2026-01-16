@@ -11,7 +11,7 @@ import { LocaleSchema } from "./common.js";
 export const SendVerificationRequestSchema = z.object({
 	phoneNumber: z.string().regex(/^09\d{8}$/, "Invalid Taiwan phone number"),
 	locale: LocaleSchema.optional(),
-	turnstileToken: z.string(),
+	turnstileToken: z.string()
 });
 export type SendVerificationRequest = z.infer<typeof SendVerificationRequestSchema>;
 
@@ -20,7 +20,7 @@ export type SendVerificationRequest = z.infer<typeof SendVerificationRequestSche
  */
 export const VerifyCodeRequestSchema = z.object({
 	phoneNumber: z.string().regex(/^09\d{8}$/, "Invalid Taiwan phone number"),
-	code: z.string().regex(/^\d{6}$/, "Invalid verification code"),
+	code: z.string().regex(/^\d{6}$/, "Invalid verification code")
 });
 export type VerifyCodeRequest = z.infer<typeof VerifyCodeRequestSchema>;
 
@@ -30,7 +30,7 @@ export type VerifyCodeRequest = z.infer<typeof VerifyCodeRequestSchema>;
 export const TwSMSResponseSchema = z.object({
 	code: z.string(),
 	text: z.string(),
-	msgid: z.string().optional(),
+	msgid: z.string().optional()
 });
 export type TwSMSResponse = z.infer<typeof TwSMSResponseSchema>;
 
@@ -42,7 +42,7 @@ export const TwSMSStatusResponseSchema = z.object({
 	text: z.string(),
 	statuscode: z.string().optional(),
 	statustext: z.string().optional(),
-	donetime: z.string().optional(),
+	donetime: z.string().optional()
 });
 export type TwSMSStatusResponse = z.infer<typeof TwSMSStatusResponseSchema>;
 
@@ -53,7 +53,7 @@ export const SMSSendResultSchema = z.object({
 	success: z.boolean(),
 	msgid: z.string(),
 	code: z.string(),
-	text: z.string(),
+	text: z.string()
 });
 export type SMSSendResult = z.infer<typeof SMSSendResultSchema>;
 

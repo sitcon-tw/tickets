@@ -13,7 +13,7 @@ pnpm add @sitcontix/types
 ### Import all types (default)
 
 ```typescript
-import { UserSchema, EventSchema, TicketSchema } from '@sitcontix/types';
+import { UserSchema, EventSchema, TicketSchema } from "@sitcontix/types";
 ```
 
 ### Import from specific modules (tree-shakeable)
@@ -22,55 +22,55 @@ The package is modularized into separate domains for better tree-shaking and cod
 
 ```typescript
 // Common types
-import { LocalizedText, UserRole, SortOrder } from '@sitcontix/types/common';
+import { LocalizedText, UserRole, SortOrder } from "@sitcontix/types/common";
 
 // API types
-import { ApiResponse, Pagination, PaginationQuery } from '@sitcontix/types/api';
+import { ApiResponse, Pagination, PaginationQuery } from "@sitcontix/types/api";
 
 // User types
-import { User, SessionUser, UserCapabilities } from '@sitcontix/types/user';
+import { User, SessionUser, UserCapabilities } from "@sitcontix/types/user";
 
 // Auth types
-import { AuthContext, LoginRequest, Session } from '@sitcontix/types/auth';
+import { AuthContext, LoginRequest, Session } from "@sitcontix/types/auth";
 
 // Event types
-import { Event, EventListItem, EventStats } from '@sitcontix/types/event';
+import { Event, EventListItem, EventStats } from "@sitcontix/types/event";
 
 // Ticket types
-import { Ticket, TicketAnalytics } from '@sitcontix/types/ticket';
+import { Ticket, TicketAnalytics } from "@sitcontix/types/ticket";
 
 // Form types
-import { EventFormField, FieldFilter, FilterCondition } from '@sitcontix/types/form';
+import { EventFormField, FieldFilter, FilterCondition } from "@sitcontix/types/form";
 
 // Registration types
-import { Registration, RegistrationStats } from '@sitcontix/types/registration';
+import { Registration, RegistrationStats } from "@sitcontix/types/registration";
 
 // Referral types
-import { Referral, ReferralLeaderboard, ReferralTree } from '@sitcontix/types/referral';
+import { Referral, ReferralLeaderboard, ReferralTree } from "@sitcontix/types/referral";
 
 // Invitation types
-import { InvitationCode, InvitationCodeVerification } from '@sitcontix/types/invitation';
+import { InvitationCode, InvitationCodeVerification } from "@sitcontix/types/invitation";
 
 // Email types
-import { EmailCampaign, TargetAudience } from '@sitcontix/types/email';
+import { EmailCampaign, TargetAudience } from "@sitcontix/types/email";
 
 // SMS types
-import { SendVerificationRequest, VerifyCodeRequest } from '@sitcontix/types/sms';
+import { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types/sms";
 
 // Turnstile types
-import { TurnstileResponse, TurnstileValidationResult } from '@sitcontix/types/turnstile';
+import { TurnstileResponse, TurnstileValidationResult } from "@sitcontix/types/turnstile";
 
 // Analytics types
-import { AnalyticsData, EventDashboardData } from '@sitcontix/types/analytics';
+import { AnalyticsData, EventDashboardData } from "@sitcontix/types/analytics";
 
 // Validation types
-import { ValidationError } from '@sitcontix/types/validation';
+import { ValidationError } from "@sitcontix/types/validation";
 
 // System types
-import { HealthStatus, ExportData } from '@sitcontix/types/system';
+import { HealthStatus, ExportData } from "@sitcontix/types/system";
 
 // Helper types
-import { IdParams, EventAccessRequest } from '@sitcontix/types/helpers';
+import { IdParams, EventAccessRequest } from "@sitcontix/types/helpers";
 ```
 
 ## Module Organization

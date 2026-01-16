@@ -19,7 +19,7 @@ export const InvitationCodeSchema = z.object({
 	validUntil: z.string().datetime().nullable().optional(),
 	isActive: z.boolean(),
 	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime(),
+	updatedAt: z.string().datetime()
 });
 export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
 
@@ -28,7 +28,7 @@ export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
  */
 export const InvitationCodeInfoSchema = InvitationCodeSchema.extend({
 	description: z.string().optional(),
-	expiresAt: z.string().datetime().optional(),
+	expiresAt: z.string().datetime().optional()
 });
 export type InvitationCodeInfo = z.infer<typeof InvitationCodeInfoSchema>;
 
@@ -41,7 +41,7 @@ export const InvitationCodeCreateRequestSchema = z.object({
 	name: z.string().optional(),
 	usageLimit: z.number().int().min(1).optional(),
 	validFrom: z.string().datetime().optional(),
-	validUntil: z.string().datetime().optional(),
+	validUntil: z.string().datetime().optional()
 });
 export type InvitationCodeCreateRequest = z.infer<typeof InvitationCodeCreateRequestSchema>;
 
@@ -55,7 +55,7 @@ export const InvitationCodeUpdateRequestSchema = z.object({
 	validFrom: z.string().datetime().optional(),
 	validUntil: z.string().datetime().optional(),
 	isActive: z.boolean().optional(),
-	ticketId: z.string().optional(),
+	ticketId: z.string().optional()
 });
 export type InvitationCodeUpdateRequest = z.infer<typeof InvitationCodeUpdateRequestSchema>;
 
@@ -64,7 +64,7 @@ export type InvitationCodeUpdateRequest = z.infer<typeof InvitationCodeUpdateReq
  */
 export const InvitationCodeVerifyRequestSchema = z.object({
 	code: z.string().min(1),
-	ticketId: z.string(),
+	ticketId: z.string()
 });
 export type InvitationCodeVerifyRequest = z.infer<typeof InvitationCodeVerifyRequestSchema>;
 
@@ -79,7 +79,7 @@ export const InvitationCodeVerificationSchema = z.object({
 		description: z.string().optional(),
 		usedCount: z.number().int().min(0),
 		usageLimit: z.number().int().min(1).optional(),
-		expiresAt: z.string().datetime().optional(),
+		expiresAt: z.string().datetime().optional()
 	}),
 	availableTickets: z.array(
 		z.object({
@@ -91,8 +91,8 @@ export const InvitationCodeVerificationSchema = z.object({
 			quantity: z.number().int().min(0),
 			soldCount: z.number().int().min(0),
 			available: z.number().int().min(0),
-			isOnSale: z.boolean(),
+			isOnSale: z.boolean()
 		})
-	),
+	)
 });
 export type InvitationCodeVerification = z.infer<typeof InvitationCodeVerificationSchema>;

@@ -16,9 +16,9 @@ export const TurnstileResponseSchema = z.object({
 	cdata: z.string().optional(),
 	metadata: z
 		.object({
-			ephemeral_id: z.string().optional(),
+			ephemeral_id: z.string().optional()
 		})
-		.optional(),
+		.optional()
 });
 export type TurnstileResponse = z.infer<typeof TurnstileResponseSchema>;
 
@@ -29,7 +29,7 @@ export const TurnstileValidationOptionsSchema = z.object({
 	remoteip: z.string().optional(),
 	idempotencyKey: z.string().optional(),
 	expectedAction: z.string().optional(),
-	expectedHostname: z.string().optional(),
+	expectedHostname: z.string().optional()
 });
 export type TurnstileValidationOptions = z.infer<typeof TurnstileValidationOptionsSchema>;
 
@@ -43,6 +43,6 @@ export const TurnstileValidationResultSchema = z.object({
 	expected: z.string().optional(),
 	received: z.string().optional(),
 	data: TurnstileResponseSchema.optional(),
-	tokenAge: z.number().optional(),
+	tokenAge: z.number().optional()
 });
 export type TurnstileValidationResult = z.infer<typeof TurnstileValidationResultSchema>;

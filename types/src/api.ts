@@ -12,7 +12,7 @@ export const ApiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
 	z.object({
 		success: z.boolean(),
 		message: z.string(),
-		data: dataSchema,
+		data: dataSchema
 	});
 
 /**
@@ -33,8 +33,8 @@ export const ApiErrorSchema = z.object({
 	error: z.object({
 		code: z.string(),
 		message: z.string(),
-		details: z.unknown().optional(),
-	}),
+		details: z.unknown().optional()
+	})
 });
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
@@ -47,7 +47,7 @@ export const PaginationSchema = z.object({
 	total: z.number().int().min(0),
 	totalPages: z.number().int().min(0),
 	hasNext: z.boolean(),
-	hasPrev: z.boolean(),
+	hasPrev: z.boolean()
 });
 export type Pagination = z.infer<typeof PaginationSchema>;
 
@@ -59,7 +59,7 @@ export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
 		success: z.boolean(),
 		message: z.string(),
 		data: z.array(dataSchema),
-		pagination: PaginationSchema.optional(),
+		pagination: PaginationSchema.optional()
 	});
 
 /**
@@ -67,7 +67,7 @@ export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
  */
 export const PaginationQuerySchema = z.object({
 	page: z.number().int().min(1).optional().default(1),
-	limit: z.number().int().min(1).max(100).optional().default(10),
+	limit: z.number().int().min(1).max(100).optional().default(10)
 });
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
 
@@ -78,6 +78,6 @@ export const SearchQuerySchema = z.object({
 	q: z.string().optional(),
 	sortBy: z.string().optional(),
 	sortOrder: SortOrderSchema.optional(),
-	filters: z.record(z.string(), z.unknown()).optional(),
+	filters: z.record(z.string(), z.unknown()).optional()
 });
 export type SearchQuery = z.infer<typeof SearchQuerySchema>;

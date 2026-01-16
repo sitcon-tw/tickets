@@ -16,10 +16,10 @@ export const ValidationErrorSchema = z.object({
 		.array(
 			z.object({
 				field: z.string(),
-				message: z.string(),
+				message: z.string()
 			})
 		)
 		.optional(),
-	validationContext: z.string().optional(),
+	validationContext: z.string().optional()
 });
 export type ValidationError = z.infer<typeof ValidationErrorSchema>;

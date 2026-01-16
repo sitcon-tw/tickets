@@ -2,8 +2,6 @@
 	"name": "@sitcontix/types",
 	"version": "1.0.0",
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -78,6 +76,8 @@
 			"import": "./dist/helpers.js"
 		}
 	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsc --watch"

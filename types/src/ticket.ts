@@ -28,7 +28,7 @@ export const TicketSchema = z.object({
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
 	createdAt: z.string().datetime().optional(),
-	updatedAt: z.string().datetime().optional(),
+	updatedAt: z.string().datetime().optional()
 });
 export type Ticket = z.infer<typeof TicketSchema>;
 
@@ -47,7 +47,7 @@ export const TicketCreateRequestSchema = z.object({
 	saleEnd: z.string().datetime().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
-	hidden: z.boolean().optional(),
+	hidden: z.boolean().optional()
 });
 export type TicketCreateRequest = z.infer<typeof TicketCreateRequestSchema>;
 
@@ -66,7 +66,7 @@ export const TicketUpdateRequestSchema = z.object({
 	isActive: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
-	hidden: z.boolean().optional(),
+	hidden: z.boolean().optional()
 });
 export type TicketUpdateRequest = z.infer<typeof TicketUpdateRequestSchema>;
 
@@ -77,9 +77,9 @@ export const TicketReorderRequestSchema = z.object({
 	tickets: z.array(
 		z.object({
 			id: z.string(),
-			order: z.number().int().min(0),
+			order: z.number().int().min(0)
 		})
-	),
+	)
 });
 export type TicketReorderRequest = z.infer<typeof TicketReorderRequestSchema>;
 
@@ -95,8 +95,8 @@ export const TicketAnalyticsSchema = z.object({
 		z.object({
 			date: z.string(),
 			count: z.number().int().min(0),
-			revenue: z.number().min(0),
+			revenue: z.number().min(0)
 		})
-	),
+	)
 });
 export type TicketAnalytics = z.infer<typeof TicketAnalyticsSchema>;

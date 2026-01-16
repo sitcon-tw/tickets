@@ -20,7 +20,7 @@ export const TargetAudienceSchema = z.object({
 	registeredAfter: z.string().datetime().optional(),
 	registeredBefore: z.string().datetime().optional(),
 	tags: z.array(z.string()).optional(),
-	emailDomains: z.array(z.string()).optional(),
+	emailDomains: z.array(z.string()).optional()
 });
 export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
 
@@ -46,9 +46,9 @@ export const EmailCampaignSchema = z.object({
 	user: z
 		.object({
 			name: z.string(),
-			email: z.string().email(),
+			email: z.string().email()
 		})
-		.optional(),
+		.optional()
 });
 export type EmailCampaign = z.infer<typeof EmailCampaignSchema>;
 
@@ -61,7 +61,7 @@ export const EmailCampaignCreateRequestSchema = z.object({
 	content: z.string().min(1),
 	eventId: z.string().optional(),
 	targetAudience: TargetAudienceSchema.optional(),
-	scheduledAt: z.string().datetime().optional(),
+	scheduledAt: z.string().datetime().optional()
 });
 export type EmailCampaignCreateRequest = z.infer<typeof EmailCampaignCreateRequestSchema>;
 
@@ -74,7 +74,7 @@ export const EmailCampaignUpdateRequestSchema = z.object({
 	content: z.string().min(1).optional(),
 	eventId: z.string().optional(),
 	targetAudience: TargetAudienceSchema.optional(),
-	scheduledAt: z.string().datetime().optional(),
+	scheduledAt: z.string().datetime().optional()
 });
 export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateRequestSchema>;
 
@@ -83,7 +83,7 @@ export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateReque
  */
 export const EmailCampaignSendRequestSchema = z.object({
 	sendNow: z.boolean().optional().default(false),
-	scheduledAt: z.string().datetime().optional(),
+	scheduledAt: z.string().datetime().optional()
 });
 export type EmailCampaignSendRequest = z.infer<typeof EmailCampaignSendRequestSchema>;
 
@@ -97,7 +97,7 @@ export const EmailCampaignStatusResponseSchema = z.object({
 	sentCount: z.number().int().min(0),
 	failedCount: z.number().int().min(0),
 	openCount: z.number().int().min(0).optional(),
-	clickCount: z.number().int().min(0).optional(),
+	clickCount: z.number().int().min(0).optional()
 });
 export type EmailCampaignStatusResponse = z.infer<typeof EmailCampaignStatusResponseSchema>;
 
@@ -108,7 +108,7 @@ export const CampaignResultSchema = z.object({
 	success: z.boolean(),
 	sentCount: z.number().int().min(0),
 	failedCount: z.number().int().min(0),
-	totalRecipients: z.number().int().min(0),
+	totalRecipients: z.number().int().min(0)
 });
 export type CampaignResult = z.infer<typeof CampaignResultSchema>;
 
@@ -117,7 +117,7 @@ export type CampaignResult = z.infer<typeof CampaignResultSchema>;
  */
 export const EmailSenderSchema = z.object({
 	email: z.string().email(),
-	name: z.string(),
+	name: z.string()
 });
 export type EmailSender = z.infer<typeof EmailSenderSchema>;
 
@@ -125,7 +125,7 @@ export type EmailSender = z.infer<typeof EmailSenderSchema>;
  * Email recipient
  */
 export const EmailRecipientSchema = z.object({
-	email: z.string().email(),
+	email: z.string().email()
 });
 export type EmailRecipient = z.infer<typeof EmailRecipientSchema>;
 
@@ -137,7 +137,7 @@ export const RecipientDataSchema = z.object({
 	id: z.string(),
 	formData: z.string().nullable().optional(),
 	event: EventSchema.partial().optional(),
-	ticket: TicketSchema.partial().optional(),
+	ticket: TicketSchema.partial().optional()
 });
 export type RecipientData = z.infer<typeof RecipientDataSchema>;
 

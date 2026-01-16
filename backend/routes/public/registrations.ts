@@ -3,13 +3,13 @@ import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth.ts";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas";
-import type { Event, Registration, Ticket } from "@sitcontix/types";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
+import type { Event, Registration, Ticket } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {

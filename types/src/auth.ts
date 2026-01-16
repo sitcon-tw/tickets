@@ -12,7 +12,7 @@ import { SessionUserSchema } from "./user.js";
 export const AuthContextSchema = z.object({
 	user: SessionUserSchema.nullable(),
 	sessionId: z.string().nullable(),
-	isAuthenticated: z.boolean(),
+	isAuthenticated: z.boolean()
 });
 export type AuthContext = z.infer<typeof AuthContextSchema>;
 
@@ -21,7 +21,7 @@ export type AuthContext = z.infer<typeof AuthContextSchema>;
  */
 export const LoginRequestSchema = z.object({
 	email: z.string().email(),
-	password: z.string().min(6),
+	password: z.string().min(6)
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
@@ -31,7 +31,7 @@ export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export const RegisterRequestSchema = z.object({
 	name: z.string().min(1),
 	email: z.string().email(),
-	password: z.string().min(6),
+	password: z.string().min(6)
 });
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 
@@ -39,7 +39,7 @@ export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
  * Magic link request
  */
 export const MagicLinkRequestSchema = z.object({
-	email: z.string().email(),
+	email: z.string().email()
 });
 export type MagicLinkRequest = z.infer<typeof MagicLinkRequestSchema>;
 
@@ -47,7 +47,7 @@ export type MagicLinkRequest = z.infer<typeof MagicLinkRequestSchema>;
  * Reset password request
  */
 export const ResetPasswordRequestSchema = z.object({
-	email: z.string().email(),
+	email: z.string().email()
 });
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
 
@@ -56,7 +56,7 @@ export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
  */
 export const ChangePasswordRequestSchema = z.object({
 	currentPassword: z.string(),
-	newPassword: z.string().min(6),
+	newPassword: z.string().min(6)
 });
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
@@ -66,7 +66,7 @@ export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 export const UserUpdateRequestSchema = z.object({
 	name: z.string().min(1).optional(),
 	email: z.string().email().optional(),
-	image: z.string().optional(),
+	image: z.string().optional()
 });
 export type UserUpdateRequest = z.infer<typeof UserUpdateRequestSchema>;
 
@@ -78,7 +78,7 @@ export const AdminUserUpdateRequestSchema = z.object({
 	email: z.string().email().optional(),
 	role: UserRoleSchema.optional(),
 	permissions: z.array(z.string()).optional(),
-	isActive: z.boolean().optional(),
+	isActive: z.boolean().optional()
 });
 export type AdminUserUpdateRequest = z.infer<typeof AdminUserUpdateRequestSchema>;
 
@@ -93,7 +93,7 @@ export const SessionSchema = z.object({
 		email: z.string().email(),
 		emailVerified: z.boolean(),
 		name: z.string(),
-		image: z.string().nullable().optional(),
+		image: z.string().nullable().optional()
 	}),
 	session: z.object({
 		id: z.string(),
@@ -103,7 +103,7 @@ export const SessionSchema = z.object({
 		expiresAt: z.string().datetime(),
 		token: z.string(),
 		ipAddress: z.string().nullable().optional(),
-		userAgent: z.string().nullable().optional(),
-	}),
+		userAgent: z.string().nullable().optional()
+	})
 });
 export type Session = z.infer<typeof SessionSchema>;

@@ -28,7 +28,7 @@ export const RegistrationSchema = z.object({
 			location: z.string().nullable().optional(),
 			startDate: z.string().datetime(),
 			endDate: z.string().datetime(),
-			slug: z.string().nullable().optional(),
+			slug: z.string().nullable().optional()
 		})
 		.optional(),
 	ticket: z
@@ -37,13 +37,13 @@ export const RegistrationSchema = z.object({
 			name: LocalizedTextSchema,
 			description: LocalizedTextSchema.nullable().optional(),
 			plainDescription: LocalizedTextSchema.nullable().optional(),
-			price: z.number().min(0),
+			price: z.number().min(0)
 		})
 		.optional(),
 	isUpcoming: z.boolean().optional(),
 	isPast: z.boolean().optional(),
 	canEdit: z.boolean().optional(),
-	canCancel: z.boolean().optional(),
+	canCancel: z.boolean().optional()
 });
 export type Registration = z.infer<typeof RegistrationSchema>;
 
@@ -55,7 +55,7 @@ export const RegistrationCreateRequestSchema = z.object({
 	ticketId: z.string(),
 	invitationCode: z.string().optional(),
 	referralCode: z.string().optional(),
-	formData: z.record(z.string(), z.unknown()),
+	formData: z.record(z.string(), z.unknown())
 });
 export type RegistrationCreateRequest = z.infer<typeof RegistrationCreateRequestSchema>;
 
@@ -65,7 +65,7 @@ export type RegistrationCreateRequest = z.infer<typeof RegistrationCreateRequest
 export const RegistrationUpdateRequestSchema = z.object({
 	formData: z.record(z.string(), z.unknown()).optional(),
 	status: RegistrationStatusSchema.optional(),
-	tags: z.array(z.string()).optional(),
+	tags: z.array(z.string()).optional()
 });
 export type RegistrationUpdateRequest = z.infer<typeof RegistrationUpdateRequestSchema>;
 
@@ -81,12 +81,12 @@ export const RegistrationStatsSchema = z.object({
 			status: z.string(),
 			ticketName: LocalizedTextSchema,
 			registeredAt: z.string().datetime(),
-			email: z.string().email(),
+			email: z.string().email()
 		})
 	),
 	referrerInfo: z.object({
 		id: z.string(),
-		email: z.string().email(),
-	}),
+		email: z.string().email()
+	})
 });
 export type RegistrationStats = z.infer<typeof RegistrationStatsSchema>;

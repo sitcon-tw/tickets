@@ -15,7 +15,7 @@ export const FilterConditionSchema = z.object({
 	operator: z.enum(["equals", "filled", "notFilled"]).optional(),
 	value: z.string().optional(),
 	startTime: z.string().datetime().optional(),
-	endTime: z.string().datetime().optional(),
+	endTime: z.string().datetime().optional()
 });
 export type FilterCondition = z.infer<typeof FilterConditionSchema>;
 
@@ -26,7 +26,7 @@ export const FieldFilterSchema = z.object({
 	enabled: z.boolean(),
 	action: z.enum(["display", "hide"]),
 	operator: z.enum(["and", "or"]),
-	conditions: z.array(FilterConditionSchema),
+	conditions: z.array(FilterConditionSchema)
 });
 export type FieldFilter = z.infer<typeof FieldFilterSchema>;
 
@@ -47,7 +47,7 @@ export const EventFormFieldSchema = z.object({
 	options: z.array(LocalizedTextSchema).nullable().optional(), // Parsed options for frontend use
 	filters: FieldFilterSchema.nullable().optional(),
 	prompts: z.record(z.string(), z.array(z.string())).nullable().optional(),
-	enableOther: z.boolean().nullable().optional(),
+	enableOther: z.boolean().nullable().optional()
 });
 export type EventFormField = z.infer<typeof EventFormFieldSchema>;
 
@@ -66,7 +66,7 @@ export const EventFormFieldCreateRequestSchema = z.object({
 	values: z.array(LocalizedTextSchema).optional(),
 	filters: FieldFilterSchema.optional(),
 	prompts: z.record(z.string(), z.array(z.string())).optional(),
-	enableOther: z.boolean().optional(),
+	enableOther: z.boolean().optional()
 });
 export type EventFormFieldCreateRequest = z.infer<typeof EventFormFieldCreateRequestSchema>;
 
@@ -84,7 +84,7 @@ export const EventFormFieldUpdateRequestSchema = z.object({
 	values: z.array(LocalizedTextSchema).optional(),
 	filters: FieldFilterSchema.optional(),
 	prompts: z.record(z.string(), z.array(z.string())).optional(),
-	enableOther: z.boolean().optional(),
+	enableOther: z.boolean().optional()
 });
 export type EventFormFieldUpdateRequest = z.infer<typeof EventFormFieldUpdateRequestSchema>;
 
@@ -95,9 +95,9 @@ export const EventFormFieldReorderRequestSchema = z.object({
 	fieldOrders: z.array(
 		z.object({
 			id: z.string(),
-			order: z.number().int().min(0),
+			order: z.number().int().min(0)
 		})
-	),
+	)
 });
 export type EventFormFieldReorderRequest = z.infer<typeof EventFormFieldReorderRequestSchema>;
 
@@ -118,7 +118,7 @@ export const FormValidationRulesSchema = z.object({
 	min: z.number().optional(),
 	max: z.number().optional(),
 	options: z.array(z.string()).optional(),
-	customMessage: z.string().optional(),
+	customMessage: z.string().optional()
 });
 export type FormValidationRules = z.infer<typeof FormValidationRulesSchema>;
 
@@ -127,7 +127,7 @@ export type FormValidationRules = z.infer<typeof FormValidationRulesSchema>;
  */
 export const FieldValidationErrorSchema = z.object({
 	field: z.string(),
-	messages: z.array(z.string()),
+	messages: z.array(z.string())
 });
 export type FieldValidationError = z.infer<typeof FieldValidationErrorSchema>;
 
@@ -136,6 +136,6 @@ export type FieldValidationError = z.infer<typeof FieldValidationErrorSchema>;
  */
 export const ValidationResultSchema = z.object({
 	isValid: z.boolean(),
-	errors: z.record(z.string(), z.array(z.string())),
+	errors: z.record(z.string(), z.array(z.string()))
 });
 export type ValidationResult = z.infer<typeof ValidationResultSchema>;

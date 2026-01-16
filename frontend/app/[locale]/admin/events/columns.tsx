@@ -2,8 +2,8 @@
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import type { Event } from "@sitcontix/types";
 import { ColumnActions } from "@/lib/types/columns";
+import type { Event } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type EventWithStatus = Event & {

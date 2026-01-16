@@ -24,7 +24,7 @@ export const EventSchema = z.object({
 	hideEvent: z.boolean().optional(),
 	useOpass: z.boolean().optional(),
 	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime(),
+	updatedAt: z.string().datetime()
 });
 export type Event = z.infer<typeof EventSchema>;
 
@@ -34,7 +34,7 @@ export type Event = z.infer<typeof EventSchema>;
 export const EventListItemSchema = EventSchema.extend({
 	ticketCount: z.number().int().min(0),
 	registrationCount: z.number().int().min(0),
-	hasAvailableTickets: z.boolean(),
+	hasAvailableTickets: z.boolean()
 });
 export type EventListItem = z.infer<typeof EventListItemSchema>;
 
@@ -49,7 +49,7 @@ export const EventCreateRequestSchema = z.object({
 	startDate: z.string().datetime(),
 	endDate: z.string().datetime(),
 	location: z.string().optional(),
-	ogImage: z.string().optional(),
+	ogImage: z.string().optional()
 });
 export type EventCreateRequest = z.infer<typeof EventCreateRequestSchema>;
 
@@ -67,7 +67,7 @@ export const EventUpdateRequestSchema = z.object({
 	ogImage: z.string().optional(),
 	isActive: z.boolean().optional(),
 	hideEvent: z.boolean().optional(),
-	useOpass: z.boolean().optional(),
+	useOpass: z.boolean().optional()
 });
 export type EventUpdateRequest = z.infer<typeof EventUpdateRequestSchema>;
 
@@ -80,6 +80,6 @@ export const EventStatsSchema = z.object({
 	confirmedRegistrations: z.number().int().min(0),
 	totalTickets: z.number().int().min(0),
 	availableTickets: z.number().int().min(0),
-	registrationRate: z.number().min(0).max(100),
+	registrationRate: z.number().min(0).max(100)
 });
 export type EventStats = z.infer<typeof EventStatsSchema>;

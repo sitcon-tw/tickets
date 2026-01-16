@@ -4,9 +4,9 @@ import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { getClientIP, validateTurnstile } from "#lib/turnstile";
 import { requireAuth } from "#middleware/auth.ts";
 import { smsVerificationSchemas } from "#schemas";
-import type { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
+import type { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {

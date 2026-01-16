@@ -1,4 +1,4 @@
-import type { EventCreateRequest, EventUpdateRequest, Event } from "@sitcontix/types";
+import type { Event, EventCreateRequest, EventUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
@@ -51,7 +51,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
 			});
-	
+
 			const event: Event = {
 				...createdEvent,
 				name: createdEvent.name as Record<string, string>,
@@ -62,7 +62,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				createdAt: createdEvent.createdAt.toISOString(),
 				updatedAt: createdEvent.updatedAt.toISOString()
 			};
-	
+
 			return reply.code(201).send(successResponse(event, "活動創建成功"));
 		}
 	);
@@ -249,7 +249,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				},
 				orderBy: { createdAt: "desc" }
 			});
-	
+
 			const events: Event[] = rawEvents.map(event => ({
 				...event,
 				name: event.name as Record<string, string>,
@@ -260,7 +260,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				createdAt: event.createdAt.toISOString(),
 				updatedAt: event.updatedAt.toISOString()
 			}));
-	
+
 			return reply.send(successResponse(events));
 		}
 	);
