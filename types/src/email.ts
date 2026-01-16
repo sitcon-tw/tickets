@@ -33,9 +33,7 @@ export const EmailCampaignSchema = z.object({
 	name: z.string(),
 	subject: z.string(),
 	content: z.string(),
-	eventId: z.string().nullable().optional(),
 	recipientFilter: z.string().nullable().optional(),
-	targetAudience: TargetAudienceSchema.nullable().optional(),
 	status: EmailCampaignStatusSchema,
 	sentCount: z.number().int().min(0),
 	totalCount: z.number().int().min(0),
@@ -59,8 +57,7 @@ export const EmailCampaignCreateRequestSchema = z.object({
 	name: z.string().min(1),
 	subject: z.string().min(1),
 	content: z.string().min(1),
-	eventId: z.string().optional(),
-	targetAudience: TargetAudienceSchema.optional(),
+	recipientFilter: z.string().optional(),
 	scheduledAt: z.string().datetime().optional()
 });
 export type EmailCampaignCreateRequest = z.infer<typeof EmailCampaignCreateRequestSchema>;
@@ -72,8 +69,7 @@ export const EmailCampaignUpdateRequestSchema = z.object({
 	name: z.string().min(1).optional(),
 	subject: z.string().min(1).optional(),
 	content: z.string().min(1).optional(),
-	eventId: z.string().optional(),
-	targetAudience: TargetAudienceSchema.optional(),
+	recipientFilter: z.string().optional(),
 	scheduledAt: z.string().datetime().optional()
 });
 export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateRequestSchema>;
@@ -92,7 +88,7 @@ export type EmailCampaignSendRequest = z.infer<typeof EmailCampaignSendRequestSc
  */
 export const EmailCampaignStatusResponseSchema = z.object({
 	id: z.string(),
-	status: z.enum(["draft", "sent", "scheduled", "sending", "failed"]),
+	status: EmailCampaignStatusSchema,
 	totalRecipients: z.number().int().min(0),
 	sentCount: z.number().int().min(0),
 	failedCount: z.number().int().min(0),

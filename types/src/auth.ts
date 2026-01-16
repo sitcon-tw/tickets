@@ -83,6 +83,19 @@ export const AdminUserUpdateRequestSchema = z.object({
 export type AdminUserUpdateRequest = z.infer<typeof AdminUserUpdateRequestSchema>;
 
 /**
+ * Magic link attempt record
+ */
+export const MagicLinkAttemptSchema = z.object({
+	id: z.string(),
+	email: z.string().email(),
+	ipAddress: z.string().nullable().optional(),
+	success: z.boolean(),
+	sessionId: z.string().nullable().optional(),
+	createdAt: z.string().datetime()
+});
+export type MagicLinkAttempt = z.infer<typeof MagicLinkAttemptSchema>;
+
+/**
  * Session response
  */
 export const SessionSchema = z.object({

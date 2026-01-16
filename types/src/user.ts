@@ -10,8 +10,11 @@ import { UserRoleSchema } from "./common.js";
  */
 export const SmsVerificationSchema = z.object({
 	id: z.string(),
+	userId: z.string(),
 	phoneNumber: z.string(),
+	code: z.string(),
 	verified: z.boolean(),
+	expiresAt: z.string().datetime(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime()
 });
@@ -29,6 +32,8 @@ export const UserSchema = z.object({
 	role: UserRoleSchema,
 	permissions: z.array(z.string()),
 	isActive: z.boolean(),
+	phoneNumber: z.string().nullable().optional(),
+	phoneVerified: z.boolean(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime(),
 	smsVerifications: z.array(SmsVerificationSchema).optional()

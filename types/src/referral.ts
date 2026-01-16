@@ -9,10 +9,9 @@ import { z } from "zod/v4";
  */
 export const ReferralSchema = z.object({
 	id: z.string(),
-	eventId: z.string(),
-	userId: z.string(),
 	code: z.string(),
-	description: z.string().nullable().optional(),
+	registrationId: z.string(),
+	eventId: z.string(),
 	isActive: z.boolean(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime()
@@ -55,8 +54,8 @@ export type ReferralValidation = z.infer<typeof ReferralValidationSchema>;
 export const ReferralUsageSchema = z.object({
 	id: z.string(),
 	referralId: z.string(),
+	registrationId: z.string(),
 	eventId: z.string(),
-	userId: z.string(),
 	usedAt: z.string().datetime()
 });
 export type ReferralUsage = z.infer<typeof ReferralUsageSchema>;

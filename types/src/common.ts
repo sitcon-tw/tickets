@@ -32,7 +32,7 @@ export type RegistrationStatus = z.infer<typeof RegistrationStatusSchema>;
 /**
  * Email campaign status
  */
-export const EmailCampaignStatusSchema = z.enum(["draft", "sent", "scheduled", "sending", "cancelled"]);
+export const EmailCampaignStatusSchema = z.enum(["draft", "sending", "sent", "cancelled"]);
 export type EmailCampaignStatus = z.infer<typeof EmailCampaignStatusSchema>;
 
 /**
