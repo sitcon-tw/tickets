@@ -1,4 +1,4 @@
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest, EventFormFields } from "@sitcontix/types";
+import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest, EventFormField } from "@sitcontix/types";
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
@@ -53,13 +53,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
-						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull),
-						prompts: prompts === "" ? Prisma.DbNull : (prompts ?? Prisma.DbNull)
+						values: !values || values.length === 0 ? Prisma.DbNull : values,
+						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
+						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: CacheInvalidation.eventFormFields()
-				})) as EventFormFields;
+				})) as EventFormField;
 
 				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
 			} catch (error) {
@@ -85,7 +85,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id }
-				})) as EventFormFields | null;
+				})) as EventFormField | null;
 
 				if (!formField) {
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
@@ -148,7 +148,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				if (updateData.placeholder === "") data.placeholder = null;
 
 				if ("name" in updateData) {
-					if (updateData.name === "" || updateData.name === null) {
+					if (updateData.name === null || updateData.name === undefined) {
 						delete data.name;
 					} else if (typeof updateData.name === "object") {
 						data.name = JSON.parse(JSON.stringify(updateData.name));
@@ -156,7 +156,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("description" in updateData) {
-					if (updateData.description === "" || updateData.description === null) {
+					if (updateData.description === null || updateData.description === undefined) {
 						data.description = null;
 					} else if (typeof updateData.description === "object") {
 						data.description = JSON.parse(JSON.stringify(updateData.description));
@@ -164,7 +164,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("values" in updateData) {
-					if (updateData.values === "" || updateData.values === null || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
+					if (updateData.values === null || updateData.values === undefined || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
 						data.values = null;
 					} else if (Array.isArray(updateData.values)) {
 						data.values = JSON.parse(JSON.stringify(updateData.values));
@@ -172,7 +172,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("filters" in updateData) {
-					if (updateData.filters === "" || updateData.filters === null) {
+					if (updateData.filters === null || updateData.filters === undefined) {
 						data.filters = null;
 					} else if (typeof updateData.filters === "object") {
 						data.filters = JSON.parse(JSON.stringify(updateData.filters));
@@ -180,7 +180,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("prompts" in updateData) {
-					if (updateData.prompts === "" || updateData.prompts === null || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
+					if (updateData.prompts === null || updateData.prompts === undefined || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
 						data.prompts = null;
 					} else if (Array.isArray(updateData.prompts)) {
 						data.prompts = JSON.parse(JSON.stringify(updateData.prompts));
@@ -195,7 +195,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						uncacheKeys: ["prisma:event_form_fields:*"],
 						hasPattern: true
 					}
-				})) as EventFormFields;
+				})) as EventFormField;
 
 				return reply.send(successResponse(formField, "表單欄位更新成功"));
 			} catch (error) {
@@ -279,7 +279,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const formFields = (await prisma.eventFormFields.findMany({
 					where,
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
-				})) as EventFormFields[];
+				})) as EventFormField[];
 
 				return reply.send(successResponse(formFields));
 			} catch (error) {

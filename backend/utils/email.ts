@@ -469,8 +469,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					email: r.email,
 					id: r.id,
 					formData: r.formData,
-					event: r.event as Partial<Event>,
-					ticket: r.ticket as Partial<Ticket>
+					event: r.event as unknown as Partial<Event>,
+					ticket: r.ticket as unknown as Partial<Ticket>
 				});
 			}
 		});

@@ -3,8 +3,8 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
-import prisma from "../config/database";
-import { getAdminEmails } from "../config/security";
+import prisma from "#/config/database";
+import { getAdminEmails } from "#/config/security";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {

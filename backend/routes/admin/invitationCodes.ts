@@ -76,7 +76,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 						}
 					});
 
-					return newCode;
+					return {
+						...newCode,
+						createdAt: newCode.createdAt.toISOString(),
+						updatedAt: newCode.updatedAt.toISOString(),
+						validFrom: newCode.validFrom?.toISOString() ?? null,
+						validUntil: newCode.validUntil?.toISOString() ?? null
+					};
 				});
 
 				return reply.code(201).send(successResponse(invitationCode, "邀請碼創建成功"));
@@ -101,7 +107,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { id } = request.params;
 
-				const invitationCode: InvitationCode | null = await prisma.invitationCode.findUnique({
+				const rawInvitationCode = await prisma.invitationCode.findUnique({
 					where: { id },
 					include: {
 						ticket: {
@@ -123,10 +129,18 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				});
 
-				if (!invitationCode) {
+				if (!rawInvitationCode) {
 					const { response, statusCode } = notFoundResponse("邀請碼不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				const invitationCode: InvitationCode = {
+					...rawInvitationCode,
+					createdAt: rawInvitationCode.createdAt.toISOString(),
+					updatedAt: rawInvitationCode.updatedAt.toISOString(),
+					validFrom: rawInvitationCode.validFrom?.toISOString() ?? null,
+					validUntil: rawInvitationCode.validUntil?.toISOString() ?? null
+				};
 
 				return reply.send(successResponse(invitationCode));
 			} catch (error) {
@@ -224,7 +238,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 						data: updatePayload
 					});
 
-					return updatedCode;
+					return {
+						...updatedCode,
+						createdAt: updatedCode.createdAt.toISOString(),
+						updatedAt: updatedCode.updatedAt.toISOString(),
+						validFrom: updatedCode.validFrom?.toISOString() ?? null,
+						validUntil: updatedCode.validUntil?.toISOString() ?? null
+					};
 				});
 
 				return reply.send(successResponse(invitationCode, "邀請碼更新成功"));
@@ -313,7 +333,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					where.ticketId = ticketId ? (eventTicketIds.includes(ticketId) ? ticketId : "none") : { in: eventTicketIds };
 				}
 
-				const invitationCodes: InvitationCode[] = await prisma.invitationCode.findMany({
+				const rawInvitationCodes = await prisma.invitationCode.findMany({
 					where,
 					include: {
 						ticket: {
@@ -336,12 +356,20 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					orderBy: { createdAt: "desc" }
 				});
 
+				const invitationCodes: InvitationCode[] = rawInvitationCodes.map(code => ({
+					...code,
+					createdAt: code.createdAt.toISOString(),
+					updatedAt: code.updatedAt.toISOString(),
+					validFrom: code.validFrom?.toISOString() ?? null,
+					validUntil: code.validUntil?.toISOString() ?? null
+				}));
+
 				// Add status indicators
 				const now = new Date();
 				const codesWithStatus = invitationCodes.map(code => ({
 					...code,
-					isExpired: code.validUntil && code.validUntil < now,
-					isNotStarted: code.validFrom && code.validFrom > now,
+					isExpired: code.validUntil && new Date(code.validUntil) < now,
+					isNotStarted: code.validFrom && new Date(code.validFrom) > now,
 					isExhausted: code.usageLimit && code.usedCount >= code.usageLimit,
 					remainingUses: code.usageLimit ? Math.max(0, code.usageLimit - code.usedCount) : null
 				}));

@@ -331,7 +331,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
-				await sendRegistrationConfirmation(result as unknown as Registration, event as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
+				await sendRegistrationConfirmation(result as unknown as Registration, event as unknown as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 

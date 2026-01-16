@@ -10,13 +10,13 @@ import { LocalizedTextSchema, RegistrationStatusSchema } from "./common.js";
  */
 export const RegistrationSchema = z.object({
 	id: z.string(),
+	userId: z.string(),
 	eventId: z.string(),
 	ticketId: z.string(),
 	email: z.string().email(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
-	tags: z.array(z.string()).nullable().optional(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime(),
 	event: z
