@@ -3,18 +3,12 @@ import { auth } from "#lib/auth";
 import { referralSchemas, referralStatsResponse } from "#schemas";
 import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 // Custom param schema for regId parameter
-const regIdParam = {
-	type: "object",
-	properties: {
-		regId: {
-			type: "string",
-			description: "報名 ID"
-		}
-	},
-	required: ["regId"]
-};
+const regIdParam = z.object({
+	regId: z.string()
+});
 
 interface ReferralValidateRequest {
 	code: string;
@@ -31,23 +25,16 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				tags: ["referrals"],
 				params: regIdParam,
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									referralLink: { type: "string" },
-									referralCode: { type: "string" },
-									eventId: { type: "string" }
-								},
-								required: ["id", "referralLink", "referralCode", "eventId"]
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.object({
+							id: z.string(),
+							referralLink: z.string(),
+							referralCode: z.string(),
+							eventId: z.string()
+						})
+					})
 				}
 			}
 		},

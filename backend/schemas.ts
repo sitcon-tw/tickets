@@ -10,7 +10,6 @@ import {
 
 	// Event schemas
 	EventSchema,
-	EventListItemSchema,
 	EventCreateRequestSchema,
 	EventUpdateRequestSchema,
 	EventStatsSchema,
@@ -346,21 +345,21 @@ export const publicEventsListResponse = {
 		success: z.literal(true),
 		message: z.string(),
 		data: z.array(
-			EventListItemSchema.pick({
-				id: true,
-				slug: true,
-				name: true,
-				description: true,
-				plainDescription: true,
-				location: true,
-				startDate: true,
-				endDate: true,
-				ogImage: true,
-				hideEvent: true,
-				useOpass: true,
-				ticketCount: true,
-				registrationCount: true,
-				hasAvailableTickets: true
+			z.object({
+				id: z.string(),
+				slug: z.string().nullable().optional(),
+				name: z.unknown(),
+				description: z.unknown().nullable().optional(),
+				plainDescription: z.unknown().nullable().optional(),
+				location: z.string().nullable().optional(),
+				startDate: z.union([z.date(), z.string()]),
+				endDate: z.union([z.date(), z.string()]),
+				ogImage: z.string().nullable().optional(),
+				hideEvent: z.boolean().optional(),
+				useOpass: z.boolean().optional(),
+				ticketCount: z.number(),
+				registrationCount: z.number(),
+				hasAvailableTickets: z.boolean()
 			})
 		)
 	})
@@ -801,17 +800,37 @@ export const userRegistrationsResponse = {
 		success: z.literal(true),
 		message: z.string(),
 		data: z.array(
-			RegistrationSchema.pick({
-				id: true,
-				status: true,
-				formData: true,
-				createdAt: true,
-				event: true,
-				ticket: true,
-				isUpcoming: true,
-				isPast: true,
-				canEdit: true,
-				canCancel: true
+			z.object({
+				id: z.string(),
+				userId: z.string(),
+				eventId: z.string(),
+				ticketId: z.string(),
+				email: z.string(),
+				status: z.string(),
+				referredBy: z.string().nullable().optional(),
+				formData: z.unknown(),
+				createdAt: z.union([z.date(), z.string()]),
+				updatedAt: z.union([z.date(), z.string()]),
+				event: z.object({
+					id: z.string(),
+					name: z.unknown(),
+					description: z.unknown().nullable().optional(),
+					location: z.string().nullable().optional(),
+					startDate: z.union([z.date(), z.string()]),
+					endDate: z.union([z.date(), z.string()]),
+					ogImage: z.string().nullable().optional()
+				}),
+				ticket: z.object({
+					id: z.string(),
+					name: z.unknown(),
+					description: z.unknown().nullable().optional(),
+					price: z.number(),
+					saleEnd: z.union([z.date(), z.string()]).nullable().optional()
+				}),
+				isUpcoming: z.boolean(),
+				isPast: z.boolean(),
+				canEdit: z.boolean(),
+				canCancel: z.boolean()
 			})
 		)
 	})

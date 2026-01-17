@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -26,16 +27,13 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "取得簡訊驗證記錄",
 				tags: ["admin/sms-verification"],
-				querystring: {
-					type: "object",
-					properties: {
-						userId: { type: "string" },
-						phoneNumber: { type: "string" },
-						verified: { type: "boolean" },
-						page: { type: "integer", minimum: 1, default: 1 },
-						limit: { type: "integer", minimum: 1, maximum: 100, default: 20 }
-					}
-				}
+				querystring: z.object({
+					userId: z.string().optional(),
+					phoneNumber: z.string().optional(),
+					verified: z.boolean().optional(),
+					page: z.number().int().min(1).default(1).optional(),
+					limit: z.number().int().min(1).max(100).default(20).optional()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Querystring: SmsLogsQuery }>, reply: FastifyReply) => {

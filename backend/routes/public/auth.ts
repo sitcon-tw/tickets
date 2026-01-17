@@ -7,6 +7,7 @@ import { auth } from "#lib/auth";
 import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 /**
  * Auth routes
@@ -23,38 +24,23 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 				description: "取得當前用戶的權限資訊",
 				tags: ["auth"],
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									role: { type: "string" },
-									permissions: {
-										type: "array",
-										items: { type: "string" }
-									},
-									capabilities: {
-										type: "object",
-										properties: {
-											canManageUsers: { type: "boolean" },
-											canManageAllEvents: { type: "boolean" },
-											canViewAnalytics: { type: "boolean" },
-											canManageEmailCampaigns: { type: "boolean" },
-											canManageReferrals: { type: "boolean" },
-											canManageSmsLogs: { type: "boolean" },
-											managedEventIds: {
-												type: "array",
-												items: { type: "string" }
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						data: z.object({
+							role: z.string(),
+							permissions: z.array(z.string()),
+							capabilities: z.object({
+								canManageUsers: z.boolean(),
+								canManageAllEvents: z.boolean(),
+								canViewAnalytics: z.boolean(),
+								canManageEmailCampaigns: z.boolean(),
+								canManageReferrals: z.boolean(),
+								canManageSmsLogs: z.boolean(),
+								managedEventIds: z.array(z.string())
+							})
+						})
+					})
 				}
 			}
 		},

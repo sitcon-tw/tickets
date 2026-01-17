@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
@@ -299,56 +300,28 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: {
 				description: "重新排序活動表單欄位",
 				tags: ["admin/events"],
-				params: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["eventId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						fieldOrders: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "integer", minimum: 0 }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["fieldOrders"]
-				},
+				params: z.object({
+					eventId: z.string()
+				}),
+				body: z.object({
+					fieldOrders: z.array(z.object({
+						id: z.string(),
+						order: z.number().int().min(0)
+					}))
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						},
-						required: ["success", "message"]
-					},
-					400: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						data: z.null()
+					}),
+					400: z.object({
+						success: z.boolean(),
+						error: z.object({
+							code: z.string(),
+							message: z.string()
+						}).optional()
+					})
 				}
 			}
 		},

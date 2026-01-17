@@ -2,6 +2,7 @@ import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 interface EventIdParams {
 	id: string;
@@ -177,19 +178,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				...eventSchemas.listEvents,
 				description: "獲取所有活動列表",
-				querystring: {
-					type: "object",
-					properties: {
-						isActive: {
-							type: "boolean",
-							description: "篩選啟用狀態"
-						},
-						upcoming: {
-							type: "boolean",
-							description: "僅顯示即將開始的活動"
-						}
-					}
-				},
+				querystring: z.object({
+					isActive: z.boolean().optional(),
+					upcoming: z.boolean().optional()
+				}),
 				response: publicEventsListResponse
 			}
 		},
@@ -356,44 +348,28 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "獲取活動報名表單欄位（透過票券 ID）",
 				tags: ["events"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "object", additionalProperties: true },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" },
-										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true },
-										enableOther: { type: "boolean" }
-									}
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						data: z.array(z.object({
+							id: z.string(),
+							name: z.unknown(),
+							description: z.unknown().nullable(),
+							type: z.string(),
+							required: z.boolean(),
+							options: z.array(z.unknown()),
+							validater: z.string().nullable(),
+							placeholder: z.string().nullable(),
+							order: z.number(),
+							filters: z.unknown(),
+							prompts: z.unknown(),
+							enableOther: z.boolean()
+						}))
+					})
 				}
 			}
 		},

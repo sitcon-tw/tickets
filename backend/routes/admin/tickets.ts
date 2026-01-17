@@ -1,5 +1,6 @@
 import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
@@ -329,34 +330,21 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "取得票券銷售分析",
 				tags: ["admin/tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									totalsoldCount: { type: "integer" },
-									totalRevenue: { type: "number" },
-									availableQuantity: { type: "integer" },
-									salesByStatus: { type: "object" },
-									dailySales: { type: "array" }
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.object({
+							totalSold: z.number().int(),
+							totalRevenue: z.number(),
+							availableQuantity: z.number().int(),
+							salesByStatus: z.record(z.string(), z.unknown()),
+							dailySales: z.array(z.unknown())
+						}).optional()
+					})
 				}
 			}
 		},
@@ -424,32 +412,18 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "重新排序票券",
 				tags: ["admin/tickets"],
-				body: {
-					type: "object",
-					properties: {
-						tickets: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "number" }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["tickets"]
-				},
+				body: z.object({
+					tickets: z.array(z.object({
+						id: z.string(),
+						order: z.number()
+					}))
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.null()
+					})
 				}
 			}
 		},

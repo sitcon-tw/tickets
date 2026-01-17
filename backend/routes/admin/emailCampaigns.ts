@@ -4,7 +4,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { emailCampaignSchemas, EmailCampaignCreateBodySchema } from "#schemas";
-import type { z } from "zod/v4";
+import { z } from "zod/v4";
 
 type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
@@ -21,33 +21,12 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				...emailCampaignSchemas.listEmailCampaigns,
 				description: "獲取郵件發送記錄",
-				querystring: {
-					type: "object",
-					properties: {
-						status: {
-							type: "string",
-							enum: ["draft", "sent", "scheduled"],
-							description: "篩選活動狀態"
-						},
-						eventId: {
-							type: "string",
-							description: "篩選關聯活動 ID"
-						},
-						page: {
-							type: "integer",
-							minimum: 1,
-							default: 1,
-							description: "頁碼"
-						},
-						limit: {
-							type: "integer",
-							minimum: 1,
-							maximum: 100,
-							default: 20,
-							description: "每頁筆數"
-						}
-					}
-				}
+				querystring: z.object({
+					status: z.enum(["draft", "sent", "scheduled"]).optional(),
+					eventId: z.string().optional(),
+					page: z.number().int().min(1).default(1).optional(),
+					limit: z.number().int().min(1).max(100).default(20).optional()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
@@ -118,16 +97,9 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				description: "獲取郵件發送狀態",
 				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
+				params: z.object({
+					campaignId: z.string()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -172,16 +144,9 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				description: "預覽郵件內容",
 				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
+				params: z.object({
+					campaignId: z.string()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -241,16 +206,9 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				description: "計算收件人數量",
 				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
+				params: z.object({
+					campaignId: z.string()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -290,26 +248,12 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				description: "發送郵件",
 				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						sendNow: {
-							type: "boolean",
-							description: "是否立即發送",
-							default: true
-						}
-					}
-				}
+				params: z.object({
+					campaignId: z.string()
+				}),
+				body: z.object({
+					sendNow: z.boolean().default(true).optional()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
@@ -420,16 +364,9 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 			schema: {
 				description: "取消郵件發送任務",
 				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
+				params: z.object({
+					campaignId: z.string()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {

@@ -3,6 +3,7 @@ import { requireEventDashboardAccess } from "#middleware/auth";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireEventDashboardAccess);
@@ -14,87 +15,50 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: {
 				description: "取得活動專屬儀表板數據",
 				tags: ["admin/analytics"],
-				params: {
-					type: "object",
-					properties: {
-						eventId: { type: "string", description: "活動 ID" }
-					},
-					required: ["eventId"]
-				},
+				params: z.object({
+					eventId: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									event: {
-										type: "object",
-										properties: {
-											id: { type: "string" },
-											name: {
-												type: "object",
-												additionalProperties: true
-											},
-											startDate: { type: "string" },
-											endDate: { type: "string" },
-											location: { type: ["string", "null"] }
-										}
-									},
-									stats: {
-										type: "object",
-										properties: {
-											totalRegistrations: { type: "integer" },
-											confirmedRegistrations: { type: "integer" },
-											pendingRegistrations: { type: "integer" },
-											cancelledRegistrations: { type: "integer" },
-											totalRevenue: { type: "number" }
-										}
-									},
-									tickets: {
-										type: "array",
-										items: {
-											type: "object",
-											properties: {
-												id: { type: "string" },
-												name: {
-													type: "object",
-													additionalProperties: true
-												},
-												price: { type: "integer" },
-												quantity: { type: "integer" },
-												soldCount: { type: "integer" },
-												revenue: { type: "number" },
-												available: { type: "integer" },
-												salesRate: { type: "number" }
-											}
-										}
-									},
-									registrationTrends: {
-										type: "array",
-										items: {
-											type: "object",
-											properties: {
-												date: { type: "string" },
-												count: { type: "integer" },
-												confirmed: { type: "integer" }
-											}
-										}
-									},
-									referralStats: {
-										type: "object",
-										properties: {
-											totalReferrals: { type: "integer" },
-											activeReferrers: { type: "integer" },
-											conversionRate: { type: "number" }
-										}
-									}
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.object({
+							event: z.object({
+								id: z.string(),
+								name: z.record(z.string(), z.unknown()),
+								startDate: z.string(),
+								endDate: z.string(),
+								location: z.string().nullable()
+							}),
+							stats: z.object({
+								totalRegistrations: z.number().int(),
+								confirmedRegistrations: z.number().int(),
+								pendingRegistrations: z.number().int(),
+								cancelledRegistrations: z.number().int(),
+								totalRevenue: z.number()
+							}),
+							tickets: z.array(z.object({
+								id: z.string(),
+								name: z.record(z.string(), z.unknown()),
+								price: z.number().int(),
+								quantity: z.number().int(),
+								soldCount: z.number().int(),
+								revenue: z.number(),
+								available: z.number().int(),
+								salesRate: z.number()
+							})),
+							registrationTrends: z.array(z.object({
+								date: z.string(),
+								count: z.number().int(),
+								confirmed: z.number().int()
+							})),
+							referralStats: z.object({
+								totalReferrals: z.number().int(),
+								activeReferrers: z.number().int(),
+								conversionRate: z.number()
+							})
+						}).optional()
+					})
 				}
 			}
 		},

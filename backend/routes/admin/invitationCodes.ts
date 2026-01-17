@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type { InvitationCode, InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
@@ -400,42 +401,14 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: {
 				description: "批量創建邀請碼",
 				tags: ["admin/invitation-codes"],
-				body: {
-					type: "object",
-					properties: {
-						ticketId: {
-							type: "string",
-							description: "票券 ID"
-						},
-						name: {
-							type: "string",
-							description: "邀請碼前綴",
-							minLength: 1
-						},
-						count: {
-							type: "integer",
-							minimum: 1,
-							maximum: 100,
-							description: "生成數量"
-						},
-						usageLimit: {
-							type: "integer",
-							minimum: 1,
-							description: "使用次數限制"
-						},
-						validFrom: {
-							type: "string",
-							format: "date-time",
-							description: "開始時間"
-						},
-						validUntil: {
-							type: "string",
-							format: "date-time",
-							description: "結束時間"
-						}
-					},
-					required: ["ticketId", "name", "count"]
-				}
+				body: z.object({
+					ticketId: z.string(),
+					name: z.string().min(1),
+					count: z.number().int().min(1).max(100),
+					usageLimit: z.number().int().min(1).optional(),
+					validFrom: z.iso.datetime().optional(),
+					validUntil: z.iso.datetime().optional()
+				})
 			}
 		},
 		async (
@@ -530,26 +503,11 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: {
 				description: "透過 Email 寄送邀請碼",
 				tags: ["admin/invitation-codes"],
-				body: {
-					type: "object",
-					properties: {
-						email: {
-							type: "string",
-							format: "email",
-							description: "收件者 Email"
-						},
-						code: {
-							type: "string",
-							description: "邀請碼"
-						},
-						message: {
-							type: "string",
-							description: "附加訊息",
-							default: ""
-						}
-					},
-					required: ["email", "code"]
-				}
+				body: z.object({
+					email: z.email(),
+					code: z.string(),
+					message: z.string().default("").optional()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Body: { email: string; code: string; message?: string } }>, reply: FastifyReply) => {

@@ -10,6 +10,7 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import fastifyMetrics from "fastify-metrics";
+import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
@@ -26,6 +27,10 @@ const fastify = Fastify({
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
 	trustProxy: true
 });
+
+// Set Zod validator and serializer compilers for automatic Zod to JSON Schema conversion
+fastify.setValidatorCompiler(validatorCompiler);
+fastify.setSerializerCompiler(serializerCompiler);
 
 // Override logger config (the second one takes precedence)
 fastify.log.level = "error";

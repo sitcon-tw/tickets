@@ -10,6 +10,7 @@ import { createPagination, notFoundResponse, serverErrorResponse, successRespons
 
 import type { PaginationQuery, RegistrationUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -261,26 +262,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: {
 				description: "匯出報名資料",
 				tags: ["admin/registrations"],
-				querystring: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						},
-						status: {
-							type: "string",
-							enum: ["confirmed", "cancelled", "pending"],
-							description: "報名狀態"
-						},
-						format: {
-							type: "string",
-							enum: ["csv", "excel"],
-							default: "csv",
-							description: "匯出格式"
-						}
-					}
-				}
+				querystring: z.object({
+					eventId: z.string().optional(),
+					status: z.enum(["confirmed", "cancelled", "pending"]).optional(),
+					format: z.enum(["csv", "excel"]).default("csv").optional()
+				})
 			}
 		},
 		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
@@ -375,25 +361,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: {
 				description: "刪除報名記錄",
 				tags: ["admin/registrations"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "報名記錄 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "object" }
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.record(z.string(), z.unknown()).optional()
+					})
 				}
 			}
 		},
@@ -449,18 +425,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				description: "取得 Google Sheets 服務帳號 Email",
 				tags: ["admin/registrations"],
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							data: {
-								type: "object",
-								properties: {
-									email: { type: "string" }
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						data: z.object({
+							email: z.string()
+						}).optional()
+					})
 				}
 			}
 		},
@@ -480,35 +450,19 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: {
 				description: "同步報名資料到 Google Sheets",
 				tags: ["admin/registrations"],
-				body: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						},
-						sheetsUrl: {
-							type: "string",
-							description: "Google Sheets URL"
-						}
-					},
-					required: ["eventId", "sheetsUrl"]
-				},
+				body: z.object({
+					eventId: z.string(),
+					sheetsUrl: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									count: { type: "number" },
-									sheetsUrl: { type: "string" }
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.object({
+							count: z.number(),
+							sheetsUrl: z.string()
+						}).optional()
+					})
 				}
 			}
 		},

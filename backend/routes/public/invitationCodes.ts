@@ -2,29 +2,16 @@ import prisma from "#config/database";
 import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 // Custom param schemas for invitation code routes
-const codeParam = {
-	type: "object",
-	properties: {
-		code: {
-			type: "string",
-			description: "邀請碼"
-		}
-	},
-	required: ["code"]
-};
+const codeParam = z.object({
+	code: z.string()
+});
 
-const ticketIdQuery = {
-	type: "object",
-	properties: {
-		ticketId: {
-			type: "string",
-			description: "票券 ID"
-		}
-	},
-	required: ["ticketId"]
-};
+const ticketIdQuery = z.object({
+	ticketId: z.string()
+});
 
 interface InvitationCodeVerifyRequest {
 	code: string;

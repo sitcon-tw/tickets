@@ -1,6 +1,7 @@
 import prisma from "#config/database";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod/v4";
 
 const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Get single ticket information (public)
@@ -10,56 +11,37 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 			schema: {
 				description: "獲取票券公開資訊",
 				tags: ["tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
+				params: z.object({
+					id: z.string()
+				}),
 				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									name: { type: "object", additionalProperties: true },
-									description: { type: "object", additionalProperties: true },
-									plainDescription: { type: "object", additionalProperties: true },
-									price: { type: "number" },
-									quantity: { type: "integer" },
-									soldCount: { type: "integer" },
-									available: { type: "integer" },
-									saleStart: { type: "string" },
-									saleEnd: { type: "string" },
-									isOnSale: { type: "boolean" },
-									isSoldOut: { type: "boolean" },
-									requireInviteCode: { type: "boolean" },
-									requireSmsVerification: { type: "boolean" }
-								}
-							}
-						}
-					},
-					404: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
+					200: z.object({
+						success: z.boolean(),
+						message: z.string().optional(),
+						data: z.object({
+							id: z.string(),
+							name: z.record(z.string(), z.unknown()),
+							description: z.record(z.string(), z.unknown()),
+							plainDescription: z.record(z.string(), z.unknown()),
+							price: z.number(),
+							quantity: z.number().int(),
+							soldCount: z.number().int(),
+							available: z.number().int(),
+							saleStart: z.string().nullable(),
+							saleEnd: z.string().nullable(),
+							isOnSale: z.boolean(),
+							isSoldOut: z.boolean(),
+							requireInviteCode: z.boolean(),
+							requireSmsVerification: z.boolean()
+						}).optional()
+					}),
+					404: z.object({
+						success: z.boolean(),
+						error: z.object({
+							code: z.string(),
+							message: z.string()
+						}).optional()
+					})
 				}
 			}
 		},
