@@ -24,8 +24,8 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				querystring: z.object({
 					status: z.enum(["draft", "sent", "scheduled"]).optional(),
 					eventId: z.string().optional(),
-					page: z.number().int().min(1).default(1).optional(),
-					limit: z.number().int().min(1).max(100).default(20).optional()
+					page: z.coerce.number().int().min(1).default(1).optional(),
+					limit: z.coerce.number().int().min(1).max(100).default(20).optional()
 				})
 			}
 		},

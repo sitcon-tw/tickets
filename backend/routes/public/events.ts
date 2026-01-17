@@ -179,8 +179,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				...eventSchemas.listEvents,
 				description: "獲取所有活動列表",
 				querystring: z.object({
-					isActive: z.boolean().optional(),
-					upcoming: z.boolean().optional()
+					isActive: z.coerce.boolean().optional(),
+					upcoming: z.coerce.boolean().optional()
 				}),
 				response: publicEventsListResponse
 			}
