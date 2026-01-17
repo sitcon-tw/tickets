@@ -42,7 +42,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						ogImage: true,
 						landingPage: true,
 						hideEvent: true,
-						useOpass: true
+						useOpass: true,
+						isActive: true,
+						createdAt: true,
+						updatedAt: true
 					}
 				});
 

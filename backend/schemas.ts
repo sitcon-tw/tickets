@@ -327,7 +327,6 @@ export const eventTicketsResponse = {
 				plainDescription: true,
 				price: true,
 				quantity: true,
-				soldCount: true,
 				available: true,
 				saleStart: true,
 				saleEnd: true,
@@ -335,6 +334,18 @@ export const eventTicketsResponse = {
 				isSoldOut: true,
 				requireSmsVerification: true,
 				requireInviteCode: true
+			}).extend({
+				formFields: z.array(z.object({
+					id: z.string(),
+					name: z.unknown(),
+					description: z.unknown().nullable(),
+					type: z.string(),
+					required: z.boolean(),
+					validater: z.string().nullable(),
+					placeholder: z.string().nullable(),
+					options: z.array(z.unknown()),
+					order: z.number()
+				}))
 			})
 		)
 	})
