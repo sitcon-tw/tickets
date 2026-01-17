@@ -363,8 +363,8 @@ export const publicEventsListResponse = {
 				description: z.unknown().nullable().optional(),
 				plainDescription: z.unknown().nullable().optional(),
 				location: z.string().nullable().optional(),
-				startDate: z.union([z.date(), z.string()]),
-				endDate: z.union([z.date(), z.string()]),
+				startDate: z.string(),
+				endDate: z.string(),
 				ogImage: z.string().nullable().optional(),
 				hideEvent: z.boolean().optional(),
 				useOpass: z.boolean().optional(),
@@ -820,15 +820,15 @@ export const userRegistrationsResponse = {
 				status: z.string(),
 				referredBy: z.string().nullable().optional(),
 				formData: z.unknown(),
-				createdAt: z.union([z.date(), z.string()]),
-				updatedAt: z.union([z.date(), z.string()]),
+				createdAt: z.string(),
+				updatedAt: z.string(),
 				event: z.object({
 					id: z.string(),
 					name: z.unknown(),
 					description: z.unknown().nullable().optional(),
 					location: z.string().nullable().optional(),
-					startDate: z.union([z.date(), z.string()]),
-					endDate: z.union([z.date(), z.string()]),
+					startDate: z.string(),
+					endDate: z.string(),
 					ogImage: z.string().nullable().optional()
 				}),
 				ticket: z.object({
@@ -836,7 +836,7 @@ export const userRegistrationsResponse = {
 					name: z.unknown(),
 					description: z.unknown().nullable().optional(),
 					price: z.number(),
-					saleEnd: z.union([z.date(), z.string()]).nullable().optional()
+					saleEnd: z.string().nullable().optional()
 				}),
 				isUpcoming: z.boolean(),
 				isPast: z.boolean(),

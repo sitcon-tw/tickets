@@ -10,7 +10,8 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import fastifyMetrics from "fastify-metrics";
-import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import { serializerCompiler, validatorCompiler, jsonSchemaTransform } from "fastify-type-provider-zod";
+import { z } from "zod/v4";
 
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
@@ -92,7 +93,8 @@ await fastify.register(fastifySwagger, {
 			{ name: "admin/referrals", description: "管理後台標籤相關操作 requires: Admin Role" },
 			{ name: "admin/email-campaigns", description: "管理後台郵件活動相關操作 requires: Admin Role" }
 		]
-	}
+	},
+	transform: jsonSchemaTransform
 });
 
 await fastify.register(fastifySwaggerUi, {
@@ -165,18 +167,14 @@ fastify.post<{ Body: MagicLinkBody }>(
 		schema: {
 			description: "Send magic link with Turnstile protection",
 			tags: ["auth"],
-			body: {
-				type: "object",
-				required: ["email"],
-				properties: {
-					email: { type: "string", format: "email" },
-					name: { type: "string" },
-					callbackURL: { type: "string" },
-					newUserCallbackURL: { type: "string" },
-					errorCallbackURL: { type: "string" },
-					turnstileToken: { type: "string" }
-				}
-			}
+			body: z.object({
+				email: z.email(),
+				name: z.string().optional(),
+				callbackURL: z.string().optional(),
+				newUserCallbackURL: z.string().optional(),
+				errorCallbackURL: z.string().optional(),
+				turnstileToken: z.string().optional()
+			})
 		},
 		config: {
 			rateLimit: rateLimitConfig.auth
