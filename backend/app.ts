@@ -117,24 +117,6 @@ await fastify.register(fastifySwaggerUi, {
 	transformSpecificationClone: true,
 	theme: {
 		title: "SITCONTIX API",
-		js: [
-			{
-				filename: "special.js",
-				content: `
-    window.addEventListener("DOMContentLoaded", () => {
-        import("https://font.emtech.cc/emfont.js").then(() => {
-			document.body.classList.add("emfont-LINESeedTW");
-			const waiting =  setInterval(() => {
-				if(document.querySelector(".title")?.innerHTML) {
-					clearInterval(waiting);
-					emfont.init();
-				}
-			}, 30);
-        });
-      });
-    `
-			}
-		],
 		css: [
 			{
 				filename: "theme.css",
