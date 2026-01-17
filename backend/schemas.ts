@@ -4,19 +4,9 @@
 import { z } from "zod/v4";
 import {
 	// Common schemas
-	LocalizedTextSchema,
 	SortOrderSchema,
 	UserRoleSchema,
 	RegistrationStatusSchema,
-	EmailCampaignStatusSchema,
-	FormFieldTypeSchema,
-	LocaleSchema,
-
-	// API schemas
-	ApiErrorSchema,
-	PaginationSchema,
-	PaginationQuerySchema,
-	SearchQuerySchema,
 
 	// Event schemas
 	EventSchema,
@@ -32,7 +22,6 @@ import {
 
 	// User schemas
 	UserSchema,
-	SmsVerificationSchema,
 
 	// Registration schemas
 	RegistrationSchema,
@@ -64,7 +53,6 @@ import {
 	EventFormFieldSchema,
 	EventFormFieldCreateRequestSchema,
 	EventFormFieldUpdateRequestSchema,
-	FieldFilterSchema,
 
 	// SMS schemas
 	SendVerificationRequestSchema,

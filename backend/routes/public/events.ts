@@ -180,7 +180,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				querystring: {
 					type: "object",
 					properties: {
-						...eventSchemas.listEvents.querystring.properties,
+						isActive: {
+							type: "boolean",
+							description: "篩選啟用狀態"
+						},
 						upcoming: {
 							type: "boolean",
 							description: "僅顯示即將開始的活動"

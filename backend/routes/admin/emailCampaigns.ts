@@ -1,9 +1,12 @@
-import type { EmailCampaignCreateRequest, PaginationQuery } from "@sitcontix/types";
+import type { PaginationQuery } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas } from "#schemas";
+import { emailCampaignSchemas, EmailCampaignCreateBodySchema } from "#schemas";
+import type { z } from "zod/v4";
+
+type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -21,7 +24,15 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				querystring: {
 					type: "object",
 					properties: {
-						...emailCampaignSchemas.listEmailCampaigns.querystring.properties,
+						status: {
+							type: "string",
+							enum: ["draft", "sent", "scheduled"],
+							description: "篩選活動狀態"
+						},
+						eventId: {
+							type: "string",
+							description: "篩選關聯活動 ID"
+						},
 						page: {
 							type: "integer",
 							minimum: 1,
@@ -69,13 +80,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	fastify.post<{
-		Body: EmailCampaignCreateRequest;
+		Body: EmailCampaignCreateBody;
 	}>(
 		"/email-campaigns",
 		{
 			schema: emailCampaignSchemas.createEmailCampaign
 		},
-		async (request: FastifyRequest<{ Body: EmailCampaignCreateRequest }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Body: EmailCampaignCreateBody }>, reply: FastifyReply) => {
 			const { name, subject, content, targetAudience, scheduledAt } = request.body;
 
 			if (!content) {
