@@ -5,7 +5,7 @@ import { requireAuth } from "#middleware/auth.ts";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { conflictResponse, notFoundResponse, serializeDates, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
@@ -653,10 +653,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(
 					successResponse(
-						{
+						serializeDates({
 							...updatedRegistration,
 							formData: parsedFormData
-						},
+						}),
 						"報名資料已更新"
 					)
 				);
