@@ -1,6 +1,6 @@
 import prisma from "#config/database";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
+import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface EventIdParams {
@@ -41,7 +41,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						ogImage: true,
 						landingPage: true,
 						hideEvent: true,
-						useOpass: true
+						useOpass: true,
+						isActive: true,
+						createdAt: true,
+						updatedAt: true
 					}
 				});
 
@@ -50,7 +53,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(event));
+				return reply.send(successResponse(serializeDates(event)));
 			} catch (error) {
 				console.error("Get public event info error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
@@ -161,7 +164,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(ticketsWithStatus));
+				return reply.send(successResponse(serializeDates(ticketsWithStatus)));
 			} catch (error) {
 				console.error("Get event tickets error:", error);
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
@@ -176,17 +179,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		{
 			schema: {
 				...eventSchemas.listEvents,
-				description: "獲取所有活動列表",
-				querystring: {
-					type: "object",
-					properties: {
-						...eventSchemas.listEvents.querystring.properties,
-						upcoming: {
-							type: "boolean",
-							description: "僅顯示即將開始的活動"
-						}
-					}
-				},
+				...publicEventSchemas.listPublicEvents,
 				response: publicEventsListResponse
 			}
 		},
@@ -267,7 +260,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(eventsWithStatus));
+				return reply.send(successResponse(serializeDates(eventsWithStatus)));
 			} catch (error) {
 				console.error("List events error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
@@ -350,49 +343,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
-			schema: {
-				description: "獲取活動報名表單欄位（透過票券 ID）",
-				tags: ["events"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "object", additionalProperties: true },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" },
-										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true },
-										enableOther: { type: "boolean" }
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: publicEventSchemas.getTicketFormFields
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {

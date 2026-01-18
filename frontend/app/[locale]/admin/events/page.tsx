@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
-import type { Event } from "@/lib/types/api";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
+import type { Event } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createEventsColumns, type EventWithStatus } from "./columns";
@@ -189,7 +189,7 @@ export default function EventsPage() {
 		return { label: t.active, class: "active" };
 	}
 
-	function formatDateTime(dt?: string) {
+	function formatDateTime(dt?: string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
@@ -216,9 +216,9 @@ export default function EventsPage() {
 		setEditingEvent(event);
 
 		if (event) {
-			const name = typeof event.name === "object" ? event.name : { en: event.name };
-			const desc = typeof event.description === "object" ? event.description : { en: event.description || "" };
-			const plainDesc = typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
+			const name = event.name && typeof event.name === "object" ? event.name : { en: event.name || "" };
+			const desc = event.description && typeof event.description === "object" ? event.description : { en: event.description || "" };
+			const plainDesc = event.plainDescription && typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -334,7 +334,7 @@ export default function EventsPage() {
 				...event,
 				statusLabel: status.label,
 				statusClass: status.class,
-				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
+				displayName: event.name && typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name || "",
 				formattedStartDate: formatDateTime(event.startDate),
 				formattedEndDate: formatDateTime(event.endDate)
 			};

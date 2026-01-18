@@ -1,9 +1,9 @@
-import type { AdminUserUpdateRequest } from "#types/auth";
+import type { AdminUserUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { userSchemas } from "#schemas/user";
+import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -34,6 +34,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						role: true,
 						permissions: true,
 						isActive: true,
+						phoneNumber: true,
+						phoneVerified: true,
 						createdAt: true,
 						updatedAt: true,
 						smsVerifications: true
@@ -43,7 +45,16 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
-					permissions: safeJsonParse(user.permissions, [], "user permissions")
+					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					phoneVerified: user.phoneVerified ?? false,
+					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
+					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt,
+					smsVerifications: user.smsVerifications?.map(sms => ({
+						...sms,
+						expiresAt: sms.expiresAt instanceof Date ? sms.expiresAt.toISOString() : sms.expiresAt,
+						createdAt: sms.createdAt instanceof Date ? sms.createdAt.toISOString() : sms.createdAt,
+						updatedAt: sms.updatedAt instanceof Date ? sms.updatedAt.toISOString() : sms.updatedAt
+					}))
 				}));
 
 				return reply.send(successResponse(usersWithParsedPermissions));
@@ -77,6 +88,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						role: true,
 						permissions: true,
 						isActive: true,
+						phoneNumber: true,
+						phoneVerified: true,
 						createdAt: true,
 						updatedAt: true,
 						registrations: {
@@ -104,7 +117,10 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
-					permissions: safeJsonParse(user.permissions, [], "user permissions")
+					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					phoneVerified: user.phoneVerified ?? false,
+					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
+					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions));
@@ -175,6 +191,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						role: true,
 						permissions: true,
 						isActive: true,
+						phoneNumber: true,
+						phoneVerified: true,
 						createdAt: true,
 						updatedAt: true
 					}
@@ -182,7 +200,10 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
-					permissions: safeJsonParse(user.permissions, [], "user permissions")
+					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					phoneVerified: user.phoneVerified ?? false,
+					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
+					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions, "用戶更新成功"));

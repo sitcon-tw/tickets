@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
+import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -240,10 +240,10 @@ export default function FormsPage() {
 						}
 					}
 
-					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+					const fieldName = field.name && typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name || "";
+					const nameObj = field.name && typeof field.name === "object" ? field.name : { en: fieldName };
 
-					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: field.id,
@@ -338,11 +338,11 @@ export default function FormsPage() {
 						}
 					}
 
-					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+					const fieldName = field.name && typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name || "";
+					const nameObj = field.name && typeof field.name === "object" ? field.name : { en: fieldName };
 
 					// Parse description as localized object
-					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: "temp-" + crypto.randomUUID(),
@@ -670,7 +670,7 @@ export default function FormsPage() {
 								<SelectContent>
 									{allEvents.map(event => (
 										<SelectItem key={event.id} value={event.id}>
-											{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
+											{event.name && typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name || ""}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -1229,7 +1229,7 @@ export default function FormsPage() {
 																							<SelectContent>
 																								{eventTickets.map(ticket => (
 																									<SelectItem key={ticket.id} value={ticket.id}>
-																										{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																										{ticket.name && typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || ""}
 																									</SelectItem>
 																								))}
 																							</SelectContent>

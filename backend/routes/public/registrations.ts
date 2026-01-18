@@ -2,14 +2,14 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth.ts";
-import { registrationSchemas, userRegistrationsResponse } from "#schemas/registration";
-import type { Event, Registration, Ticket } from "#types/database.ts";
+import { registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { conflictResponse, notFoundResponse, serializeDates, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
+import type { Event, Registration, Ticket } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface RegistrationCreateRequest {
@@ -331,11 +331,23 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
-				await sendRegistrationConfirmation(result as unknown as Registration, event as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
+				await sendRegistrationConfirmation(result as unknown as Registration, event as unknown as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 
-				return reply.code(201).send(successResponse(result, "報名成功"));
+				// Convert Date objects to ISO strings for schema compliance
+				const responseData = {
+					...result,
+					createdAt: result.createdAt.toISOString(),
+					updatedAt: result.updatedAt.toISOString(),
+					event: {
+						...result.event,
+						startDate: result.event.startDate.toISOString(),
+						endDate: result.event.endDate.toISOString()
+					}
+				};
+
+				return reply.code(201).send(successResponse(responseData, "報名成功"));
 			} catch (error) {
 				request.log.error({ err: error }, "Create registration error");
 
@@ -410,8 +422,32 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					const parsedFormData = safeJsonParse(reg.formData, {}, `user registrations for ${reg.id}`);
 
 					return {
-						...reg,
+						id: reg.id,
+						userId: reg.userId,
+						eventId: reg.eventId,
+						ticketId: reg.ticketId,
+						email: reg.email,
+						status: reg.status,
+						referredBy: reg.referredBy ?? null,
 						formData: parsedFormData,
+						createdAt: reg.createdAt.toISOString(),
+						updatedAt: reg.updatedAt.toISOString(),
+						event: {
+							id: reg.event.id,
+							name: reg.event.name,
+							description: reg.event.description ?? null,
+							location: reg.event.location ?? null,
+							startDate: reg.event.startDate.toISOString(),
+							endDate: reg.event.endDate.toISOString(),
+							ogImage: reg.event.ogImage ?? null
+						},
+						ticket: {
+							id: reg.ticket.id,
+							name: reg.ticket.name,
+							description: reg.ticket.description ?? null,
+							price: Number(reg.ticket.price),
+							saleEnd: reg.ticket.saleEnd?.toISOString() ?? null
+						},
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
 						canEdit: reg.status === "confirmed" && reg.event.startDate > now && (!reg.ticket.saleEnd || reg.ticket.saleEnd > now),
@@ -617,10 +653,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(
 					successResponse(
-						{
+						serializeDates({
 							...updatedRegistration,
 							formData: parsedFormData
-						},
+						}),
 						"報名資料已更新"
 					)
 				);

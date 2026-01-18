@@ -1,6 +1,6 @@
 const TWSMS_API_BASE = "https://api.twsms.com/json";
 
-import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "../types/sms";
+import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "@sitcontix/types";
 
 export async function sendSMS(phoneNumber: string, message: string, options: SMSSendOptions = {}): Promise<SMSSendResult> {
 	const username = process.env.TWSMS_USERNAME;

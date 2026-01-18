@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
-import type { Registration } from "@/lib/types/api";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
+import type { Registration } from "@sitcontix/types";
 import { Download, FileSpreadsheet, QrCode, RotateCw, Search, Trash } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";

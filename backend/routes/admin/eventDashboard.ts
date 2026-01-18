@@ -1,5 +1,6 @@
 import prisma from "#config/database";
 import { requireEventDashboardAccess } from "#middleware/auth";
+import { eventDashboardSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -11,92 +12,7 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.get<{ Params: { eventId: string } }>(
 		"/events/:eventId/dashboard",
 		{
-			schema: {
-				description: "取得活動專屬儀表板數據",
-				tags: ["admin/analytics"],
-				params: {
-					type: "object",
-					properties: {
-						eventId: { type: "string", description: "活動 ID" }
-					},
-					required: ["eventId"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									event: {
-										type: "object",
-										properties: {
-											id: { type: "string" },
-											name: {
-												type: "object",
-												additionalProperties: true
-											},
-											startDate: { type: "string" },
-											endDate: { type: "string" },
-											location: { type: ["string", "null"] }
-										}
-									},
-									stats: {
-										type: "object",
-										properties: {
-											totalRegistrations: { type: "integer" },
-											confirmedRegistrations: { type: "integer" },
-											pendingRegistrations: { type: "integer" },
-											cancelledRegistrations: { type: "integer" },
-											totalRevenue: { type: "number" }
-										}
-									},
-									tickets: {
-										type: "array",
-										items: {
-											type: "object",
-											properties: {
-												id: { type: "string" },
-												name: {
-													type: "object",
-													additionalProperties: true
-												},
-												price: { type: "integer" },
-												quantity: { type: "integer" },
-												soldCount: { type: "integer" },
-												revenue: { type: "number" },
-												available: { type: "integer" },
-												salesRate: { type: "number" }
-											}
-										}
-									},
-									registrationTrends: {
-										type: "array",
-										items: {
-											type: "object",
-											properties: {
-												date: { type: "string" },
-												count: { type: "integer" },
-												confirmed: { type: "integer" }
-											}
-										}
-									},
-									referralStats: {
-										type: "object",
-										properties: {
-											totalReferrals: { type: "integer" },
-											activeReferrers: { type: "integer" },
-											conversionRate: { type: "number" }
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: eventDashboardSchemas.getEventDashboard
 		},
 		async (request: FastifyRequest<{ Params: { eventId: string } }>, reply: FastifyReply) => {
 			try {

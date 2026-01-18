@@ -1,10 +1,9 @@
-import type { EventCreateRequest, EventUpdateRequest } from "#types/api";
-import type { Event } from "#types/database";
+import type { Event, EventCreateRequest, EventUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
-import { eventSchemas } from "#schemas/event";
+import { eventSchemas } from "#schemas";
 import { CacheInvalidation } from "#utils/cache-keys";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
@@ -38,7 +37,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				return reply.code(statusCode).send(response);
 			}
 
-			const event = (await prisma.event.create({
+			const createdEvent = await prisma.event.create({
 				data: {
 					name,
 					description,
@@ -51,7 +50,18 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				},
 				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
-			})) as Event;
+			});
+
+			const event: Event = {
+				...createdEvent,
+				name: createdEvent.name as Record<string, string>,
+				description: createdEvent.description as Record<string, string> | undefined,
+				plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
+				startDate: createdEvent.startDate.toISOString(),
+				endDate: createdEvent.endDate.toISOString(),
+				createdAt: createdEvent.createdAt.toISOString(),
+				updatedAt: createdEvent.updatedAt.toISOString()
+			};
 
 			return reply.code(201).send(successResponse(event, "活動創建成功"));
 		}
@@ -143,12 +153,23 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				updatedAt: new Date()
 			};
 
-			const event = (await prisma.event.update({
+			const updatedEvent = await prisma.event.update({
 				where: { id },
 				data: updatePayload,
 				// @ts-expect-error - uncache is an extension so it's not properly typed
 				uncache: CacheInvalidation.events()
-			})) as Event;
+			});
+
+			const event: Event = {
+				...updatedEvent,
+				name: updatedEvent.name as Record<string, string>,
+				description: updatedEvent.description as Record<string, string> | undefined,
+				plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
+				startDate: updatedEvent.startDate.toISOString(),
+				endDate: updatedEvent.endDate.toISOString(),
+				createdAt: updatedEvent.createdAt.toISOString(),
+				updatedAt: updatedEvent.updatedAt.toISOString()
+			};
 
 			return reply.send(successResponse(event, "活動更新成功"));
 		}
@@ -216,7 +237,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				whereClause.id = { in: request.userEventPermissions };
 			}
 
-			const events = (await prisma.event.findMany({
+			const rawEvents = await prisma.event.findMany({
 				where: whereClause,
 				include: {
 					_count: {
@@ -227,7 +248,18 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				},
 				orderBy: { createdAt: "desc" }
-			})) as Event[];
+			});
+
+			const events: Event[] = rawEvents.map(event => ({
+				...event,
+				name: event.name as Record<string, string>,
+				description: event.description as Record<string, string> | undefined,
+				plainDescription: event.plainDescription as Record<string, string> | undefined,
+				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
+				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
+				createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
+				updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt
+			}));
 
 			return reply.send(successResponse(events));
 		}

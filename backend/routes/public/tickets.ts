@@ -1,4 +1,5 @@
 import prisma from "#config/database";
+import { publicTicketSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
@@ -7,61 +8,7 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/tickets/:id",
 		{
-			schema: {
-				description: "獲取票券公開資訊",
-				tags: ["tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									name: { type: "object", additionalProperties: true },
-									description: { type: "object", additionalProperties: true },
-									plainDescription: { type: "object", additionalProperties: true },
-									price: { type: "number" },
-									quantity: { type: "integer" },
-									soldCount: { type: "integer" },
-									available: { type: "integer" },
-									saleStart: { type: "string" },
-									saleEnd: { type: "string" },
-									isOnSale: { type: "boolean" },
-									isSoldOut: { type: "boolean" },
-									requireInviteCode: { type: "boolean" },
-									requireSmsVerification: { type: "boolean" }
-								}
-							}
-						}
-					},
-					404: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: publicTicketSchemas.getPublicTicket
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {

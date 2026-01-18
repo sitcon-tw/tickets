@@ -13,12 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Ticket } from "@/lib/types/api";
 import { LanguageFieldsProps } from "@/lib/types/pages";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
@@ -178,9 +178,9 @@ export default function TicketsPage() {
 		setEditingTicket(ticket);
 
 		if (ticket) {
-			const name = typeof ticket.name === "object" ? ticket.name : { en: ticket.name };
-			const desc = typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
-			const plainDesc = typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
+			const name = ticket.name && typeof ticket.name === "object" ? ticket.name : { en: ticket.name || "" };
+			const desc = ticket.description && typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
+			const plainDesc = ticket.plainDescription && typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -191,6 +191,10 @@ export default function TicketsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setTicketPrice(ticket.price);
+			setTicketQuantity(ticket.quantity);
+			setTicketSaleStart(ticket.saleStart ? new Date(ticket.saleStart) : null);
+			setTicketSaleEnd(ticket.saleEnd ? new Date(ticket.saleEnd) : null);
 			setRequireInviteCode(ticket.requireInviteCode || false);
 			setRequireSmsVerification(ticket.requireSmsVerification || false);
 			setHidden(ticket.hidden || false);
@@ -215,6 +219,10 @@ export default function TicketsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setTicketPrice(0);
+		setTicketQuantity(0);
+		setTicketSaleStart(null);
+		setTicketSaleEnd(null);
 		setRequireInviteCode(false);
 		setRequireSmsVerification(false);
 		setHidden(false);
@@ -340,7 +348,7 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: string) {
+	function formatDateTime(dt?: string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
@@ -354,7 +362,7 @@ export default function TicketsPage() {
 			const status = computeStatus(ticket);
 			return {
 				...ticket,
-				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
+				displayName: ticket.name && typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || "",
 				formattedSaleStart: formatDateTime(ticket.saleStart),
 				formattedSaleEnd: formatDateTime(ticket.saleEnd),
 				statusLabel: status.label,
