@@ -81,12 +81,12 @@ export const RegistrationStatsSchema = z.object({
 			status: z.string(),
 			ticketName: LocalizedTextSchema,
 			registeredAt: z.iso.datetime(),
-			email: z.email()
+			email: z.string() // Masked email (e.g., "ab***@domain.com"), not a valid email format
 		})
 	),
 	referrerInfo: z.object({
 		id: z.string(),
-		email: z.email()
+		email: z.string() // Masked email (e.g., "ab***@domain.com"), not a valid email format
 	})
 });
 export type RegistrationStats = z.infer<typeof RegistrationStatsSchema>;

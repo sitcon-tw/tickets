@@ -335,7 +335,19 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 
-				return reply.code(201).send(successResponse(result, "報名成功"));
+				// Convert Date objects to ISO strings for schema compliance
+				const responseData = {
+					...result,
+					createdAt: result.createdAt.toISOString(),
+					updatedAt: result.updatedAt.toISOString(),
+					event: {
+						...result.event,
+						startDate: result.event.startDate.toISOString(),
+						endDate: result.event.endDate.toISOString()
+					}
+				};
+
+				return reply.code(201).send(successResponse(responseData, "報名成功"));
 			} catch (error) {
 				request.log.error({ err: error }, "Create registration error");
 

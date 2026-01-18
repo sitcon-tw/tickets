@@ -22,7 +22,7 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 							id: z.string(),
 							name: z.record(z.string(), z.unknown()),
 							description: z.record(z.string(), z.unknown()),
-							plainDescription: z.record(z.string(), z.unknown()),
+							plainDescription: z.record(z.string(), z.unknown()).nullable(),
 							price: z.number(),
 							quantity: z.number().int(),
 							soldCount: z.number().int(),
