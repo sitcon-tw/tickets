@@ -243,7 +243,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					event: {
 						select: {
 							id: true,
-							name: true
+							name: true,
+							startDate: true,
+							endDate: true
 						}
 					},
 					ticket: {
@@ -257,8 +259,31 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			const parsedRegistration = {
-				...registration,
-				formData: registration.formData ? JSON.parse(registration.formData) : {}
+				id: registration.id,
+				userId: registration.userId,
+				eventId: registration.eventId,
+				ticketId: registration.ticketId,
+				email: registration.email,
+				status: registration.status,
+				referredBy: registration.referredBy ?? null,
+				formData: registration.formData ? JSON.parse(registration.formData) : {},
+				createdAt: registration.createdAt.toISOString(),
+				updatedAt: registration.updatedAt.toISOString(),
+				event: registration.event
+					? {
+							id: registration.event.id,
+							name: registration.event.name as Record<string, string>,
+							startDate: registration.event.startDate.toISOString(),
+							endDate: registration.event.endDate.toISOString()
+						}
+					: undefined,
+				ticket: registration.ticket
+					? {
+							id: registration.ticket.id,
+							name: registration.ticket.name as Record<string, string>,
+							price: Number(registration.ticket.price)
+						}
+					: undefined
 			};
 
 			return reply.send(successResponse(parsedRegistration, "報名更新成功"));

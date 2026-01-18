@@ -62,7 +62,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					uncache: CacheInvalidation.eventFormFields()
 				})) as EventFormField;
 
-				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.code(201).send(successResponse(normalizedField, "表單欄位創建成功"));
 			} catch (error) {
 				console.error("Create event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("創建表單欄位失敗");
@@ -93,7 +99,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(formField));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.send(successResponse(normalizedField));
 			} catch (error) {
 				console.error("Get event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("取得表單欄位資訊失敗");
@@ -198,7 +210,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				})) as EventFormField;
 
-				return reply.send(successResponse(formField, "表單欄位更新成功"));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.send(successResponse(normalizedField, "表單欄位更新成功"));
 			} catch (error) {
 				console.error("Update event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("更新表單欄位失敗");
@@ -282,7 +300,13 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
 				})) as EventFormField[];
 
-				return reply.send(successResponse(formFields));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedFields = formFields.map(field => ({
+					...field,
+					filters: field.filters && typeof field.filters === "object" && "enabled" in field.filters ? field.filters : null
+				}));
+
+				return reply.send(successResponse(normalizedFields));
 			} catch (error) {
 				console.error("List event form fields error:", error);
 				const { response, statusCode } = serverErrorResponse("取得表單欄位列表失敗");

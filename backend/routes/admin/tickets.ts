@@ -348,6 +348,19 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 					return {
 						...ticket,
+						name: ticket.name as Record<string, string>,
+						description: ticket.description as Record<string, string> | undefined,
+						plainDescription: ticket.plainDescription as Record<string, string> | undefined,
+						saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
+						saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
+						createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
+						updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
+						event: ticket.event ? {
+							...ticket.event,
+							name: ticket.event.name as Record<string, string>,
+							startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
+							endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+						} : undefined,
 						available,
 						isOnSale,
 						isSoldOut
