@@ -1,53 +1,14 @@
 import prisma from "#config/database";
+import { publicTicketSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Get single ticket information (public)
 	fastify.get(
 		"/tickets/:id",
 		{
-			schema: {
-				description: "獲取票券公開資訊",
-				tags: ["tickets"],
-				params: z.object({
-					id: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z
-							.object({
-								id: z.string(),
-								name: z.record(z.string(), z.unknown()),
-								description: z.record(z.string(), z.unknown()),
-								plainDescription: z.record(z.string(), z.unknown()).nullable(),
-								price: z.number(),
-								quantity: z.number().int(),
-								soldCount: z.number().int(),
-								available: z.number().int(),
-								saleStart: z.string().nullable(),
-								saleEnd: z.string().nullable(),
-								isOnSale: z.boolean(),
-								isSoldOut: z.boolean(),
-								requireInviteCode: z.boolean(),
-								requireSmsVerification: z.boolean()
-							})
-							.optional()
-					}),
-					404: z.object({
-						success: z.boolean(),
-						error: z
-							.object({
-								code: z.string(),
-								message: z.string()
-							})
-							.optional()
-					})
-				}
-			}
+			schema: publicTicketSchemas.getPublicTicket
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {

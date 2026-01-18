@@ -1,17 +1,7 @@
 import prisma from "#config/database";
-import { invitationCodeSchemas, invitationCodeVerifyResponse } from "#schemas";
+import { publicInvitationCodeSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
-
-// Custom param schemas for invitation code routes
-const codeParam = z.object({
-	code: z.string()
-});
-
-const ticketIdQuery = z.object({
-	ticketId: z.string()
-});
 
 interface InvitationCodeVerifyRequest {
 	code: string;
@@ -22,12 +12,7 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post(
 		"/invitation-codes/verify",
 		{
-			schema: {
-				...invitationCodeSchemas.validateInvitationCode,
-				description: "驗證邀請碼並返回可用票種",
-				tags: ["invitation-codes"],
-				response: invitationCodeVerifyResponse
-			}
+			schema: publicInvitationCodeSchemas.verifyInvitationCode
 		},
 		async (request: FastifyRequest<{ Body: InvitationCodeVerifyRequest }>, reply: FastifyReply) => {
 			try {
@@ -158,12 +143,7 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/invitation-codes/:code/info",
 		{
-			schema: {
-				description: "獲取邀請碼資訊",
-				tags: ["invitation-codes"],
-				params: codeParam,
-				querystring: ticketIdQuery
-			}
+			schema: publicInvitationCodeSchemas.getInvitationCodeInfo
 		},
 		async (request: FastifyRequest<{ Params: { code: string }; Querystring: { ticketId: string } }>, reply: FastifyReply) => {
 			try {

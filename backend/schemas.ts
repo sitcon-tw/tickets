@@ -1097,6 +1097,546 @@ export const userSchemas = {
 } as const;
 
 // ----------------------------------------------------------------------------
+// Public Ticket Schemas
+// ----------------------------------------------------------------------------
+
+export const PublicTicketIdParamSchema = z.object({
+	id: z.string()
+});
+
+export const PublicTicketResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z
+		.object({
+			id: z.string(),
+			name: z.record(z.string(), z.unknown()),
+			description: z.record(z.string(), z.unknown()),
+			plainDescription: z.record(z.string(), z.unknown()).nullable(),
+			price: z.number(),
+			quantity: z.number().int(),
+			soldCount: z.number().int(),
+			available: z.number().int(),
+			saleStart: z.string().nullable(),
+			saleEnd: z.string().nullable(),
+			isOnSale: z.boolean(),
+			isSoldOut: z.boolean(),
+			requireInviteCode: z.boolean(),
+			requireSmsVerification: z.boolean()
+		})
+		.optional()
+});
+
+export const PublicTicketNotFoundResponseSchema = z.object({
+	success: z.boolean(),
+	error: z
+		.object({
+			code: z.string(),
+			message: z.string()
+		})
+		.optional()
+});
+
+export const publicTicketSchemas = {
+	getPublicTicket: {
+		description: "獲取票券公開資訊",
+		tags: ["tickets"],
+		params: PublicTicketIdParamSchema,
+		response: {
+			200: PublicTicketResponseSchema,
+			404: PublicTicketNotFoundResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Public Events Additional Schemas
+// ----------------------------------------------------------------------------
+
+export const PublicEventsQuerySchema = z.object({
+	isActive: z.coerce.boolean().optional(),
+	upcoming: z.coerce.boolean().optional()
+});
+
+export const TicketFormFieldsResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string(),
+	data: z.array(
+		z.object({
+			id: z.string(),
+			name: z.unknown(),
+			description: z.unknown().nullable(),
+			type: z.string(),
+			required: z.boolean(),
+			options: z.array(z.unknown()),
+			validater: z.string().nullable(),
+			placeholder: z.string().nullable(),
+			order: z.number(),
+			filters: z.unknown(),
+			prompts: z.unknown(),
+			enableOther: z.boolean()
+		})
+	)
+});
+
+export const publicEventSchemas = {
+	getTicketFormFields: {
+		description: "獲取活動報名表單欄位（透過票券 ID）",
+		tags: ["events"],
+		params: PublicTicketIdParamSchema,
+		response: {
+			200: TicketFormFieldsResponseSchema
+		}
+	},
+	listPublicEvents: {
+		description: "獲取所有活動列表",
+		tags: ["events"],
+		querystring: PublicEventsQuerySchema,
+		response: publicEventsListResponse
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Ticket Analytics Schemas
+// ----------------------------------------------------------------------------
+
+export const TicketAnalyticsResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z
+		.object({
+			totalSold: z.number().int(),
+			totalRevenue: z.number(),
+			availableQuantity: z.number().int(),
+			salesByStatus: z.record(z.string(), z.unknown()),
+			dailySales: z.array(z.unknown())
+		})
+		.optional()
+});
+
+export const TicketReorderBodySchema = z.object({
+	tickets: z.array(
+		z.object({
+			id: z.string(),
+			order: z.number()
+		})
+	)
+});
+
+export const TicketReorderResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z.null()
+});
+
+export const adminTicketSchemas = {
+	getTicketAnalytics: {
+		description: "取得票券銷售分析",
+		tags: ["admin/tickets"],
+		params: IdParamSchema,
+		response: {
+			200: TicketAnalyticsResponseSchema
+		}
+	},
+	reorderTickets: {
+		description: "重新排序票券",
+		tags: ["admin/tickets"],
+		body: TicketReorderBodySchema,
+		response: {
+			200: TicketReorderResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Registration Schemas
+// ----------------------------------------------------------------------------
+
+export const RegistrationExportQuerySchema = z.object({
+	eventId: z.string().optional(),
+	status: z.enum(["confirmed", "cancelled", "pending"]).optional(),
+	format: z.enum(["csv", "excel"]).default("csv").optional()
+});
+
+export const RegistrationDeleteResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z.record(z.string(), z.unknown()).optional()
+});
+
+export const GoogleSheetsServiceAccountResponseSchema = z.object({
+	success: z.boolean(),
+	data: z
+		.object({
+			email: z.string()
+		})
+		.optional()
+});
+
+export const GoogleSheetsSyncBodySchema = z.object({
+	eventId: z.string(),
+	sheetsUrl: z.string()
+});
+
+export const GoogleSheetsSyncResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z
+		.object({
+			count: z.number(),
+			sheetsUrl: z.string()
+		})
+		.optional()
+});
+
+export const adminRegistrationSchemas = {
+	exportRegistrations: {
+		description: "匯出報名資料",
+		tags: ["admin/registrations"],
+		querystring: RegistrationExportQuerySchema
+	},
+	deleteRegistration: {
+		description: "刪除報名記錄",
+		tags: ["admin/registrations"],
+		params: IdParamSchema,
+		response: {
+			200: RegistrationDeleteResponseSchema
+		}
+	},
+	getGoogleSheetsServiceAccount: {
+		description: "取得 Google Sheets 服務帳號 Email",
+		tags: ["admin/registrations"],
+		response: {
+			200: GoogleSheetsServiceAccountResponseSchema
+		}
+	},
+	syncGoogleSheets: {
+		description: "同步報名資料到 Google Sheets",
+		tags: ["admin/registrations"],
+		body: GoogleSheetsSyncBodySchema,
+		response: {
+			200: GoogleSheetsSyncResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Event Form Fields Reorder Schemas
+// ----------------------------------------------------------------------------
+
+export const EventFormFieldReorderParamsSchema = z.object({
+	eventId: z.string()
+});
+
+export const EventFormFieldReorderBodySchema = z.object({
+	fieldOrders: z.array(
+		z.object({
+			id: z.string(),
+			order: z.number().int().min(0)
+		})
+	)
+});
+
+export const EventFormFieldReorderResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string(),
+	data: z.null()
+});
+
+export const EventFormFieldReorderErrorResponseSchema = z.object({
+	success: z.boolean(),
+	error: z
+		.object({
+			code: z.string(),
+			message: z.string()
+		})
+		.optional()
+});
+
+export const adminEventFormFieldSchemas = {
+	reorderEventFormFields: {
+		description: "重新排序活動表單欄位",
+		tags: ["admin/events"],
+		params: EventFormFieldReorderParamsSchema,
+		body: EventFormFieldReorderBodySchema,
+		response: {
+			200: EventFormFieldReorderResponseSchema,
+			400: EventFormFieldReorderErrorResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Event Dashboard Schemas
+// ----------------------------------------------------------------------------
+
+export const EventDashboardParamsSchema = z.object({
+	eventId: z.string()
+});
+
+export const EventDashboardResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z
+		.object({
+			event: z.object({
+				id: z.string(),
+				name: z.record(z.string(), z.unknown()),
+				startDate: z.string(),
+				endDate: z.string(),
+				location: z.string().nullable()
+			}),
+			stats: z.object({
+				totalRegistrations: z.number().int(),
+				confirmedRegistrations: z.number().int(),
+				pendingRegistrations: z.number().int(),
+				cancelledRegistrations: z.number().int(),
+				totalRevenue: z.number()
+			}),
+			tickets: z.array(
+				z.object({
+					id: z.string(),
+					name: z.record(z.string(), z.unknown()),
+					price: z.number().int(),
+					quantity: z.number().int(),
+					soldCount: z.number().int(),
+					revenue: z.number(),
+					available: z.number().int(),
+					salesRate: z.number()
+				})
+			),
+			registrationTrends: z.array(
+				z.object({
+					date: z.string(),
+					count: z.number().int(),
+					confirmed: z.number().int()
+				})
+			),
+			referralStats: z.object({
+				totalReferrals: z.number().int(),
+				activeReferrers: z.number().int(),
+				conversionRate: z.number()
+			})
+		})
+		.optional()
+});
+
+export const eventDashboardSchemas = {
+	getEventDashboard: {
+		description: "取得活動專屬儀表板數據",
+		tags: ["admin/analytics"],
+		params: EventDashboardParamsSchema,
+		response: {
+			200: EventDashboardResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Email Campaign Additional Schemas
+// ----------------------------------------------------------------------------
+
+export const EmailCampaignListQuerySchema = z.object({
+	status: z.enum(["draft", "sent", "scheduled"]).optional(),
+	eventId: z.string().optional(),
+	page: z.coerce.number().int().min(1).default(1).optional(),
+	limit: z.coerce.number().int().min(1).max(100).default(20).optional()
+});
+
+export const CampaignIdParamSchema = z.object({
+	campaignId: z.string()
+});
+
+export const EmailCampaignSendBodySchema2 = z.object({
+	sendNow: z.boolean().default(true).optional()
+});
+
+export const adminEmailCampaignSchemas = {
+	listEmailCampaigns: {
+		...emailCampaignSchemas.listEmailCampaigns,
+		description: "獲取郵件發送記錄",
+		querystring: EmailCampaignListQuerySchema
+	},
+	getEmailCampaignStatus: {
+		description: "獲取郵件發送狀態",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema
+	},
+	previewEmailCampaign: {
+		description: "預覽郵件內容",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema
+	},
+	calculateRecipients: {
+		description: "計算收件人數量",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema
+	},
+	sendEmailCampaign: {
+		description: "發送郵件",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema,
+		body: EmailCampaignSendBodySchema2
+	},
+	cancelEmailCampaign: {
+		description: "取消郵件發送任務",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin SMS Verification Logs Schemas
+// ----------------------------------------------------------------------------
+
+export const SmsVerificationLogsQuerySchema = z.object({
+	userId: z.string().optional(),
+	phoneNumber: z.string().optional(),
+	verified: z.coerce.boolean().optional(),
+	page: z.coerce.number().int().min(1).default(1).optional(),
+	limit: z.coerce.number().int().min(1).max(100).default(20).optional()
+});
+
+export const smsVerificationLogsSchemas = {
+	getSmsVerificationLogs: {
+		description: "取得簡訊驗證記錄",
+		tags: ["admin/sms-verification"],
+		querystring: SmsVerificationLogsQuerySchema
+	},
+	getSmsVerificationStats: {
+		description: "取得簡訊驗證統計",
+		tags: ["admin/sms-verification"]
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Public Referral Schemas
+// ----------------------------------------------------------------------------
+
+export const RegIdParamSchema = z.object({
+	regId: z.string()
+});
+
+export const ReferralLinkResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: z.object({
+		id: z.string(),
+		referralLink: z.string(),
+		referralCode: z.string(),
+		eventId: z.string()
+	})
+});
+
+export const publicReferralSchemas = {
+	getReferralLink: {
+		description: "獲取專屬推薦連結",
+		tags: ["referrals"],
+		params: RegIdParamSchema,
+		response: {
+			200: ReferralLinkResponseSchema
+		}
+	},
+	getReferralStats: {
+		description: "獲取個人推薦統計",
+		tags: ["referrals"],
+		params: RegIdParamSchema,
+		response: referralStatsResponse
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Public Invitation Code Schemas
+// ----------------------------------------------------------------------------
+
+export const InvitationCodeParamSchema = z.object({
+	code: z.string()
+});
+
+export const InvitationCodeTicketIdQuerySchema = z.object({
+	ticketId: z.string()
+});
+
+export const publicInvitationCodeSchemas = {
+	verifyInvitationCode: {
+		...invitationCodeSchemas.validateInvitationCode,
+		description: "驗證邀請碼並返回可用票種",
+		tags: ["invitation-codes"],
+		response: invitationCodeVerifyResponse
+	},
+	getInvitationCodeInfo: {
+		description: "獲取邀請碼資訊",
+		tags: ["invitation-codes"],
+		params: InvitationCodeParamSchema,
+		querystring: InvitationCodeTicketIdQuerySchema
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Invitation Code Bulk Schemas
+// ----------------------------------------------------------------------------
+
+export const InvitationCodeBulkCreateBodySchema = z.object({
+	ticketId: z.string(),
+	name: z.string().min(1),
+	count: z.number().int().min(1).max(100),
+	usageLimit: z.number().int().min(1).optional(),
+	validFrom: z.iso.datetime().optional(),
+	validUntil: z.iso.datetime().optional()
+});
+
+export const InvitationCodeSendEmailBodySchema = z.object({
+	email: z.email(),
+	code: z.string(),
+	message: z.string().default("").optional()
+});
+
+export const adminInvitationCodeSchemas = {
+	bulkCreateInvitationCodes: {
+		description: "批量創建邀請碼",
+		tags: ["admin/invitation-codes"],
+		body: InvitationCodeBulkCreateBodySchema
+	},
+	sendInvitationCodeEmail: {
+		description: "透過 Email 寄送邀請碼",
+		tags: ["admin/invitation-codes"],
+		body: InvitationCodeSendEmailBodySchema
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Public Auth Schemas
+// ----------------------------------------------------------------------------
+
+export const AuthPermissionsResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string(),
+	data: z.object({
+		role: z.string(),
+		permissions: z.array(z.string()),
+		capabilities: z.object({
+			canManageUsers: z.boolean(),
+			canManageAllEvents: z.boolean(),
+			canViewAnalytics: z.boolean(),
+			canManageEmailCampaigns: z.boolean(),
+			canManageReferrals: z.boolean(),
+			canManageSmsLogs: z.boolean(),
+			managedEventIds: z.array(z.string())
+		})
+	})
+});
+
+export const publicAuthSchemas = {
+	getAuthPermissions: {
+		description: "取得當前用戶的權限資訊",
+		tags: ["auth"],
+		response: {
+			200: AuthPermissionsResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
 // Legacy exports for backwards compatibility
 // ----------------------------------------------------------------------------
 

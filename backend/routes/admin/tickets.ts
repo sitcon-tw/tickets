@@ -1,10 +1,9 @@
 import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
-import { ticketSchemas } from "#schemas";
+import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
@@ -383,28 +382,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/analytics",
 		{
-			schema: {
-				description: "取得票券銷售分析",
-				tags: ["admin/tickets"],
-				params: z.object({
-					id: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z
-							.object({
-								totalSold: z.number().int(),
-								totalRevenue: z.number(),
-								availableQuantity: z.number().int(),
-								salesByStatus: z.record(z.string(), z.unknown()),
-								dailySales: z.array(z.unknown())
-							})
-							.optional()
-					})
-				}
-			}
+			schema: adminTicketSchemas.getTicketAnalytics
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -467,25 +445,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/reorder",
 		{
 			preHandler: requireEventAccess,
-			schema: {
-				description: "重新排序票券",
-				tags: ["admin/tickets"],
-				body: z.object({
-					tickets: z.array(
-						z.object({
-							id: z.string(),
-							order: z.number()
-						})
-					)
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z.null()
-					})
-				}
-			}
+			schema: adminTicketSchemas.reorderTickets
 		},
 		async (request: FastifyRequest<{ Body: TicketReorderRequest }>, reply: FastifyReply) => {
 			try {

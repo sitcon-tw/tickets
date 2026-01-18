@@ -1,9 +1,9 @@
 import prisma from "#config/database";
 import { requireEventDashboardAccess } from "#middleware/auth";
+import { eventDashboardSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireEventDashboardAccess);
@@ -12,61 +12,7 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.get<{ Params: { eventId: string } }>(
 		"/events/:eventId/dashboard",
 		{
-			schema: {
-				description: "取得活動專屬儀表板數據",
-				tags: ["admin/analytics"],
-				params: z.object({
-					eventId: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z
-							.object({
-								event: z.object({
-									id: z.string(),
-									name: z.record(z.string(), z.unknown()),
-									startDate: z.string(),
-									endDate: z.string(),
-									location: z.string().nullable()
-								}),
-								stats: z.object({
-									totalRegistrations: z.number().int(),
-									confirmedRegistrations: z.number().int(),
-									pendingRegistrations: z.number().int(),
-									cancelledRegistrations: z.number().int(),
-									totalRevenue: z.number()
-								}),
-								tickets: z.array(
-									z.object({
-										id: z.string(),
-										name: z.record(z.string(), z.unknown()),
-										price: z.number().int(),
-										quantity: z.number().int(),
-										soldCount: z.number().int(),
-										revenue: z.number(),
-										available: z.number().int(),
-										salesRate: z.number()
-									})
-								),
-								registrationTrends: z.array(
-									z.object({
-										date: z.string(),
-										count: z.number().int(),
-										confirmed: z.number().int()
-									})
-								),
-								referralStats: z.object({
-									totalReferrals: z.number().int(),
-									activeReferrers: z.number().int(),
-									conversionRate: z.number()
-								})
-							})
-							.optional()
-					})
-				}
-			}
+			schema: eventDashboardSchemas.getEventDashboard
 		},
 		async (request: FastifyRequest<{ Params: { eventId: string } }>, reply: FastifyReply) => {
 			try {

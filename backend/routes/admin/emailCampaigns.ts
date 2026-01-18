@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
+import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { z } from "zod/v4";
@@ -18,16 +18,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns",
 		{
-			schema: {
-				...emailCampaignSchemas.listEmailCampaigns,
-				description: "獲取郵件發送記錄",
-				querystring: z.object({
-					status: z.enum(["draft", "sent", "scheduled"]).optional(),
-					eventId: z.string().optional(),
-					page: z.coerce.number().int().min(1).default(1).optional(),
-					limit: z.coerce.number().int().min(1).max(100).default(20).optional()
-				})
-			}
+			schema: adminEmailCampaignSchemas.listEmailCampaigns
 		},
 		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
 			const { page = 1, limit = 20 } = request.query;
@@ -94,13 +85,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/status",
 		{
-			schema: {
-				description: "獲取郵件發送狀態",
-				tags: ["admin/email-campaigns"],
-				params: z.object({
-					campaignId: z.string()
-				})
-			}
+			schema: adminEmailCampaignSchemas.getEmailCampaignStatus
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -141,13 +126,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/preview",
 		{
-			schema: {
-				description: "預覽郵件內容",
-				tags: ["admin/email-campaigns"],
-				params: z.object({
-					campaignId: z.string()
-				})
-			}
+			schema: adminEmailCampaignSchemas.previewEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -203,13 +182,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/calculate-recipients",
 		{
-			schema: {
-				description: "計算收件人數量",
-				tags: ["admin/email-campaigns"],
-				params: z.object({
-					campaignId: z.string()
-				})
-			}
+			schema: adminEmailCampaignSchemas.calculateRecipients
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -245,16 +218,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/send",
 		{
-			schema: {
-				description: "發送郵件",
-				tags: ["admin/email-campaigns"],
-				params: z.object({
-					campaignId: z.string()
-				}),
-				body: z.object({
-					sendNow: z.boolean().default(true).optional()
-				})
-			}
+			schema: adminEmailCampaignSchemas.sendEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -361,13 +325,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId",
 		{
-			schema: {
-				description: "取消郵件發送任務",
-				tags: ["admin/email-campaigns"],
-				params: z.object({
-					campaignId: z.string()
-				})
-			}
+			schema: adminEmailCampaignSchemas.cancelEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;

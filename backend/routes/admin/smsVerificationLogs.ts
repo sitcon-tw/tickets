@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
+import { smsVerificationLogsSchemas } from "#schemas";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import { nowInUTC8 } from "#utils/timezone";
 
@@ -24,17 +24,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Querystring: SmsLogsQuery }>(
 		"/sms-verification-logs",
 		{
-			schema: {
-				description: "取得簡訊驗證記錄",
-				tags: ["admin/sms-verification"],
-				querystring: z.object({
-					userId: z.string().optional(),
-					phoneNumber: z.string().optional(),
-					verified: z.coerce.boolean().optional(),
-					page: z.coerce.number().int().min(1).default(1).optional(),
-					limit: z.coerce.number().int().min(1).max(100).default(20).optional()
-				})
-			}
+			schema: smsVerificationLogsSchemas.getSmsVerificationLogs
 		},
 		async (request: FastifyRequest<{ Querystring: SmsLogsQuery }>, reply: FastifyReply) => {
 			try {
@@ -96,10 +86,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/sms-verification-stats",
 		{
-			schema: {
-				description: "取得簡訊驗證統計",
-				tags: ["admin/sms-verification"]
-			}
+			schema: smsVerificationLogsSchemas.getSmsVerificationStats
 		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			try {

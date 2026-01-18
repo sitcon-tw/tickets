@@ -1,8 +1,7 @@
 import prisma from "#config/database";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas";
+import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 interface EventIdParams {
 	id: string;
@@ -180,11 +179,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		{
 			schema: {
 				...eventSchemas.listEvents,
-				description: "獲取所有活動列表",
-				querystring: z.object({
-					isActive: z.coerce.boolean().optional(),
-					upcoming: z.coerce.boolean().optional()
-				}),
+				...publicEventSchemas.listPublicEvents,
 				response: publicEventsListResponse
 			}
 		},
@@ -348,35 +343,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
-			schema: {
-				description: "獲取活動報名表單欄位（透過票券 ID）",
-				tags: ["events"],
-				params: z.object({
-					id: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string(),
-						data: z.array(
-							z.object({
-								id: z.string(),
-								name: z.unknown(),
-								description: z.unknown().nullable(),
-								type: z.string(),
-								required: z.boolean(),
-								options: z.array(z.unknown()),
-								validater: z.string().nullable(),
-								placeholder: z.string().nullable(),
-								order: z.number(),
-								filters: z.unknown(),
-								prompts: z.unknown(),
-								enableOther: z.boolean()
-							})
-						)
-					})
-				}
-			}
+			schema: publicEventSchemas.getTicketFormFields
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {

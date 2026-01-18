@@ -1,16 +1,15 @@
-﻿/**
+/**
  * @fileoverview Admin registrations routes with modular types and schemas
  */
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
-import { registrationSchemas } from "#schemas";
+import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 import type { PaginationQuery, RegistrationUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 /**
  * Admin registrations routes with modular schemas and types
@@ -296,15 +295,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}>(
 		"/registrations/export",
 		{
-			schema: {
-				description: "匯出報名資料",
-				tags: ["admin/registrations"],
-				querystring: z.object({
-					eventId: z.string().optional(),
-					status: z.enum(["confirmed", "cancelled", "pending"]).optional(),
-					format: z.enum(["csv", "excel"]).default("csv").optional()
-				})
-			}
+			schema: adminRegistrationSchemas.exportRegistrations
 		},
 		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
 			const { eventId, status, format = "csv" } = request.query;
@@ -395,20 +386,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
-			schema: {
-				description: "刪除報名記錄",
-				tags: ["admin/registrations"],
-				params: z.object({
-					id: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z.record(z.string(), z.unknown()).optional()
-					})
-				}
-			}
+			schema: adminRegistrationSchemas.deleteRegistration
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			const { id } = request.params;
@@ -458,20 +436,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.get(
 		"/registrations/google-sheets/service-account",
 		{
-			schema: {
-				description: "取得 Google Sheets 服務帳號 Email",
-				tags: ["admin/registrations"],
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						data: z
-							.object({
-								email: z.string()
-							})
-							.optional()
-					})
-				}
-			}
+			schema: adminRegistrationSchemas.getGoogleSheetsServiceAccount
 		},
 		async (_request: FastifyRequest, reply: FastifyReply) => {
 			const email = getServiceAccountEmail();
@@ -486,26 +451,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/google-sheets/sync",
 		{
 			preHandler: requireEventAccess,
-			schema: {
-				description: "同步報名資料到 Google Sheets",
-				tags: ["admin/registrations"],
-				body: z.object({
-					eventId: z.string(),
-					sheetsUrl: z.string()
-				}),
-				response: {
-					200: z.object({
-						success: z.boolean(),
-						message: z.string().optional(),
-						data: z
-							.object({
-								count: z.number(),
-								sheetsUrl: z.string()
-							})
-							.optional()
-					})
-				}
-			}
+			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
 		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
 			const { eventId, sheetsUrl } = request.body;

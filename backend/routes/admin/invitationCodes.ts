@@ -1,11 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import type { InvitationCode, InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod/v4";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
-import { invitationCodeSchemas } from "#schemas";
+import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
 import { sendInvitationCode } from "#utils/email.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -398,18 +397,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 		"/invitation-codes/bulk",
 		{
 			preHandler: requireEventAccessViaTicketBody,
-			schema: {
-				description: "批量創建邀請碼",
-				tags: ["admin/invitation-codes"],
-				body: z.object({
-					ticketId: z.string(),
-					name: z.string().min(1),
-					count: z.number().int().min(1).max(100),
-					usageLimit: z.number().int().min(1).optional(),
-					validFrom: z.iso.datetime().optional(),
-					validUntil: z.iso.datetime().optional()
-				})
-			}
+			schema: adminInvitationCodeSchemas.bulkCreateInvitationCodes
 		},
 		async (
 			request: FastifyRequest<{
@@ -500,15 +488,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/invitation-codes/send-email",
 		{
-			schema: {
-				description: "透過 Email 寄送邀請碼",
-				tags: ["admin/invitation-codes"],
-				body: z.object({
-					email: z.email(),
-					code: z.string(),
-					message: z.string().default("").optional()
-				})
-			}
+			schema: adminInvitationCodeSchemas.sendInvitationCodeEmail
 		},
 		async (request: FastifyRequest<{ Body: { email: string; code: string; message?: string } }>, reply: FastifyReply) => {
 			try {
