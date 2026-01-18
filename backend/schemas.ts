@@ -755,6 +755,37 @@ export const RegistrationsListResponseSchema = z.object({
 	data: z.array(RegistrationSchema)
 });
 
+// Admin registration schema - more permissive for list endpoints
+export const AdminRegistrationSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	eventId: z.string(),
+	ticketId: z.string(),
+	email: z.string(),
+	status: RegistrationStatusSchema,
+	referredBy: z.string().nullable().optional(),
+	formData: z.record(z.string(), z.unknown()),
+	createdAt: z.string(),
+	updatedAt: z.string(),
+	event: z
+		.object({
+			id: z.string(),
+			name: z.unknown(),
+			startDate: z.string(),
+			endDate: z.string()
+		})
+		.optional(),
+	ticket: z
+		.object({
+			id: z.string(),
+			name: z.unknown(),
+			price: z.number()
+		})
+		.optional()
+});
+
+export const AdminRegistrationsListResponseSchema = PaginatedResponseSchema(z.array(AdminRegistrationSchema));
+
 export const registrationSchemas = {
 	createRegistration: {
 		description: "創建新報名",
@@ -799,7 +830,7 @@ export const registrationSchemas = {
 		tags: ["admin/registrations"],
 		querystring: RegistrationQuerySchema,
 		response: {
-			200: RegistrationsListResponseSchema,
+			200: AdminRegistrationsListResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema
 		}

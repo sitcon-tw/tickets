@@ -410,8 +410,32 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					const parsedFormData = safeJsonParse(reg.formData, {}, `user registrations for ${reg.id}`);
 
 					return {
-						...reg,
+						id: reg.id,
+						userId: reg.userId,
+						eventId: reg.eventId,
+						ticketId: reg.ticketId,
+						email: reg.email,
+						status: reg.status,
+						referredBy: reg.referredBy ?? null,
 						formData: parsedFormData,
+						createdAt: reg.createdAt.toISOString(),
+						updatedAt: reg.updatedAt.toISOString(),
+						event: {
+							id: reg.event.id,
+							name: reg.event.name,
+							description: reg.event.description ?? null,
+							location: reg.event.location ?? null,
+							startDate: reg.event.startDate.toISOString(),
+							endDate: reg.event.endDate.toISOString(),
+							ogImage: reg.event.ogImage ?? null
+						},
+						ticket: {
+							id: reg.ticket.id,
+							name: reg.ticket.name,
+							description: reg.ticket.description ?? null,
+							price: Number(reg.ticket.price),
+							saleEnd: reg.ticket.saleEnd?.toISOString() ?? null
+						},
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
 						canEdit: reg.status === "confirmed" && reg.event.startDate > now && (!reg.ticket.saleEnd || reg.ticket.saleEnd > now),

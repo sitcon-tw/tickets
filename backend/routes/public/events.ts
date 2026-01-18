@@ -1,6 +1,6 @@
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod/v4";
 
@@ -54,7 +54,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(event));
+				return reply.send(successResponse(serializeDates(event)));
 			} catch (error) {
 				console.error("Get public event info error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
@@ -165,7 +165,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(ticketsWithStatus));
+				return reply.send(successResponse(serializeDates(ticketsWithStatus)));
 			} catch (error) {
 				console.error("Get event tickets error:", error);
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
@@ -265,7 +265,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(eventsWithStatus));
+				return reply.send(successResponse(serializeDates(eventsWithStatus)));
 			} catch (error) {
 				console.error("List events error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");

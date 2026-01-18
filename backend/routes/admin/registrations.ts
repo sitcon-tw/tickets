@@ -84,18 +84,30 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 				const plainReg = {
 					id: reg.id,
+					userId: reg.userId,
 					eventId: reg.eventId,
 					ticketId: reg.ticketId,
 					email: reg.email,
 					status: reg.status,
-					referredBy: reg.referredBy || "",
+					referredBy: reg.referredBy ?? null,
 					formData: parsedFormData,
-					createdAt: reg.createdAt,
-					updatedAt: reg.updatedAt,
-					user: reg.user,
-					event: reg.event,
-					ticket: reg.ticket,
-					referral: reg.referral
+					createdAt: reg.createdAt.toISOString(),
+					updatedAt: reg.updatedAt.toISOString(),
+					event: reg.event
+						? {
+								id: reg.event.id,
+								name: reg.event.name as Record<string, string>,
+								startDate: reg.event.startDate.toISOString(),
+								endDate: reg.event.endDate.toISOString()
+							}
+						: undefined,
+					ticket: reg.ticket
+						? {
+								id: reg.ticket.id,
+								name: reg.ticket.name as Record<string, string>,
+								price: Number(reg.ticket.price)
+							}
+						: undefined
 				};
 
 				return plainReg;

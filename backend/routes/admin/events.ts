@@ -255,10 +255,10 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				name: event.name as Record<string, string>,
 				description: event.description as Record<string, string> | undefined,
 				plainDescription: event.plainDescription as Record<string, string> | undefined,
-				startDate: event.startDate.toISOString(),
-				endDate: event.endDate.toISOString(),
-				createdAt: event.createdAt.toISOString(),
-				updatedAt: event.updatedAt.toISOString()
+				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
+				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
+				createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
+				updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt
 			}));
 
 			return reply.send(successResponse(events));

@@ -431,6 +431,7 @@ interface FastifyValidationError extends Error {
 	validation?: ValidationError[];
 	statusCode?: number;
 	code?: string;
+	cause?: unknown;
 }
 
 // Global error handler to format errors according to API response structure
@@ -456,6 +457,45 @@ fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest,
 
 		log.warn({ validationError: error.validation, url: request.url }, "Validation error");
 		return reply.code(error.statusCode || 400).send(errorResponse);
+	}
+
+	// Handle response serialization errors (from fastify-type-provider-zod)
+	if (error.message === "Response doesn't match the schema" && error.cause) {
+		// Extract Zod validation issues from the cause
+		const zodError = error.cause as { issues?: Array<{ path: (string | number)[]; message: string; code: string }> };
+		if (zodError.issues) {
+			log.error(
+				{
+					url: request.url,
+					method: request.method,
+					schemaValidationIssues: zodError.issues.map(issue => ({
+						path: issue.path.join("."),
+						message: issue.message,
+						code: issue.code
+					}))
+				},
+				"Response schema mismatch - data returned by handler doesn't match expected schema"
+			);
+		} else {
+			log.error(
+				{
+					url: request.url,
+					method: request.method,
+					cause: error.cause
+				},
+				"Response schema mismatch - unknown cause format"
+			);
+		}
+
+		const errorResponse = {
+			success: false,
+			error: {
+				code: "SCHEMA_MISMATCH",
+				message: "Response doesn't match the schema"
+			}
+		};
+
+		return reply.code(500).send(errorResponse);
 	}
 
 	// Handle custom application errors (with statusCode)
