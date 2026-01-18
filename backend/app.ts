@@ -10,7 +10,7 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import fastifyMetrics from "fastify-metrics";
-import { serializerCompiler, validatorCompiler, jsonSchemaTransform } from "fastify-type-provider-zod";
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import { z } from "zod/v4";
 
 import prisma from "./config/database";

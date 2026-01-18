@@ -464,9 +464,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				response: {
 					200: z.object({
 						success: z.boolean(),
-						data: z.object({
-							email: z.string()
-						}).optional()
+						data: z
+							.object({
+								email: z.string()
+							})
+							.optional()
 					})
 				}
 			}
@@ -495,10 +497,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					200: z.object({
 						success: z.boolean(),
 						message: z.string().optional(),
-						data: z.object({
-							count: z.number(),
-							sheetsUrl: z.string()
-						}).optional()
+						data: z
+							.object({
+								count: z.number(),
+								sheetsUrl: z.string()
+							})
+							.optional()
 					})
 				}
 			}

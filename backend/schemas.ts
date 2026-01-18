@@ -1,65 +1,55 @@
 // SCHEMA DEFINITIONS (Zod)
 // ============================================================================
 
-import { z } from "zod/v4";
 import {
-	// Common schemas
-	SortOrderSchema,
-	UserRoleSchema,
-	RegistrationStatusSchema,
-
-	// Event schemas
-	EventSchema,
-	EventCreateRequestSchema,
-	EventUpdateRequestSchema,
-	EventStatsSchema,
-
-	// Ticket schemas
-	TicketSchema,
-	TicketCreateRequestSchema,
-	TicketUpdateRequestSchema,
-
-	// User schemas
-	UserSchema,
-
-	// Registration schemas
-	RegistrationSchema,
-	RegistrationCreateRequestSchema,
-	RegistrationUpdateRequestSchema,
-	RegistrationStatsSchema,
-
-	// Email campaign schemas
-	TargetAudienceSchema,
-	EmailCampaignSchema,
 	EmailCampaignCreateRequestSchema,
-	EmailCampaignUpdateRequestSchema,
+	EmailCampaignSchema,
 	EmailCampaignSendRequestSchema,
-
-	// Invitation code schemas
-	InvitationCodeSchema,
-	InvitationCodeCreateRequestSchema,
-	InvitationCodeUpdateRequestSchema,
-	InvitationCodeVerifyRequestSchema,
-	InvitationCodeVerificationSchema,
-
-	// Referral schemas
-	ReferralSchema,
-	ReferralValidateRequestSchema,
-	ReferralValidationSchema,
-	ReferralUsageSchema,
-
+	EmailCampaignUpdateRequestSchema,
+	EventCreateRequestSchema,
+	EventFormFieldCreateRequestSchema,
 	// Form field schemas
 	EventFormFieldSchema,
-	EventFormFieldCreateRequestSchema,
 	EventFormFieldUpdateRequestSchema,
-
+	// Event schemas
+	EventSchema,
+	EventStatsSchema,
+	EventUpdateRequestSchema,
+	InvitationCodeCreateRequestSchema,
+	// Invitation code schemas
+	InvitationCodeSchema,
+	InvitationCodeUpdateRequestSchema,
+	InvitationCodeVerificationSchema,
+	InvitationCodeVerifyRequestSchema,
+	// Referral schemas
+	ReferralSchema,
+	ReferralUsageSchema,
+	ReferralValidateRequestSchema,
+	ReferralValidationSchema,
+	RegistrationCreateRequestSchema,
+	// Registration schemas
+	RegistrationSchema,
+	RegistrationStatsSchema,
+	RegistrationStatusSchema,
+	RegistrationUpdateRequestSchema,
 	// SMS schemas
 	SendVerificationRequestSchema,
-	VerifyCodeRequestSchema,
-
+	// Common schemas
+	SortOrderSchema,
+	// Email campaign schemas
+	TargetAudienceSchema,
+	TicketCreateRequestSchema,
+	// Ticket schemas
+	TicketSchema,
+	TicketUpdateRequestSchema,
+	UserRoleSchema,
+	// User schemas
+	UserSchema,
 	// Validation schemas
-	ValidationErrorSchema
+	ValidationErrorSchema,
+	VerifyCodeRequestSchema
 } from "@sitcontix/types";
+import { z } from "zod/v4";
 
 // ----------------------------------------------------------------------------
 // Common Schemas
@@ -113,8 +103,7 @@ export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
 export const DateTimeSchema = z.iso.datetime().describe("ISO 8601 日期時間格式");
 
 // Re-export common enums for convenience
-export { RegistrationStatusSchema as StatusEnumSchema };
-export { UserRoleSchema as RoleEnumSchema };
+export { UserRoleSchema as RoleEnumSchema, RegistrationStatusSchema as StatusEnumSchema };
 
 // ----------------------------------------------------------------------------
 // Email Campaign Schemas
@@ -335,17 +324,19 @@ export const eventTicketsResponse = {
 				requireSmsVerification: true,
 				requireInviteCode: true
 			}).extend({
-				formFields: z.array(z.object({
-					id: z.string(),
-					name: z.unknown(),
-					description: z.unknown().nullable(),
-					type: z.string(),
-					required: z.boolean(),
-					validater: z.string().nullable(),
-					placeholder: z.string().nullable(),
-					options: z.array(z.unknown()),
-					order: z.number()
-				}))
+				formFields: z.array(
+					z.object({
+						id: z.string(),
+						name: z.unknown(),
+						description: z.unknown().nullable(),
+						type: z.string(),
+						required: z.boolean(),
+						validater: z.string().nullable(),
+						placeholder: z.string().nullable(),
+						options: z.array(z.unknown()),
+						order: z.number()
+					})
+				)
 			})
 		)
 	})

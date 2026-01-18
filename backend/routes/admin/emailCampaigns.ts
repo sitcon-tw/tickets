@@ -3,12 +3,12 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas, EmailCampaignCreateBodySchema } from "#schemas";
+import { EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
+import { calculateRecipients, sendCampaignEmail } from "#utils/email";
+import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { z } from "zod/v4";
 
 type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
-import { calculateRecipients, sendCampaignEmail } from "#utils/email";
-import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);

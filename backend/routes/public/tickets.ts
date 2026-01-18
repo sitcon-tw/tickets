@@ -18,29 +18,33 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 					200: z.object({
 						success: z.boolean(),
 						message: z.string().optional(),
-						data: z.object({
-							id: z.string(),
-							name: z.record(z.string(), z.unknown()),
-							description: z.record(z.string(), z.unknown()),
-							plainDescription: z.record(z.string(), z.unknown()).nullable(),
-							price: z.number(),
-							quantity: z.number().int(),
-							soldCount: z.number().int(),
-							available: z.number().int(),
-							saleStart: z.string().nullable(),
-							saleEnd: z.string().nullable(),
-							isOnSale: z.boolean(),
-							isSoldOut: z.boolean(),
-							requireInviteCode: z.boolean(),
-							requireSmsVerification: z.boolean()
-						}).optional()
+						data: z
+							.object({
+								id: z.string(),
+								name: z.record(z.string(), z.unknown()),
+								description: z.record(z.string(), z.unknown()),
+								plainDescription: z.record(z.string(), z.unknown()).nullable(),
+								price: z.number(),
+								quantity: z.number().int(),
+								soldCount: z.number().int(),
+								available: z.number().int(),
+								saleStart: z.string().nullable(),
+								saleEnd: z.string().nullable(),
+								isOnSale: z.boolean(),
+								isSoldOut: z.boolean(),
+								requireInviteCode: z.boolean(),
+								requireSmsVerification: z.boolean()
+							})
+							.optional()
 					}),
 					404: z.object({
 						success: z.boolean(),
-						error: z.object({
-							code: z.string(),
-							message: z.string()
-						}).optional()
+						error: z
+							.object({
+								code: z.string(),
+								message: z.string()
+							})
+							.optional()
 					})
 				}
 			}

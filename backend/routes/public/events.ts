@@ -358,20 +358,22 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					200: z.object({
 						success: z.boolean(),
 						message: z.string(),
-						data: z.array(z.object({
-							id: z.string(),
-							name: z.unknown(),
-							description: z.unknown().nullable(),
-							type: z.string(),
-							required: z.boolean(),
-							options: z.array(z.unknown()),
-							validater: z.string().nullable(),
-							placeholder: z.string().nullable(),
-							order: z.number(),
-							filters: z.unknown(),
-							prompts: z.unknown(),
-							enableOther: z.boolean()
-						}))
+						data: z.array(
+							z.object({
+								id: z.string(),
+								name: z.unknown(),
+								description: z.unknown().nullable(),
+								type: z.string(),
+								required: z.boolean(),
+								options: z.array(z.unknown()),
+								validater: z.string().nullable(),
+								placeholder: z.string().nullable(),
+								order: z.number(),
+								filters: z.unknown(),
+								prompts: z.unknown(),
+								enableOther: z.boolean()
+							})
+						)
 					})
 				}
 			}

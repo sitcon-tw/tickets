@@ -328,10 +328,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					eventId: z.string()
 				}),
 				body: z.object({
-					fieldOrders: z.array(z.object({
-						id: z.string(),
-						order: z.number().int().min(0)
-					}))
+					fieldOrders: z.array(
+						z.object({
+							id: z.string(),
+							order: z.number().int().min(0)
+						})
+					)
 				}),
 				response: {
 					200: z.object({
@@ -341,10 +343,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}),
 					400: z.object({
 						success: z.boolean(),
-						error: z.object({
-							code: z.string(),
-							message: z.string()
-						}).optional()
+						error: z
+							.object({
+								code: z.string(),
+								message: z.string()
+							})
+							.optional()
 					})
 				}
 			}

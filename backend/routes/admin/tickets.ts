@@ -141,12 +141,14 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
 					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
 					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
-					event: ticket.event ? {
-						...ticket.event,
-						name: ticket.event.name as Record<string, string>,
-						startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
-						endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
-					} : undefined
+					event: ticket.event
+						? {
+								...ticket.event,
+								name: ticket.event.name as Record<string, string>,
+								startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
+								endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+							}
+						: undefined
 				};
 
 				return reply.send(successResponse(responseTicket));
@@ -355,12 +357,14 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
 						createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
 						updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
-						event: ticket.event ? {
-							...ticket.event,
-							name: ticket.event.name as Record<string, string>,
-							startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
-							endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
-						} : undefined,
+						event: ticket.event
+							? {
+									...ticket.event,
+									name: ticket.event.name as Record<string, string>,
+									startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
+									endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+								}
+							: undefined,
 						available,
 						isOnSale,
 						isSoldOut
@@ -389,13 +393,15 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					200: z.object({
 						success: z.boolean(),
 						message: z.string().optional(),
-						data: z.object({
-							totalSold: z.number().int(),
-							totalRevenue: z.number(),
-							availableQuantity: z.number().int(),
-							salesByStatus: z.record(z.string(), z.unknown()),
-							dailySales: z.array(z.unknown())
-						}).optional()
+						data: z
+							.object({
+								totalSold: z.number().int(),
+								totalRevenue: z.number(),
+								availableQuantity: z.number().int(),
+								salesByStatus: z.record(z.string(), z.unknown()),
+								dailySales: z.array(z.unknown())
+							})
+							.optional()
 					})
 				}
 			}
@@ -465,10 +471,12 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				description: "重新排序票券",
 				tags: ["admin/tickets"],
 				body: z.object({
-					tickets: z.array(z.object({
-						id: z.string(),
-						order: z.number()
-					}))
+					tickets: z.array(
+						z.object({
+							id: z.string(),
+							order: z.number()
+						})
+					)
 				}),
 				response: {
 					200: z.object({
