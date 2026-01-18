@@ -1,10 +1,9 @@
 import prisma from "#config/database";
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { Event, Registration, Ticket } from "../types/database";
-import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, RecipientData, TargetAudienceFilters } from "../types/email";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -216,7 +215,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const eventName = getLocalizedValue(event.name);
 		const ticketName = getLocalizedValue(ticket.name);
-		const eventLocation = event.location || "待公布 TBA";
+		const eventLocation = event.location || "";
 
 		const userName = await prisma.user
 			.findFirst({
@@ -469,8 +468,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					email: r.email,
 					id: r.id,
 					formData: r.formData,
-					event: r.event as Partial<Event>,
-					ticket: r.ticket as Partial<Ticket>
+					event: r.event as unknown as Partial<Event>,
+					ticket: r.ticket as unknown as Partial<Ticket>
 				});
 			}
 		});

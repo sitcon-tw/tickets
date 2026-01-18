@@ -90,6 +90,7 @@ model Event {
   location    String?
   startDate   DateTime
   endDate     DateTime
+  editDeadline DateTime? // Deadline for users to edit registration form (must be before startDate)
   ogImage     String?
   landingPage String?  // JSON content
   googleSheetsUrl String? // Google Sheets URL for data export

@@ -22,7 +22,8 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"paths": {
-			"#*": ["./*"]
+			"#*": ["./*"],
+			"#schemas": ["./schemas.ts"]
 		},
 		"types": ["node"],
 		"allowImportingTsExtensions": true,

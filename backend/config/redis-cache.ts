@@ -1,4 +1,4 @@
-import type { RedisClientConfig } from "#types/database";
+import type { RedisClientConfig } from "@sitcontix/types";
 import type { AutoCacheConfig, CacheConfig } from "prisma-extension-redis";
 import { CacheCase } from "prisma-extension-redis";
 

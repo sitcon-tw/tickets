@@ -21,12 +21,12 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 	const fieldDescription = field.description ? getLocalizedText(field.description, locale) : "";
 
 	const localizedOptions =
-		field.options?.map(opt => ({
+		field.options?.map((opt: Record<string, string> | string) => ({
 			value: typeof opt === "object" && opt !== null ? opt.en || getLocalizedText(opt, locale) : String(opt),
 			label: getLocalizedText(opt, locale)
 		})) || [];
 
-	const localizedPrompts = (field.prompts?.[locale] || field.prompts?.["en"] || []).filter(p => p && p.trim() !== "");
+	const localizedPrompts = (field.prompts?.[locale] || field.prompts?.["en"] || []).filter((p: string) => p && p.trim() !== "");
 
 	switch (field.type) {
 		case "text":
@@ -100,8 +100,8 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 						} as React.ChangeEvent<HTMLInputElement>;
 						onTextChange(syntheticEvent);
 					}}
-					enableOther={field.enableOther}
-					otherPlaceholder={field.placeholder}
+					enableOther={field.enableOther || undefined}
+					otherPlaceholder={field.placeholder || undefined}
 					description={fieldDescription}
 				/>
 			);

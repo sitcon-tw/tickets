@@ -3,7 +3,7 @@
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Registration } from "@/lib/types/api";
+import type { Registration } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type RegistrationDisplay = Registration & {

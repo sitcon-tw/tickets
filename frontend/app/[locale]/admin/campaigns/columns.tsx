@@ -2,7 +2,7 @@
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
-import type { EmailCampaign } from "@/lib/types/api";
+import type { EmailCampaign } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CampaignDisplay = EmailCampaign & {
@@ -75,7 +75,7 @@ export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<Campai
 							📤 {actions.t.send}
 						</Button>
 					)}
-					{(campaign.status === "draft" || campaign.status === "scheduled") && (
+					{campaign.status === "draft" && (
 						<Button variant="destructive" size="sm" onClick={() => actions.onCancel(campaign)}>
 							✕ {actions.t.cancel}
 						</Button>

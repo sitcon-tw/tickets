@@ -1,9 +1,9 @@
-import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "#types/api";
+import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
-import { ticketSchemas } from "#schemas/ticket";
+import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
@@ -77,7 +77,18 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				return reply.code(201).send(successResponse(ticket, "票券創建成功"));
+				const responseTicket = {
+					...ticket,
+					name: ticket.name as Record<string, string>,
+					description: ticket.description as Record<string, string> | undefined,
+					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
+					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
+					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
+					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
+					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt
+				};
+
+				return reply.code(201).send(successResponse(responseTicket, "票券創建成功"));
 			} catch (error) {
 				console.error("Create ticket error:", error);
 				const { response, statusCode } = serverErrorResponse("創建票券失敗");
@@ -120,7 +131,26 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(ticket));
+				const responseTicket = {
+					...ticket,
+					name: ticket.name as Record<string, string>,
+					description: ticket.description as Record<string, string> | undefined,
+					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
+					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
+					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
+					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
+					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
+					event: ticket.event
+						? {
+								...ticket.event,
+								name: ticket.event.name as Record<string, string>,
+								startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
+								endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+							}
+						: undefined
+				};
+
+				return reply.send(successResponse(responseTicket));
 			} catch (error) {
 				console.error("Get ticket error:", error);
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
@@ -209,7 +239,18 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				return reply.send(successResponse(ticket, "票券更新成功"));
+				const responseTicket = {
+					...ticket,
+					name: ticket.name as Record<string, string>,
+					description: ticket.description as Record<string, string> | undefined,
+					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
+					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
+					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
+					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
+					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt
+				};
+
+				return reply.send(successResponse(responseTicket, "票券更新成功"));
 			} catch (error) {
 				console.error("Update ticket error:", error);
 				const { response, statusCode } = serverErrorResponse("更新票券失敗");
@@ -308,6 +349,21 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 					return {
 						...ticket,
+						name: ticket.name as Record<string, string>,
+						description: ticket.description as Record<string, string> | undefined,
+						plainDescription: ticket.plainDescription as Record<string, string> | undefined,
+						saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
+						saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
+						createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
+						updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
+						event: ticket.event
+							? {
+									...ticket.event,
+									name: ticket.event.name as Record<string, string>,
+									startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
+									endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+								}
+							: undefined,
 						available,
 						isOnSale,
 						isSoldOut
@@ -326,39 +382,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/analytics",
 		{
-			schema: {
-				description: "取得票券銷售分析",
-				tags: ["admin/tickets"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									totalsoldCount: { type: "integer" },
-									totalRevenue: { type: "number" },
-									availableQuantity: { type: "integer" },
-									salesByStatus: { type: "object" },
-									dailySales: { type: "array" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: adminTicketSchemas.getTicketAnalytics
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {
@@ -421,37 +445,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		"/tickets/reorder",
 		{
 			preHandler: requireEventAccess,
-			schema: {
-				description: "重新排序票券",
-				tags: ["admin/tickets"],
-				body: {
-					type: "object",
-					properties: {
-						tickets: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "number" }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["tickets"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						}
-					}
-				}
-			}
+			schema: adminTicketSchemas.reorderTickets
 		},
 		async (request: FastifyRequest<{ Body: TicketReorderRequest }>, reply: FastifyReply) => {
 			try {

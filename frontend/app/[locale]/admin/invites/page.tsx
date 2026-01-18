@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { InvitationCodeInfo, Ticket } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import type { InvitationCodeInfo, Ticket } from "@sitcontix/types";
 import { Download, Import, Mail, Plus, Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
@@ -38,6 +38,7 @@ export default function InvitesPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 
+	const [isSaving, setIsSaving] = useState(false);
 	const [inviteTypes, setInviteTypes] = useState<InviteType[]>([]);
 	const [filteredTypes, setFilteredTypes] = useState<InviteType[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -207,9 +208,11 @@ export default function InvitesPage() {
 
 	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 
 		if (!selectedTicketId) {
 			showAlert(t.pleaseSelectTicket, "warning");
+			setIsSaving(false);
 			return;
 		}
 
@@ -250,6 +253,8 @@ export default function InvitesPage() {
 			showAlert(t.createSuccess.replace("{count}", formData.amount.toString()), "success");
 		} catch (error) {
 			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -750,7 +755,7 @@ export default function InvitesPage() {
 								<Button type="button" variant="outline" onClick={() => setShowModal(false)}>
 									{t.cancel}
 								</Button>
-								<Button type="submit">{t.save}</Button>
+								<Button type="submit" isLoading={isSaving}>{t.save}</Button>
 							</DialogFooter>
 						</form>
 					</DialogContent>
@@ -821,7 +826,7 @@ export default function InvitesPage() {
 								<Button type="button" variant="outline" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
 									{t.cancel}
 								</Button>
-								<Button type="submit" disabled={isImporting}>
+								<Button type="submit" isLoading={isImporting}>
 									{isImporting ? t.importing : t.import}
 								</Button>
 							</DialogFooter>

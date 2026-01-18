@@ -10,6 +10,8 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import fastifyMetrics from "fastify-metrics";
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import { z } from "zod/v4";
 
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
@@ -26,6 +28,10 @@ const fastify = Fastify({
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
 	trustProxy: true
 });
+
+// Set Zod validator and serializer compilers for automatic Zod to JSON Schema conversion
+fastify.setValidatorCompiler(validatorCompiler);
+fastify.setSerializerCompiler(serializerCompiler);
 
 // Override logger config (the second one takes precedence)
 fastify.log.level = "error";
@@ -87,7 +93,8 @@ await fastify.register(fastifySwagger, {
 			{ name: "admin/referrals", description: "管理後台標籤相關操作 requires: Admin Role" },
 			{ name: "admin/email-campaigns", description: "管理後台郵件活動相關操作 requires: Admin Role" }
 		]
-	}
+	},
+	transform: jsonSchemaTransform
 });
 
 await fastify.register(fastifySwaggerUi, {
@@ -110,24 +117,6 @@ await fastify.register(fastifySwaggerUi, {
 	transformSpecificationClone: true,
 	theme: {
 		title: "SITCONTIX API",
-		js: [
-			{
-				filename: "special.js",
-				content: `
-    window.addEventListener("DOMContentLoaded", () => {
-        import("https://font.emtech.cc/emfont.js").then(() => {
-			document.body.classList.add("emfont-LINESeedTW");
-			const waiting =  setInterval(() => {
-				if(document.querySelector(".title")?.innerHTML) {
-					clearInterval(waiting);
-					emfont.init();
-				}
-			}, 30);
-        });
-      });
-    `
-			}
-		],
 		css: [
 			{
 				filename: "theme.css",
@@ -160,18 +149,14 @@ fastify.post<{ Body: MagicLinkBody }>(
 		schema: {
 			description: "Send magic link with Turnstile protection",
 			tags: ["auth"],
-			body: {
-				type: "object",
-				required: ["email"],
-				properties: {
-					email: { type: "string", format: "email" },
-					name: { type: "string" },
-					callbackURL: { type: "string" },
-					newUserCallbackURL: { type: "string" },
-					errorCallbackURL: { type: "string" },
-					turnstileToken: { type: "string" }
-				}
-			}
+			body: z.object({
+				email: z.email(),
+				name: z.string().optional(),
+				callbackURL: z.string().optional(),
+				newUserCallbackURL: z.string().optional(),
+				errorCallbackURL: z.string().optional(),
+				turnstileToken: z.string().optional()
+			})
 		},
 		config: {
 			rateLimit: rateLimitConfig.auth
@@ -446,6 +431,7 @@ interface FastifyValidationError extends Error {
 	validation?: ValidationError[];
 	statusCode?: number;
 	code?: string;
+	cause?: unknown;
 }
 
 // Global error handler to format errors according to API response structure
@@ -471,6 +457,45 @@ fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest,
 
 		log.warn({ validationError: error.validation, url: request.url }, "Validation error");
 		return reply.code(error.statusCode || 400).send(errorResponse);
+	}
+
+	// Handle response serialization errors (from fastify-type-provider-zod)
+	if (error.message === "Response doesn't match the schema" && error.cause) {
+		// Extract Zod validation issues from the cause
+		const zodError = error.cause as { issues?: Array<{ path: (string | number)[]; message: string; code: string }> };
+		if (zodError.issues) {
+			log.error(
+				{
+					url: request.url,
+					method: request.method,
+					schemaValidationIssues: zodError.issues.map(issue => ({
+						path: issue.path.join("."),
+						message: issue.message,
+						code: issue.code
+					}))
+				},
+				"Response schema mismatch - data returned by handler doesn't match expected schema"
+			);
+		} else {
+			log.error(
+				{
+					url: request.url,
+					method: request.method,
+					cause: error.cause
+				},
+				"Response schema mismatch - unknown cause format"
+			);
+		}
+
+		const errorResponse = {
+			success: false,
+			error: {
+				code: "SCHEMA_MISMATCH",
+				message: "Response doesn't match the schema"
+			}
+		};
+
+		return reply.code(500).send(errorResponse);
 	}
 
 	// Handle custom application errors (with statusCode)

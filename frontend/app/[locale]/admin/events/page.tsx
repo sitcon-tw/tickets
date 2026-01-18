@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI } from "@/lib/api/endpoints";
-import type { Event } from "@/lib/types/api";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
+import type { Event } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createEventsColumns, type EventWithStatus } from "./columns";
@@ -100,6 +100,7 @@ export default function EventsPage() {
 
 	const [events, setEvents] = useState<Event[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 	const [activeTab, setActiveTab] = useState<"info" | "en" | "zh-Hant" | "zh-Hans">("info");
@@ -115,6 +116,7 @@ export default function EventsPage() {
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
 	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
+	const [editDeadline, setEditDeadline] = useState("");
 	const [hideEvent, setHideEvent] = useState(false);
 	const [useOpass, setUseOpass] = useState(true);
 
@@ -152,6 +154,12 @@ export default function EventsPage() {
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
+		editDeadline: { "zh-Hant": "編輯截止時間", "zh-Hans": "编辑截止时间", en: "Edit Deadline" },
+		editDeadlineHint: {
+			"zh-Hant": "報名者可以編輯表單的截止時間。若未設定，則以票種販售截止時間或活動開始時間為準。必須早於活動開始時間。",
+			"zh-Hans": "报名者可以编辑表单的截止时间。若未设定，则以票种销售截止时间或活动开始时间为准。必须早于活动开始时间。",
+			en: "Deadline for attendees to edit their registration form. If not set, falls back to ticket sale end date or event start date. Must be before event start date."
+		},
 		hideEvent: { "zh-Hant": "在活動列表中隱藏", "zh-Hans": "在活动列表中隐藏", en: "Hide in Event List" },
 		hideEventHint: {
 			"zh-Hant": "勾選後，此活動不會顯示在首頁活動列表中，但仍可透過網址直接存取",
@@ -189,7 +197,7 @@ export default function EventsPage() {
 		return { label: t.active, class: "active" };
 	}
 
-	function formatDateTime(dt?: string) {
+	function formatDateTime(dt?: string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
@@ -216,9 +224,9 @@ export default function EventsPage() {
 		setEditingEvent(event);
 
 		if (event) {
-			const name = typeof event.name === "object" ? event.name : { en: event.name };
-			const desc = typeof event.description === "object" ? event.description : { en: event.description || "" };
-			const plainDesc = typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
+			const name = event.name && typeof event.name === "object" ? event.name : { en: event.name || "" };
+			const desc = event.description && typeof event.description === "object" ? event.description : { en: event.description || "" };
+			const plainDesc = event.plainDescription && typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -231,6 +239,7 @@ export default function EventsPage() {
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
 			setSlug(event.slug || "");
 			setOgImage(event.ogImage || "");
+			setEditDeadline(event.editDeadline ? toDateTimeLocalString(event.editDeadline) : "");
 			setHideEvent(event.hideEvent || false);
 			setUseOpass(event.useOpass ?? true);
 		} else {
@@ -245,6 +254,7 @@ export default function EventsPage() {
 			setPlainDescZhHans("");
 			setSlug("");
 			setOgImage("");
+			setEditDeadline("");
 			setHideEvent(false);
 			setUseOpass(true);
 		}
@@ -266,12 +276,14 @@ export default function EventsPage() {
 		setPlainDescZhHans("");
 		setSlug("");
 		setOgImage("");
+		setEditDeadline("");
 		setHideEvent(false);
 		setUseOpass(true);
 	};
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 		const formData = new FormData(e.currentTarget);
 		const startDateStr = formData.get("startDate") as string;
 		const endDateStr = formData.get("endDate") as string;
@@ -297,6 +309,7 @@ export default function EventsPage() {
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
 			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
+			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
 			hideEvent,
 			useOpass
 		};
@@ -312,6 +325,8 @@ export default function EventsPage() {
 			window.dispatchEvent(new Event("eventListChanged"));
 		} catch (error) {
 			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -334,7 +349,7 @@ export default function EventsPage() {
 				...event,
 				statusLabel: status.label,
 				statusClass: status.class,
-				displayName: typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name,
+				displayName: event.name && typeof event.name === "object" ? event.name[locale] || event.name["en"] || Object.values(event.name)[0] : event.name || "",
 				formattedStartDate: formatDateTime(event.startDate),
 				formattedEndDate: formatDateTime(event.endDate)
 			};
@@ -413,6 +428,11 @@ export default function EventsPage() {
 											<Label htmlFor="endDate">{t.endDate}</Label>
 											<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? toDateTimeLocalString(editingEvent.endDate) : ""} />
 										</div>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="editDeadline">{t.editDeadline}</Label>
+										<Input id="editDeadline" type="datetime-local" value={editDeadline} onChange={e => setEditDeadline(e.target.value)} />
+										<p className="text-xs text-muted-foreground">{t.editDeadlineHint}</p>
 									</div>
 									<div className="space-y-4">
 										<div className="flex items-start space-x-2">
@@ -499,7 +519,7 @@ export default function EventsPage() {
 								<Button type="button" variant="outline" onClick={closeModal}>
 									{t.cancel}
 								</Button>
-								<Button type="submit" variant="default">
+								<Button type="submit" variant="default" isLoading={isSaving}>
 									{t.save}
 								</Button>
 							</DialogFooter>

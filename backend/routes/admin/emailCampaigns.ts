@@ -1,11 +1,14 @@
-import type { EmailCampaignCreateRequest, PaginationQuery } from "#types/api";
+import type { PaginationQuery } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { emailCampaignSchemas } from "#schemas/emailCampaign";
+import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { z } from "zod/v4";
+
+type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
@@ -15,29 +18,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns",
 		{
-			schema: {
-				...emailCampaignSchemas.listEmailCampaigns,
-				description: "獲取郵件發送記錄",
-				querystring: {
-					type: "object",
-					properties: {
-						...emailCampaignSchemas.listEmailCampaigns.querystring.properties,
-						page: {
-							type: "integer",
-							minimum: 1,
-							default: 1,
-							description: "頁碼"
-						},
-						limit: {
-							type: "integer",
-							minimum: 1,
-							maximum: 100,
-							default: 20,
-							description: "每頁筆數"
-						}
-					}
-				}
-			}
+			schema: adminEmailCampaignSchemas.listEmailCampaigns
 		},
 		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
 			const { page = 1, limit = 20 } = request.query;
@@ -69,13 +50,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	fastify.post<{
-		Body: EmailCampaignCreateRequest;
+		Body: EmailCampaignCreateBody;
 	}>(
 		"/email-campaigns",
 		{
 			schema: emailCampaignSchemas.createEmailCampaign
 		},
-		async (request: FastifyRequest<{ Body: EmailCampaignCreateRequest }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Body: EmailCampaignCreateBody }>, reply: FastifyReply) => {
 			const { name, subject, content, targetAudience, scheduledAt } = request.body;
 
 			if (!content) {
@@ -104,20 +85,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/status",
 		{
-			schema: {
-				description: "獲取郵件發送狀態",
-				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
-			}
+			schema: adminEmailCampaignSchemas.getEmailCampaignStatus
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -158,20 +126,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/preview",
 		{
-			schema: {
-				description: "預覽郵件內容",
-				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
-			}
+			schema: adminEmailCampaignSchemas.previewEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -227,20 +182,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/calculate-recipients",
 		{
-			schema: {
-				description: "計算收件人數量",
-				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
-			}
+			schema: adminEmailCampaignSchemas.calculateRecipients
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -276,30 +218,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/send",
 		{
-			schema: {
-				description: "發送郵件",
-				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						sendNow: {
-							type: "boolean",
-							description: "是否立即發送",
-							default: true
-						}
-					}
-				}
-			}
+			schema: adminEmailCampaignSchemas.sendEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;
@@ -406,20 +325,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId",
 		{
-			schema: {
-				description: "取消郵件發送任務",
-				tags: ["admin/email-campaigns"],
-				params: {
-					type: "object",
-					properties: {
-						campaignId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["campaignId"]
-				}
-			}
+			schema: adminEmailCampaignSchemas.cancelEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
 			const { campaignId } = request.params;

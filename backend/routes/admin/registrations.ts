@@ -1,14 +1,14 @@
-﻿/**
+/**
  * @fileoverview Admin registrations routes with modular types and schemas
  */
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
-import { registrationSchemas } from "#schemas/registration";
+import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
-import type { PaginationQuery, RegistrationUpdateRequest } from "#types/api";
+import type { PaginationQuery, RegistrationUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 /**
@@ -83,18 +83,30 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 				const plainReg = {
 					id: reg.id,
+					userId: reg.userId,
 					eventId: reg.eventId,
 					ticketId: reg.ticketId,
 					email: reg.email,
 					status: reg.status,
-					referredBy: reg.referredBy || "",
+					referredBy: reg.referredBy ?? null,
 					formData: parsedFormData,
-					createdAt: reg.createdAt,
-					updatedAt: reg.updatedAt,
-					user: reg.user,
-					event: reg.event,
-					ticket: reg.ticket,
-					referral: reg.referral
+					createdAt: reg.createdAt.toISOString(),
+					updatedAt: reg.updatedAt.toISOString(),
+					event: reg.event
+						? {
+								id: reg.event.id,
+								name: reg.event.name as Record<string, string>,
+								startDate: reg.event.startDate.toISOString(),
+								endDate: reg.event.endDate.toISOString()
+							}
+						: undefined,
+					ticket: reg.ticket
+						? {
+								id: reg.ticket.id,
+								name: reg.ticket.name as Record<string, string>,
+								price: Number(reg.ticket.price)
+							}
+						: undefined
 				};
 
 				return plainReg;
@@ -230,7 +242,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					event: {
 						select: {
 							id: true,
-							name: true
+							name: true,
+							startDate: true,
+							endDate: true
 						}
 					},
 					ticket: {
@@ -244,8 +258,31 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			const parsedRegistration = {
-				...registration,
-				formData: registration.formData ? JSON.parse(registration.formData) : {}
+				id: registration.id,
+				userId: registration.userId,
+				eventId: registration.eventId,
+				ticketId: registration.ticketId,
+				email: registration.email,
+				status: registration.status,
+				referredBy: registration.referredBy ?? null,
+				formData: registration.formData ? JSON.parse(registration.formData) : {},
+				createdAt: registration.createdAt.toISOString(),
+				updatedAt: registration.updatedAt.toISOString(),
+				event: registration.event
+					? {
+							id: registration.event.id,
+							name: registration.event.name as Record<string, string>,
+							startDate: registration.event.startDate.toISOString(),
+							endDate: registration.event.endDate.toISOString()
+						}
+					: undefined,
+				ticket: registration.ticket
+					? {
+							id: registration.ticket.id,
+							name: registration.ticket.name as Record<string, string>,
+							price: Number(registration.ticket.price)
+						}
+					: undefined
 			};
 
 			return reply.send(successResponse(parsedRegistration, "報名更新成功"));
@@ -258,30 +295,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}>(
 		"/registrations/export",
 		{
-			schema: {
-				description: "匯出報名資料",
-				tags: ["admin/registrations"],
-				querystring: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						},
-						status: {
-							type: "string",
-							enum: ["confirmed", "cancelled", "pending"],
-							description: "報名狀態"
-						},
-						format: {
-							type: "string",
-							enum: ["csv", "excel"],
-							default: "csv",
-							description: "匯出格式"
-						}
-					}
-				}
-			}
+			schema: adminRegistrationSchemas.exportRegistrations
 		},
 		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
 			const { eventId, status, format = "csv" } = request.query;
@@ -372,30 +386,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
-			schema: {
-				description: "刪除報名記錄",
-				tags: ["admin/registrations"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "報名記錄 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "object" }
-						}
-					}
-				}
-			}
+			schema: adminRegistrationSchemas.deleteRegistration
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			const { id } = request.params;
@@ -445,24 +436,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.get(
 		"/registrations/google-sheets/service-account",
 		{
-			schema: {
-				description: "取得 Google Sheets 服務帳號 Email",
-				tags: ["admin/registrations"],
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							data: {
-								type: "object",
-								properties: {
-									email: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: adminRegistrationSchemas.getGoogleSheetsServiceAccount
 		},
 		async (_request: FastifyRequest, reply: FastifyReply) => {
 			const email = getServiceAccountEmail();
@@ -477,40 +451,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		"/registrations/google-sheets/sync",
 		{
 			preHandler: requireEventAccess,
-			schema: {
-				description: "同步報名資料到 Google Sheets",
-				tags: ["admin/registrations"],
-				body: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						},
-						sheetsUrl: {
-							type: "string",
-							description: "Google Sheets URL"
-						}
-					},
-					required: ["eventId", "sheetsUrl"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									count: { type: "number" },
-									sheetsUrl: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
 		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
 			const { eventId, sheetsUrl } = request.body;

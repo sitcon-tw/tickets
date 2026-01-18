@@ -1,4 +1,4 @@
-import type { ApiResponse, EventListItem } from "@/lib/types/api";
+import type { ApiResponse, EventListItem } from "@sitcontix/types";
 import type { MetadataRoute } from "next";
 
 const BASE_URL = process.env.FRONTEND_URI || "https://tickets.sitcon.org";
@@ -8,7 +8,7 @@ const locales = ["en", "zh-Hant", "zh-Hans"];
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const sitemap: MetadataRoute.Sitemap = [];
 
-	let events: Array<{ slug?: string; updatedAt: string }> = [];
+	let events: Array<{ slug?: string | null; updatedAt: string }> = [];
 	try {
 		const response = await fetch(`${API_URL}/api/events?isActive=true`, {
 			headers: {

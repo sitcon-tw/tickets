@@ -4,6 +4,7 @@
 
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
+import { publicAuthSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -19,44 +20,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/auth/permissions",
 		{
-			schema: {
-				description: "取得當前用戶的權限資訊",
-				tags: ["auth"],
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									role: { type: "string" },
-									permissions: {
-										type: "array",
-										items: { type: "string" }
-									},
-									capabilities: {
-										type: "object",
-										properties: {
-											canManageUsers: { type: "boolean" },
-											canManageAllEvents: { type: "boolean" },
-											canViewAnalytics: { type: "boolean" },
-											canManageEmailCampaigns: { type: "boolean" },
-											canManageReferrals: { type: "boolean" },
-											canManageSmsLogs: { type: "boolean" },
-											managedEventIds: {
-												type: "array",
-												items: { type: "string" }
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: publicAuthSchemas.getAuthPermissions
 		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const session = await auth.api.getSession({
