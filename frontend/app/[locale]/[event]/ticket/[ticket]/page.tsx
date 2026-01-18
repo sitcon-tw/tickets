@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { eventsAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, invitationCodesAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -93,6 +93,16 @@ export default function SetTicket() {
 			"zh-Hant": "返回活動頁面",
 			"zh-Hans": "返回活动页面",
 			en: "Back to Event"
+		},
+		inviteCodeRequired: {
+			"zh-Hant": "此票券需要邀請碼才能報名。",
+			"zh-Hans": "此票券需要邀请码才能报名。",
+			en: "This ticket requires an invitation code to register."
+		},
+		inviteCodeInvalid: {
+			"zh-Hant": "邀請碼無效或已過期。",
+			"zh-Hans": "邀请码无效或已过期。",
+			en: "The invitation code is invalid or has expired."
 		}
 	});
 
@@ -165,7 +175,7 @@ export default function SetTicket() {
 	}, [params.ticket, showAlert, t.loadFailed, t.ticketNotFound]);
 
 	const handleTicketSelect = useCallback(
-		(ticket: Ticket, eventId: string) => {
+		async (ticket: Ticket, eventId: string): Promise<boolean> => {
 			if (isTicketExpired(ticket)) {
 				setErrorMessage(t.ticketSaleEnded);
 				showAlert(t.ticketSaleEnded, "error");
@@ -192,14 +202,43 @@ export default function SetTicket() {
 			}
 
 			const referralCode = new URLSearchParams(window.location.search).get("ref");
-			const invitationCode = new URLSearchParams(window.location.search).get("inv");
+			const invitationCode = new URLSearchParams(window.location.search).get("inv") || localStorage.getItem("invitationCode");
+
+			// Check if ticket requires invite code
+			if (ticket.requireInviteCode) {
+				if (!invitationCode) {
+					setErrorMessage(t.inviteCodeRequired);
+					showAlert(t.inviteCodeRequired, "error");
+					setHasError(true);
+					setLoading(false);
+					return false;
+				}
+
+				// Validate the invite code
+				try {
+					const verifyResult = await invitationCodesAPI.verify({ code: invitationCode, ticketId: ticket.id });
+					if (!verifyResult?.success || !verifyResult.data?.valid) {
+						setErrorMessage(t.inviteCodeInvalid);
+						showAlert(t.inviteCodeInvalid, "error");
+						setHasError(true);
+						setLoading(false);
+						return false;
+					}
+				} catch {
+					setErrorMessage(t.inviteCodeInvalid);
+					showAlert(t.inviteCodeInvalid, "error");
+					setHasError(true);
+					setLoading(false);
+					return false;
+				}
+			}
 
 			try {
 				const formData = {
 					ticketId: ticket.id,
 					eventId: eventId,
 					referralCode: referralCode || localStorage.getItem("referralCode") || undefined,
-					invitationCode: invitationCode || localStorage.getItem("invitationCode") || undefined
+					invitationCode: invitationCode || undefined
 				};
 				localStorage.setItem("formData", JSON.stringify(formData));
 				return true;
@@ -208,17 +247,17 @@ export default function SetTicket() {
 				return false;
 			}
 		},
-		[t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, showAlert]
+		[t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, t.inviteCodeRequired, t.inviteCodeInvalid, showAlert]
 	);
 
 	useEffect(() => {
 		const event = fetchEvent();
 		const ticket = fetchTicket();
 
-		Promise.all([event, ticket]).then(values => {
+		Promise.all([event, ticket]).then(async values => {
 			const [eventId, ticketData] = values;
 			if (eventId && ticketData) {
-				const isValid = handleTicketSelect(ticketData, eventId);
+				const isValid = await handleTicketSelect(ticketData, eventId);
 				if (isValid) {
 					router.push(`/${params.event}/form`);
 				}
