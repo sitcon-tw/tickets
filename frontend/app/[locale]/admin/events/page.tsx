@@ -100,6 +100,7 @@ export default function EventsPage() {
 
 	const [events, setEvents] = useState<Event[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 	const [activeTab, setActiveTab] = useState<"info" | "en" | "zh-Hant" | "zh-Hans">("info");
@@ -272,6 +273,7 @@ export default function EventsPage() {
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 		const formData = new FormData(e.currentTarget);
 		const startDateStr = formData.get("startDate") as string;
 		const endDateStr = formData.get("endDate") as string;
@@ -312,6 +314,8 @@ export default function EventsPage() {
 			window.dispatchEvent(new Event("eventListChanged"));
 		} catch (error) {
 			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -499,7 +503,7 @@ export default function EventsPage() {
 								<Button type="button" variant="outline" onClick={closeModal}>
 									{t.cancel}
 								</Button>
-								<Button type="submit" variant="default">
+								<Button type="submit" variant="default" isLoading={isSaving}>
 									{t.save}
 								</Button>
 							</DialogFooter>

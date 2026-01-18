@@ -61,6 +61,7 @@ export default function FormsPage() {
 	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
 	const [eventTickets, setEventTickets] = useState<Ticket[]>([]);
 	const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
+	const [isSaving, setIsSaving] = useState<boolean>(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -381,6 +382,7 @@ export default function FormsPage() {
 		}
 
 		try {
+			setIsSaving(true);
 			const formFieldsData = questions.map((q, index) => ({
 				id: q.id.startsWith("temp-") ? undefined : q.id,
 				name: {
@@ -436,10 +438,12 @@ export default function FormsPage() {
 
 			await loadFormFields();
 
-			showAlert("表單已保存！", "success");
+			showAlert("表單已儲存！", "success");
 		} catch (error) {
 			console.error("Failed to save form:", error);
-			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("儲存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -1428,6 +1432,7 @@ export default function FormsPage() {
 							type="button"
 							onClick={saveForm}
 							className="text-[0.9rem] py-2.5 px-5 border border-primary text-black dark:text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							isLoading={isSaving}
 						>
 							<Save size={18} /> {t.save}
 						</Button>

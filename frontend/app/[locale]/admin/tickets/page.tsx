@@ -93,6 +93,7 @@ export default function TicketsPage() {
 	const [inviteCode, setInviteCode] = useState("");
 	const [refCode, setRefCode] = useState("");
 	const [isSorting, setIsSorting] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor),
@@ -230,6 +231,7 @@ export default function TicketsPage() {
 
 	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 		if (!currentEventId) return;
 
 		// ticketSaleStart and ticketSaleEnd are already Date objects in UTC from fromDateTimeLocalString
@@ -289,6 +291,8 @@ export default function TicketsPage() {
 			closeModal();
 		} catch (error) {
 			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -604,7 +608,7 @@ export default function TicketsPage() {
 							<Button type="button" variant="outline" onClick={closeModal}>
 								{t.cancel}
 							</Button>
-							<Button type="submit" variant="default">
+							<Button type="submit" variant="default" isLoading={isSaving}>
 								{t.save}
 							</Button>
 						</DialogFooter>
