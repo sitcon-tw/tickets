@@ -215,7 +215,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const eventName = getLocalizedValue(event.name);
 		const ticketName = getLocalizedValue(ticket.name);
-		const eventLocation = event.location || "待公布 TBA";
+		const eventLocation = event.location || "";
 
 		const userName = await prisma.user
 			.findFirst({
