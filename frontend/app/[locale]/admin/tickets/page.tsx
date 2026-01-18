@@ -191,6 +191,10 @@ export default function TicketsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setTicketPrice(ticket.price);
+			setTicketQuantity(ticket.quantity);
+			setTicketSaleStart(ticket.saleStart ? new Date(ticket.saleStart) : null);
+			setTicketSaleEnd(ticket.saleEnd ? new Date(ticket.saleEnd) : null);
 			setRequireInviteCode(ticket.requireInviteCode || false);
 			setRequireSmsVerification(ticket.requireSmsVerification || false);
 			setHidden(ticket.hidden || false);
@@ -215,6 +219,10 @@ export default function TicketsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setTicketPrice(0);
+		setTicketQuantity(0);
+		setTicketSaleStart(null);
+		setTicketSaleEnd(null);
 		setRequireInviteCode(false);
 		setRequireSmsVerification(false);
 		setHidden(false);
