@@ -145,7 +145,7 @@ export default function ReferralStatus() {
 	if (error) {
 		return (
 			<>
-				<div className="flex items-center justify-center">
+				<div className="flex items-center justify-center h-screen">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
 						<Button onClick={() => router.push("/")}>{t.backToSuccess}</Button>
