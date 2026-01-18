@@ -73,26 +73,35 @@ export type InvitationCodeVerifyRequest = z.infer<typeof InvitationCodeVerifyReq
  */
 export const InvitationCodeVerificationSchema = z.object({
 	valid: z.boolean(),
-	invitationCode: z.object({
-		id: z.string(),
-		code: z.string(),
-		description: z.string().optional(),
-		usedCount: z.number().int().min(0),
-		usageLimit: z.number().int().min(1).optional(),
-		expiresAt: z.iso.datetime().optional()
-	}),
-	availableTickets: z.array(
-		z.object({
+	message: z.string().optional(),
+	invitationCode: z
+		.object({
 			id: z.string(),
-			name: LocalizedTextSchema,
-			description: LocalizedTextSchema.nullable().optional(),
-			plainDescription: LocalizedTextSchema.nullable().optional(),
-			price: z.number().min(0),
-			quantity: z.number().int().min(0),
-			soldCount: z.number().int().min(0),
-			available: z.number().int().min(0),
-			isOnSale: z.boolean()
+			code: z.string(),
+			name: z.string().nullable().optional(),
+			description: z.string().optional(),
+			usedCount: z.number().int().min(0),
+			usageLimit: z.number().int().min(1).nullable().optional(),
+			validFrom: z.iso.datetime().nullable().optional(),
+			validUntil: z.iso.datetime().nullable().optional(),
+			ticketId: z.string(),
+			expiresAt: z.iso.datetime().optional()
 		})
-	)
+		.optional(),
+	availableTickets: z
+		.array(
+			z.object({
+				id: z.string(),
+				name: LocalizedTextSchema,
+				description: LocalizedTextSchema.nullable().optional(),
+				plainDescription: LocalizedTextSchema.nullable().optional(),
+				price: z.number().min(0),
+				quantity: z.number().int().min(0),
+				soldCount: z.number().int().min(0),
+				available: z.number().int().min(0),
+				isOnSale: z.boolean()
+			})
+		)
+		.optional()
 });
 export type InvitationCodeVerification = z.infer<typeof InvitationCodeVerificationSchema>;
