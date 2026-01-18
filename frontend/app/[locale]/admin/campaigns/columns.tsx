@@ -75,7 +75,7 @@ export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<Campai
 							📤 {actions.t.send}
 						</Button>
 					)}
-					{(campaign.status === "draft" || campaign.status === "scheduled") && (
+					{campaign.status === "draft" && (
 						<Button variant="destructive" size="sm" onClick={() => actions.onCancel(campaign)}>
 							✕ {actions.t.cancel}
 						</Button>
