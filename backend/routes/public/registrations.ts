@@ -400,6 +400,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								location: true,
 								startDate: true,
 								endDate: true,
+								editDeadline: true,
 								ogImage: true
 							}
 						},
@@ -450,7 +451,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						},
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
-						canEdit: reg.status === "confirmed" && reg.event.startDate > now && (!reg.ticket.saleEnd || reg.ticket.saleEnd > now),
+						canEdit:
+							reg.status === "confirmed" &&
+							reg.event.startDate > now &&
+							(reg.event.editDeadline ? reg.event.editDeadline > now : !reg.ticket.saleEnd || reg.ticket.saleEnd > now),
 						canCancel: reg.status === "confirmed" && reg.event.startDate > now
 					};
 				});
@@ -494,6 +498,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								location: true,
 								startDate: true,
 								endDate: true,
+								editDeadline: true,
 								slug: true
 							}
 						},
@@ -523,7 +528,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
-					canEdit: registration.status === "confirmed" && registration.event.startDate > now && (!registration.ticket.saleEnd || registration.ticket.saleEnd > now),
+					canEdit:
+						registration.status === "confirmed" &&
+						registration.event.startDate > now &&
+						(registration.event.editDeadline
+							? registration.event.editDeadline > now
+							: !registration.ticket.saleEnd || registration.ticket.saleEnd > now),
 					canCancel: registration.status === "confirmed" && registration.event.startDate > now
 				};
 
@@ -569,7 +579,8 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							event: {
 								select: {
 									id: true,
-									startDate: true
+									startDate: true,
+									editDeadline: true
 								}
 							}
 						}
@@ -605,7 +616,14 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (registration.ticket.saleEnd && new Date() >= registration.ticket.saleEnd) {
+				// Check edit deadline: if editDeadline is set, use it; otherwise fall back to ticket saleEnd
+				const now = new Date();
+				if (registration.event.editDeadline) {
+					if (now >= registration.event.editDeadline) {
+						const { response, statusCode } = validationErrorResponse("編輯截止時間已過，無法編輯報名");
+						return reply.code(statusCode).send(response);
+					}
+				} else if (registration.ticket.saleEnd && now >= registration.ticket.saleEnd) {
 					const { response, statusCode } = validationErrorResponse("票券已截止，無法編輯報名");
 					return reply.code(statusCode).send(response);
 				}

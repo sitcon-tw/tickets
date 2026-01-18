@@ -22,7 +22,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			const rawBody = request.body;
 
 			const sanitizedBody = sanitizeObject(rawBody, true);
-			const { name, description, plainDescription, startDate, endDate, location, ogImage } = sanitizedBody;
+			const { name, description, plainDescription, startDate, endDate, editDeadline, location, ogImage } = sanitizedBody;
 
 			const start = new Date(startDate);
 			const end = new Date(endDate);
@@ -37,6 +37,19 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				return reply.code(statusCode).send(response);
 			}
 
+			let editDeadlineDate: Date | null = null;
+			if (editDeadline) {
+				editDeadlineDate = new Date(editDeadline);
+				if (isNaN(editDeadlineDate.getTime())) {
+					const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
+					return reply.code(statusCode).send(response);
+				}
+				if (editDeadlineDate >= start) {
+					const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+					return reply.code(statusCode).send(response);
+				}
+			}
+
 			const createdEvent = await prisma.event.create({
 				data: {
 					name,
@@ -44,6 +57,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					plainDescription,
 					startDate: start,
 					endDate: end,
+					editDeadline: editDeadlineDate,
 					location,
 					ogImage,
 					isActive: true
@@ -59,6 +73,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
 				startDate: createdEvent.startDate.toISOString(),
 				endDate: createdEvent.endDate.toISOString(),
+				editDeadline: createdEvent.editDeadline?.toISOString() ?? null,
 				createdAt: createdEvent.createdAt.toISOString(),
 				updatedAt: createdEvent.updatedAt.toISOString()
 			};
@@ -146,10 +161,29 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				}
 			}
 
+			// Validate editDeadline if provided (must be before startDate)
+			if (updateData.editDeadline !== undefined) {
+				if (updateData.editDeadline !== null) {
+					const editDeadlineDate = new Date(updateData.editDeadline);
+					if (isNaN(editDeadlineDate.getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
+						return reply.code(statusCode).send(response);
+					}
+					const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
+					if (editDeadlineDate >= startDate) {
+						const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+						return reply.code(statusCode).send(response);
+					}
+				}
+			}
+
 			const updatePayload: any = {
 				...updateData,
 				...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
 				...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
+				...(updateData.editDeadline !== undefined && {
+					editDeadline: updateData.editDeadline ? new Date(updateData.editDeadline) : null
+				}),
 				updatedAt: new Date()
 			};
 
@@ -167,6 +201,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
 				startDate: updatedEvent.startDate.toISOString(),
 				endDate: updatedEvent.endDate.toISOString(),
+				editDeadline: updatedEvent.editDeadline?.toISOString() ?? null,
 				createdAt: updatedEvent.createdAt.toISOString(),
 				updatedAt: updatedEvent.updatedAt.toISOString()
 			};
@@ -257,6 +292,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				plainDescription: event.plainDescription as Record<string, string> | undefined,
 				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
 				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
+				editDeadline: event.editDeadline instanceof Date ? event.editDeadline.toISOString() : event.editDeadline ?? null,
 				createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
 				updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt
 			}));

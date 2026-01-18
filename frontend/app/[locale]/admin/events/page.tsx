@@ -116,6 +116,7 @@ export default function EventsPage() {
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
 	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
+	const [editDeadline, setEditDeadline] = useState("");
 	const [hideEvent, setHideEvent] = useState(false);
 	const [useOpass, setUseOpass] = useState(true);
 
@@ -153,6 +154,12 @@ export default function EventsPage() {
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
+		editDeadline: { "zh-Hant": "編輯截止時間", "zh-Hans": "编辑截止时间", en: "Edit Deadline" },
+		editDeadlineHint: {
+			"zh-Hant": "報名者可以編輯表單的截止時間。若未設定，則以票種販售截止時間或活動開始時間為準。必須早於活動開始時間。",
+			"zh-Hans": "报名者可以编辑表单的截止时间。若未设定，则以票种销售截止时间或活动开始时间为准。必须早于活动开始时间。",
+			en: "Deadline for attendees to edit their registration form. If not set, falls back to ticket sale end date or event start date. Must be before event start date."
+		},
 		hideEvent: { "zh-Hant": "在活動列表中隱藏", "zh-Hans": "在活动列表中隐藏", en: "Hide in Event List" },
 		hideEventHint: {
 			"zh-Hant": "勾選後，此活動不會顯示在首頁活動列表中，但仍可透過網址直接存取",
@@ -232,6 +239,7 @@ export default function EventsPage() {
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
 			setSlug(event.slug || "");
 			setOgImage(event.ogImage || "");
+			setEditDeadline(event.editDeadline ? toDateTimeLocalString(event.editDeadline) : "");
 			setHideEvent(event.hideEvent || false);
 			setUseOpass(event.useOpass ?? true);
 		} else {
@@ -246,6 +254,7 @@ export default function EventsPage() {
 			setPlainDescZhHans("");
 			setSlug("");
 			setOgImage("");
+			setEditDeadline("");
 			setHideEvent(false);
 			setUseOpass(true);
 		}
@@ -267,6 +276,7 @@ export default function EventsPage() {
 		setPlainDescZhHans("");
 		setSlug("");
 		setOgImage("");
+		setEditDeadline("");
 		setHideEvent(false);
 		setUseOpass(true);
 	};
@@ -299,6 +309,7 @@ export default function EventsPage() {
 			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
 			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
+			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
 			hideEvent,
 			useOpass
 		};
@@ -417,6 +428,11 @@ export default function EventsPage() {
 											<Label htmlFor="endDate">{t.endDate}</Label>
 											<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? toDateTimeLocalString(editingEvent.endDate) : ""} />
 										</div>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="editDeadline">{t.editDeadline}</Label>
+										<Input id="editDeadline" type="datetime-local" value={editDeadline} onChange={e => setEditDeadline(e.target.value)} />
+										<p className="text-xs text-muted-foreground">{t.editDeadlineHint}</p>
 									</div>
 									<div className="space-y-4">
 										<div className="flex items-start space-x-2">
