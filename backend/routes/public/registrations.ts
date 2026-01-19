@@ -58,11 +58,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						return prisma.registration.findFirst({
 							where: {
 								email: user.email,
-								eventId
+								eventId,
+								status: { not: "cancelled" }
 							}
 						});
 					},
-					{ where: { email: user.email, eventId } }
+					{ where: { email: user.email, eventId, status: { not: "cancelled" } } }
 				);
 
 				if (existingRegistration) {

@@ -201,6 +201,11 @@ export default function MyRegistrationPage() {
 			"zh-Hans": "取消报名",
 			en: "Cancel Registration"
 		},
+		cancelCancelRegistration: {
+			"zh-Hant": "算了",
+			"zh-Hans": "算了",
+			en: "Never mind"
+		},
 		cancelConfirm: {
 			"zh-Hant": "確定要取消此報名嗎？您將無法再次編輯或恢復此報名。",
 			"zh-Hans": "确定要取消此报名吗？您将无法再次编辑或恢复此报名。",
@@ -570,7 +575,7 @@ export default function MyRegistrationPage() {
 												<AlertDialogDescription>{t.cancelConfirm}</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
-												<AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+												<AlertDialogCancel>{t.cancelCancelRegistration}</AlertDialogCancel>
 												<AlertDialogAction onClick={handleCancelRegistration}>{t.cancelRegistration}</AlertDialogAction>
 											</AlertDialogFooter>
 										</AlertDialogContent>

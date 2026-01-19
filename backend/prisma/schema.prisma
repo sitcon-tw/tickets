@@ -177,7 +177,7 @@ model Registration {
   referral         Referral?
   referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
-  @@unique([email, eventId])
+  @@index([email, eventId])
   @@map("registration")
 }
 
