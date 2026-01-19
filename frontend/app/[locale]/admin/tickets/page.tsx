@@ -118,6 +118,7 @@ export default function TicketsPage() {
 	const [requireInviteCode, setRequireInviteCode] = useState(false);
 	const [requireSmsVerification, setRequireSmsVerification] = useState(false);
 	const [hidden, setHidden] = useState(false);
+	const [showRemaining, setShowRemaining] = useState(true);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -141,6 +142,7 @@ export default function TicketsPage() {
 		requireSmsVerification: { "zh-Hant": "需要簡訊驗證", "zh-Hans": "需要简讯验证", en: "Require SMS Verification" },
 		hideTicket: { "zh-Hant": "隱藏票種（不在公開頁面顯示）", "zh-Hans": "隐藏票种（不在公开页面显示）", en: "Hide ticket (not displayed on public pages)" },
 		hidden: { "zh-Hant": "已隱藏", "zh-Hans": "已隐藏", en: "Hidden" },
+		showRemaining: { "zh-Hant": "顯示剩餘票數", "zh-Hans": "显示剩余票数", en: "Show remaining tickets" },
 		selling: { "zh-Hant": "販售中", "zh-Hans": "贩售中", en: "Selling" },
 		notStarted: { "zh-Hant": "尚未開始販售", "zh-Hans": "尚未开始贩售", en: "Not Started" },
 		ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" },
@@ -199,10 +201,12 @@ export default function TicketsPage() {
 			setRequireInviteCode(ticket.requireInviteCode || false);
 			setRequireSmsVerification(ticket.requireSmsVerification || false);
 			setHidden(ticket.hidden || false);
+			setShowRemaining(ticket.showRemaining !== false);
 		} else {
 			setRequireInviteCode(false);
 			setRequireSmsVerification(false);
 			setHidden(false);
+			setShowRemaining(true);
 		}
 
 		setShowModal(true);
@@ -227,6 +231,7 @@ export default function TicketsPage() {
 		setRequireInviteCode(false);
 		setRequireSmsVerification(false);
 		setHidden(false);
+		setShowRemaining(true);
 	}
 
 	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
@@ -248,6 +253,7 @@ export default function TicketsPage() {
 			requireInviteCode: boolean;
 			requireSmsVerification: boolean;
 			hidden: boolean;
+			showRemaining: boolean;
 			saleStart?: string;
 			saleEnd?: string;
 		} = {
@@ -271,7 +277,8 @@ export default function TicketsPage() {
 			quantity: ticketQuantity,
 			requireInviteCode: requireInviteCode,
 			requireSmsVerification: requireSmsVerification,
-			hidden: hidden
+			hidden: hidden,
+			showRemaining: showRemaining
 		};
 
 		if (saleStartStr) {
@@ -540,6 +547,12 @@ export default function TicketsPage() {
 										<Checkbox id="hidden" checked={hidden} onChange={e => setHidden(e.target.checked)} />
 										<Label htmlFor="hidden" className="font-normal cursor-pointer">
 											{t.hideTicket}
+										</Label>
+									</div>
+									<div className="flex items-center gap-2">
+										<Checkbox id="showRemaining" checked={showRemaining} onChange={e => setShowRemaining(e.target.checked)} />
+										<Label htmlFor="showRemaining" className="font-normal cursor-pointer">
+											{t.showRemaining}
 										</Label>
 									</div>
 								</div>

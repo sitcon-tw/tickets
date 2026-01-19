@@ -105,44 +105,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						saleStart: true,
 						saleEnd: true,
 						requireInviteCode: true,
-						requireSmsVerification: true
+						requireSmsVerification: true,
+						showRemaining: true
 					},
 					orderBy: { order: "asc" }
 				});
-
-				const formFieldsRaw = await prisma.eventFormFields.findMany({
-					where: {
-						eventId: event.id
-					},
-					select: {
-						id: true,
-						name: true,
-						description: true,
-						type: true,
-						required: true,
-						validater: true,
-						placeholder: true,
-						values: true,
-						order: true
-					},
-					orderBy: { order: "asc" }
-				});
-
-				const formFields = formFieldsRaw.map(field => ({
-					id: field.id,
-					name: field.name,
-					description: field.description,
-					type: field.type,
-					required: field.required,
-					validater: field.validater,
-					placeholder: field.placeholder,
-					options: field.values || [],
-					order: field.order
-				}));
 
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
-					const available = ticket.quantity - ticket.soldCount;
+					const available = ticket.showRemaining ? ticket.quantity - ticket.soldCount : ticket.quantity - ticket.soldCount == 0 ? 0 : 1;
+					const quantity = ticket.showRemaining ? ticket.quantity : 1;
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 					const isSoldOut = available <= 0;
 
@@ -153,14 +125,14 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						plainDescription: ticket.plainDescription,
 						price: ticket.price,
 						available,
-						quantity: ticket.quantity,
+						quantity,
 						isOnSale,
 						isSoldOut,
 						saleStart: ticket.saleStart,
 						saleEnd: ticket.saleEnd,
 						requireInviteCode: ticket.requireInviteCode,
 						requireSmsVerification: ticket.requireSmsVerification,
-						formFields
+						showRemaining: ticket.showRemaining
 					};
 				});
 
@@ -188,7 +160,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				const { upcoming } = request.query;
 
 				const where: any = {
-					isActive: true
+					isActive: true,
+					hideEvent: false
 				};
 
 				if (upcoming) {
@@ -204,13 +177,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						slug: true,
 						name: true,
 						description: true,
-						plainDescription: true,
 						location: true,
 						startDate: true,
 						endDate: true,
 						ogImage: true,
 						hideEvent: true,
-						useOpass: true,
 						tickets: {
 							select: {
 								id: true,
@@ -247,13 +218,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						slug: event.slug,
 						name: event.name,
 						description: event.description,
-						plainDescription: event.plainDescription,
 						location: event.location,
 						startDate: event.startDate,
 						endDate: event.endDate,
 						ogImage: event.ogImage,
-						hideEvent: event.hideEvent,
-						useOpass: event.useOpass,
 						ticketCount: event.tickets.length,
 						registrationCount: event._count.registrations,
 						hasAvailableTickets: activeTickets.length > 0

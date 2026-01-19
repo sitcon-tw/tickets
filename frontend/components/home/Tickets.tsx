@@ -421,11 +421,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{ticket.saleStart ? formatDateTime(ticket.saleStart) : "N/A"} - {ticket.saleEnd ? formatDateTime(ticket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {ticket.available} / {ticket.quantity}
-											{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
-											{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
-										</p>
+										{ticket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {ticket.available} / {ticket.quantity}
+											</p>
+										)}
+										{isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.registrationEnded})</p>}
+										{isSoldOut && !isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.soldOut})</p>}
 									</div>
 								</div>
 							</div>
@@ -444,9 +446,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-										</p>
+										{selectedTicket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+											</p>
+										)}
 									</div>
 								</div>
 							</div>
@@ -508,9 +512,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-										</p>
+										{selectedTicket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+											</p>
+										)}
 									</div>
 								</div>
 							) : null}
@@ -526,9 +532,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								{t.time}
 								{selectedTicket.saleStart} - {selectedTicket.saleEnd}
 							</p>
-							<p className="remain">
-								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-							</p>
+							{selectedTicket.showRemaining !== false && (
+								<p className="remain">
+									{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+								</p>
+							)}
 						</>
 					) : null}
 				</div>

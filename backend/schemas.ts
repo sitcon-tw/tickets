@@ -322,21 +322,8 @@ export const eventTicketsResponse = {
 				isOnSale: true,
 				isSoldOut: true,
 				requireSmsVerification: true,
-				requireInviteCode: true
-			}).extend({
-				formFields: z.array(
-					z.object({
-						id: z.string(),
-						name: z.unknown(),
-						description: z.unknown().nullable(),
-						type: z.string(),
-						required: z.boolean(),
-						validater: z.string().nullable(),
-						placeholder: z.string().nullable(),
-						options: z.array(z.unknown()),
-						order: z.number()
-					})
-				)
+				requireInviteCode: true,
+				showRemaining: true
 			})
 		)
 	})
@@ -352,14 +339,10 @@ export const publicEventsListResponse = {
 				slug: z.string().nullable().optional(),
 				name: z.unknown(),
 				description: z.unknown().nullable().optional(),
-				plainDescription: z.unknown().nullable().optional(),
 				location: z.string().nullable().optional(),
 				startDate: z.string(),
 				endDate: z.string(),
 				ogImage: z.string().nullable().optional(),
-				hideEvent: z.boolean().optional(),
-				useOpass: z.boolean().optional(),
-				ticketCount: z.number(),
 				registrationCount: z.number(),
 				hasAvailableTickets: z.boolean()
 			})

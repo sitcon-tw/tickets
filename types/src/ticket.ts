@@ -25,6 +25,7 @@ export const TicketSchema = z.object({
 	isSoldOut: z.boolean().optional(),
 	isActive: z.boolean().optional(),
 	hidden: z.boolean().optional(),
+	showRemaining: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
 	createdAt: z.iso.datetime().optional(),
@@ -47,7 +48,8 @@ export const TicketCreateRequestSchema = z.object({
 	saleEnd: z.iso.datetime().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
-	hidden: z.boolean().optional()
+	hidden: z.boolean().optional(),
+	showRemaining: z.boolean().optional()
 });
 export type TicketCreateRequest = z.infer<typeof TicketCreateRequestSchema>;
 
@@ -66,7 +68,8 @@ export const TicketUpdateRequestSchema = z.object({
 	isActive: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
-	hidden: z.boolean().optional()
+	hidden: z.boolean().optional(),
+	showRemaining: z.boolean().optional()
 });
 export type TicketUpdateRequest = z.infer<typeof TicketUpdateRequestSchema>;
 

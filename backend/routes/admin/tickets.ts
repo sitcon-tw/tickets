@@ -15,7 +15,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request: FastifyRequest<{ Body: TicketCreateRequest }>, reply: FastifyReply) => {
 			try {
-				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden } = request.body;
+				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden, showRemaining } = request.body;
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
@@ -68,7 +68,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: saleEnd ? new Date(saleEnd) : null,
 						isActive: true,
 						requireInviteCode,
-						hidden: hidden ?? false
+						hidden: hidden ?? false,
+						showRemaining: showRemaining ?? true
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: {
