@@ -1,4 +1,4 @@
-import { LocalizedText } from "@/lib/types/api";
+import { LocalizedText } from "@sitcontix/types";
 
 /**
  * Safely gets localized text from a localized object

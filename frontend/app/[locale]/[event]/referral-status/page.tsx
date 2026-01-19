@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
-import type { RegistrationStats } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
+import type { RegistrationStats } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -145,7 +145,7 @@ export default function ReferralStatus() {
 	if (error) {
 		return (
 			<>
-				<div className="flex items-center justify-center">
+				<div className="flex items-center justify-center h-screen">
 					<div className="text-center">
 						<h1 className="text-2xl font-bold mb-4">{t.loadFailed}</h1>
 						<Button onClick={() => router.push("/")}>{t.backToSuccess}</Button>

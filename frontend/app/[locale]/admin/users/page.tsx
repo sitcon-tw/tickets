@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
-import type { Event, User } from "@/lib/types/api";
+import type { Event, User } from "@sitcontix/types";
 import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,6 +26,7 @@ export default function UsersPage() {
 	const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [editingUser, setEditingUser] = useState<User | null>(null);
 	const [events, setEvents] = useState<Event[]>([]);
@@ -102,6 +103,7 @@ export default function UsersPage() {
 
 	async function handleUpdateUser(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 		if (!editingUser) return;
 
 		const formData = new FormData(e.currentTarget);
@@ -119,6 +121,8 @@ export default function UsersPage() {
 			showAlert(t.updateSuccess, "success");
 		} catch (error) {
 			showAlert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -280,7 +284,9 @@ export default function UsersPage() {
 							</div>
 						)}
 						<DialogFooter>
-							<Button type="submit">{t.save}</Button>
+							<Button type="submit" isLoading={isSaving}>
+								{t.save}
+							</Button>
 							<Button type="button" variant="secondary" onClick={closeEditModal}>
 								{t.cancel}
 							</Button>

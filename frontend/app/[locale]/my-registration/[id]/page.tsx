@@ -19,9 +19,9 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { LocalizedText, Registration, TicketFormField } from "@/lib/types/api";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
+import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -200,6 +200,11 @@ export default function MyRegistrationPage() {
 			"zh-Hant": "取消報名",
 			"zh-Hans": "取消报名",
 			en: "Cancel Registration"
+		},
+		cancelCancelRegistration: {
+			"zh-Hant": "算了",
+			"zh-Hans": "算了",
+			en: "Never mind"
 		},
 		cancelConfirm: {
 			"zh-Hant": "確定要取消此報名嗎？您將無法再次編輯或恢復此報名。",
@@ -570,7 +575,7 @@ export default function MyRegistrationPage() {
 												<AlertDialogDescription>{t.cancelConfirm}</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
-												<AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+												<AlertDialogCancel>{t.cancelCancelRegistration}</AlertDialogCancel>
 												<AlertDialogAction onClick={handleCancelRegistration}>{t.cancelRegistration}</AlertDialogAction>
 											</AlertDialogFooter>
 										</AlertDialogContent>

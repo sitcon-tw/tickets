@@ -10,17 +10,23 @@ import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 
-export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime, useOpass = true }: QRCodePopupProps) {
+export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime, useOpass = true, opassEventId }: QRCodePopupProps) {
 	const locale = useLocale();
+	console.log("QRCodePopup render:", { isOpen, registrationId, registrationTime, useOpass, opassEventId });
 
 	const [qrValue, setQrValue] = useState<string>("");
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
-		downloadOpass: {
-			"zh-Hant": "若活動有使用，您可以下載 OPass APP 進行報到：",
-			"zh-Hans": "若活动有使用，您可以下载 OPass APP 进行报到：",
-			en: "If the event uses it, you can download the OPass APP for check-in:"
+		openInOpass: {
+			"zh-Hant": "使用 OPass APP 開啟票券：",
+			"zh-Hans": "使用 OPass APP 开启票券：",
+			en: "Open ticket in OPass APP:"
+		},
+		openOpassLink: {
+			"zh-Hant": "點此開啟 OPass",
+			"zh-Hans": "点此开启 OPass",
+			en: "Click to open OPass"
 		},
 		or: { "zh-Hant": "或", "zh-Hans": "或", en: "or" },
 		useQrCode: { "zh-Hant": "使用此 QR Code 進行驗證", "zh-Hans": "使用此 QR Code 进行验证", en: "Use this QR Code for verification" },
@@ -60,12 +66,17 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 
 				<div className="flex flex-col items-center gap-4">
 					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
-					{useOpass && (
+					{useOpass && opassEventId && qrValue && (
 						<>
 							<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
-								<span>{t.downloadOpass} </span>
-								<Link href="https://opass.app/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
-									opass.app
+								<span>{t.openInOpass} </span>
+								<Link
+									href={`https://opass.app/open/?event_id=${opassEventId}&token=${qrValue}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-blue-400 hover:underline flex items-center gap-1"
+								>
+									{t.openOpassLink}
 									<ExternalLink size={16} />
 								</Link>
 							</p>
@@ -104,7 +115,7 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 						</div>
 					)}
 
-					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{useOpass ? t.scanInfo : t.scanInfoOpassDisabled}</p>
+					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{useOpass && opassEventId ? t.scanInfo : t.scanInfoOpassDisabled}</p>
 					<p className="text-xs text-yellow-600 dark:text-yellow-200 flex items-center text-center gap-1">
 						<TriangleAlert size={20} />
 						{t.qrAlert}

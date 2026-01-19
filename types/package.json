@@ -1,0 +1,92 @@
+{
+	"name": "@sitcontix/types",
+	"version": "1.0.0",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./common": {
+			"types": "./dist/common.d.ts",
+			"import": "./dist/common.js"
+		},
+		"./api": {
+			"types": "./dist/api.d.ts",
+			"import": "./dist/api.js"
+		},
+		"./user": {
+			"types": "./dist/user.d.ts",
+			"import": "./dist/user.js"
+		},
+		"./auth": {
+			"types": "./dist/auth.d.ts",
+			"import": "./dist/auth.js"
+		},
+		"./event": {
+			"types": "./dist/event.d.ts",
+			"import": "./dist/event.js"
+		},
+		"./ticket": {
+			"types": "./dist/ticket.d.ts",
+			"import": "./dist/ticket.js"
+		},
+		"./form": {
+			"types": "./dist/form.d.ts",
+			"import": "./dist/form.js"
+		},
+		"./registration": {
+			"types": "./dist/registration.d.ts",
+			"import": "./dist/registration.js"
+		},
+		"./referral": {
+			"types": "./dist/referral.d.ts",
+			"import": "./dist/referral.js"
+		},
+		"./invitation": {
+			"types": "./dist/invitation.d.ts",
+			"import": "./dist/invitation.js"
+		},
+		"./email": {
+			"types": "./dist/email.d.ts",
+			"import": "./dist/email.js"
+		},
+		"./sms": {
+			"types": "./dist/sms.d.ts",
+			"import": "./dist/sms.js"
+		},
+		"./turnstile": {
+			"types": "./dist/turnstile.d.ts",
+			"import": "./dist/turnstile.js"
+		},
+		"./analytics": {
+			"types": "./dist/analytics.d.ts",
+			"import": "./dist/analytics.js"
+		},
+		"./validation": {
+			"types": "./dist/validation.d.ts",
+			"import": "./dist/validation.js"
+		},
+		"./system": {
+			"types": "./dist/system.d.ts",
+			"import": "./dist/system.js"
+		},
+		"./helpers": {
+			"types": "./dist/helpers.d.ts",
+			"import": "./dist/helpers.js"
+		}
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch"
+	},
+	"dependencies": {
+		"zod": "^4.3.5"
+	},
+	"devDependencies": {
+		"@types/node": "^22.10.5",
+		"typescript": "^5.7.2"
+	}
+}

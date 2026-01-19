@@ -1,11 +1,10 @@
-import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "#types/api";
-import type { EventFormFields } from "#types/database";
 import { Prisma } from "@prisma/client";
+import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
-import { eventFormFieldSchemas } from "#schemas/eventFormFields";
+import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { CacheInvalidation } from "#utils/cache-keys.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -54,15 +53,21 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
-						values: values === "" ? Prisma.DbNull : (values ?? Prisma.DbNull),
-						filters: filters === "" ? Prisma.DbNull : (filters ?? Prisma.DbNull),
-						prompts: prompts === "" ? Prisma.DbNull : (prompts ?? Prisma.DbNull)
+						values: !values || values.length === 0 ? Prisma.DbNull : values,
+						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
+						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts
 					},
 					// @ts-expect-error - uncache is added by prisma-extension-redis
 					uncache: CacheInvalidation.eventFormFields()
-				})) as EventFormFields;
+				})) as EventFormField;
 
-				return reply.code(201).send(successResponse(formField, "表單欄位創建成功"));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.code(201).send(successResponse(normalizedField, "表單欄位創建成功"));
 			} catch (error) {
 				console.error("Create event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("創建表單欄位失敗");
@@ -86,14 +91,20 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id }
-				})) as EventFormFields | null;
+				})) as EventFormField | null;
 
 				if (!formField) {
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(formField));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.send(successResponse(normalizedField));
 			} catch (error) {
 				console.error("Get event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("取得表單欄位資訊失敗");
@@ -149,7 +160,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				if (updateData.placeholder === "") data.placeholder = null;
 
 				if ("name" in updateData) {
-					if (updateData.name === "" || updateData.name === null) {
+					if (updateData.name === null || updateData.name === undefined) {
 						delete data.name;
 					} else if (typeof updateData.name === "object") {
 						data.name = JSON.parse(JSON.stringify(updateData.name));
@@ -157,7 +168,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("description" in updateData) {
-					if (updateData.description === "" || updateData.description === null) {
+					if (updateData.description === null || updateData.description === undefined) {
 						data.description = null;
 					} else if (typeof updateData.description === "object") {
 						data.description = JSON.parse(JSON.stringify(updateData.description));
@@ -165,7 +176,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("values" in updateData) {
-					if (updateData.values === "" || updateData.values === null || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
+					if (updateData.values === null || updateData.values === undefined || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
 						data.values = null;
 					} else if (Array.isArray(updateData.values)) {
 						data.values = JSON.parse(JSON.stringify(updateData.values));
@@ -173,7 +184,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("filters" in updateData) {
-					if (updateData.filters === "" || updateData.filters === null) {
+					if (updateData.filters === null || updateData.filters === undefined) {
 						data.filters = null;
 					} else if (typeof updateData.filters === "object") {
 						data.filters = JSON.parse(JSON.stringify(updateData.filters));
@@ -181,7 +192,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				if ("prompts" in updateData) {
-					if (updateData.prompts === "" || updateData.prompts === null || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
+					if (updateData.prompts === null || updateData.prompts === undefined || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
 						data.prompts = null;
 					} else if (Array.isArray(updateData.prompts)) {
 						data.prompts = JSON.parse(JSON.stringify(updateData.prompts));
@@ -196,9 +207,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						uncacheKeys: ["prisma:event_form_fields:*"],
 						hasPattern: true
 					}
-				})) as EventFormFields;
+				})) as EventFormField;
 
-				return reply.send(successResponse(formField, "表單欄位更新成功"));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedField = {
+					...formField,
+					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
+				};
+
+				return reply.send(successResponse(normalizedField, "表單欄位更新成功"));
 			} catch (error) {
 				console.error("Update event form field error:", error);
 				const { response, statusCode } = serverErrorResponse("更新表單欄位失敗");
@@ -280,9 +297,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const formFields = (await prisma.eventFormFields.findMany({
 					where,
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
-				})) as EventFormFields[];
+				})) as EventFormField[];
 
-				return reply.send(successResponse(formFields));
+				// Normalize filters: convert empty/invalid filters to null
+				const normalizedFields = formFields.map(field => ({
+					...field,
+					filters: field.filters && typeof field.filters === "object" && "enabled" in field.filters ? field.filters : null
+				}));
+
+				return reply.send(successResponse(normalizedFields));
 			} catch (error) {
 				console.error("List event form fields error:", error);
 				const { response, statusCode } = serverErrorResponse("取得表單欄位列表失敗");
@@ -297,61 +320,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/events/:eventId/form-fields/reorder",
 		{
-			schema: {
-				description: "重新排序活動表單欄位",
-				tags: ["admin/events"],
-				params: {
-					type: "object",
-					properties: {
-						eventId: {
-							type: "string",
-							description: "活動 ID"
-						}
-					},
-					required: ["eventId"]
-				},
-				body: {
-					type: "object",
-					properties: {
-						fieldOrders: {
-							type: "array",
-							items: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									order: { type: "integer", minimum: 0 }
-								},
-								required: ["id", "order"]
-							}
-						}
-					},
-					required: ["fieldOrders"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: { type: "null" }
-						},
-						required: ["success", "message"]
-					},
-					400: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							error: {
-								type: "object",
-								properties: {
-									code: { type: "string" },
-									message: { type: "string" }
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: adminEventFormFieldSchemas.reorderEventFormFields
 		},
 		async function (this: FastifyInstance, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
 			const { eventId } = request.params;

@@ -13,12 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Ticket } from "@/lib/types/api";
 import { LanguageFieldsProps } from "@/lib/types/pages";
 import { formatDateTime as formatDateTimeUTC8, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
@@ -93,6 +93,7 @@ export default function TicketsPage() {
 	const [inviteCode, setInviteCode] = useState("");
 	const [refCode, setRefCode] = useState("");
 	const [isSorting, setIsSorting] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor),
@@ -117,6 +118,7 @@ export default function TicketsPage() {
 	const [requireInviteCode, setRequireInviteCode] = useState(false);
 	const [requireSmsVerification, setRequireSmsVerification] = useState(false);
 	const [hidden, setHidden] = useState(false);
+	const [showRemaining, setShowRemaining] = useState(true);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
@@ -140,6 +142,7 @@ export default function TicketsPage() {
 		requireSmsVerification: { "zh-Hant": "需要簡訊驗證", "zh-Hans": "需要简讯验证", en: "Require SMS Verification" },
 		hideTicket: { "zh-Hant": "隱藏票種（不在公開頁面顯示）", "zh-Hans": "隐藏票种（不在公开页面显示）", en: "Hide ticket (not displayed on public pages)" },
 		hidden: { "zh-Hant": "已隱藏", "zh-Hans": "已隐藏", en: "Hidden" },
+		showRemaining: { "zh-Hant": "顯示剩餘票數", "zh-Hans": "显示剩余票数", en: "Show remaining tickets" },
 		selling: { "zh-Hant": "販售中", "zh-Hans": "贩售中", en: "Selling" },
 		notStarted: { "zh-Hant": "尚未開始販售", "zh-Hans": "尚未开始贩售", en: "Not Started" },
 		ended: { "zh-Hant": "已結束販售", "zh-Hans": "已结束贩售", en: "Ended" },
@@ -178,9 +181,9 @@ export default function TicketsPage() {
 		setEditingTicket(ticket);
 
 		if (ticket) {
-			const name = typeof ticket.name === "object" ? ticket.name : { en: ticket.name };
-			const desc = typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
-			const plainDesc = typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
+			const name = ticket.name && typeof ticket.name === "object" ? ticket.name : { en: ticket.name || "" };
+			const desc = ticket.description && typeof ticket.description === "object" ? ticket.description : { en: ticket.description || "" };
+			const plainDesc = ticket.plainDescription && typeof ticket.plainDescription === "object" ? ticket.plainDescription : { en: ticket.plainDescription || "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -191,13 +194,19 @@ export default function TicketsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setTicketPrice(ticket.price);
+			setTicketQuantity(ticket.quantity);
+			setTicketSaleStart(ticket.saleStart ? new Date(ticket.saleStart) : null);
+			setTicketSaleEnd(ticket.saleEnd ? new Date(ticket.saleEnd) : null);
 			setRequireInviteCode(ticket.requireInviteCode || false);
 			setRequireSmsVerification(ticket.requireSmsVerification || false);
 			setHidden(ticket.hidden || false);
+			setShowRemaining(ticket.showRemaining !== false);
 		} else {
 			setRequireInviteCode(false);
 			setRequireSmsVerification(false);
 			setHidden(false);
+			setShowRemaining(true);
 		}
 
 		setShowModal(true);
@@ -215,13 +224,19 @@ export default function TicketsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setTicketPrice(0);
+		setTicketQuantity(0);
+		setTicketSaleStart(null);
+		setTicketSaleEnd(null);
 		setRequireInviteCode(false);
 		setRequireSmsVerification(false);
 		setHidden(false);
+		setShowRemaining(true);
 	}
 
 	async function saveTicket(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
+		setIsSaving(true);
 		if (!currentEventId) return;
 
 		// ticketSaleStart and ticketSaleEnd are already Date objects in UTC from fromDateTimeLocalString
@@ -238,6 +253,7 @@ export default function TicketsPage() {
 			requireInviteCode: boolean;
 			requireSmsVerification: boolean;
 			hidden: boolean;
+			showRemaining: boolean;
 			saleStart?: string;
 			saleEnd?: string;
 		} = {
@@ -261,7 +277,8 @@ export default function TicketsPage() {
 			quantity: ticketQuantity,
 			requireInviteCode: requireInviteCode,
 			requireSmsVerification: requireSmsVerification,
-			hidden: hidden
+			hidden: hidden,
+			showRemaining: showRemaining
 		};
 
 		if (saleStartStr) {
@@ -281,6 +298,8 @@ export default function TicketsPage() {
 			closeModal();
 		} catch (error) {
 			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -340,7 +359,7 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: string) {
+	function formatDateTime(dt?: string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
@@ -354,7 +373,7 @@ export default function TicketsPage() {
 			const status = computeStatus(ticket);
 			return {
 				...ticket,
-				displayName: typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name,
+				displayName: ticket.name && typeof ticket.name === "object" ? ticket.name[locale] || ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || "",
 				formattedSaleStart: formatDateTime(ticket.saleStart),
 				formattedSaleEnd: formatDateTime(ticket.saleEnd),
 				statusLabel: status.label,
@@ -530,6 +549,12 @@ export default function TicketsPage() {
 											{t.hideTicket}
 										</Label>
 									</div>
+									<div className="flex items-center gap-2">
+										<Checkbox id="showRemaining" checked={showRemaining} onChange={e => setShowRemaining(e.target.checked)} />
+										<Label htmlFor="showRemaining" className="font-normal cursor-pointer">
+											{t.showRemaining}
+										</Label>
+									</div>
 								</div>
 							</TabsContent>
 
@@ -596,7 +621,7 @@ export default function TicketsPage() {
 							<Button type="button" variant="outline" onClick={closeModal}>
 								{t.cancel}
 							</Button>
-							<Button type="submit" variant="default">
+							<Button type="submit" variant="default" isLoading={isSaving}>
 								{t.save}
 							</Button>
 						</DialogFooter>

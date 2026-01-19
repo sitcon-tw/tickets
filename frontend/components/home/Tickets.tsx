@@ -9,10 +9,10 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
 import { authAPI, eventsAPI, invitationCodesAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
-import { Ticket } from "@/lib/types/api";
 import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";
+import { Ticket } from "@sitcontix/types";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -337,8 +337,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			try {
 				const regDataRes = await registrationsAPI.getAll();
 				if (regDataRes.success && regDataRes.data) {
-					const hasRegistered = regDataRes.data.some(reg => reg.event?.id === eventId);
-					setCanRegister(!hasRegistered);
+					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status !== "cancelled");
+					setCanRegister(!hasActiveRegistration);
 				}
 			} catch (error) {
 				console.error("Failed to check registration status", error);
@@ -419,11 +419,13 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{ticket.saleStart ? formatDateTime(ticket.saleStart) : "N/A"} - {ticket.saleEnd ? formatDateTime(ticket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {ticket.available} / {ticket.quantity}
-											{isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.registrationEnded})</span>}
-											{isSoldOut && !isExpired && <span className="text-red-600 dark:text-red-400 font-bold ml-2">({t.soldOut})</span>}
-										</p>
+										{ticket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {ticket.available} / {ticket.quantity}
+											</p>
+										)}
+										{isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.registrationEnded})</p>}
+										{isSoldOut && !isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.soldOut})</p>}
 									</div>
 								</div>
 							</div>
@@ -442,9 +444,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-										</p>
+										{selectedTicket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+											</p>
+										)}
 									</div>
 								</div>
 							</div>
@@ -506,9 +510,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 											{t.time}
 											{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 										</p>
-										<p className="remain">
-											{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-										</p>
+										{selectedTicket.showRemaining !== false && (
+											<p className="remain">
+												{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+											</p>
+										)}
 									</div>
 								</div>
 							) : null}
@@ -524,9 +530,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 								{t.time}
 								{selectedTicket.saleStart} - {selectedTicket.saleEnd}
 							</p>
-							<p className="remain">
-								{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
-							</p>
+							{selectedTicket.showRemaining !== false && (
+								<p className="remain">
+									{t.remaining} {selectedTicket.available} / {selectedTicket.quantity}
+								</p>
+							)}
 						</>
 					) : null}
 				</div>

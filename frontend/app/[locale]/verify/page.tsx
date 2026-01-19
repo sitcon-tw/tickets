@@ -354,26 +354,28 @@ export default function VerifyPage() {
 									<div className="inline-flex items-center justify-center mb-6">
 										<MessageSquare size={32} />
 									</div>
-									<h2 className="text-2xl font-bold text-gray-800 ark:text-white mb-2">{t.title}</h2>
+									<h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{t.title}</h2>
 									<p className="text-gray-400 text-sm">{t.description}</p>
 								</div>
 
-								<div className="mb-6">
-									<label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
-									<input
-										type="tel"
-										value={phoneNumber}
-										onChange={handlePhoneChange}
-										placeholder="09XX-XXX-XXX"
-										className={`w-full bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-lg p-3
-											transition-all duration-200 outline-none
-											${error ? "border-red-500" : "border-gray-600"}
-											focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
-											placeholder-gray-500`}
-										autoFocus
-										onKeyDown={e => e.key === "Enter" && handleSendCode()}
-									/>
-									{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+								<div className="justify-center items-center flex flex-col">
+									<div className="mb-6">
+										<label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">{t.phoneNumberLabel}</label>
+										<input
+											type="tel"
+											value={phoneNumber}
+											onChange={handlePhoneChange}
+											placeholder="09XX-XXX-XXX"
+											className={`w-xs bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-md py-2 px-3
+												transition-all duration-200 outline-none
+												${error ? "border-red-500" : "border-gray-600"}
+												focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
+												placeholder-gray-500`}
+											autoFocus
+											onKeyDown={e => e.key === "Enter" && handleSendCode()}
+										/>
+										{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+									</div>
 								</div>
 
 								<div className="flex justify-center mb-6">

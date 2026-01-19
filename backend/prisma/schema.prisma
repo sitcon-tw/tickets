@@ -90,12 +90,14 @@ model Event {
   location    String?
   startDate   DateTime
   endDate     DateTime
+  editDeadline DateTime? // Deadline for users to edit registration form (must be before startDate)
   ogImage     String?
   landingPage String?  // JSON content
   googleSheetsUrl String? // Google Sheets URL for data export
   isActive    Boolean  @default(true)
   hideEvent   Boolean  @default(false) // Hide from event list
-  useOpass    Boolean  @default(true)  // Show OPass link in QR code popup
+  useOpass    Boolean  @default(true)  // Use OPass for check-in
+  opassEventId String? // OPass event ID for generating OPass APP link
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -104,6 +106,7 @@ model Event {
   referrals     Referral[]
   referralUsage ReferralUsage[]
   formFields    EventFormFields[]
+  webhook       WebhookEndpoint?
 
   @@map("event")
 }
@@ -123,6 +126,7 @@ model Ticket {
   requireInviteCode Boolean @default(false)
   requireSmsVerification Boolean @default(false)
   hidden      Boolean  @default(false)
+  showRemaining Boolean @default(true)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -176,7 +180,7 @@ model Registration {
   referral         Referral?
   referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
-  @@unique([email, eventId])
+  @@index([email, eventId])
   @@map("registration")
 }
 
@@ -277,4 +281,54 @@ model MagicLinkAttempt {
   @@index([email, success, createdAt])
   @@index([ipAddress, createdAt])
   @@map("magic_link_attempt")
+}
+
+// Webhook configuration for an event
+model WebhookEndpoint {
+  id              String   @id @default(cuid())
+  eventId         String   @unique // One webhook per event
+  url             String   // HTTPS URL to send POST requests to
+  authHeaderName  String?  // Custom auth header name (e.g., "X-Sitcontix-Token")
+  authHeaderValue String?  // Custom auth header value
+  eventTypes      String[] // Array of event types: "registration_confirmed", "registration_cancelled"
+  isActive        Boolean  @default(true)
+
+  // Auto-disable tracking (20-minute observation periods)
+  consecutiveFailurePeriods Int      @default(0) // Count of 20-min periods with all failures
+  lastFailureAt             DateTime? // Start of current observation period
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  deliveries      WebhookDelivery[]
+
+  @@map("webhook_endpoint")
+}
+
+// Webhook delivery log (audit trail)
+model WebhookDelivery {
+  id              String   @id @default(cuid())
+  webhookId       String
+  eventType       String   // "registration_confirmed" or "registration_cancelled"
+  payload         String   // JSON payload sent
+
+  // Delivery status
+  status          String   @default("pending") // pending, success, failed
+  statusCode      Int?     // HTTP response status code
+  responseBody    String?  // Response body (truncated)
+  errorMessage    String?  // Error message if failed
+
+  // Retry tracking
+  retryCount      Int      @default(0) // Number of retries attempted
+  nextRetryAt     DateTime? // When to retry next (if failed)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  webhook         WebhookEndpoint @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, status])
+  @@index([status, nextRetryAt])
+  @@map("webhook_delivery")
 }

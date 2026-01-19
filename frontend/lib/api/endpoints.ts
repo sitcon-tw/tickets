@@ -5,8 +5,7 @@ import type {
 	Event,
 	EventDashboardData,
 	EventFormField,
-	EventFormFieldReorder,
-	EventInfo,
+	EventFormFieldReorderRequest,
 	EventListItem,
 	EventStats,
 	ExportData,
@@ -19,13 +18,13 @@ import type {
 	ReferralValidation,
 	Registration,
 	RegistrationStats,
-	SessionResponse,
+	Session,
 	Ticket,
 	TicketAnalytics,
 	TicketFormField,
-	TicketReorder,
+	TicketReorderRequest,
 	User
-} from "@/lib/types/api";
+} from "@sitcontix/types";
 import { apiClient } from "./client";
 
 // System
@@ -48,7 +47,7 @@ export const authAPI = {
 			turnstileToken
 		});
 	},
-	getSession: () => apiClient.get<SessionResponse>("/api/auth/get-session"),
+	getSession: () => apiClient.get<Session>("/api/auth/get-session"),
 	getPermissions: () => apiClient.get<ApiResponse<PermissionsResponse>>("/api/auth/permissions"),
 	signOut: () => apiClient.post("/api/auth/sign-out")
 };
@@ -57,7 +56,7 @@ export const authAPI = {
 export const eventsAPI = {
 	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get<ApiResponse<EventListItem[]>>("/api/events", params),
 
-	getInfo: (id: string) => apiClient.get<ApiResponse<EventInfo>>(`/api/events/${id}/info`),
+	getInfo: (id: string) => apiClient.get<ApiResponse<Event>>(`/api/events/${id}/info`),
 
 	getTickets: (id: string) => apiClient.get<ApiResponse<Ticket[]>>(`/api/events/${id}/tickets`),
 
@@ -143,7 +142,7 @@ export const adminTicketsAPI = {
 
 	getAnalytics: (id: string) => apiClient.get<ApiResponse<TicketAnalytics>>(`/api/admin/tickets/${id}/analytics`),
 
-	reorder: (data: TicketReorder) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
+	reorder: (data: TicketReorderRequest) => apiClient.put<ApiResponse<null>>("/api/admin/tickets/reorder", data)
 };
 
 // Admin - Event Form Fields
@@ -168,7 +167,7 @@ export const adminEventFormFieldsAPI = {
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/event-form-fields/${id}`),
 
-	reorder: (eventId: string, data: EventFormFieldReorder) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
+	reorder: (eventId: string, data: EventFormFieldReorderRequest) => apiClient.put<ApiResponse<null>>(`/api/admin/events/${eventId}/form-fields/reorder`, data)
 };
 
 // Admin - Registrations
@@ -283,4 +282,61 @@ export const adminSmsVerificationAPI = {
 	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-logs", params),
 
 	getStats: () => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-stats")
+};
+
+// Webhook types for frontend
+export interface WebhookEndpoint {
+	id: string;
+	eventId: string;
+	url: string;
+	authHeaderName: string | null;
+	authHeaderValue: string | null; // Masked in responses
+	eventTypes: ("registration_confirmed" | "registration_cancelled")[];
+	isActive: boolean;
+	consecutiveFailurePeriods: number;
+	lastFailureAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface WebhookDelivery {
+	id: string;
+	webhookId: string;
+	eventType: string;
+	payload: string;
+	status: "pending" | "success" | "failed";
+	statusCode: number | null;
+	responseBody: string | null;
+	errorMessage: string | null;
+	retryCount: number;
+	nextRetryAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface WebhookTestResult {
+	success: boolean;
+	statusCode?: number;
+	responseBody?: string;
+	errorMessage?: string;
+}
+
+// Admin - Webhooks
+export const adminWebhooksAPI = {
+	get: (eventId: string) => apiClient.get<ApiResponse<WebhookEndpoint | null>>(`/api/admin/events/${eventId}/webhook`),
+
+	create: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string; eventTypes: string[] }) =>
+		apiClient.post<ApiResponse<WebhookEndpoint>>(`/api/admin/events/${eventId}/webhook`, data),
+
+	update: (eventId: string, data: { url?: string; authHeaderName?: string | null; authHeaderValue?: string | null; eventTypes?: string[]; isActive?: boolean }) =>
+		apiClient.put<ApiResponse<WebhookEndpoint>>(`/api/admin/events/${eventId}/webhook`, data),
+
+	delete: (eventId: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook`),
+
+	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
+		apiClient.post<ApiResponse<WebhookTestResult>>(`/api/admin/events/${eventId}/webhook/test`, data),
+
+	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) => apiClient.get<ApiResponse<WebhookDelivery[]>>(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params),
+
+	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {})
 };

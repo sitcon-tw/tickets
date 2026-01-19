@@ -1,6 +1,6 @@
 import prisma from "#config/database";
-import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventsListResponse } from "#schemas/event";
-import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
+import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface EventIdParams {
@@ -41,7 +41,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						ogImage: true,
 						landingPage: true,
 						hideEvent: true,
-						useOpass: true
+						useOpass: true,
+						opassEventId: true,
+						isActive: true,
+						createdAt: true,
+						updatedAt: true
 					}
 				});
 
@@ -50,7 +54,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(event));
+				return reply.send(successResponse(serializeDates(event)));
 			} catch (error) {
 				console.error("Get public event info error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
@@ -102,44 +106,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						saleStart: true,
 						saleEnd: true,
 						requireInviteCode: true,
-						requireSmsVerification: true
+						requireSmsVerification: true,
+						showRemaining: true
 					},
 					orderBy: { order: "asc" }
 				});
-
-				const formFieldsRaw = await prisma.eventFormFields.findMany({
-					where: {
-						eventId: event.id
-					},
-					select: {
-						id: true,
-						name: true,
-						description: true,
-						type: true,
-						required: true,
-						validater: true,
-						placeholder: true,
-						values: true,
-						order: true
-					},
-					orderBy: { order: "asc" }
-				});
-
-				const formFields = formFieldsRaw.map(field => ({
-					id: field.id,
-					name: field.name,
-					description: field.description,
-					type: field.type,
-					required: field.required,
-					validater: field.validater,
-					placeholder: field.placeholder,
-					options: field.values || [],
-					order: field.order
-				}));
 
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
-					const available = ticket.quantity - ticket.soldCount;
+					const available = ticket.showRemaining ? ticket.quantity - ticket.soldCount : ticket.quantity - ticket.soldCount == 0 ? 0 : 1;
+					const quantity = ticket.showRemaining ? ticket.quantity : 1;
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 					const isSoldOut = available <= 0;
 
@@ -150,18 +126,18 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						plainDescription: ticket.plainDescription,
 						price: ticket.price,
 						available,
-						quantity: ticket.quantity,
+						quantity,
 						isOnSale,
 						isSoldOut,
 						saleStart: ticket.saleStart,
 						saleEnd: ticket.saleEnd,
 						requireInviteCode: ticket.requireInviteCode,
 						requireSmsVerification: ticket.requireSmsVerification,
-						formFields
+						showRemaining: ticket.showRemaining
 					};
 				});
 
-				return reply.send(successResponse(ticketsWithStatus));
+				return reply.send(successResponse(serializeDates(ticketsWithStatus)));
 			} catch (error) {
 				console.error("Get event tickets error:", error);
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
@@ -176,17 +152,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		{
 			schema: {
 				...eventSchemas.listEvents,
-				description: "獲取所有活動列表",
-				querystring: {
-					type: "object",
-					properties: {
-						...eventSchemas.listEvents.querystring.properties,
-						upcoming: {
-							type: "boolean",
-							description: "僅顯示即將開始的活動"
-						}
-					}
-				},
+				...publicEventSchemas.listPublicEvents,
 				response: publicEventsListResponse
 			}
 		},
@@ -195,7 +161,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				const { upcoming } = request.query;
 
 				const where: any = {
-					isActive: true
+					isActive: true,
+					hideEvent: false
 				};
 
 				if (upcoming) {
@@ -211,13 +178,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						slug: true,
 						name: true,
 						description: true,
-						plainDescription: true,
 						location: true,
 						startDate: true,
 						endDate: true,
 						ogImage: true,
 						hideEvent: true,
 						useOpass: true,
+						opassEventId: true,
 						tickets: {
 							select: {
 								id: true,
@@ -254,20 +221,19 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						slug: event.slug,
 						name: event.name,
 						description: event.description,
-						plainDescription: event.plainDescription,
 						location: event.location,
 						startDate: event.startDate,
 						endDate: event.endDate,
 						ogImage: event.ogImage,
-						hideEvent: event.hideEvent,
 						useOpass: event.useOpass,
+						opassEventId: event.opassEventId,
 						ticketCount: event.tickets.length,
 						registrationCount: event._count.registrations,
 						hasAvailableTickets: activeTickets.length > 0
 					};
 				});
 
-				return reply.send(successResponse(eventsWithStatus));
+				return reply.send(successResponse(serializeDates(eventsWithStatus)));
 			} catch (error) {
 				console.error("List events error:", error);
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
@@ -347,52 +313,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
+	// compactability: the formfield perviously migrated from ticket to event, so the endpoint is in here. -ns
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
-			schema: {
-				description: "獲取活動報名表單欄位（透過票券 ID）",
-				tags: ["events"],
-				params: {
-					type: "object",
-					properties: {
-						id: {
-							type: "string",
-							description: "票券 ID"
-						}
-					},
-					required: ["id"]
-				},
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "array",
-								items: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "object", additionalProperties: true },
-										description: { type: "object", additionalProperties: true },
-										type: { type: "string" },
-										required: { type: "boolean" },
-										options: { type: "array" },
-										validater: { type: "string" },
-										placeholder: { type: "string" },
-										order: { type: "integer" },
-										filters: { type: "object", additionalProperties: true },
-										prompts: { type: "object", additionalProperties: true },
-										enableOther: { type: "boolean" }
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			schema: publicEventSchemas.getTicketFormFields
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			try {

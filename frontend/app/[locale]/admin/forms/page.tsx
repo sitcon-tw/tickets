@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, FieldFilter, Ticket } from "@/lib/types/api";
+import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -61,6 +61,7 @@ export default function FormsPage() {
 	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
 	const [eventTickets, setEventTickets] = useState<Ticket[]>([]);
 	const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
+	const [isSaving, setIsSaving] = useState<boolean>(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -240,10 +241,10 @@ export default function FormsPage() {
 						}
 					}
 
-					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+					const fieldName = field.name && typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name || "";
+					const nameObj = field.name && typeof field.name === "object" ? field.name : { en: fieldName };
 
-					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: field.id,
@@ -338,11 +339,11 @@ export default function FormsPage() {
 						}
 					}
 
-					const fieldName = typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name;
-					const nameObj = typeof field.name === "object" ? field.name : { en: fieldName };
+					const fieldName = field.name && typeof field.name === "object" ? field.name["en"] || Object.values(field.name)[0] : field.name || "";
+					const nameObj = field.name && typeof field.name === "object" ? field.name : { en: fieldName };
 
 					// Parse description as localized object
-					const descriptionObj = typeof field.description === "object" && field.description !== null ? field.description : {};
+					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
 					return {
 						id: "temp-" + crypto.randomUUID(),
@@ -381,6 +382,7 @@ export default function FormsPage() {
 		}
 
 		try {
+			setIsSaving(true);
 			const formFieldsData = questions.map((q, index) => ({
 				id: q.id.startsWith("temp-") ? undefined : q.id,
 				name: {
@@ -436,10 +438,12 @@ export default function FormsPage() {
 
 			await loadFormFields();
 
-			showAlert("表單已保存！", "success");
+			showAlert("表單已儲存！", "success");
 		} catch (error) {
 			console.error("Failed to save form:", error);
-			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("儲存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	}
 
@@ -670,7 +674,7 @@ export default function FormsPage() {
 								<SelectContent>
 									{allEvents.map(event => (
 										<SelectItem key={event.id} value={event.id}>
-											{typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name}
+											{event.name && typeof event.name === "object" ? event.name["en"] || Object.values(event.name)[0] : event.name || ""}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -1229,7 +1233,7 @@ export default function FormsPage() {
 																							<SelectContent>
 																								{eventTickets.map(ticket => (
 																									<SelectItem key={ticket.id} value={ticket.id}>
-																										{typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name}
+																										{ticket.name && typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || ""}
 																									</SelectItem>
 																								))}
 																							</SelectContent>
@@ -1428,6 +1432,7 @@ export default function FormsPage() {
 							type="button"
 							onClick={saveForm}
 							className="text-[0.9rem] py-2.5 px-5 border border-primary text-black dark:text-white flex items-center gap-2 font-semibold shadow-[0_2px_8px_rgba(var(--color-primary-rgb,99,102,241),0.25)]"
+							isLoading={isSaving}
 						>
 							<Save size={18} /> {t.save}
 						</Button>

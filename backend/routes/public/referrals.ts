@@ -1,20 +1,8 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
-import { referralSchemas, referralStatsResponse } from "#schemas/referral";
+import { publicReferralSchemas, referralSchemas } from "#schemas";
 import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-// Custom param schema for regId parameter
-const regIdParam = {
-	type: "object",
-	properties: {
-		regId: {
-			type: "string",
-			description: "報名 ID"
-		}
-	},
-	required: ["regId"]
-};
 
 interface ReferralValidateRequest {
 	code: string;
@@ -26,30 +14,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/registrations/:regId/referral-link",
 		{
-			schema: {
-				description: "獲取專屬推薦連結",
-				tags: ["referrals"],
-				params: regIdParam,
-				response: {
-					200: {
-						type: "object",
-						properties: {
-							success: { type: "boolean" },
-							message: { type: "string" },
-							data: {
-								type: "object",
-								properties: {
-									id: { type: "string" },
-									referralLink: { type: "string" },
-									referralCode: { type: "string" },
-									eventId: { type: "string" }
-								},
-								required: ["id", "referralLink", "referralCode", "eventId"]
-							}
-						}
-					}
-				}
-			}
+			schema: publicReferralSchemas.getReferralLink
 		},
 		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
 			try {
@@ -143,12 +108,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 	fastify.get(
 		"/registrations/referral-stats/:regId",
 		{
-			schema: {
-				description: "獲取個人推薦統計",
-				tags: ["referrals"],
-				params: regIdParam,
-				response: referralStatsResponse
-			}
+			schema: publicReferralSchemas.getReferralStats
 		},
 		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
 			try {

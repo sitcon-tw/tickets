@@ -11,6 +11,7 @@ import registrationsRoutes from "./admin/registrations";
 import smsVerificationLogsRoutes from "./admin/smsVerificationLogs";
 import ticketsRoutes from "./admin/tickets";
 import usersRoutes from "./admin/users";
+import webhooksRoutes from "./admin/webhooks";
 
 const adminRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAdminOrEventAdmin);
@@ -25,6 +26,7 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
 	await fastify.register(referralsRoutes);
 	await fastify.register(emailCampaignsRoutes);
 	await fastify.register(smsVerificationLogsRoutes);
+	await fastify.register(webhooksRoutes);
 };
 
 export default adminRoutes;

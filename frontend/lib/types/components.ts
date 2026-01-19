@@ -1,6 +1,6 @@
 // Component Props Types
+import { TicketFormField } from "@sitcontix/types";
 import React from "react";
-import { TicketFormField } from "./api";
 
 // Spinner
 export interface SpinnerProps {
@@ -15,6 +15,7 @@ export interface QRCodePopupProps {
 	registrationId: string;
 	registrationTime: string;
 	useOpass?: boolean;
+	opassEventId?: string | null;
 }
 
 // Markdown Content
