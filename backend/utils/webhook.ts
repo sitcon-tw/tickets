@@ -16,6 +16,8 @@ import type {
 	WebhookTicketInfo
 } from "@sitcontix/types";
 
+import crypto from "crypto";
+
 const MAX_RETRIES = 3;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const OBSERVATION_PERIOD_MS = 20 * 60 * 1000; // 20 minutes
@@ -24,9 +26,22 @@ const REQUEST_TIMEOUT_MS = 30 * 1000; // 30 seconds timeout
 const MAX_RESPONSE_BODY_LENGTH = 1000; // Truncate response body
 
 /**
+ * Generate a verification token for registration
+ * SHA-256 hash of registrationId + createdAt
+ */
+function generateRegistrationToken(registrationId: string, createdAt: string): string {
+	const text = registrationId + createdAt;
+	return crypto.createHash("sha256").update(text).digest("hex");
+}
+
+/**
  * Test webhook endpoint connectivity
  */
 export async function testWebhookEndpoint(url: string, authHeaderName?: string, authHeaderValue?: string): Promise<WebhookTestResponse> {
+	const testCreatedAt = new Date().toISOString();
+	const testRegistrationId = "test-registration-123";
+	const testToken = generateRegistrationToken(testRegistrationId, testCreatedAt);
+
 	const testPayload: WebhookPayload = {
 		notifications: [
 			{
@@ -36,10 +51,11 @@ export async function testWebhookEndpoint(url: string, authHeaderName?: string, 
 					slug: "test-event"
 				},
 				registration: {
-					id: "test-registration-123",
+					id: testRegistrationId,
 					status: "confirmed",
-					created_at: new Date().toISOString(),
-					email: "test@example.com"
+					created_at: testCreatedAt,
+					email: "test@example.com",
+					token: testToken
 				},
 				ticket: {
 					price: 1000,
@@ -62,9 +78,10 @@ export async function testWebhookEndpoint(url: string, authHeaderName?: string, 
 					slug: "test-event"
 				},
 				registration: {
-					id: "test-registration-123",
+					id: testRegistrationId,
 					status: "cancelled",
-					cancelled_at: new Date().toISOString()
+					cancelled_at: new Date().toISOString(),
+					token: testToken
 				}
 			}
 		]
@@ -137,14 +154,18 @@ export function buildRegistrationConfirmedNotification(
 		slug: event.slug
 	};
 
+	const createdAtIso = registration.createdAt.toISOString();
+	const token = generateRegistrationToken(registration.id, createdAtIso);
+
 	return {
 		type: "registration_confirmed",
 		event: eventInfo,
 		registration: {
 			id: registration.id,
 			status: registration.status,
-			created_at: registration.createdAt.toISOString(),
-			email: registration.email
+			created_at: createdAtIso,
+			email: registration.email,
+			token
 		},
 		ticket: ticketInfo,
 		formData
@@ -156,12 +177,15 @@ export function buildRegistrationConfirmedNotification(
  */
 export function buildRegistrationCancelledNotification(
 	event: { name: any; slug: string | null },
-	registration: { id: string; updatedAt: Date }
+	registration: { id: string; createdAt: Date; updatedAt: Date }
 ): WebhookRegistrationCancelledNotification {
 	const eventInfo: WebhookEventInfo = {
 		name: event.name,
 		slug: event.slug
 	};
+
+	// Token is based on original createdAt, not cancelled_at
+	const token = generateRegistrationToken(registration.id, registration.createdAt.toISOString());
 
 	return {
 		type: "registration_cancelled",
@@ -169,7 +193,8 @@ export function buildRegistrationCancelledNotification(
 		registration: {
 			id: registration.id,
 			status: "cancelled",
-			cancelled_at: registration.updatedAt.toISOString()
+			cancelled_at: registration.updatedAt.toISOString(),
+			token
 		}
 	};
 }

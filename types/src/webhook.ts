@@ -154,7 +154,8 @@ export const WebhookRegistrationInfoSchema = z.object({
 	id: z.string(),
 	status: z.string(),
 	created_at: z.string(), // ISO datetime string
-	email: z.string()
+	email: z.string(),
+	token: z.string() // SHA-256 hash of registrationId + createdAt for verification
 });
 export type WebhookRegistrationInfo = z.infer<typeof WebhookRegistrationInfoSchema>;
 
@@ -164,7 +165,8 @@ export type WebhookRegistrationInfo = z.infer<typeof WebhookRegistrationInfoSche
 export const WebhookCancelledRegistrationInfoSchema = z.object({
 	id: z.string(),
 	status: z.literal("cancelled"),
-	cancelled_at: z.string() // ISO datetime string
+	cancelled_at: z.string(), // ISO datetime string
+	token: z.string() // SHA-256 hash of registrationId + createdAt for verification
 });
 export type WebhookCancelledRegistrationInfo = z.infer<typeof WebhookCancelledRegistrationInfoSchema>;
 

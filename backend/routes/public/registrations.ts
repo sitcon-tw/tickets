@@ -771,7 +771,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				// Dispatch webhook for registration cancelled (fire-and-forget)
 				const cancelledNotification = buildRegistrationCancelledNotification(
 					{ name: registration.event.name, slug: registration.event.slug },
-					{ id: registration.id, updatedAt: new Date() }
+					{ id: registration.id, createdAt: registration.createdAt, updatedAt: new Date() }
 				);
 				dispatchWebhook(registration.eventId, "registration_cancelled", cancelledNotification).catch(error => {
 					request.log.error({ err: error }, "Failed to dispatch cancellation webhook");
