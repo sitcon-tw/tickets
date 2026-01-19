@@ -24,6 +24,7 @@ export const EventSchema = z.object({
 	isActive: z.boolean(),
 	hideEvent: z.boolean().optional(),
 	useOpass: z.boolean().optional(),
+	opassEventId: z.string().nullable().optional(),
 	createdAt: z.iso.datetime(),
 	updatedAt: z.iso.datetime()
 });
@@ -70,7 +71,8 @@ export const EventUpdateRequestSchema = z.object({
 	ogImage: z.string().optional(),
 	isActive: z.boolean().optional(),
 	hideEvent: z.boolean().optional(),
-	useOpass: z.boolean().optional()
+	useOpass: z.boolean().optional(),
+	opassEventId: z.string().nullable().optional()
 });
 export type EventUpdateRequest = z.infer<typeof EventUpdateRequestSchema>;
 

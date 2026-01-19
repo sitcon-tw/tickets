@@ -119,6 +119,7 @@ export default function EventsPage() {
 	const [editDeadline, setEditDeadline] = useState("");
 	const [hideEvent, setHideEvent] = useState(false);
 	const [useOpass, setUseOpass] = useState(true);
+	const [opassEventId, setOpassEventId] = useState("");
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Event Management" },
@@ -166,11 +167,17 @@ export default function EventsPage() {
 			"zh-Hans": "勾选后，此活动不会显示在首页活动列表中，但仍可透过网址直接访问",
 			en: "If checked, this event will not appear in the homepage event list, but can still be accessed directly via URL"
 		},
-		useOpass: { "zh-Hant": "顯示 OPass 連結", "zh-Hans": "显示 OPass 链接", en: "Show OPass Link" },
+		useOpass: { "zh-Hant": "使用 OPass", "zh-Hans": "使用 OPass", en: "Use OPass" },
 		useOpassHint: {
-			"zh-Hant": "勾選後，報名成功頁面的 QR Code 彈窗會顯示 OPass APP 下載連結",
-			"zh-Hans": "勾选后，报名成功页面的 QR Code 弹窗会显示 OPass APP 下载链接",
-			en: "If checked, the QR code popup will show the OPass APP download link"
+			"zh-Hant": "勾選後，報名成功頁面的 QR Code 彈窗會顯示 OPass APP 連結",
+			"zh-Hans": "勾选后，报名成功页面的 QR Code 弹窗会显示 OPass APP 链接",
+			en: "If checked, the QR code popup will show the OPass APP link"
+		},
+		opassEventId: { "zh-Hant": "OPass 活動 ID", "zh-Hans": "OPass 活动 ID", en: "OPass Event ID" },
+		opassEventIdHint: {
+			"zh-Hant": "OPass 活動 ID，用於產生 OPass APP 連結",
+			"zh-Hans": "OPass 活动 ID，用于生成 OPass APP 链接",
+			en: "OPass Event ID, used to generate OPass APP link"
 		},
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },
@@ -242,6 +249,7 @@ export default function EventsPage() {
 			setEditDeadline(event.editDeadline ? toDateTimeLocalString(event.editDeadline) : "");
 			setHideEvent(event.hideEvent || false);
 			setUseOpass(event.useOpass ?? true);
+			setOpassEventId(event.opassEventId || "");
 		} else {
 			setNameEn("");
 			setNameZhHant("");
@@ -257,6 +265,7 @@ export default function EventsPage() {
 			setEditDeadline("");
 			setHideEvent(false);
 			setUseOpass(true);
+			setOpassEventId("");
 		}
 
 		setShowModal(true);
@@ -279,6 +288,7 @@ export default function EventsPage() {
 		setEditDeadline("");
 		setHideEvent(false);
 		setUseOpass(true);
+		setOpassEventId("");
 	};
 
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
@@ -311,7 +321,8 @@ export default function EventsPage() {
 			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
 			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
 			hideEvent,
-			useOpass
+			useOpass,
+			opassEventId: opassEventId || null
 		};
 
 		try {
@@ -453,6 +464,13 @@ export default function EventsPage() {
 												<p className="text-xs text-muted-foreground">{t.useOpassHint}</p>
 											</div>
 										</div>
+										{useOpass && (
+											<div className="space-y-2 pl-6">
+												<Label htmlFor="opassEventId">{t.opassEventId}</Label>
+												<Input id="opassEventId" type="text" value={opassEventId} onChange={e => setOpassEventId(e.target.value)} placeholder="sitcon-2026" />
+												<p className="text-xs text-muted-foreground">{t.opassEventIdHint}</p>
+											</div>
+										)}
 									</div>
 								</TabsContent>
 

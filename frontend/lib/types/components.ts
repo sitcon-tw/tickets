@@ -15,6 +15,7 @@ export interface QRCodePopupProps {
 	registrationId: string;
 	registrationTime: string;
 	useOpass?: boolean;
+	opassEventId?: string | null;
 }
 
 // Markdown Content

@@ -343,6 +343,8 @@ export const publicEventsListResponse = {
 				startDate: z.string(),
 				endDate: z.string(),
 				ogImage: z.string().nullable().optional(),
+				useOpass: z.boolean().optional(),
+				opassEventId: z.string().nullable().optional(),
 				registrationCount: z.number(),
 				hasAvailableTickets: z.boolean()
 			})

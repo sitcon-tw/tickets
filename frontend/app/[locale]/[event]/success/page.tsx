@@ -32,6 +32,7 @@ export default function Success() {
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [isCancelled, setIsCancelled] = useState(false);
 	const [useOpass, setUseOpass] = useState<boolean>(true);
+	const [opassEventId, setOpassEventId] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -131,9 +132,11 @@ export default function Success() {
 						setReferralCode(t.loadFailed);
 						return;
 					}
+					console.log("Found event for success page:", foundEvent);
 
 					const currentEventId = foundEvent.id;
 					setUseOpass(foundEvent.useOpass ?? true);
+					setOpassEventId(foundEvent.opassEventId ?? null);
 
 					const registrations = await registrationsAPI.getAll();
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
@@ -260,7 +263,7 @@ export default function Success() {
 				</div>
 			</div>
 			{registrationId && registrationTime && (
-				<QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} />
+				<QRCodePopup isOpen={showQRCode} onClose={() => setShowQRCode(false)} registrationId={registrationId} registrationTime={registrationTime} useOpass={useOpass} opassEventId={opassEventId} />
 			)}
 		</>
 	);
