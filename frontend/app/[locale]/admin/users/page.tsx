@@ -284,7 +284,9 @@ export default function UsersPage() {
 							</div>
 						)}
 						<DialogFooter>
-							<Button type="submit" isLoading={isSaving}>{t.save}</Button>
+							<Button type="submit" isLoading={isSaving}>
+								{t.save}
+							</Button>
 							<Button type="button" variant="secondary" onClick={closeEditModal}>
 								{t.cancel}
 							</Button>

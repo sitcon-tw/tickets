@@ -394,7 +394,7 @@ export default function WebhooksPage() {
 							<div>
 								<Label className="text-muted-foreground">{t.eventTypes}</Label>
 								<div className="flex gap-2 mt-1">
-									{webhook.eventTypes.map((type) => (
+									{webhook.eventTypes.map(type => (
 										<Badge key={type} variant="outline">
 											{type === "registration_confirmed" ? t.registrationConfirmed : t.registrationCancelled}
 										</Badge>
@@ -442,12 +442,10 @@ export default function WebhooksPage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{failedDeliveries.map((delivery) => (
+								{failedDeliveries.map(delivery => (
 									<TableRow key={delivery.id}>
 										<TableCell>
-											<Badge variant="outline">
-												{delivery.eventType === "registration_confirmed" ? t.registrationConfirmed : t.registrationCancelled}
-											</Badge>
+											<Badge variant="outline">{delivery.eventType === "registration_confirmed" ? t.registrationConfirmed : t.registrationCancelled}</Badge>
 										</TableCell>
 										<TableCell>{delivery.statusCode || "-"}</TableCell>
 										<TableCell className="max-w-xs truncate">{delivery.errorMessage || "-"}</TableCell>
@@ -478,26 +476,15 @@ export default function WebhooksPage() {
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
 							<Label htmlFor="webhookUrl">{t.webhookUrl} *</Label>
-							<Input
-								id="webhookUrl"
-								type="url"
-								placeholder={t.webhookUrlPlaceholder}
-								value={formUrl}
-								onChange={(e) => setFormUrl(e.target.value)}
-							/>
+							<Input id="webhookUrl" type="url" placeholder={t.webhookUrlPlaceholder} value={formUrl} onChange={e => setFormUrl(e.target.value)} />
 							<p className="text-xs text-muted-foreground">{t.webhookUrlHelp}</p>
 						</div>
 
 						<div className="space-y-2">
 							<Label>{t.authHeader}</Label>
 							<div className="grid grid-cols-2 gap-2">
-								<Input placeholder={t.authHeaderNamePlaceholder} value={formAuthHeaderName} onChange={(e) => setFormAuthHeaderName(e.target.value)} />
-								<Input
-									type="password"
-									placeholder={t.authHeaderValuePlaceholder}
-									value={formAuthHeaderValue}
-									onChange={(e) => setFormAuthHeaderValue(e.target.value)}
-								/>
+								<Input placeholder={t.authHeaderNamePlaceholder} value={formAuthHeaderName} onChange={e => setFormAuthHeaderName(e.target.value)} />
+								<Input type="password" placeholder={t.authHeaderValuePlaceholder} value={formAuthHeaderValue} onChange={e => setFormAuthHeaderValue(e.target.value)} />
 							</div>
 						</div>
 
@@ -505,21 +492,13 @@ export default function WebhooksPage() {
 							<Label>{t.eventTypes} *</Label>
 							<div className="space-y-2">
 								<div className="flex items-center space-x-2">
-									<Checkbox
-										id="registration_confirmed"
-										checked={formEventTypes.has("registration_confirmed")}
-										onCheckedChange={() => toggleEventType("registration_confirmed")}
-									/>
+									<Checkbox id="registration_confirmed" checked={formEventTypes.has("registration_confirmed")} onCheckedChange={() => toggleEventType("registration_confirmed")} />
 									<label htmlFor="registration_confirmed" className="text-sm cursor-pointer">
 										{t.registrationConfirmed}
 									</label>
 								</div>
 								<div className="flex items-center space-x-2">
-									<Checkbox
-										id="registration_cancelled"
-										checked={formEventTypes.has("registration_cancelled")}
-										onCheckedChange={() => toggleEventType("registration_cancelled")}
-									/>
+									<Checkbox id="registration_cancelled" checked={formEventTypes.has("registration_cancelled")} onCheckedChange={() => toggleEventType("registration_cancelled")} />
 									<label htmlFor="registration_cancelled" className="text-sm cursor-pointer">
 										{t.registrationCancelled}
 									</label>

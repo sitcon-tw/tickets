@@ -112,9 +112,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				try {
 					const registrations = await registrationsAPI.getAll();
 					if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
-						const activeRegistration = registrations.data.find(
-						reg => reg.event?.id === eventId && reg.status !== "cancelled"
-					);
+						const activeRegistration = registrations.data.find(reg => reg.event?.id === eventId && reg.status !== "cancelled");
 						if (activeRegistration && !cancelled) {
 							setWelcomeState("registered");
 							return;

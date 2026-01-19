@@ -336,9 +336,7 @@ export const adminWebhooksAPI = {
 	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
 		apiClient.post<ApiResponse<WebhookTestResult>>(`/api/admin/events/${eventId}/webhook/test`, data),
 
-	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
-		apiClient.get<ApiResponse<WebhookDelivery[]>>(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params),
+	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) => apiClient.get<ApiResponse<WebhookDelivery[]>>(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params),
 
-	retryDelivery: (eventId: string, deliveryId: string) =>
-		apiClient.post<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {})
+	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {})
 };

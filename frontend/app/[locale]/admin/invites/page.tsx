@@ -791,7 +791,9 @@ export default function InvitesPage() {
 								<Button type="button" variant="outline" onClick={() => setShowModal(false)}>
 									{t.cancel}
 								</Button>
-								<Button type="submit" isLoading={isSaving}>{t.save}</Button>
+								<Button type="submit" isLoading={isSaving}>
+									{t.save}
+								</Button>
 							</DialogFooter>
 						</form>
 					</DialogContent>

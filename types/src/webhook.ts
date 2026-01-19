@@ -15,7 +15,7 @@ export const WebhookEventTypeSchema = z.enum([
 export type WebhookEventType = z.infer<typeof WebhookEventTypeSchema>;
 
 /**
- * Auth header name validation 
+ * Auth header name validation
  * - Not empty, max 128 characters
  * - No reserved headers
  * - No non-ASCII characters

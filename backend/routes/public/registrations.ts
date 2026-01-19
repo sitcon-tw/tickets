@@ -463,10 +463,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						},
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,
-						canEdit:
-							reg.status === "confirmed" &&
-							reg.event.startDate > now &&
-							(reg.event.editDeadline ? reg.event.editDeadline > now : !reg.ticket.saleEnd || reg.ticket.saleEnd > now),
+						canEdit: reg.status === "confirmed" && reg.event.startDate > now && (reg.event.editDeadline ? reg.event.editDeadline > now : !reg.ticket.saleEnd || reg.ticket.saleEnd > now),
 						canCancel: reg.status === "confirmed" && reg.event.startDate > now
 					};
 				});
@@ -543,9 +540,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					canEdit:
 						registration.status === "confirmed" &&
 						registration.event.startDate > now &&
-						(registration.event.editDeadline
-							? registration.event.editDeadline > now
-							: !registration.ticket.saleEnd || registration.ticket.saleEnd > now),
+						(registration.event.editDeadline ? registration.event.editDeadline > now : !registration.ticket.saleEnd || registration.ticket.saleEnd > now),
 					canCancel: registration.status === "confirmed" && registration.event.startDate > now
 				};
 

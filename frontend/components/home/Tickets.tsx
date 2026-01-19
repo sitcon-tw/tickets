@@ -337,9 +337,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			try {
 				const regDataRes = await registrationsAPI.getAll();
 				if (regDataRes.success && regDataRes.data) {
-					const hasActiveRegistration = regDataRes.data.some(
-						reg => reg.event?.id === eventId && reg.status !== "cancelled"
-					);
+					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status !== "cancelled");
 					setCanRegister(!hasActiveRegistration);
 				}
 			} catch (error) {

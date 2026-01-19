@@ -70,7 +70,12 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 						<>
 							<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
 								<span>{t.openInOpass} </span>
-								<Link href={`https://opass.app/open/?event_id=${opassEventId}&token=${qrValue}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+								<Link
+									href={`https://opass.app/open/?event_id=${opassEventId}&token=${qrValue}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-blue-400 hover:underline flex items-center gap-1"
+								>
 									{t.openOpassLink}
 									<ExternalLink size={16} />
 								</Link>

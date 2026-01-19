@@ -4,19 +4,9 @@
 
 import prisma from "#config/database";
 import { requireEventAccess } from "#middleware/auth";
-import {
-	conflictResponse,
-	notFoundResponse,
-	serverErrorResponse,
-	successResponse,
-	validationErrorResponse
-} from "#utils/response";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
-import type {
-	WebhookEndpointCreateRequest,
-	WebhookEndpointUpdateRequest,
-	WebhookTestRequest
-} from "@sitcontix/types";
+import type { WebhookEndpointCreateRequest, WebhookEndpointUpdateRequest, WebhookTestRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 interface EventIdParams {

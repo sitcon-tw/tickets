@@ -292,7 +292,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				plainDescription: event.plainDescription as Record<string, string> | undefined,
 				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
 				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
-				editDeadline: event.editDeadline instanceof Date ? event.editDeadline.toISOString() : event.editDeadline ?? null,
+				editDeadline: event.editDeadline instanceof Date ? event.editDeadline.toISOString() : (event.editDeadline ?? null),
 				createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
 				updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt
 			}));
