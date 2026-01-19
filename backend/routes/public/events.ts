@@ -308,6 +308,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
+	// compactability: the formfield perviously migrated from ticket to event, so the endpoint is in here. -ns
 	fastify.get<{ Params: { id: string } }>(
 		"/tickets/:id/form-fields",
 		{
