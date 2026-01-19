@@ -25,6 +25,7 @@ type InviteCode = {
 	usageLimit: number;
 	usedBy?: string;
 	active: boolean;
+	ticketId: string;
 };
 
 type InviteType = {
@@ -105,6 +106,7 @@ export default function InvitesPage() {
 		deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
 		selected: { "zh-Hant": "已選 {count} 個", "zh-Hans": "已选 {count} 个", en: "{count} selected" },
 		downloadTxt: { "zh-Hant": "下載 TXT", "zh-Hans": "下载 TXT", en: "Download TXT" },
+		downloadCsvWithLink: { "zh-Hant": "下載 CSV (含連結)", "zh-Hans": "下载 CSV (含链接)", en: "Download CSV (with link)" },
 		sendEmail: { "zh-Hant": "寄送 Email", "zh-Hans": "发送 Email", en: "Send Email" },
 		emailAddress: { "zh-Hant": "Email 地址", "zh-Hans": "Email 地址", en: "Email Address" },
 		emailPlaceholder: { "zh-Hant": "請輸入 Email 地址", "zh-Hans": "请输入 Email 地址", en: "Please enter email address" },
@@ -180,7 +182,8 @@ export default function InvitesPage() {
 						usedCount: code.usedCount || 0,
 						usageLimit: code.usageLimit || 1,
 						usedBy: "",
-						active: code.isActive !== false
+						active: code.isActive !== false,
+						ticketId: code.ticketId
 					});
 				});
 				setInviteTypes(Object.values(codesByType));
@@ -324,6 +327,39 @@ export default function InvitesPage() {
 		const link = document.createElement("a");
 		link.href = url;
 		link.download = `invitation-codes-${currentType.name}-${new Date().toISOString().split("T")[0]}.txt`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+
+		showAlert(t.downloadSuccess, "success");
+	}
+
+	function generateDirectLink(code: InviteCode) {
+		if (!currentEventId) return "";
+		const eventSlug = currentEventId.slice(-6);
+		const link = `/${locale}/${eventSlug}/ticket/${code.ticketId}?inv=${code.code}`;
+		return `${window.location.origin}${link}`;
+	}
+
+	function downloadSelectedCodesAsCsvWithLink() {
+		if (selectedCodes.size === 0) {
+			showAlert(t.pleaseSelectCodes, "warning");
+			return;
+		}
+
+		if (!currentType) return;
+
+		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
+		const csvHeader = "code,direct_link";
+		const csvRows = selectedCodesList.map(c => `${c.code},${generateDirectLink(c)}`);
+		const csvContent = [csvHeader, ...csvRows].join("\n");
+
+		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `invitation-codes-${currentType.name}-${new Date().toISOString().split("T")[0]}.csv`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -855,6 +891,9 @@ export default function InvitesPage() {
 									<>
 										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsTxt}>
 											<Download size={20} /> {t.downloadTxt} ({selectedCodes.size})
+										</Button>
+										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsCsvWithLink}>
+											<Download size={20} /> {t.downloadCsvWithLink} ({selectedCodes.size})
 										</Button>
 										<Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
 											<Mail size={20} /> {t.sendEmail} ({selectedCodes.size})
