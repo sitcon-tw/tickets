@@ -283,3 +283,62 @@ export const adminSmsVerificationAPI = {
 
 	getStats: () => apiClient.get<ApiResponse<unknown>>("/api/admin/sms-verification-stats")
 };
+
+// Webhook types for frontend
+export interface WebhookEndpoint {
+	id: string;
+	eventId: string;
+	url: string;
+	authHeaderName: string | null;
+	authHeaderValue: string | null; // Masked in responses
+	eventTypes: ("registration_confirmed" | "registration_cancelled")[];
+	isActive: boolean;
+	consecutiveFailurePeriods: number;
+	lastFailureAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface WebhookDelivery {
+	id: string;
+	webhookId: string;
+	eventType: string;
+	payload: string;
+	status: "pending" | "success" | "failed";
+	statusCode: number | null;
+	responseBody: string | null;
+	errorMessage: string | null;
+	retryCount: number;
+	nextRetryAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface WebhookTestResult {
+	success: boolean;
+	statusCode?: number;
+	responseBody?: string;
+	errorMessage?: string;
+}
+
+// Admin - Webhooks
+export const adminWebhooksAPI = {
+	get: (eventId: string) => apiClient.get<ApiResponse<WebhookEndpoint | null>>(`/api/admin/events/${eventId}/webhook`),
+
+	create: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string; eventTypes: string[] }) =>
+		apiClient.post<ApiResponse<WebhookEndpoint>>(`/api/admin/events/${eventId}/webhook`, data),
+
+	update: (eventId: string, data: { url?: string; authHeaderName?: string | null; authHeaderValue?: string | null; eventTypes?: string[]; isActive?: boolean }) =>
+		apiClient.put<ApiResponse<WebhookEndpoint>>(`/api/admin/events/${eventId}/webhook`, data),
+
+	delete: (eventId: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook`),
+
+	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
+		apiClient.post<ApiResponse<WebhookTestResult>>(`/api/admin/events/${eventId}/webhook/test`, data),
+
+	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
+		apiClient.get<ApiResponse<WebhookDelivery[]>>(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params),
+
+	retryDelivery: (eventId: string, deliveryId: string) =>
+		apiClient.post<ApiResponse<void>>(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {})
+};

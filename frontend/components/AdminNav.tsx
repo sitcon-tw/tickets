@@ -19,6 +19,7 @@ const activityLinks = [
 	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null }, // Always show
 	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null }, // Always show
 	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null }, // Always show
+	{ href: "/admin/webhooks/", i18nKey: "webhooks", requireCapability: null }, // Always show
 	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },
 	{ href: "/admin/users/", i18nKey: "users", requireCapability: "canManageUsers" }
 ] as const;
@@ -181,6 +182,11 @@ function AdminNav() {
 			"zh-Hans": "报名资料",
 			en: "Registrations"
 		},
+		webhooks: {
+			"zh-Hant": "Webhook 設定",
+			"zh-Hans": "Webhook 设置",
+			en: "Webhooks"
+		},
 		emailCampaigns: {
 			"zh-Hant": "郵件發送",
 			"zh-Hans": "邮件发送",
@@ -288,7 +294,7 @@ function AdminNav() {
 												{t[i18nKey]}
 											</a>
 										</li>
-										{i18nKey === "registrations" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
+										{i18nKey === "webhooks" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
 									</div>
 								);
 							})}

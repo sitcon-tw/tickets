@@ -9,6 +9,7 @@ import { conflictResponse, notFoundResponse, serializeDates, serverErrorResponse
 import { sanitizeObject } from "#utils/sanitize";
 import { tracePrismaOperation } from "#utils/trace-db";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
+import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
 import type { Event, Registration, Ticket } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
@@ -334,6 +335,16 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				await sendRegistrationConfirmation(result as unknown as Registration, event as unknown as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
+				});
+
+				// Dispatch webhook for registration confirmed (fire-and-forget)
+				const webhookNotification = buildRegistrationConfirmedNotification(
+					{ name: event.name, slug: event.slug },
+					{ id: result.id, status: result.status, createdAt: result.createdAt, email: result.email, formData: result.formData ? safeJsonStringify(result.formData, "{}", "webhook formData") : null },
+					{ id: ticket.id, name: ticket.name, price: ticket.price }
+				);
+				dispatchWebhook(eventId, "registration_confirmed", webhookNotification).catch(error => {
+					request.log.error({ err: error }, "Failed to dispatch registration webhook");
 				});
 
 				// Convert Date objects to ISO strings for schema compliance
@@ -712,6 +723,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						event: {
 							select: {
 								name: true,
+								slug: true,
 								startDate: true,
 								endDate: true
 							}
@@ -754,6 +766,15 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				await sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
 					request.log.error({ err: error }, "Failed to send cancellation email");
+				});
+
+				// Dispatch webhook for registration cancelled (fire-and-forget)
+				const cancelledNotification = buildRegistrationCancelledNotification(
+					{ name: registration.event.name, slug: registration.event.slug },
+					{ id: registration.id, updatedAt: new Date() }
+				);
+				dispatchWebhook(registration.eventId, "registration_cancelled", cancelledNotification).catch(error => {
+					request.log.error({ err: error }, "Failed to dispatch cancellation webhook");
 				});
 
 				return reply.send(successResponse(null, "報名已取消"));
