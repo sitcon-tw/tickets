@@ -339,6 +339,7 @@ export const publicEventsListResponse = {
 				slug: z.string().nullable().optional(),
 				name: z.unknown(),
 				description: z.unknown().nullable().optional(),
+				plainDescription: z.unknown().nullable().optional(),
 				locationText: z.unknown().nullable().optional(),
 				mapLink: z.string().nullable().optional(),
 				startDate: z.string(),
