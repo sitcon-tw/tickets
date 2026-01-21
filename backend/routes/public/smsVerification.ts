@@ -9,6 +9,13 @@ import { sanitizeText } from "#utils/sanitize";
 import type { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
+interface PrismaError extends Error {
+	code?: string;
+	meta?: {
+		target?: string[];
+	};
+}
+
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
 
@@ -189,6 +196,13 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
+				const prismaError = error as PrismaError;
+				if (prismaError.code === "P2034") {
+					request.log.warn({ err: error }, "SMS verification transaction conflict detected");
+					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
+				}
+				
 				request.log.error({ err: error }, "Send SMS verification error");
 				const { response, statusCode } = serverErrorResponse("發送驗證碼失敗");
 				return reply.code(statusCode).send(response);
