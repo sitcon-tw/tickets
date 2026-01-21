@@ -172,19 +172,16 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					// Check if code is expired (based on validFrom/validUntil)
 					if (code.validUntil && now > code.validUntil) {
 						const { response, statusCode } = validationErrorResponse("邀請碼已過期");
 						return reply.code(statusCode).send(response);
 					}
 
-					// Check if code is not yet valid
 					if (code.validFrom && now < code.validFrom) {
 						const { response, statusCode } = validationErrorResponse("邀請碼尚未生效");
 						return reply.code(statusCode).send(response);
 					}
 
-					// Check if code has remaining uses
 					if (code.usageLimit && code.usedCount >= code.usageLimit) {
 						const { response, statusCode } = validationErrorResponse("邀請碼已達使用上限");
 						return reply.code(statusCode).send(response);
@@ -212,7 +209,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				if (ticket.requireSmsVerification) {
-					// Ticket requires SMS verification - check if user has verified phone
 					const verifiedUser = await prisma.user.findUnique({
 						where: { id: user.id },
 						select: { phoneVerified: true }
@@ -224,7 +220,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
-				// Validate referral code if provided
 				let referralCodeId: string | null = null;
 				if (referralCode) {
 					const referral = await prisma.referral.findFirst({
@@ -243,20 +238,15 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					referralCodeId = referral.id;
 				}
 
-				// Validate form data with dynamic fields from database
-				// Pass ticketId to enable filter-aware validation (skip hidden fields)
 				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
 				}
 
-				// Create registration in transaction
-				// Use Serializable isolation level to prevent race conditions
-				// This ensures reads are consistent within the transaction and conflicts cause retries
+				// start registration transaction
 				const result = await prisma.$transaction(
 					async tx => {
-						// Re-check for existing registration within transaction to prevent race conditions
 						const existingInTx = await tx.registration.findFirst({
 							where: {
 								email: user.email,
@@ -269,7 +259,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							throw new Error("ALREADY_REGISTERED");
 						}
 
-						// Re-check ticket availability within transaction
+						// Re-check
 						const currentTicket = await tx.ticket.findUnique({
 							where: { id: ticketId },
 							select: { soldCount: true, quantity: true }
@@ -279,7 +269,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							throw new Error("TICKET_SOLD_OUT");
 						}
 
-						// Re-check invitation code usage limit within transaction
+						// Re-check
 						if (invitationCodeId) {
 							const currentCode = await tx.invitationCode.findUnique({
 								where: { id: invitationCodeId },
@@ -295,7 +285,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							}
 						}
 
-						// Create registration with sanitized form data as JSON
 						const registration = await tx.registration.create({
 							data: {
 								userId: user.id,
@@ -327,13 +316,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							}
 						});
 
-						// Update ticket sold count
 						await tx.ticket.update({
 							where: { id: ticketId },
 							data: { soldCount: { increment: 1 } }
 						});
 
-						// Update invitation code usage if used
 						if (invitationCodeId) {
 							await tx.invitationCode.update({
 								where: { id: invitationCodeId },
@@ -341,7 +328,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							});
 						}
 
-						// Create referral usage record if used
 						if (referralCodeId) {
 							await tx.referralUsage.create({
 								data: {
@@ -352,7 +338,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							});
 						}
 
-						// Add parsed form data to response with error handling
 						const parsedFormData = safeJsonParse(registration.formData, {}, "registration response");
 
 						return {
@@ -372,7 +357,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					request.log.error({ err: error }, "Failed to send registration confirmation email");
 				});
 
-				// Dispatch webhook for registration confirmed (fire-and-forget)
 				const webhookNotification = buildRegistrationConfirmedNotification(
 					{ name: event.name, slug: event.slug },
 					{ id: result.id, status: result.status, createdAt: result.createdAt, email: result.email, formData: result.formData ? safeJsonStringify(result.formData, "{}", "webhook formData") : null },
@@ -382,7 +366,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					request.log.error({ err: error }, "Failed to dispatch registration webhook");
 				});
 
-				// Convert Date objects to ISO strings for schema compliance
 				const responseData = {
 					...result,
 					createdAt: result.createdAt.toISOString(),
@@ -583,7 +566,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Parse form data and add status indicators
 				const now = new Date();
 				const parsedFormData = safeJsonParse(registration.formData, {}, `single registration ${registration.id}`);
 
@@ -629,7 +611,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const sanitizedFormData = sanitizeObject(formData, false);
 
-				// Check if registration exists and belongs to user
 				const [registration, formFields] = await Promise.all([
 					prisma.registration.findFirst({
 						where: {
@@ -647,7 +628,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							}
 						}
 					}),
-					// Fetch form fields separately based on the registration's eventId
 					prisma.registration
 						.findFirst({
 							where: { id, userId },
@@ -667,7 +647,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check if registration can be edited
 				if (registration.status !== "confirmed") {
 					const { response, statusCode } = validationErrorResponse("只能編輯已確認的報名");
 					return reply.code(statusCode).send(response);
@@ -678,7 +657,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Check edit deadline: if editDeadline is set, use it; otherwise fall back to ticket saleEnd
 				const now = new Date();
 				if (registration.event.editDeadline) {
 					if (now >= registration.event.editDeadline) {
@@ -690,15 +668,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Validate form data with dynamic fields from database
-				// Pass ticketId to enable filter-aware validation (skip hidden fields)
 				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], registration.ticketId);
 				if (formErrors) {
 					const { response, statusCode } = validationErrorResponse("表單驗證失敗", formErrors);
 					return reply.code(statusCode).send(response);
 				}
 
-				// Update registration form data with sanitized data
 				const updatedRegistration = await prisma.registration.update({
 					where: { id },
 					data: {
@@ -729,7 +704,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-				// Parse form data for response
 				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, "updated registration response");
 
 				return reply.send(
@@ -799,7 +773,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				await prisma.$transaction(
 					async tx => {
-						// Re-check registration status within transaction to prevent double-cancellation
 						const currentReg = await tx.registration.findUnique({
 							where: { id },
 							select: { status: true }
@@ -834,7 +807,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					request.log.error({ err: error }, "Failed to send cancellation email");
 				});
 
-				// Dispatch webhook for registration cancelled (fire-and-forget)
 				const cancelledNotification = buildRegistrationCancelledNotification(
 					{ name: registration.event.name, slug: registration.event.slug },
 					{ id: registration.id, createdAt: registration.createdAt, updatedAt: new Date() }
