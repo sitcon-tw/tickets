@@ -68,6 +68,11 @@ export default function MagicLinkVerify() {
 			showAlert(t.success, "success");
 			setTimeout(() => {
 				let redirectTo = returnUrl || `/${locale}/`;
+				const currentDomain = window.location.hostname;
+				const url = new URL(redirectTo, window.location.origin);
+				if (url.hostname !== currentDomain) {
+					redirectTo = `/${locale}/`;
+				}
 				if (redirectTo && (redirectTo.includes("/login") || redirectTo.includes("/verify"))) {
 					redirectTo = `/${locale}/`;
 				}

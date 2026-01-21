@@ -10,7 +10,7 @@ import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDate, formatTime, isSameDayUTC8 } from "@/lib/utils/timezone";
 import { Registration } from "@sitcontix/types";
-import { Calendar, Clock, Eye, MapPin, Ticket } from "lucide-react";
+import { Calendar, Clock, ExternalLink, Eye, MapPin, Ticket } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -184,7 +184,7 @@ export default function MyRegistrationsPage() {
 					{filteredRegistrations.map(registration => {
 						const eventName = registration.event?.name ? getLocalizedText(registration.event.name, locale) : "Unknown Event";
 						const ticketName = registration.ticket?.name ? getLocalizedText(registration.ticket.name, locale) : "Unknown Ticket";
-						const location = registration.event?.location;
+						const locationText = registration.event?.locationText ? getLocalizedText(registration.event.locationText, locale) : null;
 						const { date, time } = registration.event?.startDate && registration.event?.endDate ? formatEventDate(registration.event.startDate, registration.event.endDate) : { date: "-", time: "-" };
 
 						return (
@@ -226,10 +226,22 @@ export default function MyRegistrationsPage() {
 														<Ticket className="h-4 w-4" />
 														<span>{ticketName}</span>
 													</div>
-													{location && (
-														<div className="flex items-center gap-2 text-muted-foreground">
-															<MapPin className="h-4 w-4" />
-															<span>{location}</span>
+													{locationText && (
+														<div className="flex items-center gap-3">
+															<MapPin size={20} className="shrink-0" />
+															{registration.event?.mapLink ? (
+																<a
+																	href={registration.event?.mapLink}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center"
+																>
+																	{getLocalizedText(locationText, locale)}
+																	<ExternalLink size={16} className="ml-1" />
+																</a>
+															) : (
+																<span className="text-base">{getLocalizedText(locationText, locale)}</span>
+															)}
 														</div>
 													)}
 												</div>

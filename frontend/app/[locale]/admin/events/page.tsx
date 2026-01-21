@@ -24,16 +24,19 @@ interface EventLanguageFieldsProps {
 	eventName: string;
 	description: string;
 	plainDescription: string;
+	locationText: string;
 	language: string;
 	languageLabel: string;
 	onNameChange: (value: string) => void;
 	onDescriptionChange: (value: string) => void;
 	onPlainDescriptionChange: (value: string) => void;
+	onLocationTextChange: (value: string) => void;
 	required?: boolean;
 	tt: {
 		eventName: string;
 		description: string;
 		plainDescription: string;
+		locationText: string;
 		preview: string;
 	};
 }
@@ -42,23 +45,28 @@ function EventLanguageFields({
 	eventName,
 	description,
 	plainDescription,
+	locationText,
 	language,
 	languageLabel,
 	onNameChange,
 	onDescriptionChange,
 	onPlainDescriptionChange,
+	onLocationTextChange,
 	required = false,
 	tt
 }: EventLanguageFieldsProps) {
 	const placeholders = {
 		en: {
-			plainDesc: "Plain text description without markdown formatting"
+			plainDesc: "Plain text description without markdown formatting",
+			locationText: "e.g., Academia Sinica Humanities and Social Sciences Building"
 		},
 		"zh-Hant": {
-			plainDesc: "純文字描述，不含 Markdown 格式"
+			plainDesc: "純文字描述，不含 Markdown 格式",
+			locationText: "例如：中央研究院人文社會科學館"
 		},
 		"zh-Hans": {
-			plainDesc: "纯文字描述，不含 Markdown 格式"
+			plainDesc: "纯文字描述，不含 Markdown 格式",
+			locationText: "例如：中央研究院人文社会科学馆"
 		}
 	};
 
@@ -90,6 +98,12 @@ function EventLanguageFields({
 				</Label>
 				<Textarea id={`plainDesc-${language}`} value={plainDescription} onChange={e => onPlainDescriptionChange(e.target.value)} rows={4} placeholder={placeholder.plainDesc} />
 			</div>
+			<div className="space-y-2">
+				<Label htmlFor={`locationText-${language}`}>
+					{tt.locationText} ({languageLabel})
+				</Label>
+				<Input id={`locationText-${language}`} type="text" value={locationText} onChange={e => onLocationTextChange(e.target.value)} placeholder={placeholder.locationText} />
+			</div>
 		</div>
 	);
 }
@@ -114,6 +128,10 @@ export default function EventsPage() {
 	const [plainDescEn, setPlainDescEn] = useState("");
 	const [plainDescZhHant, setPlainDescZhHant] = useState("");
 	const [plainDescZhHans, setPlainDescZhHans] = useState("");
+	const [locationTextEn, setLocationTextEn] = useState("");
+	const [locationTextZhHant, setLocationTextZhHant] = useState("");
+	const [locationTextZhHans, setLocationTextZhHans] = useState("");
+	const [mapLink, setMapLink] = useState("");
 	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
 	const [editDeadline, setEditDeadline] = useState("");
@@ -147,11 +165,12 @@ export default function EventsPage() {
 			"zh-Hans": "请将图片上传至 Imgur 或 GitHub，并将图片链接贴于此处。建议尺寸：2400x800。",
 			en: "Please upload the image to Imgur or GitHub and paste the image link here. Recommended size: 2400x800."
 		},
-		location: { "zh-Hant": "地點", "zh-Hans": "地点", en: "Location" },
-		locationHint: {
-			"zh-Hant": "可以貼上 Google Maps 連結，系統會自動抓取地點名稱。請使用「分享」功能取得連結。若填寫的不是 Google Maps 連結，則會原樣顯示。",
-			"zh-Hans": "可以贴上 Google Maps 链接，系统会自动抓取地点名称。请使用「分享」功能取得链接。若填写的不是 Google Maps 链接，则会原样显示。",
-			en: "You can paste the Google Maps link, and the system will automatically fetch the location name. Please use the 'Share' feature to obtain the link. If the input is not a Google Maps link, it will be displayed as is."
+		locationText: { "zh-Hant": "地點名稱", "zh-Hans": "地点名称", en: "Location Name" },
+		mapLink: { "zh-Hant": "地圖連結", "zh-Hans": "地图链接", en: "Map Link" },
+		mapLinkHint: {
+			"zh-Hant": "選填。填入地圖連結（如 Google Maps）後，地點名稱會顯示為可點擊的超連結。",
+			"zh-Hans": "选填。填入地图链接（如 Google Maps）后，地点名称会显示为可点击的超链接。",
+			en: "Optional. If a map link (e.g., Google Maps) is provided, the location name will be displayed as a clickable hyperlink."
 		},
 		startDate: { "zh-Hant": "活動開始日期", "zh-Hans": "活动开始日期", en: "Event Start Date" },
 		endDate: { "zh-Hant": "結束日期", "zh-Hans": "结束日期", en: "End Date" },
@@ -234,6 +253,7 @@ export default function EventsPage() {
 			const name = event.name && typeof event.name === "object" ? event.name : { en: event.name || "" };
 			const desc = event.description && typeof event.description === "object" ? event.description : { en: event.description || "" };
 			const plainDesc = event.plainDescription && typeof event.plainDescription === "object" ? event.plainDescription : { en: event.plainDescription || "" };
+			const locText = event.locationText && typeof event.locationText === "object" ? event.locationText : { en: "" };
 
 			setNameEn(name.en || "");
 			setNameZhHant(name["zh-Hant"] || "");
@@ -244,6 +264,10 @@ export default function EventsPage() {
 			setPlainDescEn(plainDesc.en || "");
 			setPlainDescZhHant(plainDesc["zh-Hant"] || "");
 			setPlainDescZhHans(plainDesc["zh-Hans"] || "");
+			setLocationTextEn(locText.en || "");
+			setLocationTextZhHant(locText["zh-Hant"] || "");
+			setLocationTextZhHans(locText["zh-Hans"] || "");
+			setMapLink(event.mapLink || "");
 			setSlug(event.slug || "");
 			setOgImage(event.ogImage || "");
 			setEditDeadline(event.editDeadline ? toDateTimeLocalString(event.editDeadline) : "");
@@ -260,6 +284,10 @@ export default function EventsPage() {
 			setPlainDescEn("");
 			setPlainDescZhHant("");
 			setPlainDescZhHans("");
+			setLocationTextEn("");
+			setLocationTextZhHant("");
+			setLocationTextZhHans("");
+			setMapLink("");
 			setSlug("");
 			setOgImage("");
 			setEditDeadline("");
@@ -283,6 +311,10 @@ export default function EventsPage() {
 		setPlainDescEn("");
 		setPlainDescZhHant("");
 		setPlainDescZhHans("");
+		setLocationTextEn("");
+		setLocationTextZhHant("");
+		setLocationTextZhHans("");
+		setMapLink("");
 		setSlug("");
 		setOgImage("");
 		setEditDeadline("");
@@ -314,9 +346,14 @@ export default function EventsPage() {
 				"zh-Hant": plainDescZhHant,
 				"zh-Hans": plainDescZhHans
 			},
+			locationText: {
+				en: locationTextEn,
+				"zh-Hant": locationTextZhHant,
+				"zh-Hans": locationTextZhHans
+			},
+			mapLink: mapLink || undefined,
 			slug: slug || undefined,
 			ogImage: ogImage || undefined,
-			location: (formData.get("location") as string) || "",
 			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
 			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
 			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
@@ -426,9 +463,9 @@ export default function EventsPage() {
 										<p className="text-xs text-muted-foreground">{t.ogImageHint}</p>
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="location">{t.location}</Label>
-										<Input id="location" name="location" type="text" defaultValue={editingEvent?.location || ""} placeholder="https://maps.app.goo.gl/z3Kyzeu1dK29DLfv6" />
-										<p className="text-xs text-muted-foreground">{t.locationHint}</p>
+										<Label htmlFor="mapLink">{t.mapLink}</Label>
+										<Input id="mapLink" type="url" value={mapLink} onChange={e => setMapLink(e.target.value)} placeholder="https://maps.app.goo.gl/z3Kyzeu1dK29DLfv6" />
+										<p className="text-xs text-muted-foreground">{t.mapLinkHint}</p>
 									</div>
 									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 										<div className="space-y-2">
@@ -479,16 +516,19 @@ export default function EventsPage() {
 										eventName={nameEn}
 										description={descEn}
 										plainDescription={plainDescEn}
+										locationText={locationTextEn}
 										language="en"
 										languageLabel="English"
 										onNameChange={setNameEn}
 										onDescriptionChange={setDescEn}
 										onPlainDescriptionChange={setPlainDescEn}
+										onLocationTextChange={setLocationTextEn}
 										required={true}
 										tt={{
 											eventName: t.eventName,
 											description: t.description,
 											plainDescription: t.plainDescription,
+											locationText: t.locationText,
 											preview: t.preview
 										}}
 									/>
@@ -499,15 +539,18 @@ export default function EventsPage() {
 										eventName={nameZhHant}
 										description={descZhHant}
 										plainDescription={plainDescZhHant}
+										locationText={locationTextZhHant}
 										language="zh-Hant"
 										languageLabel="繁體中文"
 										onNameChange={setNameZhHant}
 										onDescriptionChange={setDescZhHant}
 										onPlainDescriptionChange={setPlainDescZhHant}
+										onLocationTextChange={setLocationTextZhHant}
 										tt={{
 											eventName: t.eventName,
 											description: t.description,
 											plainDescription: t.plainDescription,
+											locationText: t.locationText,
 											preview: t.preview
 										}}
 									/>
@@ -518,15 +561,18 @@ export default function EventsPage() {
 										eventName={nameZhHans}
 										description={descZhHans}
 										plainDescription={plainDescZhHans}
+										locationText={locationTextZhHans}
 										language="zh-Hans"
 										languageLabel="简体中文"
 										onNameChange={setNameZhHans}
 										onDescriptionChange={setDescZhHans}
 										onPlainDescriptionChange={setPlainDescZhHans}
+										onLocationTextChange={setLocationTextZhHans}
 										tt={{
 											eventName: t.eventName,
 											description: t.description,
 											plainDescription: t.plainDescription,
+											locationText: t.locationText,
 											preview: t.preview
 										}}
 									/>

@@ -41,7 +41,7 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 			name: true,
 			description: true,
 			plainDescription: true,
-			location: true,
+			locationText: true,
 			startDate: true,
 			endDate: true,
 			ogImage: true
@@ -64,7 +64,7 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 
 	const eventName = getLocalizedValue(event.name);
 	const eventDescription = getLocalizedValue(event.plainDescription || event.description);
-	const eventLocation = event.location || "";
+	const eventLocation = getLocalizedValue(event.locationText);
 
 	// Get frontend URL
 	const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";

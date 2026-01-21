@@ -148,7 +148,8 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 							name: true,
 							startDate: true,
 							endDate: true,
-							location: true
+							locationText: true,
+							mapLink: true
 						}
 					},
 					ticket: {

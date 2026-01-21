@@ -22,7 +22,7 @@ import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
-import { ChevronLeft, ChevronRight, Save, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -455,9 +455,17 @@ export default function MyRegistrationPage() {
 									<div>
 										<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
 									</div>
-									{registration.event?.location && (
-										<div>
-											<strong>{t.eventLocation}:</strong> {registration.event.location}
+									{getLocalizedText(registration.event?.locationText, locale) && (
+										<div className="flex items-center gap-3">
+											<strong>{t.eventLocation}:</strong>
+											{registration.event?.mapLink ? (
+												<a href={registration.event?.mapLink} target="_blank" rel="noopener noreferrer" className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center">
+													{getLocalizedText(registration.event?.locationText, locale)}
+													<ExternalLink size={16} className="ml-1" />
+												</a>
+											) : (
+												<span className="text-base">{getLocalizedText(registration.event?.locationText, locale)}</span>
+											)}
 										</div>
 									)}
 									<div>

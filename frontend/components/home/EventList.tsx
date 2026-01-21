@@ -4,7 +4,7 @@ import PageSpinner from "@/components/PageSpinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { eventsAPI, opengraphAPI } from "@/lib/api/endpoints";
+import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatEventDateRange } from "@/lib/utils/timezone";
 import { Event } from "@sitcontix/types";
@@ -13,22 +13,12 @@ import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const isURL = (str: string): boolean => {
-	try {
-		const url = new URL(str);
-		return url.protocol === "http:" || url.protocol === "https:";
-	} catch {
-		return false;
-	}
-};
-
 export default function EventList() {
 	const locale = useLocale();
 	const router = useRouter();
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [locationTitles, setLocationTitles] = useState<Record<string, string>>({});
 
 	const t = getTranslations(locale, {
 		title: {
@@ -70,17 +60,6 @@ export default function EventList() {
 
 					setEvents(sortedEvents);
 					setLoading(false);
-
-					sortedEvents.forEach(async event => {
-						if (event.location && isURL(event.location)) {
-							try {
-								const result = await opengraphAPI.getTitle(event.location);
-								if (result?.success && result.data?.title) {
-									setLocationTitles(prev => ({ ...prev, [event.id]: result.data.title }));
-								}
-							} catch {}
-						}
-					});
 				}
 			} catch {
 				showAlert("Failed to fetch events.", "error");
@@ -116,6 +95,7 @@ export default function EventList() {
 						const eventSlug = event.slug || event.id.slice(-6);
 						const eventName = getLocalizedText(event.name, locale);
 						const eventDescription = event.plainDescription ? getLocalizedText(event.plainDescription, locale) : event.description ? getLocalizedText(event.description, locale) : "";
+						const locationText = getLocalizedText(event.locationText, locale);
 						event.ogImage = event.ogImage || "/assets/default.webp";
 
 						return (
@@ -145,22 +125,22 @@ export default function EventList() {
 											<span>{formatDate(event.startDate, event.endDate)}</span>
 										</div>
 
-										{event.location && (
+										{locationText && (
 											<div className="flex items-center gap-2">
 												<MapPin size={16} />
-												{isURL(event.location) ? (
+												{event.mapLink ? (
 													<a
-														href={event.location}
+														href={event.mapLink}
 														target="_blank"
 														rel="noopener noreferrer"
 														className="hover:underline text-blue-500 dark:text-blue-400 flex items-center"
 														onClick={e => e.stopPropagation()}
 													>
-														{locationTitles[event.id] || event.location}
+														{locationText}
 														<ExternalLink size={16} className="ml-1" />
 													</a>
 												) : (
-													<span>{event.location}</span>
+													<span>{locationText}</span>
 												)}
 											</div>
 										)}

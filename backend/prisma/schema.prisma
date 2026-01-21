@@ -87,7 +87,8 @@ model Event {
   name        Json     // Localized: {"en": "Event Name", "zh": "活動名稱"}
   description Json?    // Localized: {"en": "Description", "zh": "描述"}
   plainDescription Json? // Localized plain text: {"en": "Plain description", "zh": "純文字描述"}
-  location    String?
+  locationText Json?   // Localized: {"en": "Location", "zh": "地點"}
+  mapLink     String?  // URL to map (e.g., Google Maps link)
   startDate   DateTime
   endDate     DateTime
   editDeadline DateTime? // Deadline for users to edit registration form (must be before startDate)
