@@ -25,7 +25,8 @@ export const RegistrationSchema = z.object({
 			name: LocalizedTextSchema,
 			description: LocalizedTextSchema.nullable().optional(),
 			plainDescription: LocalizedTextSchema.nullable().optional(),
-			location: z.string().nullable().optional(),
+			locationText: LocalizedTextSchema.nullable().optional(),
+			mapLink: z.string().nullable().optional(),
 			startDate: z.iso.datetime(),
 			endDate: z.iso.datetime(),
 			slug: z.string().nullable().optional()
