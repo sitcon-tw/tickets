@@ -215,7 +215,12 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const eventName = getLocalizedValue(event.name);
 		const ticketName = getLocalizedValue(ticket.name);
-		const eventLocation = event.location || "";
+		const eventLocationText = getLocalizedValue(event.locationText) || "";
+		const eventLocationLink = event.mapLink;
+
+		const eventLocation = eventLocationLink
+			? `<a href="${eventLocationLink}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${eventLocationText}</a>`
+			: eventLocationText;
 
 		const userName = await prisma.user
 			.findFirst({

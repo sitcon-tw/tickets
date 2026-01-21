@@ -9,6 +9,13 @@ import { sanitizeText } from "#utils/sanitize";
 import type { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
+interface PrismaError extends Error {
+	code?: string;
+	meta?: {
+		target?: string[];
+	};
+}
+
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
 
@@ -84,79 +91,95 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const recentCodePhone = await prisma.smsVerification.findFirst({
-					where: {
-						phoneNumber: sanitizedPhoneNumber,
-						createdAt: {
-							gt: new Date(Date.now() - 60000)
-						}
-					},
-					orderBy: {
-						createdAt: "desc"
-					}
-				});
-
-				if (recentCodePhone) {
-					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼發送間隔需 30 秒");
-					return reply.code(statusCode).send(response);
-				}
-
-				const recentCodeSender = await prisma.smsVerification.findFirst({
-					where: {
-						userId,
-						createdAt: {
-							gt: new Date(Date.now() - 60000)
-						}
-					},
-					orderBy: {
-						createdAt: "desc"
-					}
-				});
-
-				if (recentCodeSender) {
-					const { response, statusCode } = validationErrorResponse("請稍後再試，驗證碼發送間隔需 30 秒");
-					return reply.code(statusCode).send(response);
-				}
-
-				const todayStart = new Date();
-				todayStart.setHours(0, 0, 0, 0);
-
-				const todayEnd = new Date();
-				todayEnd.setHours(23, 59, 59, 999);
-
-				const todaySmsCountPhone = await prisma.smsVerification.count({
-					where: {
-						phoneNumber: sanitizedPhoneNumber,
-						createdAt: {
-							gte: todayStart,
-							lte: todayEnd
-						}
-					}
-				});
-
-				if (todaySmsCountPhone >= 3) {
-					const { response, statusCode } = validationErrorResponse("此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
-					return reply.code(statusCode).send(response);
-				}
-
-				const todaySmsCountUser = await prisma.smsVerification.count({
-					where: {
-						userId,
-						createdAt: {
-							gte: todayStart,
-							lte: todayEnd
-						}
-					}
-				});
-
-				if (todaySmsCountUser >= 3) {
-					const { response, statusCode } = validationErrorResponse("您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試");
-					return reply.code(statusCode).send(response);
-				}
-
 				const code = generateVerificationCode();
-
 				const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+				const rateLimitResult = await prisma.$transaction(
+					async tx => {
+						const recentCodePhone = await tx.smsVerification.findFirst({
+							where: {
+								phoneNumber: sanitizedPhoneNumber,
+								createdAt: {
+									gt: new Date(Date.now() - 60000)
+								}
+							},
+							orderBy: {
+								createdAt: "desc"
+							}
+						});
+
+						if (recentCodePhone) {
+							return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
+						}
+
+						const recentCodeSender = await tx.smsVerification.findFirst({
+							where: {
+								userId,
+								createdAt: {
+									gt: new Date(Date.now() - 60000)
+								}
+							},
+							orderBy: {
+								createdAt: "desc"
+							}
+						});
+
+						if (recentCodeSender) {
+							return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
+						}
+
+						const todayStart = new Date();
+						todayStart.setHours(0, 0, 0, 0);
+
+						const todayEnd = new Date();
+						todayEnd.setHours(23, 59, 59, 999);
+
+						const todaySmsCountPhone = await tx.smsVerification.count({
+							where: {
+								phoneNumber: sanitizedPhoneNumber,
+								createdAt: {
+									gte: todayStart,
+									lte: todayEnd
+								}
+							}
+						});
+
+						if (todaySmsCountPhone >= 3) {
+							return { error: "此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
+						}
+
+						const todaySmsCountUser = await tx.smsVerification.count({
+							where: {
+								userId,
+								createdAt: {
+									gte: todayStart,
+									lte: todayEnd
+								}
+							}
+						});
+
+						if (todaySmsCountUser >= 3) {
+							return { error: "您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
+						}
+
+						await tx.smsVerification.create({
+							data: {
+								userId,
+								phoneNumber: sanitizedPhoneNumber,
+								code,
+								expiresAt
+							}
+						});
+
+						return { success: true };
+					},
+					{ isolationLevel: "Serializable" }
+				);
+
+				if ("error" in rateLimitResult) {
+					const { response, statusCode } = validationErrorResponse(rateLimitResult.error);
+					return reply.code(statusCode).send(response);
+				}
 
 				try {
 					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
@@ -165,15 +188,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					const { response, statusCode } = serverErrorResponse("發送簡訊失敗，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
-
-				await prisma.smsVerification.create({
-					data: {
-						userId,
-						phoneNumber: sanitizedPhoneNumber,
-						code,
-						expiresAt
-					}
-				});
 
 				return reply.send(
 					successResponse(
@@ -184,6 +198,13 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
+				const prismaError = error as PrismaError;
+				if (prismaError.code === "P2034") {
+					request.log.warn({ err: error }, "SMS verification transaction conflict detected");
+					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
+				}
+
 				request.log.error({ err: error }, "Send SMS verification error");
 				const { response, statusCode } = serverErrorResponse("發送驗證碼失敗");
 				return reply.code(statusCode).send(response);

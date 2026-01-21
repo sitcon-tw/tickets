@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { QRCodePopupProps } from "@/lib/types/components";
 import generateHash from "@/lib/utils/hash";
-import { ExternalLink, TriangleAlert, X, Copy, Check } from "lucide-react";
+import { Check, Copy, ExternalLink, TriangleAlert, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";

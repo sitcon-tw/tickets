@@ -120,7 +120,8 @@ export const adminEventsAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<Event>>(`/api/admin/events/${id}`),
 
-	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: string; endDate: string; locationText?: LocalizedText; mapLink?: string }) => apiClient.post<ApiResponse<Event>>("/api/admin/events", data),
+	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: string; endDate: string; locationText?: LocalizedText; mapLink?: string }) =>
+		apiClient.post<ApiResponse<Event>>("/api/admin/events", data),
 
 	update: (id: string, data: Partial<Event>) => apiClient.put<ApiResponse<Event>>(`/api/admin/events/${id}`, data),
 
