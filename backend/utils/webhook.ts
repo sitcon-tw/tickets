@@ -17,6 +17,10 @@ import type {
 } from "@sitcontix/types";
 
 import crypto from "crypto";
+import dns from "dns";
+
+// Force IPv4-first DNS resolution to avoid IPv6 connectivity issues in containers
+dns.setDefaultResultOrder("ipv4first");
 
 const MAX_RETRIES = 3;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
