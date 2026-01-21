@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { QRCodePopupProps } from "@/lib/types/components";
 import generateHash from "@/lib/utils/hash";
-import { ExternalLink, TriangleAlert, X } from "lucide-react";
+import { ExternalLink, TriangleAlert, X, Copy, Check } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
@@ -12,9 +12,9 @@ import { useEffect, useState } from "react";
 
 export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime, useOpass = true, opassEventId }: QRCodePopupProps) {
 	const locale = useLocale();
-	console.log("QRCodePopup render:", { isOpen, registrationId, registrationTime, useOpass, opassEventId });
 
 	const [qrValue, setQrValue] = useState<string>("");
+	const [copied, setCopied] = useState<boolean>(false);
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
@@ -46,6 +46,15 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 			en: "Please do not share this QR code with others or they will steal your data."
 		}
 	});
+
+	function copyToClipboard() {
+		if (qrValue) {
+			navigator.clipboard.writeText(qrValue).then(() => {
+				setCopied(true);
+				setTimeout(() => setCopied(false), 2000);
+			});
+		}
+	}
 
 	useEffect(() => {
 		if (isOpen && registrationId && registrationTime) {
@@ -90,16 +99,16 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t.useQrCode}</h3>
 
 					{qrValue ? (
-						<div className="flex flex-col items-center gap-2">
-							<div className="rounded-lg border-16 border-gray-800 w-fit">
+						<div className="flex flex-col items-center gap-3">
+							<div className="rounded-lg border-16 border-white w-fit">
 								<QRCodeSVG
 									value={qrValue}
 									size={256}
 									level="H"
-									bgColor="var(--color-gray-800)"
-									fgColor="#ffffff"
+									bgColor="white"
+									fgColor="var(--color-gray-800)"
 									imageSettings={{
-										src: "/assets/SITCON_WHITE.svg",
+										src: "/assets/SITCON.svg",
 										height: 80,
 										width: 64,
 										opacity: 1,
@@ -107,7 +116,10 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 									}}
 								/>
 							</div>
-							<p className="text-xs">{qrValue.slice(0, 10) + "..." + qrValue.slice(-10)}</p>
+							<div className="flex items-center justify-center space-x-2 cursor-pointer text-gray-800 dark:text-gray-300" onClick={copyToClipboard}>
+								<p className="text-xs">{qrValue.slice(0, 10) + "..." + qrValue.slice(-10)}</p>
+								{copied ? <Check size={12} className="text-green-600 dark:text-green-300" /> : <Copy size={12} />}
+							</div>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">
