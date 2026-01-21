@@ -29,73 +29,6 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 			sendMagicLink: async ({ email, token, url }, request?) => {
 				const normalizedEmail = email.toLowerCase();
 
-				const recentAttempt = await prisma.magicLinkAttempt.findFirst({
-					where: {
-						email: normalizedEmail,
-						createdAt: {
-							gt: new Date(Date.now() - 30000)
-						}
-					},
-					orderBy: {
-						createdAt: "desc"
-					}
-				});
-
-				if (recentAttempt) {
-					throw new APIError("TOO_MANY_REQUESTS", {
-						message: "請稍後再試，登入信發送間隔需 30 秒"
-					});
-				}
-
-				const todayStart = new Date();
-				todayStart.setHours(0, 0, 0, 0);
-
-				const todayEnd = new Date();
-				todayEnd.setHours(23, 59, 59, 999);
-
-				const lastSuccessfulLogin = await prisma.magicLinkAttempt.findFirst({
-					where: {
-						email: normalizedEmail,
-						success: true
-					},
-					orderBy: {
-						createdAt: "desc"
-					}
-				});
-
-				const failedAttemptsSinceSuccess = await prisma.magicLinkAttempt.count({
-					where: {
-						email: normalizedEmail,
-						success: false,
-						createdAt: {
-							gt: lastSuccessfulLogin?.createdAt || new Date(0)
-						}
-					}
-				});
-
-				if (failedAttemptsSinceSuccess >= 5) {
-					throw new APIError("TOO_MANY_REQUESTS", {
-						message: "登入嘗試次數已達上限（5 次），請稍後再試或聯繫客服"
-					});
-				}
-
-				const successfulLoginsToday = await prisma.magicLinkAttempt.count({
-					where: {
-						email: normalizedEmail,
-						success: true,
-						createdAt: {
-							gte: todayStart,
-							lte: todayEnd
-						}
-					}
-				});
-
-				if (successfulLoginsToday >= 20) {
-					throw new APIError("TOO_MANY_REQUESTS", {
-						message: "今日登入次數已達上限（20 次），請明天再試"
-					});
-				}
-
 				let ipAddress: string | null = null;
 				if (request?.headers) {
 					const headers = request.headers as unknown as Record<string, string | string[] | undefined>;
@@ -109,10 +42,62 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						null;
 				}
 
-				if (ipAddress) {
-					const ipAttempts = await prisma.magicLinkAttempt.count({
+				await prisma.$transaction(async tx => {
+
+					const recentAttempt = await tx.magicLinkAttempt.findFirst({
 						where: {
-							ipAddress,
+							email: normalizedEmail,
+							createdAt: {
+								gt: new Date(Date.now() - 30000)
+							}
+						},
+						orderBy: {
+							createdAt: "desc"
+						}
+					});
+
+					if (recentAttempt) {
+						throw new APIError("TOO_MANY_REQUESTS", {
+							message: "請稍後再試，登入信發送間隔需 30 秒"
+						});
+					}
+
+					const todayStart = new Date();
+					todayStart.setHours(0, 0, 0, 0);
+
+					const todayEnd = new Date();
+					todayEnd.setHours(23, 59, 59, 999);
+
+					const lastSuccessfulLogin = await tx.magicLinkAttempt.findFirst({
+						where: {
+							email: normalizedEmail,
+							success: true
+						},
+						orderBy: {
+							createdAt: "desc"
+						}
+					});
+
+					const failedAttemptsSinceSuccess = await tx.magicLinkAttempt.count({
+						where: {
+							email: normalizedEmail,
+							success: false,
+							createdAt: {
+								gt: lastSuccessfulLogin?.createdAt || new Date(0)
+							}
+						}
+					});
+
+					if (failedAttemptsSinceSuccess >= 5) {
+						throw new APIError("TOO_MANY_REQUESTS", {
+							message: "登入嘗試次數已達上限（5 次），請稍後再試或聯繫客服"
+						});
+					}
+
+					const successfulLoginsToday = await tx.magicLinkAttempt.count({
+						where: {
+							email: normalizedEmail,
+							success: true,
 							createdAt: {
 								gte: todayStart,
 								lte: todayEnd
@@ -120,20 +105,38 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						}
 					});
 
-					if (ipAttempts >= 50) {
+					if (successfulLoginsToday >= 20) {
 						throw new APIError("TOO_MANY_REQUESTS", {
-							message: "您今日已達到發送登入信的次數上限，請明天再試"
+							message: "今日登入次數已達上限（20 次），請明天再試"
 						});
 					}
-				}
 
-				await prisma.magicLinkAttempt.create({
-					data: {
-						email: normalizedEmail,
-						ipAddress,
-						success: false
+					if (ipAddress) {
+						const ipAttempts = await tx.magicLinkAttempt.count({
+							where: {
+								ipAddress,
+								createdAt: {
+									gte: todayStart,
+									lte: todayEnd
+								}
+							}
+						});
+
+						if (ipAttempts >= 50) {
+							throw new APIError("TOO_MANY_REQUESTS", {
+								message: "您今日已達到發送登入信的次數上限，請明天再試"
+							});
+						}
 					}
-				});
+
+					await tx.magicLinkAttempt.create({
+						data: {
+							email: normalizedEmail,
+							ipAddress,
+							success: false
+						}
+					});
+				}, { isolationLevel: "Serializable" });
 
 				let locale = "zh-Hant";
 				let returnUrl: string | null = null;
