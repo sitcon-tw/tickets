@@ -94,85 +94,87 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 				const code = generateVerificationCode();
 				const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-				const rateLimitResult = await prisma.$transaction(async tx => {
-
-					const recentCodePhone = await tx.smsVerification.findFirst({
-						where: {
-							phoneNumber: sanitizedPhoneNumber,
-							createdAt: {
-								gt: new Date(Date.now() - 60000)
+				const rateLimitResult = await prisma.$transaction(
+					async tx => {
+						const recentCodePhone = await tx.smsVerification.findFirst({
+							where: {
+								phoneNumber: sanitizedPhoneNumber,
+								createdAt: {
+									gt: new Date(Date.now() - 60000)
+								}
+							},
+							orderBy: {
+								createdAt: "desc"
 							}
-						},
-						orderBy: {
-							createdAt: "desc"
+						});
+
+						if (recentCodePhone) {
+							return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
 						}
-					});
 
-					if (recentCodePhone) {
-						return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
-					}
-
-					const recentCodeSender = await tx.smsVerification.findFirst({
-						where: {
-							userId,
-							createdAt: {
-								gt: new Date(Date.now() - 60000)
+						const recentCodeSender = await tx.smsVerification.findFirst({
+							where: {
+								userId,
+								createdAt: {
+									gt: new Date(Date.now() - 60000)
+								}
+							},
+							orderBy: {
+								createdAt: "desc"
 							}
-						},
-						orderBy: {
-							createdAt: "desc"
+						});
+
+						if (recentCodeSender) {
+							return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
 						}
-					});
 
-					if (recentCodeSender) {
-						return { error: "請稍後再試，驗證碼發送間隔需 30 秒" };
-					}
+						const todayStart = new Date();
+						todayStart.setHours(0, 0, 0, 0);
 
-					const todayStart = new Date();
-					todayStart.setHours(0, 0, 0, 0);
+						const todayEnd = new Date();
+						todayEnd.setHours(23, 59, 59, 999);
 
-					const todayEnd = new Date();
-					todayEnd.setHours(23, 59, 59, 999);
-
-					const todaySmsCountPhone = await tx.smsVerification.count({
-						where: {
-							phoneNumber: sanitizedPhoneNumber,
-							createdAt: {
-								gte: todayStart,
-								lte: todayEnd
+						const todaySmsCountPhone = await tx.smsVerification.count({
+							where: {
+								phoneNumber: sanitizedPhoneNumber,
+								createdAt: {
+									gte: todayStart,
+									lte: todayEnd
+								}
 							}
+						});
+
+						if (todaySmsCountPhone >= 3) {
+							return { error: "此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
 						}
-					});
 
-					if (todaySmsCountPhone >= 3) {
-						return { error: "此手機號碼今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
-					}
-
-					const todaySmsCountUser = await tx.smsVerification.count({
-						where: {
-							userId,
-							createdAt: {
-								gte: todayStart,
-								lte: todayEnd
+						const todaySmsCountUser = await tx.smsVerification.count({
+							where: {
+								userId,
+								createdAt: {
+									gte: todayStart,
+									lte: todayEnd
+								}
 							}
+						});
+
+						if (todaySmsCountUser >= 3) {
+							return { error: "您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
 						}
-					});
 
-					if (todaySmsCountUser >= 3) {
-						return { error: "您今日已達到發送簡訊驗證碼的次數上限（3 次），請明天再試" };
-					}
+						await tx.smsVerification.create({
+							data: {
+								userId,
+								phoneNumber: sanitizedPhoneNumber,
+								code,
+								expiresAt
+							}
+						});
 
-					await tx.smsVerification.create({
-						data: {
-							userId,
-							phoneNumber: sanitizedPhoneNumber,
-							code,
-							expiresAt
-						}
-					});
-
-					return { success: true };
-				}, { isolationLevel: "Serializable" });
+						return { success: true };
+					},
+					{ isolationLevel: "Serializable" }
+				);
 
 				if ("error" in rateLimitResult) {
 					const { response, statusCode } = validationErrorResponse(rateLimitResult.error);
@@ -202,7 +204,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
-				
+
 				request.log.error({ err: error }, "Send SMS verification error");
 				const { response, statusCode } = serverErrorResponse("發送驗證碼失敗");
 				return reply.code(statusCode).send(response);

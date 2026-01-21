@@ -10,7 +10,7 @@ import { authAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDate, formatTime, isSameDayUTC8 } from "@/lib/utils/timezone";
 import { Registration } from "@sitcontix/types";
-import { Calendar, Clock, Eye, MapPin, Ticket, ExternalLink } from "lucide-react";
+import { Calendar, Clock, ExternalLink, Eye, MapPin, Ticket } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -230,7 +230,12 @@ export default function MyRegistrationsPage() {
 														<div className="flex items-center gap-3">
 															<MapPin size={20} className="shrink-0" />
 															{registration.event?.mapLink ? (
-																<a href={registration.event?.mapLink} target="_blank" rel="noopener noreferrer" className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center">
+																<a
+																	href={registration.event?.mapLink}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center"
+																>
 																	{getLocalizedText(locationText, locale)}
 																	<ExternalLink size={16} className="ml-1" />
 																</a>
