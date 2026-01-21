@@ -128,7 +128,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				// Basic ticket availability check (will be re-checked in transaction)
 				if (ticket.soldCount >= ticket.quantity) {
 					const { response, statusCode } = conflictResponse("票券已售完");
 					return reply.code(statusCode).send(response);
@@ -147,7 +146,6 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				let invitationCodeId: string | null = null;
 				if (ticket.requireInviteCode) {
-					// Ticket requires invitation code
 					addSpanEvent("validating_required_invitation_code");
 					if (!invitationCode) {
 						const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
@@ -254,82 +252,118 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				// Create registration in transaction
-				const result = await prisma.$transaction(async tx => {
-					// Re-check ticket availability within transaction to prevent race conditions
-					const currentTicket = await tx.ticket.findUnique({
-						where: { id: ticketId },
-						select: { soldCount: true, quantity: true }
-					});
+				// Use Serializable isolation level to prevent race conditions
+				// This ensures reads are consistent within the transaction and conflicts cause retries
+				const result = await prisma.$transaction(
+					async tx => {
+						// Re-check for existing registration within transaction to prevent race conditions
+						const existingInTx = await tx.registration.findFirst({
+							where: {
+								email: user.email,
+								eventId,
+								status: { not: "cancelled" }
+							}
+						});
 
-					if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
-						throw new Error("TICKET_SOLD_OUT");
-					}
+						if (existingInTx) {
+							throw new Error("ALREADY_REGISTERED");
+						}
 
-					// Create registration with sanitized form data as JSON
-					const registration = await tx.registration.create({
-						data: {
-							userId: user.id,
-							eventId,
-							ticketId,
-							email: user.email,
-							formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
-							status: "confirmed"
-						},
-						include: {
-							event: {
-								select: {
-									id: true,
-									name: true,
-									startDate: true,
-									endDate: true,
-									locationText: true,
-									mapLink: true,
-									slug: true
-								}
-							},
-							ticket: {
-								select: {
-									id: true,
-									name: true,
-									price: true
-								}
+						// Re-check ticket availability within transaction
+						const currentTicket = await tx.ticket.findUnique({
+							where: { id: ticketId },
+							select: { soldCount: true, quantity: true }
+						});
+
+						if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
+							throw new Error("TICKET_SOLD_OUT");
+						}
+
+						// Re-check invitation code usage limit within transaction
+						if (invitationCodeId) {
+							const currentCode = await tx.invitationCode.findUnique({
+								where: { id: invitationCodeId },
+								select: { usedCount: true, usageLimit: true, isActive: true }
+							});
+
+							if (!currentCode || !currentCode.isActive) {
+								throw new Error("INVITATION_CODE_INVALID");
+							}
+
+							if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
+								throw new Error("INVITATION_CODE_LIMIT_REACHED");
 							}
 						}
-					});
 
-					// Update ticket sold count
-					await tx.ticket.update({
-						where: { id: ticketId },
-						data: { soldCount: { increment: 1 } }
-					});
-
-					// Update invitation code usage if used
-					if (invitationCodeId) {
-						await tx.invitationCode.update({
-							where: { id: invitationCodeId },
-							data: { usedCount: { increment: 1 } }
-						});
-					}
-
-					// Create referral usage record if used
-					if (referralCodeId) {
-						await tx.referralUsage.create({
+						// Create registration with sanitized form data as JSON
+						const registration = await tx.registration.create({
 							data: {
-								referralId: referralCodeId,
-								registrationId: registration.id,
-								eventId
+								userId: user.id,
+								eventId,
+								ticketId,
+								email: user.email,
+								formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
+								status: "confirmed"
+							},
+							include: {
+								event: {
+									select: {
+										id: true,
+										name: true,
+										startDate: true,
+										endDate: true,
+										locationText: true,
+										mapLink: true,
+										slug: true
+									}
+								},
+								ticket: {
+									select: {
+										id: true,
+										name: true,
+										price: true
+									}
+								}
 							}
 						});
+
+						// Update ticket sold count
+						await tx.ticket.update({
+							where: { id: ticketId },
+							data: { soldCount: { increment: 1 } }
+						});
+
+						// Update invitation code usage if used
+						if (invitationCodeId) {
+							await tx.invitationCode.update({
+								where: { id: invitationCodeId },
+								data: { usedCount: { increment: 1 } }
+							});
+						}
+
+						// Create referral usage record if used
+						if (referralCodeId) {
+							await tx.referralUsage.create({
+								data: {
+									referralId: referralCodeId,
+									registrationId: registration.id,
+									eventId
+								}
+							});
+						}
+
+						// Add parsed form data to response with error handling
+						const parsedFormData = safeJsonParse(registration.formData, {}, "registration response");
+
+						return {
+							...registration,
+							formData: parsedFormData
+						};
+					},
+					{
+						isolationLevel: "Serializable"
 					}
-
-					// Add parsed form data to response with error handling
-					const parsedFormData = safeJsonParse(registration.formData, {}, "registration response");
-
-					return {
-						...registration,
-						formData: parsedFormData
-					};
-				});
+				);
 
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
@@ -364,8 +398,25 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			} catch (error) {
 				request.log.error({ err: error }, "Create registration error");
 
-				if ((error as Error).message === "TICKET_SOLD_OUT") {
+				const errorMessage = (error as Error).message;
+
+				if (errorMessage === "TICKET_SOLD_OUT") {
 					const { response, statusCode } = conflictResponse("票券已售完");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (errorMessage === "ALREADY_REGISTERED") {
+					const { response, statusCode } = conflictResponse("您已經報名此活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (errorMessage === "INVITATION_CODE_INVALID") {
+					const { response, statusCode } = validationErrorResponse("邀請碼已失效");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (errorMessage === "INVITATION_CODE_LIMIT_REACHED") {
+					const { response, statusCode } = validationErrorResponse("邀請碼已達使用上限");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -746,20 +797,35 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				await prisma.$transaction(async tx => {
-					await tx.registration.update({
-						where: { id },
-						data: {
-							status: "cancelled",
-							updatedAt: new Date()
-						}
-					});
+				await prisma.$transaction(
+					async tx => {
+						// Re-check registration status within transaction to prevent double-cancellation
+						const currentReg = await tx.registration.findUnique({
+							where: { id },
+							select: { status: true }
+						});
 
-					await tx.ticket.update({
-						where: { id: registration.ticketId },
-						data: { soldCount: { decrement: 1 } }
-					});
-				});
+						if (!currentReg || currentReg.status !== "confirmed") {
+							throw new Error("ALREADY_CANCELLED");
+						}
+
+						await tx.registration.update({
+							where: { id },
+							data: {
+								status: "cancelled",
+								updatedAt: new Date()
+							}
+						});
+
+						await tx.ticket.update({
+							where: { id: registration.ticketId },
+							data: { soldCount: { decrement: 1 } }
+						});
+					},
+					{
+						isolationLevel: "Serializable"
+					}
+				);
 
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const buttonUrl = `${frontendUrl}/zh-Hant/my-registration/${registration.id}`;
@@ -780,6 +846,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				return reply.send(successResponse(null, "報名已取消"));
 			} catch (error) {
 				request.log.error({ err: error }, "Cancel registration error");
+
+				if ((error as Error).message === "ALREADY_CANCELLED") {
+					const { response, statusCode } = conflictResponse("報名已被取消");
+					return reply.code(statusCode).send(response);
+				}
+
 				const { response, statusCode } = serverErrorResponse("取消報名失敗");
 				return reply.code(statusCode).send(response);
 			}

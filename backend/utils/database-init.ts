@@ -14,7 +14,6 @@ export async function initializeDatabase(): Promise<void> {
 				data: {
 					name: "SITCON 2026",
 					description: "Students' Information Technology Conference 2026",
-					location: "TBD",
 					startDate: new Date("2026-03-08T09:00:00.000Z"),
 					endDate: new Date("2026-03-08T18:00:00.000Z"),
 					isActive: true,
