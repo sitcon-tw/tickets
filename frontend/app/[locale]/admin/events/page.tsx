@@ -131,10 +131,12 @@ export default function EventsPage() {
 	const [locationTextEn, setLocationTextEn] = useState("");
 	const [locationTextZhHant, setLocationTextZhHant] = useState("");
 	const [locationTextZhHans, setLocationTextZhHans] = useState("");
+	const [eventStartTime, setEventStartTime] = useState("");
+	const [eventEndTime, setEventEndTime] = useState("");
+	const [editDeadline, setEditDeadline] = useState("");
 	const [mapLink, setMapLink] = useState("");
 	const [slug, setSlug] = useState("");
 	const [ogImage, setOgImage] = useState("");
-	const [editDeadline, setEditDeadline] = useState("");
 	const [hideEvent, setHideEvent] = useState(false);
 	const [useOpass, setUseOpass] = useState(true);
 	const [opassEventId, setOpassEventId] = useState("");
@@ -269,8 +271,11 @@ export default function EventsPage() {
 			setLocationTextZhHans(locText["zh-Hans"] || "");
 			setMapLink(event.mapLink || "");
 			setSlug(event.slug || "");
-			setOgImage(event.ogImage || "");
+
+			setEventStartTime(event.startDate ? toDateTimeLocalString(event.startDate) : "");
+			setEventEndTime(event.endDate ? toDateTimeLocalString(event.endDate) : "");
 			setEditDeadline(event.editDeadline ? toDateTimeLocalString(event.editDeadline) : "");
+			setOgImage(event.ogImage || "");
 			setHideEvent(event.hideEvent || false);
 			setUseOpass(event.useOpass ?? true);
 			setOpassEventId(event.opassEventId || "");
@@ -290,6 +295,8 @@ export default function EventsPage() {
 			setMapLink("");
 			setSlug("");
 			setOgImage("");
+			setEventStartTime("");
+			setEventEndTime("");
 			setEditDeadline("");
 			setHideEvent(false);
 			setUseOpass(true);
@@ -317,6 +324,8 @@ export default function EventsPage() {
 		setMapLink("");
 		setSlug("");
 		setOgImage("");
+		setEventStartTime("");
+		setEventEndTime("");
 		setEditDeadline("");
 		setHideEvent(false);
 		setUseOpass(true);
@@ -326,9 +335,6 @@ export default function EventsPage() {
 	async function saveEvent(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setIsSaving(true);
-		const formData = new FormData(e.currentTarget);
-		const startDateStr = formData.get("startDate") as string;
-		const endDateStr = formData.get("endDate") as string;
 
 		const data = {
 			name: {
@@ -354,8 +360,8 @@ export default function EventsPage() {
 			mapLink: mapLink || undefined,
 			slug: slug || undefined,
 			ogImage: ogImage || undefined,
-			startDate: startDateStr ? fromDateTimeLocalString(startDateStr) : new Date().toISOString(),
-			endDate: endDateStr ? fromDateTimeLocalString(endDateStr) : new Date().toISOString(),
+			startDate: eventStartTime ? fromDateTimeLocalString(eventStartTime) : new Date().toISOString(),
+			endDate: eventEndTime ? fromDateTimeLocalString(eventEndTime) : new Date().toISOString(),
 			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
 			hideEvent,
 			useOpass,
@@ -470,11 +476,11 @@ export default function EventsPage() {
 									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 										<div className="space-y-2">
 											<Label htmlFor="startDate">{t.startDate}</Label>
-											<Input id="startDate" name="startDate" type="datetime-local" defaultValue={editingEvent?.startDate ? toDateTimeLocalString(editingEvent.startDate) : ""} />
+											<Input id="startDate" name="startDate" type="datetime-local" value={eventStartTime} onChange={e => setEventStartTime(e.target.value)} />
 										</div>
 										<div className="space-y-2">
 											<Label htmlFor="endDate">{t.endDate}</Label>
-											<Input id="endDate" name="endDate" type="datetime-local" defaultValue={editingEvent?.endDate ? toDateTimeLocalString(editingEvent.endDate) : ""} />
+											<Input id="endDate" name="endDate" type="datetime-local" value={eventEndTime} onChange={e => setEventEndTime(e.target.value)} />
 										</div>
 									</div>
 									<div className="space-y-2">
