@@ -14,7 +14,8 @@ export const EventSchema = z.object({
 	name: LocalizedTextSchema,
 	description: LocalizedTextSchema.nullable().optional(),
 	plainDescription: LocalizedTextSchema.nullable().optional(),
-	location: z.string().nullable().optional(),
+	locationText: LocalizedTextSchema.nullable().optional(),
+	mapLink: z.string().nullable().optional(),
 	startDate: z.iso.datetime(),
 	endDate: z.iso.datetime(),
 	editDeadline: z.iso.datetime().nullable().optional(),
@@ -51,7 +52,8 @@ export const EventCreateRequestSchema = z.object({
 	startDate: z.iso.datetime(),
 	endDate: z.iso.datetime(),
 	editDeadline: z.iso.datetime().optional(),
-	location: z.string().optional(),
+	locationText: LocalizedTextSchema.optional(),
+	mapLink: z.string().optional(),
 	ogImage: z.string().optional()
 });
 export type EventCreateRequest = z.infer<typeof EventCreateRequestSchema>;
@@ -67,7 +69,8 @@ export const EventUpdateRequestSchema = z.object({
 	startDate: z.iso.datetime().optional(),
 	endDate: z.iso.datetime().optional(),
 	editDeadline: z.iso.datetime().nullable().optional(),
-	location: z.string().optional(),
+	locationText: LocalizedTextSchema.optional(),
+	mapLink: z.string().optional(),
 	ogImage: z.string().optional(),
 	isActive: z.boolean().optional(),
 	hideEvent: z.boolean().optional(),

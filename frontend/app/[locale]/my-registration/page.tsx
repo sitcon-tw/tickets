@@ -184,7 +184,7 @@ export default function MyRegistrationsPage() {
 					{filteredRegistrations.map(registration => {
 						const eventName = registration.event?.name ? getLocalizedText(registration.event.name, locale) : "Unknown Event";
 						const ticketName = registration.ticket?.name ? getLocalizedText(registration.ticket.name, locale) : "Unknown Ticket";
-						const location = registration.event?.location;
+						const locationText = registration.event?.locationText ? getLocalizedText(registration.event.locationText, locale) : null;
 						const { date, time } = registration.event?.startDate && registration.event?.endDate ? formatEventDate(registration.event.startDate, registration.event.endDate) : { date: "-", time: "-" };
 
 						return (
@@ -226,10 +226,10 @@ export default function MyRegistrationsPage() {
 														<Ticket className="h-4 w-4" />
 														<span>{ticketName}</span>
 													</div>
-													{location && (
+													{locationText && (
 														<div className="flex items-center gap-2 text-muted-foreground">
 															<MapPin className="h-4 w-4" />
-															<span>{location}</span>
+															<span>{locationText}</span>
 														</div>
 													)}
 												</div>

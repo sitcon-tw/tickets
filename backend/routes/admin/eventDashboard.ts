@@ -123,7 +123,8 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						name: event.name,
 						startDate: event.startDate,
 						endDate: event.endDate,
-						location: event.location
+						locationText: event.locationText,
+						mapLink: event.mapLink
 					},
 					stats: {
 						totalRegistrations,

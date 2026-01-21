@@ -22,7 +22,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			const rawBody = request.body;
 
 			const sanitizedBody = sanitizeObject(rawBody, true);
-			const { name, description, plainDescription, startDate, endDate, editDeadline, location, ogImage } = sanitizedBody;
+			const { name, description, plainDescription, startDate, endDate, editDeadline, locationText, mapLink, ogImage } = sanitizedBody;
 
 			const start = new Date(startDate);
 			const end = new Date(endDate);
@@ -58,7 +58,8 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					startDate: start,
 					endDate: end,
 					editDeadline: editDeadlineDate,
-					location,
+					locationText,
+					mapLink,
 					ogImage,
 					isActive: true
 				},
@@ -71,6 +72,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				name: createdEvent.name as Record<string, string>,
 				description: createdEvent.description as Record<string, string> | undefined,
 				plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
+				locationText: createdEvent.locationText as Record<string, string> | undefined,
 				startDate: createdEvent.startDate.toISOString(),
 				endDate: createdEvent.endDate.toISOString(),
 				editDeadline: createdEvent.editDeadline?.toISOString() ?? null,
@@ -199,6 +201,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				name: updatedEvent.name as Record<string, string>,
 				description: updatedEvent.description as Record<string, string> | undefined,
 				plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
+				locationText: updatedEvent.locationText as Record<string, string> | undefined,
 				startDate: updatedEvent.startDate.toISOString(),
 				endDate: updatedEvent.endDate.toISOString(),
 				editDeadline: updatedEvent.editDeadline?.toISOString() ?? null,
@@ -290,6 +293,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				name: event.name as Record<string, string>,
 				description: event.description as Record<string, string> | undefined,
 				plainDescription: event.plainDescription as Record<string, string> | undefined,
+				locationText: event.locationText as Record<string, string> | undefined,
 				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
 				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
 				editDeadline: event.editDeadline instanceof Date ? event.editDeadline.toISOString() : (event.editDeadline ?? null),

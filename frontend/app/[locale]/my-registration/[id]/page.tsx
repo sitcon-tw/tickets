@@ -455,9 +455,9 @@ export default function MyRegistrationPage() {
 									<div>
 										<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
 									</div>
-									{registration.event?.location && (
+									{getLocalizedText(registration.event?.locationText, locale) && (
 										<div>
-											<strong>{t.eventLocation}:</strong> {registration.event.location}
+											<strong>{t.eventLocation}:</strong> {getLocalizedText(registration.event?.locationText, locale)}
 										</div>
 									)}
 									<div>
