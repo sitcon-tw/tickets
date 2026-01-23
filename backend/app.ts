@@ -39,15 +39,6 @@ fastify.setSerializerCompiler(serializerCompiler);
 // Override logger config (the second one takes precedence)
 fastify.log.level = "error";
 
-// Register OpenTelemetry plugin only if enabled
-if (process.env.OTEL_ENABLED === "true") {
-	const openTelemetryPlugin = await import("@autotelic/fastify-opentelemetry");
-	await fastify.register(openTelemetryPlugin.default, {
-		wrapRoutes: true, // Automatically trace each route with active context
-		exposeApi: true // Expose request.openTelemetry() API
-	});
-}
-
 // Register Prometheus metrics exporter
 await fastify.register(fastifyMetrics, {
 	endpoint: "/metrics", // Prometheus scrapes this endpoint
