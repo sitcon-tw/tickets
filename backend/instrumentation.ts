@@ -3,7 +3,6 @@ import "@opentelemetry/auto-instrumentations-node/register";
 import FastifyOtelInstrumentation from "@fastify/otel";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
-import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
 import { PrismaInstrumentation } from "@prisma/instrumentation";
 
 registerInstrumentations({
@@ -18,6 +17,5 @@ registerInstrumentations({
 		}),
 		new FastifyOtelInstrumentation({ registerOnInitialization: true }),
 		new PrismaInstrumentation(),
-		new RedisInstrumentation()
 	]
 });
