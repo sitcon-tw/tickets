@@ -1,5 +1,7 @@
 import { logger } from "#utils/logger";
 import { context, SpanStatusCode, trace, type Span, type Tracer } from "@opentelemetry/api";
+import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
+import { PrismaInstrumentation } from "@prisma/instrumentation";
 
 const tracingLogger = logger.child({ component: "tracing" });
 
@@ -45,7 +47,9 @@ if (isOtelEnabled) {
 						span.setAttribute("http.route", info.request.routeOptions?.url || "unknown");
 					}
 				}
-			})
+			}),
+			new PrismaInstrumentation(),
+			new RedisInstrumentation()
 		]
 	});
 
