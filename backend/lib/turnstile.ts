@@ -7,6 +7,7 @@ import type { TurnstileResponse, TurnstileValidationOptions, TurnstileValidation
 
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
+const BYPASS_SECRET = process.env.TURNSTILE_BYPASS_SECRET;
 const VALIDATION_TIMEOUT = 10000; // 10 seconds
 
 /**
@@ -21,6 +22,17 @@ export async function validateTurnstile(token: string, options: TurnstileValidat
 			valid: false,
 			reason: "invalid_token_format",
 			errors: ["Token is missing or not a string"]
+		};
+	}
+
+	// Bypass validation if token matches the bypass secret
+	if (BYPASS_SECRET && token === BYPASS_SECRET) {
+		return {
+			valid: true,
+			data: {
+				success: true,
+				hostname: "bypass"
+			}
 		};
 	}
 
