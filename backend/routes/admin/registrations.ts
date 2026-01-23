@@ -424,7 +424,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				where: { id: registration.ticketId },
 				data: {
 					soldCount: {
-						increment: 1
+						decrement: 1
 					}
 				}
 			});
