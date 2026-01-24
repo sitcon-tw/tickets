@@ -65,7 +65,7 @@ export async function sendSMS(phoneNumber: string, message: string, options: SMS
 
 		return {
 			success: true,
-			msgid: data.msgid || "",
+			msgid: data.msgid?.toString() || "",
 			code: data.code,
 			text: data.text
 		};
