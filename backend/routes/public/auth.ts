@@ -7,7 +7,8 @@ import { auth } from "#lib/auth";
 import { publicAuthSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 /**
  * Auth routes
@@ -17,12 +18,12 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 	 * GET /api/auth/permissions
 	 * Get current user's permissions and capabilities
 	 */
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/auth/permissions",
 		{
 			schema: publicAuthSchemas.getAuthPermissions
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			const session = await auth.api.getSession({
 				headers: request.headers as any
 			});

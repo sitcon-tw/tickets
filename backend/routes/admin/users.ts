@@ -1,5 +1,5 @@
-import type { AdminUserUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -12,13 +12,13 @@ const componentLogger = logger.child({ component: "admin/users" });
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
-	fastify.get<{ Querystring: { role?: string; isActive?: boolean } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.listUsers
 		},
-		async (request: FastifyRequest<{ Querystring: { role?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { role, isActive } = request.query;
 
@@ -70,13 +70,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Get user by ID - admin only
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.getUser
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -136,13 +136,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Update user - admin only
-	fastify.put<{ Params: { id: string }; Body: AdminUserUpdateRequest }>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.updateUser
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: AdminUserUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 				const updateData = request.body;

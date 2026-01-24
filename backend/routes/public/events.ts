@@ -8,10 +8,6 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "public/events" });
 
-interface EventIdParams {
-	id: string;
-}
-
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/info",
@@ -256,7 +252,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/stats",
 		{
 			schema: {
@@ -266,7 +262,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				response: eventStatsResponse
 			}
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -328,12 +324,12 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// compactability: the formfield perviously migrated from ticket to event, so the endpoint is in here. -ns
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/form-fields",
 		{
 			schema: publicEventSchemas.getTicketFormFields
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 

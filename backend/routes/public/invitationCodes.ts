@@ -2,22 +2,18 @@ import prisma from "#config/database";
 import { publicInvitationCodeSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "public/invitationCodes" });
 
-interface InvitationCodeVerifyRequest {
-	code: string;
-	ticketId: string;
-}
-
 const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
-	fastify.post(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes/verify",
 		{
 			schema: publicInvitationCodeSchemas.verifyInvitationCode
 		},
-		async (request: FastifyRequest<{ Body: InvitationCodeVerifyRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { code, ticketId } = request.body;
 
@@ -143,12 +139,12 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/invitation-codes/:code/info",
 		{
 			schema: publicInvitationCodeSchemas.getInvitationCodeInfo
 		},
-		async (request: FastifyRequest<{ Params: { code: string }; Querystring: { ticketId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { code } = request.params;
 				const { ticketId } = request.query;
