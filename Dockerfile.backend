@@ -7,7 +7,7 @@ COPY backend ./backend
 COPY types ./types
 
 WORKDIR /src/backend
-RUN corepack enable && pnpm install --production
+RUN corepack enable && pnpm install --production --no-optional --frozen-lockfile
 
 EXPOSE 8080
 CMD pnpm start
