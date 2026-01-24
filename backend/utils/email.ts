@@ -174,7 +174,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 								background-clip: text;
 								-webkit-background-clip: text;
 								-webkit-text-fill-color: transparent;
-								color: transparent;
+								color: #6b7280;
 								font-weight: bold;
 							"
 						>
@@ -194,7 +194,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 								background-clip: text;
 								-webkit-background-clip: text;
 								-webkit-text-fill-color: transparent;
-								color: transparent;
+								color: #6b7280;
 								font-weight: bold;
 							"
 						>
