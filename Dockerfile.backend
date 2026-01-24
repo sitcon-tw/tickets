@@ -2,6 +2,10 @@ FROM node:24-slim
 ENV PORT=8080
 WORKDIR /src
 
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  apt update && apt-get --no-install-recommends install -y openssl
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml LICENSE ./
 COPY backend ./backend
 COPY types ./types
