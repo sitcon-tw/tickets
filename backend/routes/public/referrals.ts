@@ -2,7 +2,7 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { publicReferralSchemas, referralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
-import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
+import { errorResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 const componentLogger = logger.child({ component: "public/referrals" });
@@ -29,7 +29,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!registration || registration.status !== "confirmed") {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -69,7 +69,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 
 					if (!isUnique) {
 						componentLogger.error({ maxAttempts }, "Failed to generate unique referral code after attempts");
-						const { response, statusCode } = errorResponse("INTERNAL_ERROR", "無法生成唯一的推薦碼");
+						const { response, statusCode } = serverErrorResponse("無法生成唯一的推薦碼");
 						return reply.code(statusCode).send(response);
 					}
 
@@ -137,7 +137,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!referral || referral.registration.status !== "confirmed") {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 

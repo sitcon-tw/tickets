@@ -7,7 +7,7 @@ import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middle
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
-import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/registrations" });
 
@@ -117,7 +117,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 			const pagination = createPagination(page, limit, total);
 
-			return reply.send(successResponse(parsedRegistrations, "取得報名列表成功", pagination));
+			return reply.send(successPaginatedResponse(parsedRegistrations, "取得報名列表成功", pagination));
 		}
 	);
 

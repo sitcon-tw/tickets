@@ -3,6 +3,7 @@ import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSche
 import { logger } from "#utils/logger";
 import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "public/events" });
 
@@ -15,7 +16,7 @@ interface UpcomingQuery {
 }
 
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/info",
 		{
 			schema: {

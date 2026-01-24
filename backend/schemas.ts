@@ -1105,14 +1105,31 @@ export const PublicTicketResponseSchema = z.object({
 			quantity: z.number().int(),
 			soldCount: z.number().int(),
 			available: z.number().int(),
-			saleStart: z.iso.datetime().optional(),
-			saleEnd: z.iso.datetime().optional(),
+			saleStart: z.string().optional(),
+			saleEnd: z.date().optional(),
 			isOnSale: z.boolean(),
 			isSoldOut: z.boolean(),
 			requireInviteCode: z.boolean(),
 			requireSmsVerification: z.boolean()
 		})
 		.optional()
+});
+
+export const PublicTicketResponseDataSchema = z.object({
+	id: z.string(),
+	name: z.record(z.string(), z.unknown()),
+	description: z.record(z.string(), z.unknown()),
+	plainDescription: z.record(z.string(), z.unknown()).nullable(),
+	price: z.number(),
+	quantity: z.number().int(),
+	soldCount: z.number().int(),
+	available: z.number().int(),
+	saleStart: z.string().optional(),
+	saleEnd: z.date().optional(),
+	isOnSale: z.boolean(),
+	isSoldOut: z.boolean(),
+	requireInviteCode: z.boolean(),
+	requireSmsVerification: z.boolean()
 });
 
 export const PublicTicketNotFoundResponseSchema = z.object({
@@ -1132,7 +1149,8 @@ export const publicTicketSchemas = {
 		params: PublicTicketIdParamSchema,
 		response: {
 			200: PublicTicketResponseSchema,
-			404: PublicTicketNotFoundResponseSchema
+			404: PublicTicketNotFoundResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;

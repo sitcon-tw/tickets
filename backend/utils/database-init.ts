@@ -1,6 +1,6 @@
 import prisma from "#config/database";
+import type { Event, Ticket } from "#prisma/generated/prisma/client";
 import { logger } from "#utils/logger";
-import type { Event, Ticket } from "@prisma/client";
 
 const componentLogger = logger.child({ component: "database-init" });
 

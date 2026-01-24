@@ -6,7 +6,7 @@ import { requireAdmin } from "#middleware/auth";
 import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
 import { logger } from "#utils/logger";
-import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { z } from "zod/v4";
 
 const componentLogger = logger.child({ component: "admin/emailCampaigns" });
@@ -48,7 +48,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				hasPrev: page > 1
 			};
 
-			return reply.send(successResponse(campaigns, "取得郵件發送記錄成功", pagination));
+			return reply.send(successPaginatedResponse(campaigns, "取得郵件發送記錄成功", pagination));
 		}
 	);
 

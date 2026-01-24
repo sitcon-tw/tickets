@@ -4,7 +4,7 @@
 
 import prisma from "#config/database";
 import { requireEventAccess } from "#middleware/auth";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
 import type { WebhookEndpointCreateRequest, WebhookEndpointUpdateRequest, WebhookTestRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -343,7 +343,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				const totalPages = Math.ceil(total / limit);
 
 				return reply.send(
-					successResponse(serializedDeliveries, "Failed deliveries retrieved", {
+					successPaginatedResponse(serializedDeliveries, "Failed deliveries retrieved", {
 						page,
 						limit,
 						total,
