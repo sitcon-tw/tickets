@@ -1,6 +1,6 @@
 import { logger } from "#utils/logger";
-import type { JsonValue } from "@prisma/client/runtime/library";
 import type { sheets_v4 } from "@googleapis/sheets";
+import type { JsonValue } from "@prisma/client/runtime/library";
 import type { JWT } from "google-auth-library";
 
 const componentLogger = logger.child({ component: "google-sheets" });
@@ -39,7 +39,7 @@ interface ExportResult {
 export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 	try {
 		const { JWT } = await import("google-auth-library");
-		const googleSheets  = await import("@googleapis/sheets");
+		const googleSheets = await import("@googleapis/sheets");
 
 		const serviceAccountKey: ServiceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
 
