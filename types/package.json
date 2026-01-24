@@ -83,10 +83,8 @@
 		"dev": "tsc --watch"
 	},
 	"dependencies": {
-		"zod": "^4.3.5"
-	},
-	"devDependencies": {
 		"@types/node": "^22.10.5",
-		"typescript": "^5.7.2"
+		"typescript": "^5.7.2",
+		"zod": "^4.3.5"
 	}
 }
