@@ -3,7 +3,6 @@
  * Provides manual tracing for Prisma database operations
  */
 
-import type { NoopSpan } from "#lib/tracing";
 import { addSpanEvent, withSpan } from "#lib/tracing";
 import type { Span } from "@opentelemetry/api";
 
@@ -27,7 +26,7 @@ export async function tracePrismaOperation<T>(model: string, operation: string, 
 
 	return withSpan(
 		spanName,
-		async (span: Span | NoopSpan) => {
+		async (span: Span) => {
 			// Add database-specific attributes
 			span.setAttribute("db.system", "postgresql");
 			span.setAttribute("db.operation", operation);
@@ -80,7 +79,7 @@ export async function tracePrismaOperation<T>(model: string, operation: string, 
 export async function traceRedisOperation<T>(operation: string, key: string, fn: () => Promise<T>): Promise<T> {
 	const spanName = `redis.${operation}`;
 
-	return withSpan(spanName, async (span: Span | NoopSpan) => {
+	return withSpan(spanName, async (span: Span) => {
 		span.setAttribute("db.system", "redis");
 		span.setAttribute("db.operation", operation);
 		span.setAttribute("db.redis.key", key);
@@ -103,10 +102,10 @@ export async function traceRedisOperation<T>(operation: string, key: string, fn:
  * @param attributes - Additional attributes
  * @returns Promise resolving to the operation result
  */
-export async function traceBusinessOperation<T>(operationName: string, fn: (span: Span | NoopSpan) => Promise<T>, attributes: Record<string, string | number | boolean> = {}): Promise<T> {
+export async function traceBusinessOperation<T>(operationName: string, fn: (span: Span) => Promise<T>, attributes: Record<string, string | number | boolean> = {}): Promise<T> {
 	return withSpan(
 		operationName,
-		async (span: Span | NoopSpan) => {
+		async (span: Span) => {
 			const startTime = Date.now();
 			const result = await fn(span);
 			const duration = Date.now() - startTime;
@@ -132,7 +131,7 @@ export async function traceBusinessOperation<T>(operationName: string, fn: (span
 export async function traceEmailOperation<T>(recipient: string, subject: string, fn: () => Promise<T>): Promise<T> {
 	return withSpan(
 		"email.send",
-		async (span: Span | NoopSpan) => {
+		async (span: Span) => {
 			span.setAttribute("email.recipient", recipient);
 			span.setAttribute("email.subject", subject);
 
@@ -156,7 +155,7 @@ export async function traceEmailOperation<T>(recipient: string, subject: string,
  * @returns Promise resolving to the operation result
  */
 export async function traceSMSOperation<T>(phoneNumber: string, fn: () => Promise<T>): Promise<T> {
-	return withSpan("sms.send", async (span: Span | NoopSpan) => {
+	return withSpan("sms.send", async (span: Span) => {
 		// Mask phone number for privacy (show only last 4 digits)
 		const maskedPhone = phoneNumber.slice(0, -4).replace(/\d/g, "*") + phoneNumber.slice(-4);
 		span.setAttribute("sms.phone_number", maskedPhone);
@@ -179,7 +178,7 @@ export async function traceSMSOperation<T>(phoneNumber: string, fn: () => Promis
 export async function traceValidation<T>(validationType: string, fn: () => Promise<T>, attributes: Record<string, string | number | boolean> = {}): Promise<T> {
 	return withSpan(
 		`validation.${validationType}`,
-		async (span: Span | NoopSpan) => {
+		async (span: Span) => {
 			const result = await fn();
 
 			span.setAttribute("validation.passed", !!result);
