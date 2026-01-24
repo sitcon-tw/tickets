@@ -1115,29 +1115,6 @@ export const PublicTicketIdParamSchema = z.object({
 	id: z.string()
 });
 
-export const PublicTicketResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: z
-		.object({
-			id: z.string(),
-			name: z.record(z.string(), z.unknown()),
-			description: z.record(z.string(), z.unknown()),
-			plainDescription: z.record(z.string(), z.unknown()).nullable(),
-			price: z.number(),
-			quantity: z.number().int(),
-			soldCount: z.number().int(),
-			available: z.number().int(),
-			saleStart: z.date().optional().nullable(),
-			saleEnd: z.date().optional().nullable(),
-			isOnSale: z.boolean(),
-			isSoldOut: z.boolean(),
-			requireInviteCode: z.boolean(),
-			requireSmsVerification: z.boolean()
-		})
-		.optional()
-});
-
 export const PublicTicketResponseDataSchema = z.object({
 	id: z.string(),
 	name: LocalizedTextSchema,
@@ -1153,6 +1130,12 @@ export const PublicTicketResponseDataSchema = z.object({
 	isSoldOut: z.boolean(),
 	requireInviteCode: z.boolean(),
 	requireSmsVerification: z.boolean()
+});
+
+export const PublicTicketResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: PublicTicketResponseDataSchema.optional()
 });
 
 export const PublicTicketNotFoundResponseSchema = z.object({
