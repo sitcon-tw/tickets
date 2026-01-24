@@ -1,19 +1,22 @@
 import prisma from "#config/database";
-import { publicTicketSchemas } from "#schemas";
+import { PublicTicketResponseDataSchema, publicTicketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { LocalizedTextSchema } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod/v4";
 
 const componentLogger = logger.child({ component: "public/tickets" });
 
 const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Get single ticket information (public)
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id",
 		{
 			schema: publicTicketSchemas.getPublicTicket
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -49,10 +52,13 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const ticketWithStatus = {
 					...ticket,
+					name: LocalizedTextSchema.parse(ticket.name),
+					description: LocalizedTextSchema.nullable().parse(ticket.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 					available,
 					isOnSale,
 					isSoldOut
-				};
+				} satisfies z.infer<typeof PublicTicketResponseDataSchema>;
 
 				return reply.send(successResponse(ticketWithStatus));
 			} catch (error) {

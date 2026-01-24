@@ -17,8 +17,8 @@ export const RegistrationSchema = z.object({
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 	event: z
 		.object({
 			id: z.string(),
@@ -27,8 +27,8 @@ export const RegistrationSchema = z.object({
 			plainDescription: LocalizedTextSchema.nullable().optional(),
 			locationText: LocalizedTextSchema.nullable().optional(),
 			mapLink: z.string().nullable().optional(),
-			startDate: z.iso.datetime(),
-			endDate: z.iso.datetime(),
+			startDate: z.date(),
+			endDate: z.date(),
 			slug: z.string().nullable().optional()
 		})
 		.optional(),
@@ -81,7 +81,7 @@ export const RegistrationStatsSchema = z.object({
 			id: z.string(),
 			status: z.string(),
 			ticketName: LocalizedTextSchema,
-			registeredAt: z.iso.datetime(),
+			registeredAt: z.date(),
 			email: z.string() // Masked email (e.g., "ab***@domain.com"), not a valid email format
 		})
 	),

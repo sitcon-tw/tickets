@@ -1,9 +1,9 @@
-import { Prisma } from "@prisma/client";
 import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
+import { Prisma } from "#prisma/generated/prisma/client";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";

@@ -2,44 +2,27 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { tracer } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth";
-import { registrationSchemas, userRegistrationsResponse } from "#schemas";
+import { Prisma } from "#prisma/generated/prisma";
+import { IdParamSchema, registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
-import { conflictResponse, notFoundResponse, serializeDates, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
-import type { Event, Registration, Ticket } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-interface RegistrationCreateRequest {
-	eventId: string;
-	ticketId: string;
-	invitationCode?: string;
-	referralCode?: string;
-	formData: Record<string, any>;
-}
-
-interface RegistrationUpdateRequest {
-	formData: Record<string, any>;
-}
-
-interface PrismaError extends Error {
-	code?: string;
-	meta?: {
-		target?: string[];
-	};
-}
+import { LocalizedTextSchema, RegistrationStatusSchema, type Event, type Registration, type Ticket } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
 
-	fastify.post(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/registrations",
 		{
 			schema: registrationSchemas.createRegistration
 		},
-		async (request: FastifyRequest<{ Body: RegistrationCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("create_registration");
 
 			try {
@@ -332,12 +315,15 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const responseData = {
 					...result,
-					createdAt: result.createdAt.toISOString(),
-					updatedAt: result.updatedAt.toISOString(),
+					status: RegistrationStatusSchema.parse(result.status),
 					event: {
 						...result.event,
-						startDate: result.event.startDate.toISOString(),
-						endDate: result.event.endDate.toISOString()
+						name: LocalizedTextSchema.parse(result.event.name),
+						locationText: LocalizedTextSchema.nullable().parse(result.event.locationText)
+					},
+					ticket: {
+						...result.ticket,
+						name: LocalizedTextSchema.parse(result.ticket.name)
 					}
 				};
 
@@ -367,17 +353,19 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const prismaError = error as PrismaError;
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					const prismaError = error as Prisma.PrismaClientKnownRequestError;
 
-				if (prismaError.code === "P2034") {
-					request.log.warn({ error }, "Transaction conflict detected");
-					const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
-					return reply.code(statusCode).send(response);
-				}
+					if (prismaError.code === "P2034") {
+						request.log.warn({ error }, "Transaction conflict detected");
+						const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
+						return reply.code(statusCode).send(response);
+					}
 
-				if (prismaError.code === "P2002" && prismaError.meta?.target?.includes("email")) {
-					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
-					return reply.code(statusCode).send(response);
+					if (prismaError.code === "P2002" && (prismaError.meta?.target as string[])?.includes("email")) {
+						const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
+						return reply.code(statusCode).send(response);
+					}
 				}
 
 				const standardError = error as Error;
@@ -394,7 +382,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations",
 		{
 			schema: {
@@ -403,7 +391,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				response: userRegistrationsResponse
 			}
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -488,7 +476,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get<{ Params: { id: string } }>(
 		"/registrations/:id",
 		{
 			schema: {
@@ -496,7 +484,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				tags: ["registrations"]
 			}
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -564,17 +552,18 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.put(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id",
 		{
 			schema: {
 				description: "編輯報名記錄（僅限表單資料）",
 				tags: ["registrations"],
+				params: IdParamSchema,
 				body: registrationSchemas.updateRegistration.body,
 				response: registrationSchemas.updateRegistration.response
 			}
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -584,6 +573,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const { formData } = request.body;
 
 				const sanitizedFormData = sanitizeObject(formData, false);
+				if (!sanitizedFormData) {
+					const { response, statusCode } = validationErrorResponse("表單資料無效");
+					return reply.code(statusCode).send(response);
+				}
 
 				const [registration, formFields] = await Promise.all([
 					prisma.registration.findFirst({
@@ -680,15 +673,24 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, "updated registration response");
 
-				return reply.send(
-					successResponse(
-						serializeDates({
-							...updatedRegistration,
-							formData: parsedFormData
-						}),
-						"報名資料已更新"
-					)
-				);
+				const responseData = {
+					...updatedRegistration,
+					formData: parsedFormData,
+					status: RegistrationStatusSchema.parse(updatedRegistration.status),
+					event: {
+						...updatedRegistration.event,
+						name: LocalizedTextSchema.parse(updatedRegistration.event.name),
+						description: LocalizedTextSchema.nullable().parse(updatedRegistration.event.description),
+						locationText: LocalizedTextSchema.nullable().parse(updatedRegistration.event.locationText)
+					},
+					ticket: {
+						...updatedRegistration.ticket,
+						name: LocalizedTextSchema.parse(updatedRegistration.ticket.name),
+						description: LocalizedTextSchema.nullable().parse(updatedRegistration.ticket.description)
+					}
+				};
+
+				return reply.send(successResponse(responseData, "報名資料已更新"));
 			} catch (error) {
 				request.log.error({ error }, "Edit registration error");
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
@@ -697,7 +699,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.put(
+	fastify.withTypeProvider<ZodTypeProvider>().put<{ Params: { id: string } }>(
 		"/registrations/:id/cancel",
 		{
 			schema: {
@@ -705,7 +707,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				tags: ["registrations"]
 			}
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -798,11 +800,13 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const prismaError = error as PrismaError;
-				if (prismaError.code === "P2034") {
-					request.log.warn({ error }, "Cancellation conflict detected");
-					const { response, statusCode } = conflictResponse("取消系統繁忙，請稍後再試");
-					return reply.code(statusCode).send(response);
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					const prismaError = error as Prisma.PrismaClientKnownRequestError;
+					if (prismaError.code === "P2034") {
+						request.log.warn({ error }, "Cancellation conflict detected");
+						const { response, statusCode } = conflictResponse("取消系統繁忙，請稍後再試");
+						return reply.code(statusCode).send(response);
+					}
 				}
 
 				const { response, statusCode } = serverErrorResponse("取消報名失敗");

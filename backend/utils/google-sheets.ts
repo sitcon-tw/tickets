@@ -1,6 +1,6 @@
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { logger } from "#utils/logger";
 import type { sheets_v4 } from "@googleapis/sheets";
-import type { JsonValue } from "@prisma/client/runtime/library";
 import type { JWT } from "google-auth-library";
 
 const componentLogger = logger.child({ component: "google-sheets" });
@@ -23,10 +23,10 @@ interface RegistrationWithRelations {
 	status: string;
 	createdAt: Date;
 	event?: {
-		name: JsonValue;
+		name: Prisma.JsonValue;
 	};
 	ticket?: {
-		name: JsonValue;
+		name: Prisma.JsonValue;
 		price: number;
 	};
 }
@@ -131,7 +131,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
-		const getLocalizedName = (nameObj: JsonValue): string => {
+		const getLocalizedName = (nameObj: Prisma.JsonValue): string => {
 			if (!nameObj) return "";
 			if (typeof nameObj === "string") return nameObj;
 			if (typeof nameObj !== "object" || Array.isArray(nameObj)) return "";

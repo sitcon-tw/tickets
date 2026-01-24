@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import type { InvitationCode, InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

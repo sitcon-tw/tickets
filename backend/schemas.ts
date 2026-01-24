@@ -21,6 +21,7 @@ import {
 	InvitationCodeUpdateRequestSchema,
 	InvitationCodeVerificationSchema,
 	InvitationCodeVerifyRequestSchema,
+	LocalizedTextSchema,
 	// Referral schemas
 	ReferralSchema,
 	ReferralUsageSchema,
@@ -252,7 +253,8 @@ export const eventSchemas = {
 			201: EventResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			403: ErrorResponseSchema,
+			422: ErrorResponseSchema
 		}
 	},
 
@@ -262,7 +264,8 @@ export const eventSchemas = {
 		params: IdParamSchema,
 		response: {
 			200: EventResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -276,7 +279,8 @@ export const eventSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema
 		}
 	},
 
@@ -288,7 +292,8 @@ export const eventSchemas = {
 			200: SuccessResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema
 		}
 	},
 
@@ -326,7 +331,9 @@ export const eventTicketsResponse = {
 				showRemaining: true
 			})
 		)
-	})
+	}),
+	404: ErrorResponseSchema,
+	500: ErrorResponseSchema
 } as const;
 
 export const publicEventsListResponse = {
@@ -337,13 +344,13 @@ export const publicEventsListResponse = {
 			z.object({
 				id: z.string(),
 				slug: z.string().nullable().optional(),
-				name: z.unknown(),
-				description: z.unknown().nullable().optional(),
-				plainDescription: z.unknown().nullable().optional(),
-				locationText: z.unknown().nullable().optional(),
+				name: LocalizedTextSchema,
+				description: LocalizedTextSchema.nullable().optional(),
+				plainDescription: LocalizedTextSchema.nullable().optional(),
+				locationText: LocalizedTextSchema.nullable().optional(),
 				mapLink: z.string().nullable().optional(),
-				startDate: z.string(),
-				endDate: z.string(),
+				startDate: z.date(),
+				endDate: z.date(),
 				ogImage: z.string().nullable().optional(),
 				useOpass: z.boolean().optional(),
 				opassEventId: z.string().nullable().optional(),
@@ -351,7 +358,8 @@ export const publicEventsListResponse = {
 				hasAvailableTickets: z.boolean()
 			})
 		)
-	})
+	}),
+	500: ErrorResponseSchema
 } as const;
 
 export const eventStatsResponse = {
@@ -773,7 +781,10 @@ export const registrationSchemas = {
 			201: RegistrationResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
-			409: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -799,7 +810,9 @@ export const registrationSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -854,7 +867,8 @@ export const userRegistrationsResponse = {
 				canCancel: z.boolean()
 			})
 		)
-	})
+	}),
+	500: ErrorResponseSchema
 } as const;
 
 // ----------------------------------------------------------------------------
@@ -911,7 +925,10 @@ export const ticketSchemas = {
 			201: TicketResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -921,7 +938,8 @@ export const ticketSchemas = {
 		params: IdParamSchema,
 		response: {
 			200: TicketResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -935,7 +953,9 @@ export const ticketSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -947,7 +967,9 @@ export const ticketSchemas = {
 			200: SuccessResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -959,7 +981,8 @@ export const ticketSchemas = {
 			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
 		}),
 		response: {
-			200: TicketsListResponseSchema
+			200: TicketsListResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1092,27 +1115,27 @@ export const PublicTicketIdParamSchema = z.object({
 	id: z.string()
 });
 
+export const PublicTicketResponseDataSchema = z.object({
+	id: z.string(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable(),
+	plainDescription: LocalizedTextSchema.nullable(),
+	price: z.number(),
+	quantity: z.number().int(),
+	soldCount: z.number().int(),
+	available: z.number().int(),
+	saleStart: z.date().optional().nullable(),
+	saleEnd: z.date().optional().nullable(),
+	isOnSale: z.boolean(),
+	isSoldOut: z.boolean(),
+	requireInviteCode: z.boolean(),
+	requireSmsVerification: z.boolean()
+});
+
 export const PublicTicketResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
-	data: z
-		.object({
-			id: z.string(),
-			name: z.record(z.string(), z.unknown()),
-			description: z.record(z.string(), z.unknown()),
-			plainDescription: z.record(z.string(), z.unknown()).nullable(),
-			price: z.number(),
-			quantity: z.number().int(),
-			soldCount: z.number().int(),
-			available: z.number().int(),
-			saleStart: z.iso.datetime().optional(),
-			saleEnd: z.iso.datetime().optional(),
-			isOnSale: z.boolean(),
-			isSoldOut: z.boolean(),
-			requireInviteCode: z.boolean(),
-			requireSmsVerification: z.boolean()
-		})
-		.optional()
+	data: PublicTicketResponseDataSchema.optional()
 });
 
 export const PublicTicketNotFoundResponseSchema = z.object({
@@ -1132,7 +1155,8 @@ export const publicTicketSchemas = {
 		params: PublicTicketIdParamSchema,
 		response: {
 			200: PublicTicketResponseSchema,
-			404: PublicTicketNotFoundResponseSchema
+			404: PublicTicketNotFoundResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1223,7 +1247,9 @@ export const adminTicketSchemas = {
 		tags: ["admin/tickets"],
 		params: IdParamSchema,
 		response: {
-			200: TicketAnalyticsResponseSchema
+			200: TicketAnalyticsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 	reorderTickets: {
@@ -1231,7 +1257,10 @@ export const adminTicketSchemas = {
 		tags: ["admin/tickets"],
 		body: TicketReorderBodySchema,
 		response: {
-			200: TicketReorderResponseSchema
+			200: TicketReorderResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1288,7 +1317,8 @@ export const adminRegistrationSchemas = {
 		tags: ["admin/registrations"],
 		params: IdParamSchema,
 		response: {
-			200: RegistrationDeleteResponseSchema
+			200: RegistrationDeleteResponseSchema,
+			404: ErrorResponseSchema
 		}
 	},
 	getGoogleSheetsServiceAccount: {
