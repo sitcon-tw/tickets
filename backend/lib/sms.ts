@@ -1,77 +1,146 @@
 const TWSMS_API_BASE = "https://api.twsms.com/json";
 
-import type { Locale, SMSSendOptions, SMSSendResult, TwSMSResponse, TwSMSStatusResponse } from "@sitcontix/types";
+import { SpanStatusCode } from "@opentelemetry/api";
+import { TwSMSResponseSchema, type Locale, type SMSSendOptions, type SMSSendResult, type TwSMSStatusResponse } from "@sitcontix/types";
+import { tracer } from "./tracing";
 
 export async function sendSMS(phoneNumber: string, message: string, options: SMSSendOptions = {}): Promise<SMSSendResult> {
-	const username = process.env.TWSMS_USERNAME;
-	const password = process.env.TWSMS_PASSWORD;
+	// Mask phone number for security (show only last 4 digits)
+	const maskedPhone = phoneNumber.length > 4 ? `****${phoneNumber.slice(-4)}` : "****";
 
-	if (!username || !password) {
-		throw new Error("TWSMS credentials not configured. Please set TWSMS_USERNAME and TWSMS_PASSWORD environment variables.");
-	}
-
-	// Validate phone number format (Taiwan mobile: 09xxxxxxxx)
-	if (!phoneNumber.match(/^09\d{8}$/) && !phoneNumber.match(/^\+\d{10,15}$/)) {
-		throw new Error("Invalid phone number format. Use 09xxxxxxxx for Taiwan or +[country code][number] for international.");
-	}
-
-	const params = new URLSearchParams({
-		username,
-		password,
-		mobile: phoneNumber,
-		message: message,
-		...Object.fromEntries(Object.entries(options).map(([k, v]) => [k, String(v)]))
-	});
-
-	const response = await fetch(`${TWSMS_API_BASE}/sms_send.php?${params.toString()}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded"
+	const span = tracer.startSpan("sms.send", {
+		attributes: {
+			"sms.recipient.masked": maskedPhone,
+			"sms.message.length": message.length,
+			"sms.provider": "twsms"
 		}
 	});
 
-	const data = (await response.json()) as TwSMSResponse;
+	try {
+		const username = process.env.TWSMS_USERNAME;
+		const password = process.env.TWSMS_PASSWORD;
 
-	if (data.code !== "00000") {
-		throw new Error(`TwSMS API Error: ${data.code} - ${data.text}`);
+		if (!username || !password) {
+			throw new Error("TWSMS credentials not configured. Please set TWSMS_USERNAME and TWSMS_PASSWORD environment variables.");
+		}
+
+		// Validate phone number format (Taiwan mobile: 09xxxxxxxx)
+		if (!phoneNumber.match(/^09\d{8}$/) && !phoneNumber.match(/^\+\d{10,15}$/)) {
+			throw new Error("Invalid phone number format. Use 09xxxxxxxx for Taiwan or +[country code][number] for international.");
+		}
+
+		const params = new URLSearchParams({
+			username,
+			password,
+			mobile: phoneNumber,
+			message: message,
+			...Object.fromEntries(Object.entries(options).map(([k, v]) => [k, String(v)]))
+		});
+
+		span.addEvent("twsms.api.request");
+
+		const response = await fetch(`${TWSMS_API_BASE}/sms_send.php?${params.toString()}`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded"
+			}
+		});
+
+		span.setAttribute("http.status_code", response.status);
+
+		const data = TwSMSResponseSchema.parse(await response.json());
+
+		span.setAttribute("sms.api.code", data.code);
+		span.setAttribute("sms.msgid", data.msgid || "");
+
+		if (data.code !== "00000") {
+			span.addEvent("twsms.api.error", {
+				"error.code": data.code,
+				"error.message": data.text
+			});
+			throw new Error(`TwSMS API Error: ${data.code} - ${data.text}`);
+		}
+
+		span.setStatus({ code: SpanStatusCode.OK });
+
+		return {
+			success: true,
+			msgid: data.msgid || "",
+			code: data.code,
+			text: data.text
+		};
+	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send SMS"
+		});
+		throw error;
+	} finally {
+		span.end();
 	}
-
-	return {
-		success: true,
-		msgid: data.msgid || "",
-		code: data.code,
-		text: data.text
-	};
 }
 
 export async function querySMSStatus(phoneNumber: string, msgid: string): Promise<TwSMSStatusResponse> {
-	const username = process.env.TWSMS_USERNAME;
-	const password = process.env.TWSMS_PASSWORD;
+	// Mask phone number for security
+	const maskedPhone = phoneNumber.length > 4 ? `****${phoneNumber.slice(-4)}` : "****";
 
-	if (!username || !password) {
-		throw new Error("TWSMS credentials not configured");
+	const span = tracer.startSpan("sms.query_status", {
+		attributes: {
+			"sms.recipient.masked": maskedPhone,
+			"sms.msgid": msgid,
+			"sms.provider": "twsms"
+		}
+	});
+
+	try {
+		const username = process.env.TWSMS_USERNAME;
+		const password = process.env.TWSMS_PASSWORD;
+
+		if (!username || !password) {
+			throw new Error("TWSMS credentials not configured");
+		}
+
+		const params = new URLSearchParams({
+			username,
+			password,
+			mobile: phoneNumber,
+			msgid
+		});
+
+		span.addEvent("twsms.api.status_query");
+
+		const response = await fetch(`${TWSMS_API_BASE}/sms_query.php?${params.toString()}`, {
+			method: "GET"
+		});
+
+		span.setAttribute("http.status_code", response.status);
+
+		const data = (await response.json()) as TwSMSStatusResponse;
+
+		span.setAttribute("sms.api.code", data.code);
+		span.setAttribute("sms.status.code", data.statuscode || "");
+		span.setAttribute("sms.status.text", data.statustext || "");
+
+		span.setStatus({ code: SpanStatusCode.OK });
+
+		return {
+			code: data.code,
+			text: data.text,
+			statuscode: data.statuscode,
+			statustext: data.statustext,
+			donetime: data.donetime
+		};
+	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to query SMS status"
+		});
+		throw error;
+	} finally {
+		span.end();
 	}
-
-	const params = new URLSearchParams({
-		username,
-		password,
-		mobile: phoneNumber,
-		msgid
-	});
-
-	const response = await fetch(`${TWSMS_API_BASE}/sms_query.php?${params.toString()}`, {
-		method: "GET"
-	});
-
-	const data = (await response.json()) as TwSMSStatusResponse;
-
-	return {
-		code: data.code,
-		text: data.text,
-		statuscode: data.statuscode,
-		statustext: data.statustext,
-		donetime: data.donetime
-	};
 }
 
 export function generateVerificationCode(): string {
@@ -79,17 +148,44 @@ export function generateVerificationCode(): string {
 }
 
 export async function sendVerificationCode(phoneNumber: string, code: string, locale: Locale = "zh-Hant"): Promise<SMSSendResult> {
-	const messages: Record<Locale, string> = {
-		"zh-Hant": `[SITCONTIX] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(twsms)`,
-		"zh-Hans": `[SITCONTIX] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(twsms)`,
-		en: `[SITCONTIX] Your verification code is: ${code}\nThis code will expire in 10 minutes. (twsms)`
-	};
+	// Mask phone number for security
+	const maskedPhone = phoneNumber.length > 4 ? `****${phoneNumber.slice(-4)}` : "****";
 
-	const message = messages[locale] || messages["zh-Hant"];
-
-	return await sendSMS(phoneNumber, message, {
-		expirytime: 600 // 10 minutes
+	const span = tracer.startSpan("sms.send_verification_code", {
+		attributes: {
+			"sms.recipient.masked": maskedPhone,
+			"sms.type": "verification_code",
+			"sms.locale": locale,
+			"sms.code.length": code.length
+		}
 	});
+
+	try {
+		const messages: Record<Locale, string> = {
+			"zh-Hant": `[SITCONTIX] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(twsms)`,
+			"zh-Hans": `[SITCONTIX] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(twsms)`,
+			en: `[SITCONTIX] Your verification code is: ${code}\nThis code will expire in 10 minutes. (twsms)`
+		};
+
+		const message = messages[locale] || messages["zh-Hant"];
+
+		const result = await sendSMS(phoneNumber, message, {
+			expirytime: 600 // 10 minutes
+		});
+
+		span.setStatus({ code: SpanStatusCode.OK });
+
+		return result;
+	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send verification code"
+		});
+		throw error;
+	} finally {
+		span.end();
+	}
 }
 
 export const TWSMS_ERROR_CODES: Record<string, string> = {
