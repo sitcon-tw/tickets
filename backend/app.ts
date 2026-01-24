@@ -13,7 +13,7 @@ import fastifyMetrics from "fastify-metrics";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import { z } from "zod/v4";
 
-import { logger } from "#utils/logger.ts";
+import { logger } from "#utils/logger";
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";

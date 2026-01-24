@@ -1,4 +1,4 @@
-import { logger } from "#utils/logger.ts";
+import { logger } from "#utils/logger";
 import Redis from "ioredis";
 
 const redisLogger = logger.child({ component: "redis" });

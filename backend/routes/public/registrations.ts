@@ -1,7 +1,7 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
-import { requireAuth } from "#middleware/auth.ts";
+import { requireAuth } from "#middleware/auth";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";

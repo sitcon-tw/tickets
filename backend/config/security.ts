@@ -2,7 +2,7 @@
  * @fileoverview Security configuration for the application
  */
 
-import { logger } from "#utils/logger.ts";
+import { logger } from "#utils/logger";
 import type { RateLimitPluginOptions, errorResponseBuilderContext } from "@fastify/rate-limit";
 import type { FastifyRequest } from "fastify";
 

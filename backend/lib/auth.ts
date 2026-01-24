@@ -1,7 +1,7 @@
 import prisma from "#/config/database";
 import { getAdminEmails } from "#/config/security";
 import { sendMagicLink } from "#utils/email";
-import { logger } from "#utils/logger.ts";
+import { logger } from "#utils/logger";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";

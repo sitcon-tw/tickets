@@ -2,7 +2,7 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { getClientIP, validateTurnstile } from "#lib/turnstile";
-import { requireAuth } from "#middleware/auth.ts";
+import { requireAuth } from "#middleware/auth";
 import { smsVerificationSchemas } from "#schemas";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";

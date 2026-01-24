@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
-import { CacheInvalidation } from "#utils/cache-keys.ts";
+import { CacheInvalidation } from "#utils/cache-keys";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 

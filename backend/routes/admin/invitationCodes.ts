@@ -5,7 +5,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
 import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
-import { sendInvitationCode } from "#utils/email.ts";
+import { sendInvitationCode } from "#utils/email";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
