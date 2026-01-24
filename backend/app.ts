@@ -13,6 +13,7 @@ import fastifyMetrics from "fastify-metrics";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import { z } from "zod/v4";
 
+import { logger } from "#utils/logger.ts";
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
@@ -20,7 +21,6 @@ import { auth } from "./lib/auth";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
-import { logger } from "#utils/logger.ts";
 
 const fastifyLogger = logger.child({ component: "fastify" });
 
@@ -29,7 +29,7 @@ const fastify = Fastify({
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
-	trustProxy: true,
+	trustProxy: true
 });
 
 // Set Zod validator and serializer compilers for automatic Zod to JSON Schema conversion

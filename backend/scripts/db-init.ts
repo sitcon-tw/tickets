@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
+import { logger } from "#utils/logger";
 import { exec } from "child_process";
 import { createHash } from "crypto";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { promisify } from "util";
-import { logger } from "#utils/logger";
 
 const execAsync = promisify(exec);
 const componentLogger = logger.child({ component: "db-init" });

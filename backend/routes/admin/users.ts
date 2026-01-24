@@ -2,10 +2,10 @@ import type { AdminUserUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireAdmin } from "#middleware/auth";
 import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
+import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/users" });

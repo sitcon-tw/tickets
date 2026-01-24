@@ -1,5 +1,5 @@
-import { context, SpanStatusCode, trace, type Span, type Tracer } from "@opentelemetry/api";
 import { logger } from "#utils/logger.ts";
+import { context, SpanStatusCode, trace, type Span, type Tracer } from "@opentelemetry/api";
 
 const tracingLogger = logger.child({ component: "tracing" });
 

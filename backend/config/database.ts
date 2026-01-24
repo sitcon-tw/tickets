@@ -1,8 +1,8 @@
+import { logger } from "#utils/logger";
 import { PrismaClient } from "@prisma/client";
 import { PrismaExtensionRedis } from "prisma-extension-redis";
 import { getRedisClient } from "./redis";
 import { cacheConfig, parseRedisUri } from "./redis-cache";
-import { logger } from "#utils/logger";
 
 const databaseLogger = logger.child({ component: "database" });
 

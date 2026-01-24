@@ -3,10 +3,10 @@ import type { InvitationCode, InvitationCodeCreateRequest, InvitationCodeUpdateR
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
 import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
 import { sendInvitationCode } from "#utils/email.ts";
+import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/invitationCodes" });

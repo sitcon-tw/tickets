@@ -2,10 +2,10 @@ import type { PaginationQuery } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireAdmin } from "#middleware/auth";
 import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
+import { logger } from "#utils/logger";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { z } from "zod/v4";
 

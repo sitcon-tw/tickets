@@ -58,13 +58,16 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 		componentLogger.info({ email }, "Magic link email sent successfully");
 		return true;
 	} catch (error) {
-		componentLogger.error({
-			email,
-			errorMessage: error instanceof Error ? error.message : String(error),
-			errorCode: error && typeof error === "object" && "code" in error ? error.code : undefined,
-			errorName: error instanceof Error ? error.name : undefined,
-			stack: error instanceof Error ? error.stack : undefined
-		}, "Email sending error");
+		componentLogger.error(
+			{
+				email,
+				errorMessage: error instanceof Error ? error.message : String(error),
+				errorCode: error && typeof error === "object" && "code" in error ? error.code : undefined,
+				errorName: error instanceof Error ? error.name : undefined,
+				stack: error instanceof Error ? error.stack : undefined
+			},
+			"Email sending error"
+		);
 		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };

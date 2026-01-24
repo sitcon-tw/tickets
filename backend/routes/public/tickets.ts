@@ -1,6 +1,6 @@
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { publicTicketSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 

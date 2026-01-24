@@ -2,9 +2,9 @@
  * @fileoverview Security configuration for the application
  */
 
+import { logger } from "#utils/logger.ts";
 import type { RateLimitPluginOptions, errorResponseBuilderContext } from "@fastify/rate-limit";
 import type { FastifyRequest } from "fastify";
-import { logger } from "#utils/logger.ts";
 
 const securityLogger = logger.child({ component: "security" });
 

@@ -1,6 +1,6 @@
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { getRedisClient } from "#config/redis";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import ical, { ICalCalendar } from "ical-generator";

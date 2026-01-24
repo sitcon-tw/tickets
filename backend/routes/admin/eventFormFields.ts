@@ -3,10 +3,10 @@ import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateR
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { CacheInvalidation } from "#utils/cache-keys.ts";
+import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/eventFormFields" });

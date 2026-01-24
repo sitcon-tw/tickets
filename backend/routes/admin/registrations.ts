@@ -3,10 +3,10 @@
  */
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
+import { logger } from "#utils/logger";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/registrations" });

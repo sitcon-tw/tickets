@@ -2,9 +2,9 @@ import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } f
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/tickets" });

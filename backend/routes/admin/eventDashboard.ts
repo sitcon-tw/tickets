@@ -1,7 +1,7 @@
 import prisma from "#config/database";
-import { logger } from "#utils/logger";
 import { requireEventDashboardAccess } from "#middleware/auth";
 import { eventDashboardSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
