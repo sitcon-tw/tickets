@@ -1,8 +1,8 @@
 import prisma from "#config/database";
 import { PublicTicketResponseDataSchema, publicTicketSchemas } from "#schemas";
-import { LocalizedTextSchema } from "@sitcontix/types";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { z } from "zod/v4";
