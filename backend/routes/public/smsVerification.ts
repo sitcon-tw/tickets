@@ -184,7 +184,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 				try {
 					await sendVerificationCode(sanitizedPhoneNumber, code, locale);
 				} catch (smsError) {
-					request.log.error({ err: smsError }, "SMS send error");
+					request.log.error({ error: smsError }, "SMS send error");
 					const { response, statusCode } = serverErrorResponse("發送簡訊失敗，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
@@ -200,12 +200,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 			} catch (error) {
 				const prismaError = error as PrismaError;
 				if (prismaError.code === "P2034") {
-					request.log.warn({ err: error }, "SMS verification transaction conflict detected");
+					request.log.warn({ error }, "SMS verification transaction conflict detected");
 					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
 
-				request.log.error({ err: error }, "Send SMS verification error");
+				request.log.error({ error }, "Send SMS verification error");
 				const { response, statusCode } = serverErrorResponse("發送驗證碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -303,7 +303,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
-				request.log.error({ err: error }, "Verify SMS code error");
+				request.log.error({ error }, "Verify SMS code error");
 				const { response, statusCode } = serverErrorResponse("驗證失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -347,7 +347,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					})
 				);
 			} catch (error) {
-				request.log.error({ err: error }, "Get SMS verification status error");
+				request.log.error({ error }, "Get SMS verification status error");
 				const { response, statusCode } = serverErrorResponse("取得驗證狀態失敗");
 				return reply.code(statusCode).send(response);
 			}

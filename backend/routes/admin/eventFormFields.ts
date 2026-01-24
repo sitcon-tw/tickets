@@ -3,10 +3,13 @@ import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateR
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { CacheInvalidation } from "#utils/cache-keys.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/eventFormFields" });
 
 const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event form field
@@ -69,7 +72,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.code(201).send(successResponse(normalizedField, "表單欄位創建成功"));
 			} catch (error) {
-				console.error("Create event form field error:", error);
+				componentLogger.error({ error }, "Create event form field error");
 				const { response, statusCode } = serverErrorResponse("創建表單欄位失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -106,7 +109,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(normalizedField));
 			} catch (error) {
-				console.error("Get event form field error:", error);
+				componentLogger.error({ error }, "Get event form field error");
 				const { response, statusCode } = serverErrorResponse("取得表單欄位資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -217,7 +220,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(normalizedField, "表單欄位更新成功"));
 			} catch (error) {
-				console.error("Update event form field error:", error);
+				componentLogger.error({ error }, "Update event form field error");
 				const { response, statusCode } = serverErrorResponse("更新表單欄位失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -257,7 +260,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(null, "表單欄位刪除成功"));
 			} catch (error) {
-				console.error("Delete event form field error:", error);
+				componentLogger.error({ error }, "Delete event form field error");
 				const { response, statusCode } = serverErrorResponse("刪除表單欄位失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -307,7 +310,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(normalizedFields));
 			} catch (error) {
-				console.error("List event form fields error:", error);
+				componentLogger.error({ error }, "List event form fields error");
 				const { response, statusCode } = serverErrorResponse("取得表單欄位列表失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -375,7 +378,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(null, "表單欄位排序更新成功"));
 			} catch (error) {
-				console.error("Reorder event form fields error:", error);
+				componentLogger.error({ error }, "Reorder event form fields error");
 				const { response, statusCode } = serverErrorResponse("更新表單欄位排序失敗");
 				return reply.code(statusCode).send(response);
 			}

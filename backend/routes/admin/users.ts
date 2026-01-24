@@ -2,10 +2,13 @@ import type { AdminUserUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import { requireAdmin } from "#middleware/auth";
 import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/users" });
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
@@ -59,7 +62,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(usersWithParsedPermissions));
 			} catch (error) {
-				console.error("List users error:", error);
+				componentLogger.error({ error }, "List users error");
 				const { response, statusCode } = serverErrorResponse("取得用戶列表失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -125,7 +128,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(userWithParsedPermissions));
 			} catch (error) {
-				console.error("Get user error:", error);
+				componentLogger.error({ error }, "Get user error");
 				const { response, statusCode } = serverErrorResponse("取得用戶詳情失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -208,7 +211,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(userWithParsedPermissions, "用戶更新成功"));
 			} catch (error) {
-				console.error("Update user error:", error);
+				componentLogger.error({ error }, "Update user error");
 				const { response, statusCode } = serverErrorResponse("更新用戶失敗");
 				return reply.code(statusCode).send(response);
 			}

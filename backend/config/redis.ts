@@ -1,4 +1,7 @@
 import Redis from "ioredis";
+import { logger } from "#utils/logger.ts";
+
+const redisLogger = logger.child({ component: "redis" });
 
 let redis: Redis | null = null;
 
@@ -12,7 +15,7 @@ export function getRedisClient(): Redis | null {
 	}
 
 	if (process.env.REDIS_DISABLED === "true" || !process.env.REDIS_URI) {
-		console.log("Redis is disabled or not configured, falling back to in-memory cache");
+		redisLogger.info("Redis is disabled or not configured, falling back to in-memory cache");
 		return null;
 	}
 
@@ -24,7 +27,7 @@ export function getRedisClient(): Redis | null {
 			lazyConnect: true,
 			retryStrategy(times: number): number | null {
 				if (times > 3) {
-					console.warn("Redis connection failed after 3 attempts, falling back to in-memory cache");
+					redisLogger.warn("Redis connection failed after 3 attempts, falling back to in-memory cache");
 					return null;
 				}
 				const delay = Math.min(times * 50, 2000);
@@ -40,24 +43,24 @@ export function getRedisClient(): Redis | null {
 		});
 
 		redis.on("error", err => {
-			console.error("Redis client error:", err);
+			redisLogger.error({ error: err }, "Redis client error");
 		});
 
 		redis.on("connect", () => {
-			console.log("Redis client connected");
+			redisLogger.info("Redis client connected");
 		});
 
 		redis.on("ready", () => {
-			console.log("Redis client ready");
+			redisLogger.info("Redis client ready");
 		});
 
 		redis.connect().catch(err => {
-			console.warn("Redis connection failed, falling back to in-memory cache:", err.message);
+			redisLogger.warn({ error: err }, "Redis connection failed, falling back to in-memory cache");
 		});
 
 		return redis;
 	} catch (error) {
-		console.error("Failed to initialize Redis client:", error);
+		redisLogger.error({ error }, "Failed to initialize Redis client");
 		return null;
 	}
 }

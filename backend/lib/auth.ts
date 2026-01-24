@@ -5,6 +5,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
+import { logger } from "#utils/logger.ts";
 
 interface PrismaError extends Error {
 	code?: string;
@@ -12,6 +13,8 @@ interface PrismaError extends Error {
 		target?: string[];
 	};
 }
+
+const authLogger = logger.child({ component: "auth" });
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
@@ -150,7 +153,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 				} catch (e) {
 					const prismaError = e as PrismaError;
 					if (prismaError.code === "P2034") {
-						console.warn("Magic link transaction conflict detected");
+						authLogger.warn("Magic link transaction conflict detected");
 						throw new APIError("TOO_MANY_REQUESTS", {
 							message: "系統繁忙，請稍後再試"
 						});
@@ -172,7 +175,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						returnUrl = callbackUrl.pathname + callbackUrl.search;
 					}
 				} catch (e) {
-					console.error("Error parsing callback URL:", e);
+					authLogger.error({ error: e }, "Error parsing callback URL");
 				}
 
 				let frontendUrl = `${process.env.FRONTEND_URI || "http://localhost:4321"}/api/auth/magic-link/verify?token=${token}&locale=${locale}`;

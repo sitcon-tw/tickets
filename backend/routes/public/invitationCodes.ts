@@ -1,7 +1,10 @@
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import { publicInvitationCodeSchemas } from "#schemas";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+
+const componentLogger = logger.child({ component: "public/invitationCodes" });
 
 interface InvitationCodeVerifyRequest {
 	code: string;
@@ -133,7 +136,7 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					})
 				);
 			} catch (error) {
-				console.error("Verify invitation code error:", error);
+				componentLogger.error({ error }, "Verify invitation code error");
 				const { response, statusCode } = serverErrorResponse("驗證邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -199,7 +202,7 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					})
 				);
 			} catch (error) {
-				console.error("Get invitation code info error:", error);
+				componentLogger.error({ error }, "Get invitation code info error");
 				const { response, statusCode } = serverErrorResponse("取得邀請碼資訊失敗");
 				return reply.code(statusCode).send(response);
 			}

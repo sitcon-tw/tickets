@@ -2,9 +2,12 @@ import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } f
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/tickets" });
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.post<{ Body: TicketCreateRequest }>(
@@ -91,7 +94,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.code(201).send(successResponse(responseTicket, "票券創建成功"));
 			} catch (error) {
-				console.error("Create ticket error:", error);
+				componentLogger.error({ error }, "Create ticket error");
 				const { response, statusCode } = serverErrorResponse("創建票券失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -153,7 +156,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(responseTicket));
 			} catch (error) {
-				console.error("Get ticket error:", error);
+				componentLogger.error({ error }, "Get ticket error");
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -253,7 +256,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(responseTicket, "票券更新成功"));
 			} catch (error) {
-				console.error("Update ticket error:", error);
+				componentLogger.error({ error }, "Update ticket error");
 				const { response, statusCode } = serverErrorResponse("更新票券失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -300,7 +303,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(null, "票券刪除成功"));
 			} catch (error) {
-				console.error("Delete ticket error:", error);
+				componentLogger.error({ error }, "Delete ticket error");
 				const { response, statusCode } = serverErrorResponse("刪除票券失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -373,7 +376,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(ticketsWithAvailability));
 			} catch (error) {
-				console.error("List tickets error:", error);
+				componentLogger.error({ error }, "List tickets error");
 				const { response, statusCode } = serverErrorResponse("取得票券列表失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -434,7 +437,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(analytics));
 			} catch (error) {
-				console.error("Get ticket analytics error:", error);
+				componentLogger.error({ error }, "Get ticket analytics error");
 				const { response, statusCode } = serverErrorResponse("取得票券分析失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -501,7 +504,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(null, "票券順序更新成功"));
 			} catch (error) {
-				console.error("Reorder tickets error:", error);
+				componentLogger.error({ error }, "Reorder tickets error");
 				const { response, statusCode } = serverErrorResponse("重新排序票券失敗");
 				return reply.code(statusCode).send(response);
 			}

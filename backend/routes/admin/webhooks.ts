@@ -61,7 +61,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(safeWebhook));
 			} catch (error) {
-				request.log.error({ err: error }, "Get webhook error");
+				request.log.error({ error }, "Get webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to get webhook");
 				return reply.code(statusCode).send(response);
 			}
@@ -144,7 +144,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.code(201).send(successResponse(safeWebhook, "Webhook created"));
 			} catch (error) {
-				request.log.error({ err: error }, "Create webhook error");
+				request.log.error({ error }, "Create webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to create webhook");
 				return reply.code(statusCode).send(response);
 			}
@@ -226,7 +226,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(safeWebhook, "Webhook updated"));
 			} catch (error) {
-				request.log.error({ err: error }, "Update webhook error");
+				request.log.error({ error }, "Update webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to update webhook");
 				return reply.code(statusCode).send(response);
 			}
@@ -266,7 +266,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(null, "Webhook deleted"));
 			} catch (error) {
-				request.log.error({ err: error }, "Delete webhook error");
+				request.log.error({ error }, "Delete webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to delete webhook");
 				return reply.code(statusCode).send(response);
 			}
@@ -302,7 +302,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(result, result.success ? "Webhook test successful" : "Webhook test failed"));
 			} catch (error) {
-				request.log.error({ err: error }, "Test webhook error");
+				request.log.error({ error }, "Test webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to test webhook");
 				return reply.code(statusCode).send(response);
 			}
@@ -353,7 +353,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					})
 				);
 			} catch (error) {
-				request.log.error({ err: error }, "Get failed deliveries error");
+				request.log.error({ error }, "Get failed deliveries error");
 				const { response, statusCode } = serverErrorResponse("Failed to get deliveries");
 				return reply.code(statusCode).send(response);
 			}
@@ -387,7 +387,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 			} catch (error) {
-				request.log.error({ err: error }, "Retry delivery error");
+				request.log.error({ error }, "Retry delivery error");
 				const { response, statusCode } = serverErrorResponse("Failed to retry delivery");
 				return reply.code(statusCode).send(response);
 			}

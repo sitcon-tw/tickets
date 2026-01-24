@@ -20,13 +20,16 @@ import { auth } from "./lib/auth";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
+import { logger } from "#utils/logger.ts";
+
+const fastifyLogger = logger.child({ component: "fastify" });
 
 const fastify = Fastify({
-	logger: true,
+	loggerInstance: fastifyLogger,
 	bodyLimit: bodySizeConfig.bodyLimit,
 	// Trust proxy for proper rate limiting and IP detection
 	// Trust all proxies when listening on 0.0.0.0 (for Cloudflare)
-	trustProxy: true
+	trustProxy: true,
 });
 
 // Set Zod validator and serializer compilers for automatic Zod to JSON Schema conversion
@@ -235,7 +238,7 @@ fastify.post<{ Body: MagicLinkBody }>(
 
 			return "";
 		} catch (error) {
-			fastify.log.error({ err: error }, "Magic link send error");
+			fastify.log.error({ error }, "Magic link send error");
 			return reply.code(500).send({
 				success: false,
 				error: {
@@ -299,7 +302,7 @@ fastify.all(
 
 			return "";
 		} catch (error) {
-			fastify.log.error({ err: error }, "Auth handler error");
+			fastify.log.error({ error }, "Auth handler error");
 			reply.code(500);
 			return {
 				success: false,
@@ -345,7 +348,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 		try {
 			response = await auth.handler(webRequest);
 		} catch (authError) {
-			fastify.log.error({ err: authError }, "Better Auth handler error:");
+			fastify.log.error({ error: authError }, "Better Auth handler error");
 			return reply.redirect(`${process.env.FRONTEND_URI}/${locale}/login?error=verification_failed`);
 		}
 
@@ -380,7 +383,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 					});
 				}
 			} catch (updateError) {
-				fastify.log.warn({ err: updateError }, "Failed to update magic link attempt status");
+				fastify.log.warn({ error: updateError }, "Failed to update magic link attempt status");
 				// Don't fail the login if we can't update the attempt
 			}
 
@@ -389,12 +392,12 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 				? `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success&returnUrl=${encodeURIComponent(returnUrl)}`
 				: `${process.env.FRONTEND_URI}/${locale}/login/magic-link?status=success`;
 
-			fastify.log.info(`Magic link verification successful for token: ${token.substring(0, 10)}...`);
+			fastify.log.info({ tokenPrefix: token.substring(0, 10) }, "Magic link verification successful");
 			return reply.redirect(successUrl);
 		} else {
 			// Log the specific response status for debugging
 			const responseText = await response.text().catch(() => "Unable to read response");
-			fastify.log.warn(`Magic link verification failed with status ${response.status}: ${responseText}`);
+			fastify.log.warn({ status: response.status, responseText }, "Magic link verification failed");
 
 			// Determine error type based on status code
 			let errorType = "verification_failed";
@@ -532,10 +535,10 @@ const port = Number(process.env.PORT) || 3000;
 
 fastify.listen({ host: "0.0.0.0", port }, (err, address) => {
 	if (err) {
-		fastify.log.error(err);
+		fastify.log.error({ error: err }, "Failed to start server");
 		process.exit(1);
 	}
-	fastify.log.info(`Server running at ${address}`);
+	fastify.log.info({ address }, "Server running");
 });
 
 // Graceful shutdown
@@ -547,7 +550,7 @@ process.on("SIGINT", async () => {
 		await fastify.close();
 		process.exit(0);
 	} catch (error) {
-		fastify.log.error({ err: error }, "Error during shutdown");
+		fastify.log.error({ error }, "Error during shutdown");
 		process.exit(1);
 	}
 });

@@ -1,8 +1,11 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import { requireAdmin } from "#middleware/auth";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/referrals" });
 
 const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
@@ -59,7 +62,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}))
 				});
 			} catch (error) {
-				console.error("Get referral overview error:", error);
+				componentLogger.error({ error }, "Get referral overview error");
 				const { response, statusCode } = serverErrorResponse("取得推薦統計失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -114,7 +117,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return successResponse(formattedLeaderboard);
 			} catch (error) {
-				console.error("Get referral leaderboard error:", error);
+				componentLogger.error({ error }, "Get referral leaderboard error");
 				const { response, statusCode } = serverErrorResponse("取得推薦排行榜失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -168,7 +171,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return successResponse(buildTree(registration));
 			} catch (error) {
-				console.error("Get referral tree error:", error);
+				componentLogger.error({ error }, "Get referral tree error");
 				const { response, statusCode } = serverErrorResponse("取得推薦擴譜圖失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -224,7 +227,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return successResponse(formattedList);
 			} catch (error) {
-				console.error("Get qualified referrers error:", error);
+				componentLogger.error({ error }, "Get qualified referrers error");
 				const { response, statusCode } = serverErrorResponse("取得達標推薦者名單失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -311,7 +314,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					seed: usedSeed
 				});
 			} catch (error) {
-				console.error("Draw referrers error:", error);
+				componentLogger.error({ error }, "Draw referrers error");
 				const { response, statusCode } = serverErrorResponse("抽選推薦者失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -399,7 +402,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					topSources
 				});
 			} catch (error) {
-				console.error("Get referral stats error:", error);
+				componentLogger.error({ error }, "Get referral stats error");
 				const { response, statusCode } = serverErrorResponse("取得推薦統計報表失敗");
 				return reply.code(statusCode).send(response);
 			}

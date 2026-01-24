@@ -1,9 +1,12 @@
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
+
+const componentLogger = logger.child({ component: "email" });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,16 +55,16 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			subject: `【SITCONTIX】登入連結 Login Link`,
 			html
 		});
-		console.log(`Magic link email sent successfully to ${email}`);
+		componentLogger.info({ email }, "Magic link email sent successfully");
 		return true;
 	} catch (error) {
-		console.error("Email sending error:", {
+		componentLogger.error({
 			email,
 			errorMessage: error instanceof Error ? error.message : String(error),
 			errorCode: error && typeof error === "object" && "code" in error ? error.code : undefined,
 			errorName: error instanceof Error ? error.name : undefined,
 			stack: error instanceof Error ? error.stack : undefined
-		});
+		}, "Email sending error");
 		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
@@ -252,10 +255,10 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			html
 		});
 
-		console.log(`Registration confirmation email sent successfully to ${registration.email}`);
+		componentLogger.info({ email: registration.email }, "Registration confirmation email sent successfully");
 		return true;
 	} catch (error) {
-		console.error("Email sending error:", error);
+		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
@@ -310,10 +313,10 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 			html
 		});
 
-		console.log(`Cancellation email sent successfully to ${email}`);
+		componentLogger.info({ email }, "Cancellation email sent successfully");
 		return true;
 	} catch (error) {
-		console.error("Email sending error:", error);
+		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
@@ -385,10 +388,10 @@ export const sendInvitationCode = async (
 			html
 		});
 
-		console.log(`Invitation code email sent successfully to ${email}`);
+		componentLogger.info({ email }, "Invitation code email sent successfully");
 		return true;
 	} catch (error) {
-		console.error("Email sending error:", error);
+		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`);
 	}
 };
@@ -481,7 +484,7 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 
 		return Array.from(uniqueEmails.values());
 	} catch (error) {
-		console.error("Error calculating recipients:", error);
+		componentLogger.error({ error }, "Error calculating recipients");
 		throw error;
 	}
 };
@@ -529,7 +532,7 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 					sentCount++;
 					return { success: true, email: recipient.email };
 				} catch (error) {
-					console.error(`Failed to send to ${recipient.email}:`, error);
+					componentLogger.error({ error, email: recipient.email }, "Failed to send email to recipient");
 					failedCount++;
 					return { success: false, email: recipient.email, error: error instanceof Error ? error.message : String(error) };
 				}
@@ -549,7 +552,7 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 			totalRecipients: recipients.length
 		};
 	} catch (error) {
-		console.error("Campaign email sending error:", error);
+		componentLogger.error({ error }, "Campaign email sending error");
 		throw error;
 	}
 };
