@@ -272,7 +272,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			});
 
 			const events = rawEvents.map(event => {
-					return {
+				return {
 					...event,
 					name: LocalizedTextSchema.parse(event.name),
 					description: LocalizedTextSchema.nullable().parse(event.description),

@@ -2,7 +2,7 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { tracer } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth";
-import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { Prisma } from "#prisma/generated/prisma";
 import { IdParamSchema, registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
@@ -10,9 +10,9 @@ import { conflictResponse, notFoundResponse, serverErrorResponse, successRespons
 import { sanitizeObject } from "#utils/sanitize";
 import { validateRegistrationFormData, type FormField } from "#utils/validation";
 import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
-import { Prisma } from "#prisma/generated/prisma";
 import { LocalizedTextSchema, RegistrationStatusSchema, type Event, type Registration, type Ticket } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -690,12 +690,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				};
 
-				return reply.send(
-					successResponse(
-						responseData,
-						"報名資料已更新"
-					)
-				);
+				return reply.send(successResponse(responseData, "報名資料已更新"));
 			} catch (error) {
 				request.log.error({ error }, "Edit registration error");
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");

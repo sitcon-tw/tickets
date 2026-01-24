@@ -1,11 +1,11 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { LocalizedTextSchema } from "@sitcontix/types";
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "admin/tickets" });
 
@@ -76,12 +76,11 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
-
 				const responseTicket = {
 					...ticket,
 					name: LocalizedTextSchema.parse(ticket.name),
 					description: LocalizedTextSchema.nullable().parse(ticket.description),
-					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription)
 				};
 
 				return reply.code(201).send(successResponse(responseTicket, "票券創建成功"));
@@ -135,7 +134,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					event: ticket.event
 						? {
 								...ticket.event,
-								name: LocalizedTextSchema.parse(ticket.event.name),
+								name: LocalizedTextSchema.parse(ticket.event.name)
 							}
 						: undefined
 				};
@@ -228,7 +227,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					...ticket,
 					name: LocalizedTextSchema.parse(ticket.name),
 					description: LocalizedTextSchema.nullable().parse(ticket.description),
-					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription)
 				};
 
 				return reply.send(successResponse(responseTicket, "票券更新成功"));
@@ -331,7 +330,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						event: ticket.event
 							? {
 									...ticket.event,
-									name: LocalizedTextSchema.parse(ticket.event.name),
+									name: LocalizedTextSchema.parse(ticket.event.name)
 								}
 							: undefined,
 						available,

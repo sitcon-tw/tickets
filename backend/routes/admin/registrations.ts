@@ -4,11 +4,11 @@
 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
-import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
 import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/registrations" });
 
@@ -182,12 +182,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				event: {
 					...registration.event,
 					name: LocalizedTextSchema.parse(registration.event.name),
-					locationText: LocalizedTextSchema.nullable().parse(registration.event.locationText),
+					locationText: LocalizedTextSchema.nullable().parse(registration.event.locationText)
 				},
 				ticket: {
 					...registration.ticket,
 					name: LocalizedTextSchema.parse(registration.ticket.name),
-					description: LocalizedTextSchema.nullable().parse(registration.ticket.description),
+					description: LocalizedTextSchema.nullable().parse(registration.ticket.description)
 				},
 				formData: registration.formData ? JSON.parse(registration.formData) : {}
 			};
