@@ -50,15 +50,11 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 				const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 				const isSoldOut = available <= 0;
 
-				const name = LocalizedTextSchema.parse(ticket.name);
-				const description = LocalizedTextSchema.nullable().parse(ticket.description);
-				const plainDescription = LocalizedTextSchema.nullable().parse(ticket.plainDescription);
-
 				const ticketWithStatus = {
 					...ticket,
-					name,
-					description,
-					plainDescription,
+					name: LocalizedTextSchema.parse(ticket.name),
+					description: LocalizedTextSchema.nullable().parse(ticket.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 					available,
 					isOnSale,
 					isSoldOut

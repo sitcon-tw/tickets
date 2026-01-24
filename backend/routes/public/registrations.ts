@@ -313,22 +313,17 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					request.log.error({ error }, "Failed to dispatch registration webhook");
 				});
 
-				const eventName = LocalizedTextSchema.parse(result.event.name);
-				const eventLocationText = LocalizedTextSchema.nullable().parse(result.event.locationText);
-				const ticketName = LocalizedTextSchema.parse(result.ticket.name);
-				const status = RegistrationStatusSchema.parse(result.status);
-
 				const responseData = {
 					...result,
-					status,
+					status: RegistrationStatusSchema.parse(result.status),
 					event: {
 						...result.event,
-						name: eventName,
-						locationText: eventLocationText
+						name: LocalizedTextSchema.parse(result.event.name),
+						locationText: LocalizedTextSchema.nullable().parse(result.event.locationText)
 					},
 					ticket: {
 						...result.ticket,
-						name: ticketName
+						name: LocalizedTextSchema.parse(result.ticket.name)
 					}
 				};
 
@@ -678,27 +673,20 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, "updated registration response");
 
-				const eventName = LocalizedTextSchema.parse(updatedRegistration.event.name);
-				const eventDescription = LocalizedTextSchema.nullable().parse(updatedRegistration.event.description);
-				const eventLocationText = LocalizedTextSchema.nullable().parse(updatedRegistration.event.locationText);
-				const ticketName = LocalizedTextSchema.parse(updatedRegistration.ticket.name);
-				const ticketDescription = LocalizedTextSchema.nullable().parse(updatedRegistration.ticket.description);
-				const status = RegistrationStatusSchema.parse(updatedRegistration.status);
-
 				const responseData = {
 					...updatedRegistration,
 					formData: parsedFormData,
-					status,
+					status: RegistrationStatusSchema.parse(updatedRegistration.status),
 					event: {
 						...updatedRegistration.event,
-						name: eventName,
-						description: eventDescription,
-						locationText: eventLocationText
+						name: LocalizedTextSchema.parse(updatedRegistration.event.name),
+						description: LocalizedTextSchema.nullable().parse(updatedRegistration.event.description),
+						locationText: LocalizedTextSchema.nullable().parse(updatedRegistration.event.locationText)
 					},
 					ticket: {
 						...updatedRegistration.ticket,
-						name: ticketName,
-						description: ticketDescription
+						name: LocalizedTextSchema.parse(updatedRegistration.ticket.name),
+						description: LocalizedTextSchema.nullable().parse(updatedRegistration.ticket.description)
 					}
 				};
 

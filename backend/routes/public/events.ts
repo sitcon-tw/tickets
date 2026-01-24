@@ -56,17 +56,12 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const name = LocalizedTextSchema.parse(event.name);
-				const description = LocalizedTextSchema.nullable().parse(event.description);
-				const plainDescription = LocalizedTextSchema.nullable().parse(event.plainDescription);
-				const locationText = LocalizedTextSchema.nullable().parse(event.locationText);
-
 				const eventDto = {
 					...event,
-					name,
-					description,
-					plainDescription,
-					locationText
+					name: LocalizedTextSchema.parse(event.name),
+					description: LocalizedTextSchema.nullable().parse(event.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+					locationText: LocalizedTextSchema.nullable().parse(event.locationText)
 				};
 
 				return reply.send(successResponse(eventDto));
@@ -134,15 +129,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 					const isSoldOut = available <= 0;
 
-					const name = LocalizedTextSchema.parse(ticket.name);
-					const description = LocalizedTextSchema.nullable().parse(ticket.description);
-					const plainDescription = LocalizedTextSchema.nullable().parse(ticket.plainDescription);
-
 					return {
 						id: ticket.id,
-						name,
-						description,
-						plainDescription,
+						name: LocalizedTextSchema.parse(ticket.name),
+						description: LocalizedTextSchema.nullable().parse(ticket.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 						price: ticket.price,
 						available,
 						quantity,
@@ -237,18 +228,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 						return ticket.isActive && isOnSale && hasAvailable;
 					});
 
-					const name = LocalizedTextSchema.parse(event.name);
-					const description = LocalizedTextSchema.nullable().parse(event.description);
-					const plainDescription = LocalizedTextSchema.nullable().parse(event.plainDescription);
-					const locationText = LocalizedTextSchema.nullable().parse(event.locationText);
-
 					return {
 						id: event.id,
 						slug: event.slug,
-						name,
-						description,
-						plainDescription,
-						locationText,
+						name: LocalizedTextSchema.parse(event.name),
+						description: LocalizedTextSchema.nullable().parse(event.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+						locationText: LocalizedTextSchema.nullable().parse(event.locationText),
 						mapLink: event.mapLink,
 						startDate: event.startDate,
 						endDate: event.endDate,

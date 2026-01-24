@@ -272,17 +272,12 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			});
 
 			const events = rawEvents.map(event => {
-				const name = LocalizedTextSchema.parse(event.name);
-				const description = LocalizedTextSchema.nullable().parse(event.description);
-				const plainDescription = LocalizedTextSchema.nullable().parse(event.plainDescription);
-				const locationText = LocalizedTextSchema.nullable().parse(event.locationText);
-
-				return {
+					return {
 					...event,
-					name,
-					description,
-					plainDescription,
-					locationText,
+					name: LocalizedTextSchema.parse(event.name),
+					description: LocalizedTextSchema.nullable().parse(event.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+					locationText: LocalizedTextSchema.nullable().parse(event.locationText),
 					startDate: event.startDate,
 					endDate: event.endDate,
 					editDeadline: event.editDeadline ?? null,
