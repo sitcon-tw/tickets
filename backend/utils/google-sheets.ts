@@ -1,5 +1,8 @@
+import { logger } from "#utils/logger";
 import type { JsonValue } from "@prisma/client/runtime/library";
 import type { sheets_v4 } from "googleapis";
+
+const componentLogger = logger.child({ component: "google-sheets" });
 
 interface GoogleSheetsClient {
 	sheets: sheets_v4.Sheets;
@@ -50,7 +53,7 @@ export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 
 		return { sheets, auth };
 	} catch (error) {
-		console.error("Failed to authenticate with Google Sheets:", error);
+		componentLogger.error({ error }, "Failed to authenticate with Google Sheets");
 		throw new Error("Google Sheets authentication failed");
 	}
 }
@@ -60,7 +63,7 @@ export function extractSpreadsheetId(url: string): string | null {
 		const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
 		return match ? match[1] : null;
 	} catch (error) {
-		console.error("Failed to extract spreadsheet ID:", error);
+		componentLogger.error({ error }, "Failed to extract spreadsheet ID");
 		return null;
 	}
 }
@@ -70,7 +73,7 @@ export function getServiceAccountEmail(): string {
 		const serviceAccountKey: ServiceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
 		return serviceAccountKey.client_email;
 	} catch (error) {
-		console.error("Failed to get service account email:", error);
+		componentLogger.error({ error }, "Failed to get service account email");
 		return "";
 	}
 }
@@ -86,7 +89,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 				spreadsheetId
 			})
 			.catch(error => {
-				console.error("Failed to access sheet:", error);
+				componentLogger.error({ error }, "Failed to access sheet");
 				throw new Error("無法存取 Google Sheets，請確認已將服務帳號加入共用");
 			});
 
@@ -109,7 +112,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 					}
 				})
 				.catch(error => {
-					console.error("Failed to create sheet:", error);
+					componentLogger.error({ error }, "Failed to create sheet");
 					throw new Error("無法建立工作表，請確認已將服務帳號加入共用");
 				});
 		}
@@ -179,7 +182,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 			message: `成功匯出 ${registrations.length} 筆報名資料到 Google Sheets`
 		};
 	} catch (error) {
-		console.error("Failed to export to Google Sheets:", error);
+		componentLogger.error({ error }, "Failed to export to Google Sheets");
 		return {
 			success: false,
 			message: error instanceof Error ? error.message : "匯出到 Google Sheets 失敗"

@@ -1,7 +1,7 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { addSpanEvent } from "#lib/tracing";
-import { requireAuth } from "#middleware/auth.ts";
+import { requireAuth } from "#middleware/auth";
 import { registrationSchemas, userRegistrationsResponse } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
@@ -354,7 +354,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
 				await sendRegistrationConfirmation(result as unknown as Registration, event as unknown as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
-					request.log.error({ err: error }, "Failed to send registration confirmation email");
+					request.log.error({ error }, "Failed to send registration confirmation email");
 				});
 
 				const webhookNotification = buildRegistrationConfirmedNotification(
@@ -363,7 +363,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					{ id: ticket.id, name: ticket.name, price: ticket.price }
 				);
 				dispatchWebhook(eventId, "registration_confirmed", webhookNotification).catch(error => {
-					request.log.error({ err: error }, "Failed to dispatch registration webhook");
+					request.log.error({ error }, "Failed to dispatch registration webhook");
 				});
 
 				const responseData = {
@@ -379,7 +379,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.code(201).send(successResponse(responseData, "報名成功"));
 			} catch (error) {
-				request.log.error({ err: error }, "Create registration error");
+				request.log.error({ error }, "Create registration error");
 
 				const errorMessage = (error as Error).message;
 
@@ -406,7 +406,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const prismaError = error as PrismaError;
 
 				if (prismaError.code === "P2034") {
-					request.log.warn({ err: error }, "Transaction conflict detected");
+					request.log.warn({ error }, "Transaction conflict detected");
 					const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
@@ -515,7 +515,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(registrationsWithStatus));
 			} catch (error) {
-				request.log.error({ err: error }, "Get user registrations error");
+				request.log.error({ error }, "Get user registrations error");
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -591,7 +591,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(registrationWithStatus));
 			} catch (error) {
-				request.log.error({ err: error }, "Get registration error");
+				request.log.error({ error }, "Get registration error");
 				const { response, statusCode } = serverErrorResponse("取得報名記錄失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -724,7 +724,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
-				request.log.error({ err: error }, "Edit registration error");
+				request.log.error({ error }, "Edit registration error");
 				const { response, statusCode } = serverErrorResponse("更新報名資料失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -812,7 +812,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const buttonUrl = `${frontendUrl}/zh-Hant/my-registration/${registration.id}`;
 
 				await sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
-					request.log.error({ err: error }, "Failed to send cancellation email");
+					request.log.error({ error }, "Failed to send cancellation email");
 				});
 
 				const cancelledNotification = buildRegistrationCancelledNotification(
@@ -820,12 +820,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					{ id: registration.id, createdAt: registration.createdAt, updatedAt: new Date() }
 				);
 				dispatchWebhook(registration.eventId, "registration_cancelled", cancelledNotification).catch(error => {
-					request.log.error({ err: error }, "Failed to dispatch cancellation webhook");
+					request.log.error({ error }, "Failed to dispatch cancellation webhook");
 				});
 
 				return reply.send(successResponse(null, "報名已取消"));
 			} catch (error) {
-				request.log.error({ err: error }, "Cancel registration error");
+				request.log.error({ error }, "Cancel registration error");
 
 				if ((error as Error).message === "ALREADY_CANCELLED") {
 					const { response, statusCode } = conflictResponse("報名已被取消");
@@ -834,7 +834,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const prismaError = error as PrismaError;
 				if (prismaError.code === "P2034") {
-					request.log.warn({ err: error }, "Cancellation conflict detected");
+					request.log.warn({ error }, "Cancellation conflict detected");
 					const { response, statusCode } = conflictResponse("取消系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+import { logger } from "#utils/logger";
 import { exec } from "child_process";
 import { createHash } from "crypto";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
+const componentLogger = logger.child({ component: "db-init" });
 
 const isProduction = process.env.NODE_ENV === "production";
 const SCHEMA_HASH_FILE = ".prisma-schema-hash";
@@ -43,47 +45,48 @@ function saveSchemaHash(): void {
 }
 
 async function runCommand(command: string, description: string): Promise<boolean> {
-	console.log(`\n🔄 ${description}...`);
+	componentLogger.info({ description }, "\n🔄 Starting task...");
 	try {
 		const { stdout, stderr } = await execAsync(command, {
 			cwd: process.cwd(),
 			env: process.env
 		});
-		if (stdout) console.log(stdout);
-		if (stderr) console.error(stderr);
-		console.log(`✅ ${description} completed`);
+		if (stdout) componentLogger.info({ channel: "stdout" }, stdout);
+		if (stderr) componentLogger.info({ channel: "stderr" }, stderr);
+		componentLogger.info({ description }, "✅ Task completed");
 		return true;
 	} catch (error) {
 		const err = error as { message: string; stdout?: string; stderr?: string };
-		console.error(`❌ ${description} failed:`, err.message);
-		if (err.stdout) console.log(err.stdout);
-		if (err.stderr) console.error(err.stderr);
+		componentLogger.error({ message: err.message }, `❌ ${description} failed`);
+		if (err.stdout) componentLogger.info({ channel: "stdout" }, err.stdout);
+		if (err.stderr) componentLogger.info({ channel: "stderr" }, err.stderr);
 		return false;
 	}
 }
 
 async function initDatabase(): Promise<void> {
-	console.log("\n🚀 Starting database initialization...");
-	console.log(`📍 Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}`);
+	componentLogger.info("\n🚀 Starting database initialization...");
+	const environment = isProduction ? "PRODUCTION" : "DEVELOPMENT";
+	componentLogger.info({ environment }, "📍 Environment");
 
 	if (isProduction) {
 		// Production: Use migrations only (safe, no data loss)
-		console.log("\n⚠️  Production mode: Using safe migration strategy");
+		componentLogger.info("\n⚠️  Production mode: Using safe migration strategy");
 
 		const migrateSuccess = await runCommand("npx prisma migrate deploy", "Applying pending migrations");
 
 		if (!migrateSuccess) {
-			console.error("\n❌ Migration failed! Please check your database connection and migrations.");
+			componentLogger.error("\n❌ Migration failed! Please check your database connection and migrations.");
 			process.exit(1);
 		}
 	} else {
 		// Development: Use db push for rapid iteration
-		console.log("\n🛠️  Development mode: Using db push for rapid iteration");
+		componentLogger.info("\n🛠️  Development mode: Using db push for rapid iteration");
 
 		const pushSuccess = await runCommand("npx prisma db push --skip-generate", "Syncing database schema");
 
 		if (!pushSuccess) {
-			console.error("\n❌ Database sync failed! Please check your database connection.");
+			componentLogger.error("\n❌ Database sync failed! Please check your database connection.");
 			process.exit(1);
 		}
 	}
@@ -95,20 +98,20 @@ async function initDatabase(): Promise<void> {
 		const generateSuccess = await runCommand("npx prisma generate", "Generating Prisma Client");
 
 		if (!generateSuccess) {
-			console.error("\n❌ Prisma Client generation failed!");
+			componentLogger.error("\n❌ Prisma Client generation failed!");
 			process.exit(1);
 		}
 
 		saveSchemaHash();
 	} else {
-		console.log("\n⚡ Schema unchanged, skipping Prisma Client generation");
+		componentLogger.info("\n⚡ Schema unchanged, skipping Prisma Client generation");
 	}
 
-	console.log("\n✨ Database initialization completed successfully!\n");
+	componentLogger.info("\n✨ Database initialization completed successfully!\n");
 }
 
 // Run initialization
 initDatabase().catch(error => {
-	console.error("\n💥 Database initialization error:", error);
+	componentLogger.error({ error }, "\n💥 Database initialization error");
 	process.exit(1);
 });

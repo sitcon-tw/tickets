@@ -1,8 +1,11 @@
 import prisma from "#config/database";
 import { getRedisClient } from "#config/redis";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import ical, { ICalCalendar } from "ical-generator";
+
+const componentLogger = logger.child({ component: "public/calendar" });
 
 interface CalendarParams {
 	eventSlug: string;
@@ -21,11 +24,11 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 		try {
 			const cached = await redis.get(cacheKey);
 			if (cached) {
-				console.log(`Calendar cache hit for event: ${eventSlug}`);
+				componentLogger.info({ eventSlug }, "Calendar cache hit for event");
 				return cached;
 			}
 		} catch (error) {
-			console.error("Redis get error:", error);
+			componentLogger.error({ error }, "Redis get error");
 		}
 	}
 
@@ -103,9 +106,9 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 	if (redis) {
 		try {
 			await redis.setex(cacheKey, 3600, icalString);
-			console.log(`Calendar cached for event: ${eventSlug}`);
+			componentLogger.info({ eventSlug }, "Calendar cached for event");
 		} catch (error) {
-			console.error("Redis set error:", error);
+			componentLogger.error({ error }, "Redis set error");
 		}
 	}
 
@@ -127,7 +130,7 @@ const publicCalendarRoutes: FastifyPluginAsync = async fastify => {
 
 			return reply.send(icalString);
 		} catch (error) {
-			console.error("Generate calendar error:", error);
+			componentLogger.error({ error }, "Generate calendar error");
 			if (error instanceof Error && error.message === "Event not found") {
 				const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 				return reply.code(statusCode).send(response);

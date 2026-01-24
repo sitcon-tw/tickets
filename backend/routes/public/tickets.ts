@@ -1,7 +1,10 @@
 import prisma from "#config/database";
 import { publicTicketSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+
+const componentLogger = logger.child({ component: "public/tickets" });
 
 const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 	// Get single ticket information (public)
@@ -53,7 +56,7 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				return reply.send(successResponse(ticketWithStatus));
 			} catch (error) {
-				console.error("Get public ticket info error:", error);
+				componentLogger.error({ error }, "Get public ticket info error");
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
 				return reply.code(statusCode).send(response);
 			}

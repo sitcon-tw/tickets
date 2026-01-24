@@ -1,4 +1,7 @@
+import { logger } from "#utils/logger";
 import { context, SpanStatusCode, trace, type Span, type Tracer } from "@opentelemetry/api";
+
+const tracingLogger = logger.child({ component: "tracing" });
 
 const isOtelEnabled = process.env.OTEL_ENABLED === "true";
 
@@ -47,11 +50,11 @@ if (isOtelEnabled) {
 	});
 
 	sdk.start();
-	console.log("✅ OpenTelemetry tracing initialized");
+	tracingLogger.info("✅ OpenTelemetry tracing initialized");
 
 	tracer = trace.getTracer("tickets-backend", "1.0.0");
 } else {
-	console.log("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
+	tracingLogger.info("⚡ OpenTelemetry disabled (set OTEL_ENABLED=true to enable)");
 	tracer = {
 		startActiveSpan: <T>(_name: string, fn: (span: NoopSpan) => T): T => fn({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} }),
 		startSpan: (_name?: string): NoopSpan => ({ setAttribute: () => {}, setStatus: () => {}, recordException: () => {}, end: () => {}, addEvent: () => {} })

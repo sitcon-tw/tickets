@@ -5,8 +5,11 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
 import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
-import { sendInvitationCode } from "#utils/email.ts";
+import { sendInvitationCode } from "#utils/email";
+import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/invitationCodes" });
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
@@ -87,7 +90,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.code(201).send(successResponse(invitationCode, "邀請碼創建成功"));
 			} catch (error) {
-				console.error("Create invitation code error:", error);
+				componentLogger.error({ error }, "Create invitation code error");
 				const { response, statusCode } = serverErrorResponse("創建邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -144,7 +147,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(invitationCode));
 			} catch (error) {
-				console.error("Get invitation code error:", error);
+				componentLogger.error({ error }, "Get invitation code error");
 				const { response, statusCode } = serverErrorResponse("取得邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -249,7 +252,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(invitationCode, "邀請碼更新成功"));
 			} catch (error) {
-				console.error("Update invitation code error:", error);
+				componentLogger.error({ error }, "Update invitation code error");
 				const { response, statusCode } = serverErrorResponse("更新邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -289,7 +292,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(null, "邀請碼刪除成功"));
 			} catch (error) {
-				console.error("Delete invitation code error:", error);
+				componentLogger.error({ error }, "Delete invitation code error");
 				const { response, statusCode } = serverErrorResponse("刪除邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -376,7 +379,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(codesWithStatus));
 			} catch (error) {
-				console.error("List invitation codes error:", error);
+				componentLogger.error({ error }, "List invitation codes error");
 				const { response, statusCode } = serverErrorResponse("取得邀請碼列表失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -475,7 +478,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					)
 				);
 			} catch (error) {
-				console.error("Bulk create invitation codes error:", error);
+				componentLogger.error({ error }, "Bulk create invitation codes error");
 				const { response, statusCode } = serverErrorResponse("批量創建邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}
@@ -533,7 +536,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				return reply.send(successResponse(null, "成功寄送邀請碼"));
 			} catch (error) {
-				console.error("Send invitation codes email error:", error);
+				componentLogger.error({ error }, "Send invitation codes email error");
 				const { response, statusCode } = serverErrorResponse("寄送邀請碼失敗");
 				return reply.code(statusCode).send(response);
 			}

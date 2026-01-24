@@ -1,8 +1,11 @@
 import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { publicReferralSchemas, referralSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+
+const componentLogger = logger.child({ component: "public/referrals" });
 
 interface ReferralValidateRequest {
 	code: string;
@@ -65,7 +68,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					}
 
 					if (!isUnique) {
-						console.error("Failed to generate unique referral code after", maxAttempts, "attempts");
+						componentLogger.error({ maxAttempts }, "Failed to generate unique referral code after attempts");
 						const { response, statusCode } = errorResponse("INTERNAL_ERROR", "無法生成唯一的推薦碼");
 						return reply.code(statusCode).send(response);
 					}
@@ -97,7 +100,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					eventId: referral.eventId
 				});
 			} catch (error) {
-				console.error("Get referral link error:", error);
+				componentLogger.error({ error }, "Get referral link error");
 				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}
@@ -196,7 +199,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 			} catch (error) {
-				console.error("Get referral stats error:", error);
+				componentLogger.error({ error }, "Get referral stats error");
 				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}
@@ -229,7 +232,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					referrerId: referral?.registrationId || null
 				});
 			} catch (error) {
-				console.error("Validate referral code error:", error);
+				componentLogger.error({ error }, "Validate referral code error");
 				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", (error as Error).message, 500);
 				return reply.code(statusCode).send(response);
 			}

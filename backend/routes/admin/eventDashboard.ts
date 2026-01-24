@@ -1,9 +1,12 @@
 import prisma from "#config/database";
 import { requireEventDashboardAccess } from "#middleware/auth";
 import { eventDashboardSchemas } from "#schemas";
+import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+
+const componentLogger = logger.child({ component: "admin/eventDashboard" });
 
 const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireEventDashboardAccess);
@@ -144,7 +147,7 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				return successResponse(dashboardData, "取得活動儀表板數據成功");
 			} catch (error) {
-				console.error("Get event dashboard analytics error:", error);
+				componentLogger.error({ error }, "Get event dashboard analytics error");
 				const { response, statusCode } = serverErrorResponse("取得活動儀表板數據失敗");
 				return reply.code(statusCode).send(response);
 			}

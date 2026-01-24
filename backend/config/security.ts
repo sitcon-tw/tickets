@@ -2,8 +2,11 @@
  * @fileoverview Security configuration for the application
  */
 
+import { logger } from "#utils/logger";
 import type { RateLimitPluginOptions, errorResponseBuilderContext } from "@fastify/rate-limit";
 import type { FastifyRequest } from "fastify";
+
+const securityLogger = logger.child({ component: "security" });
 
 /**
  * Rate limiting configuration
@@ -102,7 +105,7 @@ export const bodySizeConfig = {
 export const getAdminEmails = (): string[] => {
 	const adminEmailsEnv = process.env.ADMIN_EMAILS;
 	if (!adminEmailsEnv) {
-		console.warn("ADMIN_EMAILS environment variable not set. No automatic admin assignments will occur.");
+		securityLogger.warn("ADMIN_EMAILS environment variable not set. No automatic admin assignments will occur.");
 		return [];
 	}
 	return adminEmailsEnv
