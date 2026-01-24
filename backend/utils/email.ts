@@ -60,11 +60,8 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 	} catch (error) {
 		componentLogger.error(
 			{
-				email,
-				errorMessage: error instanceof Error ? error.message : String(error),
-				errorCode: error && typeof error === "object" && "code" in error ? error.code : undefined,
-				errorName: error instanceof Error ? error.name : undefined,
-				stack: error instanceof Error ? error.stack : undefined
+				error,
+				email
 			},
 			"Email sending error"
 		);
