@@ -51,15 +51,15 @@ async function runCommand(command: string, description: string): Promise<boolean
 			cwd: process.cwd(),
 			env: process.env
 		});
-		if (stdout) componentLogger.info(stdout);
-		if (stderr) componentLogger.error(stderr);
+		if (stdout) componentLogger.info({ channel: "stdout" }, stdout);
+		if (stderr) componentLogger.info({ channel: "stderr" }, stderr);
 		componentLogger.info({ description }, "✅ Task completed");
 		return true;
 	} catch (error) {
 		const err = error as { message: string; stdout?: string; stderr?: string };
 		componentLogger.error({ message: err.message }, `❌ ${description} failed`);
-		if (err.stdout) componentLogger.info(err.stdout);
-		if (err.stderr) componentLogger.error(err.stderr);
+		if (err.stdout) componentLogger.info({ channel: "stdout" }, err.stdout);
+		if (err.stderr) componentLogger.info({ channel: "stderr" }, err.stderr);
 		return false;
 	}
 }
