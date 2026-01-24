@@ -5,7 +5,6 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
-import { CacheInvalidation } from "#utils/cache-keys";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
@@ -60,8 +59,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
 						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts
 					},
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: CacheInvalidation.eventFormFields()
 				})) as EventFormField;
 
 				// Normalize filters: convert empty/invalid filters to null
@@ -205,11 +202,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const formField = (await prisma.eventFormFields.update({
 					where: { id },
 					data,
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:event_form_fields:*"],
-						hasPattern: true
-					}
 				})) as EventFormField;
 
 				// Normalize filters: convert empty/invalid filters to null
@@ -251,11 +243,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				await prisma.eventFormFields.delete({
 					where: { id },
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:event_form_fields:*"],
-						hasPattern: true
-					}
 				});
 
 				return reply.send(successResponse(null, "表單欄位刪除成功"));
@@ -367,11 +354,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						await prisma.eventFormFields.update({
 							where: { id },
 							data: { order },
-							// @ts-expect-error - uncache is added by prisma-extension-redis
-							uncache: {
-								uncacheKeys: ["prisma:event_form_fields:*"],
-								hasPattern: true
-							}
 						});
 					}
 				});
