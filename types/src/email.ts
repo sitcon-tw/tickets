@@ -17,8 +17,8 @@ export const TargetAudienceSchema = z.object({
 	registrationStatuses: z.array(z.string()).optional(),
 	hasReferrals: z.boolean().optional(),
 	isReferrer: z.boolean().optional(),
-	registeredAfter: z.iso.datetime().optional(),
-	registeredBefore: z.iso.datetime().optional(),
+	registeredAfter: z.date().optional(),
+	registeredBefore: z.date().optional(),
 	tags: z.array(z.string()).optional(),
 	emailDomains: z.array(z.string()).optional()
 });
@@ -37,10 +37,10 @@ export const EmailCampaignSchema = z.object({
 	status: EmailCampaignStatusSchema,
 	sentCount: z.number().int().min(0),
 	totalCount: z.number().int().min(0),
-	scheduledAt: z.iso.datetime().nullable().optional(),
-	sentAt: z.iso.datetime().nullable().optional(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime(),
+	scheduledAt: z.date().nullable().optional(),
+	sentAt: z.date().nullable().optional(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 	user: z
 		.object({
 			name: z.string(),
@@ -58,7 +58,7 @@ export const EmailCampaignCreateRequestSchema = z.object({
 	subject: z.string().min(1),
 	content: z.string().min(1),
 	recipientFilter: z.string().optional(),
-	scheduledAt: z.iso.datetime().optional()
+	scheduledAt: z.date().optional()
 });
 export type EmailCampaignCreateRequest = z.infer<typeof EmailCampaignCreateRequestSchema>;
 
@@ -70,7 +70,7 @@ export const EmailCampaignUpdateRequestSchema = z.object({
 	subject: z.string().min(1).optional(),
 	content: z.string().min(1).optional(),
 	recipientFilter: z.string().optional(),
-	scheduledAt: z.iso.datetime().optional()
+	scheduledAt: z.date().optional()
 });
 export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateRequestSchema>;
 
@@ -79,7 +79,7 @@ export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateReque
  */
 export const EmailCampaignSendRequestSchema = z.object({
 	sendNow: z.boolean().optional().default(false),
-	scheduledAt: z.iso.datetime().optional()
+	scheduledAt: z.date().optional()
 });
 export type EmailCampaignSendRequest = z.infer<typeof EmailCampaignSendRequestSchema>;
 

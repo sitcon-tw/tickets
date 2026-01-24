@@ -101,8 +101,6 @@ export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
 		})
 	});
 
-export const DateTimeSchema = z.iso.datetime().describe("ISO 8601 日期時間格式");
-
 // Re-export common enums for convenience
 export { UserRoleSchema as RoleEnumSchema, RegistrationStatusSchema as StatusEnumSchema };
 
@@ -488,7 +486,9 @@ export const invitationCodeSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			409: ErrorResponseSchema
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -498,7 +498,8 @@ export const invitationCodeSchemas = {
 		params: IdParamSchema,
 		response: {
 			200: InvitationCodeResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -512,7 +513,10 @@ export const invitationCodeSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -524,7 +528,9 @@ export const invitationCodeSchemas = {
 			200: SuccessResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -537,7 +543,8 @@ export const invitationCodeSchemas = {
 			eventId: z.string().optional().describe("篩選活動 ID")
 		}),
 		response: {
-			200: InvitationCodesListResponseSchema
+			200: InvitationCodesListResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -751,20 +758,20 @@ export const AdminRegistrationSchema = z.object({
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.string(),
-	updatedAt: z.string(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 	event: z
 		.object({
 			id: z.string(),
-			name: z.unknown(),
-			startDate: z.string(),
-			endDate: z.string()
+			name: LocalizedTextSchema,
+			startDate: z.date(),
+			endDate: z.date()
 		})
 		.optional(),
 	ticket: z
 		.object({
 			id: z.string(),
-			name: z.unknown(),
+			name: LocalizedTextSchema,
 			price: z.number()
 		})
 		.optional()
@@ -842,16 +849,16 @@ export const userRegistrationsResponse = {
 				status: z.string(),
 				referredBy: z.string().nullable().optional(),
 				formData: z.unknown(),
-				createdAt: z.string(),
-				updatedAt: z.string(),
+				createdAt: z.date(),
+				updatedAt: z.date(),
 				event: z.object({
 					id: z.string(),
 					name: z.unknown(),
 					description: z.unknown().nullable().optional(),
 					locationText: z.unknown().nullable().optional(),
 					mapLink: z.string().nullable().optional(),
-					startDate: z.string(),
-					endDate: z.string(),
+					startDate: z.date(),
+					endDate: z.date(),
 					ogImage: z.string().nullable().optional()
 				}),
 				ticket: z.object({
@@ -859,7 +866,7 @@ export const userRegistrationsResponse = {
 					name: z.unknown(),
 					description: z.unknown().nullable().optional(),
 					price: z.number(),
-					saleEnd: z.string().nullable().optional()
+					saleEnd: z.date().nullable().optional()
 				}),
 				isUpcoming: z.boolean(),
 				isPast: z.boolean(),
@@ -1399,11 +1406,11 @@ export const EventDashboardResponseSchema = z.object({
 		.object({
 			event: z.object({
 				id: z.string(),
-				name: z.record(z.string(), z.unknown()),
-				startDate: z.string(),
-				endDate: z.string(),
-				locationText: z.unknown().nullable(),
-				mapLink: z.string().nullable()
+				name: LocalizedTextSchema,
+				startDate: z.date(),
+				endDate: z.date(),
+				locationText: LocalizedTextSchema.nullable(),
+				mapLink: z.string().nullable().optional()
 			}),
 			stats: z.object({
 				totalRegistrations: z.number().int(),
@@ -1600,8 +1607,8 @@ export const InvitationCodeBulkCreateBodySchema = z.object({
 	name: z.string().min(1),
 	count: z.number().int().min(1).max(100),
 	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.iso.datetime().optional(),
-	validUntil: z.iso.datetime().optional()
+	validFrom: z.date().optional(),
+	validUntil: z.date().optional()
 });
 
 export const InvitationCodeSendEmailBodySchema = z.object({
@@ -1614,12 +1621,29 @@ export const adminInvitationCodeSchemas = {
 	bulkCreateInvitationCodes: {
 		description: "批量創建邀請碼",
 		tags: ["admin/invitation-codes"],
-		body: InvitationCodeBulkCreateBodySchema
+		body: InvitationCodeBulkCreateBodySchema,
+		response: {
+			201: z.object({
+				success: z.literal(true),
+				message: z.string(),
+				data: z.object({
+					count: z.number(),
+					codes: z.array(z.string())
+				})
+			}),
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	},
 	sendInvitationCodeEmail: {
 		description: "透過 Email 寄送邀請碼",
 		tags: ["admin/invitation-codes"],
-		body: InvitationCodeSendEmailBodySchema
+		body: InvitationCodeSendEmailBodySchema,
+		response: {
+			200: SuccessResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
@@ -1665,7 +1689,6 @@ export const searchQuery = SearchQuerySchemaExtended;
 export const successResponse = SuccessResponseSchema;
 export const errorResponse = ErrorResponseSchema;
 export const paginatedResponse = PaginatedResponseSchema;
-export const dateTimeString = DateTimeSchema;
 export const statusEnum = RegistrationStatusSchema;
 export const roleEnum = UserRoleSchema;
 export const campaignStatusEnum = CampaignStatusSchema;

@@ -14,9 +14,9 @@ export const SmsVerificationSchema = z.object({
 	phoneNumber: z.string(),
 	code: z.string(),
 	verified: z.boolean(),
-	expiresAt: z.iso.datetime(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime()
+	expiresAt: z.date(),
+	createdAt: z.date(),
+	updatedAt: z.date()
 });
 export type SmsVerification = z.infer<typeof SmsVerificationSchema>;
 
@@ -34,8 +34,8 @@ export const UserSchema = z.object({
 	isActive: z.boolean(),
 	phoneNumber: z.string().nullable().optional(),
 	phoneVerified: z.boolean(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 	smsVerifications: z.array(SmsVerificationSchema).optional()
 });
 export type User = z.infer<typeof UserSchema>;

@@ -441,16 +441,16 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						status: reg.status,
 						referredBy: reg.referredBy ?? null,
 						formData: parsedFormData,
-						createdAt: reg.createdAt.toISOString(),
-						updatedAt: reg.updatedAt.toISOString(),
+						createdAt: reg.createdAt,
+						updatedAt: reg.updatedAt,
 						event: {
 							id: reg.event.id,
 							name: reg.event.name,
 							description: reg.event.description ?? null,
 							locationText: reg.event.locationText ?? null,
 							mapLink: reg.event.mapLink ?? null,
-							startDate: reg.event.startDate.toISOString(),
-							endDate: reg.event.endDate.toISOString(),
+							startDate: reg.event.startDate,
+							endDate: reg.event.endDate,
 							ogImage: reg.event.ogImage ?? null
 						},
 						ticket: {
@@ -458,7 +458,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							name: reg.ticket.name,
 							description: reg.ticket.description ?? null,
 							price: Number(reg.ticket.price),
-							saleEnd: reg.ticket.saleEnd?.toISOString() ?? null
+							saleEnd: reg.ticket.saleEnd ?? null
 						},
 						isUpcoming: reg.event.startDate > now,
 						isPast: reg.event.endDate < now,

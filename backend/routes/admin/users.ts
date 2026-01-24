@@ -50,13 +50,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt,
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt,
 					smsVerifications: user.smsVerifications?.map(sms => ({
 						...sms,
-						expiresAt: sms.expiresAt instanceof Date ? sms.expiresAt.toISOString() : sms.expiresAt,
-						createdAt: sms.createdAt instanceof Date ? sms.createdAt.toISOString() : sms.createdAt,
-						updatedAt: sms.updatedAt instanceof Date ? sms.updatedAt.toISOString() : sms.updatedAt
+						expiresAt: sms.expiresAt,
+						createdAt: sms.createdAt,
+						updatedAt: sms.updatedAt
 					}))
 				}));
 
@@ -122,8 +122,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions));
@@ -205,8 +205,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					...user,
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions, "用戶更新成功"));

@@ -15,11 +15,11 @@ export const InvitationCodeSchema = z.object({
 	name: z.string().nullable().optional(),
 	usageLimit: z.number().int().min(1).nullable().optional(),
 	usedCount: z.number().int().min(0),
-	validFrom: z.iso.datetime().nullable().optional(),
-	validUntil: z.iso.datetime().nullable().optional(),
+	validFrom: z.date().nullable().optional(),
+	validUntil: z.date().nullable().optional(),
 	isActive: z.boolean(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime()
+	createdAt: z.date(),
+	updatedAt: z.date()
 });
 export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
 
@@ -28,7 +28,7 @@ export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
  */
 export const InvitationCodeInfoSchema = InvitationCodeSchema.extend({
 	description: z.string().optional(),
-	expiresAt: z.iso.datetime().optional()
+	expiresAt: z.date().optional()
 });
 export type InvitationCodeInfo = z.infer<typeof InvitationCodeInfoSchema>;
 
@@ -40,8 +40,8 @@ export const InvitationCodeCreateRequestSchema = z.object({
 	code: z.string().min(1),
 	name: z.string().optional(),
 	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.iso.datetime().optional(),
-	validUntil: z.iso.datetime().optional()
+	validFrom: z.date().optional(),
+	validUntil: z.date().optional()
 });
 export type InvitationCodeCreateRequest = z.infer<typeof InvitationCodeCreateRequestSchema>;
 
@@ -52,8 +52,8 @@ export const InvitationCodeUpdateRequestSchema = z.object({
 	code: z.string().min(1).optional(),
 	name: z.string().optional(),
 	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.iso.datetime().optional(),
-	validUntil: z.iso.datetime().optional(),
+	validFrom: z.date().optional(),
+	validUntil: z.date().optional(),
 	isActive: z.boolean().optional(),
 	ticketId: z.string().optional()
 });
@@ -82,10 +82,10 @@ export const InvitationCodeVerificationSchema = z.object({
 			description: z.string().optional(),
 			usedCount: z.number().int().min(0),
 			usageLimit: z.number().int().min(1).nullable().optional(),
-			validFrom: z.iso.datetime().nullable().optional(),
-			validUntil: z.iso.datetime().nullable().optional(),
+			validFrom: z.date().nullable().optional(),
+			validUntil: z.date().nullable().optional(),
 			ticketId: z.string(),
-			expiresAt: z.iso.datetime().optional()
+			expiresAt: z.date().optional()
 		})
 		.optional(),
 	availableTickets: z

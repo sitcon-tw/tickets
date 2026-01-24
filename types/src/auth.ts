@@ -91,7 +91,7 @@ export const MagicLinkAttemptSchema = z.object({
 	ipAddress: z.string().nullable().optional(),
 	success: z.boolean(),
 	sessionId: z.string().nullable().optional(),
-	createdAt: z.iso.datetime()
+	createdAt: z.date()
 });
 export type MagicLinkAttempt = z.infer<typeof MagicLinkAttemptSchema>;
 
@@ -101,8 +101,8 @@ export type MagicLinkAttempt = z.infer<typeof MagicLinkAttemptSchema>;
 export const SessionSchema = z.object({
 	user: z.object({
 		id: z.string(),
-		createdAt: z.iso.datetime(),
-		updatedAt: z.iso.datetime(),
+		createdAt: z.date(),
+		updatedAt: z.date(),
 		email: z.email(),
 		emailVerified: z.boolean(),
 		name: z.string(),
@@ -110,10 +110,10 @@ export const SessionSchema = z.object({
 	}),
 	session: z.object({
 		id: z.string(),
-		createdAt: z.iso.datetime(),
-		updatedAt: z.iso.datetime(),
+		createdAt: z.date(),
+		updatedAt: z.date(),
 		userId: z.string(),
-		expiresAt: z.iso.datetime(),
+		expiresAt: z.date(),
 		token: z.string(),
 		ipAddress: z.string().nullable().optional(),
 		userAgent: z.string().nullable().optional()
