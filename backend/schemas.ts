@@ -925,7 +925,10 @@ export const ticketSchemas = {
 			201: TicketResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -935,7 +938,8 @@ export const ticketSchemas = {
 		params: IdParamSchema,
 		response: {
 			200: TicketResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -949,7 +953,9 @@ export const ticketSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -961,7 +967,9 @@ export const ticketSchemas = {
 			200: SuccessResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -973,7 +981,8 @@ export const ticketSchemas = {
 			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
 		}),
 		response: {
-			200: TicketsListResponseSchema
+			200: TicketsListResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1255,7 +1264,9 @@ export const adminTicketSchemas = {
 		tags: ["admin/tickets"],
 		params: IdParamSchema,
 		response: {
-			200: TicketAnalyticsResponseSchema
+			200: TicketAnalyticsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 	reorderTickets: {
@@ -1263,7 +1274,10 @@ export const adminTicketSchemas = {
 		tags: ["admin/tickets"],
 		body: TicketReorderBodySchema,
 		response: {
-			200: TicketReorderResponseSchema
+			200: TicketReorderResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
