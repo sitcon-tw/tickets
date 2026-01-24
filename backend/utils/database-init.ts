@@ -1,14 +1,17 @@
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import type { Event, Ticket } from "@prisma/client";
+
+const componentLogger = logger.child({ component: "database-init" });
 
 export async function initializeDatabase(): Promise<void> {
 	try {
-		console.log("Checking database initialization...");
+		componentLogger.info("Checking database initialization...");
 
 		const eventCount = await prisma.event.count();
 
 		if (eventCount === 0) {
-			console.log("No events found, creating default event: SITCON 2026");
+			componentLogger.info("No events found, creating default event: SITCON 2026");
 
 			const defaultEvent: Event = await prisma.event.create({
 				data: {
@@ -27,7 +30,7 @@ export async function initializeDatabase(): Promise<void> {
 				}
 			});
 
-			console.log(`✅ Created default event: ${defaultEvent.name} (ID: ${defaultEvent.id})`);
+			componentLogger.info({ name: defaultEvent.name, id: defaultEvent.id }, "Created default event");
 
 			const defaultTickets = [
 				{
@@ -69,15 +72,15 @@ export async function initializeDatabase(): Promise<void> {
 						saleEnd: new Date("2026-02-28T23:59:59.000Z")
 					}
 				});
-				console.log(`✅ Created ticket: ${ticket.name} (ID: ${ticket.id})`);
+				componentLogger.info({ name: ticket.name, id: ticket.id }, "Created ticket");
 			}
 
-			console.log("🎉 Database initialized with default data!");
+			componentLogger.info("🎉 Database initialized with default data!");
 		} else {
-			console.log(`Database already initialized with ${eventCount} event(s)`);
+			componentLogger.info({ eventCount }, "Database already initialized");
 		}
 	} catch (error) {
-		console.error("❌ Failed to initialize database:", error);
+		componentLogger.error({ error }, "❌ Failed to initialize database:");
 		throw error;
 	}
 }

@@ -4,6 +4,7 @@
  */
 
 import prisma from "#config/database";
+import { logger } from "#utils/logger";
 import type {
 	WebhookAttendee,
 	WebhookEventInfo,
@@ -18,6 +19,8 @@ import type {
 
 import crypto from "crypto";
 import dns from "dns";
+
+const componentLogger = logger.child({ component: "webhook" });
 
 // Force IPv4-first DNS resolution to avoid IPv6 connectivity issues in containers
 dns.setDefaultResultOrder("ipv4first");
@@ -330,7 +333,7 @@ export async function dispatchWebhook(eventId: string, eventType: WebhookEventTy
 			await updateFailureTracking(webhook.id);
 		}
 	} catch (error) {
-		console.error("Error dispatching webhook:", error);
+		componentLogger.error({ error }, "Error dispatching webhook");
 	}
 }
 
@@ -369,7 +372,7 @@ async function updateFailureTracking(webhookId: string): Promise<void> {
 						lastFailureAt: now
 					}
 				});
-				console.log(`Webhook ${webhookId} auto-disabled after ${newFailurePeriods} consecutive failure periods`);
+				componentLogger.info({ webhookId, newFailurePeriods }, "Webhook auto-disabled after consecutive failure periods");
 			} else {
 				// Start new observation period
 				await prisma.webhookEndpoint.update({

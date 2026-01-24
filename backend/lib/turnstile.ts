@@ -3,7 +3,10 @@
  * Server-side validation for Turnstile tokens
  */
 
+import { logger } from "#utils/logger";
 import type { TurnstileResponse, TurnstileValidationOptions, TurnstileValidationResult } from "@sitcontix/types";
+
+const componentLogger = logger.child({ component: "turnstile" });
 
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
@@ -45,7 +48,7 @@ export async function validateTurnstile(token: string, options: TurnstileValidat
 	}
 
 	if (!SECRET_KEY) {
-		console.error("TURNSTILE_SECRET_KEY is not configured");
+		componentLogger.error("TURNSTILE_SECRET_KEY is not configured");
 		return {
 			valid: false,
 			reason: "server_configuration_error",
@@ -111,7 +114,7 @@ export async function validateTurnstile(token: string, options: TurnstileValidat
 			tokenAge = (now.getTime() - challengeTime.getTime()) / (1000 * 60);
 
 			if (tokenAge > 4) {
-				console.warn(`Turnstile token is ${tokenAge.toFixed(1)} minutes old (expires at 5 minutes)`);
+				componentLogger.warn({ tokenAge: tokenAge.toFixed(1) }, "Turnstile token is minutes old (expires at 5 minutes)");
 			}
 		}
 
@@ -131,7 +134,7 @@ export async function validateTurnstile(token: string, options: TurnstileValidat
 			};
 		}
 
-		console.error("Turnstile validation error:", error);
+		componentLogger.error({ error }, "Turnstile validation error");
 		return {
 			valid: false,
 			reason: "internal_error",

@@ -6,7 +6,10 @@ import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
+import { logger } from "#utils/logger";
 import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+
+const componentLogger = logger.child({ component: "admin/registrations" });
 
 import type { PaginationQuery, RegistrationUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -77,8 +80,8 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						parsedFormData = JSON.parse(reg.formData);
 					}
 				} catch (error) {
-					console.error(`Failed to parse formData for registration ${reg.id}:`, error);
-					console.error(`Raw formData was:`, reg.formData);
+					componentLogger.error({ error, registrationId: reg.id }, "Failed to parse formData for registration");
+					componentLogger.error({ rawData: reg.formData }, "Raw formData");
 				}
 
 				const plainReg = {

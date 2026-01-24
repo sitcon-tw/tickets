@@ -5,8 +5,11 @@ import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas } from "#schemas";
 import { calculateRecipients, sendCampaignEmail } from "#utils/email";
+import { logger } from "#utils/logger";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { z } from "zod/v4";
+
+const componentLogger = logger.child({ component: "admin/emailCampaigns" });
 
 type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
 
@@ -298,7 +301,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					)
 				);
 			} catch (error) {
-				console.error("Send email campaign error:", error);
+				componentLogger.error({ error }, "Send email campaign error");
 
 				// Update campaign status to failed
 				try {
@@ -310,7 +313,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 						}
 					});
 				} catch (updateError) {
-					console.error("Failed to update campaign status:", updateError);
+					componentLogger.error({ error: updateError }, "Failed to update campaign status");
 				}
 
 				const { response, statusCode } = serverErrorResponse("發送郵件失敗：" + (error as Error).message);

@@ -104,7 +104,7 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 			}
 		};
 	} catch (error) {
-		request.log.error({ err: error }, "Auth middleware error");
+		request.log.error({ error }, "Auth middleware error");
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
 		return reply.code(statusCode).send(response);
 	}
