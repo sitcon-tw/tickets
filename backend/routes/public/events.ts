@@ -1,9 +1,10 @@
 import prisma from "#config/database";
+import { z } from "zod";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { LocalizedTextSchema } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "public/events" });
@@ -306,7 +307,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
 
 				const stats = {
-					eventName: event.name,
+					eventName: LocalizedTextSchema.parse(event.name),
 					totalRegistrations: soldTickets,
 					confirmedRegistrations: event._count.registrations,
 					totalTickets,
@@ -376,13 +377,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
-					name: field.name,
-					description: field.description,
+					name: LocalizedTextSchema.parse(field.name),
+					description: LocalizedTextSchema.nullable().parse(field.description),
 					type: field.type,
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [],
+					options: z.array(z.unknown()).parse(field.values || []),
 					order: field.order,
 					filters: field.filters || {},
 					prompts: field.prompts || {},

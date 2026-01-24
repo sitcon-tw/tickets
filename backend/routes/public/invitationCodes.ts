@@ -4,6 +4,7 @@ import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { LocalizedTextSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "public/invitationCodes" });
 
@@ -128,7 +129,11 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 							validUntil: invitationCode.validUntil,
 							ticketId: invitationCode.ticketId
 						},
-						availableTickets
+						availableTickets: availableTickets.map(ticket => ({
+							...ticket,
+							name: LocalizedTextSchema.parse(ticket.name),
+							description: LocalizedTextSchema.nullable().parse(ticket.description)
+						}))
 					})
 				);
 			} catch (error) {

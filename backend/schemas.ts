@@ -365,7 +365,9 @@ export const eventStatsResponse = {
 		success: z.literal(true),
 		message: z.string(),
 		data: EventStatsSchema
-	})
+	}),
+	404: ErrorResponseSchema,
+	500: ErrorResponseSchema
 } as const;
 
 // ----------------------------------------------------------------------------
@@ -1047,7 +1049,8 @@ export const userSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			409: ErrorResponseSchema
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1059,7 +1062,8 @@ export const userSchemas = {
 			200: UserResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1073,7 +1077,10 @@ export const userSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1084,7 +1091,8 @@ export const userSchemas = {
 		response: {
 			200: UserResponseSchema,
 			400: ErrorResponseSchema,
-			401: ErrorResponseSchema
+			401: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1095,7 +1103,8 @@ export const userSchemas = {
 		response: {
 			200: SuccessResponseSchema,
 			400: ErrorResponseSchema,
-			401: ErrorResponseSchema
+			401: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1109,7 +1118,8 @@ export const userSchemas = {
 		response: {
 			200: UsersListResponseSchema,
 			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1204,14 +1214,20 @@ export const publicEventSchemas = {
 		tags: ["events"],
 		params: PublicTicketIdParamSchema,
 		response: {
-			200: TicketFormFieldsResponseSchema
+			200: TicketFormFieldsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 	listPublicEvents: {
 		description: "獲取所有活動列表",
 		tags: ["events"],
 		querystring: PublicEventsQuerySchema,
-		response: publicEventsListResponse
+		response: {
+			200: publicEventsListResponse,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
@@ -1588,7 +1604,11 @@ export const publicInvitationCodeSchemas = {
 		...invitationCodeSchemas.validateInvitationCode,
 		description: "驗證邀請碼並返回可用票種",
 		tags: ["invitation-codes"],
-		response: invitationCodeVerifyResponse
+		response: {
+			200: invitationCodeVerifyResponse,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	},
 	getInvitationCodeInfo: {
 		description: "獲取邀請碼資訊",

@@ -7,6 +7,7 @@ import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { UserRoleSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/users" });
 
@@ -48,6 +49,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
@@ -120,6 +122,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
@@ -203,6 +206,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
