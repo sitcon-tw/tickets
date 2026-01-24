@@ -44,6 +44,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.3
         version: 5.2.3
+      '@googleapis/sheets':
+        specifier: ^13.0.1
+        version: 13.0.1
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -86,9 +89,9 @@ importers:
       fastify-type-provider-zod:
         specifier: ^6.1.0
         version: 6.1.0(@fastify/swagger@9.5.1)(fastify@5.6.2)(openapi-types@12.1.3)(zod@4.3.5)
-      googleapis:
-        specifier: ^166.0.0
-        version: 166.0.0
+      google-auth-library:
+        specifier: ^10.5.0
+        version: 10.5.0
       ical-generator:
         specifier: ^10.0.0
         version: 10.0.0(@types/node@24.10.1)
@@ -868,6 +871,10 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.1':
     resolution: {integrity: sha512-ePEgLgVCqi2BBFnTMWPfIghu6FkbZnnBVhO2sSxvLfrdFw7wCHAHiDoM2h4NRgjbaY7+B7HgOLZGkK187pZTZg==}
+
+  '@googleapis/sheets@13.0.1':
+    resolution: {integrity: sha512-XTYObncN5Rqexc0uITZIN9OWTEyE/ZR2S6c7wAniqHe2oGXW9gcHR9f9hQwPMHFUTHjH7Jkj8SLdt0O0u37y2A==}
+    engines: {node: '>=12.0.0'}
 
   '@grpc/grpc-js@1.14.0':
     resolution: {integrity: sha512-N8Jx6PaYzcTRNzirReJCtADVoq4z7+1KQ4E70jTg/koQiMoUSN1kbNjPOqpPbhMFhfU1/l7ixspPl8dNY+FoUg==}
@@ -3922,10 +3929,6 @@ packages:
     resolution: {integrity: sha512-eCzNACUXPb1PW5l0ULTzMHaL/ltPRADoPgjBlT8jWsTbxkCp6siv+qKJ/1ldaybCthGwsYFYallF7u9AkU4L+A==}
     engines: {node: '>=18.0.0'}
 
-  googleapis@166.0.0:
-    resolution: {integrity: sha512-Xz7yG+ihVvYMwSULKIMeTp6vDX95rrSbsaR3xUmgYjwQdAkchMQ5ndFeG5QZwcBOIyvJFvG7ZLIZE7mKW2X/hw==}
-    engines: {node: '>=18'}
-
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -6704,6 +6707,12 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.1':
     dependencies:
       tslib: 2.8.1
+
+  '@googleapis/sheets@13.0.1':
+    dependencies:
+      googleapis-common: 8.0.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@grpc/grpc-js@1.14.0':
     dependencies:
@@ -10118,13 +10127,6 @@ snapshots:
       google-auth-library: 10.5.0
       qs: 6.14.0
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@166.0.0:
-    dependencies:
-      google-auth-library: 10.5.0
-      googleapis-common: 8.0.1
     transitivePeerDependencies:
       - supports-color
 

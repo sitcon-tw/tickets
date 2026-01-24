@@ -1,12 +1,13 @@
 import { logger } from "#utils/logger";
 import type { JsonValue } from "@prisma/client/runtime/library";
-import type { sheets_v4 } from "googleapis";
+import type { sheets_v4 } from "@googleapis/sheets";
+import type { JWT } from "google-auth-library";
 
 const componentLogger = logger.child({ component: "google-sheets" });
 
 interface GoogleSheetsClient {
 	sheets: sheets_v4.Sheets;
-	auth: unknown;
+	auth: JWT;
 }
 
 interface ServiceAccountKey {
@@ -37,11 +38,12 @@ interface ExportResult {
 
 export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 	try {
-		const { google } = await import("googleapis");
+		const { JWT } = await import("google-auth-library");
+		const googleSheets  = await import("@googleapis/sheets");
 
 		const serviceAccountKey: ServiceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
 
-		const auth = new google.auth.JWT({
+		const auth = new JWT({
 			email: serviceAccountKey.client_email,
 			key: serviceAccountKey.private_key,
 			scopes: ["https://www.googleapis.com/auth/spreadsheets"]
@@ -49,7 +51,7 @@ export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 
 		await auth.authorize();
 
-		const sheets = google.sheets({ version: "v4", auth });
+		const sheets = googleSheets.sheets({ version: "v4", auth });
 
 		return { sheets, auth };
 	} catch (error) {
