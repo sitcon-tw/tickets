@@ -1334,7 +1334,8 @@ export const adminRegistrationSchemas = {
 		tags: ["admin/registrations"],
 		params: IdParamSchema,
 		response: {
-			200: RegistrationDeleteResponseSchema
+			200: RegistrationDeleteResponseSchema,
+			404: ErrorResponseSchema,
 		}
 	},
 	getGoogleSheetsServiceAccount: {
