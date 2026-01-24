@@ -1,8 +1,8 @@
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
-import { LocalizedTextSchema } from "@sitcontix/types";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 

@@ -254,7 +254,7 @@ export const eventSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			422: ErrorResponseSchema,
+			422: ErrorResponseSchema
 		}
 	},
 
