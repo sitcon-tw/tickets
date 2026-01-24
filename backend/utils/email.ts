@@ -1,5 +1,7 @@
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
+import { SpanStatusCode } from "@opentelemetry/api";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
@@ -23,6 +25,17 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 }
 
 export const sendMagicLink = async (email: string, magicLink: string): Promise<boolean> => {
+	// Mask email for security (show only domain)
+	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+
+	const span = tracer.startSpan("email.send_magic_link", {
+		attributes: {
+			"email.recipient.masked": maskedEmail,
+			"email.type": "magic_link",
+			"email.provider": "mailtrap"
+		}
+	});
+
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
@@ -49,15 +62,27 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 		const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
+
+		span.addEvent("mailtrap.api.request");
+
 		await client.send({
 			from: sender,
 			to: recipients,
 			subject: `【SITCONTIX】登入連結 Login Link`,
 			html
 		});
+
+		span.setStatus({ code: SpanStatusCode.OK });
+
 		componentLogger.info({ email }, "Magic link email sent successfully");
 		return true;
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send magic link email"
+		});
+
 		componentLogger.error(
 			{
 				error,
@@ -66,10 +91,25 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			"Email sending error"
 		);
 		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
+	} finally {
+		span.end();
 	}
 };
 
 export const sendRegistrationConfirmation = async (registration: Registration, event: Event, ticket: Ticket, ticketUrl: string): Promise<boolean> => {
+	// Mask email for security
+	const maskedEmail = registration.email.includes("@") ? `***@${registration.email.split("@")[1]}` : "***";
+
+	const span = tracer.startSpan("email.send_registration_confirmation", {
+		attributes: {
+			"email.recipient.masked": maskedEmail,
+			"email.type": "registration_confirmation",
+			"email.provider": "mailtrap",
+			"event.id": event.id,
+			"ticket.id": ticket.id
+		}
+	});
+
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -248,6 +288,8 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			.replace(/\{\{calendarIcsUrl\}\}/g, calendarIcsUrl)
 			.replace(/\{\{calendarGoogleUrl\}\}/g, calendarGoogleUrl);
 
+		span.addEvent("mailtrap.api.request");
+
 		await client.send({
 			from: sender,
 			to: recipients,
@@ -255,15 +297,36 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			html
 		});
 
+		span.setStatus({ code: SpanStatusCode.OK });
+
 		componentLogger.info({ email: registration.email }, "Registration confirmation email sent successfully");
 		return true;
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send registration confirmation email"
+		});
+
 		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`);
+	} finally {
+		span.end();
 	}
 };
 
 export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, buttonUrl: string): Promise<boolean> => {
+	// Mask email for security
+	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+
+	const span = tracer.startSpan("email.send_cancellation", {
+		attributes: {
+			"email.recipient.masked": maskedEmail,
+			"email.type": "cancellation",
+			"email.provider": "mailtrap"
+		}
+	});
+
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
@@ -306,6 +369,8 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 			.replace(/\{\{buttonUrl\}\}/g, buttonUrl)
 			.replace(/\{\{email\}\}/g, email);
 
+		span.addEvent("mailtrap.api.request");
+
 		await client.send({
 			from: sender,
 			to: recipients,
@@ -313,11 +378,21 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 			html
 		});
 
+		span.setStatus({ code: SpanStatusCode.OK });
+
 		componentLogger.info({ email }, "Cancellation email sent successfully");
 		return true;
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send cancellation email"
+		});
+
 		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`);
+	} finally {
+		span.end();
 	}
 };
 
@@ -330,6 +405,17 @@ export const sendInvitationCode = async (
 	validUntil: string,
 	message?: string
 ): Promise<boolean> => {
+	// Mask email for security
+	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+
+	const span = tracer.startSpan("email.send_invitation_code", {
+		attributes: {
+			"email.recipient.masked": maskedEmail,
+			"email.type": "invitation_code",
+			"email.provider": "mailtrap"
+		}
+	});
+
 	try {
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
@@ -381,6 +467,8 @@ export const sendInvitationCode = async (
 			.replace(/\{\{message\}\}/g, message || "<p>感謝您！以下是您的邀請碼：</p>")
 			.replace(/\{\{email\}\}/g, email);
 
+		span.addEvent("mailtrap.api.request");
+
 		await client.send({
 			from: sender,
 			to: recipients,
@@ -388,15 +476,31 @@ export const sendInvitationCode = async (
 			html
 		});
 
+		span.setStatus({ code: SpanStatusCode.OK });
+
 		componentLogger.info({ email }, "Invitation code email sent successfully");
 		return true;
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send invitation code email"
+		});
+
 		componentLogger.error({ error }, "Email sending error");
 		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`);
+	} finally {
+		span.end();
 	}
 };
 
 export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
+	const span = tracer.startSpan("email.calculate_recipients", {
+		attributes: {
+			"email.has_filters": targetAudience !== null
+		}
+	});
+
 	try {
 		const where: Record<string, unknown> = {};
 
@@ -482,10 +586,22 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			}
 		});
 
+		const recipientCount = uniqueEmails.size;
+		span.setAttribute("email.recipient_count", recipientCount);
+		span.setStatus({ code: SpanStatusCode.OK });
+
 		return Array.from(uniqueEmails.values());
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to calculate recipients"
+		});
+
 		componentLogger.error({ error }, "Error calculating recipients");
 		throw error;
+	} finally {
+		span.end();
 	}
 };
 
@@ -504,6 +620,15 @@ const replaceTemplateVariables = (content: string, data: RecipientData): string 
 };
 
 export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipients: RecipientData[]): Promise<CampaignResult> => {
+	const span = tracer.startSpan("email.send_campaign", {
+		attributes: {
+			"email.type": "campaign",
+			"email.provider": "mailtrap",
+			"email.total_recipients": recipients.length,
+			"email.campaign.subject": campaign.subject
+		}
+	});
+
 	try {
 		const client = await getMailtrapClient();
 		const sender: EmailSender = {
@@ -517,6 +642,11 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 		const batchSize = 10;
 		for (let i = 0; i < recipients.length; i += batchSize) {
 			const batch = recipients.slice(i, i + batchSize);
+
+			span.addEvent("campaign.batch.start", {
+				"batch.index": Math.floor(i / batchSize),
+				"batch.size": batch.length
+			});
 
 			const promises = batch.map(async recipient => {
 				try {
@@ -540,10 +670,20 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 
 			await Promise.all(promises);
 
+			span.addEvent("campaign.batch.complete", {
+				"batch.index": Math.floor(i / batchSize),
+				"batch.sent": sentCount,
+				"batch.failed": failedCount
+			});
+
 			if (i + batchSize < recipients.length) {
 				await new Promise(resolve => setTimeout(resolve, 1000));
 			}
 		}
+
+		span.setAttribute("email.sent_count", sentCount);
+		span.setAttribute("email.failed_count", failedCount);
+		span.setStatus({ code: SpanStatusCode.OK });
 
 		return {
 			success: true,
@@ -552,7 +692,15 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 			totalRecipients: recipients.length
 		};
 	} catch (error) {
+		span.recordException(error as Error);
+		span.setStatus({
+			code: SpanStatusCode.ERROR,
+			message: "Failed to send campaign email"
+		});
+
 		componentLogger.error({ error }, "Campaign email sending error");
 		throw error;
+	} finally {
+		span.end();
 	}
 };

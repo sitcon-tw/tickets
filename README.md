@@ -62,12 +62,25 @@ MAILTRAP_TOKEN=replace_me
 MAILTRAP_SENDER_EMAIL=noreply@example.com
 MAIL_FROM_NAME=SITCONTIX
 
-# Optional
+# OpenTelemetry
+# OTEL_SDK_DISABLED=true
+OTEL_SERVICE_NAME=tickets-backend
+
+# Debug mode: export traces to console (stdout), useful for local development.
+OTEL_TRACES_EXPORTER=console
+
+# Production example: export traces via OTLP.
+# When using `otlp`, you must also set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+# to your collector/Tempo endpoint, e.g.:
+# OTEL_TRACES_EXPORTER=otlp
+# OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://tempo:4318/v1/traces
+
+# Redis
 # REDIS_URI=redis://localhost:6379
 # REDIS_DISABLED=true
+
+# Optional
 # ADMIN_EMAILS=admin1@example.com,admin2@example.com
-# OTEL_ENABLED=true
-# OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318/v1/traces
 # RATE_LIMIT_MAX=30000
 # RATE_LIMIT_WINDOW=10 minutes
 # AUTH_RATE_LIMIT_MAX=20000
