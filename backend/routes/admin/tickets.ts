@@ -73,7 +73,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						requireInviteCode,
 						hidden: hidden ?? false,
 						showRemaining: showRemaining ?? true
-					},
+					}
 				});
 
 				const responseTicket = {
@@ -230,7 +230,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const ticket = await prisma.ticket.update({
 					where: { id },
-					data: updatePayload,
+					data: updatePayload
 				});
 
 				const responseTicket = {
@@ -283,7 +283,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				await prisma.ticket.delete({
-					where: { id },
+					where: { id }
 				});
 
 				return reply.send(successResponse(null, "票券刪除成功"));
@@ -477,7 +477,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					tickets.map(ticket =>
 						prisma.ticket.update({
 							where: { id: ticket.id },
-							data: { order: ticket.order },
+							data: { order: ticket.order }
 						})
 					)
 				);

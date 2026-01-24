@@ -58,7 +58,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						values: !values || values.length === 0 ? Prisma.DbNull : values,
 						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
 						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts
-					},
+					}
 				})) as EventFormField;
 
 				// Normalize filters: convert empty/invalid filters to null
@@ -201,7 +201,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const formField = (await prisma.eventFormFields.update({
 					where: { id },
-					data,
+					data
 				})) as EventFormField;
 
 				// Normalize filters: convert empty/invalid filters to null
@@ -242,7 +242,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				}
 
 				await prisma.eventFormFields.delete({
-					where: { id },
+					where: { id }
 				});
 
 				return reply.send(successResponse(null, "表單欄位刪除成功"));
@@ -353,7 +353,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					for (const { id, order } of fieldOrders) {
 						await prisma.eventFormFields.update({
 							where: { id },
-							data: { order },
+							data: { order }
 						});
 					}
 				});

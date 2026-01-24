@@ -61,7 +61,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					mapLink,
 					ogImage,
 					isActive: true
-				},
+				}
 			});
 
 			const event: Event = {
@@ -188,7 +188,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 			const updatedEvent = await prisma.event.update({
 				where: { id },
-				data: updatePayload,
+				data: updatePayload
 			});
 
 			const event: Event = {
@@ -240,7 +240,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			}
 
 			await prisma.event.delete({
-				where: { id },
+				where: { id }
 			});
 
 			return reply.send(successResponse(null, "活動刪除成功"));
