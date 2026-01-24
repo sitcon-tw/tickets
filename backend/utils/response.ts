@@ -105,31 +105,3 @@ export const createPagination = (page: number, limit: number, total: number): Pa
 		hasPrev: page > 1
 	};
 };
-
-/**
- * Recursively converts Date objects to ISO strings in an object.
- * This is needed because Prisma returns Date objects but Zod schemas expect ISO strings.
- */
-export const serializeDates = <T>(obj: T): T => {
-	if (obj === null || obj === undefined) {
-		return obj;
-	}
-
-	if (obj instanceof Date) {
-		return obj.toISOString() as T;
-	}
-
-	if (Array.isArray(obj)) {
-		return obj.map(item => serializeDates(item)) as T;
-	}
-
-	if (typeof obj === "object") {
-		const result: Record<string, unknown> = {};
-		for (const key of Object.keys(obj)) {
-			result[key] = serializeDates((obj as Record<string, unknown>)[key]);
-		}
-		return result as T;
-	}
-
-	return obj;
-};
