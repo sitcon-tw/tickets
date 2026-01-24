@@ -21,6 +21,7 @@ import {
 	InvitationCodeUpdateRequestSchema,
 	InvitationCodeVerificationSchema,
 	InvitationCodeVerifyRequestSchema,
+	LocalizedTextSchema,
 	// Referral schemas
 	ReferralSchema,
 	ReferralUsageSchema,
@@ -1117,15 +1118,15 @@ export const PublicTicketResponseSchema = z.object({
 
 export const PublicTicketResponseDataSchema = z.object({
 	id: z.string(),
-	name: z.record(z.string(), z.unknown()),
-	description: z.record(z.string(), z.unknown()),
-	plainDescription: z.record(z.string(), z.unknown()).nullable(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable(),
+	plainDescription: LocalizedTextSchema.nullable(),
 	price: z.number(),
 	quantity: z.number().int(),
 	soldCount: z.number().int(),
 	available: z.number().int(),
-	saleStart: z.string().optional(),
-	saleEnd: z.date().optional(),
+	saleStart: z.date().optional().nullable(),
+	saleEnd: z.date().optional().nullable(),
 	isOnSale: z.boolean(),
 	isSoldOut: z.boolean(),
 	requireInviteCode: z.boolean(),
