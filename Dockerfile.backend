@@ -1,0 +1,13 @@
+FROM node:24-slim
+ENV PORT=8080
+WORKDIR /src
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml LICENSE ./
+COPY backend ./backend
+COPY types ./types
+
+WORKDIR /src/backend
+RUN corepack enable && pnpm install --production
+
+EXPOSE 8080
+CMD pnpm start
