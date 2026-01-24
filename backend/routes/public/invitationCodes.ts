@@ -2,9 +2,9 @@ import prisma from "#config/database";
 import { publicInvitationCodeSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { LocalizedTextSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "public/invitationCodes" });
 
