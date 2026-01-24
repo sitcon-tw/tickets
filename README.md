@@ -65,7 +65,13 @@ MAIL_FROM_NAME=SITCONTIX
 # OpenTelemetry
 # OTEL_SDK_DISABLED=true
 OTEL_SERVICE_NAME=tickets-backend
+
+# Debug mode: export traces to console (stdout), useful for local development.
 OTEL_TRACES_EXPORTER=console
+
+# Production example: export traces via OTLP.
+# When using `otlp`, you must also set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+# to your collector/Tempo endpoint, e.g.:
 # OTEL_TRACES_EXPORTER=otlp
 # OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://tempo:4318/v1/traces
 
