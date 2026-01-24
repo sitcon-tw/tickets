@@ -73,11 +73,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						requireInviteCode,
 						hidden: hidden ?? false,
 						showRemaining: showRemaining ?? true
-					},
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
-						hasPattern: true
 					}
 				});
 
@@ -235,12 +230,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const ticket = await prisma.ticket.update({
 					where: { id },
-					data: updatePayload,
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
-						hasPattern: true
-					}
+					data: updatePayload
 				});
 
 				const responseTicket = {
@@ -293,12 +283,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				await prisma.ticket.delete({
-					where: { id },
-					// @ts-expect-error - uncache is added by prisma-extension-redis
-					uncache: {
-						uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
-						hasPattern: true
-					}
+					where: { id }
 				});
 
 				return reply.send(successResponse(null, "票券刪除成功"));
@@ -492,12 +477,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					tickets.map(ticket =>
 						prisma.ticket.update({
 							where: { id: ticket.id },
-							data: { order: ticket.order },
-							// @ts-expect-error - uncache is added by prisma-extension-redis
-							uncache: {
-								uncacheKeys: ["prisma:ticket:*", "prisma:event:*"],
-								hasPattern: true
-							}
+							data: { order: ticket.order }
 						})
 					)
 				);

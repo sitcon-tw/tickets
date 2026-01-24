@@ -4,7 +4,6 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
-import { CacheInvalidation } from "#utils/cache-keys";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 
@@ -62,9 +61,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					mapLink,
 					ogImage,
 					isActive: true
-				},
-				// @ts-expect-error - uncache is an extension so it's not properly typed
-				uncache: CacheInvalidation.events()
+				}
 			});
 
 			const event: Event = {
@@ -191,9 +188,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 			const updatedEvent = await prisma.event.update({
 				where: { id },
-				data: updatePayload,
-				// @ts-expect-error - uncache is an extension so it's not properly typed
-				uncache: CacheInvalidation.events()
+				data: updatePayload
 			});
 
 			const event: Event = {
@@ -245,9 +240,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			}
 
 			await prisma.event.delete({
-				where: { id },
-				// @ts-expect-error - uncache is an extension so it's not properly typed
-				uncache: CacheInvalidation.events()
+				where: { id }
 			});
 
 			return reply.send(successResponse(null, "活動刪除成功"));
