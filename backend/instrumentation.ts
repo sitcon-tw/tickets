@@ -16,6 +16,6 @@ registerInstrumentations({
 			}
 		}),
 		new FastifyOtelInstrumentation({ registerOnInitialization: true }),
-		new PrismaInstrumentation(),
+		new PrismaInstrumentation()
 	]
 });

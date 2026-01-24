@@ -1,9 +1,9 @@
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
 import fs from "fs/promises";
-import { tracer } from "#lib/tracing";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
