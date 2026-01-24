@@ -30,7 +30,7 @@ export type VerifyCodeRequest = z.infer<typeof VerifyCodeRequestSchema>;
 export const TwSMSResponseSchema = z.object({
 	code: z.string(),
 	text: z.string(),
-	msgid: z.string().optional()
+	msgid: z.number().optional()
 });
 export type TwSMSResponse = z.infer<typeof TwSMSResponseSchema>;
 
