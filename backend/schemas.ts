@@ -253,7 +253,8 @@ export const eventSchemas = {
 			201: EventResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			403: ErrorResponseSchema,
+			422: ErrorResponseSchema,
 		}
 	},
 
@@ -263,7 +264,8 @@ export const eventSchemas = {
 		params: IdParamSchema,
 		response: {
 			200: EventResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -277,7 +279,8 @@ export const eventSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema
 		}
 	},
 
@@ -289,7 +292,8 @@ export const eventSchemas = {
 			200: SuccessResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema
 		}
 	},
 
@@ -327,7 +331,9 @@ export const eventTicketsResponse = {
 				showRemaining: true
 			})
 		)
-	})
+	}),
+	404: ErrorResponseSchema,
+	500: ErrorResponseSchema
 } as const;
 
 export const publicEventsListResponse = {
@@ -338,13 +344,13 @@ export const publicEventsListResponse = {
 			z.object({
 				id: z.string(),
 				slug: z.string().nullable().optional(),
-				name: z.unknown(),
-				description: z.unknown().nullable().optional(),
-				plainDescription: z.unknown().nullable().optional(),
-				locationText: z.unknown().nullable().optional(),
+				name: LocalizedTextSchema,
+				description: LocalizedTextSchema.nullable().optional(),
+				plainDescription: LocalizedTextSchema.nullable().optional(),
+				locationText: LocalizedTextSchema.nullable().optional(),
 				mapLink: z.string().nullable().optional(),
-				startDate: z.string(),
-				endDate: z.string(),
+				startDate: z.date(),
+				endDate: z.date(),
 				ogImage: z.string().nullable().optional(),
 				useOpass: z.boolean().optional(),
 				opassEventId: z.string().nullable().optional(),
@@ -352,7 +358,8 @@ export const publicEventsListResponse = {
 				hasAvailableTickets: z.boolean()
 			})
 		)
-	})
+	}),
+	500: ErrorResponseSchema
 } as const;
 
 export const eventStatsResponse = {
@@ -1106,8 +1113,8 @@ export const PublicTicketResponseSchema = z.object({
 			quantity: z.number().int(),
 			soldCount: z.number().int(),
 			available: z.number().int(),
-			saleStart: z.string().optional(),
-			saleEnd: z.date().optional(),
+			saleStart: z.date().optional().nullable(),
+			saleEnd: z.date().optional().nullable(),
 			isOnSale: z.boolean(),
 			isSoldOut: z.boolean(),
 			requireInviteCode: z.boolean(),

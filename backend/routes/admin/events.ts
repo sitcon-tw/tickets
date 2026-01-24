@@ -1,23 +1,22 @@
-import type { Event, EventCreateRequest, EventUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { LocalizedTextSchema, type Event } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
-	fastify.post<{
-		Body: EventCreateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events",
 		{
 			preHandler: requireAdmin,
 			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
-		async (request: FastifyRequest<{ Body: EventCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const rawBody = request.body;
 
 			const sanitizedBody = sanitizeObject(rawBody, true);
@@ -70,11 +69,11 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				description: createdEvent.description as Record<string, string> | undefined,
 				plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
 				locationText: createdEvent.locationText as Record<string, string> | undefined,
-				startDate: createdEvent.startDate.toISOString(),
-				endDate: createdEvent.endDate.toISOString(),
-				editDeadline: createdEvent.editDeadline?.toISOString() ?? null,
-				createdAt: createdEvent.createdAt.toISOString(),
-				updatedAt: createdEvent.updatedAt.toISOString()
+				startDate: createdEvent.startDate,
+				endDate: createdEvent.endDate,
+				editDeadline: createdEvent.editDeadline ?? null,
+				createdAt: createdEvent.createdAt,
+				updatedAt: createdEvent.updatedAt
 			};
 
 			return reply.code(201).send(successResponse(event, "活動創建成功"));
@@ -82,15 +81,13 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Get event by ID - admin and eventAdmin (for their events) can access
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
 			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 
 			const event = (await prisma.event.findUnique({
@@ -118,16 +115,13 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Update event - admin and eventAdmin (for their events) can update
-	fastify.put<{
-		Params: { id: string };
-		Body: EventUpdateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/events/:id",
 		{
 			preHandler: requireEventAccess,
 			schema: eventSchemas.updateEvent
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: EventUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 			const updateData = request.body;
 
@@ -197,11 +191,11 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				description: updatedEvent.description as Record<string, string> | undefined,
 				plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
 				locationText: updatedEvent.locationText as Record<string, string> | undefined,
-				startDate: updatedEvent.startDate.toISOString(),
-				endDate: updatedEvent.endDate.toISOString(),
-				editDeadline: updatedEvent.editDeadline?.toISOString() ?? null,
-				createdAt: updatedEvent.createdAt.toISOString(),
-				updatedAt: updatedEvent.updatedAt.toISOString()
+				startDate: updatedEvent.startDate,
+				endDate: updatedEvent.endDate,
+				editDeadline: updatedEvent.editDeadline ?? null,
+				createdAt: updatedEvent.createdAt,
+				updatedAt: updatedEvent.updatedAt
 			};
 
 			return reply.send(successResponse(event, "活動更新成功"));
@@ -209,15 +203,13 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// Delete event - only admin can delete events
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/events/:id",
 		{
 			preHandler: requireAdmin,
 			schema: eventSchemas.deleteEvent
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 
 			const existingEvent = await prisma.event.findUnique({
@@ -248,15 +240,13 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// List events - admin sees all, eventAdmin sees only their assigned events
-	fastify.get<{
-		Querystring: { isActive?: boolean };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events",
 		{
 			preHandler: requireEventListAccess,
 			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
-		async (request: FastifyRequest<{ Querystring: { isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { isActive } = request.query;
 
 			const whereClause: any = {};
@@ -281,18 +271,25 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				orderBy: { createdAt: "desc" }
 			});
 
-			const events: Event[] = rawEvents.map(event => ({
-				...event,
-				name: event.name as Record<string, string>,
-				description: event.description as Record<string, string> | undefined,
-				plainDescription: event.plainDescription as Record<string, string> | undefined,
-				locationText: event.locationText as Record<string, string> | undefined,
-				startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
-				endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
-				editDeadline: event.editDeadline instanceof Date ? event.editDeadline.toISOString() : (event.editDeadline ?? null),
-				createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
-				updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt
-			}));
+			const events = rawEvents.map(event => {
+				const name = LocalizedTextSchema.parse(event.name);
+				const description = LocalizedTextSchema.nullable().parse(event.description);
+				const plainDescription = LocalizedTextSchema.nullable().parse(event.plainDescription);
+				const locationText = LocalizedTextSchema.nullable().parse(event.locationText);
+
+				return {
+					...event,
+					name,
+					description,
+					plainDescription,
+					locationText,
+					startDate: event.startDate,
+					endDate: event.endDate,
+					editDeadline: event.editDeadline ?? null,
+					createdAt: event.createdAt,
+					updatedAt: event.updatedAt
+				};
+			});
 
 			return reply.send(successResponse(events));
 		}
