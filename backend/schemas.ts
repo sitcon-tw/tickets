@@ -22,6 +22,11 @@ import {
 	InvitationCodeVerificationSchema,
 	InvitationCodeVerifyRequestSchema,
 	LocalizedTextSchema,
+	// Public schemas
+	PublicEventFormFieldSchema,
+	PublicEventListItemSchema,
+	PublicTicketDetailSchema,
+	PublicTicketListItemSchema,
 	// Referral schemas
 	ReferralSchema,
 	ReferralUsageSchema,
@@ -43,6 +48,7 @@ import {
 	// Ticket schemas
 	TicketSchema,
 	TicketUpdateRequestSchema,
+	UserRegistrationListItemSchema,
 	UserRoleSchema,
 	// User schemas
 	UserSchema,
@@ -318,24 +324,7 @@ export const eventTicketsResponse = {
 	200: z.object({
 		success: z.literal(true),
 		message: z.string(),
-		data: z.array(
-			TicketSchema.pick({
-				id: true,
-				name: true,
-				description: true,
-				plainDescription: true,
-				price: true,
-				quantity: true,
-				available: true,
-				saleStart: true,
-				saleEnd: true,
-				isOnSale: true,
-				isSoldOut: true,
-				requireSmsVerification: true,
-				requireInviteCode: true,
-				showRemaining: true
-			})
-		)
+		data: z.array(PublicTicketListItemSchema)
 	}),
 	404: ErrorResponseSchema,
 	500: ErrorResponseSchema
@@ -345,24 +334,7 @@ export const publicEventsListResponse = {
 	200: z.object({
 		success: z.literal(true),
 		message: z.string(),
-		data: z.array(
-			z.object({
-				id: z.string(),
-				slug: z.string().nullable().optional(),
-				name: LocalizedTextSchema,
-				description: LocalizedTextSchema.nullable().optional(),
-				plainDescription: LocalizedTextSchema.nullable().optional(),
-				locationText: LocalizedTextSchema.nullable().optional(),
-				mapLink: z.string().nullable().optional(),
-				startDate: z.date(),
-				endDate: z.date(),
-				ogImage: z.string().nullable().optional(),
-				useOpass: z.boolean().optional(),
-				opassEventId: z.string().nullable().optional(),
-				registrationCount: z.number(),
-				hasAvailableTickets: z.boolean()
-			})
-		)
+		data: z.array(PublicEventListItemSchema)
 	}),
 	500: ErrorResponseSchema
 } as const;
@@ -928,41 +900,7 @@ export const userRegistrationsResponse = {
 	200: z.object({
 		success: z.literal(true),
 		message: z.string(),
-		data: z.array(
-			z.object({
-				id: z.string(),
-				userId: z.string(),
-				eventId: z.string(),
-				ticketId: z.string(),
-				email: z.string(),
-				status: z.string(),
-				referredBy: z.string().nullable().optional(),
-				formData: z.unknown(),
-				createdAt: z.date(),
-				updatedAt: z.date(),
-				event: z.object({
-					id: z.string(),
-					name: z.unknown(),
-					description: z.unknown().nullable().optional(),
-					locationText: z.unknown().nullable().optional(),
-					mapLink: z.string().nullable().optional(),
-					startDate: z.date(),
-					endDate: z.date(),
-					ogImage: z.string().nullable().optional()
-				}),
-				ticket: z.object({
-					id: z.string(),
-					name: z.unknown(),
-					description: z.unknown().nullable().optional(),
-					price: z.number(),
-					saleEnd: z.date().nullable().optional()
-				}),
-				isUpcoming: z.boolean(),
-				isPast: z.boolean(),
-				canEdit: z.boolean(),
-				canCancel: z.boolean()
-			})
-		)
+		data: z.array(UserRegistrationListItemSchema)
 	}),
 	500: ErrorResponseSchema
 } as const;
@@ -1293,27 +1231,10 @@ export const PublicTicketIdParamSchema = z.object({
 	id: z.string()
 });
 
-export const PublicTicketResponseDataSchema = z.object({
-	id: z.string(),
-	name: LocalizedTextSchema,
-	description: LocalizedTextSchema.nullable(),
-	plainDescription: LocalizedTextSchema.nullable(),
-	price: z.number(),
-	quantity: z.number().int(),
-	soldCount: z.number().int(),
-	available: z.number().int(),
-	saleStart: z.date().optional().nullable(),
-	saleEnd: z.date().optional().nullable(),
-	isOnSale: z.boolean(),
-	isSoldOut: z.boolean(),
-	requireInviteCode: z.boolean(),
-	requireSmsVerification: z.boolean()
-});
-
 export const PublicTicketResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
-	data: PublicTicketResponseDataSchema.optional()
+	data: PublicTicketDetailSchema.optional()
 });
 
 export const PublicTicketNotFoundResponseSchema = z.object({
@@ -1351,22 +1272,7 @@ export const PublicEventsQuerySchema = z.object({
 export const TicketFormFieldsResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string(),
-	data: z.array(
-		z.object({
-			id: z.string(),
-			name: z.unknown(),
-			description: z.unknown().nullable(),
-			type: z.string(),
-			required: z.boolean(),
-			options: z.array(z.unknown()),
-			validater: z.string().nullable(),
-			placeholder: z.string().nullable(),
-			order: z.number(),
-			filters: z.unknown(),
-			prompts: z.unknown(),
-			enableOther: z.boolean()
-		})
-	)
+	data: z.array(PublicEventFormFieldSchema)
 });
 
 export const publicEventSchemas = {

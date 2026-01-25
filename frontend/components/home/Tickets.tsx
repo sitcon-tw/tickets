@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { authAPI, eventTicketSchema, eventsAPI, invitationCodesAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
+import { authAPI, eventsAPI, invitationCodesAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";
+import { PublicTicketListItemSchema } from "@sitcontix/types";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -101,9 +102,9 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		}
 	});
 
-	const [tickets, setTickets] = useState<z.infer<typeof eventTicketSchema>[]>([]);
+	const [tickets, setTickets] = useState<z.infer<typeof PublicTicketListItemSchema>[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [selectedTicket, setSelectedTicket] = useState<z.infer<typeof eventTicketSchema> | null>(null);
+	const [selectedTicket, setSelectedTicket] = useState<z.infer<typeof PublicTicketListItemSchema> | null>(null);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [canRegister, setCanRegister] = useState(true);
@@ -117,21 +118,21 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
 	const hiddenTicketRef = useRef<HTMLDivElement | null>(null);
 
-	function isTicketExpired(ticket: z.infer<typeof eventTicketSchema>): boolean {
+	function isTicketExpired(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
 		if (!ticket.saleEnd) return false;
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? ticket.saleEnd : null;
 		if (!saleEndDate) return false;
 		return isBeforeNowUTC8(saleEndDate);
 	}
 
-	function isTicketNotYetAvailable(ticket: z.infer<typeof eventTicketSchema>): boolean {
+	function isTicketNotYetAvailable(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
 		if (!ticket.saleStart) return false;
 		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? ticket.saleStart : null;
 		if (!saleStartDate) return false;
 		return isAfterNowUTC8(saleStartDate);
 	}
 
-	function isTicketSoldOut(ticket: z.infer<typeof eventTicketSchema>): boolean {
+	function isTicketSoldOut(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}
 
@@ -165,7 +166,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		}
 	}
 
-	function handleTicketSelect(ticket: z.infer<typeof eventTicketSchema>, element: HTMLDivElement) {
+	function handleTicketSelect(ticket: z.infer<typeof PublicTicketListItemSchema>, element: HTMLDivElement) {
 		if (isTicketExpired(ticket)) {
 			showAlert(t.ticketSaleEnded, "warning");
 			return;

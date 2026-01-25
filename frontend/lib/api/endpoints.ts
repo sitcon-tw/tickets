@@ -12,6 +12,10 @@ import {
 	InvitationCodeVerificationSchema,
 	LocalizedTextSchema,
 	PermissionsResponseSchema,
+	PublicEventFormFieldSchema,
+	PublicEventListItemSchema,
+	PublicTicketDetailSchema,
+	PublicTicketListItemSchema,
 	QualifiedReferrerSchema,
 	ReferralLinkSchema,
 	ReferralTreeNodeSchema,
@@ -23,6 +27,7 @@ import {
 	TargetAudienceSchema,
 	TicketAnalyticsSchema,
 	TicketSchema,
+	UserRegistrationListItemSchema,
 	UserSchema,
 	WebhookDeliverySchema,
 	WebhookEndpointSchema,
@@ -66,70 +71,21 @@ export const authAPI = {
 };
 
 // Events - Public
-export const eventTicketSchema = TicketSchema.pick({
-	id: true,
-	name: true,
-	description: true,
-	plainDescription: true,
-	price: true,
-	quantity: true,
-	available: true,
-	saleStart: true,
-	saleEnd: true,
-	isOnSale: true,
-	isSoldOut: true,
-	requireSmsVerification: true,
-	requireInviteCode: true,
-	showRemaining: true
-});
-
 export const eventsAPI = {
-	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get("/api/events", params, ApiResponseSchema(z.array(EventSchema))),
+	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get("/api/events", params, ApiResponseSchema(z.array(PublicEventListItemSchema))),
 
 	getInfo: (id: string) => apiClient.get(`/api/events/${id}/info`, {}, ApiResponseSchema(EventSchema)),
 
-	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(eventTicketSchema))),
+	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(PublicTicketListItemSchema))),
 
 	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema))
 };
 
 // Tickets - Public
-export const ticketSchema = z.object({
-	id: z.string(),
-	name: LocalizedTextSchema,
-	description: LocalizedTextSchema.nullable(),
-	plainDescription: LocalizedTextSchema.nullable(),
-	price: z.number(),
-	quantity: z.number().int(),
-	soldCount: z.number().int(),
-	available: z.number().int(),
-	saleStart: z.date().optional().nullable(),
-	saleEnd: z.date().optional().nullable(),
-	isOnSale: z.boolean(),
-	isSoldOut: z.boolean(),
-	requireInviteCode: z.boolean(),
-	requireSmsVerification: z.boolean()
-});
-
-export const ticketFormFieldSchema = z.object({
-	id: z.string(),
-	name: LocalizedTextSchema,
-	description: LocalizedTextSchema.nullable(),
-	type: z.string(),
-	required: z.boolean(),
-	options: z.array(z.unknown()),
-	validater: z.string().nullable(),
-	placeholder: z.string().nullable(),
-	order: z.number(),
-	filters: z.unknown(),
-	prompts: z.unknown(),
-	enableOther: z.boolean()
-});
-
 export const ticketsAPI = {
-	getTicket: (id: string) => apiClient.get(`/api/tickets/${id}`, {}, ApiResponseSchema(ticketSchema)),
+	getTicket: (id: string) => apiClient.get(`/api/tickets/${id}`, {}, ApiResponseSchema(PublicTicketDetailSchema)),
 
-	getFormFields: (id: string) => apiClient.get(`/api/tickets/${id}/form-fields`, {}, ApiResponseSchema(z.array(ticketFormFieldSchema)))
+	getFormFields: (id: string) => apiClient.get(`/api/tickets/${id}/form-fields`, {}, ApiResponseSchema(z.array(PublicEventFormFieldSchema)))
 };
 
 // Registrations - Requires Auth
@@ -137,48 +93,7 @@ export const registrationsAPI = {
 	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) =>
 		apiClient.post("/api/registrations", data, ApiResponseSchema(RegistrationSchema)),
 
-	getAll: () =>
-		apiClient.get(
-			"/api/registrations",
-			{},
-			ApiResponseSchema(
-				z.array(
-					z.object({
-						id: z.string(),
-						userId: z.string(),
-						eventId: z.string(),
-						ticketId: z.string(),
-						email: z.string(),
-						status: RegistrationStatusSchema,
-						referredBy: z.string().nullable().optional(),
-						formData: z.record(z.string(), z.unknown()),
-						createdAt: z.date(),
-						updatedAt: z.date(),
-						event: z.object({
-							id: z.string(),
-							name: LocalizedTextSchema,
-							description: LocalizedTextSchema.nullable().optional(),
-							locationText: LocalizedTextSchema.nullable().optional(),
-							mapLink: z.string().nullable().optional(),
-							startDate: z.date(),
-							endDate: z.date(),
-							ogImage: z.string().nullable().optional()
-						}),
-						ticket: z.object({
-							id: z.string(),
-							name: LocalizedTextSchema,
-							description: LocalizedTextSchema.nullable().optional(),
-							price: z.number(),
-							saleEnd: z.date().nullable().optional()
-						}),
-						isUpcoming: z.boolean(),
-						isPast: z.boolean(),
-						canEdit: z.boolean(),
-						canCancel: z.boolean()
-					})
-				)
-			)
-		),
+	getAll: () => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(UserRegistrationListItemSchema))),
 
 	getById: (id: string) => apiClient.get(`/api/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 

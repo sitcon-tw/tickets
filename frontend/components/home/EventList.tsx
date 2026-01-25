@@ -7,7 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatEventDateRange } from "@/lib/utils/timezone";
-import { Event } from "@sitcontix/types";
+import { PublicEventListItem } from "@sitcontix/types";
 import { Calendar, ExternalLink, MapPin } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -17,7 +17,7 @@ export default function EventList() {
 	const locale = useLocale();
 	const router = useRouter();
 	const { showAlert } = useAlert();
-	const [events, setEvents] = useState<Event[]>([]);
+	const [events, setEvents] = useState<PublicEventListItem[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	const t = getTranslations(locale, {
@@ -40,8 +40,8 @@ export default function EventList() {
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
 					const now = new Date();
-					const visibleEvents = eventsData.data.filter(event => !event.hideEvent);
-					const sortedEvents = visibleEvents.sort((a, b) => {
+					// Note: Backend already filters out hidden events (hideEvent: false)
+					const sortedEvents = eventsData.data.sort((a, b) => {
 						const aIsUpcoming = a.startDate >= now;
 						const bIsUpcoming = b.startDate >= now;
 

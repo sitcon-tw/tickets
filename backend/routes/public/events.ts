@@ -2,7 +2,7 @@ import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
-import { LocalizedTextSchema } from "@sitcontix/types";
+import { FieldFilterSchema, FormFieldTypeSchema, LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -379,14 +379,14 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					id: field.id,
 					name: LocalizedTextSchema.parse(field.name),
 					description: LocalizedTextSchema.nullable().parse(field.description),
-					type: field.type,
+					type: FormFieldTypeSchema.parse(field.type),
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
 					options: z.array(z.unknown()).parse(field.values || []),
 					order: field.order,
-					filters: field.filters || {},
-					prompts: field.prompts || {},
+					filters: FieldFilterSchema.nullable().parse(field.filters),
+					prompts: z.record(z.string(), z.array(z.string())).nullable().parse(field.prompts),
 					enableOther: field.enableOther || false
 				}));
 

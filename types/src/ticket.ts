@@ -34,6 +34,35 @@ export const TicketSchema = z.object({
 export type Ticket = z.infer<typeof TicketSchema>;
 
 /**
+ * Public ticket list item (for public API - subset of fields)
+ */
+export const PublicTicketListItemSchema = z.object({
+	id: z.string(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable().optional(),
+	plainDescription: LocalizedTextSchema.nullable().optional(),
+	price: z.number().min(0),
+	quantity: z.number().int().min(0),
+	available: z.number().int().min(0),
+	saleStart: z.coerce.date().nullable().optional(),
+	saleEnd: z.coerce.date().nullable().optional(),
+	isOnSale: z.boolean(),
+	isSoldOut: z.boolean(),
+	requireInviteCode: z.boolean(),
+	requireSmsVerification: z.boolean(),
+	showRemaining: z.boolean()
+});
+export type PublicTicketListItem = z.infer<typeof PublicTicketListItemSchema>;
+
+/**
+ * Public ticket detail (for public API - includes soldCount)
+ */
+export const PublicTicketDetailSchema = PublicTicketListItemSchema.extend({
+	soldCount: z.number().int().min(0)
+});
+export type PublicTicketDetail = z.infer<typeof PublicTicketDetailSchema>;
+
+/**
  * Ticket create request
  */
 export const TicketCreateRequestSchema = z.object({
