@@ -1,4 +1,5 @@
 import { APIError, RetryConfig } from "@/lib/types/client";
+import { z } from "zod";
 
 class APIClient {
 	private baseURL: string;
@@ -62,7 +63,7 @@ class APIClient {
 		}
 	}
 
-	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+	private async request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>): Promise<T> {
 		const url = `${this.baseURL}${endpoint}`;
 
 		const config: RequestInit = {
@@ -155,10 +156,22 @@ class APIClient {
 
 				const contentType = response.headers.get("content-type");
 				if (contentType && contentType.includes("application/json")) {
-					return await response.json();
+					const jsonData = await response.json();
+
+					// Validate with Zod schema if provided
+					if (schema) {
+						const result = schema.safeParse(jsonData);
+						if (!result.success) {
+							const errorMessages = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+							throw new Error(`API response validation failed: ${errorMessages}`);
+						}
+						return result.data;
+					}
+
+					return jsonData;
 				}
 
-				return {} as T;
+				throw new Error("Invalid response format");
 			} catch (error) {
 				const errorInstance = error instanceof Error ? error : new Error("網路發生問題 [C]");
 
@@ -176,7 +189,7 @@ class APIClient {
 		throw lastError || new Error("Max retries exceeded");
 	}
 
-	async get<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
+	async get<T>(endpoint: string, params?: Record<string, unknown>, schema?: z.ZodType<T>): Promise<T> {
 		let finalEndpoint = endpoint;
 		if (params) {
 			const searchParams = new URLSearchParams();
@@ -188,25 +201,25 @@ class APIClient {
 			const queryString = searchParams.toString();
 			finalEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
 		}
-		return this.request<T>(finalEndpoint, { method: "GET" });
+		return this.request<T>(finalEndpoint, { method: "GET" }, schema);
 	}
 
-	async post<T>(endpoint: string, data?: unknown): Promise<T> {
+	async post<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {
 		return this.request<T>(endpoint, {
 			method: "POST",
 			body: data ? JSON.stringify(data) : "{}"
-		});
+		}, schema);
 	}
 
-	async put<T>(endpoint: string, data?: unknown): Promise<T> {
+	async put<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {
 		return this.request<T>(endpoint, {
 			method: "PUT",
 			body: data ? JSON.stringify(data) : "{}"
-		});
+		}, schema);
 	}
 
-	async delete<T>(endpoint: string): Promise<T> {
-		return this.request<T>(endpoint, { method: "DELETE", body: "{}" });
+	async delete<T>(endpoint: string, schema?: z.ZodType<T>): Promise<T> {
+		return this.request<T>(endpoint, { method: "DELETE", body: "{}" }, schema);
 	}
 }
 
