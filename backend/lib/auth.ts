@@ -4,15 +4,16 @@ import { Prisma } from "#prisma/generated/prisma";
 import { sendMagicLink } from "#utils/email";
 import { logger } from "#utils/logger";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { betterAuth } from "better-auth";
+import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
+import { createSecondaryStorage } from "./auth.storage";
 import { tracer } from "./tracing";
 
 const authLogger = logger.child({ component: "auth" });
 
-export const auth: ReturnType<typeof betterAuth> = betterAuth({
+export const auth = betterAuth<BetterAuthOptions>({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql"
 	}),
@@ -28,6 +29,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 			enabled: true,
 			maxAge: 60 * 60 * 24 * 30 // 30 days
 		}
+	},
+	secondaryStorage: createSecondaryStorage(),
+	rateLimit: {
+		enabled: true,
+		storage: "secondary-storage",
+		window: 30000, // 30 seconds
+		max: 1 // 1 request per 30 seconds
 	},
 	plugins: [
 		magicLink({
