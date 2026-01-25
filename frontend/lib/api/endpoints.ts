@@ -59,8 +59,8 @@ export const authAPI = {
 			turnstileToken
 		});
 	},
-	getSession: () => apiClient.get("/api/auth/get-session", {}, SessionSchema),
-	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema)),
+	getSession: () => apiClient.get("/api/auth/get-session", {}, SessionSchema.nullable().optional()),
+	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema).nullable().optional()),
 	signOut: () => apiClient.post("/api/auth/sign-out")
 };
 
