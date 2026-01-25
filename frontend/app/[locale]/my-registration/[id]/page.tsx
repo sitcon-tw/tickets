@@ -314,7 +314,8 @@ export default function MyRegistrationPage() {
 		}
 	}
 
-	function formatDate(dateString: string) {
+	function formatDate(dateString: Date | string | "" | null | undefined) {
+		if (!dateString) return "N/A";
 		return formatDateTime(dateString);
 	}
 

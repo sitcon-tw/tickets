@@ -1,5 +1,6 @@
-export default async function generateHash(registrationId: string, registrationTime: string) {
-	const text = registrationId + registrationTime;
+export default async function generateHash(registrationId: string, registrationTime: Date | string) {
+	const timeString = typeof registrationTime === "string" ? registrationTime : registrationTime.toISOString();
+	const text = registrationId + timeString;
 	const encoder = new TextEncoder();
 	const data = encoder.encode(text);
 	const hashBuffer = await crypto.subtle.digest("SHA-256", data);

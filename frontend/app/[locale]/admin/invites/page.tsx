@@ -31,7 +31,7 @@ type InviteCode = {
 type InviteType = {
 	id: string;
 	name: string;
-	createdAt: string;
+	createdAt: Date | string;
 	codes: InviteCode[];
 };
 

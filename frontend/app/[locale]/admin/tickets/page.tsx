@@ -359,12 +359,12 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: string | null) {
+	function formatDateTime(dt?: Date | string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
 		} catch {
-			return dt;
+			return typeof dt === "string" ? dt : "";
 		}
 	}
 

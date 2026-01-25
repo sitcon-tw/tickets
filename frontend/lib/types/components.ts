@@ -13,7 +13,7 @@ export interface QRCodePopupProps {
 	isOpen: boolean;
 	onClose: () => void;
 	registrationId: string;
-	registrationTime: string;
+	registrationTime: Date | string;
 	useOpass?: boolean;
 	opassEventId?: string | null;
 }

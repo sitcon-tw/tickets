@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import { toDateTimeLocalString } from "@/lib/utils/timezone";
 import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -1340,12 +1341,12 @@ export default function FormsPage() {
 																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
 																							<Input
 																								type="datetime-local"
-																								value={condition.startTime || ""}
+																								value={condition.startTime ? (typeof condition.startTime === "string" ? condition.startTime : toDateTimeLocalString(condition.startTime)) : ""}
 																								onChange={e => {
 																									const newConditions = [...(q.filters!.conditions || [])];
 																									newConditions[condIndex] = {
 																										...condition,
-																										startTime: e.target.value
+																										startTime: e.target.value as any
 																									};
 																									updateQuestion(q.id, {
 																										filters: {
@@ -1362,12 +1363,12 @@ export default function FormsPage() {
 																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
 																							<Input
 																								type="datetime-local"
-																								value={condition.endTime || ""}
+																								value={condition.endTime ? (typeof condition.endTime === "string" ? condition.endTime : toDateTimeLocalString(condition.endTime)) : ""}
 																								onChange={e => {
 																									const newConditions = [...(q.filters!.conditions || [])];
 																									newConditions[condIndex] = {
 																										...condition,
-																										endTime: e.target.value
+																										endTime: e.target.value as any
 																									};
 																									updateQuestion(q.id, {
 																										filters: {

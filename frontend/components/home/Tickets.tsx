@@ -528,7 +528,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 							<h3>{getLocalizedText(selectedTicket.name, locale)}</h3>
 							<p>
 								{t.time}
-								{selectedTicket.saleStart} - {selectedTicket.saleEnd}
+								{selectedTicket.saleStart ? formatDateTime(selectedTicket.saleStart) : "N/A"} - {selectedTicket.saleEnd ? formatDateTime(selectedTicket.saleEnd) : "N/A"}
 							</p>
 							{selectedTicket.showRemaining !== false && (
 								<p className="remain">

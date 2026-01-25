@@ -8,7 +8,7 @@ const locales = ["en", "zh-Hant", "zh-Hans"];
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const sitemap: MetadataRoute.Sitemap = [];
 
-	let events: Array<{ slug?: string | null; updatedAt: string }> = [];
+	let events: Array<{ slug?: string | null; updatedAt: Date | string }> = [];
 	try {
 		const response = await fetch(`${API_URL}/api/events?isActive=true`, {
 			headers: {
