@@ -37,6 +37,11 @@ export const auth = betterAuth<BetterAuthOptions>({
 		window: 30000, // 30 seconds
 		max: 1 // 1 request per 30 seconds
 	},
+	advanced: {
+		ipAddress: {
+			ipAddressHeaders: ["x-forwarded-for", "x-real-ip"]
+		}
+	},
 	plugins: [
 		magicLink({
 			expiresIn: 600,
