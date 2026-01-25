@@ -1,6 +1,7 @@
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
+import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
 import fs from "fs/promises";
@@ -13,26 +14,114 @@ const componentLogger = logger.child({ component: "email" });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let client: MailtrapClient | null = null;
+let mailtrapClient: MailtrapClient | null = null;
+let sesClient: SESClient | null = null;
+
+// Check if AWS SES is configured
+const isAwsSesConfigured = (): boolean => {
+	return !!(process.env.AWS_SES_REGION && (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE));
+};
+
+// Check if Mailtrap is configured
+const isMailtrapConfigured = (): boolean => {
+	return !!process.env.MAILTRAP_TOKEN;
+};
+
+// Get email provider
+const getEmailProvider = (): "aws-ses" | "mailtrap" => {
+	if (isAwsSesConfigured()) {
+		return "aws-ses";
+	}
+	if (isMailtrapConfigured()) {
+		return "mailtrap";
+	}
+	throw new Error("No email provider configured. Please configure AWS_SES_REGION or MAILTRAP_TOKEN");
+};
+
+async function getSesClient(): Promise<SESClient> {
+	if (!sesClient) {
+		const config: any = {
+			region: process.env.AWS_SES_REGION || "us-east-1"
+		};
+
+		// Use explicit credentials if provided, otherwise will use AWS SDK default credential chain
+		if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+			config.credentials = {
+				accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+				secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+			};
+		}
+
+		sesClient = new SESClient(config);
+	}
+	return sesClient;
+}
 
 async function getMailtrapClient(): Promise<MailtrapClient> {
-	if (!client) {
-		client = new MailtrapClient({
+	if (!mailtrapClient) {
+		mailtrapClient = new MailtrapClient({
 			token: process.env.MAILTRAP_TOKEN!
 		});
 	}
-	return client;
+	return mailtrapClient;
+}
+
+// Universal email sending function
+async function sendEmail(params: { to: string[]; subject: string; html: string; from?: EmailSender }): Promise<boolean> {
+	const provider = getEmailProvider();
+	const sender = params.from || {
+		email: process.env.MAILTRAP_SENDER_EMAIL || process.env.AWS_SES_FROM_EMAIL || "noreply@sitcon.org",
+		name: process.env.MAIL_FROM_NAME || "SITCONTIX"
+	};
+
+	if (provider === "aws-ses") {
+		const client = await getSesClient();
+		const command = new SendEmailCommand({
+			Source: sender.name ? `${sender.name} <${sender.email}>` : sender.email,
+			Destination: {
+				ToAddresses: params.to
+			},
+			Message: {
+				Subject: {
+					Data: params.subject,
+					Charset: "UTF-8"
+				},
+				Body: {
+					Html: {
+						Data: params.html,
+						Charset: "UTF-8"
+					}
+				}
+			}
+		});
+
+		await client.send(command);
+		return true;
+	} else {
+		// Mailtrap fallback
+		const client = await getMailtrapClient();
+		const recipients: EmailRecipient[] = params.to.map(email => ({ email }));
+
+		await client.send({
+			from: sender,
+			to: recipients,
+			subject: params.subject,
+			html: params.html
+		});
+		return true;
+	}
 }
 
 export const sendMagicLink = async (email: string, magicLink: string): Promise<boolean> => {
 	// Mask email for security (show only domain)
 	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+	const provider = getEmailProvider();
 
 	const span = tracer.startSpan("email.send_magic_link", {
 		attributes: {
 			"email.recipient.masked": maskedEmail,
 			"email.type": "magic_link",
-			"email.provider": "mailtrap"
+			"email.provider": provider
 		}
 	});
 
@@ -43,38 +132,22 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 		if (!magicLink || typeof magicLink !== "string") {
 			throw new Error("Invalid magic link");
 		}
-		if (!process.env.MAILTRAP_TOKEN) {
-			throw new Error("MAILTRAP_TOKEN is not configured");
-		}
-		if (!process.env.MAILTRAP_SENDER_EMAIL) {
-			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
-		}
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-		const recipients: EmailRecipient[] = [
-			{
-				email: email
-			}
-		];
+
 		const templatePath = path.join(__dirname, "../email-templates/magic-link.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 		let html = template.replace(/\{\{magicLink\}\}/g, magicLink).replace(/\{\{email\}\}/g, email);
 
-		span.addEvent("mailtrap.api.request");
+		span.addEvent(`${provider}.api.request`);
 
-		await client.send({
-			from: sender,
-			to: recipients,
+		await sendEmail({
+			to: [email],
 			subject: `【SITCONTIX】登入連結 Login Link`,
 			html
 		});
 
 		span.setStatus({ code: SpanStatusCode.OK });
 
-		componentLogger.info({ email }, "Magic link email sent successfully");
+		componentLogger.info({ email, provider }, "Magic link email sent successfully");
 		return true;
 	} catch (error) {
 		span.recordException(error as Error);
@@ -99,30 +172,19 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 export const sendRegistrationConfirmation = async (registration: Registration, event: Event, ticket: Ticket, ticketUrl: string): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = registration.email.includes("@") ? `***@${registration.email.split("@")[1]}` : "***";
+	const provider = getEmailProvider();
 
 	const span = tracer.startSpan("email.send_registration_confirmation", {
 		attributes: {
 			"email.recipient.masked": maskedEmail,
 			"email.type": "registration_confirmation",
-			"email.provider": "mailtrap",
+			"email.provider": provider,
 			"event.id": event.id,
 			"ticket.id": ticket.id
 		}
 	});
 
 	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: registration.email
-			}
-		];
-
 		const templatePath = path.join(__dirname, "../email-templates/registered.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 
@@ -288,18 +350,17 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			.replace(/\{\{calendarIcsUrl\}\}/g, calendarIcsUrl)
 			.replace(/\{\{calendarGoogleUrl\}\}/g, calendarGoogleUrl);
 
-		span.addEvent("mailtrap.api.request");
+		span.addEvent(`${provider}.api.request`);
 
-		await client.send({
-			from: sender,
-			to: recipients,
+		await sendEmail({
+			to: [registration.email],
 			subject: `【${eventName}】報名成功`,
 			html
 		});
 
 		span.setStatus({ code: SpanStatusCode.OK });
 
-		componentLogger.info({ email: registration.email }, "Registration confirmation email sent successfully");
+		componentLogger.info({ email: registration.email, provider }, "Registration confirmation email sent successfully");
 		return true;
 	} catch (error) {
 		span.recordException(error as Error);
@@ -318,12 +379,13 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, buttonUrl: string): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+	const provider = getEmailProvider();
 
 	const span = tracer.startSpan("email.send_cancellation", {
 		attributes: {
 			"email.recipient.masked": maskedEmail,
 			"email.type": "cancellation",
-			"email.provider": "mailtrap"
+			"email.provider": provider
 		}
 	});
 
@@ -331,24 +393,6 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
 		}
-		if (!process.env.MAILTRAP_TOKEN) {
-			throw new Error("MAILTRAP_TOKEN is not configured");
-		}
-		if (!process.env.MAILTRAP_SENDER_EMAIL) {
-			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
-		}
-
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: email
-			}
-		];
 
 		// Handle localized event name
 		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
@@ -369,18 +413,17 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 			.replace(/\{\{buttonUrl\}\}/g, buttonUrl)
 			.replace(/\{\{email\}\}/g, email);
 
-		span.addEvent("mailtrap.api.request");
+		span.addEvent(`${provider}.api.request`);
 
-		await client.send({
-			from: sender,
-			to: recipients,
+		await sendEmail({
+			to: [email],
 			subject: `【SITCONTIX】你已取消報名`,
 			html
 		});
 
 		span.setStatus({ code: SpanStatusCode.OK });
 
-		componentLogger.info({ email }, "Cancellation email sent successfully");
+		componentLogger.info({ email, provider }, "Cancellation email sent successfully");
 		return true;
 	} catch (error) {
 		span.recordException(error as Error);
@@ -407,12 +450,13 @@ export const sendInvitationCode = async (
 ): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
+	const provider = getEmailProvider();
 
 	const span = tracer.startSpan("email.send_invitation_code", {
 		attributes: {
 			"email.recipient.masked": maskedEmail,
 			"email.type": "invitation_code",
-			"email.provider": "mailtrap"
+			"email.provider": provider
 		}
 	});
 
@@ -423,24 +467,6 @@ export const sendInvitationCode = async (
 		if (!code || typeof code !== "string") {
 			throw new Error("Invalid invitation code");
 		}
-		if (!process.env.MAILTRAP_TOKEN) {
-			throw new Error("MAILTRAP_TOKEN is not configured");
-		}
-		if (!process.env.MAILTRAP_SENDER_EMAIL) {
-			throw new Error("MAILTRAP_SENDER_EMAIL is not configured");
-		}
-
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
-		const recipients: EmailRecipient[] = [
-			{
-				email: email
-			}
-		];
 
 		const templatePath = path.join(__dirname, "../email-templates/invitation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
@@ -467,18 +493,17 @@ export const sendInvitationCode = async (
 			.replace(/\{\{message\}\}/g, message || "<p>感謝您！以下是您的邀請碼：</p>")
 			.replace(/\{\{email\}\}/g, email);
 
-		span.addEvent("mailtrap.api.request");
+		span.addEvent(`${provider}.api.request`);
 
-		await client.send({
-			from: sender,
-			to: recipients,
+		await sendEmail({
+			to: [email],
 			subject: `【${eventName}】活動邀請碼`,
 			html
 		});
 
 		span.setStatus({ code: SpanStatusCode.OK });
 
-		componentLogger.info({ email }, "Invitation code email sent successfully");
+		componentLogger.info({ email, provider }, "Invitation code email sent successfully");
 		return true;
 	} catch (error) {
 		span.recordException(error as Error);
@@ -620,22 +645,18 @@ const replaceTemplateVariables = (content: string, data: RecipientData): string 
 };
 
 export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipients: RecipientData[]): Promise<CampaignResult> => {
+	const provider = getEmailProvider();
+
 	const span = tracer.startSpan("email.send_campaign", {
 		attributes: {
 			"email.type": "campaign",
-			"email.provider": "mailtrap",
+			"email.provider": provider,
 			"email.total_recipients": recipients.length,
 			"email.campaign.subject": campaign.subject
 		}
 	});
 
 	try {
-		const client = await getMailtrapClient();
-		const sender: EmailSender = {
-			email: process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
-			name: process.env.MAIL_FROM_NAME || "SITCONTIX"
-		};
-
 		let sentCount = 0;
 		let failedCount = 0;
 
@@ -652,9 +673,8 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 				try {
 					const personalizedContent = replaceTemplateVariables(campaign.content, recipient);
 
-					await client.send({
-						from: sender,
-						to: [{ email: recipient.email }],
+					await sendEmail({
+						to: [recipient.email],
 						subject: campaign.subject,
 						html: personalizedContent
 					});

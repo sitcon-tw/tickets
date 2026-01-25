@@ -57,7 +57,13 @@ BETTER_AUTH_SECRET=replace_me_with_a_long_random_string
 # Turnstile (server secret)
 TURNSTILE_SECRET_KEY=replace_me
 
-# Email (Mailtrap)
+# Email - AWS SES (Primary, if configured)
+AWS_SES_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_SES_FROM_EMAIL=noreply@example.com
+
+# Email - Mailtrap (Fallback if AWS SES not configured)
 MAILTRAP_TOKEN=replace_me
 MAILTRAP_SENDER_EMAIL=noreply@example.com
 MAIL_FROM_NAME=SITCONTIX

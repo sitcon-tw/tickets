@@ -16,6 +16,7 @@
 		"type-check": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@aws-sdk/client-ses": "^3.975.0",
 		"@fastify/cors": "^11.1.0",
 		"@fastify/helmet": "^13.0.2",
 		"@fastify/otel": "^0.16.0",
