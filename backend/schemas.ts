@@ -732,7 +732,8 @@ export const RegistrationCreateBodySchema = RegistrationCreateRequestSchema;
 export const RegistrationUpdateBodySchema = RegistrationUpdateRequestSchema;
 
 export const RegistrationQuerySchema = z.object({
-	...PaginationQuerySchemaExtended.shape,
+	page: z.coerce.number().int().min(1).default(1).describe("頁數"),
+	limit: z.coerce.number().int().min(1).max(100).default(10).describe("每頁項目數"),
 	eventId: z.string().optional().describe("篩選活動 ID"),
 	status: RegistrationStatusSchema.optional().describe("篩選報名狀態"),
 	userId: z.string().optional().describe("篩選用戶 ID")
@@ -1495,9 +1496,14 @@ export const EmailCampaignSendBodySchema2 = z.object({
 
 export const adminEmailCampaignSchemas = {
 	listEmailCampaigns: {
-		...emailCampaignSchemas.listEmailCampaigns,
 		description: "獲取郵件發送記錄",
-		querystring: EmailCampaignListQuerySchema
+		tags: ["admin/email-campaigns"],
+		querystring: EmailCampaignListQuerySchema,
+		response: {
+			200: EmailCampaignsListResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema
+		}
 	},
 	getEmailCampaignStatus: {
 		description: "獲取郵件發送狀態",
@@ -1601,11 +1607,15 @@ export const InvitationCodeTicketIdQuerySchema = z.object({
 
 export const publicInvitationCodeSchemas = {
 	verifyInvitationCode: {
-		...invitationCodeSchemas.validateInvitationCode,
 		description: "驗證邀請碼並返回可用票種",
 		tags: ["invitation-codes"],
+		body: InvitationCodeValidateBodySchema,
 		response: {
-			200: invitationCodeVerifyResponse,
+			200: z.object({
+				success: z.literal(true),
+				message: z.string(),
+				data: InvitationCodeVerificationSchema
+			}),
 			422: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
