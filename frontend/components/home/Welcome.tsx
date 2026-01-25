@@ -177,6 +177,20 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
 					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
+					{!isSmsVerified && (
+						<div className="text-yellow-800 dark:text-yellow-500 mt-4">
+							<p>{t.haveNotVerifySMS1}</p>
+							<p>{t.haveNotVerifySMS2}</p>
+							<Button
+								className="text-gray-900 dark:text-gray-100 mt-3"
+								onClick={() => {
+									router.push(`/verify`);
+								}}
+							>
+								{t.verifyNow}
+							</Button>
+						</div>
+					)}
 				</>
 			)}
 
@@ -187,7 +201,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						<p className="text-gray-800 dark:text-gray-200 text-center mt-4">{t.loggedInWelcomeDescription}</p>
 					) : (
 						<>
-							<div className="text-yellow-500 text-center mt-4">
+							<div className="text-yellow-800 dark:text-yellow-500 text-center mt-4">
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>
 								<Button

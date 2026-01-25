@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { authAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { FieldFilter, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
@@ -242,6 +242,23 @@ export default function FormPage() {
 
 				const ticket = ticketResponse.data;
 				setTicketData(ticket);
+
+				if (ticket.requireSmsVerification) {
+					try {
+						const smsStatus = await smsVerificationAPI.getStatus();
+						if (!smsStatus?.data?.phoneVerified) {
+							const currentUrl = window.location.pathname + window.location.search;
+							router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
+							return;
+						}
+					} catch (error) {
+						console.error("Failed to check SMS verification status:", error);
+						// 不能檢查就先導過去
+						const currentUrl = window.location.pathname + window.location.search;
+						router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
+						return;
+					}
+				}
 
 				// Verify ticket availability
 				if (isTicketExpired(ticket)) {
