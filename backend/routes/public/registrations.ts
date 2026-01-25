@@ -24,22 +24,28 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			schema: registrationSchemas.createRegistration
 		},
 		async (request, reply) => {
-			// Mask email for security
-			const session = await auth.api.getSession({
-				headers: request.headers as unknown as Headers
-			});
-			const user = session!.user;
-			const maskedEmail = user.email.length > 4 ? `****${user.email.slice(-4)}` : "****";
-
 			const span = tracer.startSpan("route.public.registrations.create", {
 				attributes: {
-					"registration.email.masked": maskedEmail,
 					"event.id": request.body.eventId,
 					"ticket.id": request.body.ticketId
 				}
 			});
 
 			try {
+				// Mask email for security
+				const session = await auth.api.getSession({
+					headers: request.headers as unknown as Headers
+				});
+				const user = session?.user;
+
+				if (!user) {
+					const { response, statusCode } = unauthorizedResponse("請先登入");
+					return reply.code(statusCode).send(response);
+				}
+
+				const maskedEmail = user?.email.length > 4 ? `****${user.email.slice(-4)}` : "****";
+				span.setAttribute("registration.email.masked", maskedEmail);
+
 				const { eventId, ticketId, invitationCode, referralCode, formData } = request.body;
 
 				const sanitizedFormData = sanitizeObject(formData, false);
