@@ -11,11 +11,12 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { FieldFilter, LocalizedText, TicketFormField } from "@sitcontix/types";
+import { FieldFilter, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { z } from "zod/v4";
 
 export default function FormPage() {
 	const router = useRouter();
@@ -128,21 +129,17 @@ export default function FormPage() {
 		}
 	});
 
-	const isTicketExpired = useCallback((ticket: any): boolean => {
+	const isTicketExpired = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
 		if (!ticket.saleEnd) return false;
-		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
-		if (!saleEndDate) return false;
-		return saleEndDate < new Date();
+		return ticket.saleEnd < new Date();
 	}, []);
 
-	const isTicketNotYetAvailable = useCallback((ticket: any): boolean => {
+	const isTicketNotYetAvailable = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
 		if (!ticket.saleStart) return false;
-		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
-		if (!saleStartDate) return false;
-		return saleStartDate > new Date();
+		return ticket.saleStart > new Date();
 	}, []);
 
-	const isTicketSoldOut = useCallback((ticket: any): boolean => {
+	const isTicketSoldOut = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
 		return ticket.available !== undefined && ticket.available <= 0;
 	}, []);
 

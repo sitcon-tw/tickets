@@ -120,16 +120,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 	function isTicketExpired(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
 		if (!ticket.saleEnd) return false;
-		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? ticket.saleEnd : null;
-		if (!saleEndDate) return false;
-		return isBeforeNowUTC8(saleEndDate);
+		return isBeforeNowUTC8(ticket.saleEnd);
 	}
 
 	function isTicketNotYetAvailable(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
 		if (!ticket.saleStart) return false;
-		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? ticket.saleStart : null;
-		if (!saleStartDate) return false;
-		return isAfterNowUTC8(saleStartDate);
+		return isAfterNowUTC8(ticket.saleStart);
 	}
 
 	function isTicketSoldOut(ticket: z.infer<typeof PublicTicketListItemSchema>): boolean {
