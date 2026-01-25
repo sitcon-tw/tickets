@@ -27,12 +27,14 @@ const isMailtrapConfigured = (): boolean => {
 	return !!process.env.MAILTRAP_TOKEN;
 };
 
-// Get email provider
+// Get email provider - AWS SES takes priority, no fallback if configured
 const getEmailProvider = (): "aws-ses" | "mailtrap" => {
 	if (isAwsSesConfigured()) {
+		componentLogger.info("Using AWS SES as email provider");
 		return "aws-ses";
 	}
 	if (isMailtrapConfigured()) {
+		componentLogger.info("Using Mailtrap as email provider (AWS SES not configured)");
 		return "mailtrap";
 	}
 	throw new Error("No email provider configured. Please configure AWS_SES_REGION or MAILTRAP_TOKEN");
@@ -67,10 +69,12 @@ async function getMailtrapClient(): Promise<MailtrapClient> {
 }
 
 // Universal email sending function
+// Note: Once a provider is selected (AWS SES or Mailtrap), it will NOT fallback to the other
+// If AWS SES is configured, it will ONLY use AWS SES, even if sending fails
 async function sendEmail(params: { to: string[]; subject: string; html: string; from?: EmailSender }): Promise<boolean> {
 	const provider = getEmailProvider();
 	const sender = params.from || {
-		email: process.env.MAILTRAP_SENDER_EMAIL || process.env.AWS_SES_FROM_EMAIL || "noreply@sitcon.org",
+		email: process.env.AWS_SES_FROM_EMAIL || process.env.MAILTRAP_SENDER_EMAIL || "noreply@sitcon.org",
 		name: process.env.MAIL_FROM_NAME || "SITCONTIX"
 	};
 
@@ -96,9 +100,10 @@ async function sendEmail(params: { to: string[]; subject: string; html: string; 
 		});
 
 		await client.send(command);
+		componentLogger.debug({ provider: "aws-ses", to: params.to.length }, "Email sent via AWS SES");
 		return true;
 	} else {
-		// Mailtrap fallback
+		// Mailtrap (only used if AWS SES is not configured)
 		const client = await getMailtrapClient();
 		const recipients: EmailRecipient[] = params.to.map(email => ({ email }));
 
@@ -108,6 +113,7 @@ async function sendEmail(params: { to: string[]; subject: string; html: string; 
 			subject: params.subject,
 			html: params.html
 		});
+		componentLogger.debug({ provider: "mailtrap", to: params.to.length }, "Email sent via Mailtrap");
 		return true;
 	}
 }
