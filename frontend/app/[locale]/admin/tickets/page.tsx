@@ -254,8 +254,8 @@ export default function TicketsPage() {
 			requireSmsVerification: boolean;
 			hidden: boolean;
 			showRemaining: boolean;
-			saleStart?: string;
-			saleEnd?: string;
+			saleStart?: Date;
+			saleEnd?: Date;
 		} = {
 			eventId: currentEventId,
 			name: {
@@ -282,10 +282,10 @@ export default function TicketsPage() {
 		};
 
 		if (saleStartStr) {
-			data.saleStart = saleStartStr;
+			data.saleStart = new Date(saleStartStr);
 		}
 		if (saleEndStr) {
-			data.saleEnd = saleEndStr;
+			data.saleEnd = new Date(saleEndStr);
 		}
 
 		try {

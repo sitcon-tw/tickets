@@ -106,14 +106,14 @@ export function toDateTimeLocalString(date: Date | string): string {
 }
 
 /**
- * Parse datetime-local input value to UTC ISO string
+ * Parse datetime-local input value to Date object
  * Assumes the input is in UTC+8 timezone
  */
-export function fromDateTimeLocalString(dateTimeLocal: string): string {
-	if (!dateTimeLocal) return new Date().toISOString();
+export function fromDateTimeLocalString(dateTimeLocal: string): Date {
+	if (!dateTimeLocal) return new Date();
 	// datetime-local format is YYYY-MM-DDTHH:mm
 	// Treat this string as UTC+8 time and convert to UTC
 	// Simply append the UTC+8 offset and parse
 	const dateTimeWithOffset = dateTimeLocal + ":00+08:00";
-	return new Date(dateTimeWithOffset).toISOString();
+	return new Date(dateTimeWithOffset);
 }
