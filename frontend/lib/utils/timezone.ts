@@ -6,19 +6,17 @@ import { format, toZonedTime } from "date-fns-tz";
 export const APP_TIMEZONE = "Asia/Taipei"; // UTC+8
 
 /**
- * Convert a Date or date string to UTC+8 timezone
+ * Convert a Date to UTC+8 timezone
  */
-export function toUTC8(date: Date | string): Date {
-	const dateObj = typeof date === "string" ? new Date(date) : date;
-	return toZonedTime(dateObj, APP_TIMEZONE);
+export function toUTC8(date: Date): Date {
+	return toZonedTime(date, APP_TIMEZONE);
 }
 
 /**
  * Format a date to UTC+8 with specified format
  */
-export function formatInUTC8(date: Date | string, formatString: string = "yyyy-MM-dd HH:mm:ss"): string {
-	const dateObj = typeof date === "string" ? new Date(date) : date;
-	return format(toZonedTime(dateObj, APP_TIMEZONE), formatString, {
+export function formatInUTC8(date: Date, formatString: string = "yyyy-MM-dd HH:mm:ss"): string {
+	return format(toZonedTime(date, APP_TIMEZONE), formatString, {
 		timeZone: APP_TIMEZONE
 	});
 }
@@ -33,35 +31,35 @@ export function nowInUTC8(): Date {
 /**
  * Format date for display (YYYY/MM/DD HH:mm)
  */
-export function formatDateTime(date: Date | string): string {
+export function formatDateTime(date: Date): string {
 	return formatInUTC8(date, "yyyy/MM/dd HH:mm");
 }
 
 /**
  * Format date only (YYYY/MM/DD)
  */
-export function formatDate(date: Date | string): string {
+export function formatDate(date: Date): string {
 	return formatInUTC8(date, "yyyy/MM/dd");
 }
 
 /**
  * Format time only (HH:mm)
  */
-export function formatTime(date: Date | string): string {
+export function formatTime(date: Date): string {
 	return formatInUTC8(date, "HH:mm");
 }
 
 /**
  * Format full datetime with timezone indicator
  */
-export function formatDateTimeWithTZ(date: Date | string): string {
+export function formatDateTimeWithTZ(date: Date): string {
 	return `${formatInUTC8(date, "yyyy/MM/dd HH:mm")} (UTC+8)`;
 }
 
 /**
  * Compare if date is before current UTC+8 time
  */
-export function isBeforeNowUTC8(date: Date | string): boolean {
+export function isBeforeNowUTC8(date: Date): boolean {
 	const compareDate = toUTC8(date);
 	const now = nowInUTC8();
 	return compareDate < now;
@@ -70,7 +68,7 @@ export function isBeforeNowUTC8(date: Date | string): boolean {
 /**
  * Compare if date is after current UTC+8 time
  */
-export function isAfterNowUTC8(date: Date | string): boolean {
+export function isAfterNowUTC8(date: Date): boolean {
 	const compareDate = toUTC8(date);
 	const now = nowInUTC8();
 	return compareDate > now;
@@ -79,7 +77,7 @@ export function isAfterNowUTC8(date: Date | string): boolean {
 /**
  * Check if two dates are on the same day in UTC+8
  */
-export function isSameDayUTC8(date1: Date | string, date2: Date | string): boolean {
+export function isSameDayUTC8(date1: Date, date2: Date): boolean {
 	const d1 = toUTC8(date1);
 	const d2 = toUTC8(date2);
 	return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
@@ -90,7 +88,7 @@ export function isSameDayUTC8(date1: Date | string, date2: Date | string): boole
  * If same day: "YYYY/MM/DD HH:mm - HH:mm"
  * If different days: "YYYY/MM/DD HH:mm - YYYY/MM/DD HH:mm"
  */
-export function formatEventDateRange(startDate: Date | string, endDate: Date | string): string {
+export function formatEventDateRange(startDate: Date, endDate: Date): string {
 	if (isSameDayUTC8(startDate, endDate)) {
 		return `${formatDate(startDate)} ${formatTime(startDate)} - ${formatTime(endDate)}`;
 	}
@@ -101,7 +99,7 @@ export function formatEventDateRange(startDate: Date | string, endDate: Date | s
  * Format date for datetime-local input (YYYY-MM-DDTHH:mm) in UTC+8
  * This is used for HTML5 datetime-local input fields
  */
-export function toDateTimeLocalString(date: Date | string): string {
+export function toDateTimeLocalString(date: Date): string {
 	return formatInUTC8(date, "yyyy-MM-dd'T'HH:mm");
 }
 

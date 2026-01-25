@@ -225,12 +225,12 @@ export default function EventsPage() {
 		return { label: t.active, class: "active" };
 	}
 
-	function formatDateTime(dt?: Date | string | null) {
+	function formatDateTime(dt?: Date | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
 		} catch {
-			return typeof dt === "string" ? dt : "";
+			return "";
 		}
 	}
 

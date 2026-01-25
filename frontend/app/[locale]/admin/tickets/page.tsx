@@ -350,21 +350,21 @@ export default function TicketsPage() {
 
 	function computeStatus(ticket: Ticket) {
 		const now = new Date();
-		if (ticket.saleStart && new Date(ticket.saleStart) > now) {
+		if (ticket.saleStart && ticket.saleStart > now) {
 			return { label: t.notStarted, class: "pending" };
 		}
-		if (ticket.saleEnd && new Date(ticket.saleEnd) < now) {
+		if (ticket.saleEnd && ticket.saleEnd < now) {
 			return { label: t.ended, class: "ended" };
 		}
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: Date | string | null) {
+	function formatDateTime(dt?: Date | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
 		} catch {
-			return typeof dt === "string" ? dt : "";
+			return "";
 		}
 	}
 

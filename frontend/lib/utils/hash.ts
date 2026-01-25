@@ -1,5 +1,5 @@
-export default async function generateHash(registrationId: string, registrationTime: Date | string) {
-	const timeString = typeof registrationTime === "string" ? registrationTime : registrationTime.toISOString();
+export default async function generateHash(registrationId: string, registrationTime: Date) {
+	const timeString = registrationTime.toISOString();
 	const text = registrationId + timeString;
 	const encoder = new TextEncoder();
 	const data = encoder.encode(text);

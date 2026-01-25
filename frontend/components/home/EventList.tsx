@@ -42,19 +42,16 @@ export default function EventList() {
 					const now = new Date();
 					const visibleEvents = eventsData.data.filter(event => !event.hideEvent);
 					const sortedEvents = visibleEvents.sort((a, b) => {
-						const aStart = new Date(a.startDate);
-						const bStart = new Date(b.startDate);
-
-						const aIsUpcoming = aStart >= now;
-						const bIsUpcoming = bStart >= now;
+						const aIsUpcoming = a.startDate >= now;
+						const bIsUpcoming = b.startDate >= now;
 
 						if (aIsUpcoming && !bIsUpcoming) return -1;
 						if (!aIsUpcoming && bIsUpcoming) return 1;
 
 						if (aIsUpcoming) {
-							return aStart.getTime() - bStart.getTime();
+							return a.startDate.getTime() - b.startDate.getTime();
 						} else {
-							return bStart.getTime() - aStart.getTime();
+							return b.startDate.getTime() - a.startDate.getTime();
 						}
 					});
 
@@ -70,7 +67,7 @@ export default function EventList() {
 		fetchEvents();
 	}, [showAlert]);
 
-	const formatDate = (startDate: Date | string, endDate: Date | string) => {
+	const formatDate = (startDate: Date, endDate: Date) => {
 		return formatEventDateRange(startDate, endDate);
 	};
 

@@ -1,5 +1,6 @@
-import type { ApiResponse, EventListItem } from "@sitcontix/types";
+import { ApiResponseSchema, EventListItemSchema, type ApiResponse, type EventListItem } from "@sitcontix/types";
 import type { MetadataRoute } from "next";
+import z from "zod/v4";
 
 const BASE_URL = process.env.FRONTEND_URI || "https://tickets.sitcon.org";
 const API_URL = process.env.BACKEND_URI || "http://localhost:8000";
@@ -8,7 +9,7 @@ const locales = ["en", "zh-Hant", "zh-Hans"];
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const sitemap: MetadataRoute.Sitemap = [];
 
-	let events: Array<{ slug?: string | null; updatedAt: Date | string }> = [];
+	let events: Array<{ slug?: string | null; updatedAt: Date }> = [];
 	try {
 		const response = await fetch(`${API_URL}/api/events?isActive=true`, {
 			headers: {
@@ -18,9 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		});
 
 		if (response.ok) {
-			const data = (await response.json()) as ApiResponse<EventListItem[]>;
+			const schema = ApiResponseSchema(z.array(EventListItemSchema));
+			const data = schema.parse(await response.json());
 			if (data.success && data.data) {
-				events = data.data;
+				events = data.data
 			}
 		}
 	} catch (error) {
@@ -38,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	events.forEach(event => {
 		if (event.slug) {
-			const lastModified = event.updatedAt ? new Date(event.updatedAt) : new Date();
+			const lastModified = event.updatedAt || new Date();
 			const validLastModified = isNaN(lastModified.getTime()) ? new Date() : lastModified;
 
 			locales.forEach(locale => {

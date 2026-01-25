@@ -28,7 +28,7 @@ export default function Success() {
 	const [viewRegLoading, setViewRegLoading] = useState(false);
 	const [registrationId, setRegistrationId] = useState<string | null>(null);
 	const [registerationTicketName, setRegistrationTicketName] = useState<string | null>(null);
-	const [registrationTime, setRegistrationTime] = useState<Date | string | null>(null);
+	const [registrationTime, setRegistrationTime] = useState<Date | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [isCancelled, setIsCancelled] = useState(false);
 	const [useOpass, setUseOpass] = useState<boolean>(true);
@@ -142,7 +142,7 @@ export default function Success() {
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
-						setRegistrationTime(eventRegistration.createdAt);
+						setRegistrationTime(new Date(eventRegistration.createdAt));
 						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
 
 						if (eventRegistration.status === "cancelled") {

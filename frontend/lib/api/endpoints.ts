@@ -132,7 +132,7 @@ export const adminEventsAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/events/${id}`, {}, ApiResponseSchema(EventSchema)),
 
-	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: Date | string; endDate: Date | string; locationText?: LocalizedText; mapLink?: string }) =>
+	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: Date; endDate: Date; locationText?: LocalizedText; mapLink?: string }) =>
 		apiClient.post("/api/admin/events", data, ApiResponseSchema(EventSchema)),
 
 	update: (id: string, data: Partial<Event>) => apiClient.put(`/api/admin/events/${id}`, data, ApiResponseSchema(EventSchema)),
@@ -146,7 +146,7 @@ export const adminTicketsAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/tickets/${id}`, {}, ApiResponseSchema(TicketSchema)),
 
-	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: Date | string; saleEnd?: Date | string; requireInviteCode?: boolean }) =>
+	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: Date; saleEnd?: Date; requireInviteCode?: boolean }) =>
 		apiClient.post("/api/admin/tickets", data, ApiResponseSchema(TicketSchema)),
 
 	update: (id: string, data: Partial<Ticket>) => apiClient.put(`/api/admin/tickets/${id}`, data, ApiResponseSchema(TicketSchema)),

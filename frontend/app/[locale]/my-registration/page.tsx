@@ -137,7 +137,7 @@ export default function MyRegistrationsPage() {
 		return true;
 	});
 
-	const formatEventDate = (startDate: Date | string, endDate: Date | string) => {
+	const formatEventDate = (startDate: Date, endDate: Date) => {
 		const isSameDay = isSameDayUTC8(startDate, endDate);
 
 		if (isSameDay) {
