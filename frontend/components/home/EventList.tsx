@@ -70,7 +70,7 @@ export default function EventList() {
 		fetchEvents();
 	}, [showAlert]);
 
-	const formatDate = (startDate: string, endDate: string) => {
+	const formatDate = (startDate: Date | string, endDate: Date | string) => {
 		return formatEventDateRange(startDate, endDate);
 	};
 

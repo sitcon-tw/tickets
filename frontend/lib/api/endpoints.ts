@@ -3,11 +3,13 @@ import type {
 	ApiResponse,
 	EmailCampaign,
 	Event,
+	EventCreateRequest,
 	EventDashboardData,
 	EventFormField,
 	EventFormFieldReorderRequest,
 	EventListItem,
 	EventStats,
+	EventUpdateRequest,
 	ExportData,
 	HealthStatus,
 	InvitationCodeInfo,
@@ -21,8 +23,10 @@ import type {
 	Session,
 	Ticket,
 	TicketAnalytics,
+	TicketCreateRequest,
 	TicketFormField,
 	TicketReorderRequest,
+	TicketUpdateRequest,
 	User
 } from "@sitcontix/types";
 import { apiClient } from "./client";
@@ -120,10 +124,9 @@ export const adminEventsAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<Event>>(`/api/admin/events/${id}`),
 
-	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: string; endDate: string; locationText?: LocalizedText; mapLink?: string }) =>
-		apiClient.post<ApiResponse<Event>>("/api/admin/events", data),
+	create: (data: EventCreateRequest) => apiClient.post<ApiResponse<Event>>("/api/admin/events", data),
 
-	update: (id: string, data: Partial<Event>) => apiClient.put<ApiResponse<Event>>(`/api/admin/events/${id}`, data),
+	update: (id: string, data: EventUpdateRequest) => apiClient.put<ApiResponse<Event>>(`/api/admin/events/${id}`, data),
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/events/${id}`)
 };
@@ -134,10 +137,9 @@ export const adminTicketsAPI = {
 
 	getById: (id: string) => apiClient.get<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`),
 
-	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: string; saleEnd?: string; requireInviteCode?: boolean }) =>
-		apiClient.post<ApiResponse<Ticket>>("/api/admin/tickets", data),
+	create: (data: TicketCreateRequest) => apiClient.post<ApiResponse<Ticket>>("/api/admin/tickets", data),
 
-	update: (id: string, data: Partial<Ticket>) => apiClient.put<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`, data),
+	update: (id: string, data: TicketUpdateRequest) => apiClient.put<ApiResponse<Ticket>>(`/api/admin/tickets/${id}`, data),
 
 	delete: (id: string) => apiClient.delete<ApiResponse<void>>(`/api/admin/tickets/${id}`),
 

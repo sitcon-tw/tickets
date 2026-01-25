@@ -240,8 +240,6 @@ export default function TicketsPage() {
 		if (!currentEventId) return;
 
 		// ticketSaleStart and ticketSaleEnd are already Date objects in UTC from fromDateTimeLocalString
-		const saleStartStr = ticketSaleStart ? ticketSaleStart.toISOString() : "";
-		const saleEndStr = ticketSaleEnd ? ticketSaleEnd.toISOString() : "";
 
 		const data: {
 			eventId: string;
@@ -254,8 +252,8 @@ export default function TicketsPage() {
 			requireSmsVerification: boolean;
 			hidden: boolean;
 			showRemaining: boolean;
-			saleStart?: string;
-			saleEnd?: string;
+			saleStart?: Date;
+			saleEnd?: Date;
 		} = {
 			eventId: currentEventId,
 			name: {
@@ -281,11 +279,11 @@ export default function TicketsPage() {
 			showRemaining: showRemaining
 		};
 
-		if (saleStartStr) {
-			data.saleStart = saleStartStr;
+		if (ticketSaleStart) {
+			data.saleStart = ticketSaleStart;
 		}
-		if (saleEndStr) {
-			data.saleEnd = saleEndStr;
+		if (ticketSaleEnd) {
+			data.saleEnd = ticketSaleEnd;
 		}
 
 		try {
@@ -359,12 +357,12 @@ export default function TicketsPage() {
 		return { label: t.selling, class: "active" };
 	}
 
-	function formatDateTime(dt?: string | null) {
+	function formatDateTime(dt?: Date | string | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
 		} catch {
-			return dt;
+			return typeof dt === "string" ? dt : dt.toISOString();
 		}
 	}
 

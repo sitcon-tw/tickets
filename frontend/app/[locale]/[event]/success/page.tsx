@@ -142,7 +142,7 @@ export default function Success() {
 					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
-						setRegistrationTime(eventRegistration.createdAt);
+						setRegistrationTime(eventRegistration.createdAt.toISOString());
 						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
 
 						if (eventRegistration.status === "cancelled") {

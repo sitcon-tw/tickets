@@ -314,7 +314,7 @@ export default function MyRegistrationPage() {
 		}
 	}
 
-	function formatDate(dateString: string) {
+	function formatDate(dateString: Date | string) {
 		return formatDateTime(dateString);
 	}
 
@@ -469,7 +469,8 @@ export default function MyRegistrationPage() {
 										</div>
 									)}
 									<div>
-										<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate || "")} - {formatDate(registration.event?.endDate || "")}
+										<strong>{t.eventTime}:</strong> {registration.event?.startDate && formatDate(registration.event.startDate)} -{" "}
+										{registration.event?.endDate && formatDate(registration.event.endDate)}
 									</div>
 								</div>
 							</div>

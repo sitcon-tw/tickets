@@ -172,7 +172,7 @@ export default function InvitesPage() {
 						codesByType[typeName] = {
 							id: typeName,
 							name: typeName,
-							createdAt: code.createdAt,
+							createdAt: code.createdAt instanceof Date ? code.createdAt.toISOString() : code.createdAt,
 							codes: []
 						};
 					}
