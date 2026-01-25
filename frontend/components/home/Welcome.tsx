@@ -178,7 +178,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					</h2>
 					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
 					{!isSmsVerified && (
-						<div className="text-yellow-500 text-center mt-4">
+						<div className="text-yellow-800 dark:text-yellow-500 mt-4">
 							<p>{t.haveNotVerifySMS1}</p>
 							<p>{t.haveNotVerifySMS2}</p>
 							<Button
