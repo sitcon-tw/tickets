@@ -341,18 +341,7 @@ export default function MyRegistrationPage() {
 				}
 
 				const regData = regResponse.data;
-				const regDataWithDates = {
-					...regData,
-					createdAt: new Date(regData.createdAt),
-					event: regData.event
-						? {
-								...regData.event,
-								startDate: new Date(regData.event.startDate),
-								endDate: new Date(regData.event.endDate)
-							}
-						: undefined
-				};
-				setRegistration(regDataWithDates);
+				setRegistration(regData);
 
 				if (regData.ticketId) {
 					const fieldsResponse = await ticketsAPI.getFormFields(regData.ticketId);
