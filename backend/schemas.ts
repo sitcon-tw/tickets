@@ -626,7 +626,10 @@ export const referralStatsResponse = {
 		message: z.string(),
 		data: RegistrationStatsSchema
 	}),
-	404: ErrorResponseSchema
+	401: ErrorResponseSchema,
+	403: ErrorResponseSchema,
+	404: ErrorResponseSchema,
+	500: ErrorResponseSchema
 } as const;
 
 export const referralSchemas = {
@@ -1592,13 +1595,7 @@ export const publicReferralSchemas = {
 		description: "獲取個人推薦統計",
 		tags: ["referrals"],
 		params: RegIdParamSchema,
-		response: {
-			200: referralStatsResponse,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema,
-			500: ErrorResponseSchema
-		}
+		response: referralStatsResponse
 	}
 } as const;
 
