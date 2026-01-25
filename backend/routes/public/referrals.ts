@@ -2,24 +2,20 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { publicReferralSchemas, referralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
-import { errorResponse, forbiddenResponse, successResponse, unauthorizedResponse } from "#utils/response";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { errorResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse } from "#utils/response";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "public/referrals" });
 
-interface ReferralValidateRequest {
-	code: string;
-	eventId: string;
-}
-
 const referralRoutes: FastifyPluginAsync = async fastify => {
 	// 獲取專屬推薦連結
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/:regId/referral-link",
 		{
 			schema: publicReferralSchemas.getReferralLink
 		},
-		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { regId } = request.params;
 
@@ -29,7 +25,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!registration || registration.status !== "confirmed") {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -69,7 +65,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 
 					if (!isUnique) {
 						componentLogger.error({ maxAttempts }, "Failed to generate unique referral code after attempts");
-						const { response, statusCode } = errorResponse("INTERNAL_ERROR", "無法生成唯一的推薦碼");
+						const { response, statusCode } = serverErrorResponse("無法生成唯一的推薦碼");
 						return reply.code(statusCode).send(response);
 					}
 
@@ -108,12 +104,12 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// 獲取個人推薦統計
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/referral-stats/:regId",
 		{
 			schema: publicReferralSchemas.getReferralStats
 		},
-		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { regId } = request.params;
 
@@ -137,7 +133,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!referral || referral.registration.status !== "confirmed") {
-					const { response, statusCode } = errorResponse("NOT_FOUND", "找不到符合的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到符合的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -207,12 +203,12 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// 驗證推薦碼
-	fastify.post(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/referrals/validate",
 		{
 			schema: { ...referralSchemas.validateReferral, tags: ["referrals"] }
 		},
-		async (request: FastifyRequest<{ Body: ReferralValidateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { code: referralCode, eventId } = request.body;
 

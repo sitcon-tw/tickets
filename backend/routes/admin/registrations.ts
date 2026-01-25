@@ -7,26 +7,25 @@ import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middle
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
-import { createPagination, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/registrations" });
 
-import type { PaginationQuery, RegistrationUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 /**
  * Admin registrations routes with modular schemas and types
  */
 const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	fastify.get<{
-		Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations",
 		{
 			preHandler: requireEventAccess,
 			schema: registrationSchemas.listRegistrations
 		},
-		async (request: FastifyRequest<{ Querystring: PaginationQuery & { eventId?: string; status?: string; userId?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { page = 1, limit = 20, eventId, status, userId } = request.query;
 
 			const where: any = {};
@@ -84,23 +83,25 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					componentLogger.error({ rawData: reg.formData }, "Raw formData");
 				}
 
+				const status = RegistrationStatusSchema.parse(reg.status);
+
 				const plainReg = {
 					id: reg.id,
 					userId: reg.userId,
 					eventId: reg.eventId,
 					ticketId: reg.ticketId,
 					email: reg.email,
-					status: reg.status,
+					status,
 					referredBy: reg.referredBy ?? null,
 					formData: parsedFormData,
-					createdAt: reg.createdAt.toISOString(),
-					updatedAt: reg.updatedAt.toISOString(),
+					createdAt: reg.createdAt,
+					updatedAt: reg.updatedAt,
 					event: reg.event
 						? {
 								id: reg.event.id,
 								name: reg.event.name as Record<string, string>,
-								startDate: reg.event.startDate.toISOString(),
-								endDate: reg.event.endDate.toISOString()
+								startDate: reg.event.startDate,
+								endDate: reg.event.endDate
 							}
 						: undefined,
 					ticket: reg.ticket
@@ -117,20 +118,18 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 			const pagination = createPagination(page, limit, total);
 
-			return reply.send(successResponse(parsedRegistrations, "取得報名列表成功", pagination));
+			return reply.send(successPaginatedResponse(parsedRegistrations, "取得報名列表成功", pagination));
 		}
 	);
 
 	// Get registration by ID
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 
 			/** @type {Registration | null} */
@@ -179,24 +178,32 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 			const parsedRegistration = {
 				...registration,
+				status: RegistrationStatusSchema.parse(registration.status),
+				event: {
+					...registration.event,
+					name: LocalizedTextSchema.parse(registration.event.name),
+					locationText: LocalizedTextSchema.nullable().parse(registration.event.locationText)
+				},
+				ticket: {
+					...registration.ticket,
+					name: LocalizedTextSchema.parse(registration.ticket.name),
+					description: LocalizedTextSchema.nullable().parse(registration.ticket.description)
+				},
 				formData: registration.formData ? JSON.parse(registration.formData) : {}
 			};
 
-			return reply.send(successResponse(parsedRegistration));
+			return reply.send(successResponse(parsedRegistration, "取得報名記錄成功"));
 		}
 	);
 
 	// Update registration
-	fastify.put<{
-		Params: { id: string };
-		Body: RegistrationUpdateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: RegistrationUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 			const updateData = request.body;
 
@@ -261,23 +268,25 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 			});
 
+			const status = RegistrationStatusSchema.parse(registration.status);
+
 			const parsedRegistration = {
 				id: registration.id,
 				userId: registration.userId,
 				eventId: registration.eventId,
 				ticketId: registration.ticketId,
 				email: registration.email,
-				status: registration.status,
+				status,
 				referredBy: registration.referredBy ?? null,
 				formData: registration.formData ? JSON.parse(registration.formData) : {},
-				createdAt: registration.createdAt.toISOString(),
-				updatedAt: registration.updatedAt.toISOString(),
+				createdAt: registration.createdAt,
+				updatedAt: registration.updatedAt,
 				event: registration.event
 					? {
 							id: registration.event.id,
-							name: registration.event.name as Record<string, string>,
-							startDate: registration.event.startDate.toISOString(),
-							endDate: registration.event.endDate.toISOString()
+							name: LocalizedTextSchema.parse(registration.event.name),
+							startDate: registration.event.startDate,
+							endDate: registration.event.endDate
 						}
 					: undefined,
 				ticket: registration.ticket
@@ -294,14 +303,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Export registrations (CSV/Excel)
-	fastify.get<{
-		Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/export",
 		{
 			schema: adminRegistrationSchemas.exportRegistrations
 		},
-		async (request: FastifyRequest<{ Querystring: { eventId?: string; status?: string; format?: "csv" | "excel" } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { eventId, status, format = "csv" } = request.query;
 
 			const where: any = {};
@@ -384,15 +391,13 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}
 
 	// Delete registration and personal data
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/registrations/:id",
 		{
 			preHandler: requireEventAccessViaRegistrationId,
 			schema: adminRegistrationSchemas.deleteRegistration
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { id } = request.params;
 
 			const registration = await prisma.registration.findUnique({
@@ -437,19 +442,19 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	);
 
 	// Get Google Sheets service account email
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/google-sheets/service-account",
 		{
 			schema: adminRegistrationSchemas.getGoogleSheetsServiceAccount
 		},
-		async (_request: FastifyRequest, reply: FastifyReply) => {
+		async (_request, reply) => {
 			const email = getServiceAccountEmail();
 			return reply.send(successResponse({ email }));
 		}
 	);
 
 	// Sync registrations to Google Sheets
-	fastify.post<{
+	fastify.withTypeProvider<ZodTypeProvider>().post<{
 		Body: { eventId: string; sheetsUrl: string };
 	}>(
 		"/registrations/google-sheets/sync",
@@ -457,7 +462,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			preHandler: requireEventAccess,
 			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
-		async (request: FastifyRequest<{ Body: { eventId: string; sheetsUrl: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const { eventId, sheetsUrl } = request.body;
 
 			const spreadsheetId = extractSpreadsheetId(sheetsUrl);

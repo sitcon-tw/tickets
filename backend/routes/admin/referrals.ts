@@ -1,4 +1,5 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -11,7 +12,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireAdmin);
 
 	// 推薦機制總覽統計
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/overview",
 		{
 			schema: {
@@ -19,7 +20,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (_request: FastifyRequest, reply: FastifyReply) => {
+		async (_request, reply) => {
 			try {
 				const totalReferrals = await prisma.referralUsage.count();
 				const uniqueReferrers = await prisma.referral.count({
@@ -70,9 +71,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// 推薦排行榜
-	fastify.get<{
-		Querystring: { limit?: number };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/leaderboard",
 		{
 			schema: {
@@ -80,7 +79,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: { limit?: number } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { limit = 10 } = request.query;
 
@@ -125,9 +124,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// 獲取推薦擴譜圖數據
-	fastify.get<{
-		Params: { regId: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/tree/:regId",
 		{
 			schema: {
@@ -135,7 +132,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request: FastifyRequest<{ Params: { regId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { regId } = request.params;
 
@@ -179,9 +176,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// 獲取達標推薦者名單
-	fastify.get<{
-		Querystring: { minReferrals?: number };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/qualified",
 		{
 			schema: {
@@ -189,7 +184,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: { minReferrals?: number } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { minReferrals = 1 } = request.query;
 
@@ -235,9 +230,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// 從達標者中隨機抽選
-	fastify.post<{
-		Body: { minReferrals: number; drawCount: number; seed?: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/referrals/draw",
 		{
 			schema: {
@@ -245,7 +238,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request: FastifyRequest<{ Body: { minReferrals: number; drawCount: number; seed?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { minReferrals, drawCount, seed } = request.body;
 
@@ -322,9 +315,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	);
 
 	// 推薦統計報表
-	fastify.get<{
-		Querystring: { startDate?: string; endDate?: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/stats",
 		{
 			schema: {
@@ -332,7 +323,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				tags: ["admin/referrals"]
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: { startDate?: string; endDate?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { startDate, endDate } = request.query;
 

@@ -1,18 +1,12 @@
 import prisma from "#/config/database";
 import { getAdminEmails } from "#/config/security";
+import { Prisma } from "#prisma/generated/prisma";
 import { sendMagicLink } from "#utils/email";
 import { logger } from "#utils/logger";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
-
-interface PrismaError extends Error {
-	code?: string;
-	meta?: {
-		target?: string[];
-	};
-}
 
 const authLogger = logger.child({ component: "auth" });
 
@@ -151,12 +145,14 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						{ isolationLevel: "Serializable" }
 					);
 				} catch (e) {
-					const prismaError = e as PrismaError;
-					if (prismaError.code === "P2034") {
-						authLogger.warn("Magic link transaction conflict detected");
-						throw new APIError("TOO_MANY_REQUESTS", {
-							message: "系統繁忙，請稍後再試"
-						});
+					if (e instanceof Prisma.PrismaClientKnownRequestError) {
+						const prismaError = e as Prisma.PrismaClientKnownRequestError;
+						if (prismaError.code === "P2034") {
+							authLogger.warn("Magic link transaction conflict detected");
+							throw new APIError("TOO_MANY_REQUESTS", {
+								message: "系統繁忙，請稍後再試"
+							});
+						}
 					}
 					throw e;
 				}

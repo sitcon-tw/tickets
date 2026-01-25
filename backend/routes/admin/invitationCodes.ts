@@ -1,6 +1,7 @@
-import type { Prisma } from "@prisma/client";
-import type { InvitationCode, InvitationCodeCreateRequest, InvitationCodeUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { Prisma } from "#prisma/generated/prisma/client";
+import type { InvitationCode } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
@@ -13,15 +14,13 @@ const componentLogger = logger.child({ component: "admin/invitationCodes" });
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
-	fastify.post<{
-		Body: InvitationCodeCreateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes",
 		{
 			preHandler: requireEventAccessViaTicketBody,
 			schema: invitationCodeSchemas.createInvitationCode
 		},
-		async (request: FastifyRequest<{ Body: InvitationCodeCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { code, name, usageLimit, validFrom, validUntil, ticketId } = request.body;
 
@@ -81,10 +80,10 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 					return {
 						...newCode,
-						createdAt: newCode.createdAt.toISOString(),
-						updatedAt: newCode.updatedAt.toISOString(),
-						validFrom: newCode.validFrom?.toISOString() ?? null,
-						validUntil: newCode.validUntil?.toISOString() ?? null
+						createdAt: newCode.createdAt,
+						updatedAt: newCode.updatedAt,
+						validFrom: newCode.validFrom ?? null,
+						validUntil: newCode.validUntil ?? null
 					};
 				});
 
@@ -98,15 +97,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Get invitation code by ID
-	fastify.get<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.getInvitationCode
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -139,10 +136,10 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				const invitationCode: InvitationCode = {
 					...rawInvitationCode,
-					createdAt: rawInvitationCode.createdAt.toISOString(),
-					updatedAt: rawInvitationCode.updatedAt.toISOString(),
-					validFrom: rawInvitationCode.validFrom?.toISOString() ?? null,
-					validUntil: rawInvitationCode.validUntil?.toISOString() ?? null
+					createdAt: rawInvitationCode.createdAt,
+					updatedAt: rawInvitationCode.updatedAt,
+					validFrom: rawInvitationCode.validFrom ?? null,
+					validUntil: rawInvitationCode.validUntil ?? null
 				};
 
 				return reply.send(successResponse(invitationCode));
@@ -155,16 +152,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Update invitation code
-	fastify.put<{
-		Params: { id: string };
-		Body: InvitationCodeUpdateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.updateInvitationCode
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: InvitationCodeUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 				const { code, name, usageLimit, validFrom, validUntil, isActive, ticketId } = request.body;
@@ -243,10 +237,10 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 					return {
 						...updatedCode,
-						createdAt: updatedCode.createdAt.toISOString(),
-						updatedAt: updatedCode.updatedAt.toISOString(),
-						validFrom: updatedCode.validFrom?.toISOString() ?? null,
-						validUntil: updatedCode.validUntil?.toISOString() ?? null
+						createdAt: updatedCode.createdAt,
+						updatedAt: updatedCode.updatedAt,
+						validFrom: updatedCode.validFrom ?? null,
+						validUntil: updatedCode.validUntil ?? null
 					};
 				});
 
@@ -260,15 +254,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Delete invitation code
-	fastify.delete<{
-		Params: { id: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/invitation-codes/:id",
 		{
 			preHandler: requireEventAccessViaCodeId,
 			schema: invitationCodeSchemas.deleteInvitationCode
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -300,15 +292,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// List invitation codes
-	fastify.get<{
-		Querystring: { ticketId?: string; isActive?: boolean; eventId?: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/invitation-codes",
 		{
 			preHandler: requireEventListAccess,
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
-		async (request: FastifyRequest<{ Querystring: { ticketId?: string; isActive?: boolean; eventId?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { ticketId, isActive, eventId } = request.query;
 
@@ -359,12 +349,12 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					orderBy: { createdAt: "desc" }
 				});
 
-				const invitationCodes: InvitationCode[] = rawInvitationCodes.map(code => ({
+				const invitationCodes = rawInvitationCodes.map(code => ({
 					...code,
-					createdAt: code.createdAt.toISOString(),
-					updatedAt: code.updatedAt.toISOString(),
-					validFrom: code.validFrom?.toISOString() ?? null,
-					validUntil: code.validUntil?.toISOString() ?? null
+					createdAt: code.createdAt,
+					updatedAt: code.updatedAt,
+					validFrom: code.validFrom ?? null,
+					validUntil: code.validUntil ?? null
 				}));
 
 				// Add status indicators
@@ -387,34 +377,13 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Bulk create invitation codes
-	fastify.post<{
-		Body: {
-			ticketId: string;
-			name: string;
-			count: number;
-			usageLimit?: number;
-			validFrom?: string;
-			validUntil?: string;
-		};
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes/bulk",
 		{
 			preHandler: requireEventAccessViaTicketBody,
 			schema: adminInvitationCodeSchemas.bulkCreateInvitationCodes
 		},
-		async (
-			request: FastifyRequest<{
-				Body: {
-					ticketId: string;
-					name: string;
-					count: number;
-					usageLimit?: number;
-					validFrom?: string;
-					validUntil?: string;
-				};
-			}>,
-			reply: FastifyReply
-		) => {
+		async (request, reply) => {
 			try {
 				const { ticketId, name, count, usageLimit, validFrom, validUntil } = request.body;
 
@@ -486,14 +455,12 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	);
 
 	// Send invitation codes via email
-	fastify.post<{
-		Body: { email: string; code: string; message?: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes/send-email",
 		{
 			schema: adminInvitationCodeSchemas.sendInvitationCodeEmail
 		},
-		async (request: FastifyRequest<{ Body: { email: string; code: string; message?: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { email, code, message } = request.body;
 

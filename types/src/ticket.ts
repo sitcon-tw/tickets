@@ -19,8 +19,8 @@ export const TicketSchema = z.object({
 	quantity: z.number().int().min(0),
 	soldCount: z.number().int().min(0),
 	available: z.number().int().min(0).optional(),
-	saleStart: z.iso.datetime().nullable().optional(),
-	saleEnd: z.iso.datetime().nullable().optional(),
+	saleStart: z.date().nullable().optional(),
+	saleEnd: z.date().nullable().optional(),
 	isOnSale: z.boolean().optional(),
 	isSoldOut: z.boolean().optional(),
 	isActive: z.boolean().optional(),
@@ -28,8 +28,8 @@ export const TicketSchema = z.object({
 	showRemaining: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
-	createdAt: z.iso.datetime().optional(),
-	updatedAt: z.iso.datetime().optional()
+	createdAt: z.date().optional(),
+	updatedAt: z.date().optional()
 });
 export type Ticket = z.infer<typeof TicketSchema>;
 
@@ -44,8 +44,8 @@ export const TicketCreateRequestSchema = z.object({
 	plainDescription: LocalizedTextSchema.optional(),
 	price: z.number().min(0),
 	quantity: z.number().int().min(1),
-	saleStart: z.iso.datetime().optional(),
-	saleEnd: z.iso.datetime().optional(),
+	saleStart: z.date().optional(),
+	saleEnd: z.date().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
 	hidden: z.boolean().optional(),
@@ -63,8 +63,8 @@ export const TicketUpdateRequestSchema = z.object({
 	plainDescription: LocalizedTextSchema.optional(),
 	price: z.number().min(0).optional(),
 	quantity: z.number().int().min(0).optional(),
-	saleStart: z.iso.datetime().optional(),
-	saleEnd: z.iso.datetime().optional(),
+	saleStart: z.date().optional(),
+	saleEnd: z.date().optional(),
 	isActive: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),

@@ -47,14 +47,14 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 		request.session = {
 			user: {
 				...session.user,
-				createdAt: session.user.createdAt instanceof Date ? session.user.createdAt.toISOString() : session.user.createdAt,
-				updatedAt: session.user.updatedAt instanceof Date ? session.user.updatedAt.toISOString() : session.user.updatedAt
+				createdAt: session.user.createdAt,
+				updatedAt: session.user.updatedAt
 			},
 			session: {
 				...session.session,
-				createdAt: session.session.createdAt instanceof Date ? session.session.createdAt.toISOString() : session.session.createdAt,
-				updatedAt: session.session.updatedAt instanceof Date ? session.session.updatedAt.toISOString() : session.session.updatedAt,
-				expiresAt: session.session.expiresAt instanceof Date ? session.session.expiresAt.toISOString() : session.session.expiresAt
+				createdAt: session.session.createdAt,
+				updatedAt: session.session.updatedAt,
+				expiresAt: session.session.expiresAt
 			}
 		};
 	}
@@ -93,14 +93,14 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 		request.session = {
 			user: {
 				...session.user,
-				createdAt: session.user.createdAt instanceof Date ? session.user.createdAt.toISOString() : session.user.createdAt,
-				updatedAt: session.user.updatedAt instanceof Date ? session.user.updatedAt.toISOString() : session.user.updatedAt
+				createdAt: session.user.createdAt,
+				updatedAt: session.user.updatedAt
 			},
 			session: {
 				...session.session,
-				createdAt: session.session.createdAt instanceof Date ? session.session.createdAt.toISOString() : session.session.createdAt,
-				updatedAt: session.session.updatedAt instanceof Date ? session.session.updatedAt.toISOString() : session.session.updatedAt,
-				expiresAt: session.session.expiresAt instanceof Date ? session.session.expiresAt.toISOString() : session.session.expiresAt
+				createdAt: session.session.createdAt,
+				updatedAt: session.session.updatedAt,
+				expiresAt: session.session.expiresAt
 			}
 		};
 	} catch (error) {

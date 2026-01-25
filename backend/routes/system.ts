@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const systemRoutes: FastifyPluginAsync = async fastify => {
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/health",
 		{
 			schema: {

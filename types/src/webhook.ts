@@ -52,9 +52,9 @@ export const WebhookEndpointSchema = z.object({
 	eventTypes: z.array(WebhookEventTypeSchema),
 	isActive: z.boolean(),
 	consecutiveFailurePeriods: z.number().int().min(0),
-	lastFailureAt: z.iso.datetime().nullable().optional(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime()
+	lastFailureAt: z.date().nullable().optional(),
+	createdAt: z.date(),
+	updatedAt: z.date()
 });
 export type WebhookEndpoint = z.infer<typeof WebhookEndpointSchema>;
 
@@ -132,9 +132,9 @@ export const WebhookDeliverySchema = z.object({
 	responseBody: z.string().nullable().optional(),
 	errorMessage: z.string().nullable().optional(),
 	retryCount: z.number().int().min(0),
-	nextRetryAt: z.iso.datetime().nullable().optional(),
-	createdAt: z.iso.datetime(),
-	updatedAt: z.iso.datetime()
+	nextRetryAt: z.date().nullable().optional(),
+	createdAt: z.date(),
+	updatedAt: z.date()
 });
 export type WebhookDelivery = z.infer<typeof WebhookDeliverySchema>;
 

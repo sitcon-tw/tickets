@@ -3,18 +3,12 @@ import { auth } from "#lib/auth";
 import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { getClientIP, validateTurnstile } from "#lib/turnstile";
 import { requireAuth } from "#middleware/auth";
+import { Prisma } from "#prisma/generated/prisma";
 import { smsVerificationSchemas } from "#schemas";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
-import type { SendVerificationRequest, VerifyCodeRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-interface PrismaError extends Error {
-	code?: string;
-	meta?: {
-		target?: string[];
-	};
-}
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -23,12 +17,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	 * Send SMS verification code
 	 * POST /api/sms-verification/send
 	 */
-	fastify.post(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/sms-verification/send",
 		{
 			schema: smsVerificationSchemas.send
 		},
-		async (request: FastifyRequest<{ Body: SendVerificationRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -198,11 +192,13 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
-				const prismaError = error as PrismaError;
-				if (prismaError.code === "P2034") {
-					request.log.warn({ error }, "SMS verification transaction conflict detected");
-					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
-					return reply.code(statusCode).send(response);
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					const prismaError = error as Prisma.PrismaClientKnownRequestError;
+					if (prismaError.code === "P2034") {
+						request.log.warn({ error }, "SMS verification transaction conflict detected");
+						const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+						return reply.code(statusCode).send(response);
+					}
 				}
 
 				request.log.error({ error }, "Send SMS verification error");
@@ -216,12 +212,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	 * Verify SMS code
 	 * POST /api/sms-verification/verify
 	 */
-	fastify.post(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/sms-verification/verify",
 		{
 			schema: smsVerificationSchemas.verify
 		},
-		async (request: FastifyRequest<{ Body: VerifyCodeRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers
@@ -314,12 +310,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	 * Get user's phone verification status
 	 * GET /api/sms-verification/status
 	 */
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/sms-verification/status",
 		{
 			schema: smsVerificationSchemas.status
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
 					headers: request.headers as unknown as Headers

@@ -1,18 +1,11 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { smsVerificationLogsSchemas } from "#schemas";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import { nowInUTC8 } from "#utils/timezone";
-
-interface SmsLogsQuery {
-	userId?: string;
-	phoneNumber?: string;
-	verified?: boolean;
-	page?: number;
-	limit?: number;
-}
 
 const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAdmin);
@@ -21,12 +14,12 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	 * GET /api/admin/sms-verification-logs
 	 * Get SMS verification logs with filters
 	 */
-	fastify.get<{ Querystring: SmsLogsQuery }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/sms-verification-logs",
 		{
 			schema: smsVerificationLogsSchemas.getSmsVerificationLogs
 		},
-		async (request: FastifyRequest<{ Querystring: SmsLogsQuery }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { userId, phoneNumber, verified, page = 1, limit = 20 } = request.query;
 
@@ -83,12 +76,12 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	 * GET /api/admin/sms-verification-stats
 	 * Get SMS verification statistics
 	 */
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/sms-verification-stats",
 		{
 			schema: smsVerificationLogsSchemas.getSmsVerificationStats
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const [totalSent, totalVerified, totalExpired] = await Promise.all([
 					prisma.smsVerification.count(),

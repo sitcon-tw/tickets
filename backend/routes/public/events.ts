@@ -1,21 +1,16 @@
 import prisma from "#config/database";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { logger } from "#utils/logger";
-import { notFoundResponse, serializeDates, serverErrorResponse, successResponse } from "#utils/response";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 
 const componentLogger = logger.child({ component: "public/events" });
 
-interface EventIdParams {
-	id: string;
-}
-
-interface UpcomingQuery {
-	upcoming?: boolean;
-}
-
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/info",
 		{
 			schema: {
@@ -23,7 +18,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				description: "獲取活動公開資訊"
 			}
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -58,7 +53,15 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				return reply.send(successResponse(serializeDates(event)));
+				const eventDto = {
+					...event,
+					name: LocalizedTextSchema.parse(event.name),
+					description: LocalizedTextSchema.nullable().parse(event.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+					locationText: LocalizedTextSchema.nullable().parse(event.locationText)
+				};
+
+				return reply.send(successResponse(eventDto));
 			} catch (error) {
 				componentLogger.error({ error }, "Get public event info error");
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
@@ -67,7 +70,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/tickets",
 		{
 			schema: {
@@ -77,7 +80,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				response: eventTicketsResponse
 			}
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -125,9 +128,9 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 					return {
 						id: ticket.id,
-						name: ticket.name,
-						description: ticket.description,
-						plainDescription: ticket.plainDescription,
+						name: LocalizedTextSchema.parse(ticket.name),
+						description: LocalizedTextSchema.nullable().parse(ticket.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 						price: ticket.price,
 						available,
 						quantity,
@@ -141,7 +144,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(serializeDates(ticketsWithStatus)));
+				return reply.send(successResponse(ticketsWithStatus));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event tickets error");
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
@@ -151,7 +154,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// List all active events
-	fastify.get<{ Querystring: UpcomingQuery }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events",
 		{
 			schema: {
@@ -160,7 +163,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				response: publicEventsListResponse
 			}
 		},
-		async (request: FastifyRequest<{ Querystring: UpcomingQuery }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { upcoming } = request.query;
 
@@ -225,10 +228,10 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					return {
 						id: event.id,
 						slug: event.slug,
-						name: event.name,
-						description: event.description,
-						plainDescription: event.plainDescription,
-						locationText: event.locationText,
+						name: LocalizedTextSchema.parse(event.name),
+						description: LocalizedTextSchema.nullable().parse(event.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+						locationText: LocalizedTextSchema.nullable().parse(event.locationText),
 						mapLink: event.mapLink,
 						startDate: event.startDate,
 						endDate: event.endDate,
@@ -241,7 +244,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
-				return reply.send(successResponse(serializeDates(eventsWithStatus)));
+				return reply.send(successResponse(eventsWithStatus));
 			} catch (error) {
 				componentLogger.error({ error }, "List events error");
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
@@ -250,7 +253,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/stats",
 		{
 			schema: {
@@ -260,7 +263,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				response: eventStatsResponse
 			}
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -304,7 +307,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
 
 				const stats = {
-					eventName: event.name,
+					eventName: LocalizedTextSchema.parse(event.name),
 					totalRegistrations: soldTickets,
 					confirmedRegistrations: event._count.registrations,
 					totalTickets,
@@ -322,12 +325,12 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// compactability: the formfield perviously migrated from ticket to event, so the endpoint is in here. -ns
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/form-fields",
 		{
 			schema: publicEventSchemas.getTicketFormFields
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -374,13 +377,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
-					name: field.name,
-					description: field.description,
+					name: LocalizedTextSchema.parse(field.name),
+					description: LocalizedTextSchema.nullable().parse(field.description),
 					type: field.type,
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [],
+					options: z.array(z.unknown()).parse(field.values || []),
 					order: field.order,
 					filters: field.filters || {},
 					prompts: field.prompts || {},

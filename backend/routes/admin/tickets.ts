@@ -1,22 +1,22 @@
-import type { TicketCreateRequest, TicketReorderRequest, TicketUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
 import prisma from "#config/database";
 import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { LocalizedTextSchema } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "admin/tickets" });
 
 const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
-	fastify.post<{ Body: TicketCreateRequest }>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
 			schema: ticketSchemas.createTicket
 		},
-		async (request: FastifyRequest<{ Body: TicketCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden, showRemaining } = request.body;
 
@@ -78,13 +78,9 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const responseTicket = {
 					...ticket,
-					name: ticket.name as Record<string, string>,
-					description: ticket.description as Record<string, string> | undefined,
-					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
-					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
-					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
-					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
-					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt
+					name: LocalizedTextSchema.parse(ticket.name),
+					description: LocalizedTextSchema.nullable().parse(ticket.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription)
 				};
 
 				return reply.code(201).send(successResponse(responseTicket, "票券創建成功"));
@@ -96,13 +92,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.getTicket
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -132,19 +128,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const responseTicket = {
 					...ticket,
-					name: ticket.name as Record<string, string>,
-					description: ticket.description as Record<string, string> | undefined,
-					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
-					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
-					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
-					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
-					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
+					name: LocalizedTextSchema.parse(ticket.name),
+					description: LocalizedTextSchema.nullable().parse(ticket.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 					event: ticket.event
 						? {
 								...ticket.event,
-								name: ticket.event.name as Record<string, string>,
-								startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
-								endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+								name: LocalizedTextSchema.parse(ticket.event.name)
 							}
 						: undefined
 				};
@@ -158,13 +148,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.put<{ Params: { id: string }; Body: TicketUpdateRequest }>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.updateTicket
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: TicketUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 				const updateData = request.body;
@@ -235,13 +225,9 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const responseTicket = {
 					...ticket,
-					name: ticket.name as Record<string, string>,
-					description: ticket.description as Record<string, string> | undefined,
-					plainDescription: ticket.plainDescription as Record<string, string> | undefined,
-					saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
-					saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
-					createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
-					updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt
+					name: LocalizedTextSchema.parse(ticket.name),
+					description: LocalizedTextSchema.nullable().parse(ticket.description),
+					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription)
 				};
 
 				return reply.send(successResponse(responseTicket, "票券更新成功"));
@@ -253,13 +239,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.delete<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/tickets/:id",
 		{
 			preHandler: requireEventAccessViaTicketId,
 			schema: ticketSchemas.deleteTicket
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -296,13 +282,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// List tickets
-	fastify.get<{ Querystring: { eventId?: string; isActive?: boolean } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets",
 		{
 			preHandler: requireEventAccess,
 			schema: ticketSchemas.listTickets
 		},
-		async (request: FastifyRequest<{ Querystring: { eventId?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId, isActive } = request.query;
 
@@ -338,19 +324,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 					return {
 						...ticket,
-						name: ticket.name as Record<string, string>,
-						description: ticket.description as Record<string, string> | undefined,
-						plainDescription: ticket.plainDescription as Record<string, string> | undefined,
-						saleStart: ticket.saleStart instanceof Date ? ticket.saleStart.toISOString() : ticket.saleStart,
-						saleEnd: ticket.saleEnd instanceof Date ? ticket.saleEnd.toISOString() : ticket.saleEnd,
-						createdAt: ticket.createdAt instanceof Date ? ticket.createdAt.toISOString() : ticket.createdAt,
-						updatedAt: ticket.updatedAt instanceof Date ? ticket.updatedAt.toISOString() : ticket.updatedAt,
+						name: LocalizedTextSchema.parse(ticket.name),
+						description: LocalizedTextSchema.nullable().parse(ticket.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
 						event: ticket.event
 							? {
 									...ticket.event,
-									name: ticket.event.name as Record<string, string>,
-									startDate: ticket.event.startDate instanceof Date ? ticket.event.startDate.toISOString() : ticket.event.startDate,
-									endDate: ticket.event.endDate instanceof Date ? ticket.event.endDate.toISOString() : ticket.event.endDate
+									name: LocalizedTextSchema.parse(ticket.event.name)
 								}
 							: undefined,
 						available,
@@ -368,12 +348,12 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/analytics",
 		{
 			schema: adminTicketSchemas.getTicketAnalytics
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -417,7 +397,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						acc[item.status] = item._count.id;
 						return acc;
 					}, {}),
-					dailySales
+					dailySales: dailySales as unknown[]
 				};
 
 				return reply.send(successResponse(analytics));
@@ -430,13 +410,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Reorder tickets
-	fastify.put<{ Body: TicketReorderRequest }>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/tickets/reorder",
 		{
 			preHandler: requireEventAccess,
 			schema: adminTicketSchemas.reorderTickets
 		},
-		async (request: FastifyRequest<{ Body: TicketReorderRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { tickets } = request.body;
 
