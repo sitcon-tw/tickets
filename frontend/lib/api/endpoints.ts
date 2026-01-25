@@ -300,6 +300,13 @@ export const adminSmsVerificationAPI = {
 };
 
 // Admin - Webhooks
+export const webhookTestSchema = z.object({
+	success: z.boolean(),
+	statusCode: z.number().optional(),
+	responseBody: z.string().optional(),
+	errorMessage: z.string().optional()
+});
+
 export const adminWebhooksAPI = {
 	get: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/webhook`, {}, ApiResponseSchema(WebhookEndpointSchema.nullable())),
 
@@ -315,7 +322,7 @@ export const adminWebhooksAPI = {
 		apiClient.post(
 			`/api/admin/events/${eventId}/webhook/test`,
 			data,
-			ApiResponseSchema(z.object({ success: z.boolean(), statusCode: z.number().optional(), responseBody: z.string().optional(), errorMessage: z.string().optional() }))
+			ApiResponseSchema(webhookTestSchema)
 		),
 
 	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
