@@ -1,8 +1,8 @@
 import prisma from "#config/database";
-import { PublicTicketResponseDataSchema, publicTicketSchemas } from "#schemas";
+import { publicTicketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
-import { LocalizedTextSchema } from "@sitcontix/types";
+import { LocalizedTextSchema, PublicTicketDetailSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { z } from "zod/v4";
@@ -36,6 +36,7 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: true,
 						requireInviteCode: true,
 						requireSmsVerification: true,
+						showRemaining: true,
 						isActive: true
 					}
 				});
@@ -58,7 +59,7 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 					available,
 					isOnSale,
 					isSoldOut
-				} satisfies z.infer<typeof PublicTicketResponseDataSchema>;
+				} satisfies z.infer<typeof PublicTicketDetailSchema>;
 
 				return reply.send(successResponse(ticketWithStatus));
 			} catch (error) {
