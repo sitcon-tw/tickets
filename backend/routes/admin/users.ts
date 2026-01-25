@@ -1,5 +1,5 @@
-import type { AdminUserUpdateRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
@@ -7,18 +7,19 @@ import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { UserRoleSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/users" });
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	// List users - admin only
-	fastify.get<{ Querystring: { role?: string; isActive?: boolean } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.listUsers
 		},
-		async (request: FastifyRequest<{ Querystring: { role?: string; isActive?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { role, isActive } = request.query;
 
@@ -48,15 +49,16 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt,
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt,
 					smsVerifications: user.smsVerifications?.map(sms => ({
 						...sms,
-						expiresAt: sms.expiresAt instanceof Date ? sms.expiresAt.toISOString() : sms.expiresAt,
-						createdAt: sms.createdAt instanceof Date ? sms.createdAt.toISOString() : sms.createdAt,
-						updatedAt: sms.updatedAt instanceof Date ? sms.updatedAt.toISOString() : sms.updatedAt
+						expiresAt: sms.expiresAt,
+						createdAt: sms.createdAt,
+						updatedAt: sms.updatedAt
 					}))
 				}));
 
@@ -70,13 +72,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Get user by ID - admin only
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.getUser
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -120,10 +122,11 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions));
@@ -136,13 +139,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// Update user - admin only
-	fastify.put<{ Params: { id: string }; Body: AdminUserUpdateRequest }>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/users/:id",
 		{
 			preHandler: requireAdmin,
 			schema: userSchemas.updateUser
 		},
-		async (request: FastifyRequest<{ Params: { id: string }; Body: AdminUserUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 				const updateData = request.body;
@@ -203,10 +206,11 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 
 				const userWithParsedPermissions = {
 					...user,
+					role: UserRoleSchema.parse(user.role),
 					permissions: safeJsonParse(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
-					createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
-					updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt
+					createdAt: user.createdAt,
+					updatedAt: user.updatedAt
 				};
 
 				return reply.send(successResponse(userWithParsedPermissions, "用戶更新成功"));

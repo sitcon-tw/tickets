@@ -54,9 +54,9 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				const safeWebhook = {
 					...webhook,
 					authHeaderValue: webhook.authHeaderValue ? "********" : null,
-					createdAt: webhook.createdAt.toISOString(),
-					updatedAt: webhook.updatedAt.toISOString(),
-					lastFailureAt: webhook.lastFailureAt?.toISOString() || null
+					createdAt: webhook.createdAt,
+					updatedAt: webhook.updatedAt,
+					lastFailureAt: webhook.lastFailureAt ?? null
 				};
 
 				return reply.send(successResponse(safeWebhook));
@@ -137,8 +137,8 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				const safeWebhook = {
 					...webhook,
 					authHeaderValue: webhook.authHeaderValue ? "********" : null,
-					createdAt: webhook.createdAt.toISOString(),
-					updatedAt: webhook.updatedAt.toISOString(),
+					createdAt: webhook.createdAt,
+					updatedAt: webhook.updatedAt,
 					lastFailureAt: null
 				};
 
@@ -219,9 +219,9 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				const safeWebhook = {
 					...updatedWebhook,
 					authHeaderValue: updatedWebhook.authHeaderValue ? "********" : null,
-					createdAt: updatedWebhook.createdAt.toISOString(),
-					updatedAt: updatedWebhook.updatedAt.toISOString(),
-					lastFailureAt: updatedWebhook.lastFailureAt?.toISOString() || null
+					createdAt: updatedWebhook.createdAt,
+					updatedAt: updatedWebhook.updatedAt,
+					lastFailureAt: updatedWebhook.lastFailureAt ?? null
 				};
 
 				return reply.send(successResponse(safeWebhook, "Webhook updated"));
@@ -335,9 +335,9 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				const serializedDeliveries = deliveries.map(d => ({
 					...d,
-					createdAt: d.createdAt.toISOString(),
-					updatedAt: d.updatedAt.toISOString(),
-					nextRetryAt: d.nextRetryAt?.toISOString() || null
+					createdAt: d.createdAt,
+					updatedAt: d.updatedAt,
+					nextRetryAt: d.nextRetryAt ?? null
 				}));
 
 				const totalPages = Math.ceil(total / limit);

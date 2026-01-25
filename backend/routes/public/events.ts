@@ -3,14 +3,11 @@ import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSche
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { LocalizedTextSchema } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 
 const componentLogger = logger.child({ component: "public/events" });
-
-interface EventIdParams {
-	id: string;
-}
 
 const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
@@ -256,7 +253,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.get<{ Params: EventIdParams }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id/stats",
 		{
 			schema: {
@@ -266,7 +263,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				response: eventStatsResponse
 			}
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -310,7 +307,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
 
 				const stats = {
-					eventName: event.name,
+					eventName: LocalizedTextSchema.parse(event.name),
 					totalRegistrations: soldTickets,
 					confirmedRegistrations: event._count.registrations,
 					totalTickets,
@@ -328,12 +325,12 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 	);
 
 	// compactability: the formfield perviously migrated from ticket to event, so the endpoint is in here. -ns
-	fastify.get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/form-fields",
 		{
 			schema: publicEventSchemas.getTicketFormFields
 		},
-		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { id } = request.params;
 
@@ -380,13 +377,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
-					name: field.name,
-					description: field.description,
+					name: LocalizedTextSchema.parse(field.name),
+					description: LocalizedTextSchema.nullable().parse(field.description),
 					type: field.type,
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: field.values || [],
+					options: z.array(z.unknown()).parse(field.values || []),
 					order: field.order,
 					filters: field.filters || {},
 					prompts: field.prompts || {},

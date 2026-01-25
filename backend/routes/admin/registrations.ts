@@ -94,14 +94,14 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					status,
 					referredBy: reg.referredBy ?? null,
 					formData: parsedFormData,
-					createdAt: reg.createdAt.toISOString(),
-					updatedAt: reg.updatedAt.toISOString(),
+					createdAt: reg.createdAt,
+					updatedAt: reg.updatedAt,
 					event: reg.event
 						? {
 								id: reg.event.id,
 								name: reg.event.name as Record<string, string>,
-								startDate: reg.event.startDate.toISOString(),
-								endDate: reg.event.endDate.toISOString()
+								startDate: reg.event.startDate,
+								endDate: reg.event.endDate
 							}
 						: undefined,
 					ticket: reg.ticket
