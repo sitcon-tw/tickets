@@ -1,7 +1,9 @@
+import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, type Event } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
@@ -17,66 +19,85 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
-			const rawBody = request.body;
+			const span = tracer.startSpan("route.admin.events.create");
 
-			const sanitizedBody = sanitizeObject(rawBody, true);
-			const { name, description, plainDescription, startDate, endDate, editDeadline, locationText, mapLink, ogImage } = sanitizedBody;
+			try {
+				const rawBody = request.body;
 
-			const start = new Date(startDate);
-			const end = new Date(endDate);
+				const sanitizedBody = sanitizeObject(rawBody, true);
+				const { name, description, plainDescription, startDate, endDate, editDeadline, locationText, mapLink, ogImage } = sanitizedBody;
 
-			if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-				const { response, statusCode } = validationErrorResponse("無效的日期格式");
-				return reply.code(statusCode).send(response);
-			}
+				const start = new Date(startDate);
+				const end = new Date(endDate);
 
-			if (start >= end) {
-				const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
-				return reply.code(statusCode).send(response);
-			}
-
-			let editDeadlineDate: Date | null = null;
-			if (editDeadline) {
-				editDeadlineDate = new Date(editDeadline);
-				if (isNaN(editDeadlineDate.getTime())) {
-					const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
+				if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+					const { response, statusCode } = validationErrorResponse("無效的日期格式");
 					return reply.code(statusCode).send(response);
 				}
-				if (editDeadlineDate >= start) {
-					const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+
+				if (start >= end) {
+					const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
 					return reply.code(statusCode).send(response);
 				}
-			}
 
-			const createdEvent = await prisma.event.create({
-				data: {
-					name,
-					description,
-					plainDescription,
-					startDate: start,
-					endDate: end,
-					editDeadline: editDeadlineDate,
-					locationText,
-					mapLink,
-					ogImage,
-					isActive: true
+				let editDeadlineDate: Date | null = null;
+				if (editDeadline) {
+					editDeadlineDate = new Date(editDeadline);
+					if (isNaN(editDeadlineDate.getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
+						return reply.code(statusCode).send(response);
+					}
+					if (editDeadlineDate >= start) {
+						const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+						return reply.code(statusCode).send(response);
+					}
 				}
-			});
 
-			const event: Event = {
-				...createdEvent,
-				name: createdEvent.name as Record<string, string>,
-				description: createdEvent.description as Record<string, string> | undefined,
-				plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
-				locationText: createdEvent.locationText as Record<string, string> | undefined,
-				startDate: createdEvent.startDate,
-				endDate: createdEvent.endDate,
-				editDeadline: createdEvent.editDeadline ?? null,
-				createdAt: createdEvent.createdAt,
-				updatedAt: createdEvent.updatedAt
-			};
+				span.addEvent("event.creating");
 
-			return reply.code(201).send(successResponse(event, "活動創建成功"));
+				const createdEvent = await prisma.event.create({
+					data: {
+						name,
+						description,
+						plainDescription,
+						startDate: start,
+						endDate: end,
+						editDeadline: editDeadlineDate,
+						locationText,
+						mapLink,
+						ogImage,
+						isActive: true
+					}
+				});
+
+				span.setAttribute("event.id", createdEvent.id);
+				span.addEvent("event.created");
+
+				const event: Event = {
+					...createdEvent,
+					name: createdEvent.name as Record<string, string>,
+					description: createdEvent.description as Record<string, string> | undefined,
+					plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
+					locationText: createdEvent.locationText as Record<string, string> | undefined,
+					startDate: createdEvent.startDate,
+					endDate: createdEvent.endDate,
+					editDeadline: createdEvent.editDeadline ?? null,
+					createdAt: createdEvent.createdAt,
+					updatedAt: createdEvent.updatedAt
+				};
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.code(201).send(successResponse(event, "活動創建成功"));
+			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to create event"
+				});
+				throw error;
+			} finally {
+				span.end();
+			}
 		}
 	);
 
@@ -88,29 +109,55 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
-			const { id } = request.params;
+			const span = tracer.startSpan("route.admin.events.get", {
+				attributes: {
+					"event.id": request.params.id
+				}
+			});
 
-			const event = (await prisma.event.findUnique({
-				where: { id },
-				include: {
-					tickets: {
-						where: { isActive: true },
-						orderBy: { createdAt: "asc" }
-					},
-					_count: {
-						select: {
-							registrations: true
+			try {
+				const { id } = request.params;
+
+				span.addEvent("event.fetching");
+
+				const eventData = await prisma.event.findUnique({
+					where: { id },
+					include: {
+						tickets: {
+							where: { isActive: true },
+							orderBy: { createdAt: "asc" }
+						},
+						_count: {
+							select: {
+								registrations: true
+							}
 						}
 					}
+				});
+
+				if (!eventData) {
+					span.addEvent("event.not_found");
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
 				}
-			})) as Event | null;
 
-			if (!event) {
-				const { response, statusCode } = notFoundResponse("活動不存在");
-				return reply.code(statusCode).send(response);
+				const event = eventData as Event;
+
+				span.setAttribute("event.tickets_count", eventData.tickets?.length || 0);
+				span.setAttribute("event.registrations_count", eventData._count?.registrations || 0);
+				span.setStatus({ code: SpanStatusCode.OK });
+
+				return reply.send(successResponse(event));
+			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get event"
+				});
+				throw error;
+			} finally {
+				span.end();
 			}
-
-			return reply.send(successResponse(event));
 		}
 	);
 
@@ -122,83 +169,108 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: eventSchemas.updateEvent
 		},
 		async (request, reply) => {
-			const { id } = request.params;
-			const updateData = request.body;
-
-			const existingEvent = await prisma.event.findUnique({
-				where: { id }
+			const span = tracer.startSpan("route.admin.events.update", {
+				attributes: {
+					"event.id": request.params.id
+				}
 			});
 
-			if (!existingEvent) {
-				const { response, statusCode } = notFoundResponse("活動不存在");
-				return reply.code(statusCode).send(response);
-			}
+			try {
+				const { id } = request.params;
+				const updateData = request.body;
 
-			if (updateData.startDate || updateData.endDate) {
-				const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
-				const endDate = updateData.endDate ? new Date(updateData.endDate) : existingEvent.endDate;
+				span.addEvent("event.fetching_existing");
 
-				if (updateData.startDate && isNaN(new Date(updateData.startDate).getTime())) {
-					const { response, statusCode } = validationErrorResponse("無效的開始日期格式");
+				const existingEvent = await prisma.event.findUnique({
+					where: { id }
+				});
+
+				if (!existingEvent) {
+					span.addEvent("event.not_found");
+					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				if (updateData.endDate && isNaN(new Date(updateData.endDate).getTime())) {
-					const { response, statusCode } = validationErrorResponse("無效的結束日期格式");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (startDate >= endDate) {
-					const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
-					return reply.code(statusCode).send(response);
-				}
-			}
-
-			// Validate editDeadline if provided (must be before startDate)
-			if (updateData.editDeadline !== undefined) {
-				if (updateData.editDeadline !== null) {
-					const editDeadlineDate = new Date(updateData.editDeadline);
-					if (isNaN(editDeadlineDate.getTime())) {
-						const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
-						return reply.code(statusCode).send(response);
-					}
+				if (updateData.startDate || updateData.endDate) {
 					const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
-					if (editDeadlineDate >= startDate) {
-						const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+					const endDate = updateData.endDate ? new Date(updateData.endDate) : existingEvent.endDate;
+
+					if (updateData.startDate && isNaN(new Date(updateData.startDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的開始日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (updateData.endDate && isNaN(new Date(updateData.endDate).getTime())) {
+						const { response, statusCode } = validationErrorResponse("無效的結束日期格式");
+						return reply.code(statusCode).send(response);
+					}
+
+					if (startDate >= endDate) {
+						const { response, statusCode } = validationErrorResponse("開始時間必須早於結束時間");
 						return reply.code(statusCode).send(response);
 					}
 				}
+
+				// Validate editDeadline if provided (must be before startDate)
+				if (updateData.editDeadline !== undefined) {
+					if (updateData.editDeadline !== null) {
+						const editDeadlineDate = new Date(updateData.editDeadline);
+						if (isNaN(editDeadlineDate.getTime())) {
+							const { response, statusCode } = validationErrorResponse("無效的編輯截止日期格式");
+							return reply.code(statusCode).send(response);
+						}
+						const startDate = updateData.startDate ? new Date(updateData.startDate) : existingEvent.startDate;
+						if (editDeadlineDate >= startDate) {
+							const { response, statusCode } = validationErrorResponse("編輯截止時間必須早於活動開始時間");
+							return reply.code(statusCode).send(response);
+						}
+					}
+				}
+
+				const updatePayload: any = {
+					...updateData,
+					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
+					...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
+					...(updateData.editDeadline !== undefined && {
+						editDeadline: updateData.editDeadline ? new Date(updateData.editDeadline) : null
+					}),
+					updatedAt: new Date()
+				};
+
+				span.addEvent("event.updating");
+
+				const updatedEvent = await prisma.event.update({
+					where: { id },
+					data: updatePayload
+				});
+
+				span.addEvent("event.updated");
+
+				const event: Event = {
+					...updatedEvent,
+					name: updatedEvent.name as Record<string, string>,
+					description: updatedEvent.description as Record<string, string> | undefined,
+					plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
+					locationText: updatedEvent.locationText as Record<string, string> | undefined,
+					startDate: updatedEvent.startDate,
+					endDate: updatedEvent.endDate,
+					editDeadline: updatedEvent.editDeadline ?? null,
+					createdAt: updatedEvent.createdAt,
+					updatedAt: updatedEvent.updatedAt
+				};
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.send(successResponse(event, "活動更新成功"));
+			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to update event"
+				});
+				throw error;
+			} finally {
+				span.end();
 			}
-
-			const updatePayload: any = {
-				...updateData,
-				...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
-				...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
-				...(updateData.editDeadline !== undefined && {
-					editDeadline: updateData.editDeadline ? new Date(updateData.editDeadline) : null
-				}),
-				updatedAt: new Date()
-			};
-
-			const updatedEvent = await prisma.event.update({
-				where: { id },
-				data: updatePayload
-			});
-
-			const event: Event = {
-				...updatedEvent,
-				name: updatedEvent.name as Record<string, string>,
-				description: updatedEvent.description as Record<string, string> | undefined,
-				plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
-				locationText: updatedEvent.locationText as Record<string, string> | undefined,
-				startDate: updatedEvent.startDate,
-				endDate: updatedEvent.endDate,
-				editDeadline: updatedEvent.editDeadline ?? null,
-				createdAt: updatedEvent.createdAt,
-				updatedAt: updatedEvent.updatedAt
-			};
-
-			return reply.send(successResponse(event, "活動更新成功"));
 		}
 	);
 
@@ -210,32 +282,60 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: eventSchemas.deleteEvent
 		},
 		async (request, reply) => {
-			const { id } = request.params;
-
-			const existingEvent = await prisma.event.findUnique({
-				where: { id },
-				include: {
-					_count: {
-						select: { registrations: true }
-					}
+			const span = tracer.startSpan("route.admin.events.delete", {
+				attributes: {
+					"event.id": request.params.id
 				}
 			});
 
-			if (!existingEvent) {
-				const { response, statusCode } = notFoundResponse("活動不存在");
-				return reply.code(statusCode).send(response);
+			try {
+				const { id } = request.params;
+
+				span.addEvent("event.checking_registrations");
+
+				const existingEvent = await prisma.event.findUnique({
+					where: { id },
+					include: {
+						_count: {
+							select: { registrations: true }
+						}
+					}
+				});
+
+				if (!existingEvent) {
+					span.addEvent("event.not_found");
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				span.setAttribute("event.registrations_count", existingEvent._count.registrations);
+
+				if (existingEvent._count.registrations > 0) {
+					span.addEvent("event.has_registrations");
+					const { response, statusCode } = conflictResponse("無法刪除已有報名的活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				span.addEvent("event.deleting");
+
+				await prisma.event.delete({
+					where: { id }
+				});
+
+				span.addEvent("event.deleted");
+				span.setStatus({ code: SpanStatusCode.OK });
+
+				return reply.send(successResponse(null, "活動刪除成功"));
+			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to delete event"
+				});
+				throw error;
+			} finally {
+				span.end();
 			}
-
-			if (existingEvent._count.registrations > 0) {
-				const { response, statusCode } = conflictResponse("無法刪除已有報名的活動");
-				return reply.code(statusCode).send(response);
-			}
-
-			await prisma.event.delete({
-				where: { id }
-			});
-
-			return reply.send(successResponse(null, "活動刪除成功"));
 		}
 	);
 
@@ -247,46 +347,71 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
-			const { isActive } = request.query;
+			const span = tracer.startSpan("route.admin.events.list", {
+				attributes: {
+					"events.filter.is_active": request.query.isActive !== undefined,
+					"events.has_user_permissions": !!(request.userEventPermissions && request.userEventPermissions.length > 0)
+				}
+			});
 
-			const whereClause: any = {};
-			if (isActive !== undefined) {
-				whereClause.isActive = isActive;
-			}
+			try {
+				const { isActive } = request.query;
 
-			if (request.userEventPermissions && request.userEventPermissions.length > 0) {
-				whereClause.id = { in: request.userEventPermissions };
-			}
+				const whereClause: any = {};
+				if (isActive !== undefined) {
+					whereClause.isActive = isActive;
+				}
 
-			const rawEvents = await prisma.event.findMany({
-				where: whereClause,
-				include: {
-					_count: {
-						select: {
-							registrations: true,
-							tickets: true
+				if (request.userEventPermissions && request.userEventPermissions.length > 0) {
+					whereClause.id = { in: request.userEventPermissions };
+					span.setAttribute("events.user_permissions_count", request.userEventPermissions.length);
+				}
+
+				span.addEvent("events.fetching");
+
+				const rawEvents = await prisma.event.findMany({
+					where: whereClause,
+					include: {
+						_count: {
+							select: {
+								registrations: true,
+								tickets: true
+							}
 						}
-					}
-				},
-				orderBy: { createdAt: "desc" }
-			});
+					},
+					orderBy: { createdAt: "desc" }
+				});
 
-			const events = rawEvents.map(event => {
-				return {
-					...event,
-					name: LocalizedTextSchema.parse(event.name),
-					description: LocalizedTextSchema.nullable().parse(event.description),
-					plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
-					locationText: LocalizedTextSchema.nullable().parse(event.locationText),
-					startDate: event.startDate,
-					endDate: event.endDate,
-					editDeadline: event.editDeadline ?? null,
-					createdAt: event.createdAt,
-					updatedAt: event.updatedAt
-				};
-			});
+				span.setAttribute("events.count", rawEvents.length);
+				span.addEvent("events.fetched");
 
-			return reply.send(successResponse(events));
+				const events = rawEvents.map(event => {
+					return {
+						...event,
+						name: LocalizedTextSchema.parse(event.name),
+						description: LocalizedTextSchema.nullable().parse(event.description),
+						plainDescription: LocalizedTextSchema.nullable().parse(event.plainDescription),
+						locationText: LocalizedTextSchema.nullable().parse(event.locationText),
+						startDate: event.startDate,
+						endDate: event.endDate,
+						editDeadline: event.editDeadline ?? null,
+						createdAt: event.createdAt,
+						updatedAt: event.updatedAt
+					};
+				});
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.send(successResponse(events));
+			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to list events"
+				});
+				throw error;
+			} finally {
+				span.end();
+			}
 		}
 	);
 };

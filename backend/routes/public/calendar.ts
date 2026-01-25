@@ -1,7 +1,9 @@
 import prisma from "#config/database";
 import { getRedisClient } from "#config/redis";
+import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse } from "#utils/response";
+import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import ical, { ICalCalendar } from "ical-generator";
 
@@ -15,7 +17,7 @@ interface CalendarParams {
  * Generate iCalendar file for an event
  * Cached in Redis with 1 hour TTL
  */
-const generateEventCalendar = async (eventSlug: string): Promise<string> => {
+const generateEventCalendar = async (eventSlug: string, span?: any): Promise<string> => {
 	const redis = getRedisClient();
 	const cacheKey = `calendar:${eventSlug}`;
 
@@ -53,6 +55,10 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 
 	if (!event) {
 		throw new Error("Event not found");
+	}
+
+	if (span) {
+		span.setAttribute("event.id", event.id);
 	}
 
 	// Get localized values
@@ -118,25 +124,51 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 const publicCalendarRoutes: FastifyPluginAsync = async fastify => {
 	// Get iCalendar file for an event
 	fastify.get<{ Params: CalendarParams }>("/events/:eventSlug/calendar.ics", async (request: FastifyRequest<{ Params: CalendarParams }>, reply: FastifyReply) => {
+		const span = tracer.startSpan("route.calendar.get_event", {
+			attributes: {
+				"event.slug": request.params.eventSlug
+			}
+		});
+
 		try {
 			const { eventSlug } = request.params;
 
-			const icalString = await generateEventCalendar(eventSlug);
+			span.addEvent("calendar.generate_start");
+
+			const icalString = await generateEventCalendar(eventSlug, span);
+
+			span.addEvent("calendar.generate_complete");
+			span.setAttribute("calendar.size", icalString.length);
 
 			// Set headers for calendar download
 			reply.header("Content-Type", "text/calendar; charset=utf-8");
 			reply.header("Content-Disposition", `attachment; filename="${eventSlug}.ics"`);
 			reply.header("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
 
+			span.setStatus({ code: SpanStatusCode.OK });
+
 			return reply.send(icalString);
 		} catch (error) {
 			componentLogger.error({ error }, "Generate calendar error");
+			span.recordException(error as Error);
+
 			if (error instanceof Error && error.message === "Event not found") {
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Event not found"
+				});
 				const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 				return reply.code(statusCode).send(response);
 			}
+
+			span.setStatus({
+				code: SpanStatusCode.ERROR,
+				message: "Failed to generate calendar"
+			});
 			const { response, statusCode } = serverErrorResponse("生成行事曆失敗");
 			return reply.code(statusCode).send(response);
+		} finally {
+			span.end();
 		}
 	});
 };
