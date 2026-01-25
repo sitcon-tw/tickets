@@ -429,7 +429,7 @@ export const smsVerificationAPI = {
 
 	verify: (data: { phoneNumber: string; code: string }) => apiClient.post("/api/sms-verification/verify", data, ApiResponseSchema(z.object({ verified: z.boolean() }))),
 
-	getStatus: () => apiClient.get("/api/sms-verification/status", {}, ApiResponseSchema(z.object({ phoneNumber: z.string().optional(), phoneVerified: z.boolean() })))
+	getStatus: () => apiClient.get("/api/sms-verification/status", {}, ApiResponseSchema(z.object({ phoneNumber: z.string().nullable().optional(), phoneVerified: z.boolean() })))
 };
 
 // Admin - SMS Verification Logs
