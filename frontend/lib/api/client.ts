@@ -163,6 +163,13 @@ class APIClient {
 						const result = schema.safeParse(jsonData);
 						if (!result.success) {
 							const errorMessages = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+							console.error({
+								message: "API response validation failed",
+								issues: result.error.issues,
+								jsonData,
+								schema,
+								endpoint
+							});
 							throw new Error(`API response validation failed: ${errorMessages}`);
 						}
 						return result.data;

@@ -60,7 +60,7 @@ export const authAPI = {
 		});
 	},
 	getSession: () => apiClient.get("/api/auth/get-session", {}, SessionSchema.nullable().optional()),
-	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema).nullable().optional()),
+	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema.nullable().optional())),
 	signOut: () => apiClient.post("/api/auth/sign-out")
 };
 

@@ -25,7 +25,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers as any
+				headers: request.headers
 			});
 			if (!session?.user || !session.user.id)
 				return reply.send(
