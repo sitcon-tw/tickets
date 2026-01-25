@@ -344,11 +344,13 @@ export default function MyRegistrationPage() {
 				const regDataWithDates = {
 					...regData,
 					createdAt: new Date(regData.createdAt),
-					event: regData.event ? {
-						...regData.event,
-						startDate: new Date(regData.event.startDate),
-						endDate: new Date(regData.event.endDate)
-					} : undefined
+					event: regData.event
+						? {
+								...regData.event,
+								startDate: new Date(regData.event.startDate),
+								endDate: new Date(regData.event.endDate)
+							}
+						: undefined
 				};
 				setRegistration(regDataWithDates);
 

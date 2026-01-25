@@ -205,17 +205,25 @@ class APIClient {
 	}
 
 	async post<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {
-		return this.request<T>(endpoint, {
-			method: "POST",
-			body: data ? JSON.stringify(data) : "{}"
-		}, schema);
+		return this.request<T>(
+			endpoint,
+			{
+				method: "POST",
+				body: data ? JSON.stringify(data) : "{}"
+			},
+			schema
+		);
 	}
 
 	async put<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {
-		return this.request<T>(endpoint, {
-			method: "PUT",
-			body: data ? JSON.stringify(data) : "{}"
-		}, schema);
+		return this.request<T>(
+			endpoint,
+			{
+				method: "PUT",
+				body: data ? JSON.stringify(data) : "{}"
+			},
+			schema
+		);
 	}
 
 	async delete<T>(endpoint: string, schema?: z.ZodType<T>): Promise<T> {

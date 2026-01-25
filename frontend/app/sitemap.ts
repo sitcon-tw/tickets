@@ -1,4 +1,4 @@
-import { ApiResponseSchema, EventListItemSchema, type ApiResponse, type EventListItem } from "@sitcontix/types";
+import { ApiResponseSchema, EventListItemSchema } from "@sitcontix/types";
 import type { MetadataRoute } from "next";
 import z from "zod/v4";
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			const schema = ApiResponseSchema(z.array(EventListItemSchema));
 			const data = schema.parse(await response.json());
 			if (data.success && data.data) {
-				events = data.data
+				events = data.data;
 			}
 		}
 	} catch (error) {

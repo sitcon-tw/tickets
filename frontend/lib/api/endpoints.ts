@@ -36,8 +36,8 @@ import {
 	type TicketReorderRequest,
 	type User
 } from "@sitcontix/types";
-import { apiClient } from "./client";
 import z from "zod/v4";
+import { apiClient } from "./client";
 
 // System
 export const healthAPI = {
@@ -205,7 +205,8 @@ export const adminRegistrationsAPI = {
 
 	getServiceAccountEmail: () => apiClient.get("/api/admin/registrations/google-sheets/service-account", {}, ApiResponseSchema(z.object({ email: z.string() }))),
 
-	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) => apiClient.post("/api/admin/registrations/google-sheets/sync", data, ApiResponseSchema(z.object({ count: z.number(), sheetsUrl: z.string() })))
+	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) =>
+		apiClient.post("/api/admin/registrations/google-sheets/sync", data, ApiResponseSchema(z.object({ count: z.number(), sheetsUrl: z.string() })))
 };
 
 // Admin - Invitation Codes
@@ -242,7 +243,8 @@ export const adminReferralsAPI = {
 
 // Admin - Email Campaigns
 export const adminEmailCampaignsAPI = {
-	getAll: (params?: { status?: "draft" | "sent" | "scheduled"; eventId?: string; page?: number; limit?: number }) => apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignSchema))),
+	getAll: (params?: { status?: "draft" | "sent" | "scheduled"; eventId?: string; page?: number; limit?: number }) =>
+		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignSchema))),
 
 	create: (data: {
 		name: string;
@@ -269,7 +271,11 @@ export const adminEmailCampaignsAPI = {
 	preview: (campaignId: string) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`, {}, ApiResponseSchema(z.object({ previewHtml: z.string() }))),
 
 	calculateRecipients: (campaignId: string) =>
-		apiClient.post(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`, {}, ApiResponseSchema(z.object({ recipientCount: z.number(), recipients: z.array(z.object({ email: z.string() })) }))),
+		apiClient.post(
+			`/api/admin/email-campaigns/${campaignId}/calculate-recipients`,
+			{},
+			ApiResponseSchema(z.object({ recipientCount: z.number(), recipients: z.array(z.object({ email: z.string() })) }))
+		),
 
 	send: (campaignId: string, sendNow: boolean = true) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }, ApiResponseSchema(EmailCampaignSchema)),
 
@@ -287,7 +293,8 @@ export const smsVerificationAPI = {
 
 // Admin - SMS Verification Logs
 export const adminSmsVerificationAPI = {
-	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) => apiClient.get("/api/admin/sms-verification-logs", params, ApiResponseSchema(z.unknown())),
+	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) =>
+		apiClient.get("/api/admin/sms-verification-logs", params, ApiResponseSchema(z.unknown())),
 
 	getStats: () => apiClient.get("/api/admin/sms-verification-stats", {}, ApiResponseSchema(z.unknown()))
 };
@@ -305,9 +312,14 @@ export const adminWebhooksAPI = {
 	delete: (eventId: string) => apiClient.delete(`/api/admin/events/${eventId}/webhook`, ApiResponseSchema(z.void())),
 
 	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
-		apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(z.object({ success: z.boolean(), statusCode: z.number().optional(), responseBody: z.string().optional(), errorMessage: z.string().optional() }))),
+		apiClient.post(
+			`/api/admin/events/${eventId}/webhook/test`,
+			data,
+			ApiResponseSchema(z.object({ success: z.boolean(), statusCode: z.number().optional(), responseBody: z.string().optional(), errorMessage: z.string().optional() }))
+		),
 
-	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) => apiClient.get(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params, ApiResponseSchema(z.array(WebhookDeliverySchema))),
+	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
+		apiClient.get(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params, ApiResponseSchema(z.array(WebhookDeliverySchema))),
 
 	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {}, ApiResponseSchema(z.void()))
 };
