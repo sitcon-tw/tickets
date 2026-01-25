@@ -319,11 +319,7 @@ export const adminWebhooksAPI = {
 	delete: (eventId: string) => apiClient.delete(`/api/admin/events/${eventId}/webhook`, ApiResponseSchema(z.void())),
 
 	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
-		apiClient.post(
-			`/api/admin/events/${eventId}/webhook/test`,
-			data,
-			ApiResponseSchema(webhookTestSchema)
-		),
+		apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(webhookTestSchema)),
 
 	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
 		apiClient.get(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params, ApiResponseSchema(z.array(WebhookDeliverySchema))),
