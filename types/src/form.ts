@@ -14,8 +14,8 @@ export const FilterConditionSchema = z.object({
 	fieldId: z.string().optional(),
 	operator: z.enum(["equals", "filled", "notFilled"]).optional(),
 	value: z.string().optional(),
-	startTime: z.date().optional(),
-	endTime: z.date().optional()
+	startTime: z.coerce.date().optional(),
+	endTime: z.coerce.date().optional()
 });
 export type FilterCondition = z.infer<typeof FilterConditionSchema>;
 

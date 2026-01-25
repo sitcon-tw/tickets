@@ -16,9 +16,9 @@ export const EventSchema = z.object({
 	plainDescription: LocalizedTextSchema.nullable().optional(),
 	locationText: LocalizedTextSchema.nullable().optional(),
 	mapLink: z.string().nullable().optional(),
-	startDate: z.date(),
-	endDate: z.date(),
-	editDeadline: z.date().nullable().optional(),
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+	editDeadline: z.coerce.date().nullable().optional(),
 	ogImage: z.string().nullable().optional(),
 	landingPage: z.string().nullable().optional(),
 	googleSheetsUrl: z.string().nullable().optional(),
@@ -26,8 +26,8 @@ export const EventSchema = z.object({
 	hideEvent: z.boolean().optional(),
 	useOpass: z.boolean().optional(),
 	opassEventId: z.string().nullable().optional(),
-	createdAt: z.date(),
-	updatedAt: z.date()
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date()
 });
 export type Event = z.infer<typeof EventSchema>;
 
@@ -49,9 +49,9 @@ export const EventCreateRequestSchema = z.object({
 	name: LocalizedTextSchema,
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),
-	startDate: z.date(),
-	endDate: z.date(),
-	editDeadline: z.date().optional(),
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+	editDeadline: z.coerce.date().optional(),
 	locationText: LocalizedTextSchema.optional(),
 	mapLink: z.string().optional(),
 	ogImage: z.string().optional()
@@ -66,9 +66,9 @@ export const EventUpdateRequestSchema = z.object({
 	name: LocalizedTextSchema.optional(),
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),
-	startDate: z.date().optional(),
-	endDate: z.date().optional(),
-	editDeadline: z.date().nullable().optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
+	editDeadline: z.coerce.date().nullable().optional(),
 	locationText: LocalizedTextSchema.optional(),
 	mapLink: z.string().optional(),
 	ogImage: z.string().optional(),

@@ -13,8 +13,8 @@ export const ReferralSchema = z.object({
 	registrationId: z.string(),
 	eventId: z.string(),
 	isActive: z.boolean(),
-	createdAt: z.date(),
-	updatedAt: z.date()
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date()
 });
 export type Referral = z.infer<typeof ReferralSchema>;
 
@@ -56,7 +56,7 @@ export const ReferralUsageSchema = z.object({
 	referralId: z.string(),
 	registrationId: z.string(),
 	eventId: z.string(),
-	usedAt: z.date()
+	usedAt: z.coerce.date()
 });
 export type ReferralUsage = z.infer<typeof ReferralUsageSchema>;
 
@@ -107,7 +107,7 @@ export const ReferralTreeSchema = z.object({
 			id: z.string(),
 			email: z.email(),
 			status: z.string(),
-			registeredAt: z.date(),
+			registeredAt: z.coerce.date(),
 			children: z.array(z.unknown()).optional()
 		})
 	)
@@ -137,7 +137,7 @@ export const DrawResultSchema = z.object({
 			referralCount: z.number().int().min(0)
 		})
 	),
-	drawDate: z.date(),
+	drawDate: z.coerce.date(),
 	totalParticipants: z.number().int().min(0)
 });
 export type DrawResult = z.infer<typeof DrawResultSchema>;
