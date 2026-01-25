@@ -314,8 +314,9 @@ export default function MyRegistrationPage() {
 		}
 	}
 
-	function formatDate(dateString: string) {
-		return formatDateTime(dateString);
+	function formatDate(date: Date | null | undefined) {
+		if (!date) return "N/A";
+		return formatDateTime(date);
 	}
 
 	useEffect(() => {
@@ -469,7 +470,7 @@ export default function MyRegistrationPage() {
 										</div>
 									)}
 									<div>
-										<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate || "")} - {formatDate(registration.event?.endDate || "")}
+										<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate)} - {formatDate(registration.event?.endDate)}
 									</div>
 								</div>
 							</div>

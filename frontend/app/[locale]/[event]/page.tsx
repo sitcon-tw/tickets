@@ -137,8 +137,7 @@ export default function Main() {
 
 	const eventName = getLocalizedText(event.name, locale);
 	const coverImage = imageSrc || event.ogImage || "/assets/default.webp";
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
+	const formatDate = (date: Date) => {
 		return date.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 	};
 

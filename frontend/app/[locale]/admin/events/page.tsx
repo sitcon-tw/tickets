@@ -225,12 +225,12 @@ export default function EventsPage() {
 		return { label: t.active, class: "active" };
 	}
 
-	function formatDateTime(dt?: string | null) {
+	function formatDateTime(dt?: Date | null) {
 		if (!dt) return "";
 		try {
 			return formatDateTimeUTC8(dt);
 		} catch {
-			return dt;
+			return "";
 		}
 	}
 
@@ -360,8 +360,8 @@ export default function EventsPage() {
 			mapLink: mapLink || undefined,
 			slug: slug || undefined,
 			ogImage: ogImage || undefined,
-			startDate: eventStartTime ? fromDateTimeLocalString(eventStartTime) : new Date().toISOString(),
-			endDate: eventEndTime ? fromDateTimeLocalString(eventEndTime) : new Date().toISOString(),
+			startDate: eventStartTime ? fromDateTimeLocalString(eventStartTime) : new Date(),
+			endDate: eventEndTime ? fromDateTimeLocalString(eventEndTime) : new Date(),
 			editDeadline: editDeadline ? fromDateTimeLocalString(editDeadline) : null,
 			hideEvent,
 			useOpass,

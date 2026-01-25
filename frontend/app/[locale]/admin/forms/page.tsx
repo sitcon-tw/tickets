@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
+import { toDateTimeLocalString } from "@/lib/utils/timezone";
+import type { Event, EventFormField, FieldFilter, FilterCondition, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -18,6 +19,15 @@ import { useCallback, useEffect, useState } from "react";
 type ShowIf = {
 	sourceId: string;
 	values: string[];
+};
+
+type FilterConditionState = Omit<FilterCondition, "startTime" | "endTime"> & {
+	startTime?: string;
+	endTime?: string;
+};
+
+type FieldFilterState = Omit<FieldFilter, "conditions"> & {
+	conditions: FilterConditionState[];
 };
 
 type Question = {
@@ -40,7 +50,7 @@ type Question = {
 	}>;
 	prompts?: Record<string, string[]>;
 	showIf?: ShowIf;
-	filters?: FieldFilter;
+	filters?: FieldFilterState;
 	enableOther?: boolean;
 };
 
@@ -186,7 +196,7 @@ export default function FormsPage() {
 			const response = await adminEventFormFieldsAPI.getAll({ eventId: currentEvent.id });
 
 			if (response.success) {
-				const loadedFields = (response.data || []).map((field: EventFormField) => {
+				const loadedFields: Question[] = (response.data || []).map((field: EventFormField): Question => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 					let prompts: Record<string, string[]> = {};
 
@@ -246,6 +256,18 @@ export default function FormsPage() {
 
 					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
+					// Convert Date to string for state management
+					const filters: FieldFilterState | undefined = field.filters
+						? {
+								...field.filters,
+								conditions: field.filters.conditions.map(condition => ({
+									...condition,
+									startTime: condition.startTime instanceof Date ? toDateTimeLocalString(condition.startTime) : condition.startTime,
+									endTime: condition.endTime instanceof Date ? toDateTimeLocalString(condition.endTime) : condition.endTime
+								}))
+							}
+						: undefined;
+
 					return {
 						id: field.id,
 						label: fieldName,
@@ -261,7 +283,7 @@ export default function FormsPage() {
 						validater: field.validater || "",
 						options,
 						prompts,
-						filters: field.filters || undefined,
+						filters,
 						enableOther: field.enableOther || false
 					};
 				});
@@ -284,7 +306,7 @@ export default function FormsPage() {
 			const response = await adminEventFormFieldsAPI.getAll({ eventId: sourceEventId });
 
 			if (response.success && response.data) {
-				const copiedQuestions = response.data.map((field: EventFormField) => {
+				const copiedQuestions: Question[] = response.data.map((field: EventFormField): Question => {
 					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 					let prompts: Record<string, string[]> = {};
 
@@ -345,6 +367,18 @@ export default function FormsPage() {
 					// Parse description as localized object
 					const descriptionObj = field.description && typeof field.description === "object" && field.description !== null ? field.description : {};
 
+					// Convert Date to string for state management
+					const filters: FieldFilterState | undefined = field.filters
+						? {
+								...field.filters,
+								conditions: field.filters.conditions.map(condition => ({
+									...condition,
+									startTime: condition.startTime instanceof Date ? toDateTimeLocalString(condition.startTime) : condition.startTime,
+									endTime: condition.endTime instanceof Date ? toDateTimeLocalString(condition.endTime) : condition.endTime
+								}))
+							}
+						: undefined;
+
 					return {
 						id: "temp-" + crypto.randomUUID(),
 						label: fieldName,
@@ -358,7 +392,7 @@ export default function FormsPage() {
 						descriptionZhHant: descriptionObj["zh-Hant"] || "",
 						descriptionZhHans: descriptionObj["zh-Hans"] || "",
 						validater: field.validater || "",
-						filters: field.filters || undefined,
+						filters,
 						options,
 						prompts,
 						enableOther: field.enableOther || false
@@ -383,27 +417,41 @@ export default function FormsPage() {
 
 		try {
 			setIsSaving(true);
-			const formFieldsData = questions.map((q, index) => ({
-				id: q.id.startsWith("temp-") ? undefined : q.id,
-				name: {
-					en: q.labelEn || q.label,
-					"zh-Hant": q.labelZhHant || "",
-					"zh-Hans": q.labelZhHans || ""
-				},
-				description: {
-					en: q.descriptionEn || "",
-					"zh-Hant": q.descriptionZhHant || "",
-					"zh-Hans": q.descriptionZhHans || ""
-				},
-				type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
-				required: q.required,
-				validater: q.validater || "",
-				values: q.options,
-				prompts: q.prompts,
-				filters: q.filters || null,
-				enableOther: q.type === "radio" ? q.enableOther || false : undefined,
-				order: index
-			}));
+			const formFieldsData = questions.map((q, index) => {
+				// Convert string back to Date for API submission
+				const filters: FieldFilter | null = q.filters
+					? {
+							...q.filters,
+							conditions: q.filters.conditions.map(condition => ({
+								...condition,
+								startTime: condition.startTime ? new Date(condition.startTime) : undefined,
+								endTime: condition.endTime ? new Date(condition.endTime) : undefined
+							}))
+						}
+					: null;
+
+				return {
+					id: q.id.startsWith("temp-") ? undefined : q.id,
+					name: {
+						en: q.labelEn || q.label,
+						"zh-Hant": q.labelZhHant || "",
+						"zh-Hans": q.labelZhHans || ""
+					},
+					description: {
+						en: q.descriptionEn || "",
+						"zh-Hant": q.descriptionZhHant || "",
+						"zh-Hans": q.descriptionZhHans || ""
+					},
+					type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
+					required: q.required,
+					validater: q.validater || "",
+					values: q.options,
+					prompts: q.prompts,
+					filters,
+					enableOther: q.type === "radio" ? q.enableOther || false : undefined,
+					order: index
+				};
+			});
 
 			const currentFieldIds = questions.map(q => q.id).filter(id => !id.startsWith("temp-"));
 

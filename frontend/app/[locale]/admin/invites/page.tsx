@@ -31,7 +31,7 @@ type InviteCode = {
 type InviteType = {
 	id: string;
 	name: string;
-	createdAt: string;
+	createdAt: Date;
 	codes: InviteCode[];
 };
 
@@ -714,7 +714,7 @@ export default function InvitesPage() {
 												<TableCell>{total}</TableCell>
 												<TableCell>{used}</TableCell>
 												<TableCell>{total - used}</TableCell>
-												<TableCell>{new Date(type.createdAt).toLocaleString()}</TableCell>
+												<TableCell>{type.createdAt.toLocaleString()}</TableCell>
 												<TableCell>
 													<Button variant="secondary" size="sm" onClick={() => openCodesModal(type.id)}>
 														檢視

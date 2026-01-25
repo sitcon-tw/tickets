@@ -28,7 +28,7 @@ export default function Success() {
 	const [viewRegLoading, setViewRegLoading] = useState(false);
 	const [registrationId, setRegistrationId] = useState<string | null>(null);
 	const [registerationTicketName, setRegistrationTicketName] = useState<string | null>(null);
-	const [registrationTime, setRegistrationTime] = useState<string | null>(null);
+	const [registrationTime, setRegistrationTime] = useState<Date | null>(null);
 	const [showQRCode, setShowQRCode] = useState(false);
 	const [isCancelled, setIsCancelled] = useState(false);
 	const [useOpass, setUseOpass] = useState<boolean>(true);

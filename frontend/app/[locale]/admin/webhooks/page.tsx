@@ -11,11 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminWebhooksAPI, type WebhookDelivery, type WebhookEndpoint, type WebhookTestResult } from "@/lib/api/endpoints";
+import { adminWebhooksAPI, webhookTestSchema } from "@/lib/api/endpoints";
 import { formatDateTime } from "@/lib/utils/timezone";
+import { type WebhookDelivery, type WebhookEndpoint } from "@sitcontix/types";
 import { AlertTriangle, CheckCircle, ExternalLink, Play, RefreshCw, Settings, Trash2, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
+import z from "zod/v4";
+
+type WebhookTestResult = z.infer<typeof webhookTestSchema>;
 
 export default function WebhooksPage() {
 	const locale = useLocale();

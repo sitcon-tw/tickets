@@ -9,7 +9,7 @@ import { z } from "zod/v4";
  */
 export const HealthStatusSchema = z.object({
 	status: z.enum(["ok", "error"]),
-	timestamp: z.date(),
+	timestamp: z.coerce.date(),
 	version: z.string().optional()
 });
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;
