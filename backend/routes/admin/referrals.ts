@@ -5,7 +5,7 @@ import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
 import { adminReferralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
-import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 
 const componentLogger = logger.child({ component: "admin/referrals" });
 
@@ -145,7 +145,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 
 				if (!registration) {
-					const { response, statusCode } = serverErrorResponse("找不到指定的報名記錄");
+					const { response, statusCode } = notFoundResponse("找不到指定的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 

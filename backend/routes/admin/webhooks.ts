@@ -4,7 +4,7 @@
 
 import prisma from "#config/database";
 import { requireEventAccess } from "#middleware/auth";
-import { webhookSchemas } from "#schemas.ts";
+import { webhookSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
 import { WebhookEventTypeSchema } from "@sitcontix/types";
