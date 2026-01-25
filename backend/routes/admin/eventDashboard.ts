@@ -12,7 +12,7 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireEventDashboardAccess);
 
 	// Get per-event dashboard data
-	fastify.get<{ Params: { eventId: string } }>(
+	fastify.get(
 		"/events/:eventId/dashboard",
 		{
 			schema: eventDashboardSchemas.getEventDashboard

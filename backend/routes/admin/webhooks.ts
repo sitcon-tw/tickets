@@ -4,41 +4,25 @@
 
 import prisma from "#config/database";
 import { requireEventAccess } from "#middleware/auth";
+import { webhookSchemas } from "#schemas.ts";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
-import type { WebhookEndpointCreateRequest, WebhookEndpointUpdateRequest, WebhookTestRequest } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-
-interface EventIdParams {
-	eventId: string;
-}
-
-interface DeliveryIdParams {
-	eventId: string;
-	deliveryId: string;
-}
-
-interface PaginationQuery {
-	page?: string;
-	limit?: string;
-}
+import { WebhookEventTypeSchema } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod/v4";
 
 const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Get webhook configuration for an event
 	 */
-	fastify.get<{
-		Params: EventIdParams;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:eventId/webhook",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Get webhook configuration for an event",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.getWebhook
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId } = request.params;
 
@@ -53,6 +37,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				// Don't expose the auth header value in response
 				const safeWebhook = {
 					...webhook,
+					eventTypes: z.array(WebhookEventTypeSchema).parse(webhook.eventTypes),
 					authHeaderValue: webhook.authHeaderValue ? "********" : null,
 					createdAt: webhook.createdAt,
 					updatedAt: webhook.updatedAt,
@@ -71,19 +56,13 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Create webhook for an event
 	 */
-	fastify.post<{
-		Params: EventIdParams;
-		Body: WebhookEndpointCreateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Create webhook for an event",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.createWebhook
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams; Body: WebhookEndpointCreateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId } = request.params;
 				const { url, authHeaderName, authHeaderValue, eventTypes } = request.body;
@@ -115,10 +94,9 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				// Validate event types
-				const validEventTypes = ["registration_confirmed", "registration_cancelled"];
-				const invalidTypes = eventTypes.filter(t => !validEventTypes.includes(t));
-				if (invalidTypes.length > 0) {
-					const { response, statusCode } = validationErrorResponse(`Invalid event types: ${invalidTypes.join(", ")}`);
+				const eventTypesParseResult = z.array(WebhookEventTypeSchema).safeParse(eventTypes);
+				if (!eventTypesParseResult.success) {
+					const { response, statusCode } = validationErrorResponse("Invalid event types", eventTypesParseResult.error.issues);
 					return reply.code(statusCode).send(response);
 				}
 
@@ -129,13 +107,14 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 						url,
 						authHeaderName: authHeaderName || null,
 						authHeaderValue: authHeaderValue || null,
-						eventTypes,
+						eventTypes: eventTypesParseResult.data,
 						isActive: true
 					}
 				});
 
 				const safeWebhook = {
 					...webhook,
+					eventTypes: eventTypesParseResult.data,
 					authHeaderValue: webhook.authHeaderValue ? "********" : null,
 					createdAt: webhook.createdAt,
 					updatedAt: webhook.updatedAt,
@@ -154,19 +133,13 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Update webhook for an event
 	 */
-	fastify.put<{
-		Params: EventIdParams;
-		Body: WebhookEndpointUpdateRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/events/:eventId/webhook",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Update webhook for an event",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.updateWebhook
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams; Body: WebhookEndpointUpdateRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId } = request.params;
 				const { url, authHeaderName, authHeaderValue, eventTypes, isActive } = request.body;
@@ -187,13 +160,10 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				// Validate event types if provided
-				if (eventTypes) {
-					const validEventTypes = ["registration_confirmed", "registration_cancelled"];
-					const invalidTypes = eventTypes.filter(t => !validEventTypes.includes(t));
-					if (invalidTypes.length > 0) {
-						const { response, statusCode } = validationErrorResponse(`Invalid event types: ${invalidTypes.join(", ")}`);
-						return reply.code(statusCode).send(response);
-					}
+				const eventTypesParseResult = z.array(WebhookEventTypeSchema).safeParse(eventTypes);
+				if (!eventTypesParseResult.success) {
+					const { response, statusCode } = validationErrorResponse("Invalid event types", eventTypesParseResult.error.issues);
+					return reply.code(statusCode).send(response);
 				}
 
 				// Build update data
@@ -218,6 +188,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				const safeWebhook = {
 					...updatedWebhook,
+					eventTypes: eventTypesParseResult.data,
 					authHeaderValue: updatedWebhook.authHeaderValue ? "********" : null,
 					createdAt: updatedWebhook.createdAt,
 					updatedAt: updatedWebhook.updatedAt,
@@ -236,18 +207,13 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Delete webhook for an event
 	 */
-	fastify.delete<{
-		Params: EventIdParams;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/events/:eventId/webhook",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Delete webhook for an event",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.deleteWebhook
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId } = request.params;
 
@@ -276,19 +242,13 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Test webhook URL
 	 */
-	fastify.post<{
-		Params: EventIdParams;
-		Body: WebhookTestRequest;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook/test",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Test webhook URL connectivity",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.testWebhook
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams; Body: WebhookTestRequest }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { url, authHeaderName, authHeaderValue } = request.body;
 
@@ -312,29 +272,22 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Get failed webhook deliveries for an event
 	 */
-	fastify.get<{
-		Params: EventIdParams;
-		Querystring: PaginationQuery;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:eventId/webhook/failed-deliveries",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Get failed webhook deliveries",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.getFailedDeliveries
 		},
-		async (request: FastifyRequest<{ Params: EventIdParams; Querystring: PaginationQuery }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { eventId } = request.params;
-				const query = request.query as PaginationQuery;
-				const page = parseInt(query.page || "1", 10);
-				const limit = parseInt(query.limit || "20", 10);
+				const { page = 1, limit = 20 } = request.query;
 
 				const { deliveries, total } = await getFailedDeliveries(eventId, page, limit);
 
 				const serializedDeliveries = deliveries.map(d => ({
 					...d,
+					eventType: WebhookEventTypeSchema.parse(d.eventType),
 					createdAt: d.createdAt,
 					updatedAt: d.updatedAt,
 					nextRetryAt: d.nextRetryAt ?? null
@@ -363,18 +316,13 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	/**
 	 * Retry a failed webhook delivery
 	 */
-	fastify.post<{
-		Params: DeliveryIdParams;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook/deliveries/:deliveryId/retry",
 		{
 			preHandler: [requireEventAccess],
-			schema: {
-				description: "Retry a failed webhook delivery",
-				tags: ["webhooks"]
-			}
+			schema: webhookSchemas.retryDelivery
 		},
-		async (request: FastifyRequest<{ Params: DeliveryIdParams }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			try {
 				const { deliveryId } = request.params;
 

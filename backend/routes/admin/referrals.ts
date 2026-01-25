@@ -3,10 +3,9 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
-import { PaginationQuerySchemaExtended } from "#schemas";
+import { adminReferralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
-import { z } from "zod/v4";
 
 const componentLogger = logger.child({ component: "admin/referrals" });
 
@@ -17,10 +16,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/overview",
 		{
-			schema: {
-				description: "推薦機制總覽統計",
-				tags: ["admin/referrals"]
-			}
+			schema: adminReferralSchemas.getReferralOverview
 		},
 		async (_request, reply) => {
 			try {
@@ -76,11 +72,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/leaderboard",
 		{
-			schema: {
-				description: "推薦排行榜",
-				tags: ["admin/referrals"],
-				querystring: PaginationQuerySchemaExtended
-			}
+			schema: adminReferralSchemas.getReferralLeaderboard
 		},
 		async (request, reply) => {
 			try {
@@ -130,13 +122,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/tree/:regId",
 		{
-			schema: {
-				description: "獲取推薦擴譜圖數據",
-				tags: ["admin/referrals"],
-				params: z.object({
-					regId: z.string().describe("報名 ID")
-				})
-			}
+			schema: adminReferralSchemas.getReferralTree
 		},
 		async (request, reply) => {
 			try {
@@ -159,7 +145,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 
 				if (!registration) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的報名記錄");
+					const { response, statusCode } = serverErrorResponse("找不到指定的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -185,13 +171,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/qualified",
 		{
-			schema: {
-				description: "獲取達標推薦者名單",
-				tags: ["admin/referrals"],
-				querystring: z.object({
-					minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數")
-				})
-			}
+			schema: adminReferralSchemas.getQualifiedReferrers
 		},
 		async (request, reply) => {
 			try {
@@ -242,15 +222,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/referrals/draw",
 		{
-			schema: {
-				description: "從達標者中隨機抽選",
-				tags: ["admin/referrals"],
-				body: z.object({
-					minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數"),
-					drawCount: z.coerce.number().int().min(1).default(1).describe("抽選人數"),
-					seed: z.string().optional().describe("種子")
-				})
-			}
+			schema: adminReferralSchemas.drawReferrers
 		},
 		async (request, reply) => {
 			try {
@@ -332,14 +304,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/stats",
 		{
-			schema: {
-				description: "推薦統計報表",
-				tags: ["admin/referrals"],
-				querystring: z.object({
-					startDate: z.string().optional().describe("開始日期"),
-					endDate: z.string().optional().describe("結束日期")
-				})
-			}
+			schema: adminReferralSchemas.getReferralStats
 		},
 		async (request, reply) => {
 			try {
