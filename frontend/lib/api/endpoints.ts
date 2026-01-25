@@ -5,27 +5,27 @@ import {
 	EmailCampaignSchema,
 	EventDashboardDataSchema,
 	EventFormFieldSchema,
-	EventListItemSchema,
 	EventSchema,
 	EventStatsSchema,
 	ExportDataSchema,
-	InvitationCodeInfoSchema,
+	InvitationCodeSchema,
 	InvitationCodeVerificationSchema,
+	LocalizedTextSchema,
 	PermissionsResponseSchema,
 	QualifiedReferrerSchema,
-	ReferralLeaderboardSchema,
 	ReferralLinkSchema,
-	ReferralOverviewSchema,
-	ReferralTreeSchema,
 	ReferralValidationSchema,
 	RegistrationSchema,
 	RegistrationStatsSchema,
+	RegistrationStatusSchema,
 	SessionSchema,
+	TargetAudienceSchema,
 	TicketAnalyticsSchema,
 	TicketSchema,
 	UserSchema,
 	WebhookDeliverySchema,
 	WebhookEndpointSchema,
+	WebhookTestResponseSchema,
 	type Event,
 	type EventFormField,
 	type EventFormFieldReorderRequest,
@@ -66,20 +66,113 @@ export const authAPI = {
 
 // Events - Public
 export const eventsAPI = {
-	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get("/api/events", params, ApiResponseSchema(z.array(EventListItemSchema))),
+	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) =>
+		apiClient.get(
+			"/api/events",
+			params,
+			ApiResponseSchema(
+				z.array(
+					z.object({
+						id: z.string(),
+						slug: z.string().nullable().optional(),
+						name: LocalizedTextSchema,
+						description: LocalizedTextSchema.nullable().optional(),
+						plainDescription: LocalizedTextSchema.nullable().optional(),
+						locationText: LocalizedTextSchema.nullable().optional(),
+						mapLink: z.string().nullable().optional(),
+						startDate: z.date(),
+						endDate: z.date(),
+						ogImage: z.string().nullable().optional(),
+						useOpass: z.boolean().optional(),
+						opassEventId: z.string().nullable().optional(),
+						ticketCount: z.number(),
+						registrationCount: z.number(),
+						hasAvailableTickets: z.boolean()
+					})
+				)
+			)
+		),
 
 	getInfo: (id: string) => apiClient.get(`/api/events/${id}/info`, {}, ApiResponseSchema(EventSchema)),
 
-	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(TicketSchema))),
+	getTickets: (id: string) =>
+		apiClient.get(
+			`/api/events/${id}/tickets`,
+			{},
+			ApiResponseSchema(
+				z.array(
+					TicketSchema.pick({
+						id: true,
+						name: true,
+						description: true,
+						plainDescription: true,
+						price: true,
+						quantity: true,
+						available: true,
+						saleStart: true,
+						saleEnd: true,
+						isOnSale: true,
+						isSoldOut: true,
+						requireSmsVerification: true,
+						requireInviteCode: true,
+						showRemaining: true
+					})
+				)
+			)
+		),
 
 	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema))
 };
 
 // Tickets - Public
 export const ticketsAPI = {
-	getTicket: (id: string) => apiClient.get(`/api/tickets/${id}`, {}, ApiResponseSchema(TicketSchema)),
+	getTicket: (id: string) =>
+		apiClient.get(
+			`/api/tickets/${id}`,
+			{},
+			ApiResponseSchema(
+				z.object({
+					id: z.string(),
+					name: LocalizedTextSchema,
+					description: LocalizedTextSchema.nullable(),
+					plainDescription: LocalizedTextSchema.nullable(),
+					price: z.number(),
+					quantity: z.number().int(),
+					soldCount: z.number().int(),
+					available: z.number().int(),
+					saleStart: z.date().optional().nullable(),
+					saleEnd: z.date().optional().nullable(),
+					isOnSale: z.boolean(),
+					isSoldOut: z.boolean(),
+					requireInviteCode: z.boolean(),
+					requireSmsVerification: z.boolean()
+				})
+			)
+		),
 
-	getFormFields: (id: string) => apiClient.get(`/api/tickets/${id}/form-fields`, {}, ApiResponseSchema(z.array(EventFormFieldSchema)))
+	getFormFields: (id: string) =>
+		apiClient.get(
+			`/api/tickets/${id}/form-fields`,
+			{},
+			ApiResponseSchema(
+				z.array(
+					z.object({
+						id: z.string(),
+						name: LocalizedTextSchema,
+						description: LocalizedTextSchema.nullable(),
+						type: z.string(),
+						required: z.boolean(),
+						options: z.array(z.unknown()),
+						validater: z.string().nullable(),
+						placeholder: z.string().nullable(),
+						order: z.number(),
+						filters: z.unknown(),
+						prompts: z.unknown(),
+						enableOther: z.boolean()
+					})
+				)
+			)
+		)
 };
 
 // Registrations - Requires Auth
@@ -87,13 +180,54 @@ export const registrationsAPI = {
 	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) =>
 		apiClient.post("/api/registrations", data, ApiResponseSchema(RegistrationSchema)),
 
-	getAll: () => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(RegistrationSchema))),
+	getAll: () =>
+		apiClient.get(
+			"/api/registrations",
+			{},
+			ApiResponseSchema(
+				z.array(
+					z.object({
+						id: z.string(),
+						userId: z.string(),
+						eventId: z.string(),
+						ticketId: z.string(),
+						email: z.string(),
+						status: RegistrationStatusSchema,
+						referredBy: z.string().nullable().optional(),
+						formData: z.record(z.string(), z.unknown()),
+						createdAt: z.date(),
+						updatedAt: z.date(),
+						event: z.object({
+							id: z.string(),
+							name: LocalizedTextSchema,
+							description: LocalizedTextSchema.nullable().optional(),
+							locationText: LocalizedTextSchema.nullable().optional(),
+							mapLink: z.string().nullable().optional(),
+							startDate: z.date(),
+							endDate: z.date(),
+							ogImage: z.string().nullable().optional()
+						}),
+						ticket: z.object({
+							id: z.string(),
+							name: LocalizedTextSchema,
+							description: LocalizedTextSchema.nullable().optional(),
+							price: z.number(),
+							saleEnd: z.date().nullable().optional()
+						}),
+						isUpcoming: z.boolean(),
+						isPast: z.boolean(),
+						canEdit: z.boolean(),
+						canCancel: z.boolean()
+					})
+				)
+			)
+		),
 
 	getById: (id: string) => apiClient.get(`/api/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 
 	update: (id: string, data: Record<string, unknown>) => apiClient.put(`/api/registrations/${id}`, data, ApiResponseSchema(RegistrationSchema)),
 
-	cancel: (id: string) => apiClient.put(`/api/registrations/${id}/cancel`, {}, ApiResponseSchema(RegistrationSchema))
+	cancel: (id: string) => apiClient.put(`/api/registrations/${id}/cancel`, {}, ApiResponseSchema(z.null()))
 };
 
 // Referrals - Requires Auth
@@ -109,7 +243,34 @@ export const referralsAPI = {
 export const invitationCodesAPI = {
 	verify: (data: { code: string; ticketId: string }) => apiClient.post("/api/invitation-codes/verify", data, ApiResponseSchema(InvitationCodeVerificationSchema)),
 
-	getInfo: (code: string, ticketId: string) => apiClient.get(`/api/invitation-codes/${code}/info`, { ticketId }, ApiResponseSchema(InvitationCodeInfoSchema))
+	getInfo: (code: string, ticketId: string) =>
+		apiClient.get(
+			`/api/invitation-codes/${code}/info`,
+			{ ticketId },
+			ApiResponseSchema(
+				z.object({
+					id: z.string(),
+					code: z.string(),
+					name: z.string().nullable(),
+					usedCount: z.number().int(),
+					usageLimit: z.number().int().nullable(),
+					validFrom: z.date().nullable(),
+					validUntil: z.date().nullable(),
+					ticket: z.object({
+						event: z.object({
+							name: LocalizedTextSchema,
+							startDate: z.date(),
+							endDate: z.date()
+						})
+					}),
+					isValid: z.boolean(),
+					isExpired: z.boolean(),
+					isNotYetValid: z.boolean(),
+					isUsageExceeded: z.boolean(),
+					remainingUses: z.number().int().nullable()
+				})
+			)
+		)
 };
 
 // User // Admin - Analytics
@@ -137,7 +298,7 @@ export const adminEventsAPI = {
 
 	update: (id: string, data: Partial<Event>) => apiClient.put(`/api/admin/events/${id}`, data, ApiResponseSchema(EventSchema)),
 
-	delete: (id: string) => apiClient.delete(`/api/admin/events/${id}`, ApiResponseSchema(z.void()))
+	delete: (id: string) => apiClient.delete(`/api/admin/events/${id}`, ApiResponseSchema(z.null()))
 };
 
 // Admin - Tickets
@@ -151,7 +312,7 @@ export const adminTicketsAPI = {
 
 	update: (id: string, data: Partial<Ticket>) => apiClient.put(`/api/admin/tickets/${id}`, data, ApiResponseSchema(TicketSchema)),
 
-	delete: (id: string) => apiClient.delete(`/api/admin/tickets/${id}`, ApiResponseSchema(z.void())),
+	delete: (id: string) => apiClient.delete(`/api/admin/tickets/${id}`, ApiResponseSchema(z.null())),
 
 	getAnalytics: (id: string) => apiClient.get(`/api/admin/tickets/${id}/analytics`, {}, ApiResponseSchema(TicketAnalyticsSchema)),
 
@@ -178,15 +339,44 @@ export const adminEventFormFieldsAPI = {
 
 	update: (id: string, data: Partial<EventFormField>) => apiClient.put(`/api/admin/event-form-fields/${id}`, data, ApiResponseSchema(EventFormFieldSchema)),
 
-	delete: (id: string) => apiClient.delete(`/api/admin/event-form-fields/${id}`, ApiResponseSchema(z.void())),
+	delete: (id: string) => apiClient.delete(`/api/admin/event-form-fields/${id}`, ApiResponseSchema(z.null())),
 
 	reorder: (eventId: string, data: EventFormFieldReorderRequest) => apiClient.put(`/api/admin/events/${eventId}/form-fields/reorder`, data, ApiResponseSchema(z.null()))
 };
 
+// Admin Registration Schema (for list endpoints)
+const AdminRegistrationSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	eventId: z.string(),
+	ticketId: z.string(),
+	email: z.string(),
+	status: RegistrationStatusSchema,
+	referredBy: z.string().nullable().optional(),
+	formData: z.record(z.string(), z.unknown()),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+	event: z
+		.object({
+			id: z.string(),
+			name: LocalizedTextSchema,
+			startDate: z.date(),
+			endDate: z.date()
+		})
+		.optional(),
+	ticket: z
+		.object({
+			id: z.string(),
+			name: LocalizedTextSchema,
+			price: z.number()
+		})
+		.optional()
+});
+
 // Admin - Registrations
 export const adminRegistrationsAPI = {
 	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: "pending" | "confirmed" | "cancelled"; userId?: string }) =>
-		apiClient.get("/api/admin/registrations", params, ApiResponseSchema(z.array(RegistrationSchema))),
+		apiClient.get("/api/admin/registrations", params, ApiResponseSchema(z.array(AdminRegistrationSchema))),
 
 	getById: (id: string) => apiClient.get(`/api/admin/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 
@@ -211,40 +401,139 @@ export const adminRegistrationsAPI = {
 
 // Admin - Invitation Codes
 export const adminInvitationCodesAPI = {
-	getAll: (params?: { ticketId?: string; eventId?: string; isActive?: boolean }) => apiClient.get("/api/admin/invitation-codes", params, ApiResponseSchema(z.array(InvitationCodeInfoSchema))),
+	getAll: (params?: { ticketId?: string; eventId?: string; isActive?: boolean }) => apiClient.get("/api/admin/invitation-codes", params, ApiResponseSchema(z.array(InvitationCodeSchema))),
 
-	getById: (id: string) => apiClient.get(`/api/admin/invitation-codes/${id}`, {}, ApiResponseSchema(InvitationCodeInfoSchema)),
+	getById: (id: string) => apiClient.get(`/api/admin/invitation-codes/${id}`, {}, ApiResponseSchema(InvitationCodeSchema)),
 
 	create: (data: { ticketId: string; code: string; name?: string; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
-		apiClient.post("/api/admin/invitation-codes", data, ApiResponseSchema(InvitationCodeInfoSchema)),
+		apiClient.post("/api/admin/invitation-codes", data, ApiResponseSchema(InvitationCodeSchema)),
 
-	update: (id: string, data: Partial<InvitationCodeInfo>) => apiClient.put(`/api/admin/invitation-codes/${id}`, data, ApiResponseSchema(InvitationCodeInfoSchema)),
+	update: (id: string, data: Partial<InvitationCodeInfo>) => apiClient.put(`/api/admin/invitation-codes/${id}`, data, ApiResponseSchema(InvitationCodeSchema)),
 
-	delete: (id: string) => apiClient.delete(`/api/admin/invitation-codes/${id}`, ApiResponseSchema(z.void())),
+	delete: (id: string) => apiClient.delete(`/api/admin/invitation-codes/${id}`, ApiResponseSchema(z.null())),
 
 	bulkCreate: (data: { ticketId: string; name: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
-		apiClient.post("/api/admin/invitation-codes/bulk", data, ApiResponseSchema(z.array(InvitationCodeInfoSchema)))
+		apiClient.post(
+			"/api/admin/invitation-codes/bulk",
+			data,
+			ApiResponseSchema(
+				z.object({
+					count: z.number(),
+					codes: z.array(z.string())
+				})
+			)
+		)
 };
 
 // Admin - Referrals
 export const adminReferralsAPI = {
-	getOverview: () => apiClient.get("/api/admin/referrals/overview", {}, ApiResponseSchema(ReferralOverviewSchema)),
+	getOverview: () =>
+		apiClient.get(
+			"/api/admin/referrals/overview",
+			{},
+			ApiResponseSchema(
+				z.object({
+					totalReferrals: z.number().int(),
+					uniqueReferrers: z.number().int(),
+					conversionRate: z.number(),
+					topReferrers: z.array(
+						z.object({
+							id: z.string(),
+							code: z.string(),
+							email: z.string(),
+							name: z.string(),
+							referralCount: z.number().int()
+						})
+					)
+				})
+			)
+		),
 
-	getLeaderboard: () => apiClient.get("/api/admin/referrals/leaderboard", {}, ApiResponseSchema(ReferralLeaderboardSchema)),
+	getLeaderboard: () =>
+		apiClient.get(
+			"/api/admin/referrals/leaderboard",
+			{},
+			ApiResponseSchema(
+				z.array(
+					z.object({
+						rank: z.number().int(),
+						id: z.string(),
+						code: z.string(),
+						email: z.string(),
+						name: z.string(),
+						referralCount: z.number().int(),
+						createdAt: z.date()
+					})
+				)
+			)
+		),
 
-	getTree: (regId: string) => apiClient.get(`/api/admin/referrals/tree/${regId}`, {}, ApiResponseSchema(ReferralTreeSchema)),
+	getTree: (regId: string) => {
+		const ReferralTreeNode: z.ZodType<{
+			id: string;
+			email: string;
+			name: string;
+			referralCode?: string;
+			createdAt: Date;
+			children: any[];
+		}> = z.lazy(() =>
+			z.object({
+				id: z.string(),
+				email: z.string(),
+				name: z.string(),
+				referralCode: z.string().optional(),
+				createdAt: z.date(),
+				children: z.array(ReferralTreeNode)
+			})
+		);
+
+		return apiClient.get(`/api/admin/referrals/tree/${regId}`, {}, ApiResponseSchema(ReferralTreeNode));
+	},
 
 	getQualified: () => apiClient.get("/api/admin/referrals/qualified", {}, ApiResponseSchema(z.array(QualifiedReferrerSchema))),
 
 	draw: () => apiClient.post("/api/admin/referrals/draw", {}, ApiResponseSchema(DrawResultSchema)),
 
-	getStats: () => apiClient.get("/api/admin/referrals/stats", {}, ApiResponseSchema(ReferralOverviewSchema))
+	getStats: () =>
+		apiClient.get(
+			"/api/admin/referrals/stats",
+			{},
+			ApiResponseSchema(
+				z.object({
+					dailyStats: z.array(
+						z.object({
+							date: z.string(),
+							count: z.number()
+						})
+					),
+					conversionFunnel: z.array(
+						z.object({
+							stage: z.string(),
+							count: z.union([z.number(), z.string()])
+						})
+					),
+					topSources: z.array(
+						z.object({
+							source: z.string(),
+							count: z.number()
+						})
+					)
+				})
+			)
+		)
 };
+
+// Email Campaign Properties Schema (extends EmailCampaignSchema with additional fields)
+const EmailCampaignPropertiesSchema = EmailCampaignSchema.extend({
+	eventId: z.string().optional(),
+	targetAudience: TargetAudienceSchema.optional(),
+	createdBy: z.string().optional()
+});
 
 // Admin - Email Campaigns
 export const adminEmailCampaignsAPI = {
 	getAll: (params?: { status?: "draft" | "sent" | "scheduled"; eventId?: string; page?: number; limit?: number }) =>
-		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignSchema))),
+		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignPropertiesSchema))),
 
 	create: (data: {
 		name: string;
@@ -279,7 +568,7 @@ export const adminEmailCampaignsAPI = {
 
 	send: (campaignId: string, sendNow: boolean = true) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }, ApiResponseSchema(EmailCampaignSchema)),
 
-	cancel: (campaignId: string) => apiClient.delete(`/api/admin/email-campaigns/${campaignId}`, ApiResponseSchema(z.void()))
+	cancel: (campaignId: string) => apiClient.delete(`/api/admin/email-campaigns/${campaignId}`, ApiResponseSchema(z.null()))
 };
 
 // SMS Verification - Requires Auth
@@ -300,13 +589,6 @@ export const adminSmsVerificationAPI = {
 };
 
 // Admin - Webhooks
-export const webhookTestSchema = z.object({
-	success: z.boolean(),
-	statusCode: z.number().optional(),
-	responseBody: z.string().optional(),
-	errorMessage: z.string().optional()
-});
-
 export const adminWebhooksAPI = {
 	get: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/webhook`, {}, ApiResponseSchema(WebhookEndpointSchema.nullable())),
 
@@ -316,13 +598,16 @@ export const adminWebhooksAPI = {
 	update: (eventId: string, data: { url?: string; authHeaderName?: string | null; authHeaderValue?: string | null; eventTypes?: string[]; isActive?: boolean }) =>
 		apiClient.put(`/api/admin/events/${eventId}/webhook`, data, ApiResponseSchema(WebhookEndpointSchema)),
 
-	delete: (eventId: string) => apiClient.delete(`/api/admin/events/${eventId}/webhook`, ApiResponseSchema(z.void())),
+	delete: (eventId: string) => apiClient.delete(`/api/admin/events/${eventId}/webhook`, ApiResponseSchema(z.null())),
 
 	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
-		apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(webhookTestSchema)),
+		apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(WebhookTestResponseSchema)),
 
 	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
 		apiClient.get(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params, ApiResponseSchema(z.array(WebhookDeliverySchema))),
 
-	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {}, ApiResponseSchema(z.void()))
+	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {}, ApiResponseSchema(z.null()))
 };
+
+// Export schemas for component use
+export const webhookTestSchema = WebhookTestResponseSchema;
