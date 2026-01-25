@@ -385,7 +385,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					placeholder: field.placeholder,
 					options: z.array(z.unknown()).parse(field.values || []),
 					order: field.order,
-					filters: FieldFilterSchema.nullable().parse(field.filters),
+					filters: FieldFilterSchema.safeParse(field.filters).data ?? null,
 					prompts: z.record(z.string(), z.array(z.string())).nullable().parse(field.prompts),
 					enableOther: field.enableOther || false
 				}));
