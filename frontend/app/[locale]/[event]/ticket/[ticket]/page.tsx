@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { eventsAPI, invitationCodesAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { Ticket } from "@sitcontix/types";
+import { eventsAPI, invitationCodesAPI, ticketsAPI, ticketSchema } from "@/lib/api/endpoints";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { z } from "zod/v4";
 
 export default function SetTicket() {
 	const { showAlert } = useAlert();
@@ -106,21 +106,21 @@ export default function SetTicket() {
 		}
 	});
 
-	const isTicketExpired = (ticket: Ticket): boolean => {
+	const isTicketExpired = (ticket: z.infer<typeof ticketSchema>): boolean => {
 		if (!ticket.saleEnd) return false;
 		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
 		if (!saleEndDate) return false;
 		return saleEndDate < new Date();
 	};
 
-	const isTicketNotYetAvailable = (ticket: Ticket): boolean => {
+	const isTicketNotYetAvailable = (ticket: z.infer<typeof ticketSchema>): boolean => {
 		if (!ticket.saleStart) return false;
 		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
 		if (!saleStartDate) return false;
 		return saleStartDate > new Date();
 	};
 
-	const isTicketSoldOut = (ticket: Ticket): boolean => {
+	const isTicketSoldOut = (ticket: z.infer<typeof ticketSchema>): boolean => {
 		return ticket.available !== undefined && ticket.available <= 0;
 	};
 
@@ -175,7 +175,7 @@ export default function SetTicket() {
 	}, [params.ticket, showAlert, t.loadFailed, t.ticketNotFound]);
 
 	const handleTicketSelect = useCallback(
-		async (ticket: Ticket, eventId: string): Promise<boolean> => {
+		async (ticket: z.infer<typeof ticketSchema>, eventId: string): Promise<boolean> => {
 			if (isTicketExpired(ticket)) {
 				setErrorMessage(t.ticketSaleEnded);
 				showAlert(t.ticketSaleEnded, "error");
