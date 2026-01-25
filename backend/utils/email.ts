@@ -186,7 +186,9 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			"email.type": "registration_confirmation",
 			"email.provider": provider,
 			"event.id": event.id,
-			"ticket.id": ticket.id
+			"ticket.id": ticket.id,
+			"registration.id": registration.id,
+			"user.id": registration.userId
 		}
 	});
 
@@ -462,7 +464,8 @@ export const sendInvitationCode = async (
 		attributes: {
 			"email.recipient.masked": maskedEmail,
 			"email.type": "invitation_code",
-			"email.provider": provider
+			"email.provider": provider,
+			"invitation_code.code": code
 		}
 	});
 
@@ -619,6 +622,10 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 
 		const recipientCount = uniqueEmails.size;
 		span.setAttribute("email.recipient_count", recipientCount);
+		if (recipientCount > 0) {
+			const firstRecipient = Array.from(uniqueEmails.values())[0];
+			span.setAttribute("registration.id", firstRecipient.id);
+		}
 		span.setStatus({ code: SpanStatusCode.OK });
 
 		return Array.from(uniqueEmails.values());
@@ -661,6 +668,10 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 			"email.campaign.subject": campaign.subject
 		}
 	});
+
+	if (recipients.length > 0) {
+		span.setAttribute("registration.id", recipients[0].id);
+	}
 
 	try {
 		let sentCount = 0;

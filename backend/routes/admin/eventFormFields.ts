@@ -2,11 +2,13 @@ import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateR
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
 import { Prisma } from "#prisma/generated/prisma/client";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { SpanStatusCode } from "@opentelemetry/api";
 
 const componentLogger = logger.child({ component: "admin/eventFormFields" });
 
@@ -20,18 +22,32 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: eventFormFieldSchemas.createEventFormField
 		},
 		async function (this: FastifyInstance, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
+			const span = tracer.startSpan("route.admin.event_form_fields.create", {
+				attributes: {
+					"event.id": request.body.eventId,
+					"field.type": request.body.type,
+					"field.order": request.body.order,
+					"field.required": request.body.required || false
+				}
+			});
+
 			try {
 				await requireEventAccess.call(this, request, reply, () => {});
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body;
+
+				span.addEvent("query.event.start");
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
 
 				if (!event) {
+					span.addEvent("event.not_found");
 					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.addEvent("check.order_conflict");
 
 				const existingOrder = await prisma.eventFormFields.findFirst({
 					where: {
@@ -41,9 +57,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				});
 
 				if (existingOrder) {
+					span.addEvent("validation.failed", { reason: "order_conflict" });
 					const { response, statusCode } = conflictResponse("此活動已存在相同排序的欄位");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.addEvent("field.create.start");
 
 				const formField = (await prisma.eventFormFields.create({
 					data: {
@@ -61,6 +80,9 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				})) as EventFormField;
 
+				span.setAttribute("field.id", formField.id);
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				// Normalize filters: convert empty/invalid filters to null
 				const normalizedField = {
 					...formField,
@@ -70,8 +92,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				return reply.code(201).send(successResponse(normalizedField, "表單欄位創建成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Create event form field error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to create event form field"
+				});
 				const { response, statusCode } = serverErrorResponse("創建表單欄位失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -86,17 +115,30 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: eventFormFieldSchemas.getEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const span = tracer.startSpan("route.admin.event_form_fields.get", {
+				attributes: {
+					"field.id": request.params.id
+				}
+			});
+
 			try {
 				const { id } = request.params;
+
+				span.addEvent("query.field.start");
 
 				const formField = (await prisma.eventFormFields.findUnique({
 					where: { id }
 				})) as EventFormField | null;
 
 				if (!formField) {
+					span.addEvent("field.not_found");
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("field.type", formField.type);
+				span.setAttribute("field.required", formField.required);
+				span.setStatus({ code: SpanStatusCode.OK });
 
 				// Normalize filters: convert empty/invalid filters to null
 				const normalizedField = {
@@ -107,8 +149,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				return reply.send(successResponse(normalizedField));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event form field error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get event form field"
+				});
 				const { response, statusCode } = serverErrorResponse("取得表單欄位資訊失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -124,20 +173,35 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: eventFormFieldSchemas.updateEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string }; Body: EventFormFieldUpdateRequest }>, reply: FastifyReply) => {
+			const span = tracer.startSpan("route.admin.event_form_fields.update", {
+				attributes: {
+					"field.id": request.params.id,
+					"update.has_order_change": request.body.order !== undefined,
+					"update.has_type_change": request.body.type !== undefined
+				}
+			});
+
 			try {
 				const { id } = request.params;
 				const updateData = request.body;
+
+				span.addEvent("query.field.start");
 
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
 				});
 
 				if (!existingField) {
+					span.addEvent("field.not_found");
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
 				}
 
+				span.setAttribute("field.event_id", existingField.eventId);
+
 				if (updateData.order !== undefined && updateData.order !== existingField.order) {
+					span.addEvent("check.order_conflict");
+
 					const orderConflict = await prisma.eventFormFields.findFirst({
 						where: {
 							eventId: existingField.eventId,
@@ -147,6 +211,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					});
 
 					if (orderConflict) {
+						span.addEvent("validation.failed", { reason: "order_conflict" });
 						const { response, statusCode } = conflictResponse("此活動已存在相同排序的欄位");
 						return reply.code(statusCode).send(response);
 					}
@@ -199,10 +264,14 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				}
 
+				span.addEvent("field.update.start");
+
 				const formField = (await prisma.eventFormFields.update({
 					where: { id },
 					data
 				})) as EventFormField;
+
+				span.setStatus({ code: SpanStatusCode.OK });
 
 				// Normalize filters: convert empty/invalid filters to null
 				const normalizedField = {
@@ -213,8 +282,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				return reply.send(successResponse(normalizedField, "表單欄位更新成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Update event form field error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to update event form field"
+				});
 				const { response, statusCode } = serverErrorResponse("更新表單欄位失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -229,27 +305,49 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: eventFormFieldSchemas.deleteEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const span = tracer.startSpan("route.admin.event_form_fields.delete", {
+				attributes: {
+					"field.id": request.params.id
+				}
+			});
+
 			try {
 				const { id } = request.params;
+
+				span.addEvent("query.field.start");
 
 				const existingField = await prisma.eventFormFields.findUnique({
 					where: { id }
 				});
 
 				if (!existingField) {
+					span.addEvent("field.not_found");
 					const { response, statusCode } = notFoundResponse("表單欄位不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("field.event_id", existingField.eventId);
+				span.setAttribute("field.type", existingField.type);
+				span.addEvent("field.delete.start");
 
 				await prisma.eventFormFields.delete({
 					where: { id }
 				});
 
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return reply.send(successResponse(null, "表單欄位刪除成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Delete event form field error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to delete event form field"
+				});
 				const { response, statusCode } = serverErrorResponse("刪除表單欄位失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -263,20 +361,30 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
 		async function (this: FastifyInstance, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
-			const { eventId } = request.query;
-
-			if (eventId) {
-				await requireEventAccess.call(this, request, reply, () => {});
-			}
+			const span = tracer.startSpan("route.admin.event_form_fields.list", {
+				attributes: {
+					"filter.has_event_id": !!request.query.eventId
+				}
+			});
 
 			try {
+				const { eventId } = request.query;
+
+				if (eventId) {
+					span.setAttribute("filter.event_id", eventId);
+					await requireEventAccess.call(this, request, reply, () => {});
+				}
+
 				const where: Record<string, unknown> = {};
 				if (eventId) {
+					span.addEvent("query.event.start");
+
 					const event = await prisma.event.findUnique({
 						where: { id: eventId }
 					});
 
 					if (!event) {
+						span.addEvent("event.not_found");
 						const { response, statusCode } = notFoundResponse("活動不存在");
 						return reply.code(statusCode).send(response);
 					}
@@ -284,10 +392,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					where.eventId = eventId;
 				}
 
+				span.addEvent("query.fields.start");
+
 				const formFields = (await prisma.eventFormFields.findMany({
 					where,
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
 				})) as EventFormField[];
+
+				span.setAttribute("fields.count", formFields.length);
+				span.setStatus({ code: SpanStatusCode.OK });
 
 				// Normalize filters: convert empty/invalid filters to null
 				const normalizedFields = formFields.map(field => ({
@@ -298,8 +411,15 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				return reply.send(successResponse(normalizedFields));
 			} catch (error) {
 				componentLogger.error({ error }, "List event form fields error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to list event form fields"
+				});
 				const { response, statusCode } = serverErrorResponse("取得表單欄位列表失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -313,21 +433,33 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			schema: adminEventFormFieldSchemas.reorderEventFormFields
 		},
 		async function (this: FastifyInstance, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
-			const { eventId } = request.params;
-
-			await requireEventAccess.call(this, request, reply, () => {});
+			const span = tracer.startSpan("route.admin.event_form_fields.reorder", {
+				attributes: {
+					"event.id": request.params.eventId,
+					"fields.count": request.body.fieldOrders.length
+				}
+			});
 
 			try {
+				const { eventId } = request.params;
+
+				await requireEventAccess.call(this, request, reply, () => {});
+
 				const { fieldOrders } = request.body;
+
+				span.addEvent("query.event.start");
 
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
 
 				if (!event) {
+					span.addEvent("event.not_found");
 					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.addEvent("query.fields.verify");
 
 				const fieldIds = fieldOrders.map(f => f.id);
 				const existingFields = await prisma.eventFormFields.findMany({
@@ -338,6 +470,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				});
 
 				if (existingFields.length !== fieldIds.length) {
+					span.addEvent("validation.failed", { reason: "fields_not_belong_to_event" });
 					const { response, statusCode } = validationErrorResponse("部分表單欄位不屬於此活動");
 					return reply.code(statusCode).send(response);
 				}
@@ -345,9 +478,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				const orders = fieldOrders.map(f => f.order);
 				const uniqueOrders = new Set(orders);
 				if (orders.length !== uniqueOrders.size) {
+					span.addEvent("validation.failed", { reason: "duplicate_orders" });
 					const { response, statusCode } = validationErrorResponse("排序編號不能重複");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.addEvent("reorder.transaction.start");
 
 				await prisma.$transaction(async prisma => {
 					for (const { id, order } of fieldOrders) {
@@ -358,11 +494,20 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				});
 
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return reply.send(successResponse(null, "表單欄位排序更新成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Reorder event form fields error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to reorder event form fields"
+				});
 				const { response, statusCode } = serverErrorResponse("更新表單欄位排序失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
