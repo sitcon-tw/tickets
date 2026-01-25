@@ -109,16 +109,12 @@ export default function SetTicket() {
 
 	const isTicketExpired = (ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
 		if (!ticket.saleEnd) return false;
-		const saleEndDate = typeof ticket.saleEnd === "string" && ticket.saleEnd !== "N/A" ? new Date(ticket.saleEnd) : null;
-		if (!saleEndDate) return false;
-		return saleEndDate < new Date();
+		return ticket.saleEnd < new Date();
 	};
 
 	const isTicketNotYetAvailable = (ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
 		if (!ticket.saleStart) return false;
-		const saleStartDate = typeof ticket.saleStart === "string" && ticket.saleStart !== "N/A" ? new Date(ticket.saleStart) : null;
-		if (!saleStartDate) return false;
-		return saleStartDate > new Date();
+		return ticket.saleStart > new Date();
 	};
 
 	const isTicketSoldOut = (ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
