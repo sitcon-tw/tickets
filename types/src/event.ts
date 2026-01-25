@@ -42,6 +42,28 @@ export const EventListItemSchema = EventSchema.extend({
 export type EventListItem = z.infer<typeof EventListItemSchema>;
 
 /**
+ * Public event list item (for public API - subset of fields)
+ */
+export const PublicEventListItemSchema = z.object({
+	id: z.string(),
+	slug: z.string().nullable().optional(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable().optional(),
+	plainDescription: LocalizedTextSchema.nullable().optional(),
+	locationText: LocalizedTextSchema.nullable().optional(),
+	mapLink: z.string().nullable().optional(),
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+	ogImage: z.string().nullable().optional(),
+	useOpass: z.boolean().optional(),
+	opassEventId: z.string().nullable().optional(),
+	ticketCount: z.number().int().min(0),
+	registrationCount: z.number().int().min(0),
+	hasAvailableTickets: z.boolean()
+});
+export type PublicEventListItem = z.infer<typeof PublicEventListItemSchema>;
+
+/**
  * Event create request
  */
 export const EventCreateRequestSchema = z.object({

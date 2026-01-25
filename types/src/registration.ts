@@ -49,6 +49,44 @@ export const RegistrationSchema = z.object({
 export type Registration = z.infer<typeof RegistrationSchema>;
 
 /**
+ * User registration list item (for user's own registrations - includes event and ticket details)
+ */
+export const UserRegistrationListItemSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	eventId: z.string(),
+	ticketId: z.string(),
+	email: z.string(),
+	status: RegistrationStatusSchema,
+	referredBy: z.string().nullable().optional(),
+	formData: z.record(z.string(), z.unknown()),
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
+	event: z.object({
+		id: z.string(),
+		name: LocalizedTextSchema,
+		description: LocalizedTextSchema.nullable().optional(),
+		locationText: LocalizedTextSchema.nullable().optional(),
+		mapLink: z.string().nullable().optional(),
+		startDate: z.coerce.date(),
+		endDate: z.coerce.date(),
+		ogImage: z.string().nullable().optional()
+	}),
+	ticket: z.object({
+		id: z.string(),
+		name: LocalizedTextSchema,
+		description: LocalizedTextSchema.nullable().optional(),
+		price: z.number().min(0),
+		saleEnd: z.coerce.date().nullable().optional()
+	}),
+	isUpcoming: z.boolean(),
+	isPast: z.boolean(),
+	canEdit: z.boolean(),
+	canCancel: z.boolean()
+});
+export type UserRegistrationListItem = z.infer<typeof UserRegistrationListItemSchema>;
+
+/**
  * Registration create request
  */
 export const RegistrationCreateRequestSchema = z.object({

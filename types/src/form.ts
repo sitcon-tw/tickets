@@ -52,6 +52,25 @@ export const EventFormFieldSchema = z.object({
 export type EventFormField = z.infer<typeof EventFormFieldSchema>;
 
 /**
+ * Public event form field (for public API - subset of fields)
+ */
+export const PublicEventFormFieldSchema = z.object({
+	id: z.string(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable().optional(),
+	type: FormFieldTypeSchema,
+	required: z.boolean(),
+	options: z.array(z.unknown()),
+	validater: z.string().nullable().optional(),
+	placeholder: z.string().nullable().optional(),
+	order: z.number().int().min(0),
+	filters: FieldFilterSchema.nullable().optional(),
+	prompts: z.record(z.string(), z.array(z.string())).nullable().optional(),
+	enableOther: z.boolean()
+});
+export type PublicEventFormField = z.infer<typeof PublicEventFormFieldSchema>;
+
+/**
  * Event form field create request
  */
 export const EventFormFieldCreateRequestSchema = z.object({
