@@ -216,7 +216,6 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				if (!registration) {
 					span.addEvent("registration.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("報名記錄不存在");
 					return reply.code(statusCode).send(response);
@@ -564,7 +563,6 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				if (!registration) {
 					span.addEvent("registration.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("報名記錄不存在");
 					return reply.code(statusCode).send(response);

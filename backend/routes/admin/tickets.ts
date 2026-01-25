@@ -41,7 +41,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!event) {
 					span.addEvent("event.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
@@ -54,7 +53,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (isNaN(saleStartDate.getTime()) || isNaN(saleEndDate.getTime())) {
 						span.addEvent("ticket.validation.invalid_date_format");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("無效的販售日期格式");
 						return reply.code(statusCode).send(response);
@@ -63,7 +61,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (saleStartDate >= saleEndDate) {
 						span.addEvent("ticket.validation.invalid_date_range");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("販售開始時間必須早於結束時間");
 						return reply.code(statusCode).send(response);
@@ -72,7 +69,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (saleEndDate > event.startDate) {
 						span.addEvent("ticket.validation.sale_end_after_event_start");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
 						return reply.code(statusCode).send(response);
@@ -177,7 +173,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!ticket) {
 					span.addEvent("ticket.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("票券不存在");
 					return reply.code(statusCode).send(response);
@@ -257,7 +252,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!existingTicket) {
 					span.addEvent("ticket.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("票券不存在");
 					return reply.code(statusCode).send(response);
@@ -269,7 +263,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						"ticket.sold_count": existingTicket.soldCount
 					});
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = validationErrorResponse(`票券數量不能低於已售出數量 (${existingTicket.soldCount})`);
 					return reply.code(statusCode).send(response);
@@ -282,7 +275,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (updateData.saleStart && isNaN(new Date(updateData.saleStart).getTime())) {
 						span.addEvent("ticket.validation.invalid_sale_start_format");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("無效的販售開始日期格式");
 						return reply.code(statusCode).send(response);
@@ -291,7 +283,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (updateData.saleEnd && isNaN(new Date(updateData.saleEnd).getTime())) {
 						span.addEvent("ticket.validation.invalid_sale_end_format");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("無效的販售結束日期格式");
 						return reply.code(statusCode).send(response);
@@ -300,7 +291,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (saleStart && saleEnd && saleStart >= saleEnd) {
 						span.addEvent("ticket.validation.invalid_sale_date_range");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("販售開始時間必須早於結束時間");
 						return reply.code(statusCode).send(response);
@@ -309,7 +299,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					if (saleEnd && saleEnd > existingTicket.event.startDate) {
 						span.addEvent("ticket.validation.sale_end_after_event_start");
 						span.setStatus({ code: SpanStatusCode.OK });
-						span.end();
 
 						const { response, statusCode } = validationErrorResponse("販售結束時間不應晚於活動開始時間");
 						return reply.code(statusCode).send(response);
@@ -394,7 +383,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!existingTicket) {
 					span.addEvent("ticket.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("票券不存在");
 					return reply.code(statusCode).send(response);
@@ -405,7 +393,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (existingTicket._count.registrations > 0) {
 					span.addEvent("ticket.validation.has_registrations");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = conflictResponse("無法刪除已有報名的票券");
 					return reply.code(statusCode).send(response);
@@ -548,7 +535,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!ticket) {
 					span.addEvent("ticket.not_found");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("票券不存在");
 					return reply.code(statusCode).send(response);
@@ -636,7 +622,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (!tickets || tickets.length === 0) {
 					span.addEvent("tickets.validation.empty_list");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = validationErrorResponse("票券列表不能為空");
 					return reply.code(statusCode).send(response);
@@ -657,7 +642,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						"tickets.found": existingTickets.length
 					});
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = notFoundResponse("部分票券不存在");
 					return reply.code(statusCode).send(response);
@@ -670,7 +654,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						"events.count": eventIds.length
 					});
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = validationErrorResponse("所有票券必須屬於同一個活動");
 					return reply.code(statusCode).send(response);
@@ -684,7 +667,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				if (uniqueOrders.size !== orders.length) {
 					span.addEvent("tickets.validation.duplicate_orders");
 					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
 
 					const { response, statusCode } = validationErrorResponse("票券順序不能重複");
 					return reply.code(statusCode).send(response);
