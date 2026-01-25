@@ -140,3 +140,41 @@ export const DrawResultSchema = z.object({
 	totalParticipants: z.number().int().min(0)
 });
 export type DrawResult = z.infer<typeof DrawResultSchema>;
+
+/**
+ * Referral tree node (recursive structure)
+ */
+export const ReferralTreeNodeSchema: z.ZodType<{
+	id: string;
+	email: string;
+	name: string;
+	referralCode?: string;
+	createdAt: Date;
+	children: Array<{
+		id: string;
+		email: string;
+		name: string;
+		referralCode?: string;
+		createdAt: Date;
+		children: unknown[];
+	}>;
+}> = z.lazy(() =>
+	z.object({
+		id: z.string(),
+		email: z.string(),
+		name: z.string(),
+		referralCode: z.string().optional(),
+		createdAt: z.coerce.date(),
+		children: z.array(ReferralTreeNodeSchema)
+	})
+);
+export type ReferralTreeNode = z.infer<typeof ReferralTreeNodeSchema>;
+
+/**
+ * Prisma date filter type
+ */
+export const PrismaDateFilterSchema = z.object({
+	gte: z.coerce.date().optional(),
+	lte: z.coerce.date().optional()
+});
+export type PrismaDateFilter = z.infer<typeof PrismaDateFilterSchema>;

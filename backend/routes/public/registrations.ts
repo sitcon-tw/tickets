@@ -3,7 +3,7 @@ import { auth } from "#lib/auth";
 import { tracer } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth";
 import { Prisma } from "#prisma/generated/prisma";
-import { IdParamSchema, registrationSchemas, userRegistrationsResponse } from "#schemas";
+import { registrationSchemas } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
@@ -385,11 +385,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations",
 		{
-			schema: {
-				description: "取得用戶的報名記錄",
-				tags: ["registrations"],
-				response: userRegistrationsResponse
-			}
+			schema: registrationSchemas.getUserRegistrations
 		},
 		async (request, reply) => {
 			try {
@@ -476,13 +472,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.withTypeProvider<ZodTypeProvider>().get<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/:id",
 		{
-			schema: {
-				description: "取得特定報名記錄",
-				tags: ["registrations"]
-			}
+			schema: registrationSchemas.getRegistration
 		},
 		async (request, reply) => {
 			try {
@@ -536,6 +529,18 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					formData: parsedFormData,
 					isUpcoming: registration.event.startDate > now,
 					isPast: registration.event.endDate < now,
+					status: RegistrationStatusSchema.parse(registration.status),
+					event: {
+						...registration.event,
+						name: LocalizedTextSchema.parse(registration.event.name),
+						description: LocalizedTextSchema.nullable().parse(registration.event.description),
+						locationText: LocalizedTextSchema.nullable().parse(registration.event.locationText)
+					},
+					ticket: {
+						...registration.ticket,
+						name: LocalizedTextSchema.parse(registration.ticket.name),
+						description: LocalizedTextSchema.nullable().parse(registration.ticket.description)
+					},
 					canEdit:
 						registration.status === "confirmed" &&
 						registration.event.startDate > now &&
@@ -555,18 +560,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id",
 		{
-			schema: {
-				description: "編輯報名記錄（僅限表單資料）",
-				tags: ["registrations"],
-				params: IdParamSchema,
-				body: registrationSchemas.updateRegistration.body,
-				response: registrationSchemas.updateRegistration.response
-			}
+			schema: registrationSchemas.updateRegistration
 		},
 		async (request, reply) => {
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as unknown as Headers
+					headers: request.headers
 				});
 				const userId = session?.user?.id;
 				const id = request.params.id;
@@ -699,13 +698,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	fastify.withTypeProvider<ZodTypeProvider>().put<{ Params: { id: string } }>(
+	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id/cancel",
 		{
-			schema: {
-				description: "取消報名",
-				tags: ["registrations"]
-			}
+			schema: registrationSchemas.cancelRegistration
 		},
 		async (request, reply) => {
 			try {

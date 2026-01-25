@@ -21,7 +21,7 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
+import { FieldFilter, LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -370,7 +370,7 @@ export default function MyRegistrationPage() {
 								description = { en: description };
 							}
 
-							const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
+							const options = (field.options || []).map((opt: unknown): Record<string, string> => {
 								if (typeof opt === "object" && opt !== null && "label" in opt) {
 									const optWithLabel = opt as { label: unknown };
 									const labelValue =
@@ -387,9 +387,13 @@ export default function MyRegistrationPage() {
 
 							return {
 								...field,
+								eventId: regData.eventId,
+								type: field.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 								name,
 								description: description as LocalizedText | undefined,
-								options
+								options,
+								filters: field.filters as FieldFilter | null | undefined,
+								prompts: field.prompts as Record<string, string[]> | null | undefined
 							};
 						});
 

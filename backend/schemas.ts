@@ -48,7 +48,14 @@ import {
 	UserSchema,
 	// Validation schemas
 	ValidationErrorSchema,
-	VerifyCodeRequestSchema
+	VerifyCodeRequestSchema,
+	// Webhook schemas
+	WebhookDeliverySchema,
+	WebhookEndpointCreateRequestSchema,
+	WebhookEndpointSchema,
+	WebhookEndpointUpdateRequestSchema,
+	WebhookTestRequestSchema,
+	WebhookTestResponseSchema
 } from "@sitcontix/types";
 import { z } from "zod/v4";
 
@@ -74,7 +81,7 @@ export const SearchQuerySchemaExtended = z.object({
 export const SuccessResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string().describe("回應訊息"),
-	data: z.unknown().optional().describe("回應資料")
+	data: z.null().optional().describe("回應資料")
 });
 
 export const ErrorResponseSchema = z.object({
@@ -632,6 +639,137 @@ export const referralStatsResponse = {
 	500: ErrorResponseSchema
 } as const;
 
+// Admin Referral Query/Body Schemas
+export const ReferralTreeParamSchema = z.object({
+	regId: z.string().describe("報名 ID")
+});
+
+export const ReferralQualifiedQuerySchema = z.object({
+	minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數")
+});
+
+export const ReferralDrawBodySchema = z.object({
+	minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數"),
+	drawCount: z.coerce.number().int().min(1).default(1).describe("抽選人數"),
+	seed: z.string().optional().describe("種子")
+});
+
+export const ReferralStatsQuerySchema = z.object({
+	startDate: z.string().optional().describe("開始日期"),
+	endDate: z.string().optional().describe("結束日期")
+});
+
+// Admin Referrals Response Schemas
+export const ReferralOverviewResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.object({
+		totalReferrals: z.number().int(),
+		uniqueReferrers: z.number().int(),
+		conversionRate: z.number(),
+		topReferrers: z.array(
+			z.object({
+				id: z.string(),
+				code: z.string(),
+				email: z.string(),
+				name: z.string(),
+				referralCount: z.number().int()
+			})
+		)
+	})
+});
+
+export const ReferralLeaderboardResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(
+		z.object({
+			rank: z.number().int(),
+			id: z.string(),
+			code: z.string(),
+			email: z.string(),
+			name: z.string(),
+			referralCount: z.number().int(),
+			createdAt: z.coerce.date()
+		})
+	)
+});
+
+export const ReferralTreeResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.lazy(() =>
+		z.object({
+			id: z.string(),
+			email: z.string(),
+			name: z.string(),
+			referralCode: z.string().optional(),
+			createdAt: z.coerce.date(),
+			children: z.array(z.unknown())
+		})
+	)
+});
+
+export const ReferralQualifiedResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(
+		z.object({
+			id: z.string(),
+			code: z.string(),
+			email: z.string(),
+			name: z.string(),
+			referralCount: z.number().int(),
+			createdAt: z.coerce.date()
+		})
+	)
+});
+
+export const ReferralDrawResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.object({
+		drawResults: z.array(
+			z.object({
+				rank: z.number().int(),
+				id: z.string(),
+				code: z.string(),
+				email: z.string(),
+				name: z.string(),
+				referralCount: z.number().int()
+			})
+		),
+		drawCount: z.number().int(),
+		eligibleCount: z.number().int(),
+		seed: z.string()
+	})
+});
+
+export const ReferralStatsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.object({
+		dailyStats: z.array(
+			z.object({
+				date: z.string(),
+				count: z.number().int()
+			})
+		),
+		conversionFunnel: z.array(
+			z.object({
+				stage: z.string(),
+				count: z.union([z.number(), z.string()])
+			})
+		),
+		topSources: z.array(
+			z.object({
+				source: z.string(),
+				count: z.number().int()
+			})
+		)
+	})
+});
+
 export const referralSchemas = {
 	createReferral: {
 		description: "創建新推薦碼",
@@ -786,62 +924,6 @@ export const AdminRegistrationSchema = z.object({
 
 export const AdminRegistrationsListResponseSchema = PaginatedResponseSchema(z.array(AdminRegistrationSchema));
 
-export const registrationSchemas = {
-	createRegistration: {
-		description: "創建新報名",
-		tags: ["registrations"],
-		body: RegistrationCreateBodySchema,
-		response: {
-			201: RegistrationResponseSchema,
-			400: ErrorResponseSchema,
-			401: ErrorResponseSchema,
-			404: ErrorResponseSchema,
-			409: ErrorResponseSchema,
-			422: ErrorResponseSchema,
-			500: ErrorResponseSchema
-		}
-	},
-
-	getRegistration: {
-		description: "取得報名詳情",
-		tags: ["registrations"],
-		params: IdParamSchema,
-		response: {
-			200: RegistrationResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
-		}
-	},
-
-	updateRegistration: {
-		description: "更新報名",
-		tags: ["registrations"],
-		body: RegistrationUpdateBodySchema,
-		params: IdParamSchema,
-		response: {
-			200: RegistrationResponseSchema,
-			400: ErrorResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema,
-			422: ErrorResponseSchema,
-			500: ErrorResponseSchema
-		}
-	},
-
-	listRegistrations: {
-		description: "取得報名列表",
-		tags: ["admin/registrations"],
-		querystring: RegistrationQuerySchema,
-		response: {
-			200: AdminRegistrationsListResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
-		}
-	}
-} as const;
-
 export const userRegistrationsResponse = {
 	200: z.object({
 		success: z.literal(true),
@@ -883,6 +965,80 @@ export const userRegistrationsResponse = {
 		)
 	}),
 	500: ErrorResponseSchema
+} as const;
+
+export const registrationSchemas = {
+	createRegistration: {
+		description: "創建新報名",
+		tags: ["registrations"],
+		body: RegistrationCreateBodySchema,
+		response: {
+			201: RegistrationResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	getUserRegistrations: {
+		description: "取得用戶的報名記錄",
+		tags: ["registrations"],
+		response: userRegistrationsResponse
+	},
+
+	getRegistration: {
+		description: "取得特定報名記錄",
+		tags: ["registrations"],
+		params: IdParamSchema,
+		response: {
+			200: RegistrationResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	updateRegistration: {
+		description: "更新報名",
+		tags: ["registrations"],
+		body: RegistrationUpdateBodySchema,
+		params: IdParamSchema,
+		response: {
+			200: RegistrationResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	cancelRegistration: {
+		description: "取消報名",
+		tags: ["registrations"],
+		params: IdParamSchema,
+		response: {
+			200: SuccessResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	listRegistrations: {
+		description: "取得報名列表",
+		tags: ["admin/registrations"],
+		querystring: RegistrationQuerySchema,
+		response: {
+			200: AdminRegistrationsListResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema
+		}
+	}
 } as const;
 
 // ----------------------------------------------------------------------------
@@ -1635,6 +1791,69 @@ export const publicInvitationCodeSchemas = {
 } as const;
 
 // ----------------------------------------------------------------------------
+// Admin Referral Schemas
+// ----------------------------------------------------------------------------
+
+export const adminReferralSchemas = {
+	getReferralOverview: {
+		description: "推薦機制總覽統計",
+		tags: ["admin/referrals"],
+		response: {
+			200: ReferralOverviewResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getReferralLeaderboard: {
+		description: "推薦排行榜",
+		tags: ["admin/referrals"],
+		querystring: PaginationQuerySchemaExtended,
+		response: {
+			200: ReferralLeaderboardResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getReferralTree: {
+		description: "獲取推薦擴譜圖數據",
+		tags: ["admin/referrals"],
+		params: ReferralTreeParamSchema,
+		response: {
+			200: ReferralTreeResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getQualifiedReferrers: {
+		description: "獲取達標推薦者名單",
+		tags: ["admin/referrals"],
+		querystring: ReferralQualifiedQuerySchema,
+		response: {
+			200: ReferralQualifiedResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	drawReferrers: {
+		description: "從達標者中隨機抽選",
+		tags: ["admin/referrals"],
+		body: ReferralDrawBodySchema,
+		response: {
+			200: ReferralDrawResponseSchema,
+			400: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getReferralStats: {
+		description: "推薦統計報表",
+		tags: ["admin/referrals"],
+		querystring: ReferralStatsQuerySchema,
+		response: {
+			200: ReferralStatsResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
 // Admin Invitation Code Bulk Schemas
 // ----------------------------------------------------------------------------
 
@@ -1711,6 +1930,134 @@ export const publicAuthSchemas = {
 		tags: ["auth"],
 		response: {
 			200: AuthPermissionsResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Webhook Schemas
+// ----------------------------------------------------------------------------
+
+export const EventIdParamSchema = z.object({
+	eventId: z.string().describe("活動 ID")
+});
+
+export const DeliveryIdParamSchema = z.object({
+	eventId: z.string().describe("活動 ID"),
+	deliveryId: z.string().describe("交付 ID")
+});
+
+export const WebhookResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: WebhookEndpointSchema
+});
+
+export const WebhookNullableResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: WebhookEndpointSchema.nullable()
+});
+
+export const WebhookTestResultResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: WebhookTestResponseSchema
+});
+
+export const WebhookDeliveriesListResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(WebhookDeliverySchema),
+	pagination: z.object({
+		page: z.number().int(),
+		limit: z.number().int(),
+		total: z.number().int(),
+		totalPages: z.number().int(),
+		hasNext: z.boolean(),
+		hasPrev: z.boolean()
+	})
+});
+
+export const webhookSchemas = {
+	getWebhook: {
+		description: "取得 Webhook 配置",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		response: {
+			200: WebhookNullableResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	createWebhook: {
+		description: "創建 Webhook",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		body: WebhookEndpointCreateRequestSchema,
+		response: {
+			201: WebhookResponseSchema,
+			400: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	updateWebhook: {
+		description: "更新 Webhook",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		body: WebhookEndpointUpdateRequestSchema,
+		response: {
+			200: WebhookResponseSchema,
+			400: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	deleteWebhook: {
+		description: "刪除 Webhook",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		response: {
+			200: SuccessResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	testWebhook: {
+		description: "測試 Webhook URL",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		body: WebhookTestRequestSchema,
+		response: {
+			200: WebhookTestResultResponseSchema,
+			400: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getFailedDeliveries: {
+		description: "取得失敗的 Webhook 交付記錄",
+		tags: ["admin/webhooks"],
+		params: EventIdParamSchema,
+		querystring: PaginationQuerySchemaExtended,
+		response: {
+			200: WebhookDeliveriesListResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	retryDelivery: {
+		description: "重試失敗的 Webhook 交付",
+		tags: ["admin/webhooks"],
+		params: DeliveryIdParamSchema,
+		response: {
+			200: SuccessResponseSchema,
+			400: ErrorResponseSchema,
+			422: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	}
