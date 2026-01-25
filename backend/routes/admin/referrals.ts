@@ -198,7 +198,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (registration.referral?.id) span.setAttribute("registration.id", registration.referral.id);
+				if (registration.referral?.id) span.setAttribute("referral.id", registration.referral.id);
 				span.addEvent("referrals.building_tree");
 
 				const buildTree = (reg: any): any => ({
