@@ -65,114 +65,70 @@ export const authAPI = {
 };
 
 // Events - Public
+export const eventTicketSchema = TicketSchema.pick({
+	id: true,
+	name: true,
+	description: true,
+	plainDescription: true,
+	price: true,
+	quantity: true,
+	available: true,
+	saleStart: true,
+	saleEnd: true,
+	isOnSale: true,
+	isSoldOut: true,
+	requireSmsVerification: true,
+	requireInviteCode: true,
+	showRemaining: true
+});
+
 export const eventsAPI = {
-	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) =>
-		apiClient.get(
-			"/api/events",
-			params,
-			ApiResponseSchema(
-				z.array(
-					z.object({
-						id: z.string(),
-						slug: z.string().nullable().optional(),
-						name: LocalizedTextSchema,
-						description: LocalizedTextSchema.nullable().optional(),
-						plainDescription: LocalizedTextSchema.nullable().optional(),
-						locationText: LocalizedTextSchema.nullable().optional(),
-						mapLink: z.string().nullable().optional(),
-						startDate: z.date(),
-						endDate: z.date(),
-						ogImage: z.string().nullable().optional(),
-						useOpass: z.boolean().optional(),
-						opassEventId: z.string().nullable().optional(),
-						ticketCount: z.number(),
-						registrationCount: z.number(),
-						hasAvailableTickets: z.boolean()
-					})
-				)
-			)
-		),
+	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get("/api/events", params, ApiResponseSchema(z.array(EventSchema))),
 
 	getInfo: (id: string) => apiClient.get(`/api/events/${id}/info`, {}, ApiResponseSchema(EventSchema)),
 
-	getTickets: (id: string) =>
-		apiClient.get(
-			`/api/events/${id}/tickets`,
-			{},
-			ApiResponseSchema(
-				z.array(
-					TicketSchema.pick({
-						id: true,
-						name: true,
-						description: true,
-						plainDescription: true,
-						price: true,
-						quantity: true,
-						available: true,
-						saleStart: true,
-						saleEnd: true,
-						isOnSale: true,
-						isSoldOut: true,
-						requireSmsVerification: true,
-						requireInviteCode: true,
-						showRemaining: true
-					})
-				)
-			)
-		),
+	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(eventTicketSchema))),
 
 	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema))
 };
 
 // Tickets - Public
-export const ticketsAPI = {
-	getTicket: (id: string) =>
-		apiClient.get(
-			`/api/tickets/${id}`,
-			{},
-			ApiResponseSchema(
-				z.object({
-					id: z.string(),
-					name: LocalizedTextSchema,
-					description: LocalizedTextSchema.nullable(),
-					plainDescription: LocalizedTextSchema.nullable(),
-					price: z.number(),
-					quantity: z.number().int(),
-					soldCount: z.number().int(),
-					available: z.number().int(),
-					saleStart: z.date().optional().nullable(),
-					saleEnd: z.date().optional().nullable(),
-					isOnSale: z.boolean(),
-					isSoldOut: z.boolean(),
-					requireInviteCode: z.boolean(),
-					requireSmsVerification: z.boolean()
-				})
-			)
-		),
+export const ticketSchema = z.object({
+	id: z.string(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable(),
+	plainDescription: LocalizedTextSchema.nullable(),
+	price: z.number(),
+	quantity: z.number().int(),
+	soldCount: z.number().int(),
+	available: z.number().int(),
+	saleStart: z.date().optional().nullable(),
+	saleEnd: z.date().optional().nullable(),
+	isOnSale: z.boolean(),
+	isSoldOut: z.boolean(),
+	requireInviteCode: z.boolean(),
+	requireSmsVerification: z.boolean()
+});
 
-	getFormFields: (id: string) =>
-		apiClient.get(
-			`/api/tickets/${id}/form-fields`,
-			{},
-			ApiResponseSchema(
-				z.array(
-					z.object({
-						id: z.string(),
-						name: LocalizedTextSchema,
-						description: LocalizedTextSchema.nullable(),
-						type: z.string(),
-						required: z.boolean(),
-						options: z.array(z.unknown()),
-						validater: z.string().nullable(),
-						placeholder: z.string().nullable(),
-						order: z.number(),
-						filters: z.unknown(),
-						prompts: z.unknown(),
-						enableOther: z.boolean()
-					})
-				)
-			)
-		)
+export const ticketFormFieldSchema = z.object({
+	id: z.string(),
+	name: LocalizedTextSchema,
+	description: LocalizedTextSchema.nullable(),
+	type: z.string(),
+	required: z.boolean(),
+	options: z.array(z.unknown()),
+	validater: z.string().nullable(),
+	placeholder: z.string().nullable(),
+	order: z.number(),
+	filters: z.unknown(),
+	prompts: z.unknown(),
+	enableOther: z.boolean()
+});
+
+export const ticketsAPI = {
+	getTicket: (id: string) => apiClient.get(`/api/tickets/${id}`, {}, ApiResponseSchema(ticketSchema)),
+
+	getFormFields: (id: string) => apiClient.get(`/api/tickets/${id}/form-fields`, {}, ApiResponseSchema(z.array(ticketFormFieldSchema)))
 };
 
 // Registrations - Requires Auth

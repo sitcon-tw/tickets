@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { LocalizedText, TicketFormField } from "@sitcontix/types";
+import { FieldFilter, LocalizedText, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -295,7 +295,7 @@ export default function FormPage() {
 						description = { en: description };
 					}
 
-					const options = (field.values || field.options || []).map((opt: unknown): Record<string, string> => {
+					const options = (field.options || []).map((opt: unknown): Record<string, string> => {
 						if (typeof opt === "object" && opt !== null && "label" in opt) {
 							const optWithLabel = opt as { label: unknown };
 							const labelValue =
@@ -321,10 +321,13 @@ export default function FormPage() {
 
 					return {
 						...field,
+						eventId: parsedData.eventId,
+						type: field.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 						name,
 						description: description as LocalizedText | undefined,
 						options,
-						filters
+						filters: filters as FieldFilter | null | undefined,
+						prompts: field.prompts as Record<string, string[]> | null | undefined
 					};
 				});
 

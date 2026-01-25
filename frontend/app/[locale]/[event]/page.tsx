@@ -5,14 +5,15 @@ import Welcome from "@/components/home/Welcome";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
-import { eventsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, eventTicketSchema } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { EventListItem, Ticket } from "@sitcontix/types";
+import { EventSchema } from "@sitcontix/types";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { z } from "zod/v4";
 
 export default function Main() {
 	const params = useParams();
@@ -20,8 +21,8 @@ export default function Main() {
 	const locale = useLocale();
 	const eventSlug = params.event as string;
 
-	const [event, setEvent] = useState<EventListItem | null>(null);
-	const [tickets, setTickets] = useState<Ticket[]>([]);
+	const [event, setEvent] = useState<z.infer<typeof EventSchema> | null>(null);
+	const [tickets, setTickets] = useState<z.infer<typeof eventTicketSchema>[]>([]);
 	const [registrationCount, setRegistrationCount] = useState<number>(0);
 	const [eventDescription, setEventDescription] = useState<string>("");
 	const [loading, setLoading] = useState(true);
