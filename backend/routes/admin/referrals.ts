@@ -471,7 +471,6 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				span.setAttribute("referrals.stats.total_registrations", totalRegistrations);
 				span.setAttribute("referrals.stats.conversion_rate", Math.round(conversionRate * 100) / 100);
-				referralUsages.forEach(usage => {});
 
 				const conversionFunnel = [
 					{ stage: "總報名數", count: totalRegistrations },
