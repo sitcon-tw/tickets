@@ -14,6 +14,7 @@ import {
 	PermissionsResponseSchema,
 	QualifiedReferrerSchema,
 	ReferralLinkSchema,
+	ReferralTreeNodeSchema,
 	ReferralValidationSchema,
 	RegistrationSchema,
 	RegistrationStatsSchema,
@@ -424,27 +425,7 @@ export const adminReferralsAPI = {
 			)
 		),
 
-	getTree: (regId: string) => {
-		const ReferralTreeNode: z.ZodType<{
-			id: string;
-			email: string;
-			name: string;
-			referralCode?: string;
-			createdAt: Date;
-			children: any[];
-		}> = z.lazy(() =>
-			z.object({
-				id: z.string(),
-				email: z.string(),
-				name: z.string(),
-				referralCode: z.string().optional(),
-				createdAt: z.date(),
-				children: z.array(ReferralTreeNode)
-			})
-		);
-
-		return apiClient.get(`/api/admin/referrals/tree/${regId}`, {}, ApiResponseSchema(ReferralTreeNode));
-	},
+	getTree: (regId: string) => apiClient.get(`/api/admin/referrals/tree/${regId}`, {}, ApiResponseSchema(ReferralTreeNodeSchema)),
 
 	getQualified: () => apiClient.get("/api/admin/referrals/qualified", {}, ApiResponseSchema(z.array(QualifiedReferrerSchema))),
 
