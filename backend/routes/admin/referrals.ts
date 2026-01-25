@@ -3,8 +3,10 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { requireAdmin } from "#middleware/auth";
+import { PaginationQuerySchemaExtended } from "#schemas";
 import { logger } from "#utils/logger";
 import { serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { z } from "zod/v4";
 
 const componentLogger = logger.child({ component: "admin/referrals" });
 
@@ -76,7 +78,8 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		{
 			schema: {
 				description: "推薦排行榜",
-				tags: ["admin/referrals"]
+				tags: ["admin/referrals"],
+				querystring: PaginationQuerySchemaExtended
 			}
 		},
 		async (request, reply) => {
@@ -129,7 +132,10 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		{
 			schema: {
 				description: "獲取推薦擴譜圖數據",
-				tags: ["admin/referrals"]
+				tags: ["admin/referrals"],
+				params: z.object({
+					regId: z.string().describe("報名 ID")
+				})
 			}
 		},
 		async (request, reply) => {
@@ -181,7 +187,10 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		{
 			schema: {
 				description: "獲取達標推薦者名單",
-				tags: ["admin/referrals"]
+				tags: ["admin/referrals"],
+				querystring: z.object({
+					minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數")
+				})
 			}
 		},
 		async (request, reply) => {
@@ -235,7 +244,12 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		{
 			schema: {
 				description: "從達標者中隨機抽選",
-				tags: ["admin/referrals"]
+				tags: ["admin/referrals"],
+				body: z.object({
+					minReferrals: z.coerce.number().int().min(1).default(1).describe("最小推薦人數"),
+					drawCount: z.coerce.number().int().min(1).default(1).describe("抽選人數"),
+					seed: z.string().optional().describe("種子")
+				})
 			}
 		},
 		async (request, reply) => {
@@ -320,7 +334,11 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 		{
 			schema: {
 				description: "推薦統計報表",
-				tags: ["admin/referrals"]
+				tags: ["admin/referrals"],
+				querystring: z.object({
+					startDate: z.string().optional().describe("開始日期"),
+					endDate: z.string().optional().describe("結束日期")
+				})
 			}
 		},
 		async (request, reply) => {

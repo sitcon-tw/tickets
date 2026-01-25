@@ -704,7 +704,8 @@ export const referralSchemas = {
 				data: ReferralValidationSchema
 			}),
 			400: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 
@@ -1582,14 +1583,22 @@ export const publicReferralSchemas = {
 		tags: ["referrals"],
 		params: RegIdParamSchema,
 		response: {
-			200: ReferralLinkResponseSchema
+			200: ReferralLinkResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	},
 	getReferralStats: {
 		description: "獲取個人推薦統計",
 		tags: ["referrals"],
 		params: RegIdParamSchema,
-		response: referralStatsResponse
+		response: {
+			200: referralStatsResponse,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
@@ -1704,7 +1713,8 @@ export const publicAuthSchemas = {
 		description: "取得當前用戶的權限資訊",
 		tags: ["auth"],
 		response: {
-			200: AuthPermissionsResponseSchema
+			200: AuthPermissionsResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
