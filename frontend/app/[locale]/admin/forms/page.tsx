@@ -21,7 +21,6 @@ type ShowIf = {
 	values: string[];
 };
 
-// Local state types - use string for dates to avoid unnecessary conversions
 type FilterConditionState = Omit<FilterCondition, "startTime" | "endTime"> & {
 	startTime?: string;
 	endTime?: string;
