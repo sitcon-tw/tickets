@@ -98,7 +98,7 @@ model Event {
   isActive    Boolean  @default(true)
   hideEvent   Boolean  @default(false) // Hide from event list
   useOpass    Boolean  @default(true)  // Use OPass for check-in
-  opassEventId String? // OPass event ID for generating OPass APP link
+  opassEventId String? // OPass event ID for generating OPass app link
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

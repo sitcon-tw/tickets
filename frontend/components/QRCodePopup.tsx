@@ -19,9 +19,9 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
 		openInOpass: {
-			"zh-Hant": "使用 OPass APP 開啟票券：",
-			"zh-Hans": "使用 OPass APP 开启票券：",
-			en: "Open ticket in OPass APP:"
+			"zh-Hant": "使用 OPass app 開啟票券：",
+			"zh-Hans": "使用 OPass app 开启票券：",
+			en: "Open ticket in OPass app:"
 		},
 		openOpassLink: {
 			"zh-Hant": "點此開啟 OPass",
