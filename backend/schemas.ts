@@ -847,7 +847,7 @@ export const RegistrationUpdateBodySchema = RegistrationUpdateRequestSchema;
 
 export const RegistrationQuerySchema = z.object({
 	page: z.coerce.number().int().min(1).default(1).describe("頁數"),
-	limit: z.coerce.number().int().min(1).max(100).default(10).describe("每頁項目數"),
+	limit: z.coerce.number().int().min(1).default(10).describe("每頁項目數"),
 	eventId: z.string().optional().describe("篩選活動 ID"),
 	status: RegistrationStatusSchema.optional().describe("篩選報名狀態"),
 	userId: z.string().optional().describe("篩選用戶 ID")
