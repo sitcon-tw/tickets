@@ -140,7 +140,6 @@ export default function RegistrationsPage() {
 		setIsLoading(true);
 		try {
 			const params: { limit: number; status?: "pending" | "confirmed" | "cancelled"; eventId?: string } = {
-				limit: 100,
 				eventId: currentEventId
 			};
 			if (statusFilter) params.status = statusFilter as "pending" | "confirmed" | "cancelled";
