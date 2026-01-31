@@ -33,6 +33,7 @@ export default function Success() {
 	const [isCancelled, setIsCancelled] = useState(false);
 	const [useOpass, setUseOpass] = useState<boolean>(true);
 	const [opassEventId, setOpassEventId] = useState<string | null>(null);
+	const [isScreenReallySmall, setIsScreenReallySmall] = useState(false);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -129,7 +130,7 @@ export default function Success() {
 					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 					if (!foundEvent) {
-						setReferralCode(t.loadFailed);
+						setReferralCode("Failed");
 						return;
 					}
 					console.log("Found event for success page:", foundEvent);
@@ -143,11 +144,16 @@ export default function Success() {
 					if (eventRegistration) {
 						setRegistrationId(eventRegistration.id);
 						setRegistrationTime(eventRegistration.createdAt);
-						setRegistrationTicketName(getLocalizedText(eventRegistration.ticket?.name, locale) || null);
+						let ticketname = getLocalizedText(eventRegistration.ticket?.name, locale) || "Ticket";
+						ticketname = ticketname
+							.replace(/\(.*?\)/g, "")
+							.replace(/（.*?）/g, "")
+							.trim();
+						setRegistrationTicketName(ticketname);
 
 						if (eventRegistration.status === "cancelled") {
 							setIsCancelled(true);
-							setReferralCode(t.loadFailed);
+							setReferralCode("Failed");
 						} else {
 							setIsCancelled(false);
 							const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
@@ -158,7 +164,7 @@ export default function Success() {
 					}
 				} catch (error) {
 					console.error("Failed to load registrations:", error);
-					setReferralCode(t.loadFailed);
+					setReferralCode("Failed");
 				}
 			} catch (error) {
 				console.error("Failed to load success info:", error);
@@ -169,9 +175,18 @@ export default function Success() {
 		loadSuccessInfo();
 	}, [eventSlug, locale, t.loadFailed]);
 
+	useEffect(() => {
+		const handleResize = () => {
+			setIsScreenReallySmall(window.innerWidth < 315);
+		};
+		handleResize();
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
 	return (
 		<>
-			<div className="grid grid-cols-1 sm:grid-cols-[50%_50%] md:grid-cols-[40%_60%] max-w-full overflow-hidden">
+			<div className="grid grid-cols-1 sm:grid-cols-[60%_40%] md:grid-cols-[50%_50%] max-w-full overflow-hidden">
 				<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 					<div className="flex flex-col gap-4">
 						<h1 className="my-4 text-5xl font-bold">{isCancelled ? t.cancelled : t.success}</h1>
@@ -183,11 +198,11 @@ export default function Success() {
 									onClick={handleCopyRefCode}
 									className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2"
 								>
-									{referralCode === t.loading ? (
+									{referralCode === "Loading..." ? (
 										<Spinner />
 									) : (
 										<div className="flex items-center gap-2">
-											<span className="font-mono text-lg">{referralCode}</span>
+											<span className="font-mono text-sm sm:text-lg">{referralCode}</span>
 											{referralCode !== t.loadFailed && (
 												<span className="cursor-pointer" title={t.copyInvite}>
 													{copiedCode ? <Check className="text-green-500" /> : <Copy />}
@@ -201,18 +216,20 @@ export default function Success() {
 									onClick={handleCopyRefUrl}
 									className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2"
 								>
-									{referralCode === t.loading ? (
+									{referralCode === "Loading..." ? (
 										<Spinner />
-									) : referralCode === t.loadFailed ? (
+									) : referralCode === "Failed" ? (
 										<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
 									) : (
 										<div className="flex items-center gap-2">
-											<span className="font-mono text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
-												{`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
-													? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
-													: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}
+											<span className="font-mono text-sm sm:text-lg" title={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}>
+												{isScreenReallySmall
+													? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 10)}...`
+													: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.length > 20 && !locale.includes("zh")
+														? `${`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`.substring(0, 20)}...`
+														: `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`}
 											</span>
-											{referralCode !== t.loadFailed && (
+											{referralCode !== "Failed" && (
 												<span className="cursor-pointer" title={t.copyInvite}>
 													{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
 												</span>
@@ -232,6 +249,7 @@ export default function Success() {
 						<div className={`gap-4 mt-2 flex ${locale.includes("en") && "flex-col"}`}>
 							{registrationId && (
 								<Button
+									className="px-3"
 									isLoading={viewRegLoading}
 									onClick={() => {
 										setViewRegLoading(true);
@@ -243,6 +261,7 @@ export default function Success() {
 							)}
 							{!isCancelled && (
 								<Button
+									className="px-3"
 									isLoading={viewRefLoading}
 									onClick={() => {
 										setViewRefLoading(true);

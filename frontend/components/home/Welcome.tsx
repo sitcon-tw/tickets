@@ -17,6 +17,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const [welcomeState, setWelcomeState] = useState<WelcomeState>("notloggedin");
 	const [referralParam, setReferralParam] = useState<string | null>(null);
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
+	const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -138,6 +139,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 		function decideState(isAuthenticated: boolean) {
 			if (cancelled) return;
+			setIsLoggedIn(isAuthenticated);
 			if (referralParam) {
 				setWelcomeState("referral");
 				return;
@@ -177,7 +179,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 						<span>{referralParam || t.friend}</span> {t.referralWelcome}
 					</h2>
 					<p className="text-gray-800 dark:text-gray-200">{t.promotionalText}</p>
-					{!isSmsVerified && (
+					{!isSmsVerified && isLoggedIn && (
 						<div className="text-yellow-800 dark:text-yellow-500 mt-4">
 							<p>{t.haveNotVerifySMS1}</p>
 							<p>{t.haveNotVerifySMS2}</p>

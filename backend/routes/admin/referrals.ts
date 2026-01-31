@@ -1,7 +1,9 @@
+import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { requireAdmin } from "#middleware/auth";
 import { adminReferralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
@@ -19,13 +21,22 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.getReferralOverview
 		},
 		async (_request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.overview");
+
 			try {
+				span.addEvent("referrals.fetching_stats");
+
 				const totalReferrals = await prisma.referralUsage.count();
 				const uniqueReferrers = await prisma.referral.count({
 					where: { isActive: true }
 				});
 				const totalRegistrations = await prisma.registration.count();
 				const conversionRate = totalRegistrations > 0 ? (totalReferrals / totalRegistrations) * 100 : 0;
+
+				span.setAttribute("referrals.total_count", totalReferrals);
+				span.setAttribute("referrals.conversion_rate", Math.round(conversionRate * 100) / 100);
+
+				span.addEvent("referrals.fetching_top_referrers");
 
 				const topReferrers = await prisma.referral.findMany({
 					where: { isActive: true },
@@ -48,6 +59,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					take: 10
 				});
 
+				span.setAttribute("referrals.top_referrers_count", topReferrers.length);
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return successResponse({
 					totalReferrals,
 					uniqueReferrers,
@@ -62,8 +76,15 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 			} catch (error) {
 				componentLogger.error({ error }, "Get referral overview error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get referral overview"
+				});
 				const { response, statusCode } = serverErrorResponse("取得推薦統計失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -75,8 +96,16 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.getReferralLeaderboard
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.leaderboard", {
+				attributes: {
+					"referrals.leaderboard.limit": request.query.limit || 10
+				}
+			});
+
 			try {
 				const { limit = 10 } = request.query;
+
+				span.addEvent("referrals.fetching_leaderboard");
 
 				const leaderboard = await prisma.referral.findMany({
 					where: { isActive: true },
@@ -99,6 +128,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					take: typeof limit === "number" ? limit : parseInt(String(limit), 10)
 				});
 
+				span.setAttribute("referrals.leaderboard.count", leaderboard.length);
+				span.addEvent("referrals.leaderboard_fetched");
+
 				const formattedLeaderboard = leaderboard.map((r, index) => ({
 					rank: index + 1,
 					id: r.id,
@@ -109,11 +141,19 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					createdAt: r.createdAt
 				}));
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return successResponse(formattedLeaderboard);
 			} catch (error) {
 				componentLogger.error({ error }, "Get referral leaderboard error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get referral leaderboard"
+				});
 				const { response, statusCode } = serverErrorResponse("取得推薦排行榜失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -125,8 +165,16 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.getReferralTree
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.tree", {
+				attributes: {
+					"referrals.tree.registration_id": request.params.regId
+				}
+			});
+
 			try {
 				const { regId } = request.params;
+
+				span.addEvent("referrals.fetching_tree");
 
 				const registration = await prisma.registration.findUnique({
 					where: { id: regId },
@@ -145,9 +193,13 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 
 				if (!registration) {
+					span.addEvent("referrals.registration_not_found");
 					const { response, statusCode } = notFoundResponse("找不到指定的報名記錄");
 					return reply.code(statusCode).send(response);
 				}
+
+				if (registration.referral?.id) span.setAttribute("referral.id", registration.referral.id);
+				span.addEvent("referrals.building_tree");
 
 				const buildTree = (reg: any): any => ({
 					id: reg.id,
@@ -158,11 +210,23 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					children: reg.referrals?.map(buildTree) || []
 				});
 
-				return successResponse(buildTree(registration));
+				const tree = buildTree(registration);
+
+				span.addEvent("referrals.tree_built");
+				span.setStatus({ code: SpanStatusCode.OK });
+
+				return successResponse(tree);
 			} catch (error) {
 				componentLogger.error({ error }, "Get referral tree error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get referral tree"
+				});
 				const { response, statusCode } = serverErrorResponse("取得推薦擴譜圖失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -174,8 +238,16 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.getQualifiedReferrers
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.qualified", {
+				attributes: {
+					"referrals.qualified.min_referrals": request.query.minReferrals || 1
+				}
+			});
+
 			try {
 				const { minReferrals = 1 } = request.query;
+
+				span.addEvent("referrals.fetching_qualified");
 
 				const qualifiedReferrers = await prisma.referral.findMany({
 					where: {
@@ -200,6 +272,10 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const minReferralsNum = typeof minReferrals === "number" ? minReferrals : parseInt(String(minReferrals), 10);
 				const filtered = qualifiedReferrers.filter(r => r._count.referredUsers >= minReferralsNum);
 
+				span.setAttribute("referrals.qualified.total_count", qualifiedReferrers.length);
+				span.setAttribute("referrals.qualified.filtered_count", filtered.length);
+				span.addEvent("referrals.qualified_filtered");
+
 				const formattedList = filtered.map(r => ({
 					id: r.id,
 					code: r.code,
@@ -209,11 +285,19 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					createdAt: r.createdAt
 				}));
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return successResponse(formattedList);
 			} catch (error) {
 				componentLogger.error({ error }, "Get qualified referrers error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get qualified referrers"
+				});
 				const { response, statusCode } = serverErrorResponse("取得達標推薦者名單失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -225,6 +309,13 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.drawReferrers
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.draw", {
+				attributes: {
+					"referrals.draw.min_referrals": request.body.minReferrals || 0,
+					"referrals.draw.count": request.body.drawCount || 0
+				}
+			});
+
 			try {
 				const { minReferrals, drawCount, seed } = request.body;
 
@@ -232,6 +323,8 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					const { response, statusCode } = validationErrorResponse("最小推薦人數和抽選人數為必填");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.addEvent("referrals.fetching_candidates");
 
 				const qualifiedReferrers = await prisma.referral.findMany({
 					where: {
@@ -258,13 +351,19 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				const eligible = qualifiedReferrers.filter(r => r._count.referredUsers >= minReferralsNum);
 
+				span.setAttribute("referrals.draw.eligible_count", eligible.length);
+
 				if (eligible.length === 0) {
+					span.addEvent("referrals.no_eligible_candidates");
 					const { response, statusCode } = validationErrorResponse("沒有符合條件的推薦者");
 					return reply.code(statusCode).send(response);
 				}
 
 				const actualDrawCount = Math.min(drawCountNum, eligible.length);
 				const usedSeed = seed || Date.now().toString();
+
+				span.setAttribute("referrals.draw.actual_count", actualDrawCount);
+				span.addEvent("referrals.performing_draw");
 
 				const seededRandom = (seed: string) => {
 					let x = Math.sin(parseInt(seed)) * 10000;
@@ -286,6 +385,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					referralCount: r._count.referredUsers
 				}));
 
+				span.addEvent("referrals.draw_completed");
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return successResponse({
 					drawResults,
 					drawCount: actualDrawCount,
@@ -294,8 +396,15 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 			} catch (error) {
 				componentLogger.error({ error }, "Draw referrers error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to draw referrers"
+				});
 				const { response, statusCode } = serverErrorResponse("抽選推薦者失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -307,12 +416,16 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			schema: adminReferralSchemas.getReferralStats
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.admin.referrals.stats");
+
 			try {
 				const { startDate, endDate } = request.query;
 
 				const dateFilter: any = {};
 				if (startDate) dateFilter.gte = new Date(startDate);
 				if (endDate) dateFilter.lte = new Date(endDate);
+
+				span.addEvent("referrals.fetching_usage_data");
 
 				const referralUsages = await prisma.referralUsage.findMany({
 					where: {
@@ -329,6 +442,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				});
 
+				span.setAttribute("referrals.stats.usage_count", referralUsages.length);
+				span.addEvent("referrals.calculating_daily_stats");
+
 				const dailyStats: Record<string, number> = {};
 				referralUsages.forEach(usage => {
 					const date = usage.usedAt.toISOString().split("T")[0];
@@ -342,6 +458,8 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}))
 					.sort((a, b) => a.date.localeCompare(b.date));
 
+				span.addEvent("referrals.fetching_registration_count");
+
 				const totalRegistrations = await prisma.registration.count({
 					where: {
 						createdAt: dateFilter
@@ -351,11 +469,16 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const totalReferralUsages = referralUsages.length;
 				const conversionRate = totalRegistrations > 0 ? (totalReferralUsages / totalRegistrations) * 100 : 0;
 
+				span.setAttribute("referrals.stats.total_registrations", totalRegistrations);
+				span.setAttribute("referrals.stats.conversion_rate", Math.round(conversionRate * 100) / 100);
+
 				const conversionFunnel = [
 					{ stage: "總報名數", count: totalRegistrations },
 					{ stage: "使用推薦碼", count: totalReferralUsages },
 					{ stage: "轉換率", count: `${Math.round(conversionRate * 100) / 100}%` }
 				];
+
+				span.addEvent("referrals.calculating_top_sources");
 
 				const referralCounts: Record<string, number> = {};
 				referralUsages.forEach(usage => {
@@ -370,6 +493,10 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					.sort((a, b) => b.count - a.count)
 					.slice(0, 10);
 
+				span.setAttribute("referrals.stats.top_sources_count", topSources.length);
+				span.addEvent("referrals.stats_calculated");
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return successResponse({
 					dailyStats: dailyStatsArray,
 					conversionFunnel,
@@ -377,8 +504,15 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				});
 			} catch (error) {
 				componentLogger.error({ error }, "Get referral stats error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get referral stats"
+				});
 				const { response, statusCode } = serverErrorResponse("取得推薦統計報表失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);

@@ -19,9 +19,9 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
 		openInOpass: {
-			"zh-Hant": "使用 OPass APP 開啟票券：",
-			"zh-Hans": "使用 OPass APP 开启票券：",
-			en: "Open ticket in OPass APP:"
+			"zh-Hant": "使用 OPass app 開啟票券：",
+			"zh-Hans": "使用 OPass app 开启票券：",
+			en: "Open ticket in OPass app:"
 		},
 		openOpassLink: {
 			"zh-Hant": "點此開啟 OPass",
@@ -41,9 +41,14 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 			en: "Please show this QR code to the service desk staff for verification"
 		},
 		qrAlert: {
-			"zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷你資料。",
-			"zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷你资料。",
-			en: "Please do not share this QR code with others or they will steal your data."
+			"zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷吃你便當跟玩大地遊戲。",
+			"zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷吃你便当跟玩大地游戏。",
+			en: "Please do not share this QR code with others or they may use it to check in on your behalf."
+		},
+		qrAlert2: {
+			"zh-Hant": "＊ 此 QR Code 包含之 Token 為 hash，並不包含個人資料。若您想要將您報名後的票分送給其他人，您可以分享 OPass 連結或截圖 QR Code 給他。",
+			"zh-Hans": "＊ 此 QR Code 包含之 Token 为 hash，并不包含个人资料。若您想要将您报名后的票分送给其他人，您可以分享 OPass 连结或截图 QR Code 给他。",
+			en: "* The token contained in this QR code is a hash and does not contain personal information. If you want to transfer your ticket to someone else, you can share the OPass link or take a screenshot of the QR code."
 		}
 	});
 
@@ -128,10 +133,11 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 					)}
 
 					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{useOpass && opassEventId ? t.scanInfo : t.scanInfoOpassDisabled}</p>
-					<p className="text-xs text-yellow-600 dark:text-yellow-200 flex items-center text-center gap-1">
-						<TriangleAlert size={20} />
+					<div className="text-xs flex text-yellow-600 dark:text-yellow-200 items-center text-center gap-1">
+						<TriangleAlert size={20} className="w-[100px]" />
 						{t.qrAlert}
-					</p>
+						{t.qrAlert2}
+					</div>
 				</div>
 			</div>
 		</div>

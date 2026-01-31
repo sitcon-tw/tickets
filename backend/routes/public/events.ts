@@ -1,7 +1,9 @@
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
+import { SpanStatusCode } from "@opentelemetry/api";
 import { FieldFilterSchema, FormFieldTypeSchema, LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -19,8 +21,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			}
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.public.events.get_info");
+
 			try {
 				const { id } = request.params;
+				span.setAttribute("event.lookup_id", id);
 
 				const event = await prisma.event.findFirst({
 					where: {
@@ -49,9 +54,14 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!event) {
+					span.addEvent("event.not_found");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Event not found" });
 					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("event.id", event.id);
+				span.setAttribute("event.slug", event.slug || "");
 
 				const eventDto = {
 					...event,
@@ -61,11 +71,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					locationText: LocalizedTextSchema.nullable().parse(event.locationText)
 				};
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(eventDto));
 			} catch (error) {
 				componentLogger.error({ error }, "Get public event info error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get event info" });
 				const { response, statusCode } = serverErrorResponse("取得活動資訊失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -81,9 +96,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			}
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.public.events.get_tickets");
+
 			try {
 				const { id } = request.params;
+				span.setAttribute("event.lookup_id", id);
 
+				span.addEvent("event.lookup");
 				const event = await prisma.event.findFirst({
 					where: {
 						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
@@ -92,9 +111,14 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!event) {
+					span.addEvent("event.not_found");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Event not found" });
 					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("event.id", event.id);
+				span.addEvent("tickets.lookup");
 
 				const tickets = await prisma.ticket.findMany({
 					where: {
@@ -118,6 +142,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					},
 					orderBy: { order: "asc" }
 				});
+
+				span.setAttribute("tickets.count", tickets.length);
 
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
@@ -144,11 +170,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(ticketsWithStatus));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event tickets error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get event tickets" });
 				const { response, statusCode } = serverErrorResponse("取得票券資訊失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -164,8 +195,11 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			}
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.public.events.list");
+
 			try {
 				const { upcoming } = request.query;
+				span.setAttribute("events.filter.upcoming", upcoming || false);
 
 				const where: any = {
 					isActive: true,
@@ -178,6 +212,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				}
 
+				span.addEvent("events.lookup");
 				const events = await prisma.event.findMany({
 					where,
 					select: {
@@ -217,6 +252,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { startDate: "asc" }
 				});
 
+				span.setAttribute("events.count", events.length);
+
 				const eventsWithStatus = events.map(event => {
 					const now = new Date();
 					const activeTickets = event.tickets.filter(ticket => {
@@ -244,11 +281,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					};
 				});
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(eventsWithStatus));
 			} catch (error) {
 				componentLogger.error({ error }, "List events error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to list events" });
 				const { response, statusCode } = serverErrorResponse("取得活動列表失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -264,15 +306,20 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			}
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.public.events.get_stats");
+
 			try {
 				const { id } = request.params;
+				span.setAttribute("event.lookup_id", id);
 
+				span.addEvent("event.lookup");
 				const event = await prisma.event.findFirst({
 					where: {
 						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 						isActive: true
 					},
 					select: {
+						id: true,
 						name: true,
 						tickets: {
 							select: {
@@ -296,15 +343,25 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!event) {
+					span.addEvent("event.not_found");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Event not found" });
 					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("event.id", event.id);
 
 				const activeTickets = event.tickets.filter(t => t.isActive);
 				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
 				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.soldCount, 0);
 				const availableTickets = totalTickets - soldTickets;
 				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
+
+				span.setAttribute("stats.total_tickets", totalTickets);
+				span.setAttribute("stats.sold_tickets", soldTickets);
+				span.setAttribute("stats.available_tickets", availableTickets);
+				span.setAttribute("stats.registration_rate", registrationRate);
+				span.setAttribute("stats.confirmed_registrations", event._count.registrations);
 
 				const stats = {
 					eventName: LocalizedTextSchema.parse(event.name),
@@ -315,11 +372,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					registrationRate: Math.round(registrationRate * 100) / 100
 				};
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(stats));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event stats error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get event stats" });
 				const { response, statusCode } = serverErrorResponse("取得活動統計失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -331,9 +393,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 			schema: publicEventSchemas.getTicketFormFields
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.public.events.get_form_fields");
+
 			try {
 				const { id } = request.params;
+				span.setAttribute("ticket.id", id);
 
+				span.addEvent("ticket.lookup");
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id,
@@ -350,9 +416,14 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!ticket || !ticket.event.isActive) {
+					span.addEvent("ticket.not_found_or_inactive");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket not found or inactive" });
 					const { response, statusCode } = notFoundResponse("票券不存在或已關閉");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("event.id", ticket.eventId);
+				span.addEvent("form_fields.lookup");
 
 				const formFields = await prisma.eventFormFields.findMany({
 					where: {
@@ -375,6 +446,8 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					orderBy: { order: "asc" }
 				});
 
+				span.setAttribute("form_fields.count", formFields.length);
+
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
 					name: LocalizedTextSchema.parse(field.name),
@@ -390,11 +463,16 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 					enableOther: field.enableOther || false
 				}));
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(transformedFields));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event form fields error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get form fields" });
 				const { response, statusCode } = serverErrorResponse("取得表單欄位失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);

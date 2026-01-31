@@ -190,15 +190,15 @@ export default function EventsPage() {
 		},
 		useOpass: { "zh-Hant": "使用 OPass", "zh-Hans": "使用 OPass", en: "Use OPass" },
 		useOpassHint: {
-			"zh-Hant": "勾選後，報名成功頁面的 QR Code 彈窗會顯示 OPass APP 連結",
-			"zh-Hans": "勾选后，报名成功页面的 QR Code 弹窗会显示 OPass APP 链接",
-			en: "If checked, the QR code popup will show the OPass APP link"
+			"zh-Hant": "勾選後，報名成功頁面的 QR Code 彈窗會顯示 OPass app 連結",
+			"zh-Hans": "勾选后，报名成功页面的 QR Code 弹窗会显示 OPass app 链接",
+			en: "If checked, the QR code popup will show the OPass app link"
 		},
 		opassEventId: { "zh-Hant": "OPass 活動 ID", "zh-Hans": "OPass 活动 ID", en: "OPass Event ID" },
 		opassEventIdHint: {
-			"zh-Hant": "OPass 活動 ID，用於產生 OPass APP 連結",
-			"zh-Hans": "OPass 活动 ID，用于生成 OPass APP 链接",
-			en: "OPass Event ID, used to generate OPass APP link"
+			"zh-Hant": "OPass 活動 ID，用於產生 OPass app 連結",
+			"zh-Hans": "OPass 活动 ID，用于生成 OPass app 链接",
+			en: "OPass Event ID, used to generate OPass app link"
 		},
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		actions: { "zh-Hant": "操作", "zh-Hans": "操作", en: "Actions" },

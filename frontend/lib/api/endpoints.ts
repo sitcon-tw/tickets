@@ -226,14 +226,14 @@ const AdminRegistrationSchema = z.object({
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.date(),
-	updatedAt: z.date(),
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
 	event: z
 		.object({
 			id: z.string(),
 			name: LocalizedTextSchema,
-			startDate: z.date(),
-			endDate: z.date()
+			startDate: z.coerce.date(),
+			endDate: z.coerce.date()
 		})
 		.optional(),
 	ticket: z

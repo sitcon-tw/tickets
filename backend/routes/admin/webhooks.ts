@@ -3,10 +3,12 @@
  */
 
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { requireEventAccess } from "#middleware/auth";
 import { webhookSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
+import { SpanStatusCode } from "@opentelemetry/api";
 import { WebhookEventTypeSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -23,16 +25,28 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.getWebhook
 		},
 		async (request, reply) => {
+			const { eventId } = request.params;
+			const span = tracer.startSpan("route.admin.webhooks.get", {
+				attributes: {
+					"event.id": eventId
+				}
+			});
+
 			try {
-				const { eventId } = request.params;
+				span.addEvent("database.query.webhook");
 
 				const webhook = await prisma.webhookEndpoint.findUnique({
 					where: { eventId }
 				});
 
 				if (!webhook) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(successResponse(null, "No webhook configured"));
 				}
+
+				span.setAttribute("webhook.id", webhook.id);
+				span.setAttribute("webhook.isActive", webhook.isActive);
+				span.setAttribute("webhook.eventTypes.count", webhook.eventTypes.length);
 
 				// Don't expose the auth header value in response
 				const safeWebhook = {
@@ -44,11 +58,19 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					lastFailureAt: webhook.lastFailureAt ?? null
 				};
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(safeWebhook));
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get webhook"
+				});
 				request.log.error({ error }, "Get webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to get webhook");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -63,32 +85,50 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.createWebhook
 		},
 		async (request, reply) => {
-			try {
-				const { eventId } = request.params;
-				const { url, authHeaderName, authHeaderValue, eventTypes } = request.body;
+			const { eventId } = request.params;
+			const { url, authHeaderName, authHeaderValue, eventTypes } = request.body;
 
+			// Mask URL domain for security
+			const maskedUrl = url.replace(/^(https?:\/\/[^/]+)(.*)$/, "$1/***");
+
+			const span = tracer.startSpan("route.admin.webhooks.create", {
+				attributes: {
+					"event.id": eventId,
+					"webhook.url.masked": maskedUrl,
+					"webhook.eventTypes.count": eventTypes.length
+				}
+			});
+
+			try {
 				// Check if event exists
+				span.addEvent("database.query.event");
+
 				const event = await prisma.event.findUnique({
 					where: { id: eventId }
 				});
 
 				if (!event) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = notFoundResponse("Event not found");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Check if webhook already exists
+				span.addEvent("database.check.webhook_exists");
+
 				const existing = await prisma.webhookEndpoint.findUnique({
 					where: { eventId }
 				});
 
 				if (existing) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = conflictResponse("Webhook already exists for this event");
 					return reply.code(statusCode).send(response);
 				}
 
 				// Validate URL is HTTPS
 				if (!url.startsWith("https://")) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Webhook URL must use HTTPS");
 					return reply.code(statusCode).send(response);
 				}
@@ -96,11 +136,16 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				// Validate event types
 				const eventTypesParseResult = z.array(WebhookEventTypeSchema).safeParse(eventTypes);
 				if (!eventTypesParseResult.success) {
+					span.setAttribute("validation.error", JSON.stringify(eventTypesParseResult.error.issues));
+					span.setAttribute("validation.field", "eventTypes");
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Invalid event types", eventTypesParseResult.error.issues);
 					return reply.code(statusCode).send(response);
 				}
 
 				// Create webhook
+				span.addEvent("database.create.webhook");
+
 				const webhook = await prisma.webhookEndpoint.create({
 					data: {
 						eventId,
@@ -112,6 +157,8 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					}
 				});
 
+				span.setAttribute("webhook.id", webhook.id);
+
 				const safeWebhook = {
 					...webhook,
 					eventTypes: eventTypesParseResult.data,
@@ -121,11 +168,19 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					lastFailureAt: null
 				};
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.code(201).send(successResponse(safeWebhook, "Webhook created"));
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to create webhook"
+				});
 				request.log.error({ error }, "Create webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to create webhook");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -140,21 +195,37 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.updateWebhook
 		},
 		async (request, reply) => {
+			const { eventId } = request.params;
+			const { url, authHeaderName, authHeaderValue, eventTypes, isActive } = request.body;
+
+			// Mask URL domain for security
+			const maskedUrl = url ? url.replace(/^(https?:\/\/[^/]+)(.*)$/, "$1/***") : undefined;
+
+			const span = tracer.startSpan("route.admin.webhooks.update", {
+				attributes: {
+					"event.id": eventId,
+					"webhook.url.masked": maskedUrl || "unchanged"
+				}
+			});
+
 			try {
-				const { eventId } = request.params;
-				const { url, authHeaderName, authHeaderValue, eventTypes, isActive } = request.body;
+				span.addEvent("database.query.webhook");
 
 				const webhook = await prisma.webhookEndpoint.findUnique({
 					where: { eventId }
 				});
 
 				if (!webhook) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = notFoundResponse("Webhook not found");
 					return reply.code(statusCode).send(response);
 				}
 
+				span.setAttribute("webhook.id", webhook.id);
+
 				// Validate URL if provided
 				if (url && !url.startsWith("https://")) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Webhook URL must use HTTPS");
 					return reply.code(statusCode).send(response);
 				}
@@ -162,6 +233,9 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				// Validate event types if provided
 				const eventTypesParseResult = z.array(WebhookEventTypeSchema).safeParse(eventTypes);
 				if (!eventTypesParseResult.success) {
+					span.setAttribute("validation.error", JSON.stringify(eventTypesParseResult.error.issues));
+					span.setAttribute("validation.field", "eventTypes");
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Invalid event types", eventTypesParseResult.error.issues);
 					return reply.code(statusCode).send(response);
 				}
@@ -178,8 +252,11 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					if (isActive) {
 						updateData.consecutiveFailurePeriods = 0;
 						updateData.lastFailureAt = null;
+						span.addEvent("webhook.reset_failure_tracking");
 					}
 				}
+
+				span.addEvent("database.update.webhook");
 
 				const updatedWebhook = await prisma.webhookEndpoint.update({
 					where: { id: webhook.id },
@@ -195,11 +272,19 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					lastFailureAt: updatedWebhook.lastFailureAt ?? null
 				};
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(safeWebhook, "Webhook updated"));
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to update webhook"
+				});
 				request.log.error({ error }, "Update webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to update webhook");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -214,27 +299,47 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.deleteWebhook
 		},
 		async (request, reply) => {
+			const { eventId } = request.params;
+			const span = tracer.startSpan("route.admin.webhooks.delete", {
+				attributes: {
+					"event.id": eventId
+				}
+			});
+
 			try {
-				const { eventId } = request.params;
+				span.addEvent("database.query.webhook");
 
 				const webhook = await prisma.webhookEndpoint.findUnique({
 					where: { eventId }
 				});
 
 				if (!webhook) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = notFoundResponse("Webhook not found");
 					return reply.code(statusCode).send(response);
 				}
+
+				span.setAttribute("webhook.id", webhook.id);
+
+				span.addEvent("database.delete.webhook");
 
 				await prisma.webhookEndpoint.delete({
 					where: { id: webhook.id }
 				});
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(null, "Webhook deleted"));
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to delete webhook"
+				});
 				request.log.error({ error }, "Delete webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to delete webhook");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -249,22 +354,50 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.testWebhook
 		},
 		async (request, reply) => {
-			try {
-				const { url, authHeaderName, authHeaderValue } = request.body;
+			const { url, authHeaderName, authHeaderValue } = request.body;
 
+			// Mask URL domain for security
+			const maskedUrl = url.replace(/^(https?:\/\/[^/]+)(.*)$/, "$1/***");
+
+			const span = tracer.startSpan("route.admin.webhooks.test", {
+				attributes: {
+					"event.id": request.params.eventId,
+					"webhook.url.masked": maskedUrl
+				}
+			});
+
+			try {
 				// Validate URL is HTTPS
 				if (!url.startsWith("https://")) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Webhook URL must use HTTPS");
 					return reply.code(statusCode).send(response);
 				}
 
+				span.addEvent("webhook.test.start");
+
 				const result = await testWebhookEndpoint(url, authHeaderName, authHeaderValue);
 
+				span.setAttribute("webhook.test.success", result.success);
+				if (!result.success) {
+					span.addEvent("webhook.test.failed", {
+						"error.message": result.errorMessage || "Unknown error"
+					});
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(result, result.success ? "Webhook test successful" : "Webhook test failed"));
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to test webhook"
+				});
 				request.log.error({ error }, "Test webhook error");
 				const { response, statusCode } = serverErrorResponse("Failed to test webhook");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -279,11 +412,24 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.getFailedDeliveries
 		},
 		async (request, reply) => {
+			const { eventId } = request.params;
+			const { page = 1, limit = 20 } = request.query;
+
+			const span = tracer.startSpan("route.admin.webhooks.getFailedDeliveries", {
+				attributes: {
+					"event.id": eventId,
+					"pagination.page": page,
+					"pagination.limit": limit
+				}
+			});
+
 			try {
-				const { eventId } = request.params;
-				const { page = 1, limit = 20 } = request.query;
+				span.addEvent("database.query.failed_deliveries");
 
 				const { deliveries, total } = await getFailedDeliveries(eventId, page, limit);
+
+				span.setAttribute("deliveries.total", total);
+				span.setAttribute("deliveries.returned", deliveries.length);
 
 				const serializedDeliveries = deliveries.map(d => ({
 					...d,
@@ -295,6 +441,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				const totalPages = Math.ceil(total / limit);
 
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(
 					successPaginatedResponse(serializedDeliveries, "Failed deliveries retrieved", {
 						page,
@@ -306,9 +453,16 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 					})
 				);
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get failed deliveries"
+				});
 				request.log.error({ error }, "Get failed deliveries error");
 				const { response, statusCode } = serverErrorResponse("Failed to get deliveries");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -323,21 +477,41 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			schema: webhookSchemas.retryDelivery
 		},
 		async (request, reply) => {
+			const { eventId, deliveryId } = request.params;
+			const span = tracer.startSpan("route.admin.webhooks.retryDelivery", {
+				attributes: {
+					"event.id": eventId,
+					"delivery.id": deliveryId
+				}
+			});
+
 			try {
-				const { deliveryId } = request.params;
+				span.addEvent("webhook.retry.start");
 
 				const success = await retryFailedDelivery(deliveryId);
 
+				span.setAttribute("webhook.retry.success", success);
+
 				if (success) {
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(successResponse(null, "Delivery retry successful"));
 				} else {
+					span.addEvent("webhook.retry.not_eligible");
+					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = validationErrorResponse("Delivery retry failed or not eligible for retry");
 					return reply.code(statusCode).send(response);
 				}
 			} catch (error) {
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to retry delivery"
+				});
 				request.log.error({ error }, "Retry delivery error");
 				const { response, statusCode } = serverErrorResponse("Failed to retry delivery");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);

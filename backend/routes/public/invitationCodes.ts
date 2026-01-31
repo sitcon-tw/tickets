@@ -1,7 +1,9 @@
 import prisma from "#config/database";
+import { tracer } from "#lib/tracing";
 import { publicInvitationCodeSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -15,14 +17,26 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 			schema: publicInvitationCodeSchemas.verifyInvitationCode
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.invitation_codes.verify");
+
 			try {
 				const { code, ticketId } = request.body;
 
+				// Mask invitation code for security (show only first 2 and last 2 chars)
+				const maskedCode = code && code.length > 4 ? `${code.slice(0, 2)}****${code.slice(-2)}` : "****";
+				span.setAttribute("invitation_code.masked", maskedCode);
+				span.setAttribute("ticket.id", ticketId);
+
 				if (!code || !ticketId) {
+					span.addEvent("validation.failed", {
+						"error.reason": "missing_required_fields"
+					});
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Validation error" });
 					const { response, statusCode } = validationErrorResponse("邀請碼和票券 ID 為必填");
 					return reply.code(statusCode).send(response);
 				}
 
+				span.addEvent("ticket.lookup");
 				const ticket = await prisma.ticket.findUnique({
 					where: {
 						id: ticketId,
@@ -31,6 +45,10 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!ticket) {
+					span.addEvent("validation.result", {
+						result: "invalid_ticket"
+					});
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(
 						successResponse({
 							valid: false,
@@ -39,6 +57,10 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
+				// Add event context
+				span.setAttribute("event.id", ticket.eventId);
+
+				span.addEvent("invitation_code.lookup");
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
@@ -48,6 +70,10 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!invitationCode) {
+					span.addEvent("validation.result", {
+						result: "code_not_found"
+					});
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(
 						successResponse({
 							valid: false,
@@ -56,8 +82,17 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
+				span.setAttribute("invitation_code.id", invitationCode.id);
+				span.setAttribute("invitation_code.usage_count", invitationCode.usedCount);
+				span.setAttribute("invitation_code.usage_limit", invitationCode.usageLimit || -1);
+
 				const now = new Date();
 				if (invitationCode.validUntil && now > invitationCode.validUntil) {
+					span.addEvent("validation.result", {
+						result: "expired",
+						valid_until: invitationCode.validUntil.toISOString()
+					});
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(
 						successResponse({
 							valid: false,
@@ -67,6 +102,11 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				if (invitationCode.validFrom && now < invitationCode.validFrom) {
+					span.addEvent("validation.result", {
+						result: "not_yet_valid",
+						valid_from: invitationCode.validFrom.toISOString()
+					});
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(
 						successResponse({
 							valid: false,
@@ -76,6 +116,10 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				if (invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit) {
+					span.addEvent("validation.result", {
+						result: "usage_limit_exceeded"
+					});
+					span.setStatus({ code: SpanStatusCode.OK });
 					return reply.send(
 						successResponse({
 							valid: false,
@@ -84,6 +128,7 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					);
 				}
 
+				span.addEvent("tickets.lookup");
 				const tickets = await prisma.ticket.findMany({
 					where: {
 						id: ticketId,
@@ -116,6 +161,12 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 					})
 					.filter(ticket => ticket.isOnSale);
 
+				span.setAttribute("available_tickets.count", availableTickets.length);
+				span.addEvent("validation.result", {
+					result: "valid"
+				});
+				span.setStatus({ code: SpanStatusCode.OK });
+
 				return reply.send(
 					successResponse({
 						valid: true,
@@ -138,8 +189,12 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				);
 			} catch (error) {
 				componentLogger.error({ error }, "Verify invitation code error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to verify invitation code" });
 				const { response, statusCode } = serverErrorResponse("驗證邀請碼失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);
@@ -150,10 +205,18 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 			schema: publicInvitationCodeSchemas.getInvitationCodeInfo
 		},
 		async (request, reply) => {
+			const span = tracer.startSpan("route.invitation_codes.get_info");
+
 			try {
 				const { code } = request.params;
 				const { ticketId } = request.query;
 
+				// Mask invitation code for security
+				const maskedCode = code && code.length > 4 ? `${code.slice(0, 2)}****${code.slice(-2)}` : "****";
+				span.setAttribute("invitation_code.masked", maskedCode);
+				span.setAttribute("ticket.id", ticketId);
+
+				span.addEvent("invitation_code.lookup");
 				const invitationCode = await prisma.invitationCode.findFirst({
 					where: {
 						code,
@@ -183,15 +246,40 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				});
 
 				if (!invitationCode) {
+					span.addEvent("invitation_code.not_found");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code not found" });
 					const { response, statusCode } = notFoundResponse("邀請碼不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				const now = new Date();
-				const isExpired = invitationCode.validUntil && now > invitationCode.validUntil;
-				const isNotYetValid = invitationCode.validFrom && now < invitationCode.validFrom;
-				const isUsageExceeded = invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit;
+				span.setAttribute("invitation_code.id", invitationCode.id);
+				span.setAttribute("invitation_code.usage_count", invitationCode.usedCount);
+				span.setAttribute("invitation_code.usage_limit", invitationCode.usageLimit || -1);
 
+				const now = new Date();
+				const isExpired = !!(invitationCode.validUntil && now > invitationCode.validUntil);
+				const isNotYetValid = !!(invitationCode.validFrom && now < invitationCode.validFrom);
+				const isUsageExceeded = !!(invitationCode.usageLimit && invitationCode.usedCount >= invitationCode.usageLimit);
+
+				if (isExpired) {
+					span.addEvent("validation.result", {
+						result: "expired"
+					});
+				} else if (isNotYetValid) {
+					span.addEvent("validation.result", {
+						result: "not_yet_valid"
+					});
+				} else if (isUsageExceeded) {
+					span.addEvent("validation.result", {
+						result: "usage_limit_exceeded"
+					});
+				} else {
+					span.addEvent("validation.result", {
+						result: "valid"
+					});
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(
 					successResponse({
 						...invitationCode,
@@ -204,8 +292,12 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				);
 			} catch (error) {
 				componentLogger.error({ error }, "Get invitation code info error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get invitation code info" });
 				const { response, statusCode } = serverErrorResponse("取得邀請碼資訊失敗");
 				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
 			}
 		}
 	);

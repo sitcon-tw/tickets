@@ -35,6 +35,9 @@ export default function FormPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [agreeToTerms, setAgreeToTerms] = useState(false);
 	const [ticketData, setTicketData] = useState<any | null>(null);
+	const [autosaveRestored, setAutosaveRestored] = useState(false);
+
+	const autosaveKey = ticketId ? `formAutosave_${ticketId}` : null;
 
 	const t = getTranslations(locale, {
 		noTicketAlert: {
@@ -126,6 +129,11 @@ export default function FormPage() {
 			"zh-Hant": "此票種已售完",
 			"zh-Hans": "此票种已售完",
 			en: "This ticket is sold out"
+		},
+		autosaveRestored: {
+			"zh-Hant": "已自動恢復您之前填寫的表單資料",
+			"zh-Hans": "已自动恢复您之前填写的表单资料",
+			en: "Your previously entered form data has been restored"
 		}
 	});
 
@@ -202,6 +210,10 @@ export default function FormPage() {
 				localStorage.removeItem("formData");
 				localStorage.removeItem("referralCode");
 				localStorage.removeItem("invitationCode");
+				// Clear autosaved form data on successful submission
+				if (autosaveKey) {
+					localStorage.removeItem(autosaveKey);
+				}
 				router.push(window.location.href.replace("/form", "/success"));
 			} else {
 				throw new Error(result.message || "Registration failed");
@@ -260,7 +272,6 @@ export default function FormPage() {
 					}
 				}
 
-				// Verify ticket availability
 				if (isTicketExpired(ticket)) {
 					showAlert(t.ticketSaleEnded, "error");
 					router.push(pathname.replace("/form", ""));
@@ -356,6 +367,58 @@ export default function FormPage() {
 
 		initForm();
 	}, [router, showAlert, pathname, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
+
+	useEffect(() => {
+		if (!autosaveKey || !autosaveRestored) return;
+
+		const dataToSave = {
+			formData,
+			referralCode,
+			agreeToTerms,
+			savedAt: Date.now()
+		};
+
+		localStorage.setItem(autosaveKey, JSON.stringify(dataToSave));
+	}, [autosaveKey, formData, referralCode, agreeToTerms, autosaveRestored]);
+
+	useEffect(() => {
+		if (!autosaveKey || loading || autosaveRestored) return;
+
+		try {
+			const savedData = localStorage.getItem(autosaveKey);
+			if (savedData) {
+				const parsed = JSON.parse(savedData);
+
+				const twentyFourHours = 24 * 60 * 60 * 1000;
+				if (parsed.savedAt && Date.now() - parsed.savedAt < twentyFourHours) {
+					let hasRestoredData = false;
+
+					if (parsed.formData && Object.keys(parsed.formData).length > 0) {
+						setFormData(parsed.formData);
+						hasRestoredData = true;
+					}
+					if (parsed.referralCode) {
+						setReferralCode(parsed.referralCode);
+						hasRestoredData = true;
+					}
+					if (parsed.agreeToTerms !== undefined) {
+						setAgreeToTerms(parsed.agreeToTerms);
+						hasRestoredData = true;
+					}
+
+					if (hasRestoredData) {
+						showAlert(t.autosaveRestored, "info");
+					}
+				} else {
+					localStorage.removeItem(autosaveKey);
+				}
+			}
+		} catch (error) {
+			console.error("Failed to restore autosaved form data:", error);
+		}
+
+		setAutosaveRestored(true);
+	}, [autosaveKey, loading, autosaveRestored, showAlert, t.autosaveRestored]);
 
 	const visibleFields = useMemo(() => {
 		if (!ticketId) return formFields;
