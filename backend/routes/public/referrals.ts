@@ -345,6 +345,141 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 			}
 		}
 	);
+
+	// 獲取推薦排行榜（公開）
+	fastify.withTypeProvider<ZodTypeProvider>().get(
+		"/referrals/ranking",
+		{
+			schema: publicReferralSchemas.getReferralRanking
+		},
+		async (request, reply) => {
+			const { eventId, limit = 50 } = request.query;
+
+			const span = tracer.startSpan("route.referrals.get_ranking", {
+				attributes: {
+					"event.id": eventId,
+					"ranking.limit": limit
+				}
+			});
+
+			try {
+				// Get the current user's session (optional - may not be logged in)
+				let currentUserId: string | null = null;
+				try {
+					const session = await auth.api.getSession({
+						headers: request.headers as any
+					});
+					currentUserId = session?.user?.id || null;
+				} catch {
+					// User not logged in, that's fine for public endpoint
+				}
+
+				span.addEvent("referral.fetch_rankings");
+
+				// Get all referrals for this event with their usage counts
+				const referralsWithCounts = await prisma.referral.findMany({
+					where: {
+						eventId: eventId,
+						isActive: true,
+						registration: {
+							status: "confirmed"
+						}
+					},
+					include: {
+						registration: {
+							select: {
+								id: true,
+								userId: true,
+								formData: true
+							}
+						},
+						_count: {
+							select: {
+								referredUsers: {
+									where: {
+										registration: {
+											status: "confirmed"
+										}
+									}
+								}
+							}
+						}
+					}
+				});
+
+				// Filter to only those with at least 1 successful referral and sort by count
+				const rankedReferrals = referralsWithCounts.filter(r => r._count.referredUsers > 0).sort((a, b) => b._count.referredUsers - a._count.referredUsers);
+
+				span.setAttribute("ranking.total_participants", rankedReferrals.length);
+
+				// Helper function to censor name
+				const censorName = (name: string, isCurrentUser: boolean): string => {
+					if (isCurrentUser) return name;
+					if (!name || name.length === 0) return "***";
+					if (name.length === 1) return name[0] + "**";
+					if (name.length === 2) return name[0] + "*";
+					// For longer names, show first and last character
+					return name[0] + "*".repeat(Math.min(name.length - 2, 3)) + name[name.length - 1];
+				};
+
+				// Helper to extract name from formData
+				const extractName = (formData: string | null): string => {
+					if (!formData) return "匿名";
+					try {
+						const parsed = JSON.parse(formData);
+						// Try common field names for name
+						return parsed.name || parsed.displayName || parsed.nickname || parsed.姓名 || parsed.暱稱 || "匿名";
+					} catch {
+						return "匿名";
+					}
+				};
+
+				// Build rankings array
+				const rankings = rankedReferrals.slice(0, limit).map((r, index) => {
+					const isCurrentUser = currentUserId !== null && r.registration.userId === currentUserId;
+					const name = extractName(r.registration.formData as string | null);
+					return {
+						rank: index + 1,
+						censoredName: censorName(name, isCurrentUser),
+						referralCount: r._count.referredUsers,
+						isCurrentUser
+					};
+				});
+
+				// Find current user's rank if logged in
+				let currentUserRank: number | null = null;
+				let currentUserReferralCount: number | null = null;
+
+				if (currentUserId) {
+					const currentUserIndex = rankedReferrals.findIndex(r => r.registration.userId === currentUserId);
+					if (currentUserIndex !== -1) {
+						currentUserRank = currentUserIndex + 1;
+						currentUserReferralCount = rankedReferrals[currentUserIndex]._count.referredUsers;
+					}
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
+
+				return successResponse({
+					rankings,
+					currentUserRank,
+					currentUserReferralCount,
+					totalParticipants: rankedReferrals.length
+				});
+			} catch (error) {
+				componentLogger.error({ error }, "Get referral ranking error");
+				span.recordException(error as Error);
+				span.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: "Failed to get referral ranking"
+				});
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦排行榜失敗", (error as Error).message, 500);
+				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
+			}
+		}
+	);
 };
 
 export default referralRoutes;

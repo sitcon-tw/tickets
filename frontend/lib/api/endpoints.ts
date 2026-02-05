@@ -14,6 +14,7 @@ import {
 	PermissionsResponseSchema,
 	PublicEventFormFieldSchema,
 	PublicEventListItemSchema,
+	PublicReferralRankingDataSchema,
 	PublicTicketDetailSchema,
 	PublicTicketListItemSchema,
 	QualifiedReferrerSchema,
@@ -108,7 +109,9 @@ export const referralsAPI = {
 
 	getStats: (regId: string) => apiClient.get(`/api/registrations/referral-stats/${regId}`, {}, ApiResponseSchema(RegistrationStatsSchema)),
 
-	validate: (data: { code: string; eventId: string }) => apiClient.post("/api/referrals/validate", data, ApiResponseSchema(ReferralValidationSchema))
+	validate: (data: { code: string; eventId: string }) => apiClient.post("/api/referrals/validate", data, ApiResponseSchema(ReferralValidationSchema)),
+
+	getRanking: (eventId: string, limit?: number) => apiClient.get("/api/referrals/ranking", { eventId, limit }, ApiResponseSchema(PublicReferralRankingDataSchema))
 };
 
 // Invitation Codes - Public
@@ -225,6 +228,13 @@ const AdminRegistrationSchema = z.object({
 	email: z.string(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
+	referrer: z
+		.object({
+			id: z.string(),
+			email: z.string()
+		})
+		.nullable()
+		.optional(),
 	formData: z.record(z.string(), z.unknown()),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
