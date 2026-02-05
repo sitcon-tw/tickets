@@ -178,3 +178,25 @@ export const PrismaDateFilterSchema = z.object({
 	lte: z.coerce.date().optional()
 });
 export type PrismaDateFilter = z.infer<typeof PrismaDateFilterSchema>;
+
+/**
+ * Public referral ranking item
+ */
+export const PublicReferralRankingItemSchema = z.object({
+	rank: z.number().int(),
+	censoredName: z.string(),
+	referralCount: z.number().int(),
+	isCurrentUser: z.boolean()
+});
+export type PublicReferralRankingItem = z.infer<typeof PublicReferralRankingItemSchema>;
+
+/**
+ * Public referral ranking response data
+ */
+export const PublicReferralRankingDataSchema = z.object({
+	rankings: z.array(PublicReferralRankingItemSchema),
+	currentUserRank: z.number().int().nullable(),
+	currentUserReferralCount: z.number().int().nullable(),
+	totalParticipants: z.number().int()
+});
+export type PublicReferralRankingData = z.infer<typeof PublicReferralRankingDataSchema>;

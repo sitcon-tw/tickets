@@ -133,7 +133,6 @@ export default function Success() {
 						setReferralCode("Failed");
 						return;
 					}
-					console.log("Found event for success page:", foundEvent);
 
 					const currentEventId = foundEvent.id;
 					setUseOpass(foundEvent.useOpass ?? true);

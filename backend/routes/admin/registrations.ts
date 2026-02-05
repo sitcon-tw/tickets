@@ -83,6 +83,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								id: true,
 								code: true
 							}
+						},
+						referrer: {
+							select: {
+								id: true,
+								email: true
+							}
 						}
 					},
 					orderBy: { createdAt: "desc" },
@@ -115,6 +121,12 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						email: reg.email,
 						status,
 						referredBy: reg.referredBy ?? null,
+						referrer: (reg as any).referrer
+							? {
+									id: (reg as any).referrer.id,
+									email: (reg as any).referrer.email
+								}
+							: null,
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
@@ -449,6 +461,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								name: true,
 								price: true
 							}
+						},
+						referrer: {
+							select: {
+								email: true
+							}
 						}
 					},
 					orderBy: { createdAt: "desc" }
@@ -495,7 +512,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
-		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Created At"];
+		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Referred By", "Created At"];
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
@@ -511,7 +528,16 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		};
 
 		const rows = parsedRegistrations.map((reg: any) => {
-			const baseValues = [reg.id, reg.email, getLocalizedName(reg.event?.name), getLocalizedName(reg.ticket?.name), reg.ticket?.price || 0, reg.status, new Date(reg.createdAt).toISOString()];
+			const baseValues = [
+				reg.id,
+				reg.email,
+				getLocalizedName(reg.event?.name),
+				getLocalizedName(reg.ticket?.name),
+				reg.ticket?.price || 0,
+				reg.status,
+				reg.referrer?.email || reg.referredBy || "",
+				new Date(reg.createdAt).toISOString()
+			];
 
 			const formDataValues = sortedFormFields.map((key: string) => formatFormValue(reg.formData[key]));
 
@@ -683,6 +709,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 							select: {
 								name: true,
 								price: true
+							}
+						},
+						referrer: {
+							select: {
+								email: true
 							}
 						}
 					},

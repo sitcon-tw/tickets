@@ -225,7 +225,7 @@ export default function RegistrationsPage() {
 			displayId: r.id.slice(0, 8) + "...",
 			displayTicket: getLocalizedText(r.ticket?.name, locale) || r.ticketId || "",
 			displayEvent: getLocalizedText(r.event?.name, locale) || r.eventId || "",
-			displayReferredBy: r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-",
+			displayReferredBy: (r as any).referrer?.email || (r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-"),
 			formattedCreatedAt: r.createdAt ? formatDateTime(r.createdAt) : "",
 			formattedUpdatedAt: r.updatedAt ? formatDateTime(r.updatedAt) : "",
 			statusClass: r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : ""

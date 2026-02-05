@@ -946,6 +946,20 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							where: { id: registration.ticketId },
 							data: { soldCount: { decrement: 1 } }
 						});
+
+						await tx.invitationCode.updateMany({
+							where: {
+								ticketId: registration.ticketId,
+								usedCount: { gt: 0 }
+							},
+							data: { usedCount: { decrement: 1 } }
+						});
+
+						await tx.referralUsage.deleteMany({
+							where: {
+								registrationId: registration.id
+							}
+						});
 					},
 					{
 						isolationLevel: "Serializable"

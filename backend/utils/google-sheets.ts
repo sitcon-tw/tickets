@@ -23,6 +23,10 @@ interface RegistrationWithRelations {
 	email: string;
 	formData: string | Record<string, unknown> | null;
 	status: string;
+	referredBy?: string | null;
+	referrer?: {
+		email: string;
+	} | null;
 	createdAt: Date;
 	event?: {
 		name: Prisma.JsonValue;
@@ -185,7 +189,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 		};
 
 		span.addEvent("google_sheets.prepare_headers");
-		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Created At"];
+		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Referred By", "Created At"];
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 		span.setAttribute("google_sheets.total_columns", headers.length);
@@ -199,6 +203,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 				getLocalizedName(reg.ticket?.name || ""),
 				reg.ticket?.price || 0,
 				reg.status,
+				(reg as any).referrer?.email || reg.referredBy || "",
 				new Date(reg.createdAt).toISOString()
 			];
 

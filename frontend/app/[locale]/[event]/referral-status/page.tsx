@@ -4,17 +4,22 @@ import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
-import type { RegistrationStats } from "@sitcontix/types";
+import type { PublicReferralRankingData, RegistrationStats } from "@sitcontix/types";
+import { Trophy } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function ReferralStatus() {
 	const locale = useLocale();
 	const router = useRouter();
+	const params = useParams();
+	const eventSlug = params.event as string;
 
 	const [stats, setStats] = useState<RegistrationStats | null>(null);
+	const [rankingData, setRankingData] = useState<PublicReferralRankingData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
 
@@ -93,6 +98,21 @@ export default function ReferralStatus() {
 			"zh-Hant": "載入失敗",
 			"zh-Hans": "载入失败",
 			en: "Load failed"
+		},
+		yourRank: {
+			"zh-Hant": "你的排名",
+			"zh-Hans": "你的排名",
+			en: "Your Rank"
+		},
+		notRanked: {
+			"zh-Hant": "尚未上榜",
+			"zh-Hans": "尚未上榜",
+			en: "Not ranked yet"
+		},
+		viewLeaderboard: {
+			"zh-Hant": "查看排行榜",
+			"zh-Hans": "查看排行榜",
+			en: "View Leaderboard"
 		}
 	});
 
@@ -130,8 +150,27 @@ export default function ReferralStatus() {
 					router.push("/");
 					return;
 				}
-				const referralStats = await referralsAPI.getStats(registrations.data[0].id);
+
+				const eventsData = await eventsAPI.getAll();
+				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
+
+				if (!foundEvent) {
+					router.push("/");
+					return;
+				}
+
+				const currentEventId = foundEvent.id;
+				const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
+				if (!eventRegistration) {
+					router.push("/");
+					return;
+				}
+
+				// Fetch referral stats and ranking data in parallel
+				const [referralStats, ranking] = await Promise.all([referralsAPI.getStats(eventRegistration.id), referralsAPI.getRanking(currentEventId, 50)]);
+
 				setStats(referralStats.data);
+				setRankingData(ranking.data);
 			} catch (error) {
 				console.error("Failed to load referral stats:", error);
 				setError(true);
@@ -140,7 +179,7 @@ export default function ReferralStatus() {
 			}
 		};
 		loadReferralStats();
-	}, [router]);
+	}, [router, eventSlug]);
 
 	if (error) {
 		return (
@@ -167,7 +206,7 @@ export default function ReferralStatus() {
 						<h1 className="text-4xl font-bold mb-8">{t.title}</h1>
 
 						{/* Stats Cards */}
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 							<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
 								<div className="text-gray-400 dark:text-gray-500 mb-2">{t.totalReferrals}</div>
 								<div className="text-4xl font-bold">{stats?.totalReferrals || 0}</div>
@@ -175,6 +214,20 @@ export default function ReferralStatus() {
 							<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
 								<div className="text-gray-400 dark:text-gray-500 mb-2">{t.successfulReferrals}</div>
 								<div className="text-4xl font-bold text-green-500">{stats?.successfulReferrals || 0}</div>
+							</div>
+							{/* Current Rank Card - Entry to Ranking Page */}
+							<div
+								className="border-2 border-yellow-500 dark:border-yellow-400 rounded-lg p-6 bg-yellow-50 dark:bg-yellow-900/20 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+								onClick={() => router.push(`/${eventSlug}/referral-ranking`)}
+							>
+								<div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-2">
+									<Trophy className="w-5 h-5" />
+									<span>{t.yourRank}</span>
+								</div>
+								<div className="text-4xl font-bold text-yellow-700 dark:text-yellow-300">
+									{rankingData?.currentUserRank !== null && rankingData?.currentUserRank !== undefined ? `#${rankingData.currentUserRank}` : t.notRanked}
+								</div>
+								<div className="mt-2 text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-1">{t.viewLeaderboard} &rarr;</div>
 							</div>
 						</div>
 
@@ -212,7 +265,7 @@ export default function ReferralStatus() {
 
 						{/* Back Button */}
 						<div className="mt-8">
-							<Button onClick={() => router.back()}>{t.backToSuccess}</Button>
+							<Button onClick={() => router.push(`/${eventSlug}/success`)}>{t.backToSuccess}</Button>
 						</div>
 					</div>
 				</main>

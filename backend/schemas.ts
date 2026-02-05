@@ -1642,6 +1642,30 @@ export const ReferralLinkResponseSchema = z.object({
 	})
 });
 
+// Public Referral Ranking Schemas
+export const PublicReferralRankingQuerySchema = z.object({
+	eventId: z.string().describe("活動 ID"),
+	limit: z.coerce.number().int().min(1).max(100).default(50).optional().describe("排行榜顯示數量")
+});
+
+export const PublicReferralRankingItemSchema = z.object({
+	rank: z.number().int().describe("排名"),
+	censoredName: z.string().describe("遮蔽後的名稱"),
+	referralCount: z.number().int().describe("推薦數量"),
+	isCurrentUser: z.boolean().describe("是否為當前用戶")
+});
+
+export const PublicReferralRankingResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.object({
+		rankings: z.array(PublicReferralRankingItemSchema),
+		currentUserRank: z.number().int().nullable().describe("當前用戶排名"),
+		currentUserReferralCount: z.number().int().nullable().describe("當前用戶推薦數量"),
+		totalParticipants: z.number().int().describe("參與人數")
+	})
+});
+
 export const publicReferralSchemas = {
 	getReferralLink: {
 		description: "獲取專屬推薦連結",
@@ -1658,6 +1682,16 @@ export const publicReferralSchemas = {
 		tags: ["referrals"],
 		params: RegIdParamSchema,
 		response: referralStatsResponse
+	},
+	getReferralRanking: {
+		description: "獲取推薦排行榜（公開）",
+		tags: ["referrals"],
+		querystring: PublicReferralRankingQuerySchema,
+		response: {
+			200: PublicReferralRankingResponseSchema,
+			400: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
