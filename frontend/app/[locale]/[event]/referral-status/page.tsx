@@ -4,15 +4,18 @@ import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import type { RegistrationStats } from "@sitcontix/types";
 import { useLocale } from "next-intl";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function ReferralStatus() {
 	const locale = useLocale();
 	const router = useRouter();
+	const params = useParams();
+	const eventSlug = params.event as string;
 
 	const [stats, setStats] = useState<RegistrationStats | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -130,7 +133,23 @@ export default function ReferralStatus() {
 					router.push("/");
 					return;
 				}
-				const referralStats = await referralsAPI.getStats(registrations.data[0].id);
+
+				const eventsData = await eventsAPI.getAll();
+				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
+
+				if (!foundEvent) {
+					router.push("/");
+					return;
+				}
+
+				const currentEventId = foundEvent.id;
+				const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
+				if (!eventRegistration) {
+					router.push("/");
+					return;
+				}
+
+				const referralStats = await referralsAPI.getStats(eventRegistration.id);
 				setStats(referralStats.data);
 			} catch (error) {
 				console.error("Failed to load referral stats:", error);
