@@ -390,7 +390,11 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 							select: {
 								id: true,
 								userId: true,
-								formData: true
+								user: {
+									select: {
+										name: true
+									}
+								}
 							}
 						},
 						_count: {
@@ -422,25 +426,13 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					return name[0] + "*".repeat(Math.min(name.length - 2, 3)) + name[name.length - 1];
 				};
 
-				// Helper to extract name from formData
-				const extractName = (formData: string | null): string => {
-					if (!formData) return "匿名";
-					try {
-						const parsed = JSON.parse(formData);
-						// Try common field names for name
-						return parsed.name || parsed.displayName || parsed.nickname || parsed.姓名 || parsed.暱稱 || "匿名";
-					} catch {
-						return "匿名";
-					}
-				};
-
 				// Build rankings array
 				const rankings = rankedReferrals.slice(0, limit).map((r, index) => {
 					const isCurrentUser = currentUserId !== null && r.registration.userId === currentUserId;
-					const name = extractName(r.registration.formData as string | null);
+					const userName = r.registration.user.name || "匿名";
 					return {
 						rank: index + 1,
-						censoredName: censorName(name, isCurrentUser),
+						censoredName: censorName(userName, isCurrentUser),
 						referralCount: r._count.referredUsers,
 						isCurrentUser
 					};
