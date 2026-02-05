@@ -44,7 +44,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						registration: {
 							select: {
 								email: true,
-								formData: true
+								user: {
+									select: { name: true }
+								}
 							}
 						},
 						_count: {
@@ -70,7 +72,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						id: r.id,
 						code: r.code,
 						email: r.registration.email,
-						name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
+						name: r.registration.user.name || "Unknown",
 						referralCount: r._count.referredUsers
 					}))
 				});
@@ -113,7 +115,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						registration: {
 							select: {
 								email: true,
-								formData: true
+								user: {
+									select: { name: true }
+								}
 							}
 						},
 						_count: {
@@ -136,7 +140,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
+					name: r.registration.user.name || "Unknown",
 					referralCount: r._count.referredUsers,
 					createdAt: r.createdAt
 				}));
@@ -180,11 +184,26 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					where: { id: regId },
 					include: {
 						referral: true,
+						user: {
+							select: { name: true }
+						},
 						referrals: {
 							include: {
+								user: {
+									select: { name: true }
+								},
 								referrals: {
 									include: {
-										referrals: true
+										user: {
+											select: { name: true }
+										},
+										referrals: {
+											include: {
+												user: {
+													select: { name: true }
+												}
+											}
+										}
 									}
 								}
 							}
@@ -204,7 +223,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const buildTree = (reg: any): any => ({
 					id: reg.id,
 					email: reg.email,
-					name: JSON.parse(reg.formData || "{}").name || "Unknown",
+					name: reg.user?.name || "Unknown",
 					referralCode: reg.referral?.code,
 					createdAt: reg.createdAt,
 					children: reg.referrals?.map(buildTree) || []
@@ -260,7 +279,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						registration: {
 							select: {
 								email: true,
-								formData: true
+								user: {
+									select: { name: true }
+								}
 							}
 						},
 						_count: {
@@ -280,7 +301,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
+					name: r.registration.user.name || "Unknown",
 					referralCount: r._count.referredUsers,
 					createdAt: r.createdAt
 				}));
@@ -337,7 +358,9 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						registration: {
 							select: {
 								email: true,
-								formData: true
+								user: {
+									select: { name: true }
+								}
 							}
 						},
 						_count: {
@@ -381,7 +404,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					id: r.id,
 					code: r.code,
 					email: r.registration.email,
-					name: JSON.parse(r.registration.formData || "{}").name || "Unknown",
+					name: r.registration.user.name || "Unknown",
 					referralCount: r._count.referredUsers
 				}));
 
@@ -435,7 +458,11 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						referral: {
 							include: {
 								registration: {
-									select: { formData: true }
+									select: {
+										user: {
+											select: { name: true }
+										}
+									}
 								}
 							}
 						}
@@ -483,7 +510,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const referralCounts: Record<string, number> = {};
 				referralUsages.forEach(usage => {
 					const code = usage.referral.code;
-					const name = JSON.parse(usage.referral.registration.formData || "{}").name || "Unknown";
+					const name = usage.referral.registration.user.name || "Unknown";
 					const key = `${name} (${code})`;
 					referralCounts[key] = (referralCounts[key] || 0) + 1;
 				});
