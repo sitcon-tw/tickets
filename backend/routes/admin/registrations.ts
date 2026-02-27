@@ -84,10 +84,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								code: true
 							}
 						},
-						referrer: {
+						referralUsage: {
 							select: {
-								id: true,
-								email: true
+								referral: {
+									select: {
+										registration: {
+											select: { email: true }
+										}
+									}
+								}
 							}
 						}
 					},
@@ -120,13 +125,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						ticketId: reg.ticketId,
 						email: reg.email,
 						status,
-						referredBy: reg.referredBy ?? null,
-						referrer: (reg as any).referrer
-							? {
-									id: (reg as any).referrer.id,
-									email: (reg as any).referrer.email
-								}
-							: null,
+						referredBy: (reg as any).referralUsage?.[0]?.referral?.registration?.email ?? null,
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
@@ -462,9 +461,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								price: true
 							}
 						},
-						referrer: {
+						referralUsage: {
 							select: {
-								email: true
+								referral: {
+									select: {
+										registration: {
+											select: { email: true }
+										}
+									}
+								}
 							}
 						}
 					},
@@ -535,7 +540,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				getLocalizedName(reg.ticket?.name),
 				reg.ticket?.price || 0,
 				reg.status,
-				reg.referrer?.email || reg.referredBy || "",
+				reg.referralUsage?.[0]?.referral?.registration?.email || "",
 				new Date(reg.createdAt).toISOString()
 			];
 
@@ -711,9 +716,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								price: true
 							}
 						},
-						referrer: {
+						referralUsage: {
 							select: {
-								email: true
+								referral: {
+									select: {
+										registration: {
+											select: { email: true }
+										}
+									}
+								}
 							}
 						}
 					},

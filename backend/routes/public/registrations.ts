@@ -223,6 +223,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				let referralCodeId: string | null = null;
+				let referrerRegistrationId: string | null = null;
 				if (referralCode) {
 					span.addEvent("validating_referral_code");
 					const referral = await prisma.referral.findFirst({
@@ -242,6 +243,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 					span.setAttribute("referral_code.id", referral.id);
 					referralCodeId = referral.id;
+					referrerRegistrationId = referral.registrationId;
 				}
 
 				span.addEvent("validating_form_data");
@@ -302,7 +304,8 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								ticketId,
 								email: user.email,
 								formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
-								status: "confirmed"
+								status: "confirmed",
+								...(referrerRegistrationId && { referredBy: referrerRegistrationId })
 							},
 							include: {
 								event: {
