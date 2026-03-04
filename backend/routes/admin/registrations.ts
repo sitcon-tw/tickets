@@ -476,13 +476,34 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					orderBy: { createdAt: "desc" }
 				});
 
+				// Fetch form fields to get localized names for CSV headers
+				const eventIds = [...new Set(registrations.map(r => r.eventId))];
+				const formFields = await prisma.eventFormFields.findMany({
+					where: { eventId: { in: eventIds } },
+					orderBy: { order: "asc" }
+				});
+
+				// Create a map from field ID to localized name
+				const fieldNameMap = new Map<string, string>();
+				for (const field of formFields) {
+					if (field.name && typeof field.name === "object" && !Array.isArray(field.name)) {
+						const nameObj = field.name as Record<string, string>;
+						const localizedName = nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
+						fieldNameMap.set(field.id, localizedName);
+					} else if (typeof field.name === "string") {
+						fieldNameMap.set(field.id, field.name);
+					} else {
+						fieldNameMap.set(field.id, field.id);
+					}
+				}
+
 				span.setAttribute("export.count", registrations.length);
 				span.addEvent("export.generate_csv");
 
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
-				const csvContent = generateCSV(registrations);
+				const csvContent = generateCSV(registrations, fieldNameMap);
 
 				span.setAttribute("export.filename", filename);
 				span.setAttribute("export.size", csvContent.length);
@@ -504,7 +525,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		}
 	);
 
-	function generateCSV(registrations: any) {
+	function generateCSV(registrations: any, fieldNameMap: Map<string, string>) {
 		const parsedRegistrations = registrations.map((reg: any) => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData) : {}
@@ -518,7 +539,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
 		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Referred By", "Created At"];
-		const formDataHeaders = sortedFormFields.map(key => `Form: ${key}`);
+		const formDataHeaders = sortedFormFields.map(key => `Form: ${fieldNameMap.get(key) || key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
 		const getLocalizedName = (nameObj: any) => {
