@@ -476,25 +476,28 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					orderBy: { createdAt: "desc" }
 				});
 
-				// Fetch form fields to get localized names for CSV headers
+				// Fetch form fields to get localized names for CSV headers and values
 				const eventIds = [...new Set(registrations.map(r => r.eventId))];
 				const formFields = await prisma.eventFormFields.findMany({
 					where: { eventId: { in: eventIds } },
 					orderBy: { order: "asc" }
 				});
 
-				// Create a map from field ID to localized name
-				const fieldNameMap = new Map<string, string>();
+				// Create a map from field ID to field info (name, type, values)
+				const fieldMap = new Map<string, { name: string; type: string; values: any }>();
 				for (const field of formFields) {
+					let localizedName = field.id;
 					if (field.name && typeof field.name === "object" && !Array.isArray(field.name)) {
 						const nameObj = field.name as Record<string, string>;
-						const localizedName = nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
-						fieldNameMap.set(field.id, localizedName);
+						localizedName = nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
 					} else if (typeof field.name === "string") {
-						fieldNameMap.set(field.id, field.name);
-					} else {
-						fieldNameMap.set(field.id, field.id);
+						localizedName = field.name;
 					}
+					fieldMap.set(field.id, {
+						name: localizedName,
+						type: field.type,
+						values: field.values
+					});
 				}
 
 				span.setAttribute("export.count", registrations.length);
@@ -503,7 +506,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
-				const csvContent = generateCSV(registrations, fieldNameMap);
+				const csvContent = generateCSV(registrations, fieldMap);
 
 				span.setAttribute("export.filename", filename);
 				span.setAttribute("export.size", csvContent.length);
@@ -525,7 +528,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		}
 	);
 
-	function generateCSV(registrations: any, fieldNameMap: Map<string, string>) {
+	function generateCSV(registrations: any, fieldMap: Map<string, { name: string; type: string; values: any }>) {
 		const parsedRegistrations = registrations.map((reg: any) => ({
 			...reg,
 			formData: reg.formData ? JSON.parse(reg.formData) : {}
@@ -539,7 +542,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		const sortedFormFields = Array.from(formFieldKeys).sort();
 
 		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Referred By", "Created At"];
-		const formDataHeaders = sortedFormFields.map(key => `Form: ${fieldNameMap.get(key) || key}`);
+		const formDataHeaders = sortedFormFields.map(key => `Form: ${fieldMap.get(key)?.name || key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
 		const getLocalizedName = (nameObj: any) => {
@@ -547,7 +550,55 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
-		const formatFormValue = (value: any) => {
+		const getLocalizedOptionValue = (fieldId: string, value: any, locale: string = "zh-Hant"): string => {
+			const field = fieldMap.get(fieldId);
+			if (!field) return String(value);
+
+			// Handle checkbox (multiple selection)
+			if (field.type === "checkbox" && Array.isArray(value)) {
+				if (field.values) {
+					try {
+						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+						const localizedValues = value.map(v => {
+							const option = options.find((opt: string | Record<string, string>) => {
+								if (typeof opt === "object" && opt !== null) {
+									return Object.values(opt).includes(v) || ("value" in opt && opt.value === v);
+								}
+								return opt === v;
+							});
+
+							if (option && typeof option === "object") {
+								return option[locale] || option["en"] || Object.values(option)[0] || v;
+							}
+							return v;
+						});
+						return localizedValues.join(", ");
+					} catch {
+						return value.join(", ");
+					}
+				}
+				return value.join(", ");
+			}
+
+			// Handle select/radio (single selection)
+			if ((field.type === "select" || field.type === "radio") && field.values) {
+				try {
+					const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+					const option = options.find((opt: string | Record<string, string>) => {
+						if (typeof opt === "object" && opt !== null) {
+							return Object.values(opt).includes(value) || ("value" in opt && opt.value === value);
+						}
+						return opt === value;
+					});
+
+					if (option && typeof option === "object") {
+						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
+					}
+				} catch {
+					return String(value);
+				}
+			}
+
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
 			return String(value);
@@ -565,7 +616,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				new Date(reg.createdAt).toISOString()
 			];
 
-			const formDataValues = sortedFormFields.map((key: string) => formatFormValue(reg.formData[key]));
+			const formDataValues = sortedFormFields.map((key: string) => getLocalizedOptionValue(key, reg.formData[key]));
 
 			return [...baseValues, ...formDataValues];
 		});
