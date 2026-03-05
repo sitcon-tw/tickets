@@ -92,13 +92,25 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					return reply.code(statusCode).send(response);
 				}
 
+				const recipientFilter = targetAudience ? JSON.stringify(targetAudience) : null;
+
+				// Pre-calculate recipient count so the list shows it immediately for drafts
+				let totalCount = 0;
+				try {
+					const recipients = await calculateRecipients(recipientFilter);
+					totalCount = recipients.length;
+				} catch {
+					// Non-fatal
+				}
+
 				const campaign = await prisma.emailCampaign.create({
 					data: {
 						userId: request.user?.id || "system",
 						name,
 						subject,
 						content,
-						recipientFilter: targetAudience ? JSON.stringify(targetAudience) : null,
+						recipientFilter,
+						totalCount,
 						status: "draft"
 					}
 				});
@@ -141,6 +153,16 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					return reply.code(statusCode).send(response);
 				}
 
+				let newTotalCount: number | undefined;
+				if (targetAudience !== undefined) {
+					try {
+						const recipients = await calculateRecipients(JSON.stringify(targetAudience));
+						newTotalCount = recipients.length;
+					} catch {
+						// Non-fatal
+					}
+				}
+
 				const updated = await prisma.emailCampaign.update({
 					where: { id: campaignId },
 					data: {
@@ -148,6 +170,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 						...(subject !== undefined && { subject }),
 						...(content !== undefined && { content }),
 						...(targetAudience !== undefined && { recipientFilter: JSON.stringify(targetAudience) }),
+						...(newTotalCount !== undefined && { totalCount: newTotalCount }),
 						updatedAt: new Date()
 					}
 				});
