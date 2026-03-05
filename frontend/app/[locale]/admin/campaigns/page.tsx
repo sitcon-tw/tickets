@@ -103,6 +103,8 @@ export default function EmailCampaignsPage() {
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
 	const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
 	const [previewHtml, setPreviewHtml] = useState("");
+	const [previewRecipients, setPreviewRecipients] = useState<Recipient[]>([]);
+	const [previewTab, setPreviewTab] = useState<"html" | "recipients">("html");
 
 	// Sending progress
 	const [sendingCampaign, setSendingCampaign] = useState<{ id: string; name: string; total: number; sent: number } | null>(null);
@@ -258,9 +260,11 @@ export default function EmailCampaignsPage() {
 
 	const handlePreview = async (campaign: EmailCampaign) => {
 		try {
-			const response = await adminEmailCampaignsAPI.preview(campaign.id);
-			if (response.success) {
-				setPreviewHtml(response.data.previewHtml);
+			const [previewRes, recipientsRes] = await Promise.all([adminEmailCampaignsAPI.preview(campaign.id), adminEmailCampaignsAPI.calculateRecipients(campaign.id)]);
+			if (previewRes.success) {
+				setPreviewHtml(previewRes.data.previewHtml);
+				setPreviewRecipients(recipientsRes.success ? recipientsRes.data.recipients : []);
+				setPreviewTab("html");
 				setSelectedCampaign(campaign);
 				setShowPreviewModal(true);
 			}
@@ -576,15 +580,55 @@ export default function EmailCampaignsPage() {
 
 			{/* Preview Modal */}
 			<Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-				<DialogContent className="max-w-4xl">
+				<DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
 					<DialogHeader>
 						<DialogTitle>
 							{t.preview}: {selectedCampaign?.subject}
 						</DialogTitle>
+						{/* Tab switcher */}
+						<div className="flex gap-1 mt-2 border-b">
+							<button
+								type="button"
+								onClick={() => setPreviewTab("html")}
+								className={`px-3 py-1.5 text-sm font-medium border-b-2 transition-colors ${previewTab === "html" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+							>
+								郵件預覽
+							</button>
+							<button
+								type="button"
+								onClick={() => setPreviewTab("recipients")}
+								className={`px-3 py-1.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${previewTab === "recipients" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+							>
+								<Users className="h-3.5 w-3.5" />
+								收件人名單
+								<Badge variant="secondary" className="text-xs px-1.5 py-0">
+									{previewRecipients.length}
+								</Badge>
+							</button>
+						</div>
 					</DialogHeader>
-					<div className="p-4 bg-white text-black rounded-lg max-h-[70vh] overflow-auto">
-						<div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-					</div>
+
+					{previewTab === "html" ? (
+						<div className="p-4 bg-white text-black rounded-lg overflow-auto flex-1 min-h-0 max-h-[60vh]">
+							<div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+						</div>
+					) : (
+						<div className="overflow-auto flex-1 min-h-0 max-h-[60vh]">
+							{previewRecipients.length === 0 ? (
+								<p className="text-muted-foreground text-sm p-4">無符合收件人</p>
+							) : (
+								<div className="space-y-0.5 p-1">
+									{previewRecipients.map((r, i) => (
+										<div key={r.id} className="flex items-center gap-3 px-3 py-1.5 rounded hover:bg-muted text-sm">
+											<span className="text-muted-foreground w-8 text-right shrink-0">{i + 1}</span>
+											<span className="font-mono">{r.email}</span>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+
 					<DialogFooter>
 						<Button variant="secondary" onClick={() => setShowPreviewModal(false)}>
 							{t.close}
