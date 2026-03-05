@@ -392,45 +392,57 @@ const EmailCampaignPropertiesSchema = EmailCampaignSchema.extend({
 	createdBy: z.string().optional()
 });
 
+type TargetAudienceInput = {
+	roles?: string[];
+	eventIds?: string[];
+	ticketIds?: string[];
+	registrationStatuses?: string[];
+	hasReferrals?: boolean;
+	isReferrer?: boolean;
+	registeredAfter?: string;
+	registeredBefore?: string;
+	tags?: string[];
+	emailDomains?: string[];
+};
+
+const RecipientSchema = z.object({ email: z.string(), id: z.string() });
+const RecipientsResponseSchema = z.object({ recipientCount: z.number(), recipients: z.array(RecipientSchema) });
+
 // Admin - Email Campaigns
 export const adminEmailCampaignsAPI = {
-	getAll: (params?: { status?: "draft" | "sent" | "scheduled"; eventId?: string; page?: number; limit?: number }) =>
+	getAll: (params?: { status?: "draft" | "sent" | "sending"; eventId?: string; page?: number; limit?: number }) =>
 		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignPropertiesSchema))),
 
-	create: (data: {
-		name: string;
-		subject: string;
-		content: string;
-		eventId?: string;
-		targetAudience?: {
-			roles?: string[];
-			eventIds?: string[];
-			ticketIds?: string[];
-			registrationStatuses?: string[];
-			hasReferrals?: boolean;
-			isReferrer?: boolean;
-			registeredAfter?: string;
-			registeredBefore?: string;
-			tags?: string[];
-			emailDomains?: string[];
-		};
-		scheduledAt?: string;
-	}) => apiClient.post("/api/admin/email-campaigns", data, ApiResponseSchema(EmailCampaignSchema)),
+	create: (data: { name: string; subject: string; content: string; targetAudience?: TargetAudienceInput }) =>
+		apiClient.post("/api/admin/email-campaigns", data, ApiResponseSchema(EmailCampaignSchema)),
 
-	getStatus: (campaignId: string) => apiClient.get(`/api/admin/email-campaigns/${campaignId}/status`, {}, ApiResponseSchema(z.object({ status: z.string(), sentCount: z.number() }))),
+	update: (campaignId: string, data: { name?: string; subject?: string; content?: string; targetAudience?: TargetAudienceInput }) =>
+		apiClient.patch(`/api/admin/email-campaigns/${campaignId}`, data, ApiResponseSchema(EmailCampaignSchema)),
+
+	getStatus: (campaignId: string) =>
+		apiClient.get(
+			`/api/admin/email-campaigns/${campaignId}/status`,
+			{},
+			ApiResponseSchema(z.object({ id: z.string(), status: z.string(), sentCount: z.number(), totalRecipients: z.number(), failedCount: z.number() }))
+		),
 
 	preview: (campaignId: string) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`, {}, ApiResponseSchema(z.object({ previewHtml: z.string() }))),
 
-	calculateRecipients: (campaignId: string) =>
+	previewRecipients: (targetAudience?: TargetAudienceInput) => apiClient.post("/api/admin/email-campaigns/preview-recipients", { targetAudience }, ApiResponseSchema(RecipientsResponseSchema)),
+
+	calculateRecipients: (campaignId: string) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`, {}, ApiResponseSchema(RecipientsResponseSchema)),
+
+	send: (campaignId: string) =>
 		apiClient.post(
-			`/api/admin/email-campaigns/${campaignId}/calculate-recipients`,
-			{},
-			ApiResponseSchema(z.object({ recipientCount: z.number(), recipients: z.array(z.object({ email: z.string() })) }))
+			`/api/admin/email-campaigns/${campaignId}/send`,
+			{ sendNow: true },
+			ApiResponseSchema(z.object({ id: z.string(), status: z.string(), totalCount: z.number(), sentCount: z.number() }))
 		),
 
-	send: (campaignId: string, sendNow: boolean = true) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/send`, { sendNow }, ApiResponseSchema(EmailCampaignSchema)),
+	cancel: (campaignId: string) => apiClient.delete(`/api/admin/email-campaigns/${campaignId}`, ApiResponseSchema(EmailCampaignSchema)),
 
-	cancel: (campaignId: string) => apiClient.delete(`/api/admin/email-campaigns/${campaignId}`, ApiResponseSchema(z.null()))
+	getTemplates: () =>
+		apiClient.get("/api/admin/email-campaigns/templates", {}, ApiResponseSchema(z.array(z.object({ id: z.string(), name: z.string(), description: z.string(), content: z.string() }))))
 };
 
 // SMS Verification - Requires Auth

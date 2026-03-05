@@ -233,6 +233,17 @@ class APIClient {
 		);
 	}
 
+	async patch<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {
+		return this.request<T>(
+			endpoint,
+			{
+				method: "PATCH",
+				body: data ? JSON.stringify(data) : "{}"
+			},
+			schema
+		);
+	}
+
 	async delete<T>(endpoint: string, schema?: z.ZodType<T>): Promise<T> {
 		return this.request<T>(endpoint, { method: "DELETE", body: "{}" }, schema);
 	}
