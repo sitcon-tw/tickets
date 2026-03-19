@@ -3,6 +3,7 @@
 import AdminNav from "@/components/AdminNav";
 import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
+import TodayEventNotification from "@/components/TodayEventNotification";
 import { usePathname } from "next/navigation";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -21,6 +22,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 					</div>
 				</div>
 			</main>
+			<TodayEventNotification />
 		</>
 	);
 }

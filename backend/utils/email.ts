@@ -9,6 +9,26 @@ import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
 
+/**
+ * Extended recipient data used internally for campaign sending.
+ * Adds user-level fields not present in the shared RecipientData type.
+ */
+interface CampaignRecipient extends RecipientData {
+	userName?: string;
+	userId?: string;
+}
+
+/** Extract a localized string from a JSON field (zh-Hant → en → first value). */
+const getLocalizedValue = (field: unknown, locale = "zh-Hant"): string => {
+	if (!field) return "";
+	if (typeof field === "string") return field;
+	if (typeof field === "object" && !Array.isArray(field)) {
+		const obj = field as Record<string, unknown>;
+		return String(obj[locale] ?? obj["en"] ?? obj["zh-Hant"] ?? Object.values(obj)[0] ?? "");
+	}
+	return String(field);
+};
+
 const componentLogger = logger.child({ component: "email" });
 
 const __filename = fileURLToPath(import.meta.url);
@@ -528,7 +548,7 @@ export const sendInvitationCode = async (
 	}
 };
 
-export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<RecipientData[]> => {
+export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<CampaignRecipient[]> => {
 	const span = tracer.startSpan("email.calculate_recipients", {
 		attributes: {
 			"email.has_filters": targetAudience !== null
@@ -536,78 +556,53 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 	});
 
 	try {
-		const where: Record<string, unknown> = {};
-
 		const filters: TargetAudienceFilters | null = typeof targetAudience === "string" ? JSON.parse(targetAudience) : targetAudience;
 
-		if (!filters) {
-			const allRegistrations = await prisma.registration.findMany({
-				where: { status: "confirmed" },
-				select: { email: true, id: true, formData: true },
-				distinct: ["email"]
-			});
-			return allRegistrations as RecipientData[];
-		}
+		const where: Record<string, unknown> = {};
 
-		if (filters.eventIds && filters.eventIds.length > 0) {
+		if (filters?.eventIds && filters.eventIds.length > 0) {
 			where.eventId = { in: filters.eventIds };
 		}
-
-		if (filters.ticketIds && filters.ticketIds.length > 0) {
+		if (filters?.ticketIds && filters.ticketIds.length > 0) {
 			where.ticketId = { in: filters.ticketIds };
 		}
-
-		if (filters.registrationStatuses && filters.registrationStatuses.length > 0) {
+		if (filters?.registrationStatuses && filters.registrationStatuses.length > 0) {
 			where.status = { in: filters.registrationStatuses };
 		} else {
 			where.status = "confirmed";
 		}
-
-		if (filters.hasReferrals !== undefined) {
-			if (filters.hasReferrals) {
-				where.referredBy = { not: null };
-			} else {
-				where.referredBy = null;
-			}
+		if (filters?.hasReferrals !== undefined) {
+			where.referredBy = filters.hasReferrals ? { not: null } : null;
 		}
-
-		if (filters.registeredAfter) {
-			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, gte: new Date(filters.registeredAfter) } : { gte: new Date(filters.registeredAfter) };
+		if (filters?.registeredAfter) {
+			where.createdAt = { ...(where.createdAt as object), gte: new Date(filters.registeredAfter) };
 		}
-		if (filters.registeredBefore) {
-			where.createdAt = where.createdAt && typeof where.createdAt === "object" ? { ...where.createdAt, lte: new Date(filters.registeredBefore) } : { lte: new Date(filters.registeredBefore) };
+		if (filters?.registeredBefore) {
+			where.createdAt = { ...(where.createdAt as object), lte: new Date(filters.registeredBefore) };
 		}
 
 		let registrations = await prisma.registration.findMany({
 			where,
 			include: {
-				user: { select: { email: true, role: true } },
+				user: { select: { id: true, name: true, email: true, role: true } },
 				event: true,
 				ticket: true
 			}
 		});
 
-		if (filters.emailDomains && filters.emailDomains.length > 0) {
-			registrations = registrations.filter(r => {
-				const emailDomain = r.email.split("@")[1];
-				return filters.emailDomains!.includes(emailDomain);
-			});
+		if (filters?.emailDomains && filters.emailDomains.length > 0) {
+			registrations = registrations.filter(r => filters.emailDomains!.includes(r.email.split("@")[1]));
 		}
-
-		if (filters.roles && filters.roles.length > 0) {
+		if (filters?.roles && filters.roles.length > 0) {
 			registrations = registrations.filter(r => r.user && filters.roles!.includes(r.user.role));
 		}
-
-		if (filters.isReferrer !== undefined) {
-			const referrerIds = await prisma.referral.findMany({
-				select: { registrationId: true }
-			});
+		if (filters?.isReferrer !== undefined) {
+			const referrerIds = await prisma.referral.findMany({ select: { registrationId: true } });
 			const referrerIdSet = new Set(referrerIds.map(r => r.registrationId));
-
 			registrations = registrations.filter(r => (filters.isReferrer ? referrerIdSet.has(r.id) : !referrerIdSet.has(r.id)));
 		}
 
-		const uniqueEmails = new Map<string, RecipientData>();
+		const uniqueEmails = new Map<string, CampaignRecipient>();
 		registrations.forEach(r => {
 			if (!uniqueEmails.has(r.email)) {
 				uniqueEmails.set(r.email, {
@@ -615,7 +610,9 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					id: r.id,
 					formData: r.formData,
 					event: r.event as unknown as Partial<Event>,
-					ticket: r.ticket as unknown as Partial<Ticket>
+					ticket: r.ticket as unknown as Partial<Ticket>,
+					userName: r.user?.name ?? undefined,
+					userId: r.user?.id ?? undefined
 				});
 			}
 		});
@@ -643,21 +640,132 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 	}
 };
 
-const replaceTemplateVariables = (content: string, data: RecipientData): string => {
+const replaceTemplateVariables = (content: string, data: CampaignRecipient): string => {
 	let result = content;
 
-	const formData = typeof data.formData === "string" ? JSON.parse(data.formData) : data.formData || {};
+	const formData: Record<string, unknown> = typeof data.formData === "string" ? JSON.parse(data.formData || "{}") : ((data.formData as unknown as Record<string, unknown>) ?? {});
 
-	result = result.replace(/\{\{email\}\}/g, data.email || "");
-	result = result.replace(/\{\{name\}\}/g, formData.name || "");
-	result = result.replace(/\{\{eventName\}\}/g, data.event?.name ? String(data.event.name) : "");
-	result = result.replace(/\{\{ticketName\}\}/g, data.ticket?.name ? String(data.ticket.name) : "");
-	result = result.replace(/\{\{registrationId\}\}/g, data.id || "");
+	// User identity
+	result = result.replace(/\{\{email\}\}/g, data.email ?? "");
+	result = result.replace(/\{\{name\}\}/g, data.userName ?? "");
+
+	// Event fields
+	const eventName = getLocalizedValue(data.event?.name);
+	const eventLocation = getLocalizedValue(data.event?.locationText);
+	const eventDate = data.event?.startDate ? new Date(data.event.startDate as unknown as string).toLocaleDateString("zh-TW") : "";
+	const eventEndDate = data.event?.endDate ? new Date(data.event.endDate as unknown as string).toLocaleDateString("zh-TW") : "";
+
+	result = result.replace(/\{\{eventName\}\}/g, eventName);
+	result = result.replace(/\{\{eventDate\}\}/g, eventDate);
+	result = result.replace(/\{\{eventEndDate\}\}/g, eventEndDate);
+	result = result.replace(/\{\{eventLocation\}\}/g, eventLocation);
+
+	// Ticket fields
+	const ticketName = getLocalizedValue(data.ticket?.name);
+	const ticketPrice = data.ticket?.price != null ? (data.ticket.price === 0 ? "免費" : `NT$${data.ticket.price}`) : "";
+
+	result = result.replace(/\{\{ticketName\}\}/g, ticketName);
+	result = result.replace(/\{\{ticketPrice\}\}/g, ticketPrice);
+
+	// Registration
+	result = result.replace(/\{\{registrationId\}\}/g, data.id ?? "");
+
+	// Dynamic form data: {{formData.fieldKey}}
+	result = result.replace(/\{\{formData\.([^}]+)\}\}/g, (_match, key: string) => {
+		const val = formData[key];
+		if (val == null) return "";
+		if (Array.isArray(val)) return val.join(", ");
+		return String(val);
+	});
 
 	return result;
 };
 
-export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipients: RecipientData[]): Promise<CampaignResult> => {
+export const getAvailableTemplates = async (): Promise<{ id: string; name: string; description: string; content: string }[]> => {
+	const templateDir = path.join(__dirname, "../email-templates");
+	const templateMeta: { id: string; name: string; description: string; content: string }[] = [];
+
+	try {
+		const files = await fs.readdir(templateDir);
+		const htmlFiles = files.filter(f => f.endsWith(".html"));
+
+		const builtinDescriptions: Record<string, { name: string; description: string }> = {
+			"registered.html": { name: "Registration Confirmation", description: "Sent when a user registers for an event" },
+			"magic-link.html": { name: "Magic Link Login", description: "Login link email" },
+			"canceled.html": { name: "Registration Cancelled", description: "Sent when a registration is cancelled" },
+			"invitation.html": { name: "Invitation Code", description: "Invitation code email" }
+		};
+
+		for (const file of htmlFiles) {
+			const content = await fs.readFile(path.join(templateDir, file), "utf-8");
+			const meta = builtinDescriptions[file];
+			templateMeta.push({
+				id: file.replace(".html", ""),
+				name: meta?.name || file.replace(".html", ""),
+				description: meta?.description || "",
+				content
+			});
+		}
+	} catch (error) {
+		componentLogger.error({ error }, "Failed to read email templates directory");
+	}
+
+	return templateMeta;
+};
+
+/**
+ * Generate a preview of a campaign email using a real sample registration.
+ * Uses the same variable replacement logic as the actual send, so the preview is accurate.
+ */
+export const previewCampaignEmail = async (campaign: EmailCampaignContent): Promise<{ previewHtml: string; previewText: string }> => {
+	const sampleRegistration = await prisma.registration.findFirst({
+		include: {
+			user: { select: { id: true, name: true } },
+			event: true,
+			ticket: true
+		}
+	});
+
+	let previewHtml = campaign.content;
+
+	if (sampleRegistration) {
+		const sampleRecipient: CampaignRecipient = {
+			email: sampleRegistration.email,
+			id: sampleRegistration.id,
+			formData: sampleRegistration.formData,
+			event: sampleRegistration.event as unknown as Partial<Event>,
+			ticket: sampleRegistration.ticket as unknown as Partial<Ticket>,
+			userName: sampleRegistration.user?.name ?? "Sample User",
+			userId: sampleRegistration.userId
+		};
+		previewHtml = replaceTemplateVariables(campaign.content, sampleRecipient);
+	}
+
+	const previewText = previewHtml.replace(/<[^>]*>/g, "");
+	return { previewHtml, previewText };
+};
+
+const sendEmailWithRetry = async (params: { to: string[]; subject: string; html: string; from?: EmailSender }, maxRetries = 3): Promise<boolean> => {
+	let lastError: Error | null = null;
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			return await sendEmail(params);
+		} catch (error) {
+			lastError = error instanceof Error ? error : new Error(String(error));
+			componentLogger.warn({ attempt, maxRetries, to: params.to }, `Email send attempt ${attempt} failed, retrying...`);
+			if (attempt < maxRetries) {
+				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+			}
+		}
+	}
+	throw lastError;
+};
+
+export const sendCampaignEmail = async (
+	campaign: EmailCampaignContent,
+	recipients: CampaignRecipient[],
+	onProgress?: (sentCount: number, failedCount: number) => Promise<void>
+): Promise<CampaignResult> => {
 	const provider = getEmailProvider();
 
 	const span = tracer.startSpan("email.send_campaign", {
@@ -686,26 +794,27 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 				"batch.size": batch.length
 			});
 
-			const promises = batch.map(async recipient => {
-				try {
-					const personalizedContent = replaceTemplateVariables(campaign.content, recipient);
+			const results = await Promise.all(
+				batch.map(async recipient => {
+					try {
+						const personalizedContent = replaceTemplateVariables(campaign.content, recipient);
+						await sendEmailWithRetry({
+							to: [recipient.email],
+							subject: campaign.subject,
+							html: personalizedContent
+						});
+						return { success: true, email: recipient.email };
+					} catch (error) {
+						componentLogger.error({ error, email: recipient.email }, "Failed to send email to recipient after retries");
+						return { success: false, email: recipient.email, error: error instanceof Error ? error.message : String(error) };
+					}
+				})
+			);
 
-					await sendEmail({
-						to: [recipient.email],
-						subject: campaign.subject,
-						html: personalizedContent
-					});
-
-					sentCount++;
-					return { success: true, email: recipient.email };
-				} catch (error) {
-					componentLogger.error({ error, email: recipient.email }, "Failed to send email to recipient");
-					failedCount++;
-					return { success: false, email: recipient.email, error: error instanceof Error ? error.message : String(error) };
-				}
-			});
-
-			await Promise.all(promises);
+			for (const r of results) {
+				if (r.success) sentCount++;
+				else failedCount++;
+			}
 
 			span.addEvent("campaign.batch.complete", {
 				"batch.index": Math.floor(i / batchSize),
@@ -713,8 +822,17 @@ export const sendCampaignEmail = async (campaign: EmailCampaignContent, recipien
 				"batch.failed": failedCount
 			});
 
+			// Report progress after each batch
+			if (onProgress) {
+				try {
+					await onProgress(sentCount, failedCount);
+				} catch (_) {
+					// Progress updates are best-effort; don't fail the campaign
+				}
+			}
+
 			if (i + batchSize < recipients.length) {
-				await new Promise(resolve => setTimeout(resolve, 1000));
+				await new Promise(resolve => setTimeout(resolve, 500));
 			}
 		}
 

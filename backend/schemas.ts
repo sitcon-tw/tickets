@@ -1546,7 +1546,7 @@ export const eventDashboardSchemas = {
 // ----------------------------------------------------------------------------
 
 export const EmailCampaignListQuerySchema = z.object({
-	status: z.enum(["draft", "sent", "scheduled"]).optional(),
+	status: z.enum(["draft", "sent", "sending"]).optional(),
 	eventId: z.string().optional(),
 	page: z.coerce.number().int().min(1).default(1).optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(20).optional()
@@ -1558,6 +1558,17 @@ export const CampaignIdParamSchema = z.object({
 
 export const EmailCampaignSendBodySchema2 = z.object({
 	sendNow: z.boolean().default(true).optional()
+});
+
+export const PreviewRecipientsBodySchema = z.object({
+	targetAudience: TargetAudienceSchema.optional()
+});
+
+export const EmailCampaignUpdateBodySchema2 = z.object({
+	name: z.string().min(1).optional(),
+	subject: z.string().min(1).optional(),
+	content: z.string().min(1).optional(),
+	targetAudience: TargetAudienceSchema.optional()
 });
 
 export const adminEmailCampaignSchemas = {
@@ -1586,6 +1597,17 @@ export const adminEmailCampaignSchemas = {
 		tags: ["admin/email-campaigns"],
 		params: CampaignIdParamSchema
 	},
+	previewRecipients: {
+		description: "預覽收件人（不需建立任務）",
+		tags: ["admin/email-campaigns"],
+		body: PreviewRecipientsBodySchema
+	},
+	updateEmailCampaign: {
+		description: "更新郵件任務",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema,
+		body: EmailCampaignUpdateBodySchema2
+	},
 	sendEmailCampaign: {
 		description: "發送郵件",
 		tags: ["admin/email-campaigns"],
@@ -1596,6 +1618,10 @@ export const adminEmailCampaignSchemas = {
 		description: "取消郵件發送任務",
 		tags: ["admin/email-campaigns"],
 		params: CampaignIdParamSchema
+	},
+	listTemplates: {
+		description: "取得郵件模板列表",
+		tags: ["admin/email-campaigns"]
 	}
 } as const;
 
