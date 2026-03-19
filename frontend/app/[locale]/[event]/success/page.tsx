@@ -11,7 +11,7 @@ import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Success() {
@@ -19,6 +19,8 @@ export default function Success() {
 	const { showAlert } = useAlert();
 	const router = useRouter();
 	const params = useParams();
+	const searchParams = useSearchParams();
+	const autoCheckin = searchParams.has("checkin");
 	const eventSlug = params.event as string;
 
 	const [referralCode, setReferralCode] = useState<string>("Loading...");
@@ -173,6 +175,12 @@ export default function Success() {
 		};
 		loadSuccessInfo();
 	}, [eventSlug, locale, t.loadFailed]);
+
+	useEffect(() => {
+		if (autoCheckin && registrationId && registrationTime && !isCancelled) {
+			setShowQRCode(true);
+		}
+	}, [autoCheckin, registrationId, registrationTime, isCancelled]);
 
 	useEffect(() => {
 		const handleResize = () => {
