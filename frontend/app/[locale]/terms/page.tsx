@@ -1,3 +1,5 @@
+"use client";
+
 import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
