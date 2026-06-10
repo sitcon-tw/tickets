@@ -13,7 +13,7 @@ import { useLocale } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 type SessionUser = {
 	name?: string;
 	email?: string;
@@ -21,6 +21,27 @@ type SessionUser = {
 };
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
+type NavUiState = {
+	isMobile: boolean;
+	isScrolled: boolean;
+	isMobileMenuOpen: boolean;
+};
+type NavUiAction = { type: "setMobile"; isMobile: boolean } | { type: "setScrolled"; isScrolled: boolean } | { type: "setMobileMenuOpen"; isMobileMenuOpen: boolean } | { type: "toggleMobileMenu" };
+
+function navUiReducer(state: NavUiState, action: NavUiAction): NavUiState {
+	switch (action.type) {
+		case "setMobile":
+			return { ...state, isMobile: action.isMobile };
+		case "setScrolled":
+			return { ...state, isScrolled: action.isScrolled };
+		case "setMobileMenuOpen":
+			return { ...state, isMobileMenuOpen: action.isMobileMenuOpen };
+		case "toggleMobileMenu":
+			return { ...state, isMobileMenuOpen: !state.isMobileMenuOpen };
+		default:
+			return state;
+	}
+}
 
 function getGravatarUrl(email: string, size = 40): string {
 	const hash = crypto.createHash("md5").update(email.trim().toLowerCase()).digest("hex");
@@ -34,11 +55,11 @@ export default function Nav() {
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
-	const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
-	const [isScrolled, setIsScrolled] = useState(false);
-	const [isDarkMode, setIsDarkMode] = useState(false);
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [{ isMobile, isScrolled, isMobileMenuOpen }, dispatchNavUi] = useReducer(navUiReducer, {
+		isMobile: typeof window !== "undefined" && window.innerWidth <= 768,
+		isScrolled: typeof window !== "undefined" && window.scrollY > 5,
+		isMobileMenuOpen: false
+	});
 
 	const isAdminPage = pathname.includes("/admin");
 
@@ -70,20 +91,18 @@ export default function Nav() {
 		return hasAccess;
 	}, [session]);
 
-	useEffect(() => {
+	const gravatarUrl = useMemo(() => {
 		if (session.status === "authenticated" && session.user.email) {
-			setGravatarUrl(getGravatarUrl(session.user.email));
-		} else {
-			setGravatarUrl(null);
+			return getGravatarUrl(session.user.email);
 		}
+		return null;
 	}, [session]);
 
 	useEffect(() => {
 		const checkMobile = () => {
-			setIsMobile(window.innerWidth <= 768);
+			dispatchNavUi({ type: "setMobile", isMobile: window.innerWidth <= 768 });
 		};
 
-		checkMobile();
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
@@ -92,7 +111,7 @@ export default function Nav() {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as HTMLElement;
 			if (isMobileMenuOpen && !target.closest(".mobile-menu") && !target.closest(".burger-button")) {
-				setIsMobileMenuOpen(false);
+				dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false });
 			}
 		};
 
@@ -153,32 +172,13 @@ export default function Nav() {
 
 	useEffect(() => {
 		function handleScroll() {
-			setIsScrolled(window.scrollY > 5);
+			dispatchNavUi({ type: "setScrolled", isScrolled: window.scrollY > 5 });
 		}
 
-		handleScroll();
-		window.addEventListener("scroll", handleScroll);
+		window.addEventListener("scroll", handleScroll, { passive: true });
 
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
-		};
-	}, []);
-
-	useEffect(() => {
-		function updateDarkMode() {
-			const darkModeCheck = localStorage.getItem("sitcontix-theme");
-			setIsDarkMode(darkModeCheck === "dark");
-		}
-
-		updateDarkMode();
-
-		function handleThemeChange(event: CustomEvent) {
-			setIsDarkMode(event.detail.newTheme === "dark");
-		}
-
-		window.addEventListener("systemThemeChanged", handleThemeChange as EventListener);
-		return () => {
-			window.removeEventListener("systemThemeChanged", handleThemeChange as EventListener);
 		};
 	}, []);
 
@@ -239,7 +239,8 @@ export default function Nav() {
 					<div className="flex sm:hidden items-center space-x-2">
 						{session.status === "authenticated" ? (
 							<button
-								onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+								type="button"
+								onClick={() => dispatchNavUi({ type: "toggleMobileMenu" })}
 								className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
 								aria-label="Toggle menu"
 							>
@@ -249,7 +250,7 @@ export default function Nav() {
 							<div className="flex items-center space-x-4">
 								<Link
 									href={pathname.includes("/login") ? "/login/" : `/login/?returnUrl=${encodeURIComponent(pathname)}`}
-									onClick={() => setIsMobileMenuOpen(false)}
+									onClick={() => dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false })}
 									className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
 								>
 									{t.login}
@@ -262,7 +263,14 @@ export default function Nav() {
 			</nav>
 
 			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && <div className="fixed inset-0 z-200 bg-black/50 sm:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+			{isMobileMenuOpen && (
+				<button
+					type="button"
+					className="fixed inset-0 z-200 bg-black/50 sm:hidden cursor-default"
+					onClick={() => dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false })}
+					aria-label="Close menu"
+				/>
+			)}
 
 			{/* Mobile Menu */}
 			<div
@@ -285,18 +293,26 @@ export default function Nav() {
 									</div>
 								)}
 								{hasAdminAccess && (
-									<Link href="/admin/events" onClick={() => setIsMobileMenuOpen(false)} className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2">
+									<Link
+										href="/admin/events"
+										onClick={() => dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false })}
+										className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors py-2"
+									>
 										{t.adminPanel}
 									</Link>
 								)}
-								<Link href="/my-registration" onClick={() => setIsMobileMenuOpen(false)} className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2">
+								<Link
+									href="/my-registration"
+									onClick={() => dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false })}
+									className="text-sm hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
+								>
 									{t.myRegistrations}
 								</Link>
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={() => {
-										setIsMobileMenuOpen(false);
+										dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false });
 										handleLogout();
 									}}
 									disabled={isLoggingOut}

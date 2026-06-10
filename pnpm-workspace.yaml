@@ -3,6 +3,10 @@ packages:
   - backend
   - types
 
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'

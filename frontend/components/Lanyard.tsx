@@ -10,8 +10,45 @@ import * as THREE from "three";
 
 const cardGLB = "/assets/card.glb";
 const lanyard = "/assets/lanyard.png";
+const segmentProps = {
+	canSleep: true,
+	colliders: false,
+	angularDamping: 4,
+	linearDamping: 4
+} satisfies Partial<RigidBodyProps>;
+
+function getFontSize(text: string | undefined): number {
+	if (!text) return 0.2;
+	const maxWidth = 0.7;
+	const baseFontSize = 0.2;
+	const maxLines = 3;
+
+	let estimatedWidth = 0;
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+		const isCJK = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(char);
+		const charWidth = isCJK ? baseFontSize * 1.0 : baseFontSize * 0.5;
+		estimatedWidth += charWidth;
+	}
+
+	const estimatedLines = Math.ceil(estimatedWidth / maxWidth);
+
+	if (estimatedLines > maxLines) {
+		const scaleFactor = maxLines / estimatedLines;
+		return Math.max(0.08, baseFontSize * scaleFactor);
+	}
+
+	return baseFontSize;
+}
 
 extend({ MeshLineGeometry, MeshLineMaterial });
+
+const AmbientLight = "ambientLight";
+const Group = "group";
+const Mesh = "mesh";
+const MeshPhysicalMaterial = "meshPhysicalMaterial";
+const MeshLineGeometryElement = "meshLineGeometry";
+const MeshLineMaterialElement = "meshLineMaterial";
 
 interface LanyardProps {
 	position?: [number, number, number];
@@ -33,7 +70,7 @@ export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], 
 	return (
 		<div className="relative z-0 w-full h-screen flex justify-center items-center transform scale-100 origin-center">
 			<Canvas camera={{ position, fov }} dpr={[1, isMobile ? 1.5 : 2]} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
-				<ambientLight intensity={Math.PI} />
+				<AmbientLight intensity={Math.PI} />
 				<Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
 					<Band isMobile={isMobile} name={name} />
 				</Physics>
@@ -68,38 +105,6 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 	const ang = new THREE.Vector3();
 	const rot = new THREE.Vector3();
 	const dir = new THREE.Vector3();
-
-	const getFontSize = (text: string | undefined): number => {
-		if (!text) return 0.2;
-		const maxWidth = 0.7;
-		const baseFontSize = 0.2;
-		const maxLines = 3;
-
-		let estimatedWidth = 0;
-		for (let i = 0; i < text.length; i++) {
-			const char = text[i];
-			const isCJK = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(char);
-			const charWidth = isCJK ? baseFontSize * 1.0 : baseFontSize * 0.5;
-			estimatedWidth += charWidth;
-		}
-
-		const estimatedLines = Math.ceil(estimatedWidth / maxWidth);
-
-		if (estimatedLines > maxLines) {
-			const scaleFactor = maxLines / estimatedLines;
-			return Math.max(0.08, baseFontSize * scaleFactor);
-		}
-
-		return baseFontSize;
-	};
-
-	const segmentProps: any = {
-		type: "dynamic" as RigidBodyProps["type"],
-		canSleep: true,
-		colliders: false,
-		angularDamping: 4,
-		linearDamping: 4
-	};
 
 	const { nodes, materials } = useGLTF(cardGLB) as any;
 	const texture = useTexture(lanyard);
@@ -158,7 +163,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 
 	return (
 		<>
-			<group position={[0, 4, 0]}>
+			<Group position={[0, 4, 0]}>
 				<RigidBody ref={fixed} {...segmentProps} type={"fixed" as RigidBodyProps["type"]} />
 				<RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={"dynamic" as RigidBodyProps["type"]}>
 					<BallCollider args={[0.1]} />
@@ -171,7 +176,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 				</RigidBody>
 				<RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? ("kinematicPosition" as RigidBodyProps["type"]) : ("dynamic" as RigidBodyProps["type"])}>
 					<CuboidCollider args={[0.8, 1.125, 0.01]} />
-					<group
+					<Group
 						scale={2.25}
 						position={[0, -1.2, -0.05]}
 						onPointerOver={() => hover(true)}
@@ -185,11 +190,11 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 							drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
 						}}
 					>
-						<mesh geometry={nodes.card.geometry}>
-							<meshPhysicalMaterial map={materials.base.map} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
-						</mesh>
-						<mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
-						<mesh geometry={nodes.clamp.geometry} material={materials.metal} />
+						<Mesh geometry={nodes.card.geometry}>
+							<MeshPhysicalMaterial map={materials.base.map} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
+						</Mesh>
+						<Mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
+						<Mesh geometry={nodes.clamp.geometry} material={materials.metal} />
 						{name && (
 							<Text
 								position={[0, 0.5, 0.01]}
@@ -207,13 +212,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 								{name}
 							</Text>
 						)}
-					</group>
+					</Group>
 				</RigidBody>
-			</group>
-			<mesh ref={band}>
-				<meshLineGeometry />
-				<meshLineMaterial color="white" depthTest={false} resolution={isMobile ? [1000, 2000] : [1000, 1000]} useMap map={texture} repeat={[-4, 1]} lineWidth={1} />
-			</mesh>
+			</Group>
+			<Mesh ref={band}>
+				<MeshLineGeometryElement />
+				<MeshLineMaterialElement color="white" depthTest={false} resolution={isMobile ? [1000, 2000] : [1000, 1000]} useMap map={texture} repeat={[-4, 1]} lineWidth={1} />
+			</Mesh>
 		</>
 	);
 }

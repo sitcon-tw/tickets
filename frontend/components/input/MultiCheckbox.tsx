@@ -92,7 +92,9 @@ const StyledLabel = styled.label`
 	}
 `;
 
-export default function MultiCheckbox({ label, name, options, values = [], onValueChange, description }: MultiCheckboxProps) {
+const EMPTY_VALUES: string[] = [];
+
+export default function MultiCheckbox({ label, name, options, values = EMPTY_VALUES, onValueChange, description }: MultiCheckboxProps) {
 	const handleCheckedChange = (optionValue: string, checked: boolean) => {
 		if (!onValueChange) return;
 

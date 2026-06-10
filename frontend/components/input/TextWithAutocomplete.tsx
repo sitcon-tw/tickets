@@ -3,7 +3,7 @@
 import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChangeEvent, memo, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, memo, useEffect, useMemo, useRef, useState } from "react";
 
 type TextWithAutocompleteProps = {
 	label: string;
@@ -17,31 +17,22 @@ type TextWithAutocompleteProps = {
 	description?: string;
 };
 
-function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = [], description }: TextWithAutocompleteProps) {
+const EMPTY_PROMPTS: string[] = [];
+
+function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = EMPTY_PROMPTS, description }: TextWithAutocompleteProps) {
 	const [showSuggestions, setShowSuggestions] = useState(false);
-	const [filteredPrompts, setFilteredPrompts] = useState<string[]>([]);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const suggestionsRef = useRef<HTMLDivElement>(null);
 
-	const updateFilteredPrompts = useCallback(() => {
+	const filteredPrompts = useMemo(() => {
 		if (!value || value.trim() === "" || prompts.length === 0) {
-			setFilteredPrompts([]);
-			setShowSuggestions(false);
-			return;
+			return [];
 		}
 
 		const inputValue = value.toLowerCase().trim();
-		const matches = prompts.filter(prompt => prompt.toLowerCase().includes(inputValue));
-
-		setFilteredPrompts(matches);
-		setShowSuggestions(matches.length > 0);
-		setSelectedIndex(-1);
+		return prompts.filter(prompt => prompt.toLowerCase().includes(inputValue));
 	}, [value, prompts]);
-
-	useEffect(() => {
-		updateFilteredPrompts();
-	}, [updateFilteredPrompts]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -98,6 +89,8 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 		if (onChange) {
 			onChange(e);
 		}
+		setShowSuggestions(true);
+		setSelectedIndex(-1);
 	};
 
 	return (
@@ -125,24 +118,19 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 					autoComplete="off"
 				/>
 				{showSuggestions && filteredPrompts.length > 0 && (
-					<div
-						ref={suggestionsRef}
-						className="absolute z-50 w-full max-w-60 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
-						role="listbox"
-					>
+					<div ref={suggestionsRef} className="absolute z-50 w-full max-w-60 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
 						{filteredPrompts.map((prompt, index) => (
-							<div
-								key={index}
-								role="option"
-								aria-selected={index === selectedIndex}
-								className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
+							<button
+								type="button"
+								key={prompt}
+								className={`block w-full px-3 py-2 cursor-pointer text-left text-sm transition-colors ${
 									index === selectedIndex ? "bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
 								}`}
 								onClick={() => selectPrompt(prompt)}
 								onMouseEnter={() => setSelectedIndex(index)}
 							>
 								{prompt}
-							</div>
+							</button>
 						))}
 					</div>
 				)}

@@ -12,11 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { getLocalizedText } from "@/lib/utils/localization";
 import type { InvitationCodeInfo, Ticket } from "@sitcontix/types";
 import { Download, Import, Mail, Plus, Search } from "lucide-react";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 
 type InviteCode = {
 	id: string;
@@ -35,39 +36,201 @@ type InviteType = {
 	codes: InviteCode[];
 };
 
-export default function InvitesPage() {
+type MatchedPair = { email: string; code: string; codeId: string };
+type InviteFormData = {
+	name: string;
+	amount: number;
+	usageLimit: number;
+	validFrom: string;
+	validUntil: string;
+};
+
+type InvitesState = {
+	isSaving: boolean;
+	inviteTypes: InviteType[];
+	searchTerm: string;
+	isLoading: boolean;
+	showModal: boolean;
+	showBulkImportModal: boolean;
+	showCodesModal: boolean;
+	viewingCodesOf: string | null;
+	tickets: Ticket[];
+	selectedCodes: Set<string>;
+	showEmailModal: boolean;
+	isSendingEmail: boolean;
+	emailList: string;
+	emailMessage: string;
+	matchedPairs: MatchedPair[];
+	showPreview: boolean;
+	bulkImportCodes: string;
+	isImporting: boolean;
+	selectedTicketId: string;
+	bulkTicketId: string;
+	formData: InviteFormData;
+};
+
+type InvitesAction =
+	| { type: "patch"; patch: Partial<InvitesState> }
+	| { type: "setFormField"; field: keyof InviteFormData; value: string | number }
+	| { type: "invitesLoaded"; inviteTypes: InviteType[] }
+	| { type: "ticketsLoaded"; tickets: Ticket[] }
+	| { type: "createSuccess" }
+	| { type: "bulkImportSuccess" }
+	| { type: "toggleCodeSelection"; codeId: string }
+	| { type: "toggleSelectAll"; codeIds: string[] }
+	| { type: "openCodesModal"; typeId: string }
+	| { type: "emailMatched"; pairs: MatchedPair[] }
+	| { type: "emailFinished" }
+	| { type: "closeEmailModal" };
+
+const initialInviteFormData: InviteFormData = {
+	name: "",
+	amount: 10,
+	usageLimit: 1,
+	validFrom: "",
+	validUntil: ""
+};
+
+const initialInvitesState: InvitesState = {
+	isSaving: false,
+	inviteTypes: [],
+	searchTerm: "",
+	isLoading: false,
+	showModal: false,
+	showBulkImportModal: false,
+	showCodesModal: false,
+	viewingCodesOf: null,
+	tickets: [],
+	selectedCodes: new Set(),
+	showEmailModal: false,
+	isSendingEmail: false,
+	emailList: "",
+	emailMessage: "",
+	matchedPairs: [],
+	showPreview: false,
+	bulkImportCodes: "",
+	isImporting: false,
+	selectedTicketId: "",
+	bulkTicketId: "",
+	formData: initialInviteFormData
+};
+
+function invitesReducer(state: InvitesState, action: InvitesAction): InvitesState {
+	switch (action.type) {
+		case "patch":
+			return { ...state, ...action.patch };
+		case "setFormField":
+			return { ...state, formData: { ...state.formData, [action.field]: action.value } };
+		case "invitesLoaded":
+			return { ...state, inviteTypes: action.inviteTypes };
+		case "ticketsLoaded":
+			return { ...state, tickets: action.tickets };
+		case "createSuccess":
+			return { ...state, showModal: false, selectedTicketId: "", formData: initialInviteFormData };
+		case "bulkImportSuccess":
+			return { ...state, showBulkImportModal: false, bulkImportCodes: "" };
+		case "toggleCodeSelection": {
+			const selectedCodes = new Set(state.selectedCodes);
+			if (selectedCodes.has(action.codeId)) {
+				selectedCodes.delete(action.codeId);
+			} else {
+				selectedCodes.add(action.codeId);
+			}
+			return { ...state, selectedCodes };
+		}
+		case "toggleSelectAll":
+			return { ...state, selectedCodes: state.selectedCodes.size === action.codeIds.length ? new Set() : new Set(action.codeIds) };
+		case "openCodesModal":
+			return { ...state, viewingCodesOf: action.typeId, selectedCodes: new Set(), showCodesModal: true };
+		case "emailMatched":
+			return { ...state, matchedPairs: action.pairs };
+		case "emailFinished":
+			return { ...state, isSendingEmail: false };
+		case "closeEmailModal":
+			return { ...state, showEmailModal: false, emailList: "", emailMessage: "", matchedPairs: [], showPreview: false };
+	}
+}
+
+function EmailPreview({
+	matchedPairs,
+	tickets,
+	currentType,
+	emailMessage,
+	locale
+}: {
+	matchedPairs: MatchedPair[];
+	tickets: Ticket[];
+	currentType?: InviteType | null;
+	emailMessage: string;
+	locale: string;
+}) {
+	if (matchedPairs.length === 0) {
+		return <div className="text-sm text-muted-foreground">請先配對郵件與邀請碼以查看預覽</div>;
+	}
+
+	const samplePair = matchedPairs[0];
+	const ticket = tickets.find(t => currentType?.codes.find(c => c.code === samplePair.code));
+
+	return (
+		<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
+			<div style={{ background: "linear-gradient(#e5e7eb, #e5e7eb)", fontFamily: "sans-serif", padding: "48px 32px" }}>
+				<div style={{ margin: "0 auto", maxWidth: "600px", padding: "24px calc((min(100%, 600px) - 32px) * 0.04) 0", boxSizing: "border-box" }}>
+					<div style={{ background: "linear-gradient(#f9fafb, #f9fafb)", padding: "48px 24px 0" }}>
+						<h1 style={{ fontSize: "24px", margin: "32px 0", textAlign: "center", color: "#374151" }}>來自 SITCONTIX 的活動邀請碼</h1>
+						<div className="description" style={{ color: "#6b7280", lineHeight: "150%", whiteSpace: "pre-wrap" }}>
+							{emailMessage || "（訊息預覽）"}
+						</div>
+						<div style={{ background: "linear-gradient(#9ca3af, #9ca3af)", padding: "12px 32px", margin: "32px auto", display: "block", width: "fit-content", borderRadius: "12px" }}>
+							<span style={{ fontWeight: "bold", fontFamily: "monospace", fontSize: "x-large", color: "#f3f4f6" }}>{samplePair.code}</span>
+						</div>
+						<div style={{ color: "#6b7280", lineHeight: "150%" }}>
+							<p>您可以將邀請碼用於兌換票種「{ticket ? getLocalizedText(ticket.name, locale) : "票種名稱"}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
+							<p>請在有效期限前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
+						</div>
+						<div style={{ background: "linear-gradient(#6b7280, #6b7280)", padding: "12px 32px", textDecoration: "none", margin: "auto", display: "block", width: "fit-content" }}>
+							<span style={{ fontWeight: "bold", color: "#f3f4f6" }}>直接前往領票</span>
+						</div>
+					</div>
+				</div>
+				<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
+					©SITCON
+					<br />
+					寄送給 {samplePair.email}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function useInvitesPageView() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 
-	const [isSaving, setIsSaving] = useState(false);
-	const [inviteTypes, setInviteTypes] = useState<InviteType[]>([]);
-	const [filteredTypes, setFilteredTypes] = useState<InviteType[]>([]);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-	const [showModal, setShowModal] = useState(false);
-	const [showBulkImportModal, setShowBulkImportModal] = useState(false);
-	const [showCodesModal, setShowCodesModal] = useState(false);
-	const [viewingCodesOf, setViewingCodesOf] = useState<string | null>(null);
-	const [tickets, setTickets] = useState<Ticket[]>([]);
-	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
-	const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
-	const [showEmailModal, setShowEmailModal] = useState(false);
-	const [isSendingEmail, setIsSendingEmail] = useState(false);
-	const [emailList, setEmailList] = useState("");
-	const [emailMessage, setEmailMessage] = useState("");
-	const [matchedPairs, setMatchedPairs] = useState<Array<{ email: string; code: string; codeId: string }>>([]);
-	const [showPreview, setShowPreview] = useState(false);
-	const [bulkImportCodes, setBulkImportCodes] = useState("");
-	const [isImporting, setIsImporting] = useState(false);
-	const [selectedTicketId, setSelectedTicketId] = useState("");
-	const [bulkTicketId, setBulkTicketId] = useState("");
-	const [formData, setFormData] = useState({
-		name: "",
-		amount: 10,
-		usageLimit: 1,
-		validFrom: "",
-		validUntil: ""
-	});
+	const [state, dispatch] = useReducer(invitesReducer, initialInvitesState);
+	const {
+		isSaving,
+		inviteTypes,
+		searchTerm,
+		isLoading,
+		showModal,
+		showBulkImportModal,
+		showCodesModal,
+		viewingCodesOf,
+		tickets,
+		selectedCodes,
+		showEmailModal,
+		isSendingEmail,
+		emailList,
+		emailMessage,
+		matchedPairs,
+		showPreview,
+		bulkImportCodes,
+		isImporting,
+		selectedTicketId,
+		bulkTicketId,
+		formData
+	} = state;
+	const currentEventId = useSelectedEventId();
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
@@ -160,13 +323,12 @@ export default function InvitesPage() {
 	const loadInvitationCodes = useCallback(async () => {
 		if (!currentEventId) return;
 
-		setIsLoading(true);
+		dispatch({ type: "patch", patch: { isLoading: true } });
 		try {
 			const response = await adminInvitationCodesAPI.getAll({ eventId: currentEventId });
 			if (response.success) {
 				const codesByType: Record<string, InviteType> = {};
 				(response.data || []).forEach((code: InvitationCodeInfo) => {
-					const ticket = tickets.find(t => t.id === code.ticketId);
 					const typeName = code.name || "Default";
 					if (!codesByType[typeName]) {
 						codesByType[typeName] = {
@@ -186,15 +348,14 @@ export default function InvitesPage() {
 						ticketId: code.ticketId
 					});
 				});
-				setInviteTypes(Object.values(codesByType));
-				setFilteredTypes(Object.values(codesByType));
+				dispatch({ type: "invitesLoaded", inviteTypes: Object.values(codesByType) });
 			}
 		} catch (error) {
 			console.error("Failed to load invitation codes:", error);
 		} finally {
-			setIsLoading(false);
+			dispatch({ type: "patch", patch: { isLoading: false } });
 		}
-	}, [currentEventId, tickets]);
+	}, [currentEventId]);
 
 	const loadTickets = useCallback(async () => {
 		if (!currentEventId) return;
@@ -202,7 +363,7 @@ export default function InvitesPage() {
 		try {
 			const response = await adminTicketsAPI.getAll({ eventId: currentEventId });
 			if (response.success) {
-				setTickets(response.data || []);
+				dispatch({ type: "ticketsLoaded", tickets: response.data || [] });
 			}
 		} catch (error) {
 			console.error("Failed to load tickets:", error);
@@ -211,11 +372,11 @@ export default function InvitesPage() {
 
 	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		setIsSaving(true);
+		dispatch({ type: "patch", patch: { isSaving: true } });
 
 		if (!selectedTicketId) {
 			showAlert(t.pleaseSelectTicket, "warning");
-			setIsSaving(false);
+			dispatch({ type: "patch", patch: { isSaving: false } });
 			return;
 		}
 
@@ -242,22 +403,13 @@ export default function InvitesPage() {
 
 		try {
 			await adminInvitationCodesAPI.bulkCreate(data);
-			await loadTickets();
-			await loadInvitationCodes();
-			setShowModal(false);
-			setSelectedTicketId("");
-			setFormData({
-				name: "",
-				amount: 10,
-				usageLimit: 1,
-				validFrom: "",
-				validUntil: ""
-			});
+			await Promise.all([loadTickets(), loadInvitationCodes()]);
+			dispatch({ type: "createSuccess" });
 			showAlert(t.createSuccess.replace("{count}", formData.amount.toString()), "success");
 		} catch (error) {
 			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
-			setIsSaving(false);
+			dispatch({ type: "patch", patch: { isSaving: false } });
 		}
 	}
 
@@ -266,8 +418,7 @@ export default function InvitesPage() {
 
 		try {
 			await adminInvitationCodesAPI.delete(codeId);
-			await loadTickets();
-			await loadInvitationCodes();
+			await Promise.all([loadTickets(), loadInvitationCodes()]);
 			showAlert(t.deleteSuccess, "success");
 		} catch (error) {
 			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
@@ -283,23 +434,24 @@ export default function InvitesPage() {
 		if (!confirm(t.confirmBulkDelete.replace("{count}", selectedCodes.size.toString()))) return;
 
 		try {
-			let successCount = 0;
-			let errorCount = 0;
-
-			for (const codeId of selectedCodes) {
-				try {
-					await adminInvitationCodesAPI.delete(codeId);
-					successCount++;
-				} catch (error) {
-					console.error(`Failed to delete code ${codeId}:`, error);
-					errorCount++;
-				}
-			}
+			const deleteResults = await Promise.all(
+				Array.from(selectedCodes).map(async codeId => {
+					try {
+						await adminInvitationCodesAPI.delete(codeId);
+						return true;
+					} catch (error) {
+						console.error(`Failed to delete code ${codeId}:`, error);
+						return false;
+					}
+				})
+			);
+			const successCount = deleteResults.filter(Boolean).length;
+			const errorCount = deleteResults.length - successCount;
 
 			await loadTickets();
 			await loadInvitationCodes();
 
-			setSelectedCodes(new Set());
+			dispatch({ type: "patch", patch: { selectedCodes: new Set() } });
 
 			if (errorCount > 0) {
 				showAlert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`, "error");
@@ -399,47 +551,47 @@ export default function InvitesPage() {
 		const validFromStr = formData.get("validFrom") as string;
 		const validUntilStr = formData.get("validUntil") as string;
 
-		setIsImporting(true);
+		dispatch({ type: "patch", patch: { isImporting: true } });
 		try {
-			let successCount = 0;
-			let errorCount = 0;
+			const importResults = await Promise.all(
+				codes.map(async code => {
+					try {
+						const data: {
+							ticketId: string;
+							code: string;
+							name?: string;
+							usageLimit: number;
+							validFrom?: string;
+							validUntil?: string;
+						} = {
+							ticketId,
+							code,
+							name: name || undefined,
+							usageLimit
+						};
 
-			for (const code of codes) {
-				try {
-					const data: {
-						ticketId: string;
-						code: string;
-						name?: string;
-						usageLimit: number;
-						validFrom?: string;
-						validUntil?: string;
-					} = {
-						ticketId,
-						code,
-						name: name || undefined,
-						usageLimit
-					};
+						if (validFromStr) {
+							data.validFrom = new Date(validFromStr).toISOString();
+						}
+						if (validUntilStr) {
+							data.validUntil = new Date(validUntilStr).toISOString();
+						}
 
-					if (validFromStr) {
-						data.validFrom = new Date(validFromStr).toISOString();
+						await adminInvitationCodesAPI.create(data);
+						return true;
+					} catch (error) {
+						console.error(`Failed to import code ${code}:`, error);
+						return false;
 					}
-					if (validUntilStr) {
-						data.validUntil = new Date(validUntilStr).toISOString();
-					}
-
-					await adminInvitationCodesAPI.create(data);
-					successCount++;
-				} catch (error) {
-					console.error(`Failed to import code ${code}:`, error);
-					errorCount++;
-				}
-			}
+				})
+			);
+			const successCount = importResults.filter(Boolean).length;
+			const errorCount = importResults.length - successCount;
 
 			await loadTickets();
 			await loadInvitationCodes();
 
-			setShowBulkImportModal(false);
-			setBulkImportCodes("");
+			dispatch({ type: "bulkImportSuccess" });
 
 			if (errorCount > 0) {
 				showAlert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`, "error");
@@ -449,7 +601,7 @@ export default function InvitesPage() {
 		} catch (error) {
 			showAlert("匯入失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
-			setIsImporting(false);
+			dispatch({ type: "patch", patch: { isImporting: false } });
 		}
 	}
 
@@ -460,7 +612,7 @@ export default function InvitesPage() {
 		const reader = new FileReader();
 		reader.onload = event => {
 			const text = event.target?.result as string;
-			setBulkImportCodes(text);
+			dispatch({ type: "patch", patch: { bulkImportCodes: text } });
 		};
 		reader.readAsText(file);
 	}
@@ -502,7 +654,7 @@ export default function InvitesPage() {
 			codeId: selectedCodesList[index].id
 		}));
 
-		setMatchedPairs(pairs);
+		dispatch({ type: "emailMatched", pairs });
 		showAlert(t.matchSuccess.replace("{count}", pairs.length.toString()), "success");
 	}
 
@@ -517,34 +669,35 @@ export default function InvitesPage() {
 			return;
 		}
 
-		setIsSendingEmail(true);
+		dispatch({ type: "patch", patch: { isSendingEmail: true } });
 		try {
-			let successCount = 0;
-			let errorCount = 0;
+			const sendResults = await Promise.all(
+				matchedPairs.map(async pair => {
+					try {
+						const response = await fetch("/api/admin/invitation-codes/send-email", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json"
+							},
+							body: JSON.stringify({
+								email: pair.email,
+								code: pair.code,
+								message: emailMessage
+							})
+						});
 
-			for (const pair of matchedPairs) {
-				try {
-					const response = await fetch("/api/admin/invitation-codes/send-email", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json"
-						},
-						body: JSON.stringify({
-							email: pair.email,
-							code: pair.code,
-							message: emailMessage
-						})
-					});
-
-					if (!response.ok) {
-						throw new Error("Failed to send email");
+						if (!response.ok) {
+							throw new Error("Failed to send email");
+						}
+						return true;
+					} catch (error) {
+						console.error(`Failed to send email to ${pair.email}:`, error);
+						return false;
 					}
-					successCount++;
-				} catch (error) {
-					console.error(`Failed to send email to ${pair.email}:`, error);
-					errorCount++;
-				}
-			}
+				})
+			);
+			const successCount = sendResults.filter(Boolean).length;
+			const errorCount = sendResults.length - successCount;
 
 			if (errorCount > 0) {
 				showAlert(t.sendPartialSuccess.replace("{success}", successCount.toString()).replace("{failed}", errorCount.toString()), "warning");
@@ -552,120 +705,45 @@ export default function InvitesPage() {
 				showAlert(t.sendAllSuccess.replace("{count}", successCount.toString()), "success");
 			}
 
-			setShowEmailModal(false);
-			setEmailList("");
-			setEmailMessage("");
-			setMatchedPairs([]);
+			dispatch({ type: "closeEmailModal" });
 		} catch (error) {
 			console.error("Error sending emails:", error);
 			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
-			setIsSendingEmail(false);
+			dispatch({ type: "emailFinished" });
 		}
-	}
-
-	function renderEmailPreview() {
-		if (matchedPairs.length === 0) {
-			return <div className="text-sm text-muted-foreground">請先配對郵件與邀請碼以查看預覽</div>;
-		}
-
-		const samplePair = matchedPairs[0];
-		const ticket = tickets.find(t => currentType?.codes.find(c => c.code === samplePair.code));
-
-		return (
-			<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
-				<div style={{ background: "linear-gradient(#e5e7eb, #e5e7eb)", fontFamily: "sans-serif", padding: "48px 32px" }}>
-					<div style={{ margin: "0 auto", maxWidth: "600px", padding: "24px calc((min(100%, 600px) - 32px) * 0.04) 0", boxSizing: "border-box" }}>
-						<div style={{ background: "linear-gradient(#f9fafb, #f9fafb)", padding: "48px 24px 0" }}>
-							<h1 style={{ fontSize: "24px", margin: "32px 0", textAlign: "center", color: "#374151" }}>來自 SITCONTIX 的活動邀請碼</h1>
-							<div className="description" style={{ color: "#6b7280", lineHeight: "150%" }} dangerouslySetInnerHTML={{ __html: emailMessage || "<p>（訊息預覽）</p>" }} />
-							<div style={{ background: "linear-gradient(#9ca3af, #9ca3af)", padding: "12px 32px", margin: "32px auto", display: "block", width: "fit-content", borderRadius: "12px" }}>
-								<span style={{ fontWeight: "bold", fontFamily: "monospace", fontSize: "x-large", color: "#f3f4f6" }}>{samplePair.code}</span>
-							</div>
-							<div style={{ color: "#6b7280", lineHeight: "150%" }}>
-								<p>您可以將邀請碼用於兌換票種「{ticket ? getLocalizedText(ticket.name, locale) : "票種名稱"}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
-								<p>請在有效期限前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
-							</div>
-							<a href="#" style={{ background: "linear-gradient(#6b7280, #6b7280)", padding: "12px 32px", textDecoration: "none", margin: "auto", display: "block", width: "fit-content" }}>
-								<span style={{ fontWeight: "bold", color: "#f3f4f6" }}>直接前往領票</span>
-							</a>
-						</div>
-					</div>
-					<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
-						©SITCON
-						<br />
-						寄送給 {samplePair.email}
-					</div>
-				</div>
-			</div>
-		);
 	}
 
 	function toggleCodeSelection(codeId: string) {
-		const newSelection = new Set(selectedCodes);
-		if (newSelection.has(codeId)) {
-			newSelection.delete(codeId);
-		} else {
-			newSelection.add(codeId);
-		}
-		setSelectedCodes(newSelection);
+		dispatch({ type: "toggleCodeSelection", codeId });
 	}
 
 	function toggleSelectAll() {
 		if (!currentType) return;
 
 		const allCodeIds = currentType.codes.map(c => c.id);
-		if (selectedCodes.size === allCodeIds.length) {
-			setSelectedCodes(new Set());
-		} else {
-			setSelectedCodes(new Set(allCodeIds));
-		}
+		dispatch({ type: "toggleSelectAll", codeIds: allCodeIds });
 	}
 
 	function openCodesModal(typeId: string) {
-		setViewingCodesOf(typeId);
-		setSelectedCodes(new Set());
-		setShowCodesModal(true);
+		dispatch({ type: "openCodesModal", typeId });
 	}
 
 	const currentType = inviteTypes.find(t => t.id === viewingCodesOf);
 
 	useEffect(() => {
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setCurrentEventId(savedEventId);
-		}
-
-		const handleEventChange = (e: CustomEvent) => {
-			setCurrentEventId(e.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
-		return () => {
-			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
-		};
-	}, []);
-
-	useEffect(() => {
 		if (currentEventId) {
-			loadTickets();
+			void Promise.all([loadTickets(), loadInvitationCodes()]);
 		}
-	}, [currentEventId, loadTickets]);
+	}, [currentEventId, loadTickets, loadInvitationCodes]);
 
-	useEffect(() => {
-		if (currentEventId && tickets.length > 0) {
-			loadInvitationCodes();
-		}
-	}, [currentEventId, tickets.length, loadInvitationCodes]);
-
-	useEffect(() => {
+	const filteredTypes = useMemo(() => {
 		const q = searchTerm.toLowerCase();
-		const filtered = inviteTypes.filter(t => {
+		return inviteTypes.filter(t => {
 			if (!q) return true;
 			if (t.name.toLowerCase().includes(q)) return true;
 			return t.codes.some(c => c.code.toLowerCase().includes(q));
 		});
-		setFilteredTypes(filtered);
 	}, [inviteTypes, searchTerm]);
 
 	return (
@@ -673,15 +751,15 @@ export default function InvitesPage() {
 			<main>
 				<AdminHeader title={t.title} />
 				<section className="flex gap-2 mb-4">
-					<Button onClick={() => setShowModal(true)}>
+					<Button onClick={() => dispatch({ type: "patch", patch: { showModal: true } })}>
 						<Plus /> {t.add}
 					</Button>
-					<Button variant="secondary" onClick={() => setShowBulkImportModal(true)}>
+					<Button variant="secondary" onClick={() => dispatch({ type: "patch", patch: { showBulkImportModal: true } })}>
 						<Import /> {t.bulkImport}
 					</Button>
 					<div className="relative max-w-xs">
 						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => dispatch({ type: "patch", patch: { searchTerm: e.target.value } })} className="pl-10 h-11" />
 					</div>
 				</section>
 
@@ -729,7 +807,7 @@ export default function InvitesPage() {
 					</div>
 				</section>
 
-				<Dialog open={showModal} onOpenChange={setShowModal}>
+				<Dialog open={showModal} onOpenChange={value => dispatch({ type: "patch", patch: { showModal: value } })}>
 					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t.add}</DialogTitle>
@@ -737,7 +815,7 @@ export default function InvitesPage() {
 						<form onSubmit={createInvitationCodes} className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="ticketId">{t.ticketType}</Label>
-								<Select name="ticketId" value={selectedTicketId} onValueChange={setSelectedTicketId} required>
+								<Select name="ticketId" value={selectedTicketId} onValueChange={value => dispatch({ type: "patch", patch: { selectedTicketId: value } })} required>
 									<SelectTrigger>
 										<SelectValue placeholder={t.pleaseSelectTicket} />
 									</SelectTrigger>
@@ -752,12 +830,29 @@ export default function InvitesPage() {
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="name">{t.name}</Label>
-								<Input id="name" name="name" type="text" required placeholder="e.g. VIP Media" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+								<Input
+									id="name"
+									name="name"
+									type="text"
+									required
+									placeholder="e.g. VIP Media"
+									value={formData.name}
+									onChange={e => dispatch({ type: "setFormField", field: "name", value: e.target.value })}
+								/>
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label htmlFor="amount">{t.amount}</Label>
-									<Input id="amount" name="amount" type="number" min="1" max="1000" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseInt(e.target.value) })} />
+									<Input
+										id="amount"
+										name="amount"
+										type="number"
+										min="1"
+										max="1000"
+										required
+										value={formData.amount}
+										onChange={e => dispatch({ type: "setFormField", field: "amount", value: parseInt(e.target.value) })}
+									/>
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="usageLimit">{t.usageLimit}</Label>
@@ -769,7 +864,7 @@ export default function InvitesPage() {
 										max="100"
 										required
 										value={formData.usageLimit}
-										onChange={e => setFormData({ ...formData, usageLimit: parseInt(e.target.value) })}
+										onChange={e => dispatch({ type: "setFormField", field: "usageLimit", value: parseInt(e.target.value) })}
 									/>
 								</div>
 							</div>
@@ -778,17 +873,29 @@ export default function InvitesPage() {
 									<Label htmlFor="validFrom">
 										{t.validFrom} ({t.optional})
 									</Label>
-									<Input id="validFrom" name="validFrom" type="datetime-local" value={formData.validFrom} onChange={e => setFormData({ ...formData, validFrom: e.target.value })} />
+									<Input
+										id="validFrom"
+										name="validFrom"
+										type="datetime-local"
+										value={formData.validFrom}
+										onChange={e => dispatch({ type: "setFormField", field: "validFrom", value: e.target.value })}
+									/>
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="validUntil">
 										{t.validUntil} ({t.optional})
 									</Label>
-									<Input id="validUntil" name="validUntil" type="datetime-local" value={formData.validUntil} onChange={e => setFormData({ ...formData, validUntil: e.target.value })} />
+									<Input
+										id="validUntil"
+										name="validUntil"
+										type="datetime-local"
+										value={formData.validUntil}
+										onChange={e => dispatch({ type: "setFormField", field: "validUntil", value: e.target.value })}
+									/>
 								</div>
 							</div>
 							<DialogFooter>
-								<Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+								<Button type="button" variant="outline" onClick={() => dispatch({ type: "patch", patch: { showModal: false } })}>
 									{t.cancel}
 								</Button>
 								<Button type="submit" isLoading={isSaving}>
@@ -799,7 +906,7 @@ export default function InvitesPage() {
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={showBulkImportModal} onOpenChange={setShowBulkImportModal}>
+				<Dialog open={showBulkImportModal} onOpenChange={value => dispatch({ type: "patch", patch: { showBulkImportModal: value } })}>
 					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t.bulkImportTitle}</DialogTitle>
@@ -809,7 +916,7 @@ export default function InvitesPage() {
 
 							<div className="space-y-2">
 								<Label htmlFor="bulkTicketId">{t.ticketType}</Label>
-								<Select name="ticketId" value={bulkTicketId} onValueChange={setBulkTicketId} required>
+								<Select name="ticketId" value={bulkTicketId} onValueChange={value => dispatch({ type: "patch", patch: { bulkTicketId: value } })} required>
 									<SelectTrigger>
 										<SelectValue placeholder={t.pleaseSelectTicket} />
 									</SelectTrigger>
@@ -837,7 +944,14 @@ export default function InvitesPage() {
 
 							<div className="space-y-2">
 								<Label htmlFor="bulkCodes">{t.pasteOrType}</Label>
-								<Textarea id="bulkCodes" value={bulkImportCodes} onChange={e => setBulkImportCodes(e.target.value)} placeholder={t.codesPlaceholder} rows={10} className="font-mono" />
+								<Textarea
+									id="bulkCodes"
+									value={bulkImportCodes}
+									onChange={e => dispatch({ type: "patch", patch: { bulkImportCodes: e.target.value } })}
+									placeholder={t.codesPlaceholder}
+									rows={10}
+									className="font-mono"
+								/>
 							</div>
 
 							<div className="grid grid-cols-2 gap-4">
@@ -861,7 +975,7 @@ export default function InvitesPage() {
 							</div>
 
 							<DialogFooter>
-								<Button type="button" variant="outline" onClick={() => setShowBulkImportModal(false)} disabled={isImporting}>
+								<Button type="button" variant="outline" onClick={() => dispatch({ type: "patch", patch: { showBulkImportModal: false } })} disabled={isImporting}>
 									{t.cancel}
 								</Button>
 								<Button type="submit" isLoading={isImporting}>
@@ -872,7 +986,7 @@ export default function InvitesPage() {
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={showCodesModal} onOpenChange={setShowCodesModal}>
+				<Dialog open={showCodesModal} onOpenChange={value => dispatch({ type: "patch", patch: { showCodesModal: value } })}>
 					<DialogContent className="sm:max-w-2xl max-w-2xl max-h-[85vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>
@@ -897,7 +1011,7 @@ export default function InvitesPage() {
 										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsCsvWithLink}>
 											<Download size={20} /> {t.downloadCsvWithLink} ({selectedCodes.size})
 										</Button>
-										<Button variant="outline" size="sm" onClick={() => setShowEmailModal(true)}>
+										<Button variant="outline" size="sm" onClick={() => dispatch({ type: "patch", patch: { showEmailModal: true } })}>
 											<Mail size={20} /> {t.sendEmail} ({selectedCodes.size})
 										</Button>
 										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
@@ -913,6 +1027,7 @@ export default function InvitesPage() {
 											<TableHead className="w-[50px] text-center">
 												<input
 													type="checkbox"
+													aria-label={currentType && selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
 													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
 													onChange={toggleSelectAll}
 													className="cursor-pointer"
@@ -932,7 +1047,13 @@ export default function InvitesPage() {
 											return (
 												<TableRow key={code.id}>
 													<TableCell className="text-center">
-														<input type="checkbox" checked={selectedCodes.has(code.id)} onChange={() => toggleCodeSelection(code.id)} className="cursor-pointer" />
+														<input
+															type="checkbox"
+															aria-label={`${t.code}: ${code.code}`}
+															checked={selectedCodes.has(code.id)}
+															onChange={() => toggleCodeSelection(code.id)}
+															className="cursor-pointer"
+														/>
 													</TableCell>
 													<TableCell className="font-mono text-sm">{code.code}</TableCell>
 													<TableCell className="whitespace-nowrap">{code.usedCount}</TableCell>
@@ -955,7 +1076,7 @@ export default function InvitesPage() {
 					</DialogContent>
 				</Dialog>
 
-				<Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+				<Dialog open={showEmailModal} onOpenChange={value => dispatch({ type: "patch", patch: { showEmailModal: value } })}>
 					<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t.bulkSendEmail}</DialogTitle>
@@ -964,13 +1085,20 @@ export default function InvitesPage() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label htmlFor="emailList">{t.emailListLabel}</Label>
-									<Textarea id="emailList" value={emailList} onChange={e => setEmailList(e.target.value)} placeholder={t.emailListPlaceholder} rows={8} className="font-mono text-sm" />
+									<Textarea
+										id="emailList"
+										value={emailList}
+										onChange={e => dispatch({ type: "patch", patch: { emailList: e.target.value } })}
+										placeholder={t.emailListPlaceholder}
+										rows={8}
+										className="font-mono text-sm"
+									/>
 									<p className="text-xs text-muted-foreground">已選擇 {selectedCodes.size} 個邀請碼</p>
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="emailMessage">{t.messageLabel}</Label>
-									<Textarea id="emailMessage" value={emailMessage} onChange={e => setEmailMessage(e.target.value)} placeholder={t.messagePlaceholder} rows={8} />
+									<Textarea id="emailMessage" value={emailMessage} onChange={e => dispatch({ type: "patch", patch: { emailMessage: e.target.value } })} placeholder={t.messagePlaceholder} rows={8} />
 								</div>
 							</div>
 
@@ -980,7 +1108,7 @@ export default function InvitesPage() {
 								</Button>
 								{matchedPairs.length > 0 && (
 									<>
-										<Button type="button" onClick={() => setShowPreview(!showPreview)} variant="outline" disabled={isSendingEmail}>
+										<Button type="button" onClick={() => dispatch({ type: "patch", patch: { showPreview: !showPreview } })} variant="outline" disabled={isSendingEmail}>
 											{showPreview ? t.closePreview : t.preview}
 										</Button>
 										<div className="text-sm text-muted-foreground flex items-center">
@@ -995,8 +1123,8 @@ export default function InvitesPage() {
 									<Label>配對結果</Label>
 									<div className="border rounded-lg p-4 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900">
 										<div className="space-y-1 font-mono text-sm">
-											{matchedPairs.map((pair, index) => (
-												<div key={index} className="flex justify-between items-center py-1 border-b last:border-b-0">
+											{matchedPairs.map(pair => (
+												<div key={pair.codeId} className="flex justify-between items-center py-1 border-b last:border-b-0">
 													<span className="text-blue-600 dark:text-blue-400">{pair.email}</span>
 													<span className="text-gray-400">→</span>
 													<span className="text-green-600 dark:text-green-400">{pair.code}</span>
@@ -1010,7 +1138,7 @@ export default function InvitesPage() {
 							{showPreview && (
 								<div className="space-y-2">
 									<Label>{t.emailPreview}</Label>
-									{renderEmailPreview()}
+									<EmailPreview matchedPairs={matchedPairs} tickets={tickets} currentType={currentType} emailMessage={emailMessage} locale={locale} />
 								</div>
 							)}
 						</div>
@@ -1019,11 +1147,7 @@ export default function InvitesPage() {
 								type="button"
 								variant="outline"
 								onClick={() => {
-									setShowEmailModal(false);
-									setEmailList("");
-									setEmailMessage("");
-									setMatchedPairs([]);
-									setShowPreview(false);
+									dispatch({ type: "closeEmailModal" });
 								}}
 								disabled={isSendingEmail}
 							>
@@ -1038,4 +1162,8 @@ export default function InvitesPage() {
 			</main>
 		</>
 	);
+}
+
+export default function InvitesPage() {
+	return useInvitesPageView();
 }

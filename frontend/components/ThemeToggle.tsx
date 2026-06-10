@@ -5,10 +5,14 @@ import { getTranslations } from "@/i18n/helpers";
 import { Moon, Sun } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const subscribeHydrated = () => () => {};
+const getClientHydrated = () => true;
+const getServerHydrated = () => false;
 
 export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
-	const [mounted, setMounted] = useState(false);
+	const mounted = useSyncExternalStore(subscribeHydrated, getClientHydrated, getServerHydrated);
 	const { resolvedTheme, setTheme } = useTheme();
 	const locale = useLocale();
 
@@ -19,10 +23,6 @@ export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
 			en: "Toggle theme to"
 		}
 	});
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	if (!mounted) {
 		return (

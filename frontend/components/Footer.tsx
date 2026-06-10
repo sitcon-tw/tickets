@@ -6,6 +6,12 @@ import { Globe, Heart } from "lucide-react";
 import { useRouter as useNextRouter, usePathname } from "next/navigation";
 import { useMemo } from "react";
 
+const localeNames: Record<string, string> = {
+	en: "English",
+	"zh-Hant": "\u7e41\u9ad4\u4e2d\u6587",
+	"zh-Hans": "\u7b80\u4f53\u4e2d\u6587"
+};
+
 export default function Footer() {
 	const pathname = usePathname();
 	const router = useNextRouter();
@@ -15,12 +21,6 @@ export default function Footer() {
 		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
-
-	const localeNames: Record<string, string> = {
-		en: "English",
-		"zh-Hant": "繁體中文",
-		"zh-Hans": "简体中文"
-	};
 
 	const handleLocaleChange = (newLocale: string) => {
 		// Replace the locale part in the pathname

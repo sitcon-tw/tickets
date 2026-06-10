@@ -12,8 +12,7 @@ export interface SpinnerProps {
 export interface QRCodePopupProps {
 	isOpen: boolean;
 	onClose: () => void;
-	registrationId: string;
-	registrationTime: Date;
+	qrValue: string;
 	useOpass?: boolean;
 	opassEventId?: string | null;
 }

@@ -1,0 +1,316 @@
+"use client";
+
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAlert } from "@/contexts/AlertContext";
+import { getTranslations } from "@/i18n/helpers";
+import { authAPI } from "@/lib/api/endpoints";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { useLocale } from "next-intl";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useReducer } from "react";
+
+const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
+	return (
+		<div className="my-4 mx-auto">
+			<Button
+				onClick={onClick}
+				disabled={disabled}
+				size="lg"
+				className="group relative overflow-hidden bg-gray-100 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-700"
+			>
+				<div className="svg-wrapper-1">
+					<div className="svg-wrapper group-hover:animate-[fly-1_0.8s_ease-in-out_infinite_alternate]">
+						{isLoading ? (
+							<Spinner size="sm" />
+						) : (
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								width={24}
+								height={24}
+								className="block origin-center transition-transform duration-300 ease-in-out group-hover:translate-x-14 group-hover:rotate-45 group-hover:scale-110"
+							>
+								<path fill="none" d="M0 0h24v24H0z" />
+								<path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z" />
+							</svg>
+						)}
+					</div>
+				</div>
+				<span className="block ml-1.5 transition-transform duration-300 ease-in-out group-hover:translate-x-36">{children}</span>
+			</Button>
+		</div>
+	);
+};
+
+function validateEmail(email: string): boolean {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email);
+}
+
+type LoginState = {
+	viewState: "login" | "sent";
+	isLoading: boolean;
+	email: string;
+	isCheckingAuth: boolean;
+	turnstileToken: string | null;
+};
+
+type LoginAction =
+	| { type: "authChecked" }
+	| { type: "emailChanged"; email: string }
+	| { type: "turnstileChanged"; token: string | null }
+	| { type: "sendStarted" }
+	| { type: "sendSucceeded" }
+	| { type: "sendFailed" }
+	| { type: "resetEmail" };
+
+function loginReducer(state: LoginState, action: LoginAction): LoginState {
+	switch (action.type) {
+		case "authChecked":
+			return { ...state, isCheckingAuth: false };
+		case "emailChanged":
+			return { ...state, email: action.email };
+		case "turnstileChanged":
+			return { ...state, turnstileToken: action.token };
+		case "sendStarted":
+			return { ...state, isLoading: true };
+		case "sendSucceeded":
+			return { ...state, viewState: "sent", isLoading: false, turnstileToken: null };
+		case "sendFailed":
+			return { ...state, isLoading: false, turnstileToken: null };
+		case "resetEmail":
+			return { ...state, viewState: "login", email: "", turnstileToken: null };
+		default:
+			return state;
+	}
+}
+
+function LoginContent() {
+	const locale = useLocale();
+	const router = useRouter();
+	const { showAlert } = useAlert();
+	const searchParams = useSearchParams();
+	const returnUrl = searchParams.get("returnUrl");
+	const errorParam = searchParams.get("error");
+	const [{ viewState, isLoading, email, isCheckingAuth, turnstileToken }, dispatchLogin] = useReducer(loginReducer, {
+		viewState: "login",
+		isLoading: false,
+		email: "",
+		isCheckingAuth: false,
+		turnstileToken: null
+	});
+
+	const t = getTranslations(locale, {
+		login: {
+			"zh-Hant": "登入／註冊",
+			"zh-Hans": "登录／注册",
+			en: "Login / Register"
+		},
+		continue: {
+			"zh-Hant": "寄送 Magic Link",
+			"zh-Hans": "发送 Magic Link",
+			en: "Send Magic Link"
+		},
+		sent: {
+			"zh-Hant": "已發送 Magic Link 至 ",
+			"zh-Hans": "已发送 Magic Link 至 ",
+			en: "Magic Link Sent to "
+		},
+		message: {
+			"zh-Hant": "請檢查您的電子郵件收件匣，並點擊連結以登入。若在垃圾郵件請記得回報為非垃圾郵件，以免錯過後續重要信件。",
+			"zh-Hans": "请检查您的电子邮件收件箱，并点击链接以登录。若在垃圾邮件请记得举报为非垃圾邮件，以免错过后续重要信件。",
+			en: "Please check your email inbox and click the link to log in. If you find it in the spam folder, please mark it as not spam to avoid missing important future emails."
+		},
+		error: {
+			"zh-Hant": "錯誤",
+			"zh-Hans": "错误",
+			en: "Error"
+		},
+		invalidEmail: {
+			"zh-Hant": "請輸入有效的電子郵件地址",
+			"zh-Hans": "请输入有效的电子邮件地址",
+			en: "Please enter a valid email address"
+		},
+		rateLimitError: {
+			"zh-Hant": "請求過於頻繁，請稍後再試",
+			"zh-Hans": "请求过于频繁，请稍后再试",
+			en: "Too many requests. Please try again later"
+		},
+		verificationFailed: {
+			"zh-Hant": "驗證失敗，請重新請求登入連結",
+			"zh-Hans": "验证失败，请重新请求登录链接",
+			en: "Verification failed. Please request a new login link"
+		},
+		invalidToken: {
+			"zh-Hant": "無效的連結，請重新請求登入連結",
+			"zh-Hans": "无效的链接，请重新请求登录链接",
+			en: "Invalid link. Please request a new login link"
+		},
+		serverError: {
+			"zh-Hant": "伺服器錯誤，請稍後再試",
+			"zh-Hans": "服务器错误，请稍后再试",
+			en: "Server error. Please try again later"
+		},
+		emailSendError: {
+			"zh-Hant": "無法發送電子郵件，請稍後再試",
+			"zh-Hans": "无法发送电子邮件，请稍后再试",
+			en: "Failed to send email. Please try again later"
+		},
+		tokenExpired: {
+			"zh-Hant": "連結已過期，請重新請求登入連結",
+			"zh-Hans": "链接已过期，请重新请求登录链接",
+			en: "Link has expired. Please request a new login link"
+		},
+		acceptTermsAsLoggedIn: {
+			"zh-Hant": "登入即代表您同意我們的",
+			"zh-Hans": "登录即代表您同意我们的",
+			en: "By logging in, you agree to our "
+		},
+		termsLink: {
+			"zh-Hant": "服務條款與隱私政策",
+			"zh-Hans": "服务条款与隐私政策",
+			en: "Terms of Service and Privacy Policy"
+		},
+		reenterEmail: {
+			"zh-Hant": "重新輸入電子郵件",
+			"zh-Hans": "重新输入电子邮件",
+			en: "Re-enter Email"
+		}
+	});
+
+	useEffect(() => {
+		if (errorParam) {
+			let errorMessage = t.error;
+			switch (errorParam) {
+				case "verification_failed":
+					errorMessage = t.verificationFailed;
+					break;
+				case "invalid_token":
+					errorMessage = t.invalidToken;
+					break;
+				case "token_expired":
+					errorMessage = t.tokenExpired;
+					break;
+				case "server_error":
+					errorMessage = t.serverError;
+					break;
+				default:
+					errorMessage = `${t.error}: ${errorParam}`;
+			}
+			showAlert(errorMessage, "error");
+		}
+	}, [errorParam, showAlert, t.error, t.invalidToken, t.serverError, t.tokenExpired, t.verificationFailed]);
+
+	const login = async () => {
+		if (!email || isLoading) return;
+
+		if (!validateEmail(email)) {
+			showAlert(t.invalidEmail, "error");
+			return;
+		}
+
+		if (!turnstileToken) {
+			showAlert("請完成驗證", "error");
+			return;
+		}
+
+		dispatchLogin({ type: "sendStarted" });
+		try {
+			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
+			dispatchLogin({ type: "sendSucceeded" });
+		} catch (error) {
+			console.error("Login error:", error);
+
+			let errorMessage = t.error;
+			if (error instanceof Error) {
+				const errorMsg = error.message.toLowerCase();
+				if (errorMsg.includes("rate limit") || errorMsg.includes("too many")) {
+					errorMessage = t.rateLimitError;
+				} else if (errorMsg.includes("email") || errorMsg.includes("send")) {
+					errorMessage = t.emailSendError;
+				} else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+					errorMessage = t.serverError;
+				} else {
+					errorMessage = error.message;
+				}
+			}
+
+			showAlert(errorMessage, "error");
+			dispatchLogin({ type: "sendFailed" });
+		}
+	};
+
+	if (isCheckingAuth) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full">
+				<Spinner />
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-col items-center justify-center h-screen">
+			{viewState === "login" ? (
+				<>
+					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
+					<label htmlFor="email" className="block mb-2 font-bold">
+						Email
+					</label>
+					<Input type="email" name="email" id="email" onChange={e => dispatchLogin({ type: "emailChanged", email: e.target.value })} className="max-w-xs" />
+					<div className="flex justify-center my-4">
+						<Turnstile
+							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+							onSuccess={token => dispatchLogin({ type: "turnstileChanged", token })}
+							onError={() => dispatchLogin({ type: "turnstileChanged", token: null })}
+							onExpire={() => dispatchLogin({ type: "turnstileChanged", token: null })}
+							options={{
+								action: "magic-link",
+								theme: "auto",
+								size: "normal"
+							}}
+						/>
+					</div>
+					<SendButton onClick={login} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
+						{t.continue}
+					</SendButton>
+					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
+						{t.acceptTermsAsLoggedIn}
+						<Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+							{t.termsLink}
+						</Link>
+					</p>
+				</>
+			) : (
+				<div className="w-full max-w-md">
+					<div className="text-center">
+						<h2 className="mb-4 text-xl font-semibold">
+							{t.sent}
+							<span className="text-primary">{email}</span>
+						</h2>
+						<p className="leading-relaxed mb-6">{t.message}</p>
+						<Button onClick={() => dispatchLogin({ type: "resetEmail" })} variant="outline" size="lg">
+							{t.reenterEmail}
+						</Button>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+export default function Login() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex flex-col items-center justify-center h-full">
+					<Spinner />
+				</div>
+			}
+		>
+			<LoginContent />
+		</Suspense>
+	);
+}

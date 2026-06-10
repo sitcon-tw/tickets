@@ -63,9 +63,131 @@ class APIClient {
 		}
 	}
 
-	private async request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>): Promise<T> {
-		const url = `${this.baseURL}${endpoint}`;
+	private redirectForAuthStatus(response: Response): void {
+		const browserLocation = typeof window !== "undefined" ? window.location : null;
+		if (!browserLocation) return;
 
+		const currentPath = browserLocation.pathname;
+		const locale = currentPath.split("/")[1] || "zh-Hant";
+
+		if (response.status === 401) {
+			const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+			const isHomePage = pathWithoutLocale === "/" || pathWithoutLocale === "";
+
+			if (!currentPath.includes("/login") && !isHomePage) {
+				const shouldIncludeReturnUrl = !currentPath.includes("/login") && !currentPath.includes("/verify");
+				const returnUrl = shouldIncludeReturnUrl ? encodeURIComponent(currentPath + browserLocation.search) : "";
+				browserLocation.href = `/${locale}/login${returnUrl ? `?returnUrl=${returnUrl}` : ""}`;
+			}
+			return;
+		}
+
+		if (response.status === 423) {
+			if (!currentPath.includes("/account-disabled")) {
+				browserLocation.href = `/${locale}/account-disabled`;
+			}
+			return;
+		}
+
+		if (response.status === 403) {
+			const isOnHomePage = currentPath === `/${locale}` || currentPath === `/${locale}/` || currentPath === "/";
+			if (!isOnHomePage) {
+				browserLocation.href = `/${locale}/`;
+			}
+		}
+	}
+
+	private async getResponseError(response: Response): Promise<Error> {
+		if (response.status === 401) {
+			this.redirectForAuthStatus(response);
+			return new Error("Unauthorized - please login");
+		}
+
+		if (response.status === 423) {
+			this.redirectForAuthStatus(response);
+			return new Error("Account disabled");
+		}
+
+		if (response.status === 403) {
+			this.redirectForAuthStatus(response);
+			return new Error("Forbidden access");
+		}
+
+		const errorData: APIError = await response.json().catch(() => ({
+			detail: [{ loc: [], msg: "發生了未知的錯誤 [C]", type: "unknown" }]
+		}));
+
+		if (errorData.error && errorData.error.message) {
+			return new Error(errorData.error.message);
+		}
+		if (errorData.message) {
+			return new Error(errorData.message);
+		}
+		if (typeof errorData.detail === "string") {
+			return new Error(errorData.detail);
+		}
+		if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+			return new Error(errorData.detail.map(d => d.msg).join(", "));
+		}
+		return new Error(`HTTP ${response.status}: ${response.statusText}`);
+	}
+
+	private async parseResponse<T>(response: Response, endpoint: string, schema?: z.ZodType<T>): Promise<T> {
+		const contentType = response.headers.get("content-type");
+		const isJsonResponse = contentType
+			?.toLowerCase()
+			.split(";")
+			.some(part => part.trim() === "application/json");
+		if (!isJsonResponse) {
+			throw new Error("Invalid response format");
+		}
+
+		const jsonData = await response.json();
+
+		if (!schema) {
+			return jsonData;
+		}
+
+		const result = schema.safeParse(jsonData);
+		if (!result.success) {
+			const errorMessages = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+			console.error({
+				message: "API response validation failed",
+				issues: result.error.issues,
+				jsonData,
+				schema,
+				endpoint
+			});
+			throw new Error(`API response validation failed: ${errorMessages}`);
+		}
+		return result.data;
+	}
+
+	private async requestAttempt<T>(endpoint: string, url: string, config: RequestInit, schema?: z.ZodType<T>): Promise<T> {
+		const response = await this.fetchWithTimeout(url, config);
+		if (!response.ok) {
+			throw await this.getResponseError(response);
+		}
+		return this.parseResponse(response, endpoint, schema);
+	}
+
+	private async retryRequest<T>(endpoint: string, url: string, config: RequestInit, schema: z.ZodType<T> | undefined, attempt: number): Promise<T> {
+		try {
+			return await this.requestAttempt(endpoint, url, config, schema);
+		} catch (error) {
+			const errorInstance = error instanceof Error ? error : new Error("網路發生問題 [C]");
+			if (attempt > this.retryConfig.maxRetries || !this.isRetryableError(errorInstance)) {
+				throw errorInstance;
+			}
+
+			const delay = this.calculateDelay(attempt);
+			await this.sleep(delay);
+			return this.retryRequest(endpoint, url, config, schema, attempt + 1);
+		}
+	}
+
+	private request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>): Promise<T> {
+		const url = `${this.baseURL}${endpoint}`;
 		const config: RequestInit = {
 			headers: {
 				"Content-Type": "application/json",
@@ -75,125 +197,7 @@ class APIClient {
 			...options
 		};
 
-		let lastError: Error = new Error("Max retries exceeded");
-
-		for (let attempt = 1; attempt <= this.retryConfig.maxRetries + 1; attempt++) {
-			try {
-				const response = await this.fetchWithTimeout(url, config);
-
-				if (!response.ok) {
-					if (response.status === 401) {
-						if (typeof window !== "undefined") {
-							const currentPath = window.location.pathname;
-							const locale = currentPath.split("/")[1] || "zh-Hant";
-							const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
-							const isHomePage = pathWithoutLocale === "/" || pathWithoutLocale === "";
-
-							if (!currentPath.includes("/login") && !isHomePage) {
-								const shouldIncludeReturnUrl = !currentPath.includes("/login") && !currentPath.includes("/verify");
-								const returnUrl = shouldIncludeReturnUrl ? encodeURIComponent(currentPath + window.location.search) : "";
-								window.location.href = `/${locale}/login${returnUrl ? `?returnUrl=${returnUrl}` : ""}`;
-							}
-						}
-						throw new Error("Unauthorized - please login");
-					}
-
-					if (response.status === 423) {
-						if (typeof window !== "undefined") {
-							const locale = window.location.pathname.split("/")[1] || "zh-Hant";
-							if (!window.location.pathname.includes("/account-disabled")) {
-								window.location.href = `/${locale}/account-disabled`;
-							}
-						}
-						throw new Error("Account disabled");
-					}
-
-					if (response.status === 403) {
-						if (typeof window !== "undefined") {
-							const currentPath = window.location.pathname;
-							const locale = currentPath.split("/")[1] || "zh-Hant";
-							const isOnHomePage = currentPath === `/${locale}` || currentPath === `/${locale}/` || currentPath === "/";
-
-							if (!isOnHomePage) {
-								window.location.href = `/${locale}/`;
-							}
-						}
-						throw new Error("Forbidden access");
-					}
-
-					const errorData: APIError = await response.json().catch(() => ({
-						detail: [{ loc: [], msg: "發生了未知的錯誤 [C]", type: "unknown" }]
-					}));
-
-					let errorMessage: string;
-					if (errorData.error && errorData.error.message) {
-						errorMessage = errorData.error.message;
-					} else if (errorData.message) {
-						errorMessage = errorData.message;
-					} else if (errorData.detail) {
-						if (typeof errorData.detail === "string") {
-							errorMessage = errorData.detail;
-						} else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
-							errorMessage = errorData.detail.map(d => d.msg).join(", ");
-						} else {
-							errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-						}
-					} else {
-						errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-					}
-
-					const error = new Error(errorMessage);
-
-					if (attempt <= this.retryConfig.maxRetries && this.isRetryableError(error, response)) {
-						lastError = error;
-						const delay = this.calculateDelay(attempt);
-						await this.sleep(delay);
-						continue;
-					}
-
-					throw error;
-				}
-
-				const contentType = response.headers.get("content-type");
-				if (contentType && contentType.includes("application/json")) {
-					const jsonData = await response.json();
-
-					// Validate with Zod schema if provided
-					if (schema) {
-						const result = schema.safeParse(jsonData);
-						if (!result.success) {
-							const errorMessages = result.error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
-							console.error({
-								message: "API response validation failed",
-								issues: result.error.issues,
-								jsonData,
-								schema,
-								endpoint
-							});
-							throw new Error(`API response validation failed: ${errorMessages}`);
-						}
-						return result.data;
-					}
-
-					return jsonData;
-				}
-
-				throw new Error("Invalid response format");
-			} catch (error) {
-				const errorInstance = error instanceof Error ? error : new Error("網路發生問題 [C]");
-
-				if (attempt <= this.retryConfig.maxRetries && this.isRetryableError(errorInstance)) {
-					lastError = errorInstance;
-					const delay = this.calculateDelay(attempt);
-					await this.sleep(delay);
-					continue;
-				}
-
-				throw errorInstance;
-			}
-		}
-
-		throw lastError || new Error("Max retries exceeded");
+		return this.retryRequest(endpoint, url, config, schema, 1);
 	}
 
 	async get<T>(endpoint: string, params?: Record<string, unknown>, schema?: z.ZodType<T>): Promise<T> {
@@ -252,5 +256,3 @@ class APIClient {
 export const apiClient = new APIClient();
 
 export type { RetryConfig };
-
-export default APIClient;
