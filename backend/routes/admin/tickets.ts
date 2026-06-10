@@ -607,7 +607,6 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/tickets/reorder",
 		{
-			preHandler: requireEventAccess,
 			schema: adminTicketSchemas.reorderTickets
 		},
 		async (request, reply) => {
@@ -661,6 +660,10 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.setAttribute("tickets.eventId", eventIds[0]);
+
+				request.query = { ...(request.query || {}), eventId: eventIds[0] } as typeof request.query;
+				await requireEventAccess.call(fastify, request, reply, () => {});
+				if (reply.sent) return;
 
 				// Validate no duplicate orders
 				const orders = tickets.map(t => t.order);
