@@ -488,7 +488,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				span.addEvent("webhook.retry.start");
 
-				const success = await retryFailedDelivery(deliveryId);
+				const success = await retryFailedDelivery(deliveryId, eventId);
 
 				span.setAttribute("webhook.retry.success", success);
 

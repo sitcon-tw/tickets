@@ -169,7 +169,7 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
 		const query = request.query as EventAccessRequest;
 		const params = request.params as EventAccessRequest;
 		const body = request.body as EventAccessRequest;
-		const eventId = query?.eventId || params?.id || body?.eventId;
+		const eventId = params?.eventId || params?.id || query?.eventId || body?.eventId;
 
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
