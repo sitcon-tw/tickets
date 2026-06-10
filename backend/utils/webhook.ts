@@ -516,13 +516,17 @@ export async function getFailedDeliveries(eventId: string, page: number = 1, lim
 /**
  * Manually retry a failed delivery
  */
-export async function retryFailedDelivery(deliveryId: string): Promise<boolean> {
+export async function retryFailedDelivery(deliveryId: string, eventId?: string): Promise<boolean> {
 	const delivery = await prisma.webhookDelivery.findUnique({
 		where: { id: deliveryId },
 		include: { webhook: true }
 	});
 
 	if (!delivery || delivery.status !== "failed") {
+		return false;
+	}
+
+	if (eventId && delivery.webhook.eventId !== eventId) {
 		return false;
 	}
 
