@@ -1,9 +1,9 @@
 import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
-import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaFieldId } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaFieldId, requireEventListAccess } from "#middleware/auth";
 import { Prisma } from "#prisma/generated/prisma/client";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { logger } from "#utils/logger";
@@ -19,9 +19,10 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields",
 		{
+			preHandler: requireEventAccess,
 			schema: eventFormFieldSchemas.createEventFormField
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) {
+		async (request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) => {
 			const span = tracer.startSpan("route.admin.event_form_fields.create", {
 				attributes: {
 					"event.id": request.body.eventId,
@@ -32,7 +33,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			});
 
 			try {
-				await requireEventAccess.call(this, request, reply, () => {});
 				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body;
 
 				span.addEvent("query.event.start");
@@ -358,9 +358,10 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields",
 		{
+			preHandler: requireEventListAccess,
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) {
+		async (request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) => {
 			const span = tracer.startSpan("route.admin.event_form_fields.list", {
 				attributes: {
 					"filter.has_event_id": !!request.query.eventId
@@ -369,14 +370,17 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 			try {
 				const { eventId } = request.query;
+				const permittedEventIds = request.userEventPermissions;
 
-				if (eventId) {
-					span.setAttribute("filter.event_id", eventId);
-					await requireEventAccess.call(this, request, reply, () => {});
+				if (eventId && permittedEventIds && !permittedEventIds.includes(eventId)) {
+					span.addEvent("event.access_denied");
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
 				}
 
 				const where: Record<string, unknown> = {};
 				if (eventId) {
+					span.setAttribute("filter.event_id", eventId);
 					span.addEvent("query.event.start");
 
 					const event = await prisma.event.findUnique({
@@ -390,6 +394,8 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 
 					where.eventId = eventId;
+				} else if (permittedEventIds) {
+					where.eventId = { in: permittedEventIds };
 				}
 
 				span.addEvent("query.fields.start");
@@ -430,9 +436,10 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/events/:eventId/form-fields/reorder",
 		{
+			preHandler: requireEventAccess,
 			schema: adminEventFormFieldSchemas.reorderEventFormFields
 		},
-		async function (this: FastifyInstance, request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) {
+		async (request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) => {
 			const span = tracer.startSpan("route.admin.event_form_fields.reorder", {
 				attributes: {
 					"event.id": request.params.eventId,
@@ -442,8 +449,6 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 			try {
 				const { eventId } = request.params;
-
-				await requireEventAccess.call(this, request, reply, () => {});
 
 				const { fieldOrders } = request.body;
 
