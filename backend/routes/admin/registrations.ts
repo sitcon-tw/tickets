@@ -420,6 +420,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/export",
 		{
+			preHandler: requireEventAccess,
 			schema: adminRegistrationSchemas.exportRegistrations
 		},
 		async (request, reply) => {
