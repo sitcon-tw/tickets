@@ -514,6 +514,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/analytics",
 		{
+			preHandler: requireEventAccessViaTicketId,
 			schema: adminTicketSchemas.getTicketAnalytics
 		},
 		async (request, reply) => {
