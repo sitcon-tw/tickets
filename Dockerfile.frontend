@@ -9,7 +9,7 @@ COPY frontend ./frontend
 COPY types ./types
 
 WORKDIR /src/frontend
-RUN npm install -g pnpm@10 && pnpm install --production --frozen-lockfile
+RUN npm install -g pnpm@12.3.4 && pnpm --version && pnpm install --production --frozen-lockfile
 
 RUN pnpm build
 
