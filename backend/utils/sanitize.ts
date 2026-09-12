@@ -45,19 +45,27 @@ export const sanitizeObject = <T>(obj: T, allowHtml: boolean = false): T => {
 		return obj;
 	}
 
+	if (obj instanceof Date) {
+		return obj;
+	}
+
 	if (Array.isArray(obj)) {
 		return obj.map(item => sanitizeObject(item, allowHtml)) as T;
 	}
 
 	const sanitized: Record<string, unknown> = {};
+
 	for (const [key, value] of Object.entries(obj)) {
 		if (typeof value === "string") {
 			sanitized[key] = allowHtml ? sanitizeHtml(value) : sanitizeText(value);
+		} else if (value instanceof Date) {
+			sanitized[key] = value;
 		} else if (typeof value === "object" && value !== null) {
 			sanitized[key] = sanitizeObject(value, allowHtml);
 		} else {
 			sanitized[key] = value;
 		}
 	}
+
 	return sanitized as T;
 };
