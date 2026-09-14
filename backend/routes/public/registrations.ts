@@ -302,6 +302,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								userId: user.id,
 								eventId,
 								ticketId,
+								invitationCodeId,
 								email: user.email,
 								formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
 								status: "confirmed",
@@ -930,7 +931,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 					async tx => {
 						const currentReg = await tx.registration.findUnique({
 							where: { id },
-							select: { status: true }
+							select: { status: true, invitationCodeId: true }
 						});
 
 						if (!currentReg || currentReg.status !== "confirmed") {
@@ -950,13 +951,12 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							data: { soldCount: { decrement: 1 } }
 						});
 
-						await tx.invitationCode.updateMany({
-							where: {
-								ticketId: registration.ticketId,
-								usedCount: { gt: 0 }
-							},
-							data: { usedCount: { decrement: 1 } }
-						});
+						if (currentReg.invitationCodeId) {
+							await tx.invitationCode.update({
+								where: { id: currentReg.invitationCodeId },
+								data: { usedCount: { decrement: 1 } }
+							});
+						}
 
 						await tx.referralUsage.deleteMany({
 							where: {

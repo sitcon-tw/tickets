@@ -374,22 +374,17 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 				span.setAttribute("ticket.id", existingCode.ticketId);
 				span.setAttribute("invitation_code.used_count", existingCode.usedCount);
 
-				if (existingCode.usedCount > 0) {
-					span.addEvent("invitation_code.has_been_used");
-					const { response, statusCode } = conflictResponse("無法刪除已被使用的邀請碼");
-					return reply.code(statusCode).send(response);
-				}
+				span.addEvent("invitation_code.deactivating");
 
-				span.addEvent("invitation_code.deleting");
-
-				await prisma.invitationCode.delete({
-					where: { id }
+				await prisma.invitationCode.update({
+					where: { id },
+					data: { isActive: false }
 				});
 
-				span.addEvent("invitation_code.deleted");
+				span.addEvent("invitation_code.deactivated");
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				return reply.send(successResponse(null, "邀請碼刪除成功"));
+				return reply.send(successResponse(null, "邀請碼已停用"));
 			} catch (error) {
 				componentLogger.error({ error }, "Delete invitation code error");
 				span.recordException(error as Error);
