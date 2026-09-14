@@ -7,14 +7,13 @@ import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { FieldFilter, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
-import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod/v4";
 

@@ -17,14 +17,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { FieldFilter, LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
-import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
