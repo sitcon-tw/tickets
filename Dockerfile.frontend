@@ -1,5 +1,8 @@
 FROM node:24 AS base
 
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
 FROM base AS builder
 ENV PORT=8080
 WORKDIR /src
@@ -9,7 +12,7 @@ COPY frontend ./frontend
 COPY types ./types
 
 WORKDIR /src/frontend
-RUN npm install -g pnpm@10 && pnpm install --production --frozen-lockfile
+RUN npm install -g pnpm@12.3.4 && pnpm --version && pnpm install --production --frozen-lockfile
 
 RUN pnpm build
 

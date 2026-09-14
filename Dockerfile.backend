@@ -11,7 +11,7 @@ COPY backend ./backend
 COPY types ./types
 
 WORKDIR /src/backend
-RUN corepack enable && pnpm install --production --no-optional --frozen-lockfile
+RUN npm install -g pnpm@12.3.4 && pnpm --version && pnpm install --production --no-optional --frozen-lockfile
 
 EXPOSE 8080
 CMD pnpm start
