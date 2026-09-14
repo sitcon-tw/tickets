@@ -356,7 +356,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 			: eventLocationText;
 
 		const userName = await prisma.user
-			.findFirst({
+			.findUnique({
 				where: { id: registration.userId },
 				select: { name: true }
 			})
