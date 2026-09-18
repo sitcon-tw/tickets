@@ -1,7 +1,6 @@
 import { fetchGravatarName } from "@/lib/gravatar";
 import {
 	ApiResponseSchema,
-	DrawResultSchema,
 	EmailCampaignSchema,
 	EventDashboardDataSchema,
 	EventFormFieldSchema,
@@ -17,9 +16,7 @@ import {
 	PublicReferralRankingDataSchema,
 	PublicTicketDetailSchema,
 	PublicTicketListItemSchema,
-	QualifiedReferrerSchema,
 	ReferralLinkSchema,
-	ReferralTreeNodeSchema,
 	ReferralValidationSchema,
 	RegistrationSchema,
 	RegistrationStatsSchema,
@@ -36,7 +33,6 @@ import {
 	type Event,
 	type EventFormField,
 	type EventFormFieldReorderRequest,
-	type HealthStatus,
 	type InvitationCodeInfo,
 	type LocalizedText,
 	type Ticket,
@@ -45,11 +41,6 @@ import {
 } from "@sitcontix/types";
 import z from "zod/v4";
 import { apiClient } from "./client";
-
-// System
-export const healthAPI = {
-	check: (): Promise<HealthStatus> => apiClient.get("/system/health")
-};
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
@@ -307,84 +298,6 @@ export const adminInvitationCodesAPI = {
 		)
 };
 
-// Admin - Referrals
-export const adminReferralsAPI = {
-	getOverview: () =>
-		apiClient.get(
-			"/api/admin/referrals/overview",
-			{},
-			ApiResponseSchema(
-				z.object({
-					totalReferrals: z.number().int(),
-					uniqueReferrers: z.number().int(),
-					conversionRate: z.number(),
-					topReferrers: z.array(
-						z.object({
-							id: z.string(),
-							code: z.string(),
-							email: z.string(),
-							name: z.string(),
-							referralCount: z.number().int()
-						})
-					)
-				})
-			)
-		),
-
-	getLeaderboard: () =>
-		apiClient.get(
-			"/api/admin/referrals/leaderboard",
-			{},
-			ApiResponseSchema(
-				z.array(
-					z.object({
-						rank: z.number().int(),
-						id: z.string(),
-						code: z.string(),
-						email: z.string(),
-						name: z.string(),
-						referralCount: z.number().int(),
-						createdAt: z.date()
-					})
-				)
-			)
-		),
-
-	getTree: (regId: string) => apiClient.get(`/api/admin/referrals/tree/${regId}`, {}, ApiResponseSchema(ReferralTreeNodeSchema)),
-
-	getQualified: () => apiClient.get("/api/admin/referrals/qualified", {}, ApiResponseSchema(z.array(QualifiedReferrerSchema))),
-
-	draw: () => apiClient.post("/api/admin/referrals/draw", {}, ApiResponseSchema(DrawResultSchema)),
-
-	getStats: () =>
-		apiClient.get(
-			"/api/admin/referrals/stats",
-			{},
-			ApiResponseSchema(
-				z.object({
-					dailyStats: z.array(
-						z.object({
-							date: z.string(),
-							count: z.number()
-						})
-					),
-					conversionFunnel: z.array(
-						z.object({
-							stage: z.string(),
-							count: z.union([z.number(), z.string()])
-						})
-					),
-					topSources: z.array(
-						z.object({
-							source: z.string(),
-							count: z.number()
-						})
-					)
-				})
-			)
-		)
-};
-
 // Email Campaign Properties Schema (extends EmailCampaignSchema with additional fields)
 const EmailCampaignPropertiesSchema = EmailCampaignSchema.extend({
 	eventId: z.string().optional(),
@@ -452,14 +365,6 @@ export const smsVerificationAPI = {
 	verify: (data: { phoneNumber: string; code: string }) => apiClient.post("/api/sms-verification/verify", data, ApiResponseSchema(z.object({ verified: z.boolean() }))),
 
 	getStatus: () => apiClient.get("/api/sms-verification/status", {}, ApiResponseSchema(z.object({ phoneNumber: z.string().nullable().optional(), phoneVerified: z.boolean() })))
-};
-
-// Admin - SMS Verification Logs
-export const adminSmsVerificationAPI = {
-	getLogs: (params?: { userId?: string; phoneNumber?: string; verified?: boolean; page?: number; limit?: number }) =>
-		apiClient.get("/api/admin/sms-verification-logs", params, ApiResponseSchema(z.unknown())),
-
-	getStats: () => apiClient.get("/api/admin/sms-verification-stats", {}, ApiResponseSchema(z.unknown()))
 };
 
 // Admin - Webhooks

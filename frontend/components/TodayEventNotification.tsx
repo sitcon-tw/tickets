@@ -85,6 +85,7 @@ export default function TodayEventNotification() {
 			try {
 				const [registrationsRes, eventsRes] = await Promise.all([registrationsAPI.getAll(), eventsAPI.getAll()]);
 
+				const publicEventsById = new Map(eventsRes.data.map(event => [event.id, event]));
 				const found: TodayEvent[] = [];
 
 				for (const reg of registrationsRes.data) {
@@ -93,7 +94,7 @@ export default function TodayEventNotification() {
 					if (!event) continue;
 					if (!isTodayInRange(new Date(event.startDate), new Date(event.endDate))) continue;
 
-					const publicEvent = eventsRes.data.find(e => e.id === event.id);
+					const publicEvent = publicEventsById.get(event.id);
 					const slug = publicEvent?.slug || event.id.slice(-6);
 
 					if (isHiddenForever(slug)) continue;
@@ -134,7 +135,7 @@ export default function TodayEventNotification() {
 							<p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t.message}</p>
 						</div>
 					</div>
-					<button onClick={() => setVisible(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0 mt-0.5" aria-label={t.close}>
+					<button type="button" onClick={() => setVisible(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0 mt-0.5" aria-label={t.close}>
 						<X size={16} />
 					</button>
 				</div>
@@ -153,7 +154,11 @@ export default function TodayEventNotification() {
 							>
 								{event.eventName} — {t.checkIn}
 							</Button>
-							<button onClick={() => hideForever(event.eventSlug)} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-center underline underline-offset-2 w-full">
+							<button
+								type="button"
+								onClick={() => hideForever(event.eventSlug)}
+								className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-center underline underline-offset-2 w-full"
+							>
 								{t.dontShowAgain}
 							</button>
 						</div>

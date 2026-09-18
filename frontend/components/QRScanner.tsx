@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Html5Qrcode } from "html5-qrcode";
 import { Camera, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface QRScannerProps {
 	isOpen: boolean;
@@ -19,17 +19,22 @@ export default function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Co
 	const scannerRef = useRef<Html5Qrcode | null>(null);
 	const scannerIdRef = useRef<string>("qr-reader");
 
-	useEffect(() => {
-		if (isOpen && !isScanning) {
-			startScanning();
+	const stopScanning = useCallback(async () => {
+		if (scannerRef.current) {
+			try {
+				if (scannerRef.current.isScanning) {
+					await scannerRef.current.stop();
+				}
+				scannerRef.current.clear();
+			} catch (err) {
+				console.error("Error stopping scanner:", err);
+			}
+			scannerRef.current = null;
 		}
+		setIsScanning(false);
+	}, []);
 
-		return () => {
-			stopScanning();
-		};
-	}, [isOpen]);
-
-	const startScanning = async () => {
+	const startScanning = useCallback(async () => {
 		try {
 			setError(null);
 			const html5QrCode = new Html5Qrcode(scannerIdRef.current);
@@ -62,25 +67,20 @@ export default function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Co
 			setError(err instanceof Error ? err.message : "Failed to start camera");
 			setIsScanning(false);
 		}
-	};
+	}, [onClose, onScan, stopScanning]);
 
-	const stopScanning = async () => {
-		if (scannerRef.current) {
-			try {
-				if (scannerRef.current.isScanning) {
-					await scannerRef.current.stop();
-				}
-				scannerRef.current.clear();
-			} catch (err) {
-				console.error("Error stopping scanner:", err);
-			}
-			scannerRef.current = null;
+	useEffect(() => {
+		if (isOpen && !isScanning) {
+			void startScanning();
 		}
-		setIsScanning(false);
-	};
+
+		return () => {
+			void stopScanning();
+		};
+	}, [isOpen, isScanning, startScanning, stopScanning]);
 
 	const handleClose = () => {
-		stopScanning();
+		void stopScanning();
 		onClose();
 	};
 

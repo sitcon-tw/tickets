@@ -15,23 +15,95 @@ import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
 import type { Event, User } from "@sitcontix/types";
 import { Search } from "lucide-react";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
+
+type UserRole = "admin" | "viewer" | "eventAdmin";
+type UsersUiState = {
+	users: User[];
+	searchTerm: string;
+	events: Event[];
+	isLoading: boolean;
+	isSaving: boolean;
+	showEditModal: boolean;
+	editingUser: User | null;
+	selectedEventIds: string[];
+	selectedRole: UserRole;
+};
+
+type UsersUiAction =
+	| { type: "loadStarted" }
+	| { type: "loadFinished" }
+	| { type: "usersLoaded"; users: User[] }
+	| { type: "eventsLoaded"; events: Event[] }
+	| { type: "searchChanged"; value: string }
+	| { type: "openEdit"; user: User }
+	| { type: "closeEdit" }
+	| { type: "saveStarted" }
+	| { type: "saveFinished" }
+	| { type: "roleChanged"; role: UserRole }
+	| { type: "toggleEvent"; eventId: string }
+	| { type: "setEditOpen"; open: boolean };
+
+function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiState {
+	switch (action.type) {
+		case "loadStarted":
+			return { ...state, isLoading: true };
+		case "loadFinished":
+			return { ...state, isLoading: false };
+		case "usersLoaded":
+			return { ...state, users: action.users };
+		case "eventsLoaded":
+			return { ...state, events: action.events };
+		case "searchChanged":
+			return { ...state, searchTerm: action.value };
+		case "openEdit":
+			return {
+				...state,
+				showEditModal: true,
+				editingUser: action.user,
+				selectedRole: action.user.role,
+				selectedEventIds: action.user.permissions || []
+			};
+		case "closeEdit":
+			return { ...state, showEditModal: false, editingUser: null, selectedRole: "viewer", selectedEventIds: [] };
+		case "saveStarted":
+			return { ...state, isSaving: true };
+		case "saveFinished":
+			return { ...state, isSaving: false };
+		case "roleChanged":
+			return {
+				...state,
+				selectedRole: action.role,
+				selectedEventIds: action.role === "eventAdmin" ? state.selectedEventIds : []
+			};
+		case "toggleEvent":
+			return {
+				...state,
+				selectedEventIds: state.selectedEventIds.includes(action.eventId) ? state.selectedEventIds.filter(id => id !== action.eventId) : [...state.selectedEventIds, action.eventId]
+			};
+		case "setEditOpen":
+			return action.open ? { ...state, showEditModal: true } : usersUiReducer(state, { type: "closeEdit" });
+		default:
+			return state;
+	}
+}
 
 export default function UsersPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 
-	const [users, setUsers] = useState<User[]>([]);
-	const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
-	const [showEditModal, setShowEditModal] = useState(false);
-	const [editingUser, setEditingUser] = useState<User | null>(null);
-	const [events, setEvents] = useState<Event[]>([]);
-	const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-	const [selectedRole, setSelectedRole] = useState<"admin" | "viewer" | "eventAdmin">("viewer");
+	const [{ users, searchTerm, events, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole }, dispatchUsersUi] = useReducer(usersUiReducer, {
+		users: [],
+		searchTerm: "",
+		events: [],
+		isLoading: false,
+		isSaving: false,
+		showEditModal: false,
+		editingUser: null,
+		selectedEventIds: [],
+		selectedRole: "viewer"
+	});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "User Management" },
@@ -62,17 +134,16 @@ export default function UsersPage() {
 	});
 
 	const loadUsers = useCallback(async () => {
-		setIsLoading(true);
+		dispatchUsersUi({ type: "loadStarted" });
 		try {
 			const response = await adminUsersAPI.getAll();
 			if (response.success && response.data) {
-				setUsers(response.data);
-				setFilteredUsers(response.data);
+				dispatchUsersUi({ type: "usersLoaded", users: response.data });
 			}
 		} catch (error) {
 			console.error("Failed to load users:", error);
 		} finally {
-			setIsLoading(false);
+			dispatchUsersUi({ type: "loadFinished" });
 		}
 	}, []);
 
@@ -80,7 +151,7 @@ export default function UsersPage() {
 		try {
 			const response = await adminEventsAPI.getAll();
 			if (response.success && response.data) {
-				setEvents(response.data);
+				dispatchUsersUi({ type: "eventsLoaded", events: response.data });
 			}
 		} catch (error) {
 			console.error("Failed to load events:", error);
@@ -88,26 +159,20 @@ export default function UsersPage() {
 	}, []);
 
 	function openEditModal(user: User) {
-		setEditingUser(user);
-		setSelectedRole(user.role);
-		setSelectedEventIds(user.permissions || []);
-		setShowEditModal(true);
+		dispatchUsersUi({ type: "openEdit", user });
 	}
 
 	function closeEditModal() {
-		setEditingUser(null);
-		setSelectedEventIds([]);
-		setSelectedRole("viewer");
-		setShowEditModal(false);
+		dispatchUsersUi({ type: "closeEdit" });
 	}
 
 	async function handleUpdateUser(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		setIsSaving(true);
 		if (!editingUser) return;
+		dispatchUsersUi({ type: "saveStarted" });
 
 		const formData = new FormData(e.currentTarget);
-		const role = formData.get("role") as "admin" | "viewer" | "eventAdmin";
+		const role = formData.get("role") as UserRole;
 		const data = {
 			role,
 			isActive: formData.get("isActive") === "true",
@@ -122,44 +187,41 @@ export default function UsersPage() {
 		} catch (error) {
 			showAlert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
-			setIsSaving(false);
+			dispatchUsersUi({ type: "saveFinished" });
 		}
 	}
 
 	function toggleEventSelection(eventId: string) {
-		setSelectedEventIds(prev => {
-			if (prev.includes(eventId)) {
-				return prev.filter(id => id !== eventId);
-			}
-			return [...prev, eventId];
-		});
+		dispatchUsersUi({ type: "toggleEvent", eventId });
 	}
 
-	function getRoleLabel(role: string) {
-		switch (role) {
-			case "admin":
-				return t.admin;
-			case "viewer":
-				return t.viewer;
-			case "eventAdmin":
-				return t.eventAdmin;
-			default:
-				return role;
-		}
-	}
+	const getRoleLabel = useCallback(
+		(role: string) => {
+			switch (role) {
+				case "admin":
+					return t.admin;
+				case "viewer":
+					return t.viewer;
+				case "eventAdmin":
+					return t.eventAdmin;
+				default:
+					return role;
+			}
+		},
+		[t.admin, t.eventAdmin, t.viewer]
+	);
 
 	useEffect(() => {
 		loadUsers();
 		loadEvents();
 	}, [loadUsers, loadEvents]);
 
-	useEffect(() => {
+	const filteredUsers = useMemo(() => {
 		const q = searchTerm.toLowerCase();
-		const filtered = users.filter(user => {
+		return users.filter(user => {
 			if (!q) return true;
 			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
 		});
-		setFilteredUsers(filtered);
 	}, [users, searchTerm]);
 
 	const displayUsers = useMemo((): UserDisplay[] => {
@@ -192,7 +254,7 @@ export default function UsersPage() {
 			<AdminHeader title={t.title} />
 			<div className="relative w-fit mb-4">
 				<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-				<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-11" />
+				<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => dispatchUsersUi({ type: "searchChanged", value: e.target.value })} className="pl-10 h-11" />
 			</div>
 
 			<section>
@@ -205,7 +267,7 @@ export default function UsersPage() {
 				)}
 			</section>
 
-			<Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+			<Dialog open={showEditModal} onOpenChange={open => dispatchUsersUi({ type: "setEditOpen", open })}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>{t.editUser}</DialogTitle>
@@ -234,11 +296,7 @@ export default function UsersPage() {
 								name="role"
 								value={selectedRole}
 								onValueChange={value => {
-									const newRole = value as "admin" | "viewer" | "eventAdmin";
-									setSelectedRole(newRole);
-									if (newRole !== "eventAdmin") {
-										setSelectedEventIds([]);
-									}
+									dispatchUsersUi({ type: "roleChanged", role: value as UserRole });
 								}}
 							>
 								<SelectTrigger>

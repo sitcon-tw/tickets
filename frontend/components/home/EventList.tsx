@@ -3,7 +3,7 @@
 import PageSpinner from "@/components/PageSpinner";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatEventDateRange } from "@/lib/utils/timezone";
@@ -13,9 +13,12 @@ import { useLocale } from "next-intl";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+function formatDate(startDate: Date, endDate: Date) {
+	return formatEventDateRange(startDate, endDate);
+}
+
 export default function EventList() {
 	const locale = useLocale();
-	const router = useRouter();
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<PublicEventListItem[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -67,10 +70,6 @@ export default function EventList() {
 		fetchEvents();
 	}, [showAlert]);
 
-	const formatDate = (startDate: Date, endDate: Date) => {
-		return formatEventDateRange(startDate, endDate);
-	};
-
 	if (loading) {
 		return (
 			<div className="pt-12">
@@ -96,12 +95,9 @@ export default function EventList() {
 						event.ogImage = event.ogImage || "/assets/default.webp";
 
 						return (
-							<div
-								key={event.id}
-								onClick={() => router.push(`/${eventSlug}`)}
-								className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-							>
-								<div className="relative w-full h-48 bg-muted overflow-hidden">
+							<div key={event.id} className="group relative block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer">
+								<Link href={`/${eventSlug}`} className="absolute inset-0 z-10" aria-label={eventName} />
+								<div className="relative w-full h-48 bg-muted overflow-hidden pointer-events-none">
 									<Image
 										src={event.ogImage}
 										alt={eventName}
@@ -111,7 +107,7 @@ export default function EventList() {
 									/>
 								</div>
 
-								<div className="p-6">
+								<div className="relative z-20 p-6 pointer-events-none">
 									<h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">{eventName}</h3>
 
 									{eventDescription && <p className="text-muted-foreground mb-4 line-clamp-2">{eventDescription}</p>}
@@ -126,13 +122,7 @@ export default function EventList() {
 											<div className="flex items-center gap-2">
 												<MapPin size={16} />
 												{event.mapLink ? (
-													<a
-														href={event.mapLink}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="hover:underline text-blue-500 dark:text-blue-400 flex items-center"
-														onClick={e => e.stopPropagation()}
-													>
+													<a href={event.mapLink} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 dark:text-blue-400 flex items-center pointer-events-auto">
 														{locationText}
 														<ExternalLink size={16} className="ml-1" />
 													</a>

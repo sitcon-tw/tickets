@@ -1828,8 +1828,8 @@ export const InvitationCodeBulkCreateBodySchema = z.object({
 	name: z.string().min(1),
 	count: z.number().int().min(1).max(100),
 	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.date().optional(),
-	validUntil: z.date().optional()
+	validFrom: z.coerce.date().optional(),
+	validUntil: z.coerce.date().optional()
 });
 
 export const InvitationCodeSendEmailBodySchema = z.object({

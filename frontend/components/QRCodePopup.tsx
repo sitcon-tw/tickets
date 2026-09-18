@@ -3,17 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { QRCodePopupProps } from "@/lib/types/components";
-import generateHash from "@/lib/utils/hash";
 import { Check, Copy, ExternalLink, TriangleAlert, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-export default function QRCodePopup({ isOpen, onClose, registrationId, registrationTime, useOpass = true, opassEventId }: QRCodePopupProps) {
+export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true, opassEventId }: QRCodePopupProps) {
 	const locale = useLocale();
 
-	const [qrValue, setQrValue] = useState<string>("");
 	const [copied, setCopied] = useState<boolean>(false);
 
 	const t = getTranslations(locale, {
@@ -61,19 +59,12 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 		}
 	}
 
-	useEffect(() => {
-		if (isOpen && registrationId && registrationTime) {
-			generateHash(registrationId, registrationTime).then(hash => {
-				setQrValue(hash);
-			});
-		}
-	}, [isOpen, registrationId, registrationTime]);
-
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-			<div className="relative bg-white/80 dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4" onClick={e => e.stopPropagation()}>
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+			<button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Close" />
+			<div className="relative bg-white/80 dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4">
 				<Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4" aria-label="Close">
 					<X size={24} />
 				</Button>
@@ -121,10 +112,10 @@ export default function QRCodePopup({ isOpen, onClose, registrationId, registrat
 									}}
 								/>
 							</div>
-							<div className="flex items-center justify-center space-x-2 cursor-pointer text-gray-800 dark:text-gray-300" onClick={copyToClipboard}>
+							<button type="button" className="flex items-center justify-center space-x-2 cursor-pointer text-gray-800 dark:text-gray-300" onClick={copyToClipboard}>
 								<p className="text-xs">{qrValue.slice(0, 10) + "..." + qrValue.slice(-10)}</p>
 								{copied ? <Check size={12} className="text-green-600 dark:text-green-300" /> : <Copy size={12} />}
-							</div>
+							</button>
 						</div>
 					) : (
 						<div className="w-64 h-64 flex items-center justify-center">

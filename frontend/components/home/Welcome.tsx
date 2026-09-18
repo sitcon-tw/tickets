@@ -6,18 +6,48 @@ import { useRouter } from "@/i18n/navigation";
 import { authAPI, registrationsAPI, smsVerificationAPI } from "@/lib/api/endpoints";
 import { WelcomeProps } from "@/lib/types/components";
 import { useLocale } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 type WelcomeState = "notloggedin" | "registered" | "referral" | "default";
+type WelcomeViewState = {
+	welcomeState: WelcomeState;
+	isSmsVerified: boolean;
+	isLoggedIn: boolean;
+};
+type WelcomeViewAction =
+	| { type: "registered" }
+	| {
+			type: "decide";
+			isAuthenticated: boolean;
+			hasReferral: boolean;
+			isSmsVerified: boolean;
+	  };
+
+function welcomeViewReducer(state: WelcomeViewState, action: WelcomeViewAction): WelcomeViewState {
+	switch (action.type) {
+		case "registered":
+			return { ...state, welcomeState: "registered", isLoggedIn: true };
+		case "decide":
+			return {
+				welcomeState: action.hasReferral ? "referral" : action.isAuthenticated ? "default" : "notloggedin",
+				isSmsVerified: action.isSmsVerified,
+				isLoggedIn: action.isAuthenticated
+			};
+		default:
+			return state;
+	}
+}
 
 export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const locale = useLocale();
 	const router = useRouter();
 
-	const [welcomeState, setWelcomeState] = useState<WelcomeState>("notloggedin");
-	const [referralParam, setReferralParam] = useState<string | null>(null);
-	const [isSmsVerified, setIsSmsVerified] = useState(false);
-	const [isLoggedIn, setIsLoggedIn] = useState(false);
+	const [{ welcomeState, isSmsVerified, isLoggedIn }, dispatchWelcomeView] = useReducer(welcomeViewReducer, {
+		welcomeState: "notloggedin",
+		isSmsVerified: false,
+		isLoggedIn: false
+	});
+	const [referralParam] = useState<string | null>(() => (typeof window === "undefined" ? null : localStorage.getItem("referralCode")));
 	const [loading, setLoading] = useState(false);
 
 	const t = getTranslations(locale, {
@@ -96,9 +126,6 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 
-		const referral = localStorage.getItem("referralCode");
-		setReferralParam(referral);
-
 		let cancelled = false;
 
 		async function handleWelcome() {
@@ -106,45 +133,42 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				const sessionData = await authAPI.getSession();
 
 				if (!sessionData) {
-					decideState(false);
+					decideState(false, false);
 					return;
 				}
 
+				let phoneVerified = false;
 				try {
 					const registrations = await registrationsAPI.getAll();
 					if (registrations?.success && Array.isArray(registrations.data) && registrations.data.length > 0) {
 						const activeRegistration = registrations.data.find(reg => reg.event?.id === eventId && reg.status !== "cancelled");
 						if (activeRegistration && !cancelled) {
-							setWelcomeState("registered");
+							dispatchWelcomeView({ type: "registered" });
 							return;
 						}
 					}
 
 					const smsData = await smsVerificationAPI.getStatus();
-					if (smsData?.success && smsData.data.phoneVerified) {
-						setIsSmsVerified(true);
-					} else {
-						setIsSmsVerified(false);
-					}
+					phoneVerified = Boolean(smsData?.success && smsData.data.phoneVerified);
 				} catch (error) {
 					console.error("Failed to load registrations", error);
 				}
 
-				decideState(true);
+				decideState(true, phoneVerified);
 			} catch (error) {
 				console.error("Failed to handle welcome section", error);
-				decideState(false);
+				decideState(false, false);
 			}
 		}
 
-		function decideState(isAuthenticated: boolean) {
+		function decideState(isAuthenticated: boolean, phoneVerified: boolean) {
 			if (cancelled) return;
-			setIsLoggedIn(isAuthenticated);
-			if (referralParam) {
-				setWelcomeState("referral");
-				return;
-			}
-			setWelcomeState(isAuthenticated ? "default" : "notloggedin");
+			dispatchWelcomeView({
+				type: "decide",
+				isAuthenticated,
+				hasReferral: Boolean(referralParam),
+				isSmsVerified: phoneVerified
+			});
 		}
 
 		handleWelcome();
@@ -152,7 +176,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 		return () => {
 			cancelled = true;
 		};
-	}, [referralParam, eventId, t.loadFailed]);
+	}, [referralParam, eventId]);
 
 	return (
 		<section className="pb-4">

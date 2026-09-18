@@ -92,11 +92,11 @@ export default function Select({ label, id, options, required = true, value, onC
 						<SelectValue placeholder={placeholder} />
 					</SelectTrigger>
 					<SelectContent>
-						{options.map((option, i) => {
+						{options.map(option => {
 							const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 							const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
 							return (
-								<SelectItem key={i} value={optionValue}>
+								<SelectItem key={optionValue} value={optionValue}>
 									{optionLabel}
 								</SelectItem>
 							);
@@ -141,22 +141,23 @@ export default function Select({ label, id, options, required = true, value, onC
 					<div className="bg-popover text-popover-foreground absolute z-50 mt-1 max-h-60 w-full max-w-60 origin-top overflow-y-auto rounded-md border shadow-md animate-in fade-in-0 zoom-in-95">
 						<div className="p-1">
 							{filteredOptions.length > 0 ? (
-								filteredOptions.map((option, i) => {
+								filteredOptions.map(option => {
 									const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
 									const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
 									const isSelected = optionValue === value;
 
 									return (
-										<div
-											key={i}
+										<button
+											type="button"
+											key={optionValue}
 											onClick={() => handleSelect(optionValue)}
 											className={cn(
-												"focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-2 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground",
+												"focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-2 pl-2 text-left text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground",
 												isSelected && "bg-accent/50"
 											)}
 										>
 											{optionLabel}
-										</div>
+										</button>
 									);
 								})
 							) : (

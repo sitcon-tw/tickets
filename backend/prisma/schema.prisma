@@ -166,6 +166,7 @@ model Registration {
   userId          String
   eventId         String
   ticketId        String
+  invitationCodeId String?
   email           String
   formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
@@ -176,12 +177,14 @@ model Registration {
   user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
   event            Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticket           Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  invitationCode   InvitationCode? @relation("InvitationCodeRegistrations", fields: [invitationCodeId], references: [id], onDelete: Restrict)
   referrals        Registration[] @relation("RegistrationReferrals")
   referrer         Registration? @relation("RegistrationReferrals", fields: [referredBy], references: [id])
   referral         Referral?
   referralUsage    ReferralUsage[] @relation("ReferralUsage")
   
   @@index([email, eventId])
+  @@index([invitationCodeId])
   @@map("registration")
 }
 
@@ -230,7 +233,8 @@ model InvitationCode {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  ticket  Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket        Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  registrations Registration[] @relation("InvitationCodeRegistrations")
   
   @@map("invitation_code")
 }

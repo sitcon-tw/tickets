@@ -4,15 +4,52 @@ import AdminHeader from "@/components/AdminHeader";
 import PageSpinner from "@/components/PageSpinner";
 import { getTranslations } from "@/i18n/helpers";
 import { adminAnalyticsAPI } from "@/lib/api/endpoints";
+import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import type { EventDashboardData } from "@sitcontix/types";
-import { Chart, registerables, TooltipItem } from "chart.js";
+import type { Chart as ChartInstance, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useSyncExternalStore } from "react";
+import { AdminDashboardContent } from "./admin-dashboard-content";
 
-if (typeof window !== "undefined") {
-	Chart.register(...registerables);
+let chartModulePromise: Promise<typeof import("chart.js")> | null = null;
+
+const subscribeHydrated = () => () => {};
+const getClientHydrated = () => true;
+const getServerHydrated = () => false;
+
+async function loadChartModule() {
+	chartModulePromise ??= import("chart.js").then(module => {
+		module.Chart.register(...module.registerables);
+		return module;
+	});
+	return chartModulePromise;
+}
+
+type DashboardState = {
+	dashboardData: EventDashboardData | null;
+	loading: boolean;
+};
+
+type DashboardAction = { type: "loadStarted" } | { type: "loadFinished" } | { type: "dataLoaded"; data: EventDashboardData } | { type: "noEventSelected" };
+
+const initialDashboardState: DashboardState = {
+	dashboardData: null,
+	loading: true
+};
+
+function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
+	switch (action.type) {
+		case "loadStarted":
+			return { ...state, loading: true };
+		case "loadFinished":
+			return { ...state, loading: false };
+		case "dataLoaded":
+			return { dashboardData: action.data, loading: false };
+		case "noEventSelected":
+			return { dashboardData: null, loading: false };
+	}
 }
 
 export default function AdminDashboard() {
@@ -20,18 +57,13 @@ export default function AdminDashboard() {
 	const router = useRouter();
 	const { theme, resolvedTheme } = useTheme();
 
-	const [selectedEventId, setSelectedEventId] = useState<string>("");
-	const [dashboardData, setDashboardData] = useState<EventDashboardData | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [mounted, setMounted] = useState(false);
+	const selectedEventId = useSelectedEventId() || "";
+	const [{ dashboardData, loading }, dispatchDashboard] = useReducer(dashboardReducer, initialDashboardState);
+	const mounted = useSyncExternalStore(subscribeHydrated, getClientHydrated, getServerHydrated);
 
 	const trendsChartRef = useRef<HTMLCanvasElement | null>(null);
 	const distributionChartRef = useRef<HTMLCanvasElement | null>(null);
-	const chartsInstancesRef = useRef<Chart[]>([]);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	const chartsInstancesRef = useRef<ChartInstance[]>([]);
 
 	const getThemeColors = useCallback(() => {
 		const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && theme === "dark"));
@@ -80,30 +112,36 @@ export default function AdminDashboard() {
 
 	const loadDashboardData = useCallback(async () => {
 		if (!selectedEventId) {
-			setLoading(false);
+			dispatchDashboard({ type: "noEventSelected" });
 			return;
 		}
 
-		setLoading(true);
+		dispatchDashboard({ type: "loadStarted" });
 		try {
 			const response = await adminAnalyticsAPI.getEventDashboard(selectedEventId);
 			if (response.success && response.data) {
-				setDashboardData(response.data);
+				dispatchDashboard({ type: "dataLoaded", data: response.data });
 			} else {
 				console.error("Failed to load dashboard data:", response.message);
+				dispatchDashboard({ type: "loadFinished" });
 			}
 		} catch (error) {
 			console.error("Dashboard initialization failed:", error);
-		} finally {
-			setLoading(false);
+			dispatchDashboard({ type: "loadFinished" });
 		}
 	}, [selectedEventId]);
 
-	const initCharts = useCallback(() => {
-		if (!dashboardData) return;
-
+	const destroyCharts = useCallback(() => {
 		chartsInstancesRef.current.forEach(chart => chart.destroy());
 		chartsInstancesRef.current = [];
+	}, []);
+
+	const initCharts = useCallback(async () => {
+		if (!dashboardData) return;
+
+		destroyCharts();
+
+		const { Chart } = await loadChartModule();
 
 		const themeColors = getThemeColors();
 		const colors = themeColors.chartColors;
@@ -227,23 +265,7 @@ export default function AdminDashboard() {
 				chartsInstancesRef.current.push(chart);
 			}
 		}
-	}, [dashboardData, locale, getThemeColors]);
-
-	useEffect(() => {
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setSelectedEventId(savedEventId);
-		}
-
-		const handleEventChange = (event: CustomEvent) => {
-			setSelectedEventId(event.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged" as any, handleEventChange);
-		return () => {
-			window.removeEventListener("selectedEventChanged" as any, handleEventChange);
-		};
-	}, []);
+	}, [dashboardData, destroyCharts, locale, getThemeColors]);
 
 	useEffect(() => {
 		if (selectedEventId) {
@@ -253,21 +275,22 @@ export default function AdminDashboard() {
 
 	useEffect(() => {
 		if (!loading && mounted && dashboardData) {
-			initCharts();
+			void initCharts();
 		}
 
 		return () => {
-			chartsInstancesRef.current.forEach(chart => chart.destroy());
-			chartsInstancesRef.current = [];
+			destroyCharts();
 		};
-	}, [loading, initCharts, mounted, dashboardData]);
+	}, [loading, initCharts, mounted, dashboardData, destroyCharts]);
+
+	const initChartsEvent = useEffectEvent(initCharts);
 
 	useEffect(() => {
 		if (!mounted || loading) return;
 
 		const handleResize = () => {
 			const timeoutId = setTimeout(() => {
-				initCharts();
+				void initChartsEvent();
 			}, 250);
 
 			return () => clearTimeout(timeoutId);
@@ -275,13 +298,7 @@ export default function AdminDashboard() {
 
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
-	}, [initCharts, mounted, loading]);
-
-	useEffect(() => {
-		if (!loading && mounted && dashboardData) {
-			initCharts();
-		}
-	}, [resolvedTheme, theme, loading, mounted, dashboardData, initCharts]);
+	}, [mounted, loading]);
 
 	if (loading && !dashboardData) {
 		return (
@@ -308,94 +325,7 @@ export default function AdminDashboard() {
 		<main>
 			<AdminHeader title={t.title} />
 
-			{dashboardData && (
-				<>
-					{/* Stats Grid */}
-					<section className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalRegistrations}</h3>
-							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.stats.totalRegistrations}</div>
-							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
-						</div>
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.confirmed}</h3>
-							<div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">{dashboardData.stats.confirmedRegistrations}</div>
-							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
-						</div>
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.pending}</h3>
-							<div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">{dashboardData.stats.pendingRegistrations}</div>
-							<div className="text-gray-800 dark:text-gray-100 text-xs">{t.registrations}</div>
-						</div>
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalRevenue}</h3>
-							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">NT$ {dashboardData.stats.totalRevenue.toLocaleString()}</div>
-						</div>
-					</section>
-
-					{/* Charts */}
-					<section className="flex gap-8 mb-12 flex-wrap">
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md min-w-[300px] flex-1 border border-gray-200 dark:border-gray-700">
-							<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.salesTrend}</h2>
-							<canvas ref={trendsChartRef} width="100%" height="50px"></canvas>
-						</div>
-
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex-1 min-w-[300px] border border-gray-200 dark:border-gray-700">
-							<h2 className="m-0 mb-4 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDistribution}</h2>
-							<canvas ref={distributionChartRef} width="100%" height="100%"></canvas>
-						</div>
-					</section>
-
-					{/* Ticket Details Table */}
-					<section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-12 border border-gray-200 dark:border-gray-700">
-						<h2 className="m-0 mb-6 text-gray-900 dark:text-gray-100 text-xl">{t.ticketDetails}</h2>
-						<div className="overflow-x-auto">
-							<table className="w-full">
-								<thead>
-									<tr className="border-b border-gray-200 dark:border-gray-700">
-										<th className="text-left p-3 text-gray-700 dark:text-gray-300">{t.ticketName}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.price}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.sold}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.available}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.total}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.salesRate}</th>
-										<th className="text-right p-3 text-gray-700 dark:text-gray-300">{t.revenue}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{dashboardData.tickets.map(ticket => (
-										<tr key={ticket.id} className="border-b border-gray-100 dark:border-gray-700">
-											<td className="p-3 text-gray-900 dark:text-gray-100">{ticket.name[locale] || ticket.name["zh-Hant"] || ticket.name["en"] || "Unknown"}</td>
-											<td className="text-right p-3 text-gray-700 dark:text-gray-300">NT$ {ticket.price.toLocaleString()}</td>
-											<td className="text-right p-3 text-green-600 dark:text-green-400 font-semibold">{ticket.soldCount}</td>
-											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.available}</td>
-											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.quantity}</td>
-											<td className="text-right p-3 text-gray-700 dark:text-gray-300">{ticket.salesRate}%</td>
-											<td className="text-right p-3 text-gray-900 dark:text-gray-100 font-semibold">NT$ {ticket.revenue.toLocaleString()}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</section>
-
-					{/* Referral Stats */}
-					<section className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 mb-12">
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.totalReferrals}</h3>
-							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.totalReferrals}</div>
-						</div>
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.activeReferrers}</h3>
-							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.activeReferrers}</div>
-						</div>
-						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center border border-gray-200 dark:border-gray-700">
-							<h3 className="m-0 mb-4 text-gray-600 dark:text-gray-300 text-sm font-medium">{t.conversionRate}</h3>
-							<div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">{dashboardData.referralStats.conversionRate}</div>
-						</div>
-					</section>
-				</>
-			)}
+			{dashboardData && <AdminDashboardContent dashboardData={dashboardData} locale={locale} t={t} trendsChartRef={trendsChartRef} distributionChartRef={distributionChartRef} />}
 		</main>
 	);
 }

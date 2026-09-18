@@ -152,21 +152,3 @@ function evaluateTimeCondition(condition: FilterCondition, currentTime: Date): b
 	// Check if current time is within the range
 	return now >= startTime && now <= endTime;
 }
-
-/**
- * Filters an array of form fields based on their display conditions
- *
- * @param fields - Array of form fields to filter
- * @param context - The evaluation context
- * @returns Filtered array of fields that should be displayed
- */
-export function filterVisibleFields(
-	fields: EventFormField[],
-	context: {
-		selectedTicketId: string;
-		formData: FormDataType;
-		currentTime?: Date;
-	}
-): EventFormField[] {
-	return fields.filter(field => shouldDisplayField(field, context, fields));
-}

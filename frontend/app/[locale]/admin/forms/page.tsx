@@ -10,18 +10,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { toDateTimeLocalString } from "@/lib/utils/timezone";
-import type { Event, EventFormField, FieldFilter, FilterCondition, Ticket } from "@sitcontix/types";
+import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import { DisplayFiltersSection } from "./filter-editor";
 
 type ShowIf = {
 	sourceId: string;
 	values: string[];
 };
 
-type FilterConditionState = Omit<FilterCondition, "startTime" | "endTime"> & {
+export type FilterConditionState = {
+	type: "ticket" | "field" | "time";
+	ticketId?: string;
+	fieldId?: string;
+	operator?: "equals" | "filled" | "notFilled";
+	value?: string;
 	startTime?: string;
 	endTime?: string;
 };
@@ -30,7 +37,7 @@ type FieldFilterState = Omit<FieldFilter, "conditions"> & {
 	conditions: FilterConditionState[];
 };
 
-type Question = {
+export type Question = {
 	id: string;
 	label: string;
 	labelEn?: string;
@@ -44,6 +51,7 @@ type Question = {
 	descriptionZhHans?: string;
 	validater?: string;
 	options?: Array<{
+		id?: string;
 		en: string;
 		"zh-Hant"?: string;
 		"zh-Hans"?: string;
@@ -54,24 +62,122 @@ type Question = {
 	enableOther?: boolean;
 };
 
-export default function FormsPage() {
+type FormsState = {
+	questions: Question[];
+	allEvents: Event[];
+	copyFromEventId: string;
+	draggedIndex: number | null;
+	dragOverIndex: number | null;
+	draggedOptionIndex: number | null;
+	dragOverOptionIndex: number | null;
+	draggedQuestionId: string | null;
+	eventTickets: Ticket[];
+	collapsedItems: Set<string>;
+	isSaving: boolean;
+};
+
+type FormsAction =
+	| { type: "allEventsLoaded"; events: Event[] }
+	| { type: "eventTicketsLoaded"; tickets: Ticket[] }
+	| { type: "formFieldsLoaded"; questions: Question[] }
+	| { type: "formCopied"; questions: Question[] }
+	| { type: "setCopyFromEventId"; value: string }
+	| { type: "setSaving"; value: boolean }
+	| { type: "addQuestion"; question: Question }
+	| { type: "updateQuestion"; id: string; updates: Partial<Question> }
+	| { type: "deleteQuestion"; id: string }
+	| { type: "toggleCollapse"; id: string }
+	| { type: "expandAll" }
+	| { type: "collapseAll" }
+	| { type: "fieldDragStarted"; index: number }
+	| { type: "fieldDragOver"; index: number }
+	| { type: "fieldDragCleared" }
+	| { type: "questionsReordered"; questions: Question[] }
+	| { type: "optionDragStarted"; questionId: string; optionIndex: number }
+	| { type: "optionDragOver"; optionIndex: number }
+	| { type: "optionDragCleared" };
+
+const initialFormsState: FormsState = {
+	questions: [],
+	allEvents: [],
+	copyFromEventId: "",
+	draggedIndex: null,
+	dragOverIndex: null,
+	draggedOptionIndex: null,
+	dragOverOptionIndex: null,
+	draggedQuestionId: null,
+	eventTickets: [],
+	collapsedItems: new Set(),
+	isSaving: false
+};
+
+function formsReducer(state: FormsState, action: FormsAction): FormsState {
+	switch (action.type) {
+		case "allEventsLoaded":
+			return { ...state, allEvents: action.events };
+		case "eventTicketsLoaded":
+			return { ...state, eventTickets: action.tickets };
+		case "formFieldsLoaded":
+			return {
+				...state,
+				questions: action.questions,
+				collapsedItems: new Set(action.questions.map(f => f.id))
+			};
+		case "formCopied":
+			return { ...state, questions: action.questions, copyFromEventId: "" };
+		case "setCopyFromEventId":
+			return { ...state, copyFromEventId: action.value };
+		case "setSaving":
+			return { ...state, isSaving: action.value };
+		case "addQuestion":
+			return { ...state, questions: [...state.questions, action.question] };
+		case "updateQuestion":
+			return { ...state, questions: state.questions.map(q => (q.id === action.id ? { ...q, ...action.updates } : q)) };
+		case "deleteQuestion":
+			return { ...state, questions: state.questions.filter(q => q.id !== action.id) };
+		case "toggleCollapse": {
+			const collapsedItems = new Set(state.collapsedItems);
+			if (collapsedItems.has(action.id)) {
+				collapsedItems.delete(action.id);
+			} else {
+				collapsedItems.add(action.id);
+			}
+			return { ...state, collapsedItems };
+		}
+		case "expandAll":
+			return { ...state, collapsedItems: new Set() };
+		case "collapseAll":
+			return { ...state, collapsedItems: new Set(state.questions.map(q => q.id)) };
+		case "fieldDragStarted":
+			return { ...state, draggedIndex: action.index };
+		case "fieldDragOver":
+			return { ...state, dragOverIndex: action.index };
+		case "fieldDragCleared":
+			return { ...state, draggedIndex: null, dragOverIndex: null };
+		case "questionsReordered":
+			return { ...state, questions: action.questions };
+		case "optionDragStarted":
+			return { ...state, draggedQuestionId: action.questionId, draggedOptionIndex: action.optionIndex };
+		case "optionDragOver":
+			return { ...state, dragOverOptionIndex: action.optionIndex };
+		case "optionDragCleared":
+			return {
+				...state,
+				draggedOptionIndex: null,
+				dragOverOptionIndex: null,
+				draggedQuestionId: null
+			};
+	}
+}
+
+function useFormsPageView() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 
-	const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
-	const [currentEventId, setCurrentEventId] = useState<string | null>(null);
-	const [questions, setQuestions] = useState<Question[]>([]);
-	const [allEvents, setAllEvents] = useState<Event[]>([]);
-	const [copyFromEventId, setCopyFromEventId] = useState<string>("");
-	const [originalFieldIds, setOriginalFieldIds] = useState<string[]>([]);
-	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-	const [draggedOptionIndex, setDraggedOptionIndex] = useState<number | null>(null);
-	const [dragOverOptionIndex, setDragOverOptionIndex] = useState<number | null>(null);
-	const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
-	const [eventTickets, setEventTickets] = useState<Ticket[]>([]);
-	const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
-	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const currentEventId = useSelectedEventId();
+	const originalFieldIdsRef = useRef<string[]>([]);
+	const [state, dispatch] = useReducer(formsReducer, initialFormsState);
+	const { questions, allEvents, copyFromEventId, draggedIndex, dragOverIndex, draggedOptionIndex, dragOverOptionIndex, draggedQuestionId, eventTickets, collapsedItems, isSaving } = state;
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "編輯表單", "zh-Hans": "编辑表单", en: "Edit Form" },
@@ -149,55 +255,39 @@ export default function FormsPage() {
 		{ value: "checkbox", label: t.typeCheckbox }
 	];
 
-	const loadEvent = useCallback(async () => {
-		if (!currentEventId) {
-			console.error("No event ID available");
-			return;
-		}
-
-		try {
-			const response = await adminEventsAPI.getById(currentEventId);
-			if (response.success && response.data) {
-				setCurrentEvent(response.data);
-			}
-		} catch (error) {
-			console.error("Failed to load event:", error);
-		}
-	}, [currentEventId]);
-
 	const loadAllEvents = useCallback(async () => {
 		try {
 			const response = await adminEventsAPI.getAll();
 			if (response.success) {
-				setAllEvents((response.data || []).filter(e => e.id !== currentEvent?.id));
+				dispatch({ type: "allEventsLoaded", events: (response.data || []).filter(e => e.id !== currentEventId) });
 			}
 		} catch (error) {
 			console.error("Failed to load events:", error);
 		}
-	}, [currentEvent?.id]);
+	}, [currentEventId]);
 
 	const loadEventTickets = useCallback(async () => {
-		if (!currentEvent?.id) return;
+		if (!currentEventId) return;
 
 		try {
-			const response = await adminTicketsAPI.getAll({ eventId: currentEvent.id });
+			const response = await adminTicketsAPI.getAll({ eventId: currentEventId });
 			if (response.success) {
-				setEventTickets(response.data || []);
+				dispatch({ type: "eventTicketsLoaded", tickets: response.data || [] });
 			}
 		} catch (error) {
 			console.error("Failed to load tickets:", error);
 		}
-	}, [currentEvent?.id]);
+	}, [currentEventId]);
 
 	const loadFormFields = useCallback(async () => {
-		if (!currentEvent?.id) return;
+		if (!currentEventId) return;
 
 		try {
-			const response = await adminEventFormFieldsAPI.getAll({ eventId: currentEvent.id });
+			const response = await adminEventFormFieldsAPI.getAll({ eventId: currentEventId });
 
 			if (response.success) {
 				const loadedFields: Question[] = (response.data || []).map((field: EventFormField): Question => {
-					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let options: Array<{ id?: string; en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 					let prompts: Record<string, string[]> = {};
 
 					const fieldWithOptions = field as EventFormField & { options?: unknown };
@@ -211,6 +301,7 @@ export default function FormsPage() {
 									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
 										const label = optWithLabel.label as Record<string, string>;
 										return {
+											id: crypto.randomUUID(),
 											en: label["en"] || optWithLabel.value || "",
 											"zh-Hant": label["zh-Hant"] || "",
 											"zh-Hans": label["zh-Hans"] || ""
@@ -219,18 +310,23 @@ export default function FormsPage() {
 								}
 								const optRecord = opt as Record<string, string>;
 								return {
+									id: crypto.randomUUID(),
 									en: optRecord["en"] || "",
 									"zh-Hant": optRecord["zh-Hant"] || "",
 									"zh-Hans": optRecord["zh-Hans"] || ""
 								};
 							}
-							return { en: String(opt), "zh-Hant": "", "zh-Hans": "" };
+							return { id: crypto.randomUUID(), en: String(opt), "zh-Hant": "", "zh-Hans": "" };
 						});
 					} else if (rawOptions && typeof rawOptions === "string") {
 						try {
 							const parsed = JSON.parse(rawOptions);
 							if (Array.isArray(parsed)) {
-								options = parsed.map((opt: unknown) => (typeof opt === "string" ? { en: opt, "zh-Hant": "", "zh-Hans": "" } : (opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string })));
+								options = parsed.map((opt: unknown) =>
+									typeof opt === "string"
+										? { id: crypto.randomUUID(), en: opt, "zh-Hant": "", "zh-Hans": "" }
+										: { id: crypto.randomUUID(), ...(opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }) }
+								);
 							}
 						} catch {
 							console.warn("Failed to parse field values as JSON:", rawOptions);
@@ -288,16 +384,15 @@ export default function FormsPage() {
 					};
 				});
 
-				setQuestions(loadedFields);
-				setOriginalFieldIds(loadedFields.map((f: Question) => f.id).filter((id: string) => !id.startsWith("temp-")));
-				setCollapsedItems(new Set(loadedFields.map((f: Question) => f.id)));
+				dispatch({ type: "formFieldsLoaded", questions: loadedFields });
+				originalFieldIdsRef.current = loadedFields.flatMap((f: Question) => (f.id.startsWith("temp-") ? [] : [f.id]));
 			} else {
 				throw new Error(response.message || "Failed to load form fields");
 			}
 		} catch (error) {
 			console.error("Failed to load form fields:", error);
 		}
-	}, [currentEvent?.id]);
+	}, [currentEventId]);
 
 	async function copyFormFromEvent(sourceEventId: string) {
 		if (!sourceEventId) return;
@@ -307,7 +402,7 @@ export default function FormsPage() {
 
 			if (response.success && response.data) {
 				const copiedQuestions: Question[] = response.data.map((field: EventFormField): Question => {
-					let options: Array<{ en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let options: Array<{ id?: string; en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
 					let prompts: Record<string, string[]> = {};
 
 					const fieldWithOptions = field as EventFormField & { options?: unknown };
@@ -321,6 +416,7 @@ export default function FormsPage() {
 									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
 										const label = optWithLabel.label as Record<string, string>;
 										return {
+											id: crypto.randomUUID(),
 											en: label["en"] || optWithLabel.value || "",
 											"zh-Hant": label["zh-Hant"] || "",
 											"zh-Hans": label["zh-Hans"] || ""
@@ -329,18 +425,23 @@ export default function FormsPage() {
 								}
 								const optRecord = opt as Record<string, string>;
 								return {
+									id: crypto.randomUUID(),
 									en: optRecord["en"] || "",
 									"zh-Hant": optRecord["zh-Hant"] || "",
 									"zh-Hans": optRecord["zh-Hans"] || ""
 								};
 							}
-							return { en: String(opt), "zh-Hant": "", "zh-Hans": "" };
+							return { id: crypto.randomUUID(), en: String(opt), "zh-Hant": "", "zh-Hans": "" };
 						});
 					} else if (rawOptions && typeof rawOptions === "string") {
 						try {
 							const parsed = JSON.parse(rawOptions);
 							if (Array.isArray(parsed)) {
-								options = parsed.map((opt: unknown) => (typeof opt === "string" ? { en: opt, "zh-Hant": "", "zh-Hans": "" } : (opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string })));
+								options = parsed.map((opt: unknown) =>
+									typeof opt === "string"
+										? { id: crypto.randomUUID(), en: opt, "zh-Hant": "", "zh-Hans": "" }
+										: { id: crypto.randomUUID(), ...(opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }) }
+								);
 							}
 						} catch {
 							console.warn("Failed to parse field values as JSON:", rawOptions);
@@ -399,8 +500,7 @@ export default function FormsPage() {
 					};
 				});
 
-				setQuestions(copiedQuestions);
-				setCopyFromEventId("");
+				dispatch({ type: "formCopied", questions: copiedQuestions });
 				showAlert(t.copySuccess, "success");
 			}
 		} catch (error) {
@@ -410,13 +510,13 @@ export default function FormsPage() {
 	}
 
 	async function saveForm() {
-		if (!currentEvent?.id) {
+		if (!currentEventId) {
 			showAlert("無法保存：未找到票種", "error");
 			return;
 		}
 
 		try {
-			setIsSaving(true);
+			dispatch({ type: "setSaving", value: true });
 			const formFieldsData = questions.map((q, index) => {
 				// Convert string back to Date for API submission
 				const filters: FieldFilter | null = q.filters
@@ -445,7 +545,7 @@ export default function FormsPage() {
 					type: q.type as "text" | "textarea" | "select" | "checkbox" | "radio",
 					required: q.required,
 					validater: q.validater || "",
-					values: q.options,
+					values: q.options?.map(({ id: _id, ...option }) => option),
 					prompts: q.prompts,
 					filters,
 					enableOther: q.type === "radio" ? q.enableOther || false : undefined,
@@ -453,36 +553,34 @@ export default function FormsPage() {
 				};
 			});
 
-			const currentFieldIds = questions.map(q => q.id).filter(id => !id.startsWith("temp-"));
+			const currentFieldIds = new Set(questions.flatMap(q => (q.id.startsWith("temp-") ? [] : [q.id])));
 
-			const deletedFieldIds = originalFieldIds.filter(originalId => !currentFieldIds.includes(originalId));
+			const deletedFieldIds = originalFieldIdsRef.current.filter(originalId => !currentFieldIds.has(originalId));
 
-			for (const fieldId of deletedFieldIds) {
-				await adminEventFormFieldsAPI.delete(fieldId);
-			}
+			await Promise.all([
+				...deletedFieldIds.map(fieldId => adminEventFormFieldsAPI.delete(fieldId)),
+				...formFieldsData.map(fieldData => {
+					const data = {
+						eventId: currentEventId,
+						order: fieldData.order,
+						type: fieldData.type,
+						name: fieldData.name,
+						description: fieldData.description,
+						placeholder: "",
+						required: fieldData.required,
+						validater: fieldData.validater || "",
+						values: fieldData.values,
+						prompts: fieldData.prompts,
+						filters: fieldData.filters || undefined,
+						enableOther: fieldData.enableOther
+					};
 
-			for (const fieldData of formFieldsData) {
-				const data = {
-					eventId: currentEvent.id,
-					order: fieldData.order,
-					type: fieldData.type,
-					name: fieldData.name,
-					description: fieldData.description,
-					placeholder: "",
-					required: fieldData.required,
-					validater: fieldData.validater || "",
-					values: fieldData.values,
-					prompts: fieldData.prompts,
-					filters: fieldData.filters || undefined,
-					enableOther: fieldData.enableOther
-				};
-
-				if (fieldData.id) {
-					await adminEventFormFieldsAPI.update(fieldData.id, data);
-				} else {
-					await adminEventFormFieldsAPI.create(data);
-				}
-			}
+					if (fieldData.id) {
+						return adminEventFormFieldsAPI.update(fieldData.id, data);
+					}
+					return adminEventFormFieldsAPI.create(data);
+				})
+			]);
 
 			await loadFormFields();
 
@@ -491,14 +589,14 @@ export default function FormsPage() {
 			console.error("Failed to save form:", error);
 			showAlert("儲存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
-			setIsSaving(false);
+			dispatch({ type: "setSaving", value: false });
 		}
 	}
 
 	function addQuestion() {
-		setQuestions([
-			...questions,
-			{
+		dispatch({
+			type: "addQuestion",
+			question: {
 				id: "temp-" + crypto.randomUUID(),
 				label: "New Question",
 				labelEn: "New Question",
@@ -507,47 +605,56 @@ export default function FormsPage() {
 				type: "text",
 				required: false
 			}
-		]);
-	}
-
-	function updateQuestion(id: string, updates: Partial<Question>) {
-		setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q)));
-	}
-
-	function deleteQuestion(id: string) {
-		setQuestions(questions.filter(q => q.id !== id));
-	}
-
-	function toggleCollapse(id: string) {
-		setCollapsedItems(prev => {
-			const newSet = new Set(prev);
-			if (newSet.has(id)) {
-				newSet.delete(id);
-			} else {
-				newSet.add(id);
-			}
-			return newSet;
 		});
 	}
 
+	function updateQuestion(id: string, updates: Partial<Question>) {
+		dispatch({ type: "updateQuestion", id, updates });
+	}
+
+	function updateQuestionOption(question: Question, optionIndex: number, updates: Partial<{ en: string; "zh-Hant": string; "zh-Hans": string }>) {
+		const newOptions = [...(question.options || [])];
+		const currentOption = newOptions[optionIndex];
+		newOptions[optionIndex] = {
+			id: currentOption?.id || crypto.randomUUID(),
+			en: currentOption?.en || "",
+			"zh-Hant": currentOption?.["zh-Hant"] || "",
+			"zh-Hans": currentOption?.["zh-Hans"] || "",
+			...updates
+		};
+		updateQuestion(question.id, { options: newOptions });
+	}
+
+	function addQuestionOption(question: Question) {
+		const newOptions = [...(question.options || []), { id: crypto.randomUUID(), en: "", "zh-Hant": "", "zh-Hans": "" }];
+		updateQuestion(question.id, { options: newOptions });
+	}
+
+	function deleteQuestion(id: string) {
+		dispatch({ type: "deleteQuestion", id });
+	}
+
+	function toggleCollapse(id: string) {
+		dispatch({ type: "toggleCollapse", id });
+	}
+
 	function expandAll() {
-		setCollapsedItems(new Set());
+		dispatch({ type: "expandAll" });
 	}
 
 	function collapseAll() {
-		setCollapsedItems(new Set(questions.map(q => q.id)));
+		dispatch({ type: "collapseAll" });
 	}
 
-	function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
+	function handleDragStart(e: React.DragEvent<HTMLElement>, index: number) {
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("text/html", e.currentTarget.innerHTML);
 		e.dataTransfer.setData("dragIndex", index.toString());
-		setDraggedIndex(index);
+		dispatch({ type: "fieldDragStarted", index });
 	}
 
 	function handleDragEnd() {
-		setDraggedIndex(null);
-		setDragOverIndex(null);
+		dispatch({ type: "fieldDragCleared" });
 	}
 
 	function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
@@ -555,21 +662,20 @@ export default function FormsPage() {
 		e.dataTransfer.dropEffect = "move";
 
 		if (draggedIndex !== null && draggedIndex !== index) {
-			setDragOverIndex(index);
+			dispatch({ type: "fieldDragOver", index });
 		}
 	}
 
 	function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
 		e.preventDefault();
-		setDragOverIndex(null);
+		dispatch({ type: "fieldDragCleared" });
 	}
 
 	async function handleDrop(e: React.DragEvent<HTMLDivElement>, dropIndex: number) {
 		e.preventDefault();
 		const dragIndex = parseInt(e.dataTransfer.getData("dragIndex"));
 
-		setDraggedIndex(null);
-		setDragOverIndex(null);
+		dispatch({ type: "fieldDragCleared" });
 
 		if (dragIndex === dropIndex) return;
 
@@ -579,16 +685,16 @@ export default function FormsPage() {
 		newQuestions.splice(dragIndex, 1);
 		newQuestions.splice(dropIndex, 0, draggedItem);
 
-		setQuestions(newQuestions);
+		dispatch({ type: "questionsReordered", questions: newQuestions });
 
-		if (currentEvent?.id) {
+		if (currentEventId) {
 			try {
 				const fieldOrders = newQuestions.map((q, index) => ({
 					id: q.id,
 					order: index
 				}));
 
-				await adminEventFormFieldsAPI.reorder(currentEvent.id, { fieldOrders });
+				await adminEventFormFieldsAPI.reorder(currentEventId, { fieldOrders });
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
 				showAlert("重新排序失敗：" + (error instanceof Error ? error.message : String(error)), "error");
@@ -597,19 +703,16 @@ export default function FormsPage() {
 		}
 	}
 
-	function handleOptionDragStart(e: React.DragEvent<HTMLSpanElement>, questionId: string, optionIndex: number) {
+	function handleOptionDragStart(e: React.DragEvent<HTMLElement>, questionId: string, optionIndex: number) {
 		e.stopPropagation();
 		e.dataTransfer.effectAllowed = "move";
 		e.dataTransfer.setData("optionIndex", optionIndex.toString());
-		setDraggedOptionIndex(optionIndex);
-		setDraggedQuestionId(questionId);
+		dispatch({ type: "optionDragStarted", questionId, optionIndex });
 	}
 
-	function handleOptionDragEnd(e: React.DragEvent<HTMLDivElement>) {
+	function handleOptionDragEnd(e: React.DragEvent<HTMLElement>) {
 		e.stopPropagation();
-		setDraggedOptionIndex(null);
-		setDragOverOptionIndex(null);
-		setDraggedQuestionId(null);
+		dispatch({ type: "optionDragCleared" });
 	}
 
 	function handleOptionDragOver(e: React.DragEvent<HTMLDivElement>, optionIndex: number) {
@@ -618,14 +721,14 @@ export default function FormsPage() {
 		e.dataTransfer.dropEffect = "move";
 
 		if (draggedOptionIndex !== null && draggedOptionIndex !== optionIndex) {
-			setDragOverOptionIndex(optionIndex);
+			dispatch({ type: "optionDragOver", optionIndex });
 		}
 	}
 
 	function handleOptionDragLeave(e: React.DragEvent<HTMLDivElement>) {
 		e.preventDefault();
 		e.stopPropagation();
-		setDragOverOptionIndex(null);
+		dispatch({ type: "optionDragCleared" });
 	}
 
 	function handleOptionDrop(e: React.DragEvent<HTMLDivElement>, questionId: string, dropIndex: number) {
@@ -633,9 +736,7 @@ export default function FormsPage() {
 		e.stopPropagation();
 		const dragIndex = parseInt(e.dataTransfer.getData("optionIndex"));
 
-		setDraggedOptionIndex(null);
-		setDragOverOptionIndex(null);
-		setDraggedQuestionId(null);
+		dispatch({ type: "optionDragCleared" });
 
 		if (dragIndex === dropIndex) return;
 
@@ -652,35 +753,12 @@ export default function FormsPage() {
 	}
 
 	useEffect(() => {
-		const handleEventChange = (e: CustomEvent) => {
-			setCurrentEventId(e.detail.eventId);
-		};
-
-		window.addEventListener("selectedEventChanged", handleEventChange as EventListener);
-
-		const savedEventId = localStorage.getItem("selectedEventId");
-		if (savedEventId) {
-			setCurrentEventId(savedEventId);
-		}
-
-		return () => {
-			window.removeEventListener("selectedEventChanged", handleEventChange as EventListener);
-		};
-	}, []);
-
-	useEffect(() => {
 		if (currentEventId) {
-			loadEvent();
-		}
-	}, [currentEventId, loadEvent]);
-
-	useEffect(() => {
-		if (currentEvent?.id) {
 			loadFormFields();
 			loadAllEvents();
 			loadEventTickets();
 		}
-	}, [currentEvent?.id, loadFormFields, loadAllEvents, loadEventTickets]);
+	}, [currentEventId, loadFormFields, loadAllEvents, loadEventTickets]);
 
 	if (!currentEventId) {
 		return (
@@ -712,7 +790,7 @@ export default function FormsPage() {
 									if (value && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
 										copyFormFromEvent(value);
 									} else {
-										setCopyFromEventId("");
+										dispatch({ type: "setCopyFromEventId", value: "" });
 									}
 								}}
 							>
@@ -774,11 +852,12 @@ export default function FormsPage() {
 										} ${isDropTarget ? "border-primary border-2 shadow-[0_4px_12px_rgba(var(--color-primary-rgb,99,102,241),0.3)]" : "border-gray-300 dark:border-gray-700"}`}
 									>
 										{/* Drag Handle */}
-										<div
+										<button
+											type="button"
 											draggable
 											onDragStart={e => handleDragStart(e, index)}
 											onDragEnd={handleDragEnd}
-											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 ${
+											className={`cursor-grab select-none flex items-start justify-center transition-colors duration-200 py-2 px-1 touch-none shrink-0 bg-transparent border-0 ${
 												isDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"
 											}`}
 											title="拖曳以重新排序"
@@ -790,7 +869,7 @@ export default function FormsPage() {
 											}}
 										>
 											<GripVertical size={20} />
-										</div>{" "}
+										</button>{" "}
 										{/* Field Number Badge */}
 										<div className="absolute top-3 right-3 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[0.7rem] font-semibold py-[0.2rem] px-2 rounded">#{index + 1}</div>
 										{/* Collapse/Expand Button */}
@@ -805,14 +884,14 @@ export default function FormsPage() {
 										{/* Main Content Area */}
 										<div className="flex flex-col gap-4 flex-1 pr-12">
 											{/* Summary Header - Always Visible */}
-											<div className="cursor-pointer" onClick={() => toggleCollapse(q.id)}>
+											<button type="button" className="cursor-pointer text-left w-full" onClick={() => toggleCollapse(q.id)}>
 												<div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
 													{(locale === "zh-Hant" && q.labelZhHant) || (locale === "zh-Hans" && q.labelZhHans) || q.labelEn || q.label || "Untitled Field"}
 												</div>
 												<div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
 													{fieldTypes.find(ft => ft.value === q.type)?.label || q.type} • {q.required ? t.fieldRequired : t.fieldOptional}
 												</div>
-											</div>
+											</button>
 
 											{/* Collapsible Content */}
 											{!isCollapsed && (
@@ -963,7 +1042,7 @@ export default function FormsPage() {
 
 																	return (
 																		<div
-																			key={i}
+																			key={opt.id}
 																			onDragOver={e => handleOptionDragOver(e, i)}
 																			onDragLeave={handleOptionDragLeave}
 																			onDrop={e => handleOptionDrop(e, q.id, i)}
@@ -976,11 +1055,12 @@ export default function FormsPage() {
 																			}`}
 																		>
 																			<div className="flex items-center gap-2">
-																				<span
+																				<button
+																					type="button"
 																					draggable
 																					onDragStart={e => handleOptionDragStart(e, q.id, i)}
 																					onDragEnd={handleOptionDragEnd}
-																					className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center`}
+																					className={`cursor-grab ${isOptionDragging ? "text-primary" : "text-gray-400 dark:text-gray-600"} select-none p-1 flex items-center bg-transparent border-0`}
 																					title="拖曳以重新排序選項"
 																					onMouseDown={e => {
 																						e.currentTarget.style.cursor = "grabbing";
@@ -990,7 +1070,7 @@ export default function FormsPage() {
 																					}}
 																				>
 																					⋮⋮
-																				</span>
+																				</button>
 																				<span className="text-xs text-gray-600 dark:text-gray-500 font-semibold min-w-6">{i + 1}</span>
 																			</div>
 																			<div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 flex-1">
@@ -998,45 +1078,21 @@ export default function FormsPage() {
 																					type="text"
 																					value={typeof opt === "object" ? opt.en || "" : opt}
 																					placeholder="English"
-																					onChange={e => {
-																						const newOptions = [...(q.options || [])];
-																						if (typeof newOptions[i] === "object") {
-																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), en: e.target.value };
-																						} else {
-																							newOptions[i] = { en: e.target.value };
-																						}
-																						updateQuestion(q.id, { options: newOptions });
-																					}}
+																					onChange={e => updateQuestionOption(q, i, { en: e.target.value })}
 																					className="text-xs bg-gray-100 dark:bg-gray-950"
 																				/>
 																				<Input
 																					type="text"
 																					value={typeof opt === "object" ? opt["zh-Hant"] || "" : ""}
 																					placeholder="繁體中文"
-																					onChange={e => {
-																						const newOptions = [...(q.options || [])];
-																						if (typeof newOptions[i] === "object") {
-																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hant": e.target.value };
-																						} else {
-																							newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hant": e.target.value };
-																						}
-																						updateQuestion(q.id, { options: newOptions });
-																					}}
+																					onChange={e => updateQuestionOption(q, i, { "zh-Hant": e.target.value })}
 																					className="text-xs bg-gray-100 dark:bg-gray-950"
 																				/>
 																				<Input
 																					type="text"
 																					value={typeof opt === "object" ? opt["zh-Hans"] || "" : ""}
 																					placeholder="简体中文"
-																					onChange={e => {
-																						const newOptions = [...(q.options || [])];
-																						if (typeof newOptions[i] === "object") {
-																							newOptions[i] = { ...(newOptions[i] as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }), "zh-Hans": e.target.value };
-																						} else {
-																							newOptions[i] = { en: typeof opt === "string" ? opt : "", "zh-Hans": e.target.value };
-																						}
-																						updateQuestion(q.id, { options: newOptions });
-																					}}
+																					onChange={e => updateQuestionOption(q, i, { "zh-Hans": e.target.value })}
 																					className="text-xs bg-gray-100 dark:bg-gray-950"
 																				/>
 																			</div>
@@ -1057,10 +1113,7 @@ export default function FormsPage() {
 																})}
 																<Button
 																	type="button"
-																	onClick={() => {
-																		const newOptions = [...(q.options || []), { en: "", "zh-Hant": "", "zh-Hans": "" }];
-																		updateQuestion(q.id, { options: newOptions });
-																	}}
+																	onClick={() => addQuestionOption(q)}
 																	className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
 																>
 																	<span className="text-base">
@@ -1130,332 +1183,7 @@ export default function FormsPage() {
 													)}
 
 													{/* Display Filters Section */}
-													<div>
-														<div className="text-xs font-semibold text-gray-600 dark:text-gray-500 mb-2 uppercase tracking-wider">{t.displayFilters}</div>
-														<div className="p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 flex flex-col gap-3">
-															{/* Enable filters toggle */}
-															<label className="flex items-center gap-2 cursor-pointer select-none">
-																<Checkbox
-																	checked={q.filters?.enabled || false}
-																	onCheckedChange={checked => {
-																		updateQuestion(q.id, {
-																			filters: {
-																				enabled: checked === true,
-																				action: q.filters?.action || "display",
-																				operator: q.filters?.operator || "and",
-																				conditions: q.filters?.conditions || []
-																			}
-																		});
-																	}}
-																/>
-																<span className="text-[0.85rem] font-medium text-gray-700 dark:text-gray-300">{t.enableFilters}</span>
-															</label>
-
-															{q.filters?.enabled && (
-																<>
-																	{/* Filter action and operator */}
-																	<div className="flex gap-2.5 flex-wrap">
-																		<div className="flex-1 min-w-[200px]">
-																			<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterAction}</Label>
-																			<Select
-																				value={q.filters.action}
-																				onValueChange={value => {
-																					updateQuestion(q.id, {
-																						filters: {
-																							...q.filters!,
-																							action: value as "display" | "hide"
-																						}
-																					});
-																				}}
-																			>
-																				<SelectTrigger className="w-full text-sm">
-																					<SelectValue />
-																				</SelectTrigger>
-																				<SelectContent>
-																					<SelectItem value="display">{t.actionDisplay}</SelectItem>
-																					<SelectItem value="hide">{t.actionHide}</SelectItem>
-																				</SelectContent>
-																			</Select>
-																		</div>
-
-																		<div className="flex-1 min-w-[200px]">
-																			<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.filterOperator}</Label>
-																			<Select
-																				value={q.filters.operator}
-																				onValueChange={value => {
-																					updateQuestion(q.id, {
-																						filters: {
-																							...q.filters!,
-																							operator: value as "and" | "or"
-																						}
-																					});
-																				}}
-																			>
-																				<SelectTrigger className="w-full text-sm">
-																					<SelectValue />
-																				</SelectTrigger>
-																				<SelectContent>
-																					<SelectItem value="and">{t.operatorAnd}</SelectItem>
-																					<SelectItem value="or">{t.operatorOr}</SelectItem>
-																				</SelectContent>
-																			</Select>
-																		</div>
-																	</div>
-
-																	{/* Conditions list */}
-																	<div className="flex flex-col gap-2.5">
-																		{(q.filters.conditions || []).map((condition, condIndex) => (
-																			<div key={condIndex} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md flex flex-col gap-2">
-																				{/* Condition type selector */}
-																				<div className="flex gap-2 items-start">
-																					<div className="flex-1">
-																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.conditionType}</Label>
-																						<Select
-																							value={condition.type}
-																							onValueChange={value => {
-																								const newConditions = [...(q.filters!.conditions || [])];
-																								newConditions[condIndex] = {
-																									type: value as "ticket" | "field" | "time"
-																								};
-																								updateQuestion(q.id, {
-																									filters: {
-																										...q.filters!,
-																										conditions: newConditions
-																									}
-																								});
-																							}}
-																						>
-																							<SelectTrigger className="w-full text-xs">
-																								<SelectValue />
-																							</SelectTrigger>
-																							<SelectContent>
-																								<SelectItem value="ticket">{t.typeTicket}</SelectItem>
-																								<SelectItem value="field">{t.typeField}</SelectItem>
-																								<SelectItem value="time">{t.typeTime}</SelectItem>
-																							</SelectContent>
-																						</Select>
-																					</div>
-
-																					<Button
-																						type="button"
-																						onClick={() => {
-																							const newConditions = [...(q.filters!.conditions || [])];
-																							newConditions.splice(condIndex, 1);
-																							updateQuestion(q.id, {
-																								filters: {
-																									...q.filters!,
-																									conditions: newConditions
-																								}
-																							});
-																						}}
-																						className="text-xs py-[0.45rem] px-2.5 bg-gray-100 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 text-red-600 dark:text-red-400 shrink-0 mt-[1.4rem]"
-																						title={t.deleteCondition}
-																					>
-																						<X size={14} />
-																					</Button>
-																				</div>
-
-																				{/* Condition-specific fields */}
-																				{condition.type === "ticket" && (
-																					<div>
-																						<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectTicket}</Label>
-																						<Select
-																							value={condition.ticketId || ""}
-																							onValueChange={value => {
-																								const newConditions = [...(q.filters!.conditions || [])];
-																								newConditions[condIndex] = {
-																									...condition,
-																									ticketId: value
-																								};
-																								updateQuestion(q.id, {
-																									filters: {
-																										...q.filters!,
-																										conditions: newConditions
-																									}
-																								});
-																							}}
-																						>
-																							<SelectTrigger className="w-full text-xs">
-																								<SelectValue placeholder={`${t.selectTicket}...`} />
-																							</SelectTrigger>
-																							<SelectContent>
-																								{eventTickets.map(ticket => (
-																									<SelectItem key={ticket.id} value={ticket.id}>
-																										{ticket.name && typeof ticket.name === "object" ? ticket.name["en"] || Object.values(ticket.name)[0] : ticket.name || ""}
-																									</SelectItem>
-																								))}
-																							</SelectContent>
-																						</Select>
-																					</div>
-																				)}
-
-																				{condition.type === "field" && (
-																					<>
-																						<div>
-																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.selectField}</Label>
-																							<Select
-																								value={condition.fieldId || ""}
-																								onValueChange={value => {
-																									const newConditions = [...(q.filters!.conditions || [])];
-																									newConditions[condIndex] = {
-																										...condition,
-																										fieldId: value
-																									};
-																									updateQuestion(q.id, {
-																										filters: {
-																											...q.filters!,
-																											conditions: newConditions
-																										}
-																									});
-																								}}
-																							>
-																								<SelectTrigger className="w-full text-xs">
-																									<SelectValue placeholder={`${t.selectField}...`} />
-																								</SelectTrigger>
-																								<SelectContent>
-																									{questions
-																										.filter(field => field.id !== q.id)
-																										.map(field => (
-																											<SelectItem key={field.id} value={field.id}>
-																												{field.labelEn || field.label}
-																											</SelectItem>
-																										))}
-																								</SelectContent>
-																							</Select>
-																						</div>
-
-																						<div className="flex gap-2">
-																							<div className="flex-1">
-																								<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldOperator}</Label>
-																								<Select
-																									value={condition.operator || "equals"}
-																									onValueChange={value => {
-																										const newConditions = [...(q.filters!.conditions || [])];
-																										newConditions[condIndex] = {
-																											...condition,
-																											operator: value as "equals" | "filled" | "notFilled"
-																										};
-																										updateQuestion(q.id, {
-																											filters: {
-																												...q.filters!,
-																												conditions: newConditions
-																											}
-																										});
-																									}}
-																								>
-																									<SelectTrigger className="w-full text-xs">
-																										<SelectValue />
-																									</SelectTrigger>
-																									<SelectContent>
-																										<SelectItem value="equals">{t.operatorEquals}</SelectItem>
-																										<SelectItem value="filled">{t.operatorFilled}</SelectItem>
-																										<SelectItem value="notFilled">{t.operatorNotFilled}</SelectItem>
-																									</SelectContent>
-																								</Select>
-																							</div>
-
-																							{condition.operator === "equals" && (
-																								<div className="flex-1">
-																									<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.fieldValue}</Label>
-																									<Input
-																										type="text"
-																										value={condition.value || ""}
-																										placeholder={t.fieldValue}
-																										onChange={e => {
-																											const newConditions = [...(q.filters!.conditions || [])];
-																											newConditions[condIndex] = {
-																												...condition,
-																												value: e.target.value
-																											};
-																											updateQuestion(q.id, {
-																												filters: {
-																													...q.filters!,
-																													conditions: newConditions
-																												}
-																											});
-																										}}
-																										className="w-full text-xs"
-																									/>
-																								</div>
-																							)}
-																						</div>
-																					</>
-																				)}
-
-																				{condition.type === "time" && (
-																					<>
-																						<div>
-																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.startTime}</Label>
-																							<Input
-																								type="datetime-local"
-																								value={condition.startTime || ""}
-																								onChange={e => {
-																									const newConditions = [...(q.filters!.conditions || [])];
-																									newConditions[condIndex] = {
-																										...condition,
-																										startTime: e.target.value
-																									};
-																									updateQuestion(q.id, {
-																										filters: {
-																											...q.filters!,
-																											conditions: newConditions
-																										}
-																									});
-																								}}
-																								className="w-full text-xs"
-																							/>
-																						</div>
-
-																						<div>
-																							<Label className="block text-[0.7rem] text-gray-600 dark:text-gray-500 mb-1.5 font-medium">{t.endTime}</Label>
-																							<Input
-																								type="datetime-local"
-																								value={condition.endTime || ""}
-																								onChange={e => {
-																									const newConditions = [...(q.filters!.conditions || [])];
-																									newConditions[condIndex] = {
-																										...condition,
-																										endTime: e.target.value
-																									};
-																									updateQuestion(q.id, {
-																										filters: {
-																											...q.filters!,
-																											conditions: newConditions
-																										}
-																									});
-																								}}
-																								className="w-full text-xs"
-																							/>
-																						</div>
-																					</>
-																				)}
-																			</div>
-																		))}
-
-																		{/* Add condition button */}
-																		<Button
-																			type="button"
-																			onClick={() => {
-																				const newConditions = [...(q.filters!.conditions || []), { type: "ticket" as const }];
-																				updateQuestion(q.id, {
-																					filters: {
-																						...q.filters!,
-																						conditions: newConditions
-																					}
-																				});
-																			}}
-																			className="text-xs py-2 px-3 bg-white dark:bg-gray-800 border border-dashed border-gray-400 dark:border-gray-700 text-gray-600 dark:text-gray-400 w-full flex justify-center items-center gap-1.5"
-																		>
-																			<span className="text-base">
-																				<Plus />
-																			</span>{" "}
-																			{t.addCondition}
-																		</Button>
-																	</div>
-																</>
-															)}
-														</div>
-													</div>
+													<DisplayFiltersSection question={q} questions={questions} eventTickets={eventTickets} t={t} updateQuestion={updateQuestion} />
 												</>
 											)}
 										</div>
@@ -1489,4 +1217,8 @@ export default function FormsPage() {
 			</main>
 		</>
 	);
+}
+
+export default function FormsPage() {
+	return useFormsPageView();
 }

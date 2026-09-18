@@ -3,7 +3,7 @@ import { format, toZonedTime } from "date-fns-tz";
 /**
  * Target timezone for the application (UTC+8)
  */
-export const APP_TIMEZONE = "Asia/Taipei"; // UTC+8
+const APP_TIMEZONE = "Asia/Taipei"; // UTC+8
 
 /**
  * Convert a Date to UTC+8 timezone
@@ -15,7 +15,7 @@ export function toUTC8(date: Date): Date {
 /**
  * Format a date to UTC+8 with specified format
  */
-export function formatInUTC8(date: Date, formatString: string = "yyyy-MM-dd HH:mm:ss"): string {
+function formatInUTC8(date: Date, formatString: string = "yyyy-MM-dd HH:mm:ss"): string {
 	return format(toZonedTime(date, APP_TIMEZONE), formatString, {
 		timeZone: APP_TIMEZONE
 	});
@@ -47,13 +47,6 @@ export function formatDate(date: Date): string {
  */
 export function formatTime(date: Date): string {
 	return formatInUTC8(date, "HH:mm");
-}
-
-/**
- * Format full datetime with timezone indicator
- */
-export function formatDateTimeWithTZ(date: Date): string {
-	return `${formatInUTC8(date, "yyyy/MM/dd HH:mm")} (UTC+8)`;
 }
 
 /**

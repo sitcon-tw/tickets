@@ -1,7 +1,7 @@
 import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import styled from "styled-components";
 import { Input } from "../ui/input";
 
@@ -135,25 +135,15 @@ export default function Radio({ label, name, options, required = true, value, on
 	const optionValues = options.map(opt => (typeof opt === "object" && opt !== null && "value" in opt ? opt.value : String(opt)));
 
 	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
-	const [isOtherRadioSelected, setIsOtherRadioSelected] = useState(!valueIsAPredefinedOption && enableOther && value !== undefined);
 	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : value || "");
-
-	useEffect(() => {
-		const isPredefined = value !== undefined && value !== "" && optionValues.includes(value);
-		if (isPredefined) {
-			setIsOtherRadioSelected(false);
-		} else if (value !== undefined && value !== "" && enableOther) {
-			setIsOtherRadioSelected(true);
-			setOtherText(value);
-		}
-	}, [value, optionValues, enableOther]);
+	const isOtherRadioSelected = !valueIsAPredefinedOption && enableOther && value !== undefined && value !== "";
+	const displayedOtherText = isOtherRadioSelected ? value || otherText : otherText;
 
 	const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const selectedValue = e.target.value;
 
 		if (selectedValue === OTHER_VALUE) {
-			setIsOtherRadioSelected(true);
-			const newValue = otherText || "";
+			const newValue = displayedOtherText || "";
 			const syntheticEvent = {
 				...e,
 				target: {
@@ -169,7 +159,6 @@ export default function Radio({ label, name, options, required = true, value, on
 				onValueChange(newValue);
 			}
 		} else {
-			setIsOtherRadioSelected(false);
 			if (onChange) {
 				onChange(e);
 			}
@@ -228,7 +217,7 @@ export default function Radio({ label, name, options, required = true, value, on
 							<div className="radio-circle" />
 							<span className="radio-label">{defaultOtherLabel}</span>
 						</label>
-						{isOtherRadioSelected && <Input type="text" className="max-w-64" placeholder={otherPlaceholder} value={otherText} onChange={handleOtherTextChange} required={required} />}
+						{isOtherRadioSelected && <Input type="text" className="max-w-64" placeholder={otherPlaceholder} value={displayedOtherText} onChange={handleOtherTextChange} required={required} />}
 					</>
 				)}
 			</div>

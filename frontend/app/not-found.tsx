@@ -4,18 +4,15 @@ import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function NotFound() {
-	const [locale, setLocale] = useState(routing.defaultLocale);
-
-	useEffect(() => {
+	const [locale] = useState(() => {
+		if (typeof window === "undefined") return routing.defaultLocale;
 		const path = window.location.pathname;
 		const detectedLocale = routing.locales.find(loc => path.startsWith(`/${loc}`));
-		if (detectedLocale) {
-			setLocale(detectedLocale);
-		}
-	}, []);
+		return detectedLocale || routing.defaultLocale;
+	});
 
 	const t = getTranslations(locale, {
 		title: {

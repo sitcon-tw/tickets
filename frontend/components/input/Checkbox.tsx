@@ -1,5 +1,5 @@
 import MarkdownContent from "@/components/MarkdownContent";
-import { ChangeEvent, forwardRef } from "react";
+import { ChangeEvent, Ref } from "react";
 import styled from "styled-components";
 
 type CheckboxProps = {
@@ -77,7 +77,7 @@ const StyledLabel = styled.label`
 	}
 `;
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, question, required = false, value, checked, onChange, inputRef, description }, ref) => {
+function Checkbox({ label, id, question, required = false, value, checked, onChange, inputRef, description, ref }: CheckboxProps & { ref?: Ref<HTMLInputElement> }) {
 	return (
 		<div>
 			{question ? <p style={{ marginBottom: "1rem", color: "inherit" }}>{question}</p> : null}
@@ -99,7 +99,6 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({ label, id, quest
 			)}
 		</div>
 	);
-});
-Checkbox.displayName = "Checkbox";
+}
 
 export default Checkbox;
