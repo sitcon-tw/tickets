@@ -1,6 +1,6 @@
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaTicketId } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
@@ -15,7 +15,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/tickets",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccessViaEventBody,
 			schema: ticketSchemas.createTicket
 		},
 		async (request, reply) => {

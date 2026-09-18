@@ -4,14 +4,13 @@ import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import crypto from "crypto";
 import { Menu, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useReducer, useState } from "react";
 type SessionUser = {

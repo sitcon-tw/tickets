@@ -4,7 +4,7 @@
 
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
@@ -727,7 +727,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}>(
 		"/registrations/google-sheets/sync",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccessViaEventBody,
 			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
 		async (request, reply) => {
