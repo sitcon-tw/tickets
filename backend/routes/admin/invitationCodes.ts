@@ -214,7 +214,14 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/invitation-codes/:id",
 		{
-			preHandler: [requireEventAccessViaCodeId, requireEventAccessViaTicketBody],
+			preHandler: [
+				requireEventAccessViaCodeId,
+				async (request, reply) => {
+					if (request.body.ticketId !== undefined) {
+						await requireEventAccessViaTicketBody.call(fastify, request, reply, () => {});
+					}
+				}
+			],
 			schema: invitationCodeSchemas.updateInvitationCode
 		},
 		async (request, reply) => {

@@ -150,7 +150,7 @@ export const requirePermission = (permission: string): preHandlerHookHandler => 
 export const requireAdmin = requireRole(["admin"]);
 export const requireAdminOrEventAdmin = requireRole(["admin", "eventAdmin"]);
 
-async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+async function checkEventAccess(request: FastifyRequest, reply: FastifyReply, eventId: string | undefined): Promise<void> {
 	const authenticated = await ensureAuth(request, reply);
 	if (!authenticated || reply.sent) return;
 
@@ -166,11 +166,6 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
 	}
 
 	if (userRole === "eventAdmin") {
-		const query = request.query as EventAccessRequest;
-		const params = request.params as EventAccessRequest;
-		const body = request.body as EventAccessRequest;
-		const eventId = params?.eventId || params?.id || query?.eventId || body?.eventId;
-
 		if (!eventId) {
 			const { response, statusCode } = notFoundResponse("活動不存在");
 			return reply.code(statusCode).send(response);
@@ -196,7 +191,16 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply): P
  * Returns 404 for eventAdmins without permission (to avoid redirect)
  */
 export const requireEventAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	await checkEventAccess(request, reply);
+	const query = request.query as EventAccessRequest;
+	const params = request.params as EventAccessRequest;
+	const body = request.body as EventAccessRequest;
+	await checkEventAccess(request, reply, params?.eventId || params?.id || query?.eventId || body?.eventId);
+};
+
+/** Authorize the event that a body-based handler will actually use. */
+export const requireEventAccessViaEventBody: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+	const body = request.body as EventAccessRequest;
+	await checkEventAccess(request, reply, body?.eventId);
 };
 
 /**
@@ -233,16 +237,17 @@ export const requireEventListAccess: preHandlerHookHandler = async (request: Fas
 export const requireEventAccessViaTicketBody: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const body = request.body as TicketBody;
 	const { ticketId } = body;
+	let eventId: string | undefined;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
 			where: { id: ticketId },
 			select: { eventId: true }
 		});
 		if (ticket) {
-			request.query = { ...(request.query || {}), eventId: ticket.eventId } as typeof request.query;
+			eventId = ticket.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -251,16 +256,17 @@ export const requireEventAccessViaTicketBody: preHandlerHookHandler = async (req
 export const requireEventAccessViaTicketParam: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const params = request.params as TicketIdParams;
 	const { ticketId } = params;
+	let eventId: string | undefined;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
 			where: { id: ticketId },
 			select: { eventId: true }
 		});
 		if (ticket) {
-			request.query = { ...(request.query || {}), eventId: ticket.eventId } as typeof request.query;
+			eventId = ticket.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -269,16 +275,17 @@ export const requireEventAccessViaTicketParam: preHandlerHookHandler = async (re
 export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const query = request.query as TicketIdQuery;
 	const { ticketId } = query;
+	let eventId: string | undefined;
 	if (ticketId) {
 		const ticket = await prisma.ticket.findUnique({
 			where: { id: ticketId },
 			select: { eventId: true }
 		});
 		if (ticket) {
-			request.query = { ...(request.query || {}), eventId: ticket.eventId } as typeof request.query;
+			eventId = ticket.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -287,16 +294,17 @@ export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async (re
 export const requireEventAccessViaFieldId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const params = request.params as IdParams;
 	const { id } = params;
+	let eventId: string | undefined;
 	if (id) {
 		const field = await prisma.eventFormFields.findUnique({
 			where: { id },
 			select: { eventId: true }
 		});
 		if (field) {
-			request.query = { ...(request.query || {}), eventId: field.eventId } as typeof request.query;
+			eventId = field.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -305,16 +313,17 @@ export const requireEventAccessViaFieldId: preHandlerHookHandler = async (reques
 export const requireEventAccessViaCodeId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const params = request.params as IdParams;
 	const { id } = params;
+	let eventId: string | undefined;
 	if (id) {
 		const code = await prisma.invitationCode.findUnique({
 			where: { id },
 			include: { ticket: { select: { eventId: true } } }
 		});
 		if (code?.ticket) {
-			request.query = { ...(request.query || {}), eventId: code.ticket.eventId } as typeof request.query;
+			eventId = code.ticket.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -323,16 +332,17 @@ export const requireEventAccessViaCodeId: preHandlerHookHandler = async (request
 export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const params = request.params as IdParams;
 	const { id } = params;
+	let eventId: string | undefined;
 	if (id) {
 		const registration = await prisma.registration.findUnique({
 			where: { id },
 			select: { eventId: true }
 		});
 		if (registration) {
-			request.query = { ...(request.query || {}), eventId: registration.eventId } as typeof request.query;
+			eventId = registration.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 /**
@@ -341,16 +351,17 @@ export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async 
 export const requireEventAccessViaTicketId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const params = request.params as IdParams;
 	const { id } = params;
+	let eventId: string | undefined;
 	if (id) {
 		const ticket = await prisma.ticket.findUnique({
 			where: { id },
 			select: { eventId: true }
 		});
 		if (ticket) {
-			request.query = { ...(request.query || {}), eventId: ticket.eventId } as typeof request.query;
+			eventId = ticket.eventId;
 		}
 	}
-	await checkEventAccess(request, reply);
+	await checkEventAccess(request, reply, eventId);
 };
 
 export const requireEventDashboardAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {

@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaFieldId, requireEventListAccess } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaFieldId, requireEventListAccess } from "#middleware/auth";
 import { Prisma } from "#prisma/generated/prisma/client";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
 import { logger } from "#utils/logger";
@@ -19,7 +19,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccessViaEventBody,
 			schema: eventFormFieldSchemas.createEventFormField
 		},
 		async (request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) => {
