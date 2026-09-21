@@ -97,98 +97,98 @@ function formPageReducer(state: FormPageState, action: FormPageAction): FormPage
 
 const formPageTranslations = {
 	noTicketAlert: {
-		"zh-Hant": "æœªæŒ‡å®šç¥¨ç¨®ï¼Œè«‹é‡æ–°é¸æ“‡",
-		"zh-Hans": "æœªæŒ‡å®šç¥¨ç§ï¼Œè¯·é‡æ–°é€‰æ‹©",
+		"zh-Hant": "未指定票種，請重新選擇",
+		"zh-Hans": "未指定票种，请重新选择",
 		en: "No ticket specified, please select again"
 	},
 	incompleteFormAlert: {
-		"zh-Hant": "è¡¨å–®è³‡æ–™ä¸å®Œæ•´ï¼Œè«‹é‡æ–°é¸æ“‡ç¥¨ç¨®",
-		"zh-Hans": "è¡¨å•èµ„æ–™ä¸å®Œæ•´ï¼Œè¯·é‡æ–°é€‰æ‹©ç¥¨ç§",
+		"zh-Hant": "表單資料不完整，請重新選擇票種",
+		"zh-Hans": "表单资料不完整，请重新选择票种",
 		en: "Form data incomplete, please select ticket again"
 	},
 	registrationFailedAlert: {
-		"zh-Hant": "å ±åå¤±æ•—ï¼š",
-		"zh-Hans": "æŠ¥åå¤±è´¥ï¼š",
+		"zh-Hant": "報名失敗：",
+		"zh-Hans": "报名失败：",
 		en: "Registration failed: "
 	},
 	pleaseSelect: {
-		"zh-Hant": "è«‹é¸æ“‡...",
-		"zh-Hans": "è¯·é€‰æ‹©...",
+		"zh-Hant": "請選擇...",
+		"zh-Hans": "请选择...",
 		en: "Please select..."
 	},
 	reselectTicket: {
-		"zh-Hant": "é‡æ–°é¸æ“‡ç¥¨ç¨®",
-		"zh-Hans": "é‡æ–°é€‰æ‹©ç¥¨ç§",
+		"zh-Hant": "重新選擇票種",
+		"zh-Hans": "重新选择票种",
 		en: "Reselect Ticket"
 	},
 	fillForm: {
-		"zh-Hant": "å¡«å¯«å ±åè³‡è¨Š",
-		"zh-Hans": "å¡«å†™æŠ¥åèµ„è®¯",
+		"zh-Hant": "填寫報名資訊",
+		"zh-Hans": "填写报名资讯",
 		en: "Fill Registration Form"
 	},
 	loadingForm: {
-		"zh-Hant": "è¼‰å…¥è¡¨å–®ä¸­...",
-		"zh-Hans": "è½½å…¥è¡¨å•ä¸­...",
+		"zh-Hant": "載入表單中...",
+		"zh-Hans": "载入表单中...",
 		en: "Loading form..."
 	},
 	loadFormFailed: {
-		"zh-Hant": "è¼‰å…¥è¡¨å–®å¤±æ•—ï¼š",
-		"zh-Hans": "è½½å…¥è¡¨å•å¤±è´¥ï¼š",
+		"zh-Hant": "載入表單失敗：",
+		"zh-Hans": "载入表单失败：",
 		en: "Failed to load form: "
 	},
 	backToHome: {
-		"zh-Hant": "è¿”å›žé¦–é ",
-		"zh-Hans": "è¿”å›žé¦–é¡µ",
+		"zh-Hant": "返回首頁",
+		"zh-Hans": "返回首页",
 		en: "Back to Home"
 	},
 	name: {
-		"zh-Hant": "å§“å",
-		"zh-Hans": "å§“å",
+		"zh-Hant": "姓名",
+		"zh-Hans": "姓名",
 		en: "Name"
 	},
 	invitationCode: {
-		"zh-Hant": "é‚€è«‹ç¢¼",
-		"zh-Hans": "é‚€è¯·ç ",
+		"zh-Hant": "邀請碼",
+		"zh-Hans": "邀请码",
 		en: "Invitation Code"
 	},
 	referralCode: {
-		"zh-Hant": "æŽ¨è–¦ç¢¼",
-		"zh-Hans": "æŽ¨èç ",
+		"zh-Hant": "推薦碼",
+		"zh-Hans": "推荐码",
 		en: "Referral Code"
 	},
 	referralCodeOptional: {
-		"zh-Hant": "æŽ¨è–¦ç¢¼ï¼ˆé¸å¡«ï¼‰",
-		"zh-Hans": "æŽ¨èç ï¼ˆé€‰å¡«ï¼‰",
+		"zh-Hant": "推薦碼（選填）",
+		"zh-Hans": "推荐码（选填）",
 		en: "Referral Code (Optional)"
 	},
 	submitRegistration: {
-		"zh-Hant": "æäº¤å ±å",
-		"zh-Hans": "æäº¤æŠ¥å",
+		"zh-Hant": "提交報名",
+		"zh-Hans": "提交报名",
 		en: "Submit Registration"
 	},
 	agreeToTerms: {
-		"zh-Hant": "æˆ‘å·²é–±è®€ä¸¦åŒæ„æœå‹™æ¢æ¬¾èˆ‡éš±ç§æ”¿ç­–",
-		"zh-Hans": "æˆ‘å·²é˜…è¯»å¹¶åŒæ„æœåŠ¡æ¡æ¬¾ä¸Žéšç§æ”¿ç­–",
+		"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
+		"zh-Hans": "我已阅读并同意服务条款与隐私政策",
 		en: "I have read and agree to the Terms and Privacy Policy"
 	},
 	ticketSaleEnded: {
-		"zh-Hant": "æ­¤ç¥¨ç¨®å ±åæ™‚é–“å·²çµæŸ",
-		"zh-Hans": "æ­¤ç¥¨ç§æŠ¥åæ—¶é—´å·²ç»“æŸ",
+		"zh-Hant": "此票種報名時間已結束",
+		"zh-Hans": "此票种报名时间已结束",
 		en: "This ticket's registration period has ended"
 	},
 	ticketNotYetAvailable: {
-		"zh-Hant": "æ­¤ç¥¨ç¨®å°šæœªé–‹æ”¾å ±åï¼Œè«‹å…ˆç™»å…¥å¾Œå†è©¦",
-		"zh-Hans": "æ­¤ç¥¨ç§å°šæœªå¼€æ”¾æŠ¥åï¼Œè¯·å…ˆç™»å½•åŽå†è¯•",
+		"zh-Hant": "此票種尚未開放報名，請先登入後再試",
+		"zh-Hans": "此票种尚未开放报名，请先登录后再试",
 		en: "This ticket is not yet available for registration. Please log in and try again later"
 	},
 	ticketSoldOut: {
-		"zh-Hant": "æ­¤ç¥¨ç¨®å·²å”®å®Œ",
-		"zh-Hans": "æ­¤ç¥¨ç§å·²å”®å®Œ",
+		"zh-Hant": "此票種已售完",
+		"zh-Hans": "此票种已售完",
 		en: "This ticket is sold out"
 	},
 	autosaveRestored: {
-		"zh-Hant": "å·²è‡ªå‹•æ¢å¾©æ‚¨ä¹‹å‰å¡«å¯«çš„è¡¨å–®è³‡æ–™",
-		"zh-Hans": "å·²è‡ªåŠ¨æ¢å¤æ‚¨ä¹‹å‰å¡«å†™çš„è¡¨å•èµ„æ–™",
+		"zh-Hant": "已自動恢復您之前填寫的表單資料",
+		"zh-Hans": "已自动恢复您之前填写的表单资料",
 		en: "Your previously entered form data has been restored"
 	}
 };

@@ -8,13 +8,13 @@ export default function AccountDisabledClient() {
 
 	const t = getTranslations(locale, {
 		title: {
-			"zh-Hant": "å¸³è™Ÿå·²åœç”¨",
-			"zh-Hans": "è´¦å·å·²åœç”¨",
+			"zh-Hant": "帳號已停用",
+			"zh-Hans": "账号已停用",
 			en: "Account Disabled"
 		},
 		message: {
-			"zh-Hant": "æ²’æœ‰æ‰¾åˆ°æ­¤å¸³è™Ÿï¼Œè«‹å˜—è©¦é‡æ–°ç™»å…¥ã€‚",
-			"zh-Hans": "æœªæ‰¾åˆ°æ­¤è´¦å·ï¼Œè¯·å°è¯•é‡æ–°ç™»å½•ã€‚",
+			"zh-Hant": "沒有找到此帳號，請嘗試重新登入。",
+			"zh-Hans": "未找到此账号，请尝试重新登录。",
 			en: "Account not found, please try logging in again."
 		}
 	});

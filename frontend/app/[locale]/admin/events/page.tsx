@@ -430,7 +430,7 @@ function EventEditorDialog({ showModal, editingEvent, activeTab, form, isSaving,
 								plainDescription={plainDescZhHant}
 								locationText={locationTextZhHant}
 								language="zh-Hant"
-								languageLabel="ç¹é«”ä¸­æ–‡"
+								languageLabel="繁體中文"
 								onNameChange={value => dispatch({ type: "setFormText", field: "nameZhHant", value })}
 								onDescriptionChange={value => dispatch({ type: "setFormText", field: "descZhHant", value })}
 								onPlainDescriptionChange={value => dispatch({ type: "setFormText", field: "plainDescZhHant", value })}
@@ -446,7 +446,7 @@ function EventEditorDialog({ showModal, editingEvent, activeTab, form, isSaving,
 								plainDescription={plainDescZhHans}
 								locationText={locationTextZhHans}
 								language="zh-Hans"
-								languageLabel="ç®€ä½“ä¸­æ–‡"
+								languageLabel="简体中文"
 								onNameChange={value => dispatch({ type: "setFormText", field: "nameZhHans", value })}
 								onDescriptionChange={value => dispatch({ type: "setFormText", field: "descZhHans", value })}
 								onPlainDescriptionChange={value => dispatch({ type: "setFormText", field: "plainDescZhHans", value })}

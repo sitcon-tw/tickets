@@ -154,7 +154,7 @@ export function AdminNavLayout({
 						>
 							{t.logout}
 						</button>
-						<span>ãƒ»</span>
+						<span>・</span>
 						<button
 							type="button"
 							onClick={() => onNavClick("/")}

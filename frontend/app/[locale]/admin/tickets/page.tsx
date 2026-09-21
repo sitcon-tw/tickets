@@ -317,7 +317,7 @@ function TicketFormDialog({
 			await onSaved();
 			onClose();
 		} catch (error) {
-			showAlert("?????" + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert("保存失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 		} finally {
 			dispatch({ type: "setSaving", value: false });
 		}
@@ -336,8 +336,8 @@ function TicketFormDialog({
 						<TabsList className="grid w-full grid-cols-4">
 							<TabsTrigger value="info">{t.ticketInfo}</TabsTrigger>
 							<TabsTrigger value="en">English</TabsTrigger>
-							<TabsTrigger value="zh-Hant">????</TabsTrigger>
-							<TabsTrigger value="zh-Hans">????</TabsTrigger>
+							<TabsTrigger value="zh-Hant">繁體中文</TabsTrigger>
+							<TabsTrigger value="zh-Hans">简体中文</TabsTrigger>
 						</TabsList>
 						<TabsContent value="info" className="space-y-4">
 							<div className="grid grid-cols-2 gap-4">
@@ -437,7 +437,7 @@ function TicketFormDialog({
 								description={descZhHant}
 								plainDescription={plainDescZhHant}
 								language="zh-Hant"
-								languageLabel="????"
+								languageLabel="繁體中文"
 								onNameChange={value => dispatch({ type: "setText", field: "nameZhHant", value })}
 								onDescriptionChange={value => dispatch({ type: "setText", field: "descZhHant", value })}
 								onPlainDescriptionChange={value => dispatch({ type: "setText", field: "plainDescZhHant", value })}
@@ -450,7 +450,7 @@ function TicketFormDialog({
 								description={descZhHans}
 								plainDescription={plainDescZhHans}
 								language="zh-Hans"
-								languageLabel="????"
+								languageLabel="简体中文"
 								onNameChange={value => dispatch({ type: "setText", field: "nameZhHans", value })}
 								onDescriptionChange={value => dispatch({ type: "setText", field: "descZhHans", value })}
 								onPlainDescriptionChange={value => dispatch({ type: "setText", field: "plainDescZhHans", value })}
