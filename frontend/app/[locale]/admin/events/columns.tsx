@@ -24,7 +24,7 @@ interface EventColumnActions extends ColumnActions {
 	};
 }
 
-export const createEventsColumns = (actions: EventColumnActions): ColumnDef<DataTableFeatures, EventWithStatus, unknown>[] => [
+export const createEventsColumns = (actions: EventColumnActions): ColumnDef<DataTableFeatures, EventWithStatus>[] => [
 	{
 		accessorKey: "displayName",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Event Name" />,

@@ -167,7 +167,7 @@ export default function Nav() {
 			}
 		};
 
-		checkAuthStatus();
+		void checkAuthStatus();
 
 		return () => {
 			cancelled = true;
@@ -346,7 +346,7 @@ export default function Nav() {
 									size="sm"
 									onClick={() => {
 										dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false });
-										handleLogout();
+										void handleLogout();
 									}}
 									disabled={isLoggingOut}
 									className={cn(

@@ -178,7 +178,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				span.setAttribute("ticket.price", Number(ticket.price));
+				span.setAttribute("ticket.price", ticket.price);
 				span.setAttribute("ticket.sold_count", ticket.soldCount);
 				span.setAttribute("ticket.registrations.count", ticket._count.registrations);
 
@@ -542,7 +542,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.setAttribute("ticket.sold_count", ticket.soldCount);
-				span.setAttribute("ticket.price", Number(ticket.price));
+				span.setAttribute("ticket.price", ticket.price);
 
 				span.addEvent("database.query.analytics");
 
@@ -570,7 +570,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				const availableQuantity = ticket.quantity - ticket.soldCount;
 
 				span.setAttribute("analytics.totalSold", totalSold);
-				span.setAttribute("analytics.totalRevenue", Number(totalRevenue));
+				span.setAttribute("analytics.totalRevenue", totalRevenue);
 				span.setAttribute("analytics.availableQuantity", availableQuantity);
 				span.addEvent("analytics.calculated");
 
@@ -661,8 +661,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				span.setAttribute("tickets.eventId", eventIds[0]);
 
-				request.query = { ...(request.query || {}), eventId: eventIds[0] } as typeof request.query;
-				await requireEventAccess.call(fastify, request, reply, () => {});
+				request.query = { ...(request.query || {}), eventId: eventIds[0] };
+				await requireEventAccess(request, reply);
 				if (reply.sent) return;
 
 				// Validate no duplicate orders

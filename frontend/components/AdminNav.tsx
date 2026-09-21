@@ -102,8 +102,8 @@ function AdminNav() {
 	// Load data only once
 	useEffect(() => {
 		if (isAdminPage && !dataLoadedRef.current) {
-			loadPermissions();
-			loadEvents();
+			void loadPermissions();
+			void loadEvents();
 			dataLoadedRef.current = true;
 		}
 	}, [isAdminPage, loadPermissions, loadEvents]);
@@ -115,7 +115,7 @@ function AdminNav() {
 		if (!isAdminPage) return;
 
 		const handleEventListChanged = () => {
-			loadEventsEvent();
+			void loadEventsEvent();
 		};
 
 		window.addEventListener("eventListChanged", handleEventListChanged);

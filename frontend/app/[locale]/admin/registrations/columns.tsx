@@ -24,7 +24,7 @@ interface ColumnActions {
 	};
 }
 
-export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, RegistrationDisplay, unknown>[] => [
+export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, RegistrationDisplay>[] => [
 	{
 		id: "select",
 		header: ({ table }) => (

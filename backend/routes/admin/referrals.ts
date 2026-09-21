@@ -105,7 +105,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			});
 
 			try {
-				const { limit = 10 } = request.query;
+				const { limit } = request.query;
 
 				span.addEvent("referrals.fetching_leaderboard");
 
@@ -264,7 +264,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			});
 
 			try {
-				const { minReferrals = 1 } = request.query;
+				const { minReferrals } = request.query;
 
 				span.addEvent("referrals.fetching_qualified");
 

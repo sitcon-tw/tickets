@@ -413,7 +413,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const { eventId } = request.params;
-			const { page = 1, limit = 20 } = request.query;
+			const { page, limit } = request.query;
 
 			const span = tracer.startSpan("route.admin.webhooks.getFailedDeliveries", {
 				attributes: {

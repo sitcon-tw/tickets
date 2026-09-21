@@ -147,7 +147,7 @@ export default function Main() {
 			}
 		}
 
-		fetchEvent();
+		void fetchEvent();
 
 		const urlParams = new URLSearchParams(window.location.search);
 		const referralCode = urlParams.get("ref");

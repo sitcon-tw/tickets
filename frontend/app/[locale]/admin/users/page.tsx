@@ -212,8 +212,8 @@ export default function UsersPage() {
 	);
 
 	useEffect(() => {
-		loadUsers();
-		loadEvents();
+		void loadUsers();
+		void loadEvents();
 	}, [loadUsers, loadEvents]);
 
 	const filteredUsers = useMemo(() => {

@@ -76,7 +76,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 
 					while (!isUnique && attempts < maxAttempts) {
 						const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
-						referralCode = `${randomString}`;
+						referralCode = randomString;
 
 						const existingReferral = await prisma.referral.findUnique({
 							where: { code: referralCode }

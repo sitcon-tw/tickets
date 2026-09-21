@@ -21,7 +21,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import { FieldFilter, LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
+import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
@@ -402,7 +402,7 @@ function RegistrationFormSection({
 							return <FormField key={fieldId} field={field} value={formData[fieldId] || ""} onTextChange={onTextChange} onCheckboxChange={onCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
 						}
 						const value = formData[fieldId];
-						const displayValue = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Yes" : "No") : String(value || "-");
+						const displayValue = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Yes" : "No") : value || "-";
 						return (
 							<div key={fieldId}>
 								<div className="font-bold mb-1">{fieldName}</div>
@@ -470,7 +470,7 @@ function MyRegistrationPageContent() {
 
 			if (result.success) {
 				showAlert(t.saveSuccess, "success");
-				dispatchRegistrationDetail({ type: "saveSucceeded", formData: result.data.formData as Record<string, unknown> });
+				dispatchRegistrationDetail({ type: "saveSucceeded", formData: result.data.formData });
 			} else {
 				throw new Error(result.message || "Failed to update registration");
 			}
@@ -534,10 +534,11 @@ function MyRegistrationPageContent() {
 							if (typeof name === "string" && name === "[object Object]") {
 								name = { en: typeof field.description === "string" ? field.description : "field" };
 							} else if (typeof name === "string") {
+								const rawName = name;
 								try {
-									name = JSON.parse(name);
+									name = JSON.parse(rawName);
 								} catch {
-									name = { en: name.toString() };
+									name = { en: rawName };
 								}
 							}
 
@@ -555,7 +556,7 @@ function MyRegistrationPageContent() {
 
 							const options = (field.options || []).map((opt: unknown): Record<string, string> => {
 								if (typeof opt === "object" && opt !== null && "label" in opt) {
-									const optWithLabel = opt as { label: unknown };
+									const optWithLabel = opt;
 									const labelValue =
 										typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
 											? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
@@ -571,12 +572,12 @@ function MyRegistrationPageContent() {
 							return {
 								...field,
 								eventId: regData.eventId,
-								type: field.type as "text" | "textarea" | "select" | "checkbox" | "radio",
+								type: field.type,
 								name,
 								description: description as LocalizedText | undefined,
 								options,
-								filters: field.filters as FieldFilter | null | undefined,
-								prompts: field.prompts as Record<string, string[]> | null | undefined
+								filters: field.filters,
+								prompts: field.prompts
 							};
 						});
 					}
@@ -594,7 +595,7 @@ function MyRegistrationPageContent() {
 			}
 		}
 
-		loadRegistration();
+		void loadRegistration();
 	}, [registrationId, router, t.notFound]);
 
 	return (

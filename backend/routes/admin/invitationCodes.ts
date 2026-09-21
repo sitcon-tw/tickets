@@ -218,7 +218,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 				requireEventAccessViaCodeId,
 				async (request, reply) => {
 					if (request.body.ticketId !== undefined) {
-						await requireEventAccessViaTicketBody.call(fastify, request, reply, () => {});
+						await requireEventAccessViaTicketBody(request, reply);
 					}
 				}
 			],

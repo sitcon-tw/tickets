@@ -1,5 +1,5 @@
 import MarkdownContent from "@/components/MarkdownContent";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 export type CheckboxOption = string | { value: string; label: string };
 
@@ -115,8 +115,8 @@ export default function MultiCheckbox({ label, name, options, values = EMPTY_VAL
 			)}
 			<div className={`grid gap-3 ${options.length > 10 ? "grid-cols-2" : "grid-cols-1"}`}>
 				{options.map(option => {
-					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
-					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
+					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
+					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 					const optionId = `${name}-${optionValue}`;
 					const isChecked = values.includes(optionValue);
 

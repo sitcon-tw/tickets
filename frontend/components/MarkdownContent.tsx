@@ -162,7 +162,7 @@ export default function MarkdownContent({ content, className = "" }: MarkdownCon
 			pedantic: false
 		});
 
-		return marked.lexer(content) as MarkdownToken[];
+		return marked.lexer(content);
 	}, [content]);
 
 	return (

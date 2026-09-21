@@ -25,7 +25,7 @@ interface ColumnActions {
 	};
 }
 
-export const createUsersColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, UserDisplay, unknown>[] => [
+export const createUsersColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, UserDisplay>[] => [
 	{
 		accessorKey: "name",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,

@@ -26,7 +26,7 @@ interface ColumnActions {
 	};
 }
 
-export const createTicketsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, TicketDisplay, unknown>[] => [
+export const createTicketsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, TicketDisplay>[] => [
 	{
 		accessorKey: "displayName",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Ticket Type" />,

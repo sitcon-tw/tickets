@@ -22,13 +22,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 
 	// List campaigns
 	fastify.get<{
-		Querystring: PaginationQuery;
+		Querystring: Partial<PaginationQuery>;
 	}>(
 		"/email-campaigns",
 		{
 			schema: adminEmailCampaignSchemas.listEmailCampaigns
 		},
-		async (request: FastifyRequest<{ Querystring: PaginationQuery }>, reply: FastifyReply) => {
+		async (request: FastifyRequest<{ Querystring: Partial<PaginationQuery> }>, reply: FastifyReply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.list", {
 				attributes: {
 					"pagination.page": request.query.page || 1,
@@ -430,7 +430,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				);
 
 				// Send in background, updating progress periodically
-				(async () => {
+				void (async () => {
 					try {
 						const result = await sendCampaignEmail(campaign, recipients, async (sentCount, _failedCount) => {
 							// Update sentCount in DB every batch for progress tracking

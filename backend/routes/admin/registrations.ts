@@ -28,7 +28,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			schema: registrationSchemas.listRegistrations
 		},
 		async (request, reply) => {
-			const { page = 1, limit = 20, eventId, status, userId } = request.query;
+			const { page, limit, eventId, status, userId } = request.query;
 
 			const span = tracer.startSpan("route.admin.registrations.list", {
 				attributes: {
@@ -141,7 +141,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 							? {
 									id: reg.ticket.id,
 									name: reg.ticket.name as Record<string, string>,
-									price: Number(reg.ticket.price)
+									price: reg.ticket.price
 								}
 							: undefined
 					};
@@ -396,7 +396,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						? {
 								id: registration.ticket.id,
 								name: registration.ticket.name as Record<string, string>,
-								price: Number(registration.ticket.price)
+								price: registration.ticket.price
 							}
 						: undefined
 				};

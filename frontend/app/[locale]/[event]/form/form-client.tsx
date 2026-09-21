@@ -11,7 +11,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { FieldFilter, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
+import { LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
@@ -203,10 +203,11 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 		if (typeof name === "string" && name === "[object Object]") {
 			name = { en: typeof field.description === "string" ? field.description : "field" };
 		} else if (typeof name === "string") {
+			const rawName = name;
 			try {
-				name = JSON.parse(name);
+				name = JSON.parse(rawName);
 			} catch {
-				name = { en: name.toString() };
+				name = { en: rawName };
 			}
 		}
 
@@ -224,7 +225,7 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 
 		const options = (field.options || []).map((opt: unknown): Record<string, string> => {
 			if (typeof opt === "object" && opt !== null && "label" in opt) {
-				const optWithLabel = opt as { label: unknown };
+				const optWithLabel = opt;
 				const labelValue =
 					typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
 						? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
@@ -249,12 +250,12 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 		return {
 			...field,
 			eventId,
-			type: field.type as "text" | "textarea" | "select" | "checkbox" | "radio",
+			type: field.type,
 			name,
 			description: description as LocalizedText | undefined,
 			options,
-			filters: filters as FieldFilter | null | undefined,
-			prompts: field.prompts as Record<string, string[]> | null | undefined
+			filters: filters,
+			prompts: field.prompts
 		};
 	});
 }
@@ -546,7 +547,7 @@ export default function FormPage() {
 			}
 		}
 
-		initForm();
+		void initForm();
 	}, [showAlert, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
 
 	useEffect(() => {

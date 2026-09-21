@@ -164,17 +164,17 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 	return (
 		<>
 			<Group position={[0, 4, 0]}>
-				<RigidBody ref={fixed} {...segmentProps} type={"fixed" as RigidBodyProps["type"]} />
-				<RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={"dynamic" as RigidBodyProps["type"]}>
+				<RigidBody ref={fixed} {...segmentProps} type={"fixed"} />
+				<RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={"dynamic"}>
 					<BallCollider args={[0.1]} />
 				</RigidBody>
-				<RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={"dynamic" as RigidBodyProps["type"]}>
+				<RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={"dynamic"}>
 					<BallCollider args={[0.1]} />
 				</RigidBody>
-				<RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={"dynamic" as RigidBodyProps["type"]}>
+				<RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={"dynamic"}>
 					<BallCollider args={[0.1]} />
 				</RigidBody>
-				<RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? ("kinematicPosition" as RigidBodyProps["type"]) : ("dynamic" as RigidBodyProps["type"])}>
+				<RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? "kinematicPosition" : "dynamic"}>
 					<CuboidCollider args={[0.8, 1.125, 0.01]} />
 					<Group
 						scale={2.25}

@@ -190,7 +190,7 @@ function campaignsReducer(state: CampaignsState, action: CampaignsAction): Campa
 		case "setFormContent":
 			return { ...state, formData: { ...state.formData, content: action.content } };
 		case "toggleTargetAudience": {
-			const current = state.formData.targetAudience[action.field] as string[];
+			const current = state.formData.targetAudience[action.field];
 			const next = action.checked ? [...current, action.id] : current.filter(x => x !== action.id);
 			const targetAudience = { ...state.formData.targetAudience, [action.field]: next };
 			if (action.field === "eventIds" && next.length > 0) {
@@ -617,27 +617,7 @@ export default function EmailCampaignsPage() {
 	const { showAlert } = useAlert();
 
 	const [state, dispatch] = useReducer(campaignsReducer, initialCampaignsState);
-	const {
-		campaigns,
-		isLoading,
-		showCreateModal,
-		formData,
-		isSaving,
-		recipientCount,
-		recipientList,
-		isCalculating,
-		showRecipientsModal,
-		templates,
-		showTemplateModal,
-		showPreviewModal,
-		selectedCampaign,
-		previewHtml,
-		previewRecipients,
-		previewTab,
-		sendingCampaign,
-		events,
-		tickets
-	} = state;
+	const { campaigns, isLoading, formData, sendingCampaign, tickets } = state;
 	const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	// Textarea ref for variable insertion at cursor
@@ -687,10 +667,10 @@ export default function EmailCampaignsPage() {
 	}, []);
 
 	useEffect(() => {
-		loadCampaigns();
-		loadEvents();
-		loadTickets();
-		loadTemplates();
+		void loadCampaigns();
+		void loadEvents();
+		void loadTickets();
+		void loadTemplates();
 	}, [loadCampaigns, loadEvents, loadTickets, loadTemplates]);
 
 	// Filter tickets shown based on selected events
@@ -726,7 +706,7 @@ export default function EmailCampaignsPage() {
 			});
 			if (response.success) {
 				dispatch({ type: "campaignCreated" });
-				loadCampaigns();
+				void loadCampaigns();
 				showAlert("郵件發送任務已建立", "success");
 			}
 		} catch (error) {
@@ -764,7 +744,7 @@ export default function EmailCampaignsPage() {
 						if (status === "sent" || status === "draft" || status === "cancelled") {
 							if (pollingRef.current) clearInterval(pollingRef.current);
 							dispatch({ type: "stopSending" });
-							loadCampaigns();
+							void loadCampaigns();
 							if (status === "sent") showAlert(`「${name}」發送完成！已發送 ${sentCount} 封`, "success");
 							else showAlert(`「${name}」發送失敗，已重置為草稿`, "error");
 						}
@@ -784,7 +764,7 @@ export default function EmailCampaignsPage() {
 				const response = await adminEmailCampaignsAPI.send(campaign.id);
 				if (response.success) {
 					const { totalCount } = response.data;
-					loadCampaigns();
+					void loadCampaigns();
 					startProgressPolling(campaign.id, campaign.name, totalCount || 0);
 				}
 			} catch (error) {
@@ -800,7 +780,7 @@ export default function EmailCampaignsPage() {
 			try {
 				await adminEmailCampaignsAPI.cancel(campaign.id);
 				showAlert("已取消", "success");
-				loadCampaigns();
+				void loadCampaigns();
 			} catch (error) {
 				showAlert("取消失敗：" + (error instanceof Error ? error.message : String(error)), "error");
 			}
@@ -842,7 +822,7 @@ export default function EmailCampaignsPage() {
 			campaigns.map(campaign => ({
 				...campaign,
 				statusClass: getStatusBadgeClass(campaign.status),
-				statusLabel: (t[campaign.status as keyof typeof t] as string) || campaign.status,
+				statusLabel: t[campaign.status as keyof typeof t] || campaign.status,
 				recipientsDisplay: `${campaign.sentCount || 0} / ${campaign.totalCount || 0}`,
 				formattedCreatedAt: new Date(campaign.createdAt).toLocaleString()
 			})),

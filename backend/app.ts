@@ -199,7 +199,7 @@ fastify.post<{ Body: MagicLinkBody }>(
 			}
 
 			// Turnstile validation passed, forward to BetterAuth
-			const protocol = request.headers["x-forwarded-proto"] || "http";
+			const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 			const host = request.headers.host;
 			const url = `${protocol}://${host}/api/auth/sign-in/magic-link`;
 
@@ -256,7 +256,7 @@ fastify.all(
 	},
 	async (request: FastifyRequest, reply: FastifyReply) => {
 		try {
-			const protocol = request.headers["x-forwarded-proto"] || "http";
+			const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 			const host = request.headers.host;
 			const url = `${protocol}://${host}${request.url}`;
 
@@ -327,7 +327,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 		}
 
 		// Call the Better Auth verification endpoint internally
-		const protocol = request.headers["x-forwarded-proto"] || "http";
+		const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 		const host = request.headers.host;
 		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
 

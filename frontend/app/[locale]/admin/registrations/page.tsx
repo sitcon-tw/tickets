@@ -15,6 +15,7 @@ import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { toText } from "@/lib/utils/text";
 import { formatDateTime } from "@/lib/utils/timezone";
 import type { Registration } from "@sitcontix/types";
 import { Download, FileSpreadsheet, QrCode, RotateCw, Search, Trash } from "lucide-react";
@@ -424,7 +425,7 @@ function RegistrationDetailDialog({
 										<div key={key}>
 											<Label className="text-sm mb-1 block">{key}</Label>
 											<Input
-												value={typeof value === "object" ? JSON.stringify(value) : String(value)}
+												value={typeof value === "object" ? JSON.stringify(value) : toText(value)}
 												onChange={e => {
 													try {
 														const newValue = e.target.value;
@@ -446,7 +447,7 @@ function RegistrationDetailDialog({
 									{Object.entries(selectedRegistration.formData).map(([key, value]) => (
 										<div key={key} className="mb-2">
 											<span className="text-purple-400 dark:text-purple-300 font-semibold">{key}:</span>{" "}
-											<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
+											<span className="text-gray-100 dark:text-gray-200">{typeof value === "object" ? JSON.stringify(value) : toText(value)}</span>
 										</div>
 									))}
 								</div>
@@ -559,17 +560,6 @@ function useRegistrationsPage() {
 	const sortDirection = "desc" as SortDirection;
 
 	const t = getTranslations(locale, registrationsTranslations);
-
-	const columnDefs = [
-		{ id: "id", label: "ID", accessor: (r: Registration) => r.id.slice(0, 8) + "...", sortable: true },
-		{ id: "email", label: "Email", accessor: (r: Registration) => r.email, sortable: true },
-		{ id: "status", label: "Status", accessor: (r: Registration) => r.status, sortable: true },
-		{ id: "ticket", label: "Ticket", accessor: (r: Registration) => getLocalizedText(r.ticket?.name, locale) || r.ticketId || "", sortable: false },
-		{ id: "event", label: "Event", accessor: (r: Registration) => getLocalizedText(r.event?.name, locale) || r.eventId || "", sortable: false },
-		{ id: "referredBy", label: "Referred By", accessor: (r: Registration) => (r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-"), sortable: false },
-		{ id: "createdAt", label: "Created", accessor: (r: Registration) => (r.createdAt ? formatDateTime(r.createdAt) : ""), sortable: true },
-		{ id: "updatedAt", label: "Updated", accessor: (r: Registration) => (r.updatedAt ? formatDateTime(r.updatedAt) : ""), sortable: false }
-	];
 
 	const loadRegistrations = useCallback(async () => {
 		if (!currentEventId) return;
@@ -870,7 +860,7 @@ function useRegistrationsPage() {
 	};
 
 	useEffect(() => {
-		loadRegistrations();
+		void loadRegistrations();
 	}, [loadRegistrations]);
 
 	return {

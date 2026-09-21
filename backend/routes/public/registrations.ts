@@ -557,7 +557,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							id: reg.ticket.id,
 							name: LocalizedTextSchema.parse(reg.ticket.name),
 							description: LocalizedTextSchema.nullable().parse(reg.ticket.description),
-							price: Number(reg.ticket.price),
+							price: reg.ticket.price,
 							saleEnd: reg.ticket.saleEnd ?? null
 						},
 						isUpcoming: reg.event.startDate > now,

@@ -9,7 +9,6 @@ import type { EventDashboardData } from "@sitcontix/types";
 import type { Chart as ChartInstance, TooltipItem } from "chart.js";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useSyncExternalStore } from "react";
 import { AdminDashboardContent } from "./admin-dashboard-content";
 
@@ -54,7 +53,6 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
 
 export default function AdminDashboard() {
 	const locale = useLocale();
-	const router = useRouter();
 	const { theme, resolvedTheme } = useTheme();
 
 	const selectedEventId = useSelectedEventId() || "";
@@ -252,7 +250,7 @@ export default function AdminDashboard() {
 								borderWidth: 1,
 								callbacks: {
 									label: function (context: TooltipItem<"doughnut">) {
-										const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
+										const total = context.dataset.data.reduce((a, b) => a + b, 0);
 										const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : "0";
 										const ticketLabel = locale === "zh-Hant" ? "張" : locale === "zh-Hans" ? "张" : " tickets";
 										return context.label + ": " + context.parsed + " " + ticketLabel + " (" + percentage + "%)";
@@ -269,7 +267,7 @@ export default function AdminDashboard() {
 
 	useEffect(() => {
 		if (selectedEventId) {
-			loadDashboardData();
+			void loadDashboardData();
 		}
 	}, [selectedEventId, loadDashboardData]);
 

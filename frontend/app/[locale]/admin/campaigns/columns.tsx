@@ -24,7 +24,7 @@ interface ColumnActions {
 	};
 }
 
-export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, CampaignDisplay, unknown>[] => [
+export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, CampaignDisplay>[] => [
 	{
 		accessorKey: "name",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,

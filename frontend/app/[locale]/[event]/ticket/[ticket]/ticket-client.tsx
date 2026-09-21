@@ -174,7 +174,7 @@ export default function SetTicket() {
 				showAlert(t.loadFailed, "error");
 				dispatch({ type: "failed" });
 			}
-		} catch (err) {
+		} catch {
 			showAlert(t.loadFailed, "error");
 			dispatch({ type: "failed" });
 		}
@@ -198,7 +198,7 @@ export default function SetTicket() {
 				showAlert(t.loadFailed, "error");
 				dispatch({ type: "failed" });
 			}
-		} catch (err) {
+		} catch {
 			showAlert(t.loadFailed, "error");
 			dispatch({ type: "failed" });
 		} finally {
@@ -274,7 +274,7 @@ export default function SetTicket() {
 		const event = fetchEvent();
 		const ticket = fetchTicket();
 
-		Promise.all([event, ticket]).then(async values => {
+		void Promise.all([event, ticket]).then(async values => {
 			const [eventId, ticketData] = values;
 			if (eventId && ticketData) {
 				const isValid = await handleTicketSelect(ticketData, eventId);
@@ -298,7 +298,7 @@ export default function SetTicket() {
 			) : isReady ? (
 				<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">
 					<Button asChild>
-						<Link href={`/${params.event}/form`}>{t.redirecting}</Link>
+						<Link href={`/${params.event as string}/form`}>{t.redirecting}</Link>
 					</Button>
 				</main>
 			) : (
@@ -312,7 +312,7 @@ export default function SetTicket() {
 								<Button variant="default">{t.goToLogin}</Button>
 							</Link>
 						)}
-						<Link href={`/${params.event}`}>
+						<Link href={`/${params.event as string}`}>
 							<Button variant="secondary">{t.backToEvent}</Button>
 						</Link>
 					</div>

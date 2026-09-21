@@ -1,6 +1,7 @@
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
+import { toText } from "#utils/text";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
@@ -24,9 +25,9 @@ const getLocalizedValue = (field: unknown, locale = "zh-Hant"): string => {
 	if (typeof field === "string") return field;
 	if (typeof field === "object" && !Array.isArray(field)) {
 		const obj = field as Record<string, unknown>;
-		return String(obj[locale] ?? obj["en"] ?? obj["zh-Hant"] ?? Object.values(obj)[0] ?? "");
+		return toText(obj[locale] ?? obj["en"] ?? obj["zh-Hant"] ?? Object.values(obj)[0] ?? "");
 	}
-	return String(field);
+	return toText(field);
 };
 
 const componentLogger = logger.child({ component: "email" });
@@ -189,7 +190,7 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			},
 			"Email sending error"
 		);
-		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -259,7 +260,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 							return v;
 						});
 						return localizedValues.join(", ");
-					} catch (e) {
+					} catch {
 						return value.join(", ");
 					}
 				}
@@ -279,7 +280,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 					if (option && typeof option === "object") {
 						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
 					}
-				} catch (e) {
+				} catch {
 					return String(value);
 				}
 			}
@@ -398,13 +399,13 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
 };
 
-export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, buttonUrl: string): Promise<boolean> => {
+export const sendCancellationEmail = async (email: string, eventNameOrJson: unknown, buttonUrl: string): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
 	const provider = getEmailProvider();
@@ -461,7 +462,7 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -470,8 +471,8 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 export const sendInvitationCode = async (
 	email: string,
 	code: string,
-	eventNameOrJson: string | any,
-	ticketNameOrJson: string | any,
+	eventNameOrJson: unknown,
+	ticketNameOrJson: unknown,
 	ticketUrl: string,
 	validUntil: string,
 	message?: string
@@ -542,7 +543,7 @@ export const sendInvitationCode = async (
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -652,8 +653,8 @@ const replaceTemplateVariables = (content: string, data: CampaignRecipient): str
 	// Event fields
 	const eventName = getLocalizedValue(data.event?.name);
 	const eventLocation = getLocalizedValue(data.event?.locationText);
-	const eventDate = data.event?.startDate ? new Date(data.event.startDate as unknown as string).toLocaleDateString("zh-TW") : "";
-	const eventEndDate = data.event?.endDate ? new Date(data.event.endDate as unknown as string).toLocaleDateString("zh-TW") : "";
+	const eventDate = data.event?.startDate ? new Date(data.event.startDate).toLocaleDateString("zh-TW") : "";
+	const eventEndDate = data.event?.endDate ? new Date(data.event.endDate).toLocaleDateString("zh-TW") : "";
 
 	result = result.replace(/\{\{eventName\}\}/g, eventName);
 	result = result.replace(/\{\{eventDate\}\}/g, eventDate);
@@ -675,7 +676,7 @@ const replaceTemplateVariables = (content: string, data: CampaignRecipient): str
 		const val = formData[key];
 		if (val == null) return "";
 		if (Array.isArray(val)) return val.join(", ");
-		return String(val);
+		return toText(val);
 	});
 
 	return result;
@@ -826,7 +827,7 @@ export const sendCampaignEmail = async (
 			if (onProgress) {
 				try {
 					await onProgress(sentCount, failedCount);
-				} catch (_) {
+				} catch {
 					// Progress updates are best-effort; don't fail the campaign
 				}
 			}

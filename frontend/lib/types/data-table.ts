@@ -4,7 +4,7 @@ import { Column, ColumnDef, RowData, Table } from "@tanstack/react-table";
 import { DataTableFeatures } from "@/lib/data-table-features";
 
 export interface DataTableProps<TData extends RowData> {
-	columns: ColumnDef<DataTableFeatures, TData, unknown>[];
+	columns: ColumnDef<DataTableFeatures, TData>[];
 	data: TData[];
 }
 

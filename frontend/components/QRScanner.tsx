@@ -49,7 +49,7 @@ export default function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Co
 				decodedText => {
 					// Successfully scanned
 					onScan(decodedText);
-					stopScanning();
+					void stopScanning();
 					onClose();
 				},
 				errorMessage => {

@@ -1,6 +1,6 @@
 import MarkdownContent from "@/components/MarkdownContent";
 import { ChangeEvent, Ref } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 type CheckboxProps = {
 	label?: string;

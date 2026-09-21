@@ -547,13 +547,13 @@ export default function WebhooksPage() {
 
 	useEffect(() => {
 		if (currentEventId) {
-			loadWebhook();
+			void loadWebhook();
 		}
 	}, [currentEventId, loadWebhook]);
 
 	useEffect(() => {
 		if (webhook) {
-			loadFailedDeliveries();
+			void loadFailedDeliveries();
 		}
 	}, [webhook, loadFailedDeliveries]);
 
@@ -586,7 +586,7 @@ export default function WebhooksPage() {
 				dispatch({ type: "setTestResult", value: response.data });
 				dispatch({ type: "setShowTestResult", value: true });
 			}
-		} catch (error) {
+		} catch {
 			showAlert("Failed to test webhook", "error");
 		} finally {
 			dispatch({ type: "setTesting", value: false });
@@ -630,11 +630,11 @@ export default function WebhooksPage() {
 			if (response.success) {
 				showAlert(webhook ? "Webhook updated" : "Webhook created", "success");
 				dispatch({ type: "setShowConfigModal", value: false });
-				loadWebhook();
+				void loadWebhook();
 			} else {
 				showAlert(response.message || "Failed to save webhook", "error");
 			}
-		} catch (error) {
+		} catch {
 			showAlert("Failed to save webhook", "error");
 		} finally {
 			dispatch({ type: "setSaving", value: false });
@@ -652,7 +652,7 @@ export default function WebhooksPage() {
 			} else {
 				showAlert(response.message || "Failed to delete webhook", "error");
 			}
-		} catch (error) {
+		} catch {
 			showAlert("Failed to delete webhook", "error");
 		}
 	};
@@ -667,9 +667,9 @@ export default function WebhooksPage() {
 
 			if (response.success) {
 				showAlert(webhook.isActive ? "Webhook disabled" : "Webhook enabled", "success");
-				loadWebhook();
+				void loadWebhook();
 			}
-		} catch (error) {
+		} catch {
 			showAlert("Failed to update webhook", "error");
 		}
 	};
@@ -681,11 +681,11 @@ export default function WebhooksPage() {
 			const response = await adminWebhooksAPI.retryDelivery(currentEventId, deliveryId);
 			if (response.success) {
 				showAlert("Retry successful", "success");
-				loadFailedDeliveries();
+				void loadFailedDeliveries();
 			} else {
 				showAlert("Retry failed", "error");
 			}
-		} catch (error) {
+		} catch {
 			showAlert("Retry failed", "error");
 		}
 	};

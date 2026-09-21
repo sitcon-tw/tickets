@@ -2,7 +2,7 @@ import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
 import { ChangeEvent, useState } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { Input } from "../ui/input";
 
 export type RadioOption = string | { value: string; label: string };
@@ -132,7 +132,7 @@ export default function Radio({ label, name, options, required = true, value, on
 
 	const defaultOtherLabel = t.other;
 
-	const optionValues = options.map(opt => (typeof opt === "object" && opt !== null && "value" in opt ? opt.value : String(opt)));
+	const optionValues = options.map(opt => (typeof opt === "object" && opt !== null && "value" in opt ? opt.value : opt));
 
 	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
 	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : value || "");
@@ -147,7 +147,7 @@ export default function Radio({ label, name, options, required = true, value, on
 			const syntheticEvent = {
 				...e,
 				target: {
-					...e.target,
+					name: e.target.name,
 					value: newValue
 				}
 			} as ChangeEvent<HTMLInputElement>;
@@ -197,8 +197,8 @@ export default function Radio({ label, name, options, required = true, value, on
 			)}
 			<div className="radio-buttons">
 				{options.map((option, i) => {
-					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
-					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
+					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
+					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 					const optionId = `${name}-${optionValue}`;
 					const isChecked = value === optionValue;
 

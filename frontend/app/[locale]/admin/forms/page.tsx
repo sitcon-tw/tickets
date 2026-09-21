@@ -335,7 +335,7 @@ function useFormsPageView() {
 
 					const rawPrompts = field.prompts;
 					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
-						prompts = rawPrompts as Record<string, string[]>;
+						prompts = rawPrompts;
 					} else if (rawPrompts && typeof rawPrompts === "string") {
 						try {
 							const parsed = JSON.parse(rawPrompts);
@@ -450,7 +450,7 @@ function useFormsPageView() {
 
 					const rawPrompts = field.prompts;
 					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
-						prompts = rawPrompts as Record<string, string[]>;
+						prompts = rawPrompts;
 					} else if (rawPrompts && typeof rawPrompts === "string") {
 						try {
 							const parsed = JSON.parse(rawPrompts);
@@ -754,9 +754,9 @@ function useFormsPageView() {
 
 	useEffect(() => {
 		if (currentEventId) {
-			loadFormFields();
-			loadAllEvents();
-			loadEventTickets();
+			void loadFormFields();
+			void loadAllEvents();
+			void loadEventTickets();
 		}
 	}, [currentEventId, loadFormFields, loadAllEvents, loadEventTickets]);
 
@@ -788,7 +788,7 @@ function useFormsPageView() {
 								value={copyFromEventId}
 								onValueChange={value => {
 									if (value && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
-										copyFormFromEvent(value);
+										void copyFormFromEvent(value);
 									} else {
 										dispatch({ type: "setCopyFromEventId", value: "" });
 									}

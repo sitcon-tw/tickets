@@ -1,4 +1,5 @@
 import { APIError, RetryConfig } from "@/lib/types/client";
+import { toText } from "@/lib/utils/text";
 import { z } from "zod";
 
 class APIClient {
@@ -57,7 +58,7 @@ class APIClient {
 		} catch (error) {
 			clearTimeout(timeoutId);
 			if (error instanceof Error && error.name === "AbortError") {
-				throw new Error(`Request timeout after ${this.retryConfig.timeoutMs}ms`);
+				throw new Error(`Request timeout after ${this.retryConfig.timeoutMs}ms`, { cause: error });
 			}
 			throw error;
 		}
@@ -189,12 +190,12 @@ class APIClient {
 	private request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>): Promise<T> {
 		const url = `${this.baseURL}${endpoint}`;
 		const config: RequestInit = {
+			credentials: "include",
+			...options,
 			headers: {
 				"Content-Type": "application/json",
-				...options.headers
-			},
-			credentials: "include",
-			...options
+				...Object.fromEntries(new Headers(options.headers))
+			}
 		};
 
 		return this.retryRequest(endpoint, url, config, schema, 1);
@@ -206,7 +207,7 @@ class APIClient {
 			const searchParams = new URLSearchParams();
 			Object.entries(params).forEach(([key, value]) => {
 				if (value !== undefined && value !== null) {
-					searchParams.append(key, String(value));
+					searchParams.append(key, toText(value));
 				}
 			});
 			const queryString = searchParams.toString();

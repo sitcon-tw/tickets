@@ -47,17 +47,17 @@ export default function Select({ label, id, options, required = true, value, onC
 
 	const filteredOptions = searchQuery
 		? options.filter(option => {
-				const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
+				const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 				return optionLabel.toLowerCase().includes(searchQuery.toLowerCase());
 			})
 		: options;
 
 	const selectedOption = options.find(option => {
-		const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
+		const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
 		return optionValue === value;
 	});
 
-	const selectedLabel = selectedOption ? (typeof selectedOption === "object" && selectedOption !== null && "label" in selectedOption ? selectedOption.label : String(selectedOption)) : "";
+	const selectedLabel = selectedOption ? (typeof selectedOption === "object" && selectedOption !== null && "label" in selectedOption ? selectedOption.label : selectedOption) : "";
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -93,8 +93,8 @@ export default function Select({ label, id, options, required = true, value, onC
 					</SelectTrigger>
 					<SelectContent>
 						{options.map(option => {
-							const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
-							const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
+							const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
+							const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 							return (
 								<SelectItem key={optionValue} value={optionValue}>
 									{optionLabel}
@@ -142,8 +142,8 @@ export default function Select({ label, id, options, required = true, value, onC
 						<div className="p-1">
 							{filteredOptions.length > 0 ? (
 								filteredOptions.map(option => {
-									const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : String(option);
-									const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : String(option);
+									const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
+									const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 									const isSelected = optionValue === value;
 
 									return (
