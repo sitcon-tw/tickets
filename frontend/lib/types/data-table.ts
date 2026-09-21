@@ -1,21 +1,23 @@
 // Data Table Component Types
-import { Column, ColumnDef, Table } from "@tanstack/react-table";
+import { Column, ColumnDef, RowData, Table } from "@tanstack/react-table";
 
-export interface DataTableProps<TData, TValue> {
-	columns: ColumnDef<TData, TValue>[];
+import { DataTableFeatures } from "@/lib/data-table-features";
+
+export interface DataTableProps<TData extends RowData> {
+	columns: ColumnDef<DataTableFeatures, TData, unknown>[];
 	data: TData[];
 }
 
-export interface DataTableViewOptionsProps<TData> {
-	table: Table<TData>;
+export interface DataTableViewOptionsProps<TData extends RowData> {
+	table: Table<DataTableFeatures, TData>;
 }
 
-export interface DataTablePaginationProps<TData> {
-	table: Table<TData>;
+export interface DataTablePaginationProps<TData extends RowData> {
+	table: Table<DataTableFeatures, TData>;
 }
 
-export interface DataTableColumnHeaderProps<TData, TValue> {
-	column: Column<TData, TValue>;
+export interface DataTableColumnHeaderProps<TData extends RowData, TValue> {
+	column: Column<DataTableFeatures, TData, TValue>;
 	title: string;
 	className?: string;
 	style?: React.CSSProperties;

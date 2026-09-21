@@ -5,9 +5,10 @@ import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeaderProps } from "@/lib/types/data-table";
+import { RowData } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 
-export function DataTableColumnHeader<TData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
+export function DataTableColumnHeader<TData extends RowData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
 	if (!column.getCanSort()) {
 		return <div className={cn(className)}>{title}</div>;
 	}

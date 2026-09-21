@@ -3,6 +3,7 @@
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import type { User } from "@sitcontix/types";
+import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type UserDisplay = User & {
@@ -24,7 +25,7 @@ interface ColumnActions {
 	};
 }
 
-export const createUsersColumns = (actions: ColumnActions): ColumnDef<UserDisplay>[] => [
+export const createUsersColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, UserDisplay, unknown>[] => [
 	{
 		accessorKey: "name",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,

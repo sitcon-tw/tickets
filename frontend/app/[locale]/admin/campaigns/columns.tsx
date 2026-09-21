@@ -3,6 +3,7 @@
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import type { EmailCampaign } from "@sitcontix/types";
+import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CampaignDisplay = EmailCampaign & {
@@ -23,7 +24,7 @@ interface ColumnActions {
 	};
 }
 
-export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<CampaignDisplay>[] => [
+export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, CampaignDisplay, unknown>[] => [
 	{
 		accessorKey: "name",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
