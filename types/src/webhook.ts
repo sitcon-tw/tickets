@@ -63,7 +63,6 @@ export type WebhookEndpoint = z.infer<typeof WebhookEndpointSchema>;
  */
 export const WebhookEndpointCreateRequestSchema = z
 	.object({
-		eventId: z.string(),
 		url: z.url().startsWith("https://", "Webhook URL must use HTTPS"),
 		authHeaderName: AuthHeaderNameSchema.optional(),
 		authHeaderValue: AuthHeaderValueSchema.optional(),
