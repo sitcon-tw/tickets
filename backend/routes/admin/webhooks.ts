@@ -266,7 +266,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 
 				const safeWebhook = {
 					...updatedWebhook,
-					eventTypes: eventTypesParseResult.data,
+					eventTypes: z.array(WebhookEventTypeSchema).parse(updatedWebhook.eventTypes),
 					authHeaderValue: updatedWebhook.authHeaderValue ? "********" : null,
 					createdAt: updatedWebhook.createdAt,
 					updatedAt: updatedWebhook.updatedAt,
