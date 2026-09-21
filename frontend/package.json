@@ -35,6 +35,7 @@
 		"@react-three/drei": "^10.7.8",
 		"@react-three/fiber": "^9.7.0",
 		"@react-three/rapier": "^2.2.0",
+		"@simplewebauthn/browser": "^13.3.0",
 		"@sitcontix/types": "workspace:*",
 		"@tailwindcss/postcss": "^4.3.3",
 		"@tanstack/react-table": "^9.2.4",

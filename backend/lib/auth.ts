@@ -3,6 +3,7 @@ import { getAdminEmails } from "#/config/security";
 import { Prisma } from "#prisma/generated/prisma";
 import { sendMagicLink } from "#utils/email";
 import { logger } from "#utils/logger";
+import { passkey } from "@better-auth/passkey";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
@@ -13,17 +14,18 @@ import { tracer } from "./tracing";
 
 const authLogger = logger.child({ component: "auth" });
 
+const MAX_USER_NAME_LENGTH = 50;
+
+const frontendUri = process.env.FRONTEND_URI || "http://localhost:4321";
+const devFrontendOrigins = process.env.NODE_ENV !== "production" ? ["http://127.0.0.1:4322", "http://127.0.2.2:4322", "http://localhost:4322"] : [];
+
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql"
 	}),
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
-	trustedOrigins: [
-		process.env.FRONTEND_URI || "http://localhost:4321",
-		process.env.BACKEND_URI || "http://localhost:3000",
-		...(process.env.NODE_ENV !== "production" ? ["http://127.0.0.1:4322", "http://127.0.2.2:4322", "http://localhost:4322"] : [])
-	],
+	trustedOrigins: [frontendUri, process.env.BACKEND_URI || "http://localhost:3000", ...devFrontendOrigins],
 	session: {
 		cookieCache: {
 			enabled: true,
@@ -31,6 +33,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 		}
 	},
 	plugins: [
+		// Users reach the backend through the frontend's /api proxy, so the WebAuthn
+		// relying party is the frontend, not BACKEND_URI (the plugin's default).
+		passkey({
+			rpID: new URL(frontendUri).hostname,
+			rpName: "SITCON Tickets",
+			origin: [new URL(frontendUri).origin, ...devFrontendOrigins]
+		}),
 		magicLink({
 			expiresIn: MAGIC_LINK_EXPIRY_SECONDS,
 			sendMagicLink: async ({ email, token, url }, request?) => {
@@ -222,6 +231,18 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						};
 					}
 					return { data: user };
+				}
+			},
+			update: {
+				before: async user => {
+					if (user.name === undefined) return { data: user };
+					const name = typeof user.name === "string" ? user.name.trim() : "";
+					if (name.length < 1 || name.length > MAX_USER_NAME_LENGTH) {
+						throw new APIError("BAD_REQUEST", {
+							message: `名稱需為 1 至 ${MAX_USER_NAME_LENGTH} 個字元`
+						});
+					}
+					return { data: { ...user, name } };
 				}
 			}
 		}
