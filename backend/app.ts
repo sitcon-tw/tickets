@@ -18,6 +18,7 @@ import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
 import { auth } from "./lib/auth";
+import { MAGIC_LINK_EXPIRY_SECONDS } from "./lib/magic-link-quota";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
@@ -365,7 +366,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 							email: userEmail.toLowerCase(),
 							success: false,
 							createdAt: {
-								gte: new Date(Date.now() - 600000) // Within last 10 minutes (magic link expiry)
+								gte: new Date(Date.now() - MAGIC_LINK_EXPIRY_SECONDS * 1000) // Within the magic link lifetime
 							}
 						},
 						data: {

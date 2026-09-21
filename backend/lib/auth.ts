@@ -8,6 +8,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
+import { checkMagicLinkSendQuota, MAGIC_LINK_EXPIRY_SECONDS } from "./magic-link-quota";
 import { tracer } from "./tracing";
 
 const authLogger = logger.child({ component: "auth" });
@@ -31,7 +32,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	},
 	plugins: [
 		magicLink({
-			expiresIn: 600,
+			expiresIn: MAGIC_LINK_EXPIRY_SECONDS,
 			sendMagicLink: async ({ email, token, url }, request?) => {
 				const maskedEmail = email.length > 4 ? `${email.substring(0, 2)}***@${email.split("@")[1] || "***"}` : "***";
 				const span = tracer.startSpan("auth.send_magic_link", {
@@ -93,35 +94,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 								const todayEnd = new Date();
 								todayEnd.setHours(23, 59, 59, 999);
 
-								const lastSuccessfulLogin = await tx.magicLinkAttempt.findFirst({
-									where: {
-										email: normalizedEmail,
-										success: true
-									},
-									orderBy: {
-										createdAt: "desc"
-									}
-								});
-
-								const failedAttemptsSinceSuccess = await tx.magicLinkAttempt.count({
-									where: {
-										email: normalizedEmail,
-										success: false,
-										createdAt: {
-											gt: lastSuccessfulLogin?.createdAt || new Date(0)
-										}
-									}
-								});
-
-								if (failedAttemptsSinceSuccess >= 5) {
-									span.addEvent("auth.rate_limit.throttled", {
-										reason: "failed_attempts_limit",
-										count: failedAttemptsSinceSuccess
-									});
-									throw new APIError("TOO_MANY_REQUESTS", {
-										message: "登入嘗試次數已達上限（5 次），請稍後再試或聯繫客服"
-									});
-								}
+								await checkMagicLinkSendQuota(tx, normalizedEmail, span);
 
 								const successfulLoginsToday = await tx.magicLinkAttempt.count({
 									where: {
