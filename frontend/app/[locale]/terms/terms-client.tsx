@@ -23,8 +23,8 @@ export default function TermsClient() {
 
 	const t = getTranslations(locale, {
 		termsOfService: {
-			"zh-Hant": "æœå‹™æ¢æ¬¾èˆ‡éš±ç§æ”¿ç­–",
-			"zh-Hans": "æœåŠ¡æ¡æ¬¾ä¸Žéšç§æ”¿ç­–",
+			"zh-Hant": "服務條款與隱私政策",
+			"zh-Hans": "服务条款与隐私政策",
 			en: "Terms of Service and Privacy Policy"
 		}
 	});
