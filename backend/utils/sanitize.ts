@@ -2,7 +2,7 @@
  * @fileoverview Input sanitization utilities to prevent XSS attacks
  */
 
-import DOMPurify from "isomorphic-dompurify";
+import { sanitize } from "isomorphic-dompurify";
 
 /**
  * Sanitize HTML content to prevent XSS attacks
@@ -13,7 +13,7 @@ export const sanitizeHtml = (dirty: unknown): string => {
 	if (typeof dirty !== "string") {
 		return String(dirty);
 	}
-	return DOMPurify.sanitize(dirty, {
+	return sanitize(dirty, {
 		ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
 		ALLOWED_ATTR: ["href", "target"]
 	});
@@ -28,7 +28,7 @@ export const sanitizeText = (dirty: unknown): string => {
 	if (typeof dirty !== "string") {
 		return String(dirty);
 	}
-	return DOMPurify.sanitize(dirty, {
+	return sanitize(dirty, {
 		ALLOWED_TAGS: [],
 		ALLOWED_ATTR: []
 	});

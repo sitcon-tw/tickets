@@ -83,18 +83,16 @@ function evaluateFieldCondition(condition: FilterCondition, context: { formData:
 
 	if (typeof referencedField.name === "object" && referencedField.name !== null) {
 		Object.values(referencedField.name).forEach(name => {
-			if (name) possibleKeys.push(String(name));
+			if (name) possibleKeys.push(name);
 		});
 	} else if (typeof referencedField.name === "string") {
 		possibleKeys.push(referencedField.name);
 	}
 
 	let fieldValue: unknown = undefined;
-	let foundKey: string | undefined;
 	for (const key of possibleKeys) {
 		if (key in context.formData) {
 			fieldValue = context.formData[key];
-			foundKey = key;
 			break;
 		}
 	}

@@ -143,7 +143,7 @@ function TicketSummary({ ticket, locale, t, compact = false }: { ticket: TicketI
 					{t.time}
 					{ticket.saleStart ? formatDateTime(ticket.saleStart) : "N/A"} - {ticket.saleEnd ? formatDateTime(ticket.saleEnd) : "N/A"}
 				</p>
-				{ticket.showRemaining !== false && (
+				{ticket.showRemaining && (
 					<p className="remain">
 						{t.remaining} {ticket.available} / {ticket.quantity}
 					</p>
@@ -455,7 +455,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			} else {
 				dispatch({ type: "verificationFinished", status: "invalid", message: t.codeInvalid });
 			}
-		} catch (error) {
+		} catch {
 			dispatch({ type: "verificationFinished", status: "invalid", message: t.codeInvalid });
 		}
 	}
@@ -602,7 +602,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			dispatch({ type: "mounted" });
 		}
 
-		init();
+		void init();
 
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") {

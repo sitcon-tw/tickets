@@ -1,9 +1,9 @@
 "use client";
 
 import Checkbox from "@/components/input/Checkbox";
-import MultiCheckbox, { CheckboxOption } from "@/components/input/MultiCheckbox";
-import Radio, { RadioOption } from "@/components/input/Radio";
-import Select, { SelectOption } from "@/components/input/Select";
+import MultiCheckbox from "@/components/input/MultiCheckbox";
+import Radio from "@/components/input/Radio";
+import Select from "@/components/input/Select";
 import Text from "@/components/input/Text";
 import Textarea from "@/components/input/Textarea";
 import TextWithAutocomplete from "@/components/input/TextWithAutocomplete";
@@ -22,7 +22,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 
 	const localizedOptions =
 		field.options?.map((opt: Record<string, string> | string) => ({
-			value: typeof opt === "object" && opt !== null ? opt.en || getLocalizedText(opt, locale) : String(opt),
+			value: typeof opt === "object" && opt !== null ? opt.en || getLocalizedText(opt, locale) : opt,
 			label: getLocalizedText(opt, locale)
 		})) || [];
 
@@ -65,7 +65,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 				<Select
 					label={label}
 					id={fieldId}
-					options={localizedOptions as SelectOption[]}
+					options={localizedOptions}
 					required={field.required}
 					value={(value as string) || ""}
 					onChange={newValue => {
@@ -88,7 +88,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 				<Radio
 					label={label}
 					name={fieldId}
-					options={localizedOptions as RadioOption[]}
+					options={localizedOptions}
 					required={field.required}
 					value={(value as string) || ""}
 					onValueChange={newValue => {
@@ -113,7 +113,7 @@ function FormFieldComponent({ field, value, onTextChange, onCheckboxChange, plea
 					<MultiCheckbox
 						label={label}
 						name={fieldId}
-						options={localizedOptions as CheckboxOption[]}
+						options={localizedOptions}
 						values={currentValues}
 						onValueChange={newValues => {
 							const syntheticEvent = {

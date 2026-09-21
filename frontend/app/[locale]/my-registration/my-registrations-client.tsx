@@ -123,7 +123,7 @@ export default function MyRegistrationsPage() {
 			}
 		};
 
-		fetchRegistrations();
+		void fetchRegistrations();
 	}, [locale, router, showAlert, t.loadError]);
 
 	const handleViewDetails = (id: string) => {

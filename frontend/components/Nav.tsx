@@ -1,14 +1,16 @@
 "use client";
 
+import ProfileDialog from "@/components/ProfileDialog";
 import Spinner from "@/components/Spinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import crypto from "crypto";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, Shield, Ticket, UserRound, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -54,6 +56,7 @@ export default function Nav() {
 
 	const [session, setSession] = useState<SessionState>({ status: "loading" });
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const [{ isMobile, isScrolled, isMobileMenuOpen }, dispatchNavUi] = useReducer(navUiReducer, {
 		isMobile: typeof window !== "undefined" && window.innerWidth <= 768,
 		isScrolled: typeof window !== "undefined" && window.scrollY > 5,
@@ -65,6 +68,8 @@ export default function Nav() {
 	const t = getTranslations(locale, {
 		adminPanel: { "zh-Hant": "管理員介面", "zh-Hans": "管理员介面", en: "Admin Panel" },
 		myRegistrations: { "zh-Hant": "我的報名", "zh-Hans": "我的报名", en: "My Registrations" },
+		profile: { "zh-Hant": "個人資料", "zh-Hans": "个人资料", en: "Profile" },
+		userMenu: { "zh-Hant": "使用者選單", "zh-Hans": "用户菜单", en: "User menu" },
 		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
 		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
 	});
@@ -162,7 +167,7 @@ export default function Nav() {
 			}
 		};
 
-		checkAuthStatus();
+		void checkAuthStatus();
 
 		return () => {
 			cancelled = true;
@@ -198,30 +203,49 @@ export default function Nav() {
 					{/* Desktop Navigation */}
 					<div className="hidden sm:flex items-center space-x-4">
 						{session.status === "authenticated" ? (
-							<>
-								{hasAdminAccess && (
-									<Link href="/admin/events" className="text-sm dark:text-yellow-200 hover:text-gray-900 dark:hover:text-yellow-100 transition-colors">
-										{t.adminPanel}
-									</Link>
-								)}
-								<Link href="/my-registration" className="text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-									{t.myRegistrations}
-								</Link>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={handleLogout}
-									disabled={isLoggingOut}
-									className={cn(
-										"text-sm dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent transition-colors inline-flex items-center gap-2",
-										isLoggingOut && "opacity-50 cursor-not-allowed"
+							<DropdownMenu modal={false}>
+								<DropdownMenuTrigger asChild>
+									<button type="button" aria-label={t.userMenu} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300" disabled={isLoggingOut}>
+										{isLoggingOut ? (
+											<Spinner size="sm" />
+										) : gravatarUrl ? (
+											<Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />
+										) : (
+											<UserRound size={24} />
+										)}
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" className="z-1100 w-56">
+									<DropdownMenuLabel className="flex flex-col">
+										<span className="text-sm font-medium truncate">{session.user.name}</span>
+										<span className="text-xs text-muted-foreground font-normal truncate">{session.user.email}</span>
+									</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									{hasAdminAccess && (
+										<DropdownMenuItem asChild>
+											<Link href="/admin/events">
+												<Shield />
+												{t.adminPanel}
+											</Link>
+										</DropdownMenuItem>
 									)}
-								>
-									{isLoggingOut && <Spinner size="sm" />}
-									{t.logout}
-								</Button>
-								{gravatarUrl && <Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />}
-							</>
+									<DropdownMenuItem asChild>
+										<Link href="/my-registration">
+											<Ticket />
+											{t.myRegistrations}
+										</Link>
+									</DropdownMenuItem>
+									<DropdownMenuItem onSelect={() => setIsProfileOpen(true)}>
+										<UserRound />
+										{t.profile}
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem onSelect={handleLogout} disabled={isLoggingOut}>
+										<LogOut />
+										{t.logout}
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						) : session.status === "loading" ? (
 							<Spinner size="sm" />
 						) : (
@@ -307,12 +331,22 @@ export default function Nav() {
 								>
 									{t.myRegistrations}
 								</Link>
+								<button
+									type="button"
+									onClick={() => {
+										dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false });
+										setIsProfileOpen(true);
+									}}
+									className="text-sm text-left hover:text-gray-900 dark:hover:text-gray-100 transition-colors py-2"
+								>
+									{t.profile}
+								</button>
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={() => {
 										dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false });
-										handleLogout();
+										void handleLogout();
 									}}
 									disabled={isLoggingOut}
 									className={cn(
@@ -335,6 +369,15 @@ export default function Nav() {
 					)}
 				</div>
 			</div>
+
+			{session.status === "authenticated" && (
+				<ProfileDialog
+					open={isProfileOpen}
+					onOpenChange={setIsProfileOpen}
+					user={session.user}
+					onNameUpdated={name => setSession(prev => (prev.status === "authenticated" ? { ...prev, user: { ...prev.user, name } } : prev))}
+				/>
+			)}
 		</>
 	);
 }

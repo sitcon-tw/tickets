@@ -1,7 +1,7 @@
 // Column Action Types
 
-export interface ColumnActions {
-	onEdit?: (id: any) => void;
+export interface ColumnActions<TEditItem = string> {
+	onEdit?: (item: TEditItem) => void;
 	onDelete?: (id: string) => void;
 	onView?: (id: string) => void;
 }

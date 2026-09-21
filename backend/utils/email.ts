@@ -1,32 +1,37 @@
 import prisma from "#config/database";
+import type { Event, Prisma, Registration, Ticket } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
-import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
+import { toText } from "#utils/text";
+import { SendEmailCommand, SESClient, type SESClientConfig } from "@aws-sdk/client-ses";
 import { SpanStatusCode } from "@opentelemetry/api";
-import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, Event, RecipientData, Registration, TargetAudienceFilters, Ticket } from "@sitcontix/types";
+import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, TargetAudienceFilters } from "@sitcontix/types";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
 
 /**
- * Extended recipient data used internally for campaign sending.
- * Adds user-level fields not present in the shared RecipientData type.
+ * Recipient data used internally for campaign sending.
  */
-interface CampaignRecipient extends RecipientData {
+interface CampaignRecipient {
+	email: string;
+	id: string;
+	formData: string | null;
+	event?: Event;
+	ticket?: Ticket;
 	userName?: string;
 	userId?: string;
 }
 
 /** Extract a localized string from a JSON field (zh-Hant → en → first value). */
-const getLocalizedValue = (field: unknown, locale = "zh-Hant"): string => {
+const getLocalizedValue = (field: Prisma.JsonValue | undefined, locale = "zh-Hant"): string => {
 	if (!field) return "";
 	if (typeof field === "string") return field;
 	if (typeof field === "object" && !Array.isArray(field)) {
-		const obj = field as Record<string, unknown>;
-		return String(obj[locale] ?? obj["en"] ?? obj["zh-Hant"] ?? Object.values(obj)[0] ?? "");
+		return toText(field[locale] ?? field["en"] ?? field["zh-Hant"] ?? Object.values(field)[0] ?? "");
 	}
-	return String(field);
+	return toText(field);
 };
 
 const componentLogger = logger.child({ component: "email" });
@@ -62,7 +67,7 @@ const getEmailProvider = (): "aws-ses" | "mailtrap" => {
 
 async function getSesClient(): Promise<SESClient> {
 	if (!sesClient) {
-		const config: any = {
+		const config: SESClientConfig = {
 			region: process.env.AWS_SES_REGION || "us-east-1"
 		};
 
@@ -189,13 +194,18 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			},
 			"Email sending error"
 		);
-		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
 };
 
-export const sendRegistrationConfirmation = async (registration: Registration, event: Event, ticket: Ticket, ticketUrl: string): Promise<boolean> => {
+export const sendRegistrationConfirmation = async (
+	registration: Pick<Registration, "id" | "userId" | "email"> & { formData: string | Record<string, unknown> | null },
+	event: Pick<Event, "id" | "name" | "startDate" | "locationText" | "mapLink" | "slug">,
+	ticket: Pick<Ticket, "id" | "name">,
+	ticketUrl: string
+): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = registration.email.includes("@") ? `***@${registration.email.split("@")[1]}` : "***";
 	const provider = getEmailProvider();
@@ -216,7 +226,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		const templatePath = path.join(__dirname, "../email-templates/registered.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 
-		const formData = typeof registration.formData === "string" ? JSON.parse(registration.formData) : registration.formData || {};
+		const formData: Record<string, unknown> = typeof registration.formData === "string" ? JSON.parse(registration.formData) : (registration.formData ?? {});
 
 		const formFields = await prisma.eventFormFields.findMany({
 			where: { eventId: event.id },
@@ -231,27 +241,30 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 			if (typeof field.name === "string") return field.name;
 			if (typeof field.name === "object" && !Array.isArray(field.name)) {
-				const nameObj = field.name as Record<string, any>;
-				return nameObj[locale] || nameObj["en"] || Object.values(nameObj)[0] || fieldId;
+				return toText(field.name[locale] || field.name["en"] || Object.values(field.name)[0] || fieldId);
 			}
 			return fieldId;
 		};
 
-		const formatFieldValue = (fieldId: string, value: any, locale: string = "zh-Hant"): string => {
+		type FieldOption = string | Record<string, string>;
+		const parseOptions = (values: Prisma.JsonValue): FieldOption[] => (typeof values === "string" ? JSON.parse(values) : values) as FieldOption[];
+		const matchesOption = (opt: FieldOption, v: unknown): boolean => {
+			if (typeof opt === "object" && opt !== null) {
+				return Object.values(opt).some(optValue => optValue === v);
+			}
+			return opt === v;
+		};
+
+		const formatFieldValue = (fieldId: string, value: unknown, locale: string = "zh-Hant"): string => {
 			const field = fieldMap.get(fieldId);
 			if (!field) return String(value);
 
 			if (field.type === "checkbox" && Array.isArray(value)) {
 				if (field.values) {
 					try {
-						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+						const options = parseOptions(field.values);
 						const localizedValues = value.map(v => {
-							const option = options.find((opt: string | Record<string, string>) => {
-								if (typeof opt === "object" && opt !== null) {
-									return Object.values(opt).includes(v) || ("value" in opt && opt.value === v);
-								}
-								return opt === v;
-							});
+							const option = options.find(opt => matchesOption(opt, v));
 
 							if (option && typeof option === "object") {
 								return option[locale] || option["en"] || Object.values(option)[0] || v;
@@ -259,7 +272,7 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 							return v;
 						});
 						return localizedValues.join(", ");
-					} catch (e) {
+					} catch {
 						return value.join(", ");
 					}
 				}
@@ -268,18 +281,13 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 			if ((field.type === "select" || field.type === "radio") && field.values) {
 				try {
-					const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
-					const option = options.find((opt: string | Record<string, string>) => {
-						if (typeof opt === "object" && opt !== null) {
-							return Object.values(opt).includes(value) || ("value" in opt && opt.value === value);
-						}
-						return opt === value;
-					});
+					const options = parseOptions(field.values);
+					const option = options.find(opt => matchesOption(opt, value));
 
 					if (option && typeof option === "object") {
 						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
 					}
-				} catch (e) {
+				} catch {
 					return String(value);
 				}
 			}
@@ -337,15 +345,6 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 
 		const eventDate = new Date(event.startDate).toLocaleDateString("zh-TW");
 
-		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
-			if (!jsonField) return "";
-			if (typeof jsonField === "string") return jsonField;
-			if (typeof jsonField === "object") {
-				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
-			}
-			return String(jsonField);
-		};
-
 		const eventName = getLocalizedValue(event.name);
 		const ticketName = getLocalizedValue(ticket.name);
 		const eventLocationText = getLocalizedValue(event.locationText) || "";
@@ -398,13 +397,13 @@ export const sendRegistrationConfirmation = async (registration: Registration, e
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
 };
 
-export const sendCancellationEmail = async (email: string, eventNameOrJson: string | any, buttonUrl: string): Promise<boolean> => {
+export const sendCancellationEmail = async (email: string, eventNameOrJson: Prisma.JsonValue, buttonUrl: string): Promise<boolean> => {
 	// Mask email for security
 	const maskedEmail = email.includes("@") ? `***@${email.split("@")[1]}` : "***";
 	const provider = getEmailProvider();
@@ -421,16 +420,6 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 		if (!email || typeof email !== "string" || !email.includes("@")) {
 			throw new Error("Invalid email address");
 		}
-
-		// Handle localized event name
-		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
-			if (!jsonField) return "";
-			if (typeof jsonField === "string") return jsonField;
-			if (typeof jsonField === "object") {
-				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
-			}
-			return String(jsonField);
-		};
 
 		const eventName = getLocalizedValue(eventNameOrJson);
 
@@ -461,7 +450,7 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -470,8 +459,8 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: stri
 export const sendInvitationCode = async (
 	email: string,
 	code: string,
-	eventNameOrJson: string | any,
-	ticketNameOrJson: string | any,
+	eventNameOrJson: Prisma.JsonValue,
+	ticketNameOrJson: Prisma.JsonValue,
 	ticketUrl: string,
 	validUntil: string,
 	message?: string
@@ -499,16 +488,6 @@ export const sendInvitationCode = async (
 
 		const templatePath = path.join(__dirname, "../email-templates/invitation.html");
 		let template = await fs.readFile(templatePath, "utf-8");
-
-		// Handle localized fields
-		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
-			if (!jsonField) return "";
-			if (typeof jsonField === "string") return jsonField;
-			if (typeof jsonField === "object") {
-				return jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "";
-			}
-			return String(jsonField);
-		};
 
 		const eventName = getLocalizedValue(eventNameOrJson);
 		const ticketName = getLocalizedValue(ticketNameOrJson);
@@ -542,7 +521,7 @@ export const sendInvitationCode = async (
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`);
+		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -558,7 +537,7 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 	try {
 		const filters: TargetAudienceFilters | null = typeof targetAudience === "string" ? JSON.parse(targetAudience) : targetAudience;
 
-		const where: Record<string, unknown> = {};
+		const where: Prisma.RegistrationWhereInput = {};
 
 		if (filters?.eventIds && filters.eventIds.length > 0) {
 			where.eventId = { in: filters.eventIds };
@@ -574,11 +553,11 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 		if (filters?.hasReferrals !== undefined) {
 			where.referredBy = filters.hasReferrals ? { not: null } : null;
 		}
-		if (filters?.registeredAfter) {
-			where.createdAt = { ...(where.createdAt as object), gte: new Date(filters.registeredAfter) };
-		}
-		if (filters?.registeredBefore) {
-			where.createdAt = { ...(where.createdAt as object), lte: new Date(filters.registeredBefore) };
+		if (filters?.registeredAfter || filters?.registeredBefore) {
+			where.createdAt = {
+				...(filters.registeredAfter && { gte: new Date(filters.registeredAfter) }),
+				...(filters.registeredBefore && { lte: new Date(filters.registeredBefore) })
+			};
 		}
 
 		let registrations = await prisma.registration.findMany({
@@ -609,8 +588,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 					email: r.email,
 					id: r.id,
 					formData: r.formData,
-					event: r.event as unknown as Partial<Event>,
-					ticket: r.ticket as unknown as Partial<Ticket>,
+					event: r.event,
+					ticket: r.ticket,
 					userName: r.user?.name ?? undefined,
 					userId: r.user?.id ?? undefined
 				});
@@ -643,7 +622,7 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 const replaceTemplateVariables = (content: string, data: CampaignRecipient): string => {
 	let result = content;
 
-	const formData: Record<string, unknown> = typeof data.formData === "string" ? JSON.parse(data.formData || "{}") : ((data.formData as unknown as Record<string, unknown>) ?? {});
+	const formData = JSON.parse(data.formData || "{}") as Record<string, unknown>;
 
 	// User identity
 	result = result.replace(/\{\{email\}\}/g, data.email ?? "");
@@ -652,8 +631,8 @@ const replaceTemplateVariables = (content: string, data: CampaignRecipient): str
 	// Event fields
 	const eventName = getLocalizedValue(data.event?.name);
 	const eventLocation = getLocalizedValue(data.event?.locationText);
-	const eventDate = data.event?.startDate ? new Date(data.event.startDate as unknown as string).toLocaleDateString("zh-TW") : "";
-	const eventEndDate = data.event?.endDate ? new Date(data.event.endDate as unknown as string).toLocaleDateString("zh-TW") : "";
+	const eventDate = data.event?.startDate ? new Date(data.event.startDate).toLocaleDateString("zh-TW") : "";
+	const eventEndDate = data.event?.endDate ? new Date(data.event.endDate).toLocaleDateString("zh-TW") : "";
 
 	result = result.replace(/\{\{eventName\}\}/g, eventName);
 	result = result.replace(/\{\{eventDate\}\}/g, eventDate);
@@ -675,7 +654,7 @@ const replaceTemplateVariables = (content: string, data: CampaignRecipient): str
 		const val = formData[key];
 		if (val == null) return "";
 		if (Array.isArray(val)) return val.join(", ");
-		return String(val);
+		return toText(val);
 	});
 
 	return result;
@@ -733,8 +712,8 @@ export const previewCampaignEmail = async (campaign: EmailCampaignContent): Prom
 			email: sampleRegistration.email,
 			id: sampleRegistration.id,
 			formData: sampleRegistration.formData,
-			event: sampleRegistration.event as unknown as Partial<Event>,
-			ticket: sampleRegistration.ticket as unknown as Partial<Ticket>,
+			event: sampleRegistration.event,
+			ticket: sampleRegistration.ticket,
 			userName: sampleRegistration.user?.name ?? "Sample User",
 			userId: sampleRegistration.userId
 		};
@@ -826,7 +805,7 @@ export const sendCampaignEmail = async (
 			if (onProgress) {
 				try {
 					await onProgress(sentCount, failedCount);
-				} catch (_) {
+				} catch {
 					// Progress updates are best-effort; don't fail the campaign
 				}
 			}

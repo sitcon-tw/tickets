@@ -11,7 +11,8 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { FieldFilter, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
+import { normalizeFormFieldOption } from "@/lib/utils/localization";
+import { FormFieldOption, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
@@ -194,7 +195,7 @@ const formPageTranslations = {
 
 type RawTicketFormField = Omit<TicketFormField, "eventId" | "options"> &
 	Partial<Pick<TicketFormField, "eventId">> & {
-		options?: unknown[] | null;
+		options?: FormFieldOption[] | null;
 	};
 
 function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string): TicketFormField[] {
@@ -203,14 +204,16 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 		if (typeof name === "string" && name === "[object Object]") {
 			name = { en: typeof field.description === "string" ? field.description : "field" };
 		} else if (typeof name === "string") {
+			const rawName = name;
 			try {
-				name = JSON.parse(name);
+				name = JSON.parse(rawName);
 			} catch {
-				name = { en: name.toString() };
+				name = { en: rawName };
 			}
 		}
 
-		let description: LocalizedText | string | undefined = field.description as any;
+		// Legacy data may still store the description as a (JSON) string
+		let description = (field.description ?? undefined) as LocalizedText | string | undefined;
 		if (typeof description === "string" && description.startsWith("{")) {
 			const originalStr = description;
 			try {
@@ -222,20 +225,7 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 			description = { en: description };
 		}
 
-		const options = (field.options || []).map((opt: unknown): Record<string, string> => {
-			if (typeof opt === "object" && opt !== null && "label" in opt) {
-				const optWithLabel = opt as { label: unknown };
-				const labelValue =
-					typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
-						? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
-						: optWithLabel.label;
-				return { en: String(labelValue) };
-			}
-			if (typeof opt === "object" && opt !== null) {
-				return opt as Record<string, string>;
-			}
-			return { en: String(opt) };
-		});
+		const options = (field.options || []).map(normalizeFormFieldOption);
 
 		let filters = field.filters;
 		if (typeof filters === "string") {
@@ -249,12 +239,12 @@ function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string
 		return {
 			...field,
 			eventId,
-			type: field.type as "text" | "textarea" | "select" | "checkbox" | "radio",
+			type: field.type,
 			name,
 			description: description as LocalizedText | undefined,
 			options,
-			filters: filters as FieldFilter | null | undefined,
-			prompts: field.prompts as Record<string, string[]> | null | undefined
+			filters: filters,
+			prompts: field.prompts
 		};
 	});
 }
@@ -546,7 +536,7 @@ export default function FormPage() {
 			}
 		}
 
-		initForm();
+		void initForm();
 	}, [showAlert, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
 
 	useEffect(() => {

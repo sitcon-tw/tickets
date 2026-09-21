@@ -18,7 +18,7 @@ function getSchemaHash(): string | null {
 		if (!existsSync(schemaPath)) return null;
 		const schemaContent = readFileSync(schemaPath, "utf-8");
 		return createHash("md5").update(schemaContent).digest("hex");
-	} catch (error) {
+	} catch {
 		return null;
 	}
 }

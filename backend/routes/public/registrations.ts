@@ -8,12 +8,13 @@ import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/emai
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
-import { validateRegistrationFormData, type FormField } from "#utils/validation";
+import { toFormField, validateRegistrationFormData } from "#utils/validation";
 import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { LocalizedTextSchema, RegistrationStatusSchema, type Event, type Registration, type Ticket } from "@sitcontix/types";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { fromNodeHeaders } from "better-auth/node";
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -34,7 +35,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				// Mask email for security
 				const session = await auth.api.getSession({
-					headers: request.headers as unknown as Headers
+					headers: fromNodeHeaders(request.headers)
 				});
 				const user = session?.user;
 
@@ -247,7 +248,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("validating_form_data");
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields.map(toFormField), ticketId);
 				if (formErrors) {
 					span.addEvent("form_validation.failed");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "Form validation failed" });
@@ -352,7 +353,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							});
 						}
 
-						const parsedFormData = safeJsonParse(registration.formData, {}, "registration response");
+						const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response");
 
 						return {
 							...registration,
@@ -373,7 +374,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
 
 				span.addEvent("sending_confirmation_email");
-				await sendRegistrationConfirmation(result as unknown as Registration, event as unknown as Event, ticket as unknown as Ticket, ticketUrl).catch(error => {
+				await sendRegistrationConfirmation(result, event, ticket, ticketUrl).catch(error => {
 					request.log.error({ error }, "Failed to send registration confirmation email");
 					span.addEvent("confirmation_email.failed");
 				});
@@ -483,7 +484,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers as unknown as Headers
+				headers: fromNodeHeaders(request.headers)
 			});
 			const userId = session?.user?.id;
 
@@ -530,7 +531,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				// Parse form data and add status indicators
 				const registrationsWithStatus = registrations.map(reg => {
 					const now = new Date();
-					const parsedFormData = safeJsonParse(reg.formData, {}, `user registrations for ${reg.id}`);
+					const parsedFormData = safeJsonParse<Record<string, unknown>>(reg.formData, {}, `user registrations for ${reg.id}`);
 
 					return {
 						id: reg.id,
@@ -557,7 +558,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							id: reg.ticket.id,
 							name: LocalizedTextSchema.parse(reg.ticket.name),
 							description: LocalizedTextSchema.nullable().parse(reg.ticket.description),
-							price: Number(reg.ticket.price),
+							price: reg.ticket.price,
 							saleEnd: reg.ticket.saleEnd ?? null
 						},
 						isUpcoming: reg.event.startDate > now,
@@ -588,7 +589,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers as unknown as Headers
+				headers: fromNodeHeaders(request.headers)
 			});
 			const userId = session?.user?.id;
 			const { id } = request.params;
@@ -645,7 +646,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("ticket.id", registration.ticket.id);
 
 				const now = new Date();
-				const parsedFormData = safeJsonParse(registration.formData, {}, `single registration ${registration.id}`);
+				const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, `single registration ${registration.id}`);
 
 				const registrationWithStatus = {
 					...registration,
@@ -788,7 +789,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("validating_form_data");
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields as unknown as FormField[], registration.ticketId);
+				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields.map(toFormField), registration.ticketId);
 				if (formErrors) {
 					span.addEvent("form_validation.failed");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "Form validation failed" });
@@ -830,7 +831,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("event.id", updatedRegistration.event.id);
 				span.setAttribute("ticket.id", updatedRegistration.ticket.id);
 
-				const parsedFormData = safeJsonParse(updatedRegistration.formData, {}, "updated registration response");
+				const parsedFormData = safeJsonParse<Record<string, unknown>>(updatedRegistration.formData, {}, "updated registration response");
 
 				const responseData = {
 					...updatedRegistration,
@@ -870,7 +871,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		},
 		async (request, reply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers as unknown as Headers
+				headers: fromNodeHeaders(request.headers)
 			});
 			const userId = session?.user?.id;
 			const id = request.params.id;

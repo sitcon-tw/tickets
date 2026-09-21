@@ -139,7 +139,7 @@ const initialTicketFormState: TicketFormState = {
 	isSaving: false
 };
 
-function getTicketText(value: Ticket["name"] | Ticket["description"] | Ticket["plainDescription"] | undefined) {
+function getTicketText(value: Ticket["name"] | Ticket["description"] | undefined) {
 	return value && typeof value === "object" ? value : { en: value || "" };
 }
 
@@ -732,7 +732,7 @@ export default function TicketsPage() {
 
 	useEffect(() => {
 		if (currentEventId) {
-			loadTickets();
+			void loadTickets();
 		}
 
 		const savedEventId = localStorage.getItem("selectedEventId");

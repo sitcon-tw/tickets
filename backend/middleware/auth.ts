@@ -4,6 +4,7 @@ import prisma from "../config/database";
 import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
+import { fromNodeHeaders } from "better-auth/node";
 
 declare module "fastify" {
 	interface FastifyRequest {
@@ -16,7 +17,7 @@ declare module "fastify" {
 async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
 	if (!request.user || !request.session) {
 		const session = await auth.api.getSession({
-			headers: request.headers as unknown as Headers
+			headers: fromNodeHeaders(request.headers)
 		});
 
 		if (!session) {
@@ -30,7 +31,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 			select: { isActive: true, role: true, permissions: true }
 		});
 
-		if (!user || user.isActive === false) {
+		if (!user || !user.isActive) {
 			const { response, statusCode } = accountDisabledResponse();
 			reply.code(statusCode).send(response);
 			return false;
@@ -64,7 +65,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	try {
 		const session = await auth.api.getSession({
-			headers: request.headers as unknown as Headers
+			headers: fromNodeHeaders(request.headers)
 		});
 
 		if (!session) {
@@ -77,7 +78,7 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 			select: { isActive: true, role: true, permissions: true }
 		});
 
-		if (!user || user.isActive === false) {
+		if (!user || !user.isActive) {
 			const { response, statusCode } = accountDisabledResponse("帳號已停用");
 			return reply.code(statusCode).send(response);
 		}
@@ -190,7 +191,7 @@ async function checkEventAccess(request: FastifyRequest, reply: FastifyReply, ev
  * Admins can access all events, eventAdmins can only access events in their permissions
  * Returns 404 for eventAdmins without permission (to avoid redirect)
  */
-export const requireEventAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+export const requireEventAccess = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const query = request.query as EventAccessRequest;
 	const params = request.params as EventAccessRequest;
 	const body = request.body as EventAccessRequest;
@@ -234,7 +235,7 @@ export const requireEventListAccess: preHandlerHookHandler = async (request: Fas
 /**
  * Helper middleware to check event access via ticketId in request body
  */
-export const requireEventAccessViaTicketBody: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+export const requireEventAccessViaTicketBody = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const body = request.body as TicketBody;
 	const { ticketId } = body;
 	let eventId: string | undefined;

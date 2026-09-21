@@ -4,6 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { Button } from "@/components/ui/button";
 import { ColumnActions } from "@/lib/types/columns";
 import type { Event } from "@sitcontix/types";
+import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type EventWithStatus = Event & {
@@ -14,7 +15,7 @@ export type EventWithStatus = Event & {
 	formattedEndDate: string;
 };
 
-interface EventColumnActions extends ColumnActions {
+interface EventColumnActions extends ColumnActions<Event> {
 	onEdit: (event: Event) => void;
 	onDelete: (eventId: string) => void;
 	t: {
@@ -23,7 +24,7 @@ interface EventColumnActions extends ColumnActions {
 	};
 }
 
-export const createEventsColumns = (actions: EventColumnActions): ColumnDef<EventWithStatus>[] => [
+export const createEventsColumns = (actions: EventColumnActions): ColumnDef<DataTableFeatures, EventWithStatus>[] => [
 	{
 		accessorKey: "displayName",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Event Name" />,

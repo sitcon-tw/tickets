@@ -170,7 +170,7 @@ function ReferralUrlCopyButton({
 			{referralCode === "Loading..." ? (
 				<Spinner />
 			) : referralCode === "Failed" ? (
-				<span className="font-mono text-lg">{`${t.loadFailed}`}</span>
+				<span className="font-mono text-lg">{t.loadFailed}</span>
 			) : (
 				<div className="flex items-center gap-2">
 					<span className="font-mono text-sm sm:text-lg" title={referralUrl}>
@@ -370,7 +370,7 @@ function SuccessContent() {
 				window.location.href = `/login/?returnUrl=${returnUrl}`;
 			}
 		};
-		loadSuccessInfo();
+		void loadSuccessInfo();
 	}, [autoCheckin, eventSlug, locale, t.loadFailed]);
 
 	useEffect(() => {
@@ -440,7 +440,7 @@ function SuccessContent() {
 									</Button>
 								)}
 							</div>
-							<Button className="w-fit" onClick={() => router.push(`${window.location.href.replace(/\/success$/, "")}`)}>
+							<Button className="w-fit" onClick={() => router.push(window.location.href.replace(/\/success$/, ""))}>
 								<ArrowLeft size={24} />
 							</Button>
 						</div>

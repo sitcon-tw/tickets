@@ -3,6 +3,7 @@
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import type { Ticket } from "@sitcontix/types";
+import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type TicketDisplay = Ticket & {
@@ -25,7 +26,7 @@ interface ColumnActions {
 	};
 }
 
-export const createTicketsColumns = (actions: ColumnActions): ColumnDef<TicketDisplay>[] => [
+export const createTicketsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, TicketDisplay>[] => [
 	{
 		accessorKey: "displayName",
 		header: ({ column }) => <DataTableColumnHeader column={column} title="Ticket Type" />,

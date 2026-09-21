@@ -149,7 +149,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 					}
 
 					const smsData = await smsVerificationAPI.getStatus();
-					phoneVerified = Boolean(smsData?.success && smsData.data.phoneVerified);
+					phoneVerified = smsData?.success && smsData.data.phoneVerified;
 				} catch (error) {
 					console.error("Failed to load registrations", error);
 				}
@@ -171,7 +171,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 			});
 		}
 
-		handleWelcome();
+		void handleWelcome();
 
 		return () => {
 			cancelled = true;

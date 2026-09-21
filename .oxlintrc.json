@@ -1,0 +1,54 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript", "import", "oxc"],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "warn"
+	},
+	"env": {
+		"browser": true,
+		"node": true,
+		"es2024": true
+	},
+	"ignorePatterns": ["**/generated/**", "**/.next/**", "**/dist/**", "**/out/**", "**/build/**", "**/next-env.d.ts", "k6-tests/**", "vulns/**"],
+	"rules": {
+		"typescript/no-unsafe-type-assertion": "off",
+		"no-underscore-dangle": "off",
+		"no-shadow": "off",
+		"typescript/consistent-return": "off",
+		"import/no-unassigned-import": "off",
+		"no-unused-vars": "warn"
+	},
+	"overrides": [
+		{
+			"files": ["frontend/**/*.{ts,tsx,js,jsx}"],
+			"plugins": ["typescript", "import", "oxc", "react", "jsx-a11y", "nextjs"],
+			"rules": {
+				"react/rules-of-hooks": "error",
+				"react/exhaustive-deps": "warn",
+				"react/react-in-jsx-scope": "off",
+				"nextjs/google-font-display": "warn",
+				"nextjs/google-font-preconnect": "warn",
+				"nextjs/inline-script-id": "warn",
+				"nextjs/next-script-for-ga": "warn",
+				"nextjs/no-assign-module-variable": "warn",
+				"nextjs/no-async-client-component": "warn",
+				"nextjs/no-before-interactive-script-outside-document": "warn",
+				"nextjs/no-css-tags": "warn",
+				"nextjs/no-document-import-in-page": "warn",
+				"nextjs/no-duplicate-head": "warn",
+				"nextjs/no-head-element": "warn",
+				"nextjs/no-head-import-in-document": "warn",
+				"nextjs/no-img-element": "warn",
+				"nextjs/no-page-custom-font": "warn",
+				"nextjs/no-script-component-in-head": "warn",
+				"nextjs/no-styled-jsx-in-document": "warn",
+				"nextjs/no-title-in-document-head": "warn",
+				"nextjs/no-typos": "warn",
+				"nextjs/no-unwanted-polyfillio": "warn",
+				"nextjs/no-html-link-for-pages": "error",
+				"nextjs/no-sync-scripts": "error"
+			}
+		}
+	]
+}

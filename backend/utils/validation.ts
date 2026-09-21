@@ -1,5 +1,7 @@
+import type { EventFormFields, Prisma } from "#prisma/generated/prisma/client";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
+import { toText } from "./text";
 import { nowInUTC8 } from "./timezone";
 
 export type ValidationRule = (value: unknown) => true | string;
@@ -29,6 +31,27 @@ export interface FormField {
 	enableOther?: boolean;
 }
 
+const localizedText = (json: Prisma.JsonValue): string => {
+	if (typeof json === "string") return json;
+	if (json && typeof json === "object" && !Array.isArray(json)) {
+		return toText(json["zh-Hant"] ?? json["en"] ?? Object.values(json)[0] ?? "");
+	}
+	return "";
+};
+
+/** Map a Prisma form field row (with untyped JSON columns) to the shape used by validation. */
+export const toFormField = (row: EventFormFields): FormField => ({
+	id: row.id,
+	type: row.type as FormField["type"],
+	name: row.name as FormField["name"],
+	description: localizedText(row.description),
+	required: row.required,
+	validater: row.validater ?? undefined,
+	values: (row.values ?? undefined) as FormField["values"],
+	filters: (row.filters ?? undefined) as FormField["filters"],
+	enableOther: row.enableOther
+});
+
 export interface FilterCondition {
 	type: "ticket" | "field" | "time";
 	ticketId?: string;
@@ -41,7 +64,7 @@ export interface FilterCondition {
 
 export const rules = {
 	required: (value: unknown): true | string => {
-		if (value === undefined || value === null || String(value).trim() === "") {
+		if (value === undefined || value === null || toText(value).trim() === "") {
 			return "此欄位為必填";
 		}
 		return true;
@@ -50,27 +73,27 @@ export const rules = {
 	email: (value: unknown): true | string => {
 		if (!value) return true;
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(String(value)) || "Email 格式不正確";
+		return emailRegex.test(toText(value)) || "Email 格式不正確";
 	},
 
 	phone: (value: unknown): true | string => {
 		if (!value) return true;
 		const phoneRegex = /^(\+886|0)?[2-9]\d{8}$/;
-		return phoneRegex.test(String(value).replace(/[-\s]/g, "")) || "電話格式不正確";
+		return phoneRegex.test(toText(value).replace(/[-\s]/g, "")) || "電話格式不正確";
 	},
 
 	minLength:
 		(min: number) =>
 		(value: unknown): true | string => {
 			if (!value) return true;
-			return String(value).length >= min || `最少需要 ${min} 個字元`;
+			return toText(value).length >= min || `最少需要 ${min} 個字元`;
 		},
 
 	maxLength:
 		(max: number) =>
 		(value: unknown): true | string => {
 			if (!value) return true;
-			return String(value).length <= max || `最多 ${max} 個字元`;
+			return toText(value).length <= max || `最多 ${max} 個字元`;
 		},
 
 	numeric: (value: unknown): true | string => {
@@ -80,7 +103,7 @@ export const rules = {
 
 	positiveInteger: (value: unknown): true | string => {
 		if (!value) return true;
-		const num = parseInt(String(value));
+		const num = parseInt(toText(value));
 		return (Number.isInteger(num) && num > 0) || "必須為正整數";
 	}
 };
@@ -229,7 +252,7 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 						if (!regex.test(value)) {
 							fieldErrors.push(`${field.description}格式不正確`);
 						}
-					} catch (e) {}
+					} catch {}
 				}
 				break;
 
@@ -265,7 +288,7 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 										if (!regex.test(value)) {
 											fieldErrors.push(`${field.description}格式不正確`);
 										}
-									} catch (e) {
+									} catch {
 										fieldErrors.push(`${field.description}驗證規則配置錯誤`);
 									}
 								}
@@ -273,7 +296,7 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 								fieldErrors.push(`${field.description}選項無效，可選值：${validValues.join(", ")}`);
 							}
 						}
-					} catch (e) {
+					} catch {
 						fieldErrors.push(`${field.description}選項配置錯誤`);
 					}
 				}
@@ -307,7 +330,7 @@ export const validateRegistrationFormData = (formData: Record<string, unknown>, 
 						if (invalidValues.length > 0) {
 							fieldErrors.push(`${field.description}包含無效選項：${invalidValues.join(", ")}`);
 						}
-					} catch (e) {
+					} catch {
 						fieldErrors.push(`${field.description}選項配置錯誤`);
 					}
 				}

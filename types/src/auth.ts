@@ -120,3 +120,16 @@ export const SessionSchema = z.object({
 	})
 });
 export type Session = z.infer<typeof SessionSchema>;
+
+/**
+ * Passkey (WebAuthn credential) as returned by /api/auth/passkey/list-user-passkeys
+ */
+export const PasskeySchema = z.object({
+	id: z.string(),
+	name: z.string().nullable().optional(),
+	deviceType: z.string(),
+	backedUp: z.boolean(),
+	aaguid: z.string().nullable().optional(),
+	createdAt: z.coerce.date().nullable().optional()
+});
+export type Passkey = z.infer<typeof PasskeySchema>;

@@ -218,7 +218,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 				requireEventAccessViaCodeId,
 				async (request, reply) => {
 					if (request.body.ticketId !== undefined) {
-						await requireEventAccessViaTicketBody.call(fastify, request, reply, () => {});
+						await requireEventAccessViaTicketBody(request, reply);
 					}
 				}
 			],
@@ -290,7 +290,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				// Update invitation code in transaction
 				const invitationCode: InvitationCode = await prisma.$transaction(async tx => {
-					const updatePayload: Record<string, unknown> = {};
+					const updatePayload: Prisma.InvitationCodeUncheckedUpdateInput = {};
 					if (code !== undefined) updatePayload.code = code;
 					if (name !== undefined) updatePayload.name = name;
 					if (usageLimit !== undefined) updatePayload.usageLimit = usageLimit;
@@ -424,12 +424,12 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			try {
 				const { ticketId, isActive, eventId } = request.query;
 
-				const where: Record<string, unknown> = {};
+				const where: Prisma.InvitationCodeWhereInput = {};
 				if (ticketId) where.ticketId = ticketId;
 				if (isActive !== undefined) where.isActive = isActive;
 
 				if (request.userEventPermissions) {
-					const ticketWhere: Record<string, unknown> = { eventId: { in: request.userEventPermissions } };
+					const ticketWhere: Prisma.TicketWhereInput = { eventId: { in: request.userEventPermissions } };
 					if (eventId) ticketWhere.eventId = eventId;
 
 					const accessibleTickets = await prisma.ticket.findMany({

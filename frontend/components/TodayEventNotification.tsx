@@ -112,7 +112,7 @@ export default function TodayEventNotification() {
 			}
 		};
 
-		load();
+		void load();
 	}, [locale]);
 
 	function hideForever(slug: string) {

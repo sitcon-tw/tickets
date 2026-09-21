@@ -7,10 +7,11 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { KeyRound } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, { Suspense, useEffect, useReducer } from "react";
+import { useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useReducer, useState } from "react";
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
@@ -44,6 +45,14 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 		</div>
 	);
 };
+
+/** Only allow same-origin relative paths so returnUrl can't be used as an open redirect. */
+function safeReturnPath(returnUrl: string | null, locale: string): string {
+	if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//") && !returnUrl.startsWith("/\\")) {
+		return returnUrl;
+	}
+	return `/${locale}/`;
+}
 
 function validateEmail(email: string): boolean {
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,7 +99,6 @@ function loginReducer(state: LoginState, action: LoginAction): LoginState {
 
 function LoginContent() {
 	const locale = useLocale();
-	const router = useRouter();
 	const { showAlert } = useAlert();
 	const searchParams = useSearchParams();
 	const returnUrl = searchParams.get("returnUrl");
@@ -102,6 +110,7 @@ function LoginContent() {
 		isCheckingAuth: false,
 		turnstileToken: null
 	});
+	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 
 	const t = getTranslations(locale, {
 		login: {
@@ -174,6 +183,26 @@ function LoginContent() {
 			"zh-Hans": "服务条款与隐私政策",
 			en: "Terms of Service and Privacy Policy"
 		},
+		or: {
+			"zh-Hant": "或",
+			"zh-Hans": "或",
+			en: "or"
+		},
+		passkeyLogin: {
+			"zh-Hant": "使用通行金鑰登入",
+			"zh-Hans": "使用通行密钥登录",
+			en: "Sign in with Passkey"
+		},
+		passkeyFailed: {
+			"zh-Hant": "通行金鑰登入失敗，請改用 Magic Link 登入",
+			"zh-Hans": "通行密钥登录失败，请改用 Magic Link 登录",
+			en: "Passkey sign-in failed. Please use a magic link instead"
+		},
+		passkeyUnsupported: {
+			"zh-Hant": "此瀏覽器不支援通行金鑰",
+			"zh-Hans": "此浏览器不支持通行密钥",
+			en: "This browser doesn't support passkeys"
+		},
 		reenterEmail: {
 			"zh-Hant": "重新輸入電子郵件",
 			"zh-Hans": "重新输入电子邮件",
@@ -243,6 +272,25 @@ function LoginContent() {
 		}
 	};
 
+	const loginWithPasskey = async () => {
+		if (isPasskeyLoading) return;
+		if (!window.PublicKeyCredential) {
+			showAlert(t.passkeyUnsupported, "error");
+			return;
+		}
+		setIsPasskeyLoading(true);
+		try {
+			await authAPI.signInWithPasskey();
+			// Full navigation so server components and the nav pick up the new session
+			window.location.href = safeReturnPath(returnUrl, locale);
+		} catch (error) {
+			setIsPasskeyLoading(false);
+			if (error instanceof Error && (error.name === "NotAllowedError" || error.name === "AbortError")) return;
+			console.error("Passkey login error:", error);
+			showAlert(t.passkeyFailed, "error");
+		}
+	};
+
 	if (isCheckingAuth) {
 		return (
 			<div className="flex flex-col items-center justify-center h-full">
@@ -276,6 +324,15 @@ function LoginContent() {
 					<SendButton onClick={login} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
 						{t.continue}
 					</SendButton>
+					<div className="flex items-center gap-3 w-full max-w-xs text-sm text-gray-500">
+						<div className="h-px flex-1 bg-gray-300 dark:bg-gray-700" />
+						{t.or}
+						<div className="h-px flex-1 bg-gray-300 dark:bg-gray-700" />
+					</div>
+					<Button onClick={loginWithPasskey} disabled={isPasskeyLoading} variant="outline" size="lg" className="mt-4">
+						{isPasskeyLoading ? <Spinner size="sm" /> : <KeyRound className="size-4" />}
+						{t.passkeyLogin}
+					</Button>
 					<p className="text-sm mt-20 text-gray-600 dark:text-gray-400">
 						{t.acceptTermsAsLoggedIn}
 						<Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">

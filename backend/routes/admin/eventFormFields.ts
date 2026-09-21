@@ -217,52 +217,19 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				}
 
-				const data: Record<string, unknown> = { ...updateData };
+				const toJson = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+				const { name, description, values, filters, prompts, validater, placeholder, ...scalarUpdates } = updateData;
 
-				delete data.eventId;
-
-				if (updateData.validater === "") data.validater = null;
-				if (updateData.placeholder === "") data.placeholder = null;
-
-				if ("name" in updateData) {
-					if (updateData.name === null || updateData.name === undefined) {
-						delete data.name;
-					} else if (typeof updateData.name === "object") {
-						data.name = JSON.parse(JSON.stringify(updateData.name));
-					}
-				}
-
-				if ("description" in updateData) {
-					if (updateData.description === null || updateData.description === undefined) {
-						data.description = null;
-					} else if (typeof updateData.description === "object") {
-						data.description = JSON.parse(JSON.stringify(updateData.description));
-					}
-				}
-
-				if ("values" in updateData) {
-					if (updateData.values === null || updateData.values === undefined || (Array.isArray(updateData.values) && updateData.values.length === 0)) {
-						data.values = null;
-					} else if (Array.isArray(updateData.values)) {
-						data.values = JSON.parse(JSON.stringify(updateData.values));
-					}
-				}
-
-				if ("filters" in updateData) {
-					if (updateData.filters === null || updateData.filters === undefined) {
-						data.filters = null;
-					} else if (typeof updateData.filters === "object") {
-						data.filters = JSON.parse(JSON.stringify(updateData.filters));
-					}
-				}
-
-				if ("prompts" in updateData) {
-					if (updateData.prompts === null || updateData.prompts === undefined || (Array.isArray(updateData.prompts) && updateData.prompts.length === 0)) {
-						data.prompts = null;
-					} else if (Array.isArray(updateData.prompts)) {
-						data.prompts = JSON.parse(JSON.stringify(updateData.prompts));
-					}
-				}
+				const data: Prisma.EventFormFieldsUpdateInput = {
+					...scalarUpdates,
+					...(validater !== undefined && { validater: validater === "" ? null : validater }),
+					...(placeholder !== undefined && { placeholder: placeholder === "" ? null : placeholder }),
+					...(name && { name: toJson(name) }),
+					...("description" in updateData && { description: description ? toJson(description) : Prisma.DbNull }),
+					...("values" in updateData && { values: values && values.length > 0 ? toJson(values) : Prisma.DbNull }),
+					...("filters" in updateData && { filters: filters ? toJson(filters) : Prisma.DbNull }),
+					...("prompts" in updateData && { prompts: prompts ? toJson(prompts) : Prisma.DbNull })
+				};
 
 				span.addEvent("field.update.start");
 
@@ -378,7 +345,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				const where: Record<string, unknown> = {};
+				const where: Prisma.EventFormFieldsWhereInput = {};
 				if (eventId) {
 					span.setAttribute("filter.event_id", eventId);
 					span.addEvent("query.event.start");

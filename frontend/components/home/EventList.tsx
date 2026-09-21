@@ -67,7 +67,7 @@ export default function EventList() {
 			}
 		}
 
-		fetchEvents();
+		void fetchEvents();
 	}, [showAlert]);
 
 	if (loading) {

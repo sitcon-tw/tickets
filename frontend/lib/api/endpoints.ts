@@ -10,6 +10,7 @@ import {
 	InvitationCodeSchema,
 	InvitationCodeVerificationSchema,
 	LocalizedTextSchema,
+	PasskeySchema,
 	PermissionsResponseSchema,
 	PublicEventFormFieldSchema,
 	PublicEventListItemSchema,
@@ -40,6 +41,7 @@ import {
 	type User
 } from "@sitcontix/types";
 import z from "zod/v4";
+import { startAuthentication, startRegistration, type PublicKeyCredentialCreationOptionsJSON, type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
 import { apiClient } from "./client";
 
 // Auth (handled by BetterAuth)
@@ -59,7 +61,20 @@ export const authAPI = {
 	},
 	getSession: () => apiClient.get("/api/auth/get-session", {}, SessionSchema.nullable().optional()),
 	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema.nullable().optional())),
-	signOut: () => apiClient.post("/api/auth/sign-out")
+	signOut: () => apiClient.post("/api/auth/sign-out"),
+	updateName: (name: string) => apiClient.post("/api/auth/update-user", { name }),
+	signInWithPasskey: async () => {
+		const options = await apiClient.get<PublicKeyCredentialRequestOptionsJSON>("/api/auth/passkey/generate-authenticate-options");
+		const response = await startAuthentication({ optionsJSON: options });
+		return apiClient.post("/api/auth/passkey/verify-authentication", { response });
+	},
+	addPasskey: async (name?: string) => {
+		const options = await apiClient.get<PublicKeyCredentialCreationOptionsJSON>("/api/auth/passkey/generate-register-options");
+		const response = await startRegistration({ optionsJSON: options });
+		return apiClient.post("/api/auth/passkey/verify-registration", { response, name });
+	},
+	listPasskeys: () => apiClient.get("/api/auth/passkey/list-user-passkeys", {}, z.array(PasskeySchema)),
+	deletePasskey: (id: string) => apiClient.post("/api/auth/passkey/delete-passkey", { id })
 };
 
 // Events - Public

@@ -510,7 +510,7 @@ function VerifyPageContent() {
 		}
 
 		if (newCode.every(digit => digit !== "") && newCode.join("").length === 6) {
-			verifyCode(newCode.join(""));
+			void verifyCode(newCode.join(""));
 		}
 	}
 
@@ -518,7 +518,7 @@ function VerifyPageContent() {
 		if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
 			codeInputRefs.current[index - 1]?.focus();
 		} else if (e.key === "Enter" && verificationCode.every(digit => digit !== "")) {
-			verifyCode(verificationCode.join(""));
+			void verifyCode(verificationCode.join(""));
 		}
 	}
 
@@ -538,7 +538,7 @@ function VerifyPageContent() {
 			codeInputRefs.current[nextEmpty]?.focus();
 		} else {
 			codeInputRefs.current[5]?.focus();
-			verifyCode(newCode.join(""));
+			void verifyCode(newCode.join(""));
 		}
 	}
 

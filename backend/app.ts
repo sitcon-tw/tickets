@@ -18,6 +18,7 @@ import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
 import { auth } from "./lib/auth";
+import { MAGIC_LINK_EXPIRY_SECONDS } from "./lib/magic-link-quota";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
@@ -198,7 +199,7 @@ fastify.post<{ Body: MagicLinkBody }>(
 			}
 
 			// Turnstile validation passed, forward to BetterAuth
-			const protocol = request.headers["x-forwarded-proto"] || "http";
+			const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 			const host = request.headers.host;
 			const url = `${protocol}://${host}/api/auth/sign-in/magic-link`;
 
@@ -255,7 +256,7 @@ fastify.all(
 	},
 	async (request: FastifyRequest, reply: FastifyReply) => {
 		try {
-			const protocol = request.headers["x-forwarded-proto"] || "http";
+			const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 			const host = request.headers.host;
 			const url = `${protocol}://${host}${request.url}`;
 
@@ -326,7 +327,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 		}
 
 		// Call the Better Auth verification endpoint internally
-		const protocol = request.headers["x-forwarded-proto"] || "http";
+		const protocol = [request.headers["x-forwarded-proto"]].flat()[0] || "http";
 		const host = request.headers.host;
 		const authUrl = `${protocol}://${host}/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
 
@@ -365,7 +366,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 							email: userEmail.toLowerCase(),
 							success: false,
 							createdAt: {
-								gte: new Date(Date.now() - 600000) // Within last 10 minutes (magic link expiry)
+								gte: new Date(Date.now() - MAGIC_LINK_EXPIRY_SECONDS * 1000) // Within the magic link lifetime
 							}
 						},
 						data: {

@@ -52,7 +52,7 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 
 	function copyToClipboard() {
 		if (qrValue) {
-			navigator.clipboard.writeText(qrValue).then(() => {
+			void navigator.clipboard.writeText(qrValue).then(() => {
 				setCopied(true);
 				setTimeout(() => setCopied(false), 2000);
 			});

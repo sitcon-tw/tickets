@@ -223,7 +223,7 @@ function EventLanguageFields({
 	required = false,
 	tt
 }: EventLanguageFieldsProps) {
-	const placeholder = languagePlaceholders[language as keyof typeof languagePlaceholders] || languagePlaceholders.en;
+	const placeholder = languagePlaceholders[language] || languagePlaceholders.en;
 
 	return (
 		<div className="space-y-4">
@@ -700,7 +700,7 @@ export default function EventsPage() {
 		[t.edit, t.delete, openModal, deleteEvent]
 	);
 	useEffect(() => {
-		loadEvents();
+		void loadEvents();
 	}, [loadEvents]);
 
 	return (

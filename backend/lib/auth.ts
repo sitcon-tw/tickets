@@ -3,14 +3,21 @@ import { getAdminEmails } from "#/config/security";
 import { Prisma } from "#prisma/generated/prisma";
 import { sendMagicLink } from "#utils/email";
 import { logger } from "#utils/logger";
+import { passkey } from "@better-auth/passkey";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
 import { magicLink } from "better-auth/plugins";
+import { checkMagicLinkSendQuota, MAGIC_LINK_EXPIRY_SECONDS } from "./magic-link-quota";
 import { tracer } from "./tracing";
 
 const authLogger = logger.child({ component: "auth" });
+
+const MAX_USER_NAME_LENGTH = 50;
+
+const frontendUri = process.env.FRONTEND_URI || "http://localhost:4321";
+const devFrontendOrigins = process.env.NODE_ENV !== "production" ? ["http://127.0.0.1:4322", "http://127.0.2.2:4322", "http://localhost:4322"] : [];
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	database: prismaAdapter(prisma, {
@@ -18,11 +25,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 	}),
 	baseURL: process.env.BACKEND_URI || "http://localhost:3000",
 	secret: process.env.BETTER_AUTH_SECRET,
-	trustedOrigins: [
-		process.env.FRONTEND_URI || "http://localhost:4321",
-		process.env.BACKEND_URI || "http://localhost:3000",
-		...(process.env.NODE_ENV !== "production" ? ["http://127.0.0.1:4322", "http://127.0.2.2:4322", "http://localhost:4322"] : [])
-	],
+	trustedOrigins: [frontendUri, process.env.BACKEND_URI || "http://localhost:3000", ...devFrontendOrigins],
 	session: {
 		cookieCache: {
 			enabled: true,
@@ -30,9 +33,16 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 		}
 	},
 	plugins: [
+		// Users reach the backend through the frontend's /api proxy, so the WebAuthn
+		// relying party is the frontend, not BACKEND_URI (the plugin's default).
+		passkey({
+			rpID: new URL(frontendUri).hostname,
+			rpName: "SITCON Tickets",
+			origin: [new URL(frontendUri).origin, ...devFrontendOrigins]
+		}),
 		magicLink({
-			expiresIn: 600,
-			sendMagicLink: async ({ email, token, url }, request?) => {
+			expiresIn: MAGIC_LINK_EXPIRY_SECONDS,
+			sendMagicLink: async ({ email, token, url }, ctx?) => {
 				const maskedEmail = email.length > 4 ? `${email.substring(0, 2)}***@${email.split("@")[1] || "***"}` : "***";
 				const span = tracer.startSpan("auth.send_magic_link", {
 					attributes: {
@@ -46,16 +56,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					const normalizedEmail = email.toLowerCase();
 
 					let ipAddress: string | null = null;
-					if (request?.headers) {
-						const headers = request.headers as unknown as Record<string, string | string[] | undefined>;
-						const forwardedFor = headers["x-forwarded-for"];
-						const realIp = headers["x-real-ip"];
-						const requestWithIp = request as unknown as Record<string, unknown>;
-						ipAddress =
-							(typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined) ||
-							(typeof realIp === "string" ? realIp : undefined) ||
-							(requestWithIp.ip as string | undefined) ||
-							null;
+					const headers = ctx?.headers ?? ctx?.request?.headers;
+					if (headers) {
+						ipAddress = headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || null;
 
 						if (ipAddress) {
 							span.setAttribute("auth.ip.masked", ipAddress.substring(0, 8) + "***");
@@ -93,35 +96,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 								const todayEnd = new Date();
 								todayEnd.setHours(23, 59, 59, 999);
 
-								const lastSuccessfulLogin = await tx.magicLinkAttempt.findFirst({
-									where: {
-										email: normalizedEmail,
-										success: true
-									},
-									orderBy: {
-										createdAt: "desc"
-									}
-								});
-
-								const failedAttemptsSinceSuccess = await tx.magicLinkAttempt.count({
-									where: {
-										email: normalizedEmail,
-										success: false,
-										createdAt: {
-											gt: lastSuccessfulLogin?.createdAt || new Date(0)
-										}
-									}
-								});
-
-								if (failedAttemptsSinceSuccess >= 5) {
-									span.addEvent("auth.rate_limit.throttled", {
-										reason: "failed_attempts_limit",
-										count: failedAttemptsSinceSuccess
-									});
-									throw new APIError("TOO_MANY_REQUESTS", {
-										message: "登入嘗試次數已達上限（5 次），請稍後再試或聯繫客服"
-									});
-								}
+								await checkMagicLinkSendQuota(tx, normalizedEmail, span);
 
 								const successfulLoginsToday = await tx.magicLinkAttempt.count({
 									where: {
@@ -249,6 +224,18 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						};
 					}
 					return { data: user };
+				}
+			},
+			update: {
+				before: async user => {
+					if (user.name === undefined) return { data: user };
+					const name = typeof user.name === "string" ? user.name.trim() : "";
+					if (name.length < 1 || name.length > MAX_USER_NAME_LENGTH) {
+						throw new APIError("BAD_REQUEST", {
+							message: `名稱需為 1 至 ${MAX_USER_NAME_LENGTH} 個字元`
+						});
+					}
+					return { data: { ...user, name } };
 				}
 			}
 		}

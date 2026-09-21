@@ -169,7 +169,8 @@ function EmailPreview({
 	}
 
 	const samplePair = matchedPairs[0];
-	const ticket = tickets.find(t => currentType?.codes.find(c => c.code === samplePair.code));
+	const sampleTicketId = currentType?.codes.find(c => c.code === samplePair.code)?.ticketId;
+	const ticket = tickets.find(t => t.id === sampleTicketId);
 
 	return (
 		<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
@@ -344,7 +345,7 @@ function useInvitesPageView() {
 						usedCount: code.usedCount || 0,
 						usageLimit: code.usageLimit || 1,
 						usedBy: "",
-						active: code.isActive !== false,
+						active: code.isActive,
 						ticketId: code.ticketId
 					});
 				});

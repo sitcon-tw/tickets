@@ -1,7 +1,9 @@
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { getRedisClient } from "#config/redis";
 import { tracer } from "#lib/tracing";
 import { logger } from "#utils/logger";
+import { toText } from "#utils/text";
 import { notFoundResponse, serverErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -65,11 +67,11 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 		}
 
 		// Get localized values
-		const getLocalizedValue = (jsonField: any, locale: string = "zh-Hant"): string => {
+		const getLocalizedValue = (jsonField: Prisma.JsonValue, locale: string = "zh-Hant"): string => {
 			if (!jsonField) return "";
 			if (typeof jsonField === "string") return jsonField;
-			if (typeof jsonField === "object") {
-				return jsonField[locale] || jsonField["zh-TW"] || jsonField["en"] || Object.values(jsonField)[0] || "";
+			if (typeof jsonField === "object" && !Array.isArray(jsonField)) {
+				return toText(jsonField[locale] || jsonField["zh-TW"] || jsonField["en"] || Object.values(jsonField)[0] || "");
 			}
 			return String(jsonField);
 		};

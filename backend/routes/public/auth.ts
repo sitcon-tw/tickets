@@ -73,7 +73,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				const role = user.role || "viewer";
-				const permissions = safeJsonParse(user.permissions, [], "user permissions");
+				const permissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
 
 				span.setAttribute("auth.user.role", role);
 				span.setAttribute("auth.permissions.count", permissions.length);

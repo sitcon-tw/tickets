@@ -1,4 +1,4 @@
-import { LocalizedText } from "@sitcontix/types";
+import { FormFieldOption, LocalizedText } from "@sitcontix/types";
 
 /**
  * Safely gets localized text from a localized object
@@ -28,4 +28,16 @@ export function getLocalizedText(obj: LocalizedText | string | undefined | null,
 
 	// Final fallback
 	return fallback;
+}
+
+/**
+ * Normalize a form field option (plain string, localized record, or legacy `{ label, value }`) into a localized record
+ */
+export function normalizeFormFieldOption(opt: FormFieldOption): LocalizedText {
+	if (typeof opt === "string") return { en: opt };
+	if ("label" in opt) {
+		const label = opt.label;
+		return { en: typeof label === "object" ? label.en || Object.values(label)[0] || "" : label };
+	}
+	return opt;
 }

@@ -1,6 +1,7 @@
 import { tracer } from "#lib/tracing";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { logger } from "#utils/logger";
+import { toText } from "#utils/text";
 import type { sheets_v4 } from "@googleapis/sheets";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { JWT } from "google-auth-library";
@@ -78,7 +79,7 @@ export async function getGoogleSheetsClient(): Promise<GoogleSheetsClient> {
 			code: SpanStatusCode.ERROR,
 			message: "Failed to authenticate with Google Sheets"
 		});
-		throw new Error("Google Sheets authentication failed");
+		throw new Error("Google Sheets authentication failed", { cause: error });
 	} finally {
 		span.end();
 	}
@@ -185,7 +186,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 		const formatFormValue = (value: unknown): string => {
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
-			return String(value);
+			return toText(value);
 		};
 
 		span.addEvent("google_sheets.prepare_headers");
@@ -203,7 +204,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 				getLocalizedName(reg.ticket?.name || ""),
 				reg.ticket?.price || 0,
 				reg.status,
-				(reg as any).referrer?.email || reg.referredBy || "",
+				reg.referrer?.email || reg.referredBy || "",
 				new Date(reg.createdAt).toISOString()
 			];
 

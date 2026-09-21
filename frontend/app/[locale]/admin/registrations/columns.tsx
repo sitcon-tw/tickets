@@ -4,6 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Registration } from "@sitcontix/types";
+import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type RegistrationDisplay = Registration & {
@@ -23,12 +24,12 @@ interface ColumnActions {
 	};
 }
 
-export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<RegistrationDisplay>[] => [
+export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, RegistrationDisplay>[] => [
 	{
 		id: "select",
 		header: ({ table }) => (
 			<Checkbox
-				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected() && "indeterminate")}
 				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
 			/>

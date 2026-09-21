@@ -28,6 +28,7 @@ model User {
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  passkeys      Passkey[]
   emailCampaigns EmailCampaign[]
   registrations Registration[]
   smsVerifications SmsVerification[]
@@ -68,6 +69,25 @@ model Account {
   updatedAt             DateTime
 
   @@map("account")
+}
+
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime?
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 model Verification {

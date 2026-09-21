@@ -12,7 +12,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { toDateTimeLocalString } from "@/lib/utils/timezone";
-import type { Event, EventFormField, FieldFilter, Ticket } from "@sitcontix/types";
+import type { Event, EventFormField, FieldFilter, FormFieldOption, LocalizedText, Ticket } from "@sitcontix/types";
 import { ChevronDown, ChevronUp, GripVertical, Plus, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useReducer, useRef } from "react";
@@ -110,6 +110,30 @@ const initialFormsState: FormsState = {
 	collapsedItems: new Set(),
 	isSaving: false
 };
+
+type QuestionOption = { id?: string; en: string; "zh-Hant"?: string; "zh-Hans"?: string };
+
+function toQuestionOption(opt: FormFieldOption): QuestionOption {
+	if (typeof opt === "string") {
+		return { id: crypto.randomUUID(), en: opt, "zh-Hant": "", "zh-Hans": "" };
+	}
+	if ("label" in opt && typeof opt.label === "object") {
+		const label = opt.label;
+		return {
+			id: crypto.randomUUID(),
+			en: label["en"] || opt.value || "",
+			"zh-Hant": label["zh-Hant"] || "",
+			"zh-Hans": label["zh-Hans"] || ""
+		};
+	}
+	const optRecord = opt as LocalizedText;
+	return {
+		id: crypto.randomUUID(),
+		en: optRecord["en"] || "",
+		"zh-Hant": optRecord["zh-Hant"] || "",
+		"zh-Hans": optRecord["zh-Hans"] || ""
+	};
+}
 
 function formsReducer(state: FormsState, action: FormsAction): FormsState {
 	switch (action.type) {
@@ -287,46 +311,18 @@ function useFormsPageView() {
 
 			if (response.success) {
 				const loadedFields: Question[] = (response.data || []).map((field: EventFormField): Question => {
-					let options: Array<{ id?: string; en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let options: QuestionOption[] = [];
 					let prompts: Record<string, string[]> = {};
 
-					const fieldWithOptions = field as EventFormField & { options?: unknown };
-					const rawOptions = fieldWithOptions.options || field.values;
+					const rawOptions: FormFieldOption[] | string | null | undefined = field.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
-						options = rawOptions.map((opt: unknown) => {
-							if (typeof opt === "object" && opt !== null) {
-								if ("label" in opt) {
-									const optWithLabel = opt as { label: unknown; value?: string };
-									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
-										const label = optWithLabel.label as Record<string, string>;
-										return {
-											id: crypto.randomUUID(),
-											en: label["en"] || optWithLabel.value || "",
-											"zh-Hant": label["zh-Hant"] || "",
-											"zh-Hans": label["zh-Hans"] || ""
-										};
-									}
-								}
-								const optRecord = opt as Record<string, string>;
-								return {
-									id: crypto.randomUUID(),
-									en: optRecord["en"] || "",
-									"zh-Hant": optRecord["zh-Hant"] || "",
-									"zh-Hans": optRecord["zh-Hans"] || ""
-								};
-							}
-							return { id: crypto.randomUUID(), en: String(opt), "zh-Hant": "", "zh-Hans": "" };
-						});
+						options = rawOptions.map(toQuestionOption);
 					} else if (rawOptions && typeof rawOptions === "string") {
 						try {
-							const parsed = JSON.parse(rawOptions);
+							const parsed = JSON.parse(rawOptions) as FormFieldOption[];
 							if (Array.isArray(parsed)) {
-								options = parsed.map((opt: unknown) =>
-									typeof opt === "string"
-										? { id: crypto.randomUUID(), en: opt, "zh-Hant": "", "zh-Hans": "" }
-										: { id: crypto.randomUUID(), ...(opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }) }
-								);
+								options = parsed.map(toQuestionOption);
 							}
 						} catch {
 							console.warn("Failed to parse field values as JSON:", rawOptions);
@@ -335,7 +331,7 @@ function useFormsPageView() {
 
 					const rawPrompts = field.prompts;
 					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
-						prompts = rawPrompts as Record<string, string[]>;
+						prompts = rawPrompts;
 					} else if (rawPrompts && typeof rawPrompts === "string") {
 						try {
 							const parsed = JSON.parse(rawPrompts);
@@ -402,46 +398,18 @@ function useFormsPageView() {
 
 			if (response.success && response.data) {
 				const copiedQuestions: Question[] = response.data.map((field: EventFormField): Question => {
-					let options: Array<{ id?: string; en: string; "zh-Hant"?: string; "zh-Hans"?: string }> = [];
+					let options: QuestionOption[] = [];
 					let prompts: Record<string, string[]> = {};
 
-					const fieldWithOptions = field as EventFormField & { options?: unknown };
-					const rawOptions = fieldWithOptions.options || field.values;
+					const rawOptions: FormFieldOption[] | string | null | undefined = field.options || field.values;
 
 					if (rawOptions && Array.isArray(rawOptions)) {
-						options = rawOptions.map((opt: unknown) => {
-							if (typeof opt === "object" && opt !== null) {
-								if ("label" in opt) {
-									const optWithLabel = opt as { label: unknown; value?: string };
-									if (typeof optWithLabel.label === "object" && optWithLabel.label !== null) {
-										const label = optWithLabel.label as Record<string, string>;
-										return {
-											id: crypto.randomUUID(),
-											en: label["en"] || optWithLabel.value || "",
-											"zh-Hant": label["zh-Hant"] || "",
-											"zh-Hans": label["zh-Hans"] || ""
-										};
-									}
-								}
-								const optRecord = opt as Record<string, string>;
-								return {
-									id: crypto.randomUUID(),
-									en: optRecord["en"] || "",
-									"zh-Hant": optRecord["zh-Hant"] || "",
-									"zh-Hans": optRecord["zh-Hans"] || ""
-								};
-							}
-							return { id: crypto.randomUUID(), en: String(opt), "zh-Hant": "", "zh-Hans": "" };
-						});
+						options = rawOptions.map(toQuestionOption);
 					} else if (rawOptions && typeof rawOptions === "string") {
 						try {
-							const parsed = JSON.parse(rawOptions);
+							const parsed = JSON.parse(rawOptions) as FormFieldOption[];
 							if (Array.isArray(parsed)) {
-								options = parsed.map((opt: unknown) =>
-									typeof opt === "string"
-										? { id: crypto.randomUUID(), en: opt, "zh-Hant": "", "zh-Hans": "" }
-										: { id: crypto.randomUUID(), ...(opt as { en: string; "zh-Hant"?: string; "zh-Hans"?: string }) }
-								);
+								options = parsed.map(toQuestionOption);
 							}
 						} catch {
 							console.warn("Failed to parse field values as JSON:", rawOptions);
@@ -450,7 +418,7 @@ function useFormsPageView() {
 
 					const rawPrompts = field.prompts;
 					if (rawPrompts && typeof rawPrompts === "object" && !Array.isArray(rawPrompts)) {
-						prompts = rawPrompts as Record<string, string[]>;
+						prompts = rawPrompts;
 					} else if (rawPrompts && typeof rawPrompts === "string") {
 						try {
 							const parsed = JSON.parse(rawPrompts);
@@ -754,9 +722,9 @@ function useFormsPageView() {
 
 	useEffect(() => {
 		if (currentEventId) {
-			loadFormFields();
-			loadAllEvents();
-			loadEventTickets();
+			void loadFormFields();
+			void loadAllEvents();
+			void loadEventTickets();
 		}
 	}, [currentEventId, loadFormFields, loadAllEvents, loadEventTickets]);
 
@@ -788,7 +756,7 @@ function useFormsPageView() {
 								value={copyFromEventId}
 								onValueChange={value => {
 									if (value && confirm("確定要複製該活動的表單嗎？這會取代目前的表單內容。")) {
-										copyFormFromEvent(value);
+										void copyFormFromEvent(value);
 									} else {
 										dispatch({ type: "setCopyFromEventId", value: "" });
 									}
