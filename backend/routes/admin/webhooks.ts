@@ -232,7 +232,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				// Validate event types if provided
-				const eventTypesParseResult = z.array(WebhookEventTypeSchema).safeParse(eventTypes);
+				const eventTypesParseResult = z.array(WebhookEventTypeSchema).optional().safeParse(eventTypes);
 				if (!eventTypesParseResult.success) {
 					span.setAttribute("validation.error", JSON.stringify(eventTypesParseResult.error.issues));
 					span.setAttribute("validation.field", "eventTypes");
@@ -246,7 +246,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				if (url !== undefined) updateData.url = url;
 				if (authHeaderName !== undefined) updateData.authHeaderName = authHeaderName;
 				if (authHeaderValue !== undefined) updateData.authHeaderValue = authHeaderValue;
-				if (eventTypes !== undefined) updateData.eventTypes = eventTypes;
+				if (eventTypesParseResult.data !== undefined) updateData.eventTypes = eventTypesParseResult.data;
 				if (isActive !== undefined) {
 					updateData.isActive = isActive;
 					// Reset failure tracking when manually toggling
