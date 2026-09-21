@@ -8,6 +8,7 @@ import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { fromNodeHeaders } from "better-auth/node";
 
 const componentLogger = logger.child({ component: "public/referrals" });
 
@@ -167,7 +168,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				span.addEvent("auth.check_session");
 
 				const session = await auth.api.getSession({
-					headers: request.headers as any
+					headers: fromNodeHeaders(request.headers)
 				});
 
 				if (!session) {
@@ -367,7 +368,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				let currentUserId: string | null = null;
 				try {
 					const session = await auth.api.getSession({
-						headers: request.headers as any
+						headers: fromNodeHeaders(request.headers)
 					});
 					currentUserId = session?.user?.id || null;
 				} catch {

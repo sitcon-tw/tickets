@@ -2,8 +2,8 @@
 
 "use client";
 import { Environment, Lightformer, Text, useGLTF, useTexture } from "@react-three/drei";
-import { Canvas, extend, useFrame } from "@react-three/fiber";
-import { BallCollider, CuboidCollider, Physics, RigidBody, RigidBodyProps, useRopeJoint, useSphericalJoint } from "@react-three/rapier";
+import { Canvas, extend, useFrame, type ObjectMap, type ThreeEvent } from "@react-three/fiber";
+import { BallCollider, CuboidCollider, Physics, RigidBody, RigidBodyProps, useRopeJoint, useSphericalJoint, type RapierRigidBody } from "@react-three/rapier";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -50,6 +50,13 @@ const MeshPhysicalMaterial = "meshPhysicalMaterial";
 const MeshLineGeometryElement = "meshLineGeometry";
 const MeshLineMaterialElement = "meshLineMaterial";
 
+type LerpedRigidBody = RapierRigidBody & { lerped?: THREE.Vector3 };
+
+type CardGLTF = {
+	nodes: { card: THREE.Mesh; clip: THREE.Mesh; clamp: THREE.Mesh };
+	materials: { base: THREE.MeshStandardMaterial; metal: THREE.Material };
+};
+
 interface LanyardProps {
 	position?: [number, number, number];
 	gravity?: [number, number, number];
@@ -93,20 +100,19 @@ interface BandProps {
 }
 
 function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps) {
-	// Using "any" for refs since the exact types depend on Rapier's internals
-	const band = useRef<any>(null);
-	const fixed = useRef<any>(null);
-	const j1 = useRef<any>(null);
-	const j2 = useRef<any>(null);
-	const j3 = useRef<any>(null);
-	const card = useRef<any>(null);
+	const band = useRef<THREE.Mesh<MeshLineGeometry>>(null);
+	const fixed = useRef<RapierRigidBody>(null);
+	const j1 = useRef<LerpedRigidBody>(null);
+	const j2 = useRef<LerpedRigidBody>(null);
+	const j3 = useRef<RapierRigidBody>(null);
+	const card = useRef<RapierRigidBody>(null);
 
 	const vec = new THREE.Vector3();
 	const ang = new THREE.Vector3();
 	const rot = new THREE.Vector3();
 	const dir = new THREE.Vector3();
 
-	const { nodes, materials } = useGLTF(cardGLB) as any;
+	const { nodes, materials } = useGLTF(cardGLB) as ObjectMap & CardGLTF;
 	const texture = useTexture(lanyard);
 	const [curve] = useState(() => new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]));
 	const [dragged, drag] = useState<false | THREE.Vector3>(false);
@@ -141,20 +147,20 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 				z: vec.z - dragged.z
 			});
 		}
-		if (fixed.current) {
-			[j1, j2].forEach(ref => {
-				if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
-				const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
-				ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
+		if (fixed.current && j1.current && j2.current && j3.current && card.current && band.current) {
+			const [j1Lerped, j2Lerped] = [j1.current, j2.current].map(body => {
+				body.lerped ??= new THREE.Vector3().copy(body.translation());
+				const clampedDistance = Math.max(0.1, Math.min(1, body.lerped.distanceTo(body.translation())));
+				return body.lerped.lerp(body.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
 			});
 			curve.points[0].copy(j3.current.translation());
-			curve.points[1].copy(j2.current.lerped);
-			curve.points[2].copy(j1.current.lerped);
+			curve.points[1].copy(j2Lerped);
+			curve.points[2].copy(j1Lerped);
 			curve.points[3].copy(fixed.current.translation());
 			band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
 			ang.copy(card.current.angvel());
 			rot.copy(card.current.rotation());
-			card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
+			card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z }, false);
 		}
 	});
 
@@ -181,12 +187,13 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 						position={[0, -1.2, -0.05]}
 						onPointerOver={() => hover(true)}
 						onPointerOut={() => hover(false)}
-						onPointerUp={(e: any) => {
-							e.target.releasePointerCapture(e.pointerId);
+						onPointerUp={(e: ThreeEvent<PointerEvent>) => {
+							(e.target as Element).releasePointerCapture(e.pointerId);
 							drag(false);
 						}}
-						onPointerDown={(e: any) => {
-							e.target.setPointerCapture(e.pointerId);
+						onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+							if (!card.current) return;
+							(e.target as Element).setPointerCapture(e.pointerId);
 							drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
 						}}
 					>

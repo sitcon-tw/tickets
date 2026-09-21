@@ -15,7 +15,7 @@ export type EventWithStatus = Event & {
 	formattedEndDate: string;
 };
 
-interface EventColumnActions extends ColumnActions {
+interface EventColumnActions extends ColumnActions<Event> {
 	onEdit: (event: Event) => void;
 	onDelete: (eventId: string) => void;
 	t: {

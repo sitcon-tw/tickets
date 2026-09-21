@@ -31,6 +31,19 @@ export const FieldFilterSchema = z.object({
 export type FieldFilter = z.infer<typeof FieldFilterSchema>;
 
 /**
+ * Form field option: a plain string, a localized record, or a legacy `{ label, value }` object
+ */
+export const FormFieldOptionSchema = z.union([
+	z.string(),
+	LocalizedTextSchema,
+	z.object({
+		label: z.union([z.string(), LocalizedTextSchema]),
+		value: z.string().optional()
+	})
+]);
+export type FormFieldOption = z.infer<typeof FormFieldOptionSchema>;
+
+/**
  * Event form field entity
  */
 export const EventFormFieldSchema = z.object({
@@ -60,7 +73,7 @@ export const PublicEventFormFieldSchema = z.object({
 	description: LocalizedTextSchema.nullable().optional(),
 	type: FormFieldTypeSchema,
 	required: z.boolean(),
-	options: z.array(z.unknown()),
+	options: z.array(FormFieldOptionSchema),
 	validater: z.string().nullable().optional(),
 	placeholder: z.string().nullable().optional(),
 	order: z.number().int().min(0),

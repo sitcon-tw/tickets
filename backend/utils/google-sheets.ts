@@ -204,7 +204,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 				getLocalizedName(reg.ticket?.name || ""),
 				reg.ticket?.price || 0,
 				reg.status,
-				(reg as any).referrer?.email || reg.referredBy || "",
+				reg.referrer?.email || reg.referredBy || "",
 				new Date(reg.createdAt).toISOString()
 			];
 

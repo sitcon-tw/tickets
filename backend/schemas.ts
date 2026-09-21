@@ -29,6 +29,7 @@ import {
 	PublicTicketListItemSchema,
 	// Referral schemas
 	ReferralSchema,
+	ReferralTreeNodeSchema,
 	ReferralUsageSchema,
 	ReferralValidateRequestSchema,
 	ReferralValidationSchema,
@@ -670,16 +671,7 @@ export const ReferralLeaderboardResponseSchema = z.object({
 export const ReferralTreeResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string(),
-	data: z.lazy(() =>
-		z.object({
-			id: z.string(),
-			email: z.string(),
-			name: z.string(),
-			referralCode: z.string().optional(),
-			createdAt: z.coerce.date(),
-			children: z.array(z.unknown())
-		})
-	)
+	data: ReferralTreeNodeSchema
 });
 
 export const ReferralQualifiedResponseSchema = z.object({
@@ -1310,8 +1302,14 @@ export const TicketAnalyticsResponseSchema = z.object({
 			totalSold: z.number().int(),
 			totalRevenue: z.number(),
 			availableQuantity: z.number().int(),
-			salesByStatus: z.record(z.string(), z.unknown()),
-			dailySales: z.array(z.unknown())
+			salesByStatus: z.record(z.string(), z.number().int()),
+			dailySales: z.array(
+				z.object({
+					date: z.date(),
+					count: z.number().int(),
+					confirmed_count: z.number().int()
+				})
+			)
 		})
 		.optional()
 });
@@ -1368,7 +1366,7 @@ export const RegistrationExportQuerySchema = z.object({
 export const RegistrationDeleteResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
-	data: z.record(z.string(), z.unknown()).optional()
+	data: z.object({ id: z.string(), email: z.string() }).optional()
 });
 
 export const GoogleSheetsServiceAccountResponseSchema = z.object({
@@ -1505,7 +1503,7 @@ export const EventDashboardResponseSchema = z.object({
 			tickets: z.array(
 				z.object({
 					id: z.string(),
-					name: z.record(z.string(), z.unknown()),
+					name: LocalizedTextSchema,
 					price: z.number().int(),
 					quantity: z.number().int(),
 					soldCount: z.number().int(),

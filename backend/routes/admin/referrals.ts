@@ -1,8 +1,10 @@
 import { SpanStatusCode } from "@opentelemetry/api";
+import type { ReferralTreeNode } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireAdmin } from "#middleware/auth";
 import { adminReferralSchemas } from "#schemas";
@@ -220,7 +222,15 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				if (registration.referral?.id) span.setAttribute("referral.id", registration.referral.id);
 				span.addEvent("referrals.building_tree");
 
-				const buildTree = (reg: any): any => ({
+				type TreeSource = {
+					id: string;
+					email: string;
+					createdAt: Date;
+					user?: { name: string | null } | null;
+					referral?: { code: string } | null;
+					referrals?: TreeSource[];
+				};
+				const buildTree = (reg: TreeSource): ReferralTreeNode => ({
 					id: reg.id,
 					email: reg.email,
 					name: reg.user?.name || "Unknown",
@@ -444,7 +454,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			try {
 				const { startDate, endDate } = request.query;
 
-				const dateFilter: any = {};
+				const dateFilter: Prisma.DateTimeFilter = {};
 				if (startDate) dateFilter.gte = new Date(startDate);
 				if (endDate) dateFilter.lte = new Date(endDate);
 

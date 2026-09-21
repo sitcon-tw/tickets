@@ -19,7 +19,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { getLocalizedText } from "@/lib/utils/localization";
+import { getLocalizedText, normalizeFormFieldOption } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
@@ -542,7 +542,8 @@ function MyRegistrationPageContent() {
 								}
 							}
 
-							let description: LocalizedText | string | undefined = field.description as any;
+							// Legacy data may still store the description as a (JSON) string
+							let description = (field.description ?? undefined) as LocalizedText | string | undefined;
 							const originalStr = typeof description === "string" ? description : "";
 							if (typeof description === "string" && description.startsWith("{")) {
 								try {
@@ -554,20 +555,7 @@ function MyRegistrationPageContent() {
 								description = { en: description };
 							}
 
-							const options = (field.options || []).map((opt: unknown): Record<string, string> => {
-								if (typeof opt === "object" && opt !== null && "label" in opt) {
-									const optWithLabel = opt;
-									const labelValue =
-										typeof optWithLabel.label === "object" && optWithLabel.label !== null && "en" in optWithLabel.label
-											? (optWithLabel.label as { en?: string }).en || Object.values(optWithLabel.label as Record<string, unknown>)[0]
-											: optWithLabel.label;
-									return { en: String(labelValue) };
-								}
-								if (typeof opt === "object" && opt !== null) {
-									return opt as Record<string, string>;
-								}
-								return { en: String(opt) };
-							});
+							const options = (field.options || []).map(normalizeFormFieldOption);
 
 							return {
 								...field,

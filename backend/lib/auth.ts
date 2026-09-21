@@ -42,7 +42,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 		}),
 		magicLink({
 			expiresIn: MAGIC_LINK_EXPIRY_SECONDS,
-			sendMagicLink: async ({ email, token, url }, request?) => {
+			sendMagicLink: async ({ email, token, url }, ctx?) => {
 				const maskedEmail = email.length > 4 ? `${email.substring(0, 2)}***@${email.split("@")[1] || "***"}` : "***";
 				const span = tracer.startSpan("auth.send_magic_link", {
 					attributes: {
@@ -56,16 +56,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 					const normalizedEmail = email.toLowerCase();
 
 					let ipAddress: string | null = null;
-					if (request?.headers) {
-						const headers = request.headers as unknown as Record<string, string | string[] | undefined>;
-						const forwardedFor = headers["x-forwarded-for"];
-						const realIp = headers["x-real-ip"];
-						const requestWithIp = request as unknown as Record<string, unknown>;
-						ipAddress =
-							(typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined) ||
-							(typeof realIp === "string" ? realIp : undefined) ||
-							(requestWithIp.ip as string | undefined) ||
-							null;
+					const headers = ctx?.headers ?? ctx?.request?.headers;
+					if (headers) {
+						ipAddress = headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || null;
 
 						if (ipAddress) {
 							span.setAttribute("auth.ip.masked", ipAddress.substring(0, 8) + "***");

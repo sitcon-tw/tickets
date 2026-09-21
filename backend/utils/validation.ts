@@ -1,3 +1,4 @@
+import type { EventFormFields, Prisma } from "#prisma/generated/prisma/client";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
 import { toText } from "./text";
@@ -29,6 +30,27 @@ export interface FormField {
 	};
 	enableOther?: boolean;
 }
+
+const localizedText = (json: Prisma.JsonValue): string => {
+	if (typeof json === "string") return json;
+	if (json && typeof json === "object" && !Array.isArray(json)) {
+		return toText(json["zh-Hant"] ?? json["en"] ?? Object.values(json)[0] ?? "");
+	}
+	return "";
+};
+
+/** Map a Prisma form field row (with untyped JSON columns) to the shape used by validation. */
+export const toFormField = (row: EventFormFields): FormField => ({
+	id: row.id,
+	type: row.type as FormField["type"],
+	name: row.name as FormField["name"],
+	description: localizedText(row.description),
+	required: row.required,
+	validater: row.validater ?? undefined,
+	values: (row.values ?? undefined) as FormField["values"],
+	filters: (row.filters ?? undefined) as FormField["filters"],
+	enableOther: row.enableOther
+});
 
 export interface FilterCondition {
 	type: "ticket" | "field" | "time";

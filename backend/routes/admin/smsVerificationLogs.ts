@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireAdmin } from "#middleware/auth";
 import { smsVerificationLogsSchemas } from "#schemas";
@@ -38,7 +39,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 			});
 
 			try {
-				const where: any = {};
+				const where: Prisma.SmsVerificationWhereInput = {};
 				if (userId) where.userId = userId;
 				if (phoneNumber) where.phoneNumber = { contains: phoneNumber };
 				if (typeof verified === "boolean") where.verified = verified;

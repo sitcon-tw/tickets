@@ -95,21 +95,29 @@ export type ReferralLeaderboard = z.infer<typeof ReferralLeaderboardSchema>;
 /**
  * Referral tree
  */
+export interface ReferralTreeChild {
+	id: string;
+	email: string;
+	status: string;
+	registeredAt: Date;
+	children?: ReferralTreeChild[];
+}
+const ReferralTreeChildSchema: z.ZodType<ReferralTreeChild> = z.lazy(() =>
+	z.object({
+		id: z.string(),
+		email: z.email(),
+		status: z.string(),
+		registeredAt: z.coerce.date(),
+		children: z.array(ReferralTreeChildSchema).optional()
+	})
+);
 export const ReferralTreeSchema = z.object({
 	root: z.object({
 		id: z.string(),
 		email: z.email(),
 		status: z.string()
 	}),
-	children: z.array(
-		z.object({
-			id: z.string(),
-			email: z.email(),
-			status: z.string(),
-			registeredAt: z.coerce.date(),
-			children: z.array(z.unknown()).optional()
-		})
-	)
+	children: z.array(ReferralTreeChildSchema)
 });
 export type ReferralTree = z.infer<typeof ReferralTreeSchema>;
 
@@ -144,21 +152,15 @@ export type DrawResult = z.infer<typeof DrawResultSchema>;
 /**
  * Referral tree node (recursive structure)
  */
-export const ReferralTreeNodeSchema: z.ZodType<{
+export interface ReferralTreeNode {
 	id: string;
 	email: string;
 	name: string;
 	referralCode?: string;
 	createdAt: Date;
-	children: Array<{
-		id: string;
-		email: string;
-		name: string;
-		referralCode?: string;
-		createdAt: Date;
-		children: unknown[];
-	}>;
-}> = z.lazy(() =>
+	children: ReferralTreeNode[];
+}
+export const ReferralTreeNodeSchema: z.ZodType<ReferralTreeNode> = z.lazy(() =>
 	z.object({
 		id: z.string(),
 		email: z.string(),
@@ -168,7 +170,6 @@ export const ReferralTreeNodeSchema: z.ZodType<{
 		children: z.array(ReferralTreeNodeSchema)
 	})
 );
-export type ReferralTreeNode = z.infer<typeof ReferralTreeNodeSchema>;
 
 /**
  * Prisma date filter type

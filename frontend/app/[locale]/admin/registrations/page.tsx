@@ -25,10 +25,13 @@ import { createRegistrationsColumns, type RegistrationDisplay } from "./columns"
 
 type SortField = "id" | "email" | "status" | "createdAt";
 type SortDirection = "asc" | "desc";
+/** Admin list rows also include the referrer's email */
+type AdminRegistration = Registration & { referrer?: { email: string } | null };
+
 type RegistrationStatus = "pending" | "confirmed" | "cancelled";
 
 type RegistrationsState = {
-	registrations: Registration[];
+	registrations: AdminRegistration[];
 	isLoading: boolean;
 	searchTerm: string;
 	statusFilter: string;
@@ -52,7 +55,7 @@ type RegistrationsAction =
 	| { type: "patch"; patch: Partial<RegistrationsState> }
 	| { type: "loadStarted" }
 	| { type: "loadFinished" }
-	| { type: "registrationsLoaded"; registrations: Registration[]; ticketHashes: { [key: string]: string } }
+	| { type: "registrationsLoaded"; registrations: AdminRegistration[]; ticketHashes: { [key: string]: string } }
 	| { type: "openDetail"; registration: Registration }
 	| { type: "closeDetail" }
 	| { type: "toggleEdit" }
@@ -652,7 +655,7 @@ function useRegistrationsPage() {
 			displayId: r.id.slice(0, 8) + "...",
 			displayTicket: getLocalizedText(r.ticket?.name, locale) || r.ticketId || "",
 			displayEvent: getLocalizedText(r.event?.name, locale) || r.eventId || "",
-			displayReferredBy: (r as any).referrer?.email || (r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-"),
+			displayReferredBy: r.referrer?.email || (r.referredBy ? r.referredBy.slice(0, 8) + "..." : "-"),
 			formattedCreatedAt: r.createdAt ? formatDateTime(r.createdAt) : "",
 			formattedUpdatedAt: r.updatedAt ? formatDateTime(r.updatedAt) : "",
 			statusClass: r.status === "confirmed" ? "active" : r.status === "pending" ? "pending" : r.status === "cancelled" ? "ended" : ""

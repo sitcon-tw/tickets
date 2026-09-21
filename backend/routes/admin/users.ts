@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireAdmin } from "#middleware/auth";
 import { userSchemas } from "#schemas";
@@ -32,7 +33,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 			try {
 				const { role, isActive } = request.query;
 
-				const where: any = {};
+				const where: Prisma.UserWhereInput = {};
 				if (role) where.role = role;
 				if (isActive !== undefined) where.isActive = isActive;
 
@@ -64,7 +65,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt,
@@ -157,7 +158,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const userWithParsedPermissions = {
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt
@@ -241,9 +242,10 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					span.setAttribute("user.role.new", updateData.role);
 				}
 
-				const updatePayload: any = {
-					...updateData,
-					...(updateData.permissions && { permissions: JSON.stringify(updateData.permissions) }),
+				const { permissions, ...restUpdateData } = updateData;
+				const updatePayload: Prisma.UserUpdateInput = {
+					...restUpdateData,
+					...(permissions && { permissions: JSON.stringify(permissions) }),
 					updatedAt: new Date()
 				};
 
@@ -271,7 +273,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const userWithParsedPermissions = {
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse(user.permissions, [], "user permissions"),
+					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt

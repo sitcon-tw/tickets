@@ -4,8 +4,10 @@
  */
 
 import prisma from "#config/database";
+import type { Prisma, WebhookDelivery as WebhookDeliveryRecord } from "#prisma/generated/prisma/client";
 import { logger } from "#utils/logger";
 import type {
+	LocalizedText,
 	WebhookAttendee,
 	WebhookEventInfo,
 	WebhookEventType,
@@ -138,26 +140,26 @@ export async function testWebhookEndpoint(url: string, authHeaderName?: string, 
  * Build webhook notification for registration confirmed
  */
 export function buildRegistrationConfirmedNotification(
-	event: { name: any; slug: string | null },
+	event: { name: Prisma.JsonValue; slug: string | null },
 	registration: { id: string; status: string; createdAt: Date; email: string; formData: string | null },
-	ticket: { id: string; name: any; price: number }
+	ticket: { id: string; name: Prisma.JsonValue; price: number }
 ): WebhookRegistrationConfirmedNotification {
-	const formData = registration.formData ? JSON.parse(registration.formData) : {};
+	const formData: Record<string, unknown> = registration.formData ? JSON.parse(registration.formData) : {};
 
 	const attendee: WebhookAttendee = {
-		name: formData.name || undefined,
+		name: typeof formData.name === "string" && formData.name ? formData.name : undefined,
 		email: registration.email
 	};
 
 	const ticketInfo: WebhookTicketInfo = {
 		price: ticket.price,
-		name: ticket.name,
+		name: ticket.name as LocalizedText,
 		id: ticket.id,
 		attendee
 	};
 
 	const eventInfo: WebhookEventInfo = {
-		name: event.name,
+		name: event.name as LocalizedText,
 		slug: event.slug
 	};
 
@@ -183,11 +185,11 @@ export function buildRegistrationConfirmedNotification(
  * Build webhook notification for registration cancelled
  */
 export function buildRegistrationCancelledNotification(
-	event: { name: any; slug: string | null },
+	event: { name: Prisma.JsonValue; slug: string | null },
 	registration: { id: string; createdAt: Date; updatedAt: Date }
 ): WebhookRegistrationCancelledNotification {
 	const eventInfo: WebhookEventInfo = {
-		name: event.name,
+		name: event.name as LocalizedText,
 		slug: event.slug
 	};
 
@@ -481,7 +483,7 @@ export async function processWebhookRetries(): Promise<void> {
 /**
  * Get failed webhook deliveries for an event
  */
-export async function getFailedDeliveries(eventId: string, page: number = 1, limit: number = 20): Promise<{ deliveries: any[]; total: number }> {
+export async function getFailedDeliveries(eventId: string, page: number = 1, limit: number = 20): Promise<{ deliveries: WebhookDeliveryRecord[]; total: number }> {
 	const webhook = await prisma.webhookEndpoint.findUnique({
 		where: { eventId }
 	});

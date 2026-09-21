@@ -3,6 +3,7 @@ import { LocalizedTextSchema, type Event } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
@@ -227,7 +228,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				}
 
-				const updatePayload: any = {
+				const updatePayload: Prisma.EventUpdateInput = {
 					...updateData,
 					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
 					...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
@@ -357,7 +358,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 			try {
 				const { isActive } = request.query;
 
-				const whereClause: any = {};
+				const whereClause: Prisma.EventWhereInput = {};
 				if (isActive !== undefined) {
 					whereClause.isActive = isActive;
 				}

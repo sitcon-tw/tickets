@@ -1,10 +1,10 @@
 "use client";
 
-import { ColumnFiltersState, ColumnVisibilityState, RowData, RowSelectionState, SortingState, flexRender, useTable } from "@tanstack/react-table";
+import { ColumnFiltersState, ColumnVisibilityState, Row, RowData, RowSelectionState, SortingState, flexRender, useTable } from "@tanstack/react-table";
 import * as React from "react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { dataTableFeatures } from "@/lib/data-table-features";
+import { dataTableFeatures, type DataTableFeatures } from "@/lib/data-table-features";
 import { DataTableProps } from "@/lib/types/data-table";
 
 import { useSortable } from "@dnd-kit/sortable";
@@ -12,12 +12,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination";
 
-interface SortableRowProps {
-	row: any;
+type SortableRowData = RowData & { id: string };
+
+interface SortableRowProps<TData extends SortableRowData> {
+	row: Row<DataTableFeatures, TData>;
 	children: React.ReactNode;
 }
 
-function SortableRow({ row, children }: SortableRowProps) {
+function SortableRow<TData extends SortableRowData>({ row, children }: SortableRowProps<TData>) {
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: row.original.id
 	});
@@ -40,7 +42,7 @@ function SortableRow({ row, children }: SortableRowProps) {
 	);
 }
 
-export function SortableDataTable<TData extends RowData>({ columns, data }: DataTableProps<TData>) {
+export function SortableDataTable<TData extends SortableRowData>({ columns, data }: DataTableProps<TData>) {
 	const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 	const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({});
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);

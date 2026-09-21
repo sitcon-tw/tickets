@@ -4,6 +4,7 @@ import prisma from "../config/database";
 import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
 import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
+import { fromNodeHeaders } from "better-auth/node";
 
 declare module "fastify" {
 	interface FastifyRequest {
@@ -16,7 +17,7 @@ declare module "fastify" {
 async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
 	if (!request.user || !request.session) {
 		const session = await auth.api.getSession({
-			headers: request.headers as unknown as Headers
+			headers: fromNodeHeaders(request.headers)
 		});
 
 		if (!session) {
@@ -64,7 +65,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	try {
 		const session = await auth.api.getSession({
-			headers: request.headers as unknown as Headers
+			headers: fromNodeHeaders(request.headers)
 		});
 
 		if (!session) {

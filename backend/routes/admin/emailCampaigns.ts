@@ -53,8 +53,8 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				const total = await prisma.emailCampaign.count();
 
 				const pagination = {
-					page: parseInt(page as any),
-					limit: parseInt(limit as any),
+					page,
+					limit,
 					total,
 					totalPages: Math.ceil(total / limit),
 					hasNext: page < Math.ceil(total / limit),

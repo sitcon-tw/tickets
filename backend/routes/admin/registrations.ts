@@ -3,16 +3,31 @@
  */
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
+import { toText } from "#utils/text";
 import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/registrations" });
+
+type ExportFieldOption = string | Record<string, string>;
+type ExportFieldInfo = { name: string; type: string; values: Prisma.JsonValue };
+type ExportRegistration = {
+	id: string;
+	email: string;
+	status: string;
+	createdAt: Date;
+	formData: string | null;
+	event: { name: Prisma.JsonValue } | null;
+	ticket: { name: Prisma.JsonValue; price: number } | null;
+	referralUsage: { referral: { registration: { email: string } } }[];
+};
 
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -41,7 +56,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			try {
-				const where: any = {};
+				const where: Prisma.RegistrationWhereInput = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 				if (userId) where.userId = userId;
@@ -125,7 +140,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						ticketId: reg.ticketId,
 						email: reg.email,
 						status,
-						referredBy: (reg as any).referralUsage?.[0]?.referral?.registration?.email ?? null,
+						referredBy: reg.referralUsage[0]?.referral?.registration?.email ?? null,
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
@@ -325,10 +340,10 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				}
 
 				// Convert formData object to JSON string if present
-				const dataToUpdate: Record<string, any> = { ...updateData };
-				if (dataToUpdate.formData && typeof dataToUpdate.formData === "object") {
-					dataToUpdate.formData = JSON.stringify(dataToUpdate.formData);
-				}
+				const dataToUpdate: Prisma.RegistrationUpdateInput = {
+					...(updateData.status && { status: updateData.status }),
+					...(updateData.formData && { formData: JSON.stringify(updateData.formData) })
+				};
 
 				if (updateData.status) {
 					span.setAttribute("registration.status.new", updateData.status);
@@ -435,7 +450,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			});
 
 			try {
-				const where: any = {};
+				const where: Prisma.RegistrationWhereInput = {};
 				if (eventId) where.eventId = eventId;
 				if (status) where.status = status;
 
@@ -485,7 +500,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				});
 
 				// Create a map from field ID to field info (name, type, values)
-				const fieldMap = new Map<string, { name: string; type: string; values: any }>();
+				const fieldMap = new Map<string, ExportFieldInfo>();
 				for (const field of formFields) {
 					let localizedName = field.id;
 					if (field.name && typeof field.name === "object" && !Array.isArray(field.name)) {
@@ -529,14 +544,14 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		}
 	);
 
-	function generateCSV(registrations: any, fieldMap: Map<string, { name: string; type: string; values: any }>) {
-		const parsedRegistrations = registrations.map((reg: any) => ({
+	function generateCSV(registrations: ExportRegistration[], fieldMap: Map<string, ExportFieldInfo>) {
+		const parsedRegistrations = registrations.map(reg => ({
 			...reg,
-			formData: reg.formData ? JSON.parse(reg.formData) : {}
+			formData: (reg.formData ? JSON.parse(reg.formData) : {}) as Record<string, unknown>
 		}));
 
 		const formFieldKeys = new Set<string>();
-		parsedRegistrations.forEach((reg: any) => {
+		parsedRegistrations.forEach(reg => {
 			Object.keys(reg.formData).forEach(key => formFieldKeys.add(key));
 		});
 
@@ -546,12 +561,21 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		const formDataHeaders = sortedFormFields.map(key => `Form: ${fieldMap.get(key)?.name || key}`);
 		const headers = [...baseHeaders, ...formDataHeaders];
 
-		const getLocalizedName = (nameObj: any) => {
-			if (!nameObj || typeof nameObj !== "object") return "";
+		const getLocalizedName = (json: Prisma.JsonValue | undefined): string => {
+			if (!json || typeof json !== "object" || Array.isArray(json)) return "";
+			const nameObj = json as Record<string, string>;
 			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
-		const getLocalizedOptionValue = (fieldId: string, value: any, locale: string = "zh-Hant"): string => {
+		const parseOptions = (values: Prisma.JsonValue): ExportFieldOption[] => (typeof values === "string" ? JSON.parse(values) : values) as ExportFieldOption[];
+		const matchesOption = (opt: ExportFieldOption, v: unknown): boolean => {
+			if (typeof opt === "object" && opt !== null) {
+				return Object.values(opt).some(optValue => optValue === v);
+			}
+			return opt === v;
+		};
+
+		const getLocalizedOptionValue = (fieldId: string, value: unknown, locale: string = "zh-Hant"): string => {
 			const field = fieldMap.get(fieldId);
 			if (!field) return String(value);
 
@@ -559,14 +583,9 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			if (field.type === "checkbox" && Array.isArray(value)) {
 				if (field.values) {
 					try {
-						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
+						const options = parseOptions(field.values);
 						const localizedValues = value.map(v => {
-							const option = options.find((opt: string | Record<string, string>) => {
-								if (typeof opt === "object" && opt !== null) {
-									return Object.values(opt).includes(v) || ("value" in opt && opt.value === v);
-								}
-								return opt === v;
-							});
+							const option = options.find(opt => matchesOption(opt, v));
 
 							if (option && typeof option === "object") {
 								return option[locale] || option["en"] || Object.values(option)[0] || v;
@@ -584,13 +603,8 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 			// Handle select/radio (single selection)
 			if ((field.type === "select" || field.type === "radio") && field.values) {
 				try {
-					const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
-					const option = options.find((opt: string | Record<string, string>) => {
-						if (typeof opt === "object" && opt !== null) {
-							return Object.values(opt).includes(value) || ("value" in opt && opt.value === value);
-						}
-						return opt === value;
-					});
+					const options = parseOptions(field.values);
+					const option = options.find(opt => matchesOption(opt, value));
 
 					if (option && typeof option === "object") {
 						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
@@ -602,10 +616,10 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 			if (value === null || value === undefined) return "";
 			if (typeof value === "object") return JSON.stringify(value);
-			return String(value);
+			return toText(value);
 		};
 
-		const rows = parsedRegistrations.map((reg: any) => {
+		const rows = parsedRegistrations.map(reg => {
 			const baseValues = [
 				reg.id,
 				reg.email,
@@ -613,7 +627,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				getLocalizedName(reg.ticket?.name),
 				reg.ticket?.price || 0,
 				reg.status,
-				reg.referralUsage?.[0]?.referral?.registration?.email || "",
+				reg.referralUsage[0]?.referral.registration.email || "",
 				new Date(reg.createdAt).toISOString()
 			];
 
@@ -623,7 +637,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		});
 
 		const csvRows = [headers, ...rows];
-		return csvRows.map((row: any) => row.map((field: any) => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
 
 	// Delete registration and personal data

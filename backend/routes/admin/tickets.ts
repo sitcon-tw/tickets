@@ -1,4 +1,5 @@
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaTicketId } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
@@ -305,7 +306,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
-				const updatePayload: any = {
+				const updatePayload: Prisma.TicketUpdateInput = {
 					...updateData,
 					...(updateData.saleStart && { saleStart: new Date(updateData.saleStart) }),
 					...(updateData.saleEnd && { saleEnd: new Date(updateData.saleEnd) }),
@@ -441,7 +442,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			});
 
 			try {
-				const where: any = {};
+				const where: Prisma.TicketWhereInput = {};
 				if (eventId) where.eventId = eventId;
 				if (isActive !== undefined) where.isActive = isActive;
 
@@ -552,7 +553,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						where: { ticketId: id },
 						_count: { id: true }
 					}),
-					prisma.$queryRaw`
+					prisma.$queryRaw<{ date: Date; count: bigint; confirmed_count: bigint }[]>`
 						SELECT
 							DATE(createdAt) as date,
 							COUNT(*) as count,
@@ -578,11 +579,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					totalSold,
 					totalRevenue,
 					availableQuantity,
-					salesByStatus: salesByStatus.reduce((acc: any, item) => {
-						acc[item.status] = item._count.id;
-						return acc;
-					}, {}),
-					dailySales: dailySales as unknown[]
+					salesByStatus: Object.fromEntries(salesByStatus.map(item => [item.status, item._count.id])),
+					dailySales: dailySales.map(day => ({ date: day.date, count: Number(day.count), confirmed_count: Number(day.confirmed_count) }))
 				};
 
 				span.setStatus({ code: SpanStatusCode.OK });

@@ -3,13 +3,14 @@
  */
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess } from "#middleware/auth";
 import { webhookSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { getFailedDeliveries, retryFailedDelivery, testWebhookEndpoint } from "#utils/webhook";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { WebhookEventTypeSchema } from "@sitcontix/types";
+import { WebhookDeliveryStatusSchema, WebhookEventTypeSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod/v4";
@@ -241,7 +242,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				// Build update data
-				const updateData: Record<string, any> = {};
+				const updateData: Prisma.WebhookEndpointUpdateInput = {};
 				if (url !== undefined) updateData.url = url;
 				if (authHeaderName !== undefined) updateData.authHeaderName = authHeaderName;
 				if (authHeaderValue !== undefined) updateData.authHeaderValue = authHeaderValue;
@@ -434,6 +435,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 				const serializedDeliveries = deliveries.map(d => ({
 					...d,
 					eventType: WebhookEventTypeSchema.parse(d.eventType),
+					status: WebhookDeliveryStatusSchema.parse(d.status),
 					createdAt: d.createdAt,
 					updatedAt: d.updatedAt,
 					nextRetryAt: d.nextRetryAt ?? null

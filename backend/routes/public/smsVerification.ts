@@ -11,6 +11,7 @@ import { sanitizeText } from "#utils/sanitize";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { fromNodeHeaders } from "better-auth/node";
 
 const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -29,7 +30,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as unknown as Headers
+					headers: fromNodeHeaders(request.headers)
 				});
 
 				if (!session?.user) {
@@ -283,7 +284,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as unknown as Headers
+					headers: fromNodeHeaders(request.headers)
 				});
 
 				if (!session?.user) {
@@ -408,7 +409,7 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 
 			try {
 				const session = await auth.api.getSession({
-					headers: request.headers as unknown as Headers
+					headers: fromNodeHeaders(request.headers)
 				});
 
 				if (!session?.user) {
