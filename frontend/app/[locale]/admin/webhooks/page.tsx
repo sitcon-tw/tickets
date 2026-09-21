@@ -622,7 +622,19 @@ export default function WebhooksPage() {
 
 			let response;
 			if (webhook) {
-				response = await adminWebhooksAPI.update(currentEventId, data);
+				// The stored auth header value is masked, so auth headers are only sent when a new value is entered,
+				// or cleared (both null) when the name is removed
+				const authHeaderChanged = formAuthHeaderValue !== "" || formAuthHeaderName !== (webhook.authHeaderName ?? "");
+				if (authHeaderChanged && (formAuthHeaderName === "") !== (formAuthHeaderValue === "")) {
+					showAlert("Both auth header name and value must be provided together", "error");
+					return;
+				}
+				const authHeaders = !authHeaderChanged
+					? {}
+					: formAuthHeaderName === "" && formAuthHeaderValue === ""
+						? { authHeaderName: null, authHeaderValue: null }
+						: { authHeaderName: formAuthHeaderName, authHeaderValue: formAuthHeaderValue };
+				response = await adminWebhooksAPI.update(currentEventId, { url: data.url, eventTypes: data.eventTypes, ...authHeaders });
 			} else {
 				response = await adminWebhooksAPI.create(currentEventId, data);
 			}
