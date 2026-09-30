@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { eventsAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, referralsAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
 import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields } from "@/lib/utils/formFields";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -153,6 +153,16 @@ const formPageTranslations = {
 		"zh-Hans": "推荐码（选填）",
 		en: "Referral Code (Optional)"
 	},
+	referredBy: {
+		"zh-Hant": "推薦人：",
+		"zh-Hans": "推荐人：",
+		en: "Referred by: "
+	},
+	referralCodeInvalid: {
+		"zh-Hant": "推薦碼無效",
+		"zh-Hans": "推荐码无效",
+		en: "Invalid referral code"
+	},
 	submitRegistration: {
 		"zh-Hant": "提交報名",
 		"zh-Hans": "提交报名",
@@ -227,6 +237,8 @@ type RegistrationFormViewProps = {
 	fieldErrors: Record<string, string>;
 	termsError: string | undefined;
 	referralCode: string;
+	referrerName: string | null;
+	referralInvalid: boolean;
 	agreeToTerms: boolean;
 	isSubmitting: boolean;
 	onBack: () => void;
@@ -248,6 +260,8 @@ function RegistrationFormView({
 	fieldErrors,
 	termsError,
 	referralCode,
+	referrerName,
+	referralInvalid,
 	agreeToTerms,
 	isSubmitting,
 	onBack,
@@ -320,6 +334,8 @@ function RegistrationFormView({
 							value={referralCode}
 							required={false}
 							disabled={isSubmitting}
+							description={referrerName ? `${t.referredBy}**${referrerName}**` : undefined}
+							error={referralInvalid ? t.referralCodeInvalid : undefined}
 							onChange={e => dispatchAutosavedForm({ type: "setReferralCode", referralCode: e.target.value })}
 							placeholder={t.referralCode}
 						/>
@@ -380,6 +396,7 @@ export default function FormPage() {
 	const [termsError, setTermsError] = useState<string | undefined>();
 	// Time conditions are evaluated against this clock; it is refreshed periodically and on submit.
 	const [now, setNow] = useState(() => new Date());
+	const [referral, setReferral] = useState<{ code: string; referrerName: string | null; isValid: boolean } | null>(null);
 	const eventIdRef = useRef<string | null>(null);
 	const invitationCodeRef = useRef("");
 	const autosaveRestoredRef = useRef(false);
@@ -576,6 +593,30 @@ export default function FormPage() {
 		void initForm();
 	}, [eventSlug, t.noTicketAlert, t.eventNotFound, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut]);
 
+	// Look up who the code belongs to so the form can show the referrer next to it.
+	useEffect(() => {
+		const code = referralCode.trim();
+		const eventId = eventIdRef.current;
+		if (loading || !code || !eventId) return;
+
+		let cancelled = false;
+		const timer = setTimeout(async () => {
+			try {
+				const result = await referralsAPI.validate({ code, eventId });
+				if (cancelled) return;
+				const data = result.success ? result.data : null;
+				setReferral({ code, isValid: !!data?.isValid, referrerName: data?.isValid ? (data.referrerName ?? null) : null });
+			} catch {
+				if (!cancelled) setReferral(null);
+			}
+		}, 400);
+
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
+		};
+	}, [referralCode, loading]);
+
 	useEffect(() => {
 		if (!autosaveKey || error || !autosaveRestoredRef.current) return;
 
@@ -627,6 +668,8 @@ export default function FormPage() {
 			fieldErrors={fieldErrors}
 			termsError={termsError}
 			referralCode={referralCode}
+			referrerName={referral?.code === referralCode.trim() ? referral.referrerName : null}
+			referralInvalid={referral?.code === referralCode.trim() && !referral.isValid}
 			agreeToTerms={agreeToTerms}
 			isSubmitting={isSubmitting}
 			onBack={() => router.push(eventPath)}
