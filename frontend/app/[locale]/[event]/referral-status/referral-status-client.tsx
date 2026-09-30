@@ -5,20 +5,20 @@ import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { getLocalizedText } from "@/lib/utils/localization";
 import type { PublicReferralRankingData, RegistrationStats } from "@sitcontix/types";
-import { Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Ticket, Trophy, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 
-function getStatusColor(status: string) {
+function getStatusClass(status: string) {
 	switch (status) {
 		case "confirmed":
-			return "text-green-500";
+			return "active";
 		case "pending":
-			return "text-yellow-500";
+			return "pending";
 		case "cancelled":
-			return "text-red-500";
+			return "ended";
 		default:
-			return "text-gray-500";
+			return "";
 	}
 }
 
@@ -156,76 +156,102 @@ export default function ReferralStatus({ initialStats, initialRankingData }: Ref
 		);
 	}
 
+	const total = stats?.totalReferrals ?? 0;
+	const successful = stats?.successfulReferrals ?? 0;
+	const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
+	const rank = rankingData?.currentUserRank;
+	const referralList = stats?.referralList ?? [];
+
 	return (
-		<>
-			<main className="pt-20 pb-10 px-4 mt-32">
-				<div className="max-w-6xl mx-auto">
-					<h1 className="text-4xl font-bold mb-8">{t.title}</h1>
+		<main className="mx-auto mt-32 w-full max-w-4xl px-4 pt-20 pb-16">
+			<Link href={`/${eventSlug}/success`} className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+				<ArrowLeft size={16} />
+				{t.backToSuccess}
+			</Link>
+			<h1 className="mb-8 text-3xl font-bold md:text-4xl">{t.title}</h1>
 
-					{/* Stats Cards */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-						<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
-							<div className="text-gray-400 dark:text-gray-500 mb-2">{t.totalReferrals}</div>
-							<div className="text-4xl font-bold">{stats?.totalReferrals || 0}</div>
+			{/* Summary ticket: stats on the left, leaderboard entry as the tear-off stub */}
+			<div className="ticket ticket-static mb-10 w-full">
+				<div className="ticket-body">
+					<div className="ticket-main p-6!">
+						<div className="grid grid-cols-2 gap-6">
+							<div>
+								<div className="mb-1 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+									<Users size={14} />
+									{t.totalReferrals}
+								</div>
+								<div className="text-4xl font-bold tabular-nums">{total}</div>
+							</div>
+							<div>
+								<div className="mb-1 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+									<BadgeCheck size={14} />
+									{t.successfulReferrals}
+								</div>
+								<div className="text-4xl font-bold text-green-600 tabular-nums dark:text-green-400">{successful}</div>
+							</div>
 						</div>
-						<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
-							<div className="text-gray-400 dark:text-gray-500 mb-2">{t.successfulReferrals}</div>
-							<div className="text-4xl font-bold text-green-500">{stats?.successfulReferrals || 0}</div>
+						<div className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700" role="progressbar" aria-valuenow={successRate} aria-valuemin={0} aria-valuemax={100}>
+							<div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: `${successRate}%` }} />
 						</div>
-						{/* Current Rank Card - Entry to Ranking Page */}
-						<Link
-							href={`/${eventSlug}/referral-ranking`}
-							className="border-2 border-yellow-500 dark:border-yellow-400 rounded-lg p-6 bg-yellow-50 dark:bg-yellow-900/20 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
-						>
-							<div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-2">
-								<Trophy className="w-5 h-5" />
-								<span>{t.yourRank}</span>
-							</div>
-							<div className="text-4xl font-bold text-yellow-700 dark:text-yellow-300">
-								{rankingData?.currentUserRank !== null && rankingData?.currentUserRank !== undefined ? `#${rankingData.currentUserRank}` : t.notRanked}
-							</div>
-							<div className="mt-2 text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-1">{t.viewLeaderboard} &rarr;</div>
-						</Link>
 					</div>
-
-					{/* Referral List */}
-					<div className="border-2 border-gray-500 dark:border-gray-600 rounded-lg p-6">
-						<h2 className="text-2xl font-bold mb-4">{t.referralList}</h2>
-
-						{!stats?.referralList || stats.referralList.length === 0 ? (
-							<div className="text-center text-gray-400 dark:text-gray-500 py-8">{t.noReferrals}</div>
-						) : (
-							<div className="overflow-x-auto">
-								<table className="w-full">
-									<thead>
-										<tr className="border-b border-gray-700 dark:border-gray-800">
-											<th className="text-left py-3 px-2">{t.email}</th>
-											<th className="text-left py-3 px-2">{t.ticketName}</th>
-											<th className="text-left py-3 px-2">{t.status}</th>
-											<th className="text-left py-3 px-2">{t.registeredAt}</th>
-										</tr>
-									</thead>
-									<tbody>
-										{stats.referralList.map(referral => (
-											<tr key={referral.id} className="border-b border-gray-800 dark:border-gray-900 hover:bg-gray-900 dark:hover:bg-gray-800">
-												<td className="py-3 px-2">{referral.email}</td>
-												<td className="py-3 px-2">{getLocalizedText(referral.ticketName, locale)}</td>
-												<td className={`font-semibold py-3 px-2 ${getStatusColor(referral.status)}`}>{getStatusText(referral.status)}</td>
-												<td className="py-3 px-2">{new Date(referral.registeredAt).toLocaleDateString(locale)}</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						)}
-					</div>
-
-					{/* Back Button */}
-					<div className="mt-8">
-						<Button onClick={() => router.push(`/${eventSlug}/success`)}>{t.backToSuccess}</Button>
-					</div>
+					<Link
+						href={`/${eventSlug}/referral-ranking`}
+						aria-label={t.viewLeaderboard}
+						className="ticket-stub text-yellow-700 transition-colors hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20"
+					>
+						<Trophy size={28} strokeWidth={1.5} />
+						<span className="text-xs">{t.yourRank}</span>
+						<span className="text-xl leading-tight font-bold">{rank !== null && rank !== undefined ? `#${rank}` : "—"}</span>
+						{(rank === null || rank === undefined) && <span className="text-xs">{t.notRanked}</span>}
+						<span className="mt-1 flex items-center gap-0.5 text-xs font-medium">
+							{t.viewLeaderboard}
+							<ArrowRight size={12} />
+						</span>
+					</Link>
 				</div>
-			</main>
-		</>
+			</div>
+
+			{/* Referral list */}
+			<section>
+				<h2 className="mb-4 text-xl font-bold">
+					{t.referralList}
+					<span className="ml-2 text-base font-normal text-gray-500 dark:text-gray-400">({referralList.length})</span>
+				</h2>
+
+				{referralList.length === 0 ? (
+					<div className="rounded-lg border-2 border-dashed border-gray-300 px-6 py-12 text-center text-gray-500 dark:border-gray-600 dark:text-gray-400">
+						<Users className="mx-auto mb-3 opacity-50" size={32} strokeWidth={1.5} />
+						{t.noReferrals}
+					</div>
+				) : (
+					<ul className="divide-y divide-gray-200 overflow-hidden rounded-lg border-2 border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+						{referralList.map(referral => (
+							<li key={referral.id} className="flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60">
+								<div
+									className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-600 uppercase dark:bg-gray-700 dark:text-gray-300"
+									aria-hidden
+								>
+									{referral.email.charAt(0)}
+								</div>
+								<div className="min-w-0 flex-1">
+									<div className="truncate font-medium">{referral.email}</div>
+									<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-gray-500 dark:text-gray-400">
+										<span className="inline-flex items-center gap-1">
+											<Ticket size={13} />
+											{getLocalizedText(referral.ticketName, locale)}
+										</span>
+										<span className="inline-flex items-center gap-1">
+											<CalendarDays size={13} />
+											{new Date(referral.registeredAt).toLocaleDateString(locale)}
+										</span>
+									</div>
+								</div>
+								<span className={`status-badge shrink-0 ${getStatusClass(referral.status)}`}>{getStatusText(referral.status)}</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</section>
+		</main>
 	);
 }

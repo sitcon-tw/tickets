@@ -23,7 +23,7 @@ import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normal
 import { getLocalizedText, getOptionValue } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { getVisibleFieldIds, Registration, TicketFormField, validateFormData } from "@sitcontix/types";
-import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, MapPin, Pencil, Save, Ticket, X, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useReducer, useState } from "react";
@@ -301,61 +301,67 @@ const registrationDetailTranslations = {
 
 type RegistrationDetailTranslations = Record<string, string>;
 
-function RegistrationSummaryCards({ registration, locale, t }: { registration: Registration; locale: string; t: RegistrationDetailTranslations }) {
-	return (
-		<>
-			<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
-				<h2 className="mb-4 text-2xl">{t.eventInfo}</h2>
-				<div className="flex flex-col gap-3">
-					<div>
-						<strong>{t.eventName}:</strong> {getLocalizedText(registration.event?.name || {}, locale)}
-					</div>
-					{getLocalizedText(registration.event?.locationText, locale) && (
-						<div className="flex items-center gap-3">
-							<strong>{t.eventLocation}:</strong>
-							{registration.event?.mapLink ? (
-								<a href={registration.event?.mapLink} target="_blank" rel="noopener noreferrer" className="text-base hover:underline text-blue-500 dark:text-blue-400 flex items-center">
-									{getLocalizedText(registration.event?.locationText, locale)}
-									<ExternalLink size={16} className="ml-1" />
-								</a>
-							) : (
-								<span className="text-base">{getLocalizedText(registration.event?.locationText, locale)}</span>
-							)}
-						</div>
-					)}
-					<div>
-						<strong>{t.eventTime}:</strong> {formatDate(registration.event?.startDate)} - {formatDate(registration.event?.endDate)}
-					</div>
-				</div>
-			</div>
+const statusStyles: Record<string, { icon: typeof CheckCircle2; className: string }> = {
+	confirmed: { icon: CheckCircle2, className: "text-green-600 dark:text-green-400" },
+	cancelled: { icon: XCircle, className: "text-red-600 dark:text-red-400" },
+	pending: { icon: Clock, className: "text-orange-600 dark:text-orange-400" }
+};
 
-			<div className="p-6 border-2 border-gray-500 rounded-lg bg-(--background-secondary)">
-				<h2 className="mb-4 text-2xl">{t.ticketInfo}</h2>
-				<div className="flex flex-col gap-3">
-					<div>
-						<strong>{t.ticketType}:</strong> {getLocalizedText(registration.ticket?.name || {}, locale)}
-					</div>
-					<div>
-						<strong>{t.ticketPrice}:</strong> {registration.ticket?.price === 0 ? t.free : `${registration.ticket?.price}`}
-					</div>
-					<div>
-						<strong>{t.registrationStatus}:</strong>{" "}
-						<span className={registration.status === "confirmed" ? "text-green-500" : registration.status === "cancelled" ? "text-red-500" : "text-orange-500"}>
-							{registration.status === "confirmed"
-								? t.statusConfirmed
-								: registration.status === "cancelled"
-									? t.statusCancelled
-									: registration.status === "pending"
-										? t.statusPending
-										: registration.status}
+function RegistrationTicket({ registration, locale, t }: { registration: Registration; locale: string; t: RegistrationDetailTranslations }) {
+	const status = statusStyles[registration.status] ?? statusStyles.pending;
+	const StatusIcon = status.icon;
+	const statusLabel =
+		registration.status === "confirmed" ? t.statusConfirmed : registration.status === "cancelled" ? t.statusCancelled : registration.status === "pending" ? t.statusPending : registration.status;
+	const locationText = getLocalizedText(registration.event?.locationText, locale);
+	const isCancelled = registration.status === "cancelled";
+
+	return (
+		<div className={`ticket ticket-static w-full ${isCancelled ? "opacity-70 grayscale" : ""}`}>
+			<div className="ticket-body">
+				<div className="ticket-main space-y-3 p-6!">
+					<div className="flex flex-wrap items-center gap-2 text-sm">
+						<span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 font-medium dark:bg-gray-700/60">
+							<Ticket size={14} />
+							{getLocalizedText(registration.ticket?.name || {}, locale)}
 						</span>
+						<span className="text-gray-600 dark:text-gray-300">{registration.ticket?.price ? `${registration.ticket.price}` : t.free}</span>
 					</div>
-					<div>
-						<strong>{t.registeredAt}:</strong> {formatDate(registration.createdAt)}
+					<h1 className="text-2xl font-bold leading-tight md:text-3xl">{getLocalizedText(registration.event?.name || {}, locale)}</h1>
+					<div className="max-w-32 border-t-2 border-dashed border-gray-400" />
+					<div className="flex flex-col gap-2 text-sm md:text-base">
+						<div className="flex items-start gap-3">
+							<CalendarDays size={18} className="mt-0.5 shrink-0" />
+							<span>
+								{formatDate(registration.event?.startDate)}
+								<span className="mx-1.5 text-gray-500">→</span>
+								{formatDate(registration.event?.endDate)}
+							</span>
+						</div>
+						{locationText && (
+							<div className="flex items-start gap-3">
+								<MapPin size={18} className="mt-0.5 shrink-0" />
+								{registration.event?.mapLink ? (
+									<a href={registration.event.mapLink} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline dark:text-blue-400">
+										{locationText}
+										<ExternalLink size={14} className="ml-1 shrink-0" />
+									</a>
+								) : (
+									<span>{locationText}</span>
+								)}
+							</div>
+						)}
 					</div>
+					<p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
+						{t.registeredAt} · {formatDate(registration.createdAt)}
+					</p>
+				</div>
+				<div className="ticket-stub">
+					<StatusIcon size={32} strokeWidth={1.5} className={status.className} />
+					<span className={`text-sm font-bold ${status.className}`}>{statusLabel}</span>
+					<div className="ticket-barcode" />
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -405,36 +411,50 @@ function RegistrationFormSection({
 
 	return (
 		<>
-			<div className="p-6 border-2 border-gray-500 rounded-lg">
-				<div className="flex justify-between items-center mb-4">
-					<h2 className="text-2xl">{t.registrationInfo}</h2>
+			<section className={`rounded-lg border-2 bg-(--background-secondary) transition-colors ${isEditing ? "border-blue-500 dark:border-blue-400" : "border-gray-300 dark:border-gray-600"}`}>
+				<header className="flex items-center justify-between gap-4 border-b-2 border-dashed border-gray-300 px-6 py-4 dark:border-gray-600">
+					<div>
+						<h2 className="text-xl font-bold">{t.registrationInfo}</h2>
+						{!registration.canEdit && <p className="mt-1 text-sm text-(--text-secondary)">{t.cannotEdit}</p>}
+					</div>
 					{!isEditing && registration.canEdit && (
-						<Button onClick={onEdit} size="sm">
+						<Button onClick={onEdit} size="sm" variant="secondary">
+							<Pencil size={16} />
 							{t.edit}
 						</Button>
 					)}
-				</div>
-				{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
-				{/* Fields are disabled while saving so edits made during the request are not overwritten by its response. */}
-				<fieldset disabled={isSaving} className="m-0 flex min-w-0 flex-col gap-6 border-0 p-0">
-					{shownFields.map(field => {
-						const fieldId = field.id;
-						if (isEditing) {
+				</header>
+				<div className="p-6">
+					{/* Fields are disabled while saving so edits made during the request are not overwritten by its response. */}
+					<fieldset disabled={isSaving} className={isEditing ? "m-0 flex min-w-0 flex-col gap-6 border-0 p-0" : "m-0 grid min-w-0 grid-cols-1 gap-x-8 gap-y-5 border-0 p-0 sm:grid-cols-2"}>
+						{shownFields.map(field => {
+							const fieldId = field.id;
+							if (isEditing) {
+								return (
+									<FormField key={fieldId} field={field} value={formData[fieldId]} onValueChange={onValueChange} pleaseSelectText={t.pleaseSelect} error={fieldErrors[fieldId]} disabled={isSaving} />
+								);
+							}
+							const answer = displayAnswer(field, formData[fieldId], locale, t);
 							return (
-								<FormField key={fieldId} field={field} value={formData[fieldId]} onValueChange={onValueChange} pleaseSelectText={t.pleaseSelect} error={fieldErrors[fieldId]} disabled={isSaving} />
+								<div key={fieldId} className={`min-w-0 ${field.type === "textarea" ? "sm:col-span-2" : ""}`}>
+									<div className="mb-1 text-xs font-medium uppercase tracking-wide text-(--text-secondary)">{getLocalizedText(field.name, locale)}</div>
+									<div className={`whitespace-pre-wrap wrap-break-word text-base ${answer === "-" ? "text-(--text-secondary)" : ""}`}>{answer}</div>
+								</div>
 							);
-						}
-						return (
-							<div key={fieldId}>
-								<div className="font-bold mb-1">{getLocalizedText(field.name, locale)}</div>
-								<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayAnswer(field, formData[fieldId], locale, t)}</div>
-							</div>
-						);
-					})}
-				</fieldset>
-				{isEditing && <div className="flex gap-4 mt-8 justify-center">{editActions}</div>}
-			</div>
-			{registration.canCancel && registration.status !== "cancelled" && <div className="flex justify-center">{cancelAction}</div>}
+						})}
+					</fieldset>
+					{isEditing && <div className="mt-8 flex justify-center gap-4">{editActions}</div>}
+				</div>
+			</section>
+			{registration.canCancel && registration.status !== "cancelled" && (
+				<section className="flex flex-col items-start justify-between gap-4 rounded-lg border-2 border-dashed border-red-300 p-6 sm:flex-row sm:items-center dark:border-red-500/50">
+					<div>
+						<h2 className="text-lg font-bold">{t.cancelRegistration}</h2>
+						<p className="mt-1 text-sm text-(--text-secondary)">{t.cancelConfirm}</p>
+					</div>
+					<div className="shrink-0">{cancelAction}</div>
+				</section>
+			)}
 		</>
 	);
 }
@@ -588,7 +608,7 @@ function MyRegistrationPageContent() {
 			<main>
 				<section className="mt-24 md:mt-32 max-w-[900px] mx-auto px-4 mb-16">
 					{isFromMyRegistrations ? (
-						<div className="flex gap-4 mb-4">
+						<div className="flex flex-wrap gap-3">
 							<Button variant="secondary" onClick={() => router.push(`/my-registration`)}>
 								<ChevronLeft />
 								<p>{t.backToRegistrations}</p>
@@ -604,7 +624,7 @@ function MyRegistrationPageContent() {
 							<p>{t.backToSuccessPage}</p>
 						</Button>
 					)}
-					<h1 className="my-4 text-[2.5rem]">{t.myRegistration}</h1>{" "}
+					<p className="mb-3 mt-6 text-sm font-medium uppercase tracking-widest text-(--text-secondary)">{t.myRegistration}</p>
 					{loading && (
 						<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
 							<PageSpinner />
@@ -621,8 +641,8 @@ function MyRegistrationPageContent() {
 						</div>
 					)}
 					{!loading && !error && registration && (
-						<div className="flex flex-col gap-8">
-							<RegistrationSummaryCards registration={registration} locale={locale} t={t} />
+						<div className="flex flex-col gap-6">
+							<RegistrationTicket registration={registration} locale={locale} t={t} />
 							<RegistrationFormSection
 								registration={registration}
 								formFields={formFields}

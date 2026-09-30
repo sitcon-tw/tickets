@@ -147,6 +147,19 @@
 		--ticket-border: var(--color-gray-200);
 	}
 
+	/* Non-interactive ticket (detail views) */
+	.ticket-static {
+		@apply cursor-default;
+	}
+
+	.ticket-static:hover {
+		--ticket-border: var(--color-gray-800);
+	}
+
+	.dark .ticket-static:hover {
+		--ticket-border: var(--color-gray-500);
+	}
+
 	.ticket-body {
 		@apply flex h-full;
 	}
