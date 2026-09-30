@@ -7,14 +7,37 @@ import { registrationSchemas } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { PurchaseError, REGISTRATION_HOLD_MS, releaseExpiredHolds, releaseHold, resolveTicketPurchase } from "#utils/registration-hold";
 import { sanitizeObject } from "#utils/sanitize";
 import { resolveRegistrationAnswers } from "#utils/validation";
 import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
+import type { Event, Ticket } from "#prisma/generated/prisma/client";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { fromNodeHeaders } from "better-auth/node";
+
+const registrationInclude = {
+	event: {
+		select: {
+			id: true,
+			name: true,
+			startDate: true,
+			endDate: true,
+			locationText: true,
+			mapLink: true,
+			slug: true
+		}
+	},
+	ticket: {
+		select: {
+			id: true,
+			name: true,
+			price: true
+		}
+	}
+} as const;
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -51,6 +74,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				const sanitizedFormData = sanitizeObject(formData, false);
 
+				// Free seats from lapsed holds so they don't block this user or count against stock
+				await releaseExpiredHolds();
+
 				span.addEvent("checking_existing_registration");
 				const existingRegistration = await prisma.registration.findFirst({
 					where: {
@@ -61,7 +87,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				});
 				span.setAttribute("user.id", user.id);
 
-				if (existingRegistration) {
+				// A pending registration on this ticket is the user's own seat hold; submitting the form completes it
+				const hold = existingRegistration?.status === "pending" && existingRegistration.ticketId === ticketId ? existingRegistration : null;
+
+				if (existingRegistration && !hold) {
 					span.addEvent("user_already_registered");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "User already registered" });
 					const { response, statusCode } = conflictResponse("您已經報名此活動");
@@ -69,159 +98,26 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("fetching_event_and_ticket");
-				const [event, ticket, formFields] = await Promise.all([
-					prisma.event.findUnique({
-						where: {
-							id: eventId,
-							isActive: true
-						}
-					}),
-					prisma.ticket.findUnique({
-						where: {
-							id: ticketId,
-							eventId,
-							isActive: true,
-							hidden: false
-						}
-					}),
-					prisma.eventFormFields.findMany({
-						where: { eventId },
-						orderBy: { order: "asc" }
-					})
-				]);
-
-				if (!event) {
-					span.addEvent("event.not_found");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Event not found" });
-					const { response, statusCode } = notFoundResponse("活動不存在或已關閉");
-					return reply.code(statusCode).send(response);
+				let invitationCodeId: string | null;
+				let event: Event;
+				let ticket: Ticket;
+				if (hold) {
+					// The hold already passed these checks and reserved the seat, so they are not repeated
+					[event, ticket] = await Promise.all([prisma.event.findUniqueOrThrow({ where: { id: eventId } }), prisma.ticket.findUniqueOrThrow({ where: { id: ticketId } })]);
+					invitationCodeId = hold.invitationCodeId;
+				} else {
+					({ event, ticket, invitationCodeId } = await resolveTicketPurchase({ userId: user.id, eventId, ticketId, invitationCode }));
 				}
-
-				if (!ticket) {
-					span.addEvent("ticket.not_found");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket not found" });
-					const { response, statusCode } = notFoundResponse("票券不存在或已關閉");
-					return reply.code(statusCode).send(response);
-				}
+				const formFields = await prisma.eventFormFields.findMany({
+					where: { eventId },
+					orderBy: { order: "asc" }
+				});
 
 				span.setAttribute("event.id", event.id);
 				span.setAttribute("ticket.id", ticket.id);
 				span.setAttribute("ticket.sold_count", ticket.soldCount);
 				span.setAttribute("ticket.quantity", ticket.quantity);
-
-				if (ticket.soldCount >= ticket.quantity) {
-					span.addEvent("ticket.sold_out");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket sold out" });
-					const { response, statusCode } = conflictResponse("票券已售完");
-					return reply.code(statusCode).send(response);
-				}
-
-				const now = new Date();
-				if (ticket.saleStart && now < ticket.saleStart) {
-					span.addEvent("ticket.not_yet_on_sale", {
-						"ticket.saleStart": ticket.saleStart.toISOString()
-					});
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket not yet on sale" });
-					const { response, statusCode } = validationErrorResponse("票券尚未開始販售");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (ticket.saleEnd && now > ticket.saleEnd) {
-					span.addEvent("ticket.sale_ended", {
-						"ticket.saleEnd": ticket.saleEnd.toISOString()
-					});
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket sale ended" });
-					const { response, statusCode } = validationErrorResponse("票券販售已結束");
-					return reply.code(statusCode).send(response);
-				}
-
-				let invitationCodeId: string | null = null;
-				if (ticket.requireInviteCode) {
-					span.addEvent("validating_required_invitation_code");
-					if (!invitationCode) {
-						span.addEvent("invitation_code.missing");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code required but not provided" });
-						const { response, statusCode } = unauthorizedResponse("此票券需要邀請碼");
-						return reply.code(statusCode).send(response);
-					}
-
-					const code = await prisma.invitationCode.findFirst({
-						where: {
-							code: invitationCode,
-							ticketId,
-							isActive: true
-						}
-					});
-
-					if (!code) {
-						span.addEvent("invitation_code.invalid");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invalid invitation code" });
-						const { response, statusCode } = validationErrorResponse("無效的邀請碼");
-						return reply.code(statusCode).send(response);
-					}
-
-					span.setAttribute("invitation_code.id", code.id);
-					span.setAttribute("invitation_code.used_count", code.usedCount);
-
-					if (code.validUntil && now > code.validUntil) {
-						span.addEvent("invitation_code.expired");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code expired" });
-						const { response, statusCode } = validationErrorResponse("邀請碼已過期");
-						return reply.code(statusCode).send(response);
-					}
-
-					if (code.validFrom && now < code.validFrom) {
-						span.addEvent("invitation_code.not_yet_valid");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code not yet valid" });
-						const { response, statusCode } = validationErrorResponse("邀請碼尚未生效");
-						return reply.code(statusCode).send(response);
-					}
-
-					if (code.usageLimit && code.usedCount >= code.usageLimit) {
-						span.addEvent("invitation_code.usage_limit_exceeded");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code usage limit exceeded" });
-						const { response, statusCode } = validationErrorResponse("邀請碼已達使用上限");
-						return reply.code(statusCode).send(response);
-					}
-
-					if (ticket.id != code.ticketId) {
-						span.addEvent("invitation_code.wrong_ticket");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code not for this ticket" });
-						const { response, statusCode } = validationErrorResponse("邀請碼不適用於此票券");
-						return reply.code(statusCode).send(response);
-					}
-
-					invitationCodeId = code.id;
-				} else if (invitationCode) {
-					// Ticket doesn't require invitation code but one was provided - validate it anyway for consistency
-					const code = await prisma.invitationCode.findFirst({
-						where: {
-							code: invitationCode,
-							ticketId,
-							isActive: true
-						}
-					});
-
-					if (code && (!code.validUntil || now <= code.validUntil) && (!code.validFrom || now >= code.validFrom) && (!code.usageLimit || code.usedCount < code.usageLimit)) {
-						invitationCodeId = code.id;
-						span.setAttribute("invitation_code.id", code.id);
-					}
-				}
-
-				if (ticket.requireSmsVerification) {
-					span.addEvent("checking_sms_verification");
-					const verifiedUser = await prisma.user.findUnique({
-						where: { id: user.id },
-						select: { phoneVerified: true }
-					});
-
-					if (!verifiedUser?.phoneVerified) {
-						span.addEvent("sms_verification.not_verified");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "SMS verification required" });
-						const { response, statusCode } = validationErrorResponse("此票券需要驗證手機號碼");
-						return reply.code(statusCode).send(response);
-					}
-				}
+				if (invitationCodeId) span.setAttribute("invitation_code.id", invitationCodeId);
 
 				let referralCodeId: string | null = null;
 				let referrerRegistrationId: string | null = null;
@@ -258,112 +154,129 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 				span.addEvent("starting_registration_transaction");
 				// start registration transaction
-				const result = await prisma.$transaction(
-					async tx => {
-						const existingInTx = await tx.registration.findFirst({
-							where: {
-								email: user.email,
-								eventId,
-								status: { not: "cancelled" }
-							}
-						});
-
-						if (existingInTx) {
-							throw new Error("ALREADY_REGISTERED");
-						}
-
-						// Re-check ticket availability
-						const currentTicket = await tx.ticket.findUnique({
-							where: { id: ticketId },
-							select: { soldCount: true, quantity: true }
-						});
-
-						if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
-							throw new Error("TICKET_SOLD_OUT");
-						}
-
-						// Re-check invitation code
-						if (invitationCodeId) {
-							const currentCode = await tx.invitationCode.findUnique({
-								where: { id: invitationCodeId },
-								select: { usedCount: true, usageLimit: true, isActive: true }
-							});
-
-							if (!currentCode || !currentCode.isActive) {
-								throw new Error("INVITATION_CODE_INVALID");
-							}
-
-							if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
-								throw new Error("INVITATION_CODE_LIMIT_REACHED");
-							}
-						}
-
-						const registration = await tx.registration.create({
-							data: {
-								userId: user.id,
-								eventId,
-								ticketId,
-								invitationCodeId,
-								email: user.email,
-								formData: safeJsonStringify(registrationAnswers, "{}", "registration creation"),
-								status: "confirmed",
-								...(referrerRegistrationId && { referredBy: referrerRegistrationId })
-							},
-							include: {
-								event: {
-									select: {
-										id: true,
-										name: true,
-										startDate: true,
-										endDate: true,
-										locationText: true,
-										mapLink: true,
-										slug: true
-									}
-								},
-								ticket: {
-									select: {
-										id: true,
-										name: true,
-										price: true
-									}
-								}
-							}
-						});
-
-						await tx.ticket.update({
-							where: { id: ticketId },
-							data: { soldCount: { increment: 1 } }
-						});
-
-						if (invitationCodeId) {
-							await tx.invitationCode.update({
-								where: { id: invitationCodeId },
-								data: { usedCount: { increment: 1 } }
-							});
-						}
-
-						if (referralCodeId) {
-							await tx.referralUsage.create({
+				const result = hold
+					? await prisma.$transaction(async tx => {
+							const claimed = await tx.registration.updateMany({
+								where: { id: hold.id, status: "pending", holdExpiresAt: { gt: new Date() } },
 								data: {
-									referralId: referralCodeId,
-									registrationId: registration.id,
-									eventId
+									status: "confirmed",
+									holdExpiresAt: null,
+									formData: safeJsonStringify(registrationAnswers, "{}", "registration creation"),
+									...(referrerRegistrationId && { referredBy: referrerRegistrationId })
 								}
 							});
-						}
 
-						const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response");
+							if (claimed.count === 0) {
+								throw new Error("HOLD_EXPIRED");
+							}
 
-						return {
-							...registration,
-							formData: parsedFormData
-						};
-					},
-					{
-						isolationLevel: "Serializable"
-					}
-				);
+							if (referralCodeId) {
+								await tx.referralUsage.create({
+									data: {
+										referralId: referralCodeId,
+										registrationId: hold.id,
+										eventId
+									}
+								});
+							}
+
+							const registration = await tx.registration.findUniqueOrThrow({
+								where: { id: hold.id },
+								include: registrationInclude
+							});
+
+							return {
+								...registration,
+								formData: safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response")
+							};
+						})
+					: await prisma.$transaction(
+							async tx => {
+								const existingInTx = await tx.registration.findFirst({
+									where: {
+										email: user.email,
+										eventId,
+										status: { not: "cancelled" }
+									}
+								});
+
+								if (existingInTx) {
+									throw new Error("ALREADY_REGISTERED");
+								}
+
+								// Re-check ticket availability
+								const currentTicket = await tx.ticket.findUnique({
+									where: { id: ticketId },
+									select: { soldCount: true, quantity: true }
+								});
+
+								if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
+									throw new Error("TICKET_SOLD_OUT");
+								}
+
+								// Re-check invitation code
+								if (invitationCodeId) {
+									const currentCode = await tx.invitationCode.findUnique({
+										where: { id: invitationCodeId },
+										select: { usedCount: true, usageLimit: true, isActive: true }
+									});
+
+									if (!currentCode || !currentCode.isActive) {
+										throw new Error("INVITATION_CODE_INVALID");
+									}
+
+									if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
+										throw new Error("INVITATION_CODE_LIMIT_REACHED");
+									}
+								}
+
+								const registration = await tx.registration.create({
+									data: {
+										userId: user.id,
+										eventId,
+										ticketId,
+										invitationCodeId,
+										email: user.email,
+										formData: safeJsonStringify(registrationAnswers, "{}", "registration creation"),
+										status: "confirmed",
+										...(referrerRegistrationId && { referredBy: referrerRegistrationId })
+									},
+									include: registrationInclude
+								});
+
+								await tx.ticket.update({
+									where: { id: ticketId },
+									data: { soldCount: { increment: 1 } }
+								});
+
+								if (invitationCodeId) {
+									await tx.invitationCode.update({
+										where: { id: invitationCodeId },
+										data: { usedCount: { increment: 1 } }
+									});
+								}
+
+								if (referralCodeId) {
+									await tx.referralUsage.create({
+										data: {
+											referralId: referralCodeId,
+											registrationId: registration.id,
+											eventId
+										}
+									});
+								}
+
+								const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response");
+
+								return {
+									...registration,
+									formData: parsedFormData
+								};
+							},
+							{
+								isolationLevel: "Serializable"
+							}
+						);
 
 				span.addEvent("registration_transaction.success", {
 					"registration.id": result.id
@@ -411,6 +324,27 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.recordException(error as Error);
 
 				const errorMessage = (error as Error).message;
+
+				if (error instanceof PurchaseError) {
+					span.addEvent("purchase_check.failed", { "purchase.error_kind": error.kind });
+					span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+					const { response, statusCode } =
+						error.kind === "unauthorized"
+							? unauthorizedResponse(error.message)
+							: error.kind === "notFound"
+								? notFoundResponse(error.message)
+								: error.kind === "conflict"
+									? conflictResponse(error.message)
+									: validationErrorResponse(error.message);
+					return reply.code(statusCode).send(response);
+				}
+
+				if (errorMessage === "HOLD_EXPIRED") {
+					span.addEvent("transaction_error.hold_expired");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Seat hold expired" });
+					const { response, statusCode } = conflictResponse("保留時間已過，請重新選擇票券");
+					return reply.code(statusCode).send(response);
+				}
 
 				if (errorMessage === "TICKET_SOLD_OUT") {
 					span.addEvent("transaction_error.ticket_sold_out");
@@ -477,6 +411,161 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
+	fastify.withTypeProvider<ZodTypeProvider>().post(
+		"/registrations/hold",
+		{
+			schema: registrationSchemas.holdRegistration
+		},
+		async (request, reply) => {
+			const span = tracer.startSpan("route.public.registrations.hold", {
+				attributes: {
+					"event.id": request.body.eventId,
+					"ticket.id": request.body.ticketId
+				}
+			});
+
+			try {
+				const session = await auth.api.getSession({
+					headers: fromNodeHeaders(request.headers)
+				});
+				const user = session?.user;
+
+				if (!user) {
+					const { response, statusCode } = unauthorizedResponse("請先登入");
+					return reply.code(statusCode).send(response);
+				}
+
+				const { eventId, ticketId, invitationCode } = request.body;
+				span.setAttribute("user.id", user.id);
+
+				// Free seats from lapsed holds so they don't count against stock
+				await releaseExpiredHolds();
+
+				const existing = await prisma.registration.findFirst({
+					where: { email: user.email, eventId, status: { not: "cancelled" } }
+				});
+
+				if (existing?.status === "pending" && existing.ticketId === ticketId && existing.holdExpiresAt) {
+					// Same seat as before (page reload, back button): keep the original deadline
+					span.addEvent("hold.reused");
+					span.setStatus({ code: SpanStatusCode.OK });
+					return reply.code(200).send(successResponse({ id: existing.id, eventId, ticketId, holdExpiresAt: existing.holdExpiresAt }, "座位已保留"));
+				}
+
+				if (existing?.status === "pending") {
+					// The user picked a different ticket: give the previous seat back first
+					span.addEvent("hold.switching_ticket");
+					await releaseHold(existing.id, { onlyExpired: false });
+				} else if (existing) {
+					span.addEvent("user_already_registered");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "User already registered" });
+					const { response, statusCode } = conflictResponse("您已經報名此活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				const { invitationCodeId } = await resolveTicketPurchase({ userId: user.id, eventId, ticketId, invitationCode });
+
+				const holdExpiresAt = new Date(Date.now() + REGISTRATION_HOLD_MS);
+				const hold = await prisma.$transaction(
+					async tx => {
+						const existingInTx = await tx.registration.findFirst({
+							where: { email: user.email, eventId, status: { not: "cancelled" } }
+						});
+						if (existingInTx) {
+							throw new Error("ALREADY_REGISTERED");
+						}
+
+						const currentTicket = await tx.ticket.findUnique({
+							where: { id: ticketId },
+							select: { soldCount: true, quantity: true }
+						});
+						if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
+							throw new Error("TICKET_SOLD_OUT");
+						}
+
+						if (invitationCodeId) {
+							const currentCode = await tx.invitationCode.findUnique({
+								where: { id: invitationCodeId },
+								select: { usedCount: true, usageLimit: true, isActive: true }
+							});
+							if (!currentCode || !currentCode.isActive) {
+								throw new Error("INVITATION_CODE_INVALID");
+							}
+							if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
+								throw new Error("INVITATION_CODE_LIMIT_REACHED");
+							}
+						}
+
+						const created = await tx.registration.create({
+							data: {
+								userId: user.id,
+								eventId,
+								ticketId,
+								invitationCodeId,
+								email: user.email,
+								formData: "{}",
+								status: "pending",
+								holdExpiresAt
+							}
+						});
+
+						await tx.ticket.update({ where: { id: ticketId }, data: { soldCount: { increment: 1 } } });
+						if (invitationCodeId) {
+							await tx.invitationCode.update({ where: { id: invitationCodeId }, data: { usedCount: { increment: 1 } } });
+						}
+
+						return created;
+					},
+					{ isolationLevel: "Serializable" }
+				);
+
+				span.setAttribute("registration.id", hold.id);
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.code(201).send(successResponse({ id: hold.id, eventId, ticketId, holdExpiresAt }, "座位已保留"));
+			} catch (error) {
+				request.log.error({ error }, "Hold registration error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to hold seat" });
+
+				if (error instanceof PurchaseError) {
+					const { response, statusCode } =
+						error.kind === "unauthorized"
+							? unauthorizedResponse(error.message)
+							: error.kind === "notFound"
+								? notFoundResponse(error.message)
+								: error.kind === "conflict"
+									? conflictResponse(error.message)
+									: validationErrorResponse(error.message);
+					return reply.code(statusCode).send(response);
+				}
+
+				const errorMessage = (error as Error).message;
+				const conflictMessages: Record<string, string> = {
+					TICKET_SOLD_OUT: "票券已售完",
+					ALREADY_REGISTERED: "您已經報名此活動"
+				};
+				if (conflictMessages[errorMessage]) {
+					const { response, statusCode } = conflictResponse(conflictMessages[errorMessage]);
+					return reply.code(statusCode).send(response);
+				}
+				if (errorMessage === "INVITATION_CODE_INVALID" || errorMessage === "INVITATION_CODE_LIMIT_REACHED") {
+					const { response, statusCode } = validationErrorResponse(errorMessage === "INVITATION_CODE_INVALID" ? "邀請碼已失效" : "邀請碼已達使用上限");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (error instanceof Prisma.PrismaClientKnownRequestError && (error as Prisma.PrismaClientKnownRequestError).code === "P2034") {
+					const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
+				}
+
+				const { response, statusCode } = serverErrorResponse("保留座位失敗");
+				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
+			}
+		}
+	);
+
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations",
 		{
@@ -495,6 +584,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			});
 
 			try {
+				await releaseExpiredHolds();
 				span.addEvent("fetching_user_registrations");
 				const registrations = await prisma.registration.findMany({
 					where: { userId },
@@ -541,6 +631,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						email: reg.email,
 						status: RegistrationStatusSchema.parse(reg.status),
 						referredBy: reg.referredBy ?? null,
+						holdExpiresAt: reg.holdExpiresAt,
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
@@ -602,6 +693,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 			});
 
 			try {
+				await releaseExpiredHolds();
 				span.addEvent("fetching_registration");
 				const registration = await prisma.registration.findFirst({
 					where: {
@@ -914,10 +1006,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("event.id", registration.eventId);
 				span.setAttribute("ticket.id", registration.ticketId);
 
-				if (registration.status !== "confirmed") {
-					span.addEvent("registration.not_confirmed");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Registration not confirmed" });
-					const { response, statusCode } = validationErrorResponse("只能取消已確認的報名");
+				if (registration.status !== "confirmed" && registration.status !== "pending") {
+					span.addEvent("registration.not_cancellable");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Registration not cancellable" });
+					const { response, statusCode } = validationErrorResponse("只能取消已確認或保留中的報名");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -936,7 +1028,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							select: { status: true, invitationCodeId: true }
 						});
 
-						if (!currentReg || currentReg.status !== "confirmed") {
+						if (!currentReg || (currentReg.status !== "confirmed" && currentReg.status !== "pending")) {
 							throw new Error("ALREADY_CANCELLED");
 						}
 
@@ -944,6 +1036,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							where: { id },
 							data: {
 								status: "cancelled",
+								holdExpiresAt: null,
 								updatedAt: new Date()
 							}
 						});
@@ -976,21 +1069,24 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
 				const buttonUrl = `${frontendUrl}/zh-Hant/my-registration/${registration.id}`;
 
-				span.addEvent("sending_cancellation_email");
-				await sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
-					request.log.error({ error }, "Failed to send cancellation email");
-					span.addEvent("cancellation_email.failed");
-				});
+				// A seat hold was never announced, so only confirmed registrations notify anyone when cancelled
+				if (registration.status === "confirmed") {
+					span.addEvent("sending_cancellation_email");
+					await sendCancellationEmail(registration.email, registration.event.name, buttonUrl).catch(error => {
+						request.log.error({ error }, "Failed to send cancellation email");
+						span.addEvent("cancellation_email.failed");
+					});
 
-				span.addEvent("dispatching_webhook");
-				const cancelledNotification = buildRegistrationCancelledNotification(
-					{ name: registration.event.name, slug: registration.event.slug },
-					{ id: registration.id, createdAt: registration.createdAt, updatedAt: new Date() }
-				);
-				dispatchWebhook(registration.eventId, "registration_cancelled", cancelledNotification).catch(error => {
-					request.log.error({ error }, "Failed to dispatch cancellation webhook");
-					span.addEvent("webhook.failed");
-				});
+					span.addEvent("dispatching_webhook");
+					const cancelledNotification = buildRegistrationCancelledNotification(
+						{ name: registration.event.name, slug: registration.event.slug },
+						{ id: registration.id, createdAt: registration.createdAt, updatedAt: new Date() }
+					);
+					dispatchWebhook(registration.eventId, "registration_cancelled", cancelledNotification).catch(error => {
+						request.log.error({ error }, "Failed to dispatch cancellation webhook");
+						span.addEvent("webhook.failed");
+					});
+				}
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(null, "報名已取消"));

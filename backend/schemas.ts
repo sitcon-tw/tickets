@@ -34,6 +34,8 @@ import {
 	ReferralValidateRequestSchema,
 	ReferralValidationSchema,
 	RegistrationCreateRequestSchema,
+	RegistrationHoldRequestSchema,
+	RegistrationHoldSchema,
 	// Registration schemas
 	RegistrationSchema,
 	RegistrationStatsSchema,
@@ -865,6 +867,12 @@ export const RegistrationResponseSchema = z.object({
 	data: RegistrationSchema
 });
 
+export const RegistrationHoldResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: RegistrationHoldSchema
+});
+
 export const RegistrationsListResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string(),
@@ -918,6 +926,22 @@ export const registrationSchemas = {
 		body: RegistrationCreateBodySchema,
 		response: {
 			201: RegistrationResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	holdRegistration: {
+		description: "保留座位，讓用戶在時限內填寫報名表單",
+		tags: ["registrations"],
+		body: RegistrationHoldRequestSchema,
+		response: {
+			200: RegistrationHoldResponseSchema,
+			201: RegistrationHoldResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			404: ErrorResponseSchema,

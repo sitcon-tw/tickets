@@ -20,6 +20,7 @@ import {
 	PublicTicketListItemSchema,
 	ReferralLinkSchema,
 	ReferralValidationSchema,
+	RegistrationHoldSchema,
 	RegistrationSchema,
 	RegistrationStatsSchema,
 	RegistrationStatusSchema,
@@ -127,6 +128,8 @@ export const ticketsAPI = {
 export const registrationsAPI = {
 	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) =>
 		apiClient.post("/api/registrations", data, ApiResponseSchema(RegistrationSchema)),
+
+	hold: (data: { eventId: string; ticketId: string; invitationCode?: string }) => apiClient.post("/api/registrations/hold", data, ApiResponseSchema(RegistrationHoldSchema)),
 
 	getAll: () => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(UserRegistrationListItemSchema))),
 

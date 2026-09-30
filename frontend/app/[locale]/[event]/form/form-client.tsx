@@ -23,6 +23,11 @@ const legacyFormDataStorageKey = "formData";
 const TERMS_FIELD_ID = "agreeToTerms";
 const VISIBILITY_REFRESH_MS = 30_000;
 
+function formatHoldRemaining(ms: number) {
+	const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+	return `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, "0")}`;
+}
+
 type AutosavedFormState = {
 	formData: FormDataType;
 	referralCode: string;
@@ -112,6 +117,16 @@ const formPageTranslations = {
 		"zh-Hant": "請選擇...",
 		"zh-Hans": "请选择...",
 		en: "Please select..."
+	},
+	seatHeld: {
+		"zh-Hant": "座位已為你保留，請於時限內完成報名",
+		"zh-Hans": "座位已为你保留，请于时限内完成报名",
+		en: "Your seat is held. Complete your registration before the timer runs out"
+	},
+	holdExpired: {
+		"zh-Hant": "保留時間已過，座位已釋出，請重新選擇票種",
+		"zh-Hans": "保留时间已过，座位已释放，请重新选择票种",
+		en: "Your seat hold expired and the seat was released. Please select a ticket again"
 	},
 	reselectTicket: {
 		"zh-Hant": "重新選擇票種",
@@ -241,6 +256,7 @@ type RegistrationFormViewProps = {
 	referralInvalid: boolean;
 	agreeToTerms: boolean;
 	isSubmitting: boolean;
+	holdRemaining: string | null;
 	onBack: () => void;
 	onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 	onValueChange: (fieldId: string, value: string | boolean | string[]) => void;
@@ -264,6 +280,7 @@ function RegistrationFormView({
 	referralInvalid,
 	agreeToTerms,
 	isSubmitting,
+	holdRemaining,
 	onBack,
 	onSubmit,
 	onValueChange,
@@ -282,6 +299,15 @@ function RegistrationFormView({
 					<p className="mb-8 text-sm text-gray-600 dark:text-gray-400">
 						{t.ticketLabel}: {ticketName}
 					</p>
+				)}
+
+				{holdRemaining && !loading && !error && (
+					<div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+						<span>{t.seatHeld}</span>
+						<span className="font-mono text-lg font-bold tabular-nums" role="timer" aria-live="off">
+							{holdRemaining}
+						</span>
+					</div>
 				)}
 
 				{loading && (
@@ -397,6 +423,9 @@ export default function FormPage() {
 	// Time conditions are evaluated against this clock; it is refreshed periodically and on submit.
 	const [now, setNow] = useState(() => new Date());
 	const [referral, setReferral] = useState<{ code: string; referrerName: string | null; isValid: boolean } | null>(null);
+	const [hold, setHold] = useState<{ id: string; expiresAt: number } | null>(null);
+	const [holdNow, setHoldNow] = useState(() => Date.now());
+	const holdRequestRef = useRef<ReturnType<typeof registrationsAPI.hold> | null>(null);
 	const eventIdRef = useRef<string | null>(null);
 	const invitationCodeRef = useRef("");
 	const autosaveRestoredRef = useRef(false);
@@ -432,6 +461,29 @@ export default function FormPage() {
 	}, [formFields, ticketId, formData, now]);
 
 	const visibleFields = useMemo(() => formFields.filter(field => visibleIds.has(field.id)), [formFields, visibleIds]);
+
+	const holdExpiresAt = hold?.expiresAt ?? null;
+	const holdRemainingMs = holdExpiresAt === null ? null : holdExpiresAt - holdNow;
+
+	useEffect(() => {
+		if (holdExpiresAt === null) return;
+		const timer = setInterval(() => setHoldNow(Date.now()), 1000);
+		return () => clearInterval(timer);
+	}, [holdExpiresAt]);
+
+	useEffect(() => {
+		if (holdRemainingMs === null || holdRemainingMs > 0) return;
+		showAlert(t.holdExpired, "warning");
+		router.push(eventPath);
+	}, [holdRemainingMs, showAlert, router, eventPath, t.holdExpired]);
+
+	async function handleBack() {
+		// Give the seat back right away instead of waiting for the hold to expire
+		if (hold && !isSubmitting) {
+			await registrationsAPI.cancel(hold.id).catch(() => undefined);
+		}
+		router.push(eventPath);
+	}
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -573,8 +625,17 @@ export default function FormPage() {
 					return;
 				}
 
-				if (ticket.available <= 0) {
-					dispatchFormPage({ type: "unavailable", message: t.ticketSoldOut });
+				// Reserve the seat while the form is filled out. It is idempotent: the ticket page may already have
+				// taken it, and the ref keeps a dev-mode double mount from sending two requests.
+				try {
+					holdRequestRef.current ??= registrationsAPI.hold({ eventId: parsedData.eventId, ticketId: parsedData.ticketId, invitationCode: parsedData.invitationCode || undefined });
+					const heldSeat = await holdRequestRef.current;
+					setHold({ id: heldSeat.data.id, expiresAt: heldSeat.data.holdExpiresAt.getTime() });
+					setHoldNow(Date.now());
+				} catch (error) {
+					holdRequestRef.current = null;
+					const message = error instanceof Error ? error.message : "Unknown error";
+					dispatchFormPage({ type: "unavailable", message: message.includes("已售完") ? t.ticketSoldOut : message });
 					return;
 				}
 
@@ -672,7 +733,8 @@ export default function FormPage() {
 			referralInvalid={referral?.code === referralCode.trim() && !referral.isValid}
 			agreeToTerms={agreeToTerms}
 			isSubmitting={isSubmitting}
-			onBack={() => router.push(eventPath)}
+			holdRemaining={holdRemainingMs === null ? null : formatHoldRemaining(holdRemainingMs)}
+			onBack={() => void handleBack()}
 			onSubmit={handleSubmit}
 			onValueChange={handleValueChange}
 			onAgreeChange={handleAgreeChange}

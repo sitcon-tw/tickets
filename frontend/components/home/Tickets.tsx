@@ -536,17 +536,35 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				localStorage.removeItem(legacyFormDataStorageKey);
 			}
 
-			const verificationCheck = await smsVerificationAPI.getStatus();
+			let needsVerification = false;
+			try {
+				const verificationCheck = await smsVerificationAPI.getStatus();
+				needsVerification = selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified;
+			} catch (error) {
+				console.error("Failed to check SMS verification:", error);
+			}
 
-			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
+			if (needsVerification) {
+				// The form takes the hold once the phone is verified
 				const currentUrl = `/${eventSlug}/form`;
 				router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
-			} else {
-				router.push(`/${eventSlug}/form`);
+				return;
 			}
-		} catch (error) {
-			console.error("Failed to check SMS verification:", error);
+
+			// Reserve the seat now so nobody can take it while this user fills out the form
+			try {
+				await registrationsAPI.hold({ eventId, ticketId: selectedTicket.id, invitationCode: selectedTicket.requireInviteCode ? invitationCode.trim() : undefined });
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Unknown error";
+				showAlert(message.includes("已售完") ? t.ticketSoldOut : message, "error");
+				dispatch({ type: "submittingChanged", isSubmitting: false });
+				return;
+			}
+
 			router.push(`/${eventSlug}/form`);
+		} catch (error) {
+			console.error("Failed to prepare registration:", error);
+			dispatch({ type: "submittingChanged", isSubmitting: false });
 		}
 	}
 
@@ -590,7 +608,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			try {
 				const regDataRes = await registrationsAPI.getAll();
 				if (regDataRes.success && regDataRes.data) {
-					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status !== "cancelled");
+					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status === "confirmed");
 					dispatch({ type: "registrationEligibilityChanged", canRegister: !hasActiveRegistration });
 				}
 			} catch (error) {
