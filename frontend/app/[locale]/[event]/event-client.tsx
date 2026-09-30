@@ -4,10 +4,11 @@ import Tickets from "@/components/home/Tickets";
 import Welcome from "@/components/home/Welcome";
 import MarkdownContent from "@/components/MarkdownContent";
 import PageSpinner from "@/components/PageSpinner";
+import SponsorSection from "@/components/sponsors/SponsorSection";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
-import { PublicEventListItemSchema, PublicTicketListItemSchema } from "@sitcontix/types";
+import { PublicEventListItemSchema, PublicTicketListItemSchema, type PublicSponsor } from "@sitcontix/types";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -20,6 +21,7 @@ type TicketListItem = z.infer<typeof PublicTicketListItemSchema>;
 type EventPageState = {
 	event: EventListItem | null;
 	tickets: TicketListItem[];
+	sponsors: PublicSponsor[];
 	registrationCount: number;
 	eventDescription: string;
 	loading: boolean;
@@ -30,6 +32,7 @@ type EventPageAction =
 			type: "loaded";
 			event: EventListItem;
 			tickets: TicketListItem[];
+			sponsors: PublicSponsor[];
 			registrationCount: number;
 			eventDescription: string;
 	  }
@@ -41,6 +44,7 @@ function eventPageReducer(state: EventPageState, action: EventPageAction): Event
 			return {
 				event: action.event,
 				tickets: action.tickets,
+				sponsors: action.sponsors,
 				registrationCount: action.registrationCount,
 				eventDescription: action.eventDescription,
 				loading: false,
@@ -59,9 +63,10 @@ export default function Main() {
 	const locale = useLocale();
 	const eventSlug = params.event as string;
 
-	const [{ event, tickets, registrationCount, eventDescription, loading, error }, dispatchEventPage] = useReducer(eventPageReducer, {
+	const [{ event, tickets, sponsors, registrationCount, eventDescription, loading, error }, dispatchEventPage] = useReducer(eventPageReducer, {
 		event: null,
 		tickets: [],
+		sponsors: [],
 		registrationCount: 0,
 		eventDescription: "",
 		loading: true,
@@ -128,10 +133,21 @@ export default function Main() {
 						if (ticketsData.success && Array.isArray(ticketsData.data)) {
 							nextTickets = ticketsData.data;
 						}
+						// Sponsors are decoration: never let a failure here break the event page.
+						let nextSponsors: PublicSponsor[] = [];
+						try {
+							const sponsorsData = await eventsAPI.getSponsors(foundEvent.id);
+							if (sponsorsData.success && Array.isArray(sponsorsData.data)) {
+								nextSponsors = sponsorsData.data;
+							}
+						} catch (err) {
+							console.error("Failed to load sponsors:", err);
+						}
 						dispatchEventPage({
 							type: "loaded",
 							event: foundEvent,
 							tickets: nextTickets,
+							sponsors: nextSponsors,
 							registrationCount: nextRegistrationCount,
 							eventDescription: nextEventDescription
 						});
@@ -248,6 +264,8 @@ export default function Main() {
 							<Tickets eventId={event.id} eventSlug={eventSlug} />
 						</div>
 
+						<SponsorSection sponsors={sponsors} placement="after_registration" className="p-6 md:p-8 border-b border-border" />
+
 						{/* Event Information - No border */}
 						{eventDescription && (
 							<div className="p-6 md:p-8 border-b border-border">
@@ -257,6 +275,8 @@ export default function Main() {
 								</div>
 							</div>
 						)}
+
+						<SponsorSection sponsors={sponsors} placement="after_event_info" className="p-6 md:p-8 border-b border-border" />
 
 						{/* Ticket Information - No border, but borders on individual tickets */}
 						{tickets.length > 0 && (

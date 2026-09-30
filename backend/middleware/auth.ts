@@ -365,6 +365,25 @@ export const requireEventAccessViaTicketId: preHandlerHookHandler = async (reque
 	await checkEventAccess(request, reply, eventId);
 };
 
+/**
+ * Helper middleware to check event access via sponsor ID in params
+ */
+export const requireEventAccessViaSponsorId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+	const params = request.params as IdParams;
+	const { id } = params;
+	let eventId: string | undefined;
+	if (id) {
+		const sponsor = await prisma.sponsor.findUnique({
+			where: { id },
+			select: { eventId: true }
+		});
+		if (sponsor) {
+			eventId = sponsor.eventId;
+		}
+	}
+	await checkEventAccess(request, reply, eventId);
+};
+
 export const requireEventDashboardAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const authenticated = await ensureAuth(request, reply);
 	if (!authenticated || reply.sent) return;

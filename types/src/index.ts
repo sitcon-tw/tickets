@@ -18,6 +18,7 @@ export * from "./referral.js";
 export * from "./registration.js";
 export * from "./settings.js";
 export * from "./sms.js";
+export * from "./sponsor.js";
 export * from "./system.js";
 export * from "./ticket.js";
 export * from "./turnstile.js";

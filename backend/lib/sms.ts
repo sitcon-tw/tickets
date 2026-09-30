@@ -229,9 +229,9 @@ export async function sendVerificationCode(phoneNumber: string, code: string, lo
 
 	try {
 		const messages: Record<Locale, string> = {
-			"zh-Hant": `[SITCONTIX] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(${getSMSProvider()})`,
-			"zh-Hans": `[SITCONTIX] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(${getSMSProvider()})`,
-			en: `[SITCONTIX] Your verification code is: ${code}\nThis code will expire in 10 minutes. (${getSMSProvider()})`
+			"zh-Hant": `[SITCONTIX] 您的驗證碼是：${code}\n此驗證碼將在 10 分鐘後過期。(${getSMSProvider() === "kot" ? "naf" : "twsms"})`,
+			"zh-Hans": `[SITCONTIX] 您的验证码是：${code}\n此验证码将在 10 分钟后过期。(${getSMSProvider() === "kot" ? "naf" : "twsms"})`,
+			en: `[SITCONTIX] Your verification code is: ${code}\nThis code will expire in 10 minutes. (${getSMSProvider() === "kot" ? "naf" : "twsms"})`
 		};
 
 		const message = messages[locale] || messages["zh-Hant"];

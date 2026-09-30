@@ -55,6 +55,10 @@
 			"types": "./dist/sms.d.ts",
 			"import": "./dist/sms.js"
 		},
+		"./sponsor": {
+			"types": "./dist/sponsor.d.ts",
+			"import": "./dist/sponsor.js"
+		},
 		"./turnstile": {
 			"types": "./dist/turnstile.d.ts",
 			"import": "./dist/turnstile.js"

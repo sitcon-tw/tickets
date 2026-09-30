@@ -15,6 +15,7 @@ import {
 	PublicEventFormFieldSchema,
 	PublicEventListItemSchema,
 	PublicReferralRankingDataSchema,
+	PublicSponsorSchema,
 	PublicTicketDetailSchema,
 	PublicTicketListItemSchema,
 	ReferralLinkSchema,
@@ -24,6 +25,9 @@ import {
 	RegistrationStatusSchema,
 	SessionSchema,
 	SiteSettingsSchema,
+	SponsorDailyStatSchema,
+	SponsorSchema,
+	SponsorWithStatsSchema,
 	TargetAudienceSchema,
 	TicketAnalyticsSchema,
 	TicketSchema,
@@ -38,6 +42,10 @@ import {
 	type InvitationCodeInfo,
 	type LocalizedText,
 	type SiteSettingsUpdateRequest,
+	type SponsorCreateRequest,
+	type SponsorReorderRequest,
+	type SponsorTrackRequest,
+	type SponsorUpdateRequest,
 	type Ticket,
 	type TicketReorderRequest,
 	type User
@@ -87,7 +95,20 @@ export const eventsAPI = {
 
 	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(PublicTicketListItemSchema))),
 
-	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema))
+	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema)),
+
+	getSponsors: (id: string) => apiClient.get(`/api/events/${id}/sponsors`, {}, ApiResponseSchema(z.array(PublicSponsorSchema)))
+};
+
+// Sponsors - Public tracking. Fire-and-forget: it must never retry, redirect or surface errors to the visitor.
+export const sponsorsAPI = {
+	track: (data: SponsorTrackRequest) => {
+		try {
+			void fetch("/api/sponsors/track", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), keepalive: true }).catch(() => undefined);
+		} catch {
+			// Tracking is best-effort.
+		}
+	}
 };
 
 // Site settings - Public
@@ -212,6 +233,21 @@ export const adminTicketsAPI = {
 	getAnalytics: (id: string) => apiClient.get(`/api/admin/tickets/${id}/analytics`, {}, ApiResponseSchema(TicketAnalyticsSchema)),
 
 	reorder: (data: TicketReorderRequest) => apiClient.put("/api/admin/tickets/reorder", data, ApiResponseSchema(z.null()))
+};
+
+// Admin - Sponsors
+export const adminSponsorsAPI = {
+	getAll: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/sponsors`, {}, ApiResponseSchema(z.array(SponsorWithStatsSchema))),
+
+	getDailyStats: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/sponsors/stats/daily`, {}, ApiResponseSchema(z.array(SponsorDailyStatSchema))),
+
+	create: (eventId: string, data: SponsorCreateRequest) => apiClient.post(`/api/admin/events/${eventId}/sponsors`, data, ApiResponseSchema(SponsorSchema)),
+
+	update: (id: string, data: SponsorUpdateRequest) => apiClient.put(`/api/admin/sponsors/${id}`, data, ApiResponseSchema(SponsorSchema)),
+
+	delete: (id: string) => apiClient.delete(`/api/admin/sponsors/${id}`, ApiResponseSchema(z.null())),
+
+	reorder: (eventId: string, data: SponsorReorderRequest) => apiClient.put(`/api/admin/events/${eventId}/sponsors/reorder`, data, ApiResponseSchema(z.null()))
 };
 
 // Admin - Event Form Fields
