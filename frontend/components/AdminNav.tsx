@@ -131,6 +131,7 @@ function AdminNav() {
 		webhooks: { "zh-Hant": "Webhook 設定", "zh-Hans": "Webhook 设置", en: "Webhooks" },
 		emailCampaigns: { "zh-Hant": "郵件發送", "zh-Hans": "邮件发送", en: "Email Campaigns" },
 		users: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "Users" },
+		settings: { "zh-Hant": "網站設定", "zh-Hans": "网站设置", en: "Site Settings" },
 		groupSetup: { "zh-Hant": "活動設定", "zh-Hans": "活动设置", en: "Event setup" },
 		groupAttendees: { "zh-Hant": "參加者", "zh-Hans": "参加者", en: "Attendees" },
 		groupSystem: { "zh-Hant": "系統", "zh-Hans": "系统", en: "System" },

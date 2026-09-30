@@ -308,6 +308,15 @@ model MagicLinkAttempt {
   @@map("magic_link_attempt")
 }
 
+// Site-wide key/value settings (see SiteSettingsSchema in @sitcontix/types)
+model SiteSetting {
+  key       String   @id
+  value     String   // JSON-encoded value
+  updatedAt DateTime @updatedAt
+
+  @@map("site_setting")
+}
+
 // Webhook configuration for an event
 model WebhookEndpoint {
   id              String   @id @default(cuid())

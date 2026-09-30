@@ -63,6 +63,7 @@ export const UserCapabilitiesSchema = z.object({
 	canManageEmailCampaigns: z.boolean(),
 	canManageReferrals: z.boolean(),
 	canManageSmsLogs: z.boolean(),
+	canManageSettings: z.boolean(),
 	managedEventIds: z.array(z.string())
 });
 export type UserCapabilities = z.infer<typeof UserCapabilitiesSchema>;

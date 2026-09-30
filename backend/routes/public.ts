@@ -5,6 +5,7 @@ import eventsRoutes from "./public/events";
 import invitationCodesRoutes from "./public/invitationCodes";
 import referralRoutes from "./public/referrals";
 import registrationsRoutes from "./public/registrations";
+import settingsRoutes from "./public/settings";
 import smsVerificationRoutes from "./public/smsVerification";
 import ticketsRoutes from "./public/tickets";
 
@@ -17,6 +18,7 @@ const publicRoutes: FastifyPluginAsync = async fastify => {
 	await fastify.register(invitationCodesRoutes);
 	await fastify.register(smsVerificationRoutes);
 	await fastify.register(calendarRoutes);
+	await fastify.register(settingsRoutes);
 };
 
 export default publicRoutes;

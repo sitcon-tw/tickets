@@ -23,6 +23,7 @@ import {
 	RegistrationStatsSchema,
 	RegistrationStatusSchema,
 	SessionSchema,
+	SiteSettingsSchema,
 	TargetAudienceSchema,
 	TicketAnalyticsSchema,
 	TicketSchema,
@@ -36,6 +37,7 @@ import {
 	type EventFormFieldReorderRequest,
 	type InvitationCodeInfo,
 	type LocalizedText,
+	type SiteSettingsUpdateRequest,
 	type Ticket,
 	type TicketReorderRequest,
 	type User
@@ -86,6 +88,11 @@ export const eventsAPI = {
 	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(PublicTicketListItemSchema))),
 
 	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema))
+};
+
+// Site settings - Public
+export const settingsAPI = {
+	get: () => apiClient.get("/api/settings", {}, ApiResponseSchema(SiteSettingsSchema))
 };
 
 // Tickets - Public
@@ -166,6 +173,13 @@ export const adminUsersAPI = {
 	getById: (id: string) => apiClient.get(`/api/admin/users/${id}`, {}, ApiResponseSchema(UserSchema)),
 
 	update: (id: string, data: Partial<User>) => apiClient.put(`/api/admin/users/${id}`, data, ApiResponseSchema(UserSchema))
+};
+
+// Admin - Settings
+export const adminSettingsAPI = {
+	get: () => apiClient.get("/api/admin/settings", {}, ApiResponseSchema(SiteSettingsSchema)),
+
+	update: (data: SiteSettingsUpdateRequest) => apiClient.put("/api/admin/settings", data, ApiResponseSchema(SiteSettingsSchema))
 };
 
 // Admin - Events

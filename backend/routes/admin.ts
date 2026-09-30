@@ -8,6 +8,7 @@ import eventsRoutes from "./admin/events";
 import invitationCodesRoutes from "./admin/invitationCodes";
 import referralsRoutes from "./admin/referrals";
 import registrationsRoutes from "./admin/registrations";
+import settingsRoutes from "./admin/settings";
 import smsVerificationLogsRoutes from "./admin/smsVerificationLogs";
 import ticketsRoutes from "./admin/tickets";
 import usersRoutes from "./admin/users";
@@ -27,6 +28,7 @@ const adminRoutes: FastifyPluginAsync = async fastify => {
 	await fastify.register(emailCampaignsRoutes);
 	await fastify.register(smsVerificationLogsRoutes);
 	await fastify.register(webhooksRoutes);
+	await fastify.register(settingsRoutes);
 };
 
 export default adminRoutes;

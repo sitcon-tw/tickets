@@ -16,6 +16,7 @@ export * from "./helpers.js";
 export * from "./invitation.js";
 export * from "./referral.js";
 export * from "./registration.js";
+export * from "./settings.js";
 export * from "./sms.js";
 export * from "./system.js";
 export * from "./ticket.js";

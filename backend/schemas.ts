@@ -41,6 +41,9 @@ import {
 	RegistrationUpdateRequestSchema,
 	// SMS schemas
 	SendVerificationRequestSchema,
+	// Site settings schemas
+	SiteSettingsSchema,
+	SiteSettingsUpdateRequestSchema,
 	// Common schemas
 	SortOrderSchema,
 	// Email campaign schemas
@@ -1872,6 +1875,51 @@ export const adminInvitationCodeSchemas = {
 } as const;
 
 // ----------------------------------------------------------------------------
+// Site Settings Schemas
+// ----------------------------------------------------------------------------
+
+export const SiteSettingsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: SiteSettingsSchema
+});
+
+export const settingsSchemas = {
+	getPublicSettings: {
+		description: "取得網站公開設定",
+		tags: ["settings"],
+		response: {
+			200: SiteSettingsResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	getSettings: {
+		description: "取得網站設定",
+		tags: ["admin/settings"],
+		response: {
+			200: SiteSettingsResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	updateSettings: {
+		description: "更新網站設定",
+		tags: ["admin/settings"],
+		body: SiteSettingsUpdateRequestSchema,
+		response: {
+			200: SiteSettingsResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+};
+
+// ----------------------------------------------------------------------------
 // Public Auth Schemas
 // ----------------------------------------------------------------------------
 
@@ -1888,6 +1936,7 @@ export const AuthPermissionsResponseSchema = z.object({
 			canManageEmailCampaigns: z.boolean(),
 			canManageReferrals: z.boolean(),
 			canManageSmsLogs: z.boolean(),
+			canManageSettings: z.boolean(),
 			managedEventIds: z.array(z.string())
 		})
 	})

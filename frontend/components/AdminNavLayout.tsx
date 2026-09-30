@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type { Event, UserCapabilities } from "@sitcontix/types";
-import { BarChart3, CalendarDays, ClipboardList, Globe, Home, KeyRound, LogOut, Mail, Menu, ShieldCheck, Ticket, Users, Webhook, X, type LucideIcon } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardList, Globe, Home, KeyRound, LogOut, Mail, Menu, Settings, ShieldCheck, Ticket, Users, Webhook, X, type LucideIcon } from "lucide-react";
 
 type NavItem = {
 	href: string;
@@ -51,7 +51,10 @@ const navGroups: NavGroup[] = [
 	},
 	{
 		i18nKey: "groupSystem",
-		items: [{ href: "/admin/users", i18nKey: "users", icon: ShieldCheck, requireCapability: "canManageUsers" }]
+		items: [
+			{ href: "/admin/users", i18nKey: "users", icon: ShieldCheck, requireCapability: "canManageUsers" },
+			{ href: "/admin/settings", i18nKey: "settings", icon: Settings, requireCapability: "canManageSettings" }
+		]
 	}
 ];
 
