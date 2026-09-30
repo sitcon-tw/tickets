@@ -301,6 +301,9 @@ function AnimatedTicket({
 	);
 }
 
+const flightDuration = 480;
+const flightEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
+
 function animateTicketSelection(element: HTMLElement, ticketAnimationRef: RefObject<HTMLDivElement | null>, ticketConfirmRef: RefObject<HTMLDivElement | null>, showConfirm: () => void) {
 	requestAnimationFrame(() => {
 		const ticketAnimation = ticketAnimationRef.current;
@@ -311,40 +314,52 @@ function animateTicketSelection(element: HTMLElement, ticketAnimationRef: RefObj
 			return;
 		}
 
-		const rect = element.getBoundingClientRect();
-		ticketAnimation.style.top = `${rect.top}px`;
-		ticketAnimation.style.left = `${rect.left}px`;
-		ticketAnimation.style.width = `${rect.width}px`;
-		ticketAnimation.style.height = `${rect.height}px`;
+		const from = element.getBoundingClientRect();
+		ticketAnimation.style.top = `${from.top}px`;
+		ticketAnimation.style.left = `${from.left}px`;
+		ticketAnimation.style.width = `${from.width}px`;
+		ticketAnimation.style.height = `${from.height}px`;
 		ticketAnimation.style.transform = "rotate(0deg)";
-		ticketAnimation.style.opacity = "1";
 		ticketAnimation.style.display = "block";
 
 		element.style.visibility = "hidden";
-		ticketConfirm.style.opacity = "0";
 		ticketConfirm.style.visibility = "hidden";
 		showConfirm();
 
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => {
-				const confirmRect = ticketConfirm.getBoundingClientRect();
-				ticketAnimation.style.top = `${confirmRect.top - 10}px`;
-				ticketAnimation.style.left = `${confirmRect.left}px`;
-				ticketAnimation.style.width = `${confirmRect.width}px`;
-				ticketAnimation.style.height = `${confirmRect.height}px`;
-				ticketAnimation.style.transform = "rotate(2deg)";
+				const target = ticketConfirmRef.current;
+				if (!target || !ticketAnimation.isConnected) return;
 
-				const handleTransitionEnd = () => {
-					ticketAnimation.removeEventListener("transitionend", handleTransitionEnd);
-					ticketAnimation.style.opacity = "0";
-					ticketConfirm.style.visibility = "visible";
-					ticketConfirm.style.opacity = "1";
-					setTimeout(() => {
-						ticketAnimation.style.display = "none";
-					}, 200);
+				// The confirm ticket is rotated, so its bounding box is larger than its layout box.
+				// Fly to the layout size, centred on the same point.
+				const box = target.getBoundingClientRect();
+				const width = target.offsetWidth;
+				const height = target.offsetHeight;
+				const to = {
+					top: `${box.top + box.height / 2 - height / 2}px`,
+					left: `${box.left + box.width / 2 - width / 2}px`,
+					width: `${width}px`,
+					height: `${height}px`,
+					transform: "rotate(2deg)"
 				};
 
-				ticketAnimation.addEventListener("transitionend", handleTransitionEnd, { once: true });
+				const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+				const flight = ticketAnimation.animate([{ top: `${from.top}px`, left: `${from.left}px`, width: `${from.width}px`, height: `${from.height}px`, transform: "rotate(0deg)" }, to], {
+					duration: reduceMotion ? 0 : flightDuration,
+					easing: flightEasing,
+					fill: "forwards"
+				});
+
+				// A cancelled flight (confirm closed mid-air) rejects; closeConfirm already reset everything.
+				flight.finished.then(
+					() => {
+						target.style.visibility = "visible";
+						flight.cancel();
+						ticketAnimation.style.display = "none";
+					},
+					() => {}
+				);
 			});
 		});
 	});
@@ -546,12 +561,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 		// Hide the animation ticket
 		if (ticketAnimationRef.current) {
+			ticketAnimationRef.current.getAnimations().forEach(animation => animation.cancel());
 			ticketAnimationRef.current.style.display = "none";
 		}
 
 		// Reset the popup ticket opacity and visibility
 		if (ticketConfirmRef.current) {
-			ticketConfirmRef.current.style.opacity = "0";
 			ticketConfirmRef.current.style.visibility = "hidden";
 		}
 	}

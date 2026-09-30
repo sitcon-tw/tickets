@@ -347,16 +347,15 @@
 		@apply fixed pointer-events-none;
 		z-index: 9999;
 		display: none;
-		transition:
-			all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			opacity 0.2s ease-out;
+		/* Driven by the Web Animations API; a CSS transition here would fight it */
+		transition: none;
+		will-change: top, left, width, height, transform;
 	}
 
 	.ticketConfirm {
 		@apply mb-6;
-		opacity: 0;
 		visibility: hidden;
-		transition: opacity 0.2s ease-out;
+		transition: none;
 	}
 }
 
