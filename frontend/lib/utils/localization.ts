@@ -41,3 +41,12 @@ export function normalizeFormFieldOption(opt: FormFieldOption): LocalizedText {
 	}
 	return opt;
 }
+
+/**
+ * The value submitted for an option: its English text, falling back deterministically to the first other language
+ * (never the viewer's locale, so the same option always submits the same string).
+ */
+export function getOptionValue(option: LocalizedText | string): string {
+	if (typeof option === "string") return option;
+	return option["en"] || option["zh-Hant"] || option["zh-Hans"] || Object.values(option).find(Boolean) || "";
+}

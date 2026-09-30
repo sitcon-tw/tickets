@@ -1,9 +1,10 @@
 import MarkdownContent from "@/components/MarkdownContent";
+import FieldError from "./FieldError";
 import { ChangeEvent, Ref } from "react";
 import { styled } from "styled-components";
 
 type CheckboxProps = {
-	label?: string;
+	label?: React.ReactNode;
 	id: string;
 	question?: string;
 	required?: boolean;
@@ -12,6 +13,8 @@ type CheckboxProps = {
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	inputRef?: React.Ref<HTMLInputElement>;
 	description?: string;
+	error?: string;
+	disabled?: boolean;
 };
 
 const HiddenCheckbox = styled.input.attrs({ type: "checkbox" })`
@@ -58,6 +61,10 @@ const StyledLabel = styled.label`
 		stroke: rgb(156 163 175);
 	}
 
+	${HiddenCheckbox}:focus-visible ~ svg .path {
+		stroke: rgb(59 130 246);
+	}
+
 	${HiddenCheckbox}:checked ~ svg .path {
 		stroke-dasharray: 70.5096664428711 9999999;
 		stroke-dashoffset: -262.2723388671875;
@@ -77,12 +84,25 @@ const StyledLabel = styled.label`
 	}
 `;
 
-function Checkbox({ label, id, question, required = false, value, checked, onChange, inputRef, description, ref }: CheckboxProps & { ref?: Ref<HTMLInputElement> }) {
+function Checkbox({ label, id, question, required = false, value, checked, onChange, inputRef, description, error, disabled, ref }: CheckboxProps & { ref?: Ref<HTMLInputElement> }) {
+	const errorId = `${id}-error`;
+
 	return (
 		<div>
 			{question ? <p style={{ marginBottom: "1rem", color: "inherit" }}>{question}</p> : null}
 			<StyledLabel htmlFor={id}>
-				<HiddenCheckbox id={id} name={id} aria-label={label} required={required} value={typeof value === "string" ? value : "true"} checked={checked} onChange={onChange} ref={inputRef || ref} />
+				<HiddenCheckbox
+					id={id}
+					name={id}
+					required={required}
+					disabled={disabled}
+					aria-invalid={error ? true : undefined}
+					aria-describedby={error ? errorId : undefined}
+					value={typeof value === "string" ? value : "true"}
+					checked={checked}
+					onChange={onChange}
+					ref={inputRef || ref}
+				/>
 				<svg viewBox="0 0 64 64">
 					<path
 						d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
@@ -95,6 +115,11 @@ function Checkbox({ label, id, question, required = false, value, checked, onCha
 			{description && (
 				<div className="text-sm text-gray-600 dark:text-gray-400 ml-7 mt-1">
 					<MarkdownContent content={description} className="text-sm" />
+				</div>
+			)}
+			{error && (
+				<div className="ml-7 mt-1">
+					<FieldError id={errorId} message={error} />
 				</div>
 			)}
 		</div>

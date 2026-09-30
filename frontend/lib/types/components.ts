@@ -49,11 +49,13 @@ export interface BandProps {
 // Form Field
 export interface FormFieldProps {
 	field: TicketFormField;
-	value: string | boolean | string[];
-	onTextChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-	onCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	/** The current answer; `undefined` when the field has not been answered yet. */
+	value: string | boolean | string[] | undefined;
+	onValueChange: (fieldId: string, value: string | boolean | string[]) => void;
 	pleaseSelectText: string;
-	otherText?: string;
+	/** Validation message shown under the field. */
+	error?: string;
+	disabled?: boolean;
 }
 
 // Home Components

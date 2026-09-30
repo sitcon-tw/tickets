@@ -1,4 +1,4 @@
-import { APIError, RetryConfig } from "@/lib/types/client";
+import { APIError, ApiResponseError, RetryConfig } from "@/lib/types/client";
 import { toText } from "@/lib/utils/text";
 import { z } from "zod";
 
@@ -119,7 +119,7 @@ class APIClient {
 		}));
 
 		if (errorData.error && errorData.error.message) {
-			return new Error(errorData.error.message);
+			return errorData.error.details === undefined ? new Error(errorData.error.message) : new ApiResponseError(errorData.error.message, errorData.error.code, errorData.error.details);
 		}
 		if (errorData.message) {
 			return new Error(errorData.message);

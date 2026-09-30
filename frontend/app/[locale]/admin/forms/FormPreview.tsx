@@ -5,11 +5,10 @@ import { FormField } from "@/components/form/FormField";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { FormDataType } from "@/lib/types/data";
-import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
 import { getLocalizedText } from "@/lib/utils/localization";
-import type { Ticket } from "@sitcontix/types";
+import { getVisibleFieldIds, type Ticket } from "@sitcontix/types";
 import { ClipboardList, EyeOff } from "lucide-react";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState } from "react";
 import { questionToEventFormField, type Question } from "./types";
 
 type FormPreviewProps = {
@@ -27,18 +26,12 @@ export function FormPreview({ eventId, questions, eventTickets, locale, t }: For
 	const selectedTicketId = ticketId || eventTickets[0]?.id || "";
 
 	const fields = useMemo(() => questions.map((q, index) => questionToEventFormField(q, eventId, index)), [questions, eventId]);
-	const visible = fields.filter(field => shouldDisplayField(field, { selectedTicketId, formData }, fields));
+	const visibleIds = getVisibleFieldIds(fields, { ticketId: selectedTicketId, formData, now: new Date() });
+	const visible = fields.filter(field => visibleIds.has(field.id));
 	const hiddenCount = fields.length - visible.length;
 
-	function handleTextChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-	}
-
-	function handleCheckboxChange(e: ChangeEvent<HTMLInputElement>) {
-		const { name, value, checked } = e.target;
-		const field = questions.find(q => q.id === name);
-		setFormData(prev => ({ ...prev, [name]: field && field.options.length > 0 ? (value ? value.split(",") : []) : checked }));
+	function handleValueChange(fieldId: string, value: string | boolean | string[]) {
+		setFormData(prev => ({ ...prev, [fieldId]: value }));
 	}
 
 	if (questions.length === 0) {
@@ -72,14 +65,7 @@ export function FormPreview({ eventId, questions, eventTickets, locale, t }: For
 
 			<div className="space-y-6 rounded-xl border bg-card p-5 sm:p-6">
 				{visible.map(field => (
-					<FormField
-						key={field.id}
-						field={field}
-						value={formData[field.id] ?? (field.type === "checkbox" && (field.options?.length ?? 0) > 0 ? [] : "")}
-						onTextChange={handleTextChange}
-						onCheckboxChange={handleCheckboxChange}
-						pleaseSelectText={t.pleaseSelect}
-					/>
+					<FormField key={field.id} field={field} value={formData[field.id]} onValueChange={handleValueChange} pleaseSelectText={t.pleaseSelect} />
 				))}
 				{visible.length === 0 && <p className="text-center text-sm text-muted-foreground">{t.previewAllHidden}</p>}
 			</div>

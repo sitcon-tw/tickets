@@ -253,6 +253,7 @@ function TicketConfirmContent({
 								}}
 								required={true}
 								placeholder={t.invitationCode}
+								className="max-w-60"
 							/>
 						</div>
 						<div className="flex items-end">

@@ -3,6 +3,7 @@
 import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import FieldError from "./FieldError";
 import { ChangeEvent, memo, useEffect, useMemo, useRef, useState } from "react";
 
 type TextWithAutocompleteProps = {
@@ -15,11 +16,14 @@ type TextWithAutocompleteProps = {
 	readOnly?: boolean;
 	prompts?: string[];
 	description?: string;
+	error?: string;
+	disabled?: boolean;
 };
 
 const EMPTY_PROMPTS: string[] = [];
 
-function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = EMPTY_PROMPTS, description }: TextWithAutocompleteProps) {
+function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = EMPTY_PROMPTS, description, error, disabled }: TextWithAutocompleteProps) {
+	const errorId = `${id}-error`;
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -107,18 +111,21 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 					type="text"
 					id={id}
 					name={id}
-					aria-label={label}
 					required={required}
+					disabled={disabled}
+					aria-invalid={error ? true : undefined}
+					aria-describedby={error ? errorId : undefined}
+					aria-autocomplete="list"
+					aria-expanded={showSuggestions && filteredPrompts.length > 0}
 					value={value}
 					onChange={handleInputChange}
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					readOnly={readOnly}
-					className="max-w-60"
 					autoComplete="off"
 				/>
 				{showSuggestions && filteredPrompts.length > 0 && (
-					<div ref={suggestionsRef} className="absolute z-50 w-full max-w-60 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+					<div ref={suggestionsRef} className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
 						{filteredPrompts.map((prompt, index) => (
 							<button
 								type="button"
@@ -135,6 +142,7 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 					</div>
 				)}
 			</div>
+			<FieldError id={errorId} message={error} />
 		</div>
 	);
 }

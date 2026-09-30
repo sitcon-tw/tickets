@@ -11,6 +11,7 @@ export * from "./common.js";
 export * from "./email.js";
 export * from "./event.js";
 export * from "./form.js";
+export * from "./formLogic.js";
 export * from "./helpers.js";
 export * from "./invitation.js";
 export * from "./referral.js";

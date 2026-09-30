@@ -19,13 +19,14 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { getLocalizedText, normalizeFormFieldOption } from "@/lib/utils/localization";
+import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields } from "@/lib/utils/formFields";
+import { getLocalizedText, getOptionValue } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import { LocalizedText, Registration, TicketFormField } from "@sitcontix/types";
+import { getVisibleFieldIds, Registration, TicketFormField, validateFormData } from "@sitcontix/types";
 import { ChevronLeft, ChevronRight, ExternalLink, Save, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
-import React, { Suspense, useCallback, useEffect, useReducer } from "react";
+import React, { Suspense, useCallback, useEffect, useReducer, useState } from "react";
 
 type FormDataType = {
 	[key: string]: string | boolean | string[];
@@ -46,7 +47,6 @@ type RegistrationDetailAction =
 	| { type: "loadFailed"; error: string }
 	| { type: "loaded"; registration: Registration; formFields: TicketFormField[]; formData: FormDataType }
 	| { type: "fieldChanged"; name: string; value: string | boolean | string[] }
-	| { type: "toggleCheckboxValue"; name: string; checked: boolean; value: string }
 	| { type: "editStarted" }
 	| { type: "editCancelled" }
 	| { type: "saveStarted" }
@@ -71,11 +71,6 @@ function registrationDetailReducer(state: RegistrationDetailState, action: Regis
 			};
 		case "fieldChanged":
 			return { ...state, formData: { ...state.formData, [action.name]: action.value } };
-		case "toggleCheckboxValue": {
-			const currentValues = Array.isArray(state.formData[action.name]) ? (state.formData[action.name] as string[]) : [];
-			const nextValues = action.checked ? [...currentValues, action.value] : currentValues.filter(v => v !== action.value);
-			return { ...state, formData: { ...state.formData, [action.name]: nextValues } };
-		}
 		case "editStarted":
 			return { ...state, isEditing: true };
 		case "editCancelled":
@@ -240,6 +235,13 @@ const registrationDetailTranslations = {
 		"zh-Hans": "此报名无法编辑",
 		en: "This registration cannot be edited"
 	},
+	yes: { "zh-Hant": "是", "zh-Hans": "是", en: "Yes" },
+	no: { "zh-Hant": "否", "zh-Hans": "否", en: "No" },
+	checkFields: {
+		"zh-Hant": "請檢查標示的欄位後再儲存",
+		"zh-Hans": "请检查标示的栏位后再保存",
+		en: "Please check the highlighted fields and save again"
+	},
 	pleaseSelect: {
 		"zh-Hant": "請選擇...",
 		"zh-Hans": "请选择...",
@@ -357,31 +359,50 @@ function RegistrationSummaryCards({ registration, locale, t }: { registration: R
 	);
 }
 
+function displayAnswer(field: TicketFormField, value: FormDataType[string] | undefined, locale: string, t: RegistrationDetailTranslations) {
+	// Answers are stored as the option's English text; show them in the viewer's language.
+	const localize = (answer: string) => {
+		const option = field.options?.find(opt => getOptionValue(opt) === answer);
+		return option ? getLocalizedText(option, locale) : answer;
+	};
+
+	if (Array.isArray(value)) return value.length > 0 ? value.map(localize).join(", ") : "-";
+	if (typeof value === "boolean") return value ? t.yes : t.no;
+	return value ? localize(value) : "-";
+}
+
 function RegistrationFormSection({
 	registration,
 	formFields,
+	visibleFieldIds,
 	formData,
+	fieldErrors,
 	isEditing,
+	isSaving,
 	locale,
 	t,
 	onEdit,
 	editActions,
 	cancelAction,
-	onTextChange,
-	onCheckboxChange
+	onValueChange
 }: {
 	registration: Registration;
 	formFields: TicketFormField[];
+	visibleFieldIds: Set<string>;
 	formData: FormDataType;
+	fieldErrors: Record<string, string>;
 	isEditing: boolean;
+	isSaving: boolean;
 	locale: string;
 	t: RegistrationDetailTranslations;
 	onEdit: () => void;
 	editActions: React.ReactNode;
 	cancelAction: React.ReactNode;
-	onTextChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-	onCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onValueChange: (fieldId: string, value: string | boolean | string[]) => void;
 }) {
+	// While editing only the fields that apply are shown; when reading, a hidden field still shows an answer that was stored earlier.
+	const shownFields = formFields.filter(field => visibleFieldIds.has(field.id) || (!isEditing && formData[field.id] !== undefined && formData[field.id] !== ""));
+
 	return (
 		<>
 			<div className="p-6 border-2 border-gray-500 rounded-lg">
@@ -394,23 +415,23 @@ function RegistrationFormSection({
 					)}
 				</div>
 				{!registration.canEdit && <p className="text-(--text-secondary) mb-4 text-sm">{t.cannotEdit}</p>}
-				<div className="flex flex-col gap-6">
-					{formFields.map(field => {
-						const fieldName = getLocalizedText(field.name, locale);
+				{/* Fields are disabled while saving so edits made during the request are not overwritten by its response. */}
+				<fieldset disabled={isSaving} className="m-0 flex min-w-0 flex-col gap-6 border-0 p-0">
+					{shownFields.map(field => {
 						const fieldId = field.id;
 						if (isEditing) {
-							return <FormField key={fieldId} field={field} value={formData[fieldId] || ""} onTextChange={onTextChange} onCheckboxChange={onCheckboxChange} pleaseSelectText={t.pleaseSelect} />;
+							return (
+								<FormField key={fieldId} field={field} value={formData[fieldId]} onValueChange={onValueChange} pleaseSelectText={t.pleaseSelect} error={fieldErrors[fieldId]} disabled={isSaving} />
+							);
 						}
-						const value = formData[fieldId];
-						const displayValue = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Yes" : "No") : value || "-";
 						return (
 							<div key={fieldId}>
-								<div className="font-bold mb-1">{fieldName}</div>
-								<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayValue}</div>
+								<div className="font-bold mb-1">{getLocalizedText(field.name, locale)}</div>
+								<div className="p-2 bg-(--background-secondary) rounded min-h-10 flex items-center">{displayAnswer(field, formData[fieldId], locale, t)}</div>
 							</div>
 						);
 					})}
-				</div>
+				</fieldset>
 				{isEditing && <div className="flex gap-4 mt-8 justify-center">{editActions}</div>}
 			</div>
 			{registration.canCancel && registration.status !== "cancelled" && <div className="flex justify-center">{cancelAction}</div>}
@@ -440,27 +461,31 @@ function MyRegistrationPageContent() {
 
 	const t = getTranslations(locale, registrationDetailTranslations);
 
-	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-		const { name, value } = e.target;
-		dispatchRegistrationDetail({ type: "fieldChanged", name, value });
+	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+	const handleValueChange = useCallback((fieldId: string, value: string | boolean | string[]) => {
+		dispatchRegistrationDetail({ type: "fieldChanged", name: fieldId, value });
+		setFieldErrors(prev => {
+			if (!(fieldId in prev)) return prev;
+			const { [fieldId]: _cleared, ...rest } = prev;
+			return rest;
+		});
 	}, []);
 
-	const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value, checked } = e.target;
-
-		if (value === "true") {
-			dispatchRegistrationDetail({ type: "fieldChanged", name, value: checked });
-		} else if (checked && value !== "true") {
-			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
-			dispatchRegistrationDetail({ type: "fieldChanged", name, value: values });
-		} else {
-			dispatchRegistrationDetail({ type: "toggleCheckboxValue", name, checked, value });
-		}
-	}, []);
+	const visibleFieldIds = registration ? getVisibleFieldIds(formFields, { ticketId: registration.ticketId, formData, now: new Date() }) : new Set<string>();
 
 	async function handleSave() {
 		if (!registration || !registration.canEdit) {
 			showAlert(t.cannotEdit, "warning");
+			return;
+		}
+
+		const messages = getFormErrorMessages(validateFormData(formFields, { ticketId: registration.ticketId, formData, now: new Date() }, registration.formData), locale);
+		setFieldErrors(messages);
+		const firstInvalidId = formFields.find(field => messages[field.id])?.id;
+		if (firstInvalidId) {
+			showAlert(t.checkFields, "error");
+			focusFormField(firstInvalidId);
 			return;
 		}
 
@@ -476,13 +501,23 @@ function MyRegistrationPageContent() {
 			}
 		} catch (error) {
 			console.error("Save error:", error);
-			showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+			const serverErrors = getFormErrorsFromApiError(error);
+			if (serverErrors) {
+				const serverMessages = getFormErrorMessages(serverErrors, locale);
+				setFieldErrors(serverMessages);
+				showAlert(t.checkFields, "error");
+				const firstServerError = formFields.find(field => serverMessages[field.id])?.id;
+				if (firstServerError) focusFormField(firstServerError);
+			} else {
+				showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+			}
 		} finally {
 			dispatchRegistrationDetail({ type: "saveFinished" });
 		}
 	}
 
 	function handleCancelEdit() {
+		setFieldErrors({});
 		dispatchRegistrationDetail({ type: "editCancelled" });
 	}
 
@@ -529,45 +564,7 @@ function MyRegistrationPageContent() {
 				if (regData.ticketId) {
 					const fieldsResponse = await ticketsAPI.getFormFields(regData.ticketId);
 					if (fieldsResponse.success) {
-						processedFields = (fieldsResponse.data || []).map(field => {
-							let name: LocalizedText = field.name;
-							if (typeof name === "string" && name === "[object Object]") {
-								name = { en: typeof field.description === "string" ? field.description : "field" };
-							} else if (typeof name === "string") {
-								const rawName = name;
-								try {
-									name = JSON.parse(rawName);
-								} catch {
-									name = { en: rawName };
-								}
-							}
-
-							// Legacy data may still store the description as a (JSON) string
-							let description = (field.description ?? undefined) as LocalizedText | string | undefined;
-							const originalStr = typeof description === "string" ? description : "";
-							if (typeof description === "string" && description.startsWith("{")) {
-								try {
-									description = JSON.parse(description);
-								} catch {
-									description = { en: originalStr };
-								}
-							} else if (typeof description === "string") {
-								description = { en: description };
-							}
-
-							const options = (field.options || []).map(normalizeFormFieldOption);
-
-							return {
-								...field,
-								eventId: regData.eventId,
-								type: field.type,
-								name,
-								description: description as LocalizedText | undefined,
-								options,
-								filters: field.filters,
-								prompts: field.prompts
-							};
-						});
+						processedFields = normalizeTicketFormFields(fieldsResponse.data || [], regData.eventId);
 					}
 				}
 
@@ -629,8 +626,11 @@ function MyRegistrationPageContent() {
 							<RegistrationFormSection
 								registration={registration}
 								formFields={formFields}
+								visibleFieldIds={visibleFieldIds}
 								formData={formData}
+								fieldErrors={fieldErrors}
 								isEditing={isEditing}
+								isSaving={isSaving}
 								locale={locale}
 								t={t}
 								onEdit={() => dispatchRegistrationDetail({ type: "editStarted" })}
@@ -666,8 +666,7 @@ function MyRegistrationPageContent() {
 										</AlertDialogContent>
 									</AlertDialog>
 								}
-								onTextChange={handleTextChange}
-								onCheckboxChange={handleCheckboxChange}
+								onValueChange={handleValueChange}
 							/>
 						</div>
 					)}

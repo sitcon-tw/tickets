@@ -1,8 +1,8 @@
-import type { EventFormFields, Prisma } from "#prisma/generated/prisma/client";
+import type { EventFormFields } from "#prisma/generated/prisma/client";
+import { getVisibleFieldIds, pruneFormData, validateFormData, type FormAnswers, type FormErrors, type FormLogicField } from "@sitcontix/types";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { validationErrorResponse } from "./response";
 import { toText } from "./text";
-import { nowInUTC8 } from "./timezone";
 
 export type ValidationRule = (value: unknown) => true | string;
 
@@ -12,54 +12,6 @@ export interface ValidationSchema {
 
 export interface ValidationErrors {
 	[field: string]: string[];
-}
-
-export interface FormField {
-	id: string;
-	type: "text" | "textarea" | "select" | "radio" | "checkbox";
-	name?: string | Record<string, string>;
-	description: string;
-	required: boolean;
-	validater?: string;
-	values?: string | Array<string | Record<string, string>>;
-	filters?: {
-		enabled: boolean;
-		operator?: "and" | "or";
-		action?: "display" | "hide";
-		conditions: FilterCondition[];
-	};
-	enableOther?: boolean;
-}
-
-const localizedText = (json: Prisma.JsonValue): string => {
-	if (typeof json === "string") return json;
-	if (json && typeof json === "object" && !Array.isArray(json)) {
-		return toText(json["zh-Hant"] ?? json["en"] ?? Object.values(json)[0] ?? "");
-	}
-	return "";
-};
-
-/** Map a Prisma form field row (with untyped JSON columns) to the shape used by validation. */
-export const toFormField = (row: EventFormFields): FormField => ({
-	id: row.id,
-	type: row.type as FormField["type"],
-	name: row.name as FormField["name"],
-	description: localizedText(row.description),
-	required: row.required,
-	validater: row.validater ?? undefined,
-	values: (row.values ?? undefined) as FormField["values"],
-	filters: (row.filters ?? undefined) as FormField["filters"],
-	enableOther: row.enableOther
-});
-
-export interface FilterCondition {
-	type: "ticket" | "field" | "time";
-	ticketId?: string;
-	fieldId?: string;
-	operator?: "filled" | "notFilled" | "equals";
-	value?: string;
-	startTime?: string;
-	endTime?: string;
 }
 
 export const rules = {
@@ -162,185 +114,62 @@ export const validateQuery = (schema: ValidationSchema) => {
 	};
 };
 
-const shouldDisplayField = (field: FormField, ticketId: string, formData: Record<string, unknown>, allFields: FormField[]): boolean => {
-	if (!field.filters || !field.filters.enabled) {
-		return true;
-	}
-
-	const filter = field.filters;
-	const now = nowInUTC8();
-
-	const results = filter.conditions.map(condition => {
-		switch (condition.type) {
-			case "ticket":
-				return condition.ticketId ? ticketId === condition.ticketId : true;
-
-			case "field": {
-				if (!condition.fieldId) return true;
-				const referencedField = allFields.find(f => f.id === condition.fieldId);
-				if (!referencedField) return true;
-
-				const fieldIdKey = referencedField.id;
-				const fieldValue = formData[fieldIdKey || condition.fieldId];
-				const operator = condition.operator || "equals";
-
-				switch (operator) {
-					case "filled":
-						return fieldValue !== undefined && fieldValue !== null && fieldValue !== "" && !(Array.isArray(fieldValue) && fieldValue.length === 0);
-					case "notFilled":
-						return fieldValue === undefined || fieldValue === null || fieldValue === "" || (Array.isArray(fieldValue) && fieldValue.length === 0);
-					case "equals":
-						return String(fieldValue) === String(condition.value);
-					default:
-						return true;
-				}
-			}
-
-			case "time": {
-				const nowTime = now.getTime();
-				const startTime = condition.startTime ? new Date(condition.startTime).getTime() : -Infinity;
-				const endTime = condition.endTime ? new Date(condition.endTime).getTime() : Infinity;
-				return nowTime >= startTime && nowTime <= endTime;
-			}
-
-			default:
-				return true;
+/** Parses a JSON column that may have been stored as an array or as a JSON string. */
+const parseJsonArray = (value: unknown): unknown[] => {
+	if (Array.isArray(value)) return value;
+	if (typeof value === "string") {
+		try {
+			const parsed: unknown = JSON.parse(value);
+			return Array.isArray(parsed) ? parsed : [];
+		} catch {
+			return [];
 		}
-	});
-
-	const conditionsMet = filter.operator === "and" ? results.every(r => r) : results.some(r => r);
-	return filter.action === "display" ? conditionsMet : !conditionsMet;
+	}
+	return [];
 };
 
-export const validateRegistrationFormData = (formData: Record<string, unknown>, formFields: FormField[], ticketId: string | null = null): ValidationErrors | null => {
-	const errors: ValidationErrors = {};
+/** Map a Prisma form field row (with untyped JSON columns) to the shape used by the shared form logic. */
+export const toFormLogicField = (row: EventFormFields): FormLogicField => ({
+	id: row.id,
+	type: row.type as FormLogicField["type"],
+	required: row.required,
+	validater: row.validater,
+	options: parseJsonArray(row.values) as FormLogicField["options"],
+	enableOther: row.enableOther,
+	filters: row.filters
+});
 
-	for (const field of formFields) {
-		if (ticketId && !shouldDisplayField(field, ticketId, formData, formFields)) {
-			continue;
+export interface RegistrationAnswers {
+	/** Field id -> error codes, or null when the answers are valid. */
+	errors: FormErrors | null;
+	/** The answers to store. */
+	answers: FormAnswers;
+}
+
+/**
+ * Validates submitted answers against the event's form fields and returns the answers to store.
+ *
+ * - Creating (`previousAnswers` omitted): only the answers of fields that are visible for the ticket are kept.
+ * - Editing: answers of visible fields are replaced by the submitted ones; every other stored answer is left untouched, so
+ *   a later edit never deletes data that was valid when it was submitted. Stored answers that are no longer valid options
+ *   are accepted as long as they are unchanged.
+ */
+export const resolveRegistrationAnswers = (rows: EventFormFields[], ticketId: string, submitted: FormAnswers, previousAnswers?: FormAnswers): RegistrationAnswers => {
+	const fields = rows.map(toFormLogicField);
+	const context = { ticketId, formData: submitted, now: new Date() };
+	const errors = validateFormData(fields, context, previousAnswers);
+	const visibleIds = getVisibleFieldIds(fields, context);
+
+	let answers: FormAnswers;
+	if (previousAnswers) {
+		answers = { ...previousAnswers };
+		for (const id of visibleIds) {
+			if (id in submitted) answers[id] = submitted[id];
+			else delete answers[id];
 		}
-
-		const fieldIdKey = field.id;
-
-		if (!fieldIdKey) {
-			continue;
-		}
-
-		const value = formData[fieldIdKey];
-		const fieldErrors: string[] = [];
-
-		if (field.required && (value === undefined || value === null || value === "")) {
-			fieldErrors.push(`為必填欄位`);
-			errors[fieldIdKey] = fieldErrors;
-			continue;
-		}
-
-		if (!field.required && (value === undefined || value === null || value === "")) {
-			continue;
-		}
-
-		switch (field.type) {
-			case "text":
-			case "textarea":
-				if (typeof value !== "string") {
-					fieldErrors.push(`${field.description}必須為文字`);
-					break;
-				}
-				if (field.validater) {
-					try {
-						const regex = new RegExp(field.validater);
-						if (!regex.test(value)) {
-							fieldErrors.push(`${field.description}格式不正確`);
-						}
-					} catch {}
-				}
-				break;
-
-			case "select":
-			case "radio":
-				if (field.values) {
-					try {
-						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
-
-						const validValues = options
-							.map((opt: string | Record<string, string>) => {
-								if (typeof opt === "object" && opt !== null) {
-									// If it has a 'value' property, use that
-									if ("value" in opt && opt.value !== undefined) {
-										return opt.value;
-									}
-									// Otherwise, collect all locale values
-									return Object.values(opt);
-								}
-								return opt;
-							})
-							.flat();
-
-						// For radio fields with enableOther, allow custom values
-						const isOtherValue = field.type === "radio" && field.enableOther && !validValues.includes(value);
-
-						if (!validValues.includes(value)) {
-							if (isOtherValue) {
-								// If "Other" is enabled, validate custom value with regex if provided
-								if (field.validater && typeof value === "string") {
-									try {
-										const regex = new RegExp(field.validater);
-										if (!regex.test(value)) {
-											fieldErrors.push(`${field.description}格式不正確`);
-										}
-									} catch {
-										fieldErrors.push(`${field.description}驗證規則配置錯誤`);
-									}
-								}
-							} else {
-								fieldErrors.push(`${field.description}選項無效，可選值：${validValues.join(", ")}`);
-							}
-						}
-					} catch {
-						fieldErrors.push(`${field.description}選項配置錯誤`);
-					}
-				}
-				break;
-
-			case "checkbox":
-				if (field.values) {
-					try {
-						if (!Array.isArray(value)) {
-							fieldErrors.push(`${field.description}必須為陣列`);
-							break;
-						}
-
-						const options = typeof field.values === "string" ? JSON.parse(field.values) : field.values;
-
-						const validValues = options
-							.map((opt: string | Record<string, string>) => {
-								if (typeof opt === "object" && opt !== null) {
-									// If it has a 'value' property, use that
-									if ("value" in opt && opt.value !== undefined) {
-										return opt.value;
-									}
-									// Otherwise, collect all locale values
-									return Object.values(opt);
-								}
-								return opt;
-							})
-							.flat();
-
-						const invalidValues = (value as string[]).filter((v: string) => !validValues.includes(v));
-						if (invalidValues.length > 0) {
-							fieldErrors.push(`${field.description}包含無效選項：${invalidValues.join(", ")}`);
-						}
-					} catch {
-						fieldErrors.push(`${field.description}選項配置錯誤`);
-					}
-				}
-				break;
-		}
-
-		if (fieldErrors.length > 0) {
-			errors[fieldIdKey] = fieldErrors;
-		}
+	} else {
+		answers = pruneFormData(submitted, visibleIds);
 	}
 
-	return Object.keys(errors).length > 0 ? errors : null;
+	return { errors: Object.keys(errors).length > 0 ? errors : null, answers };
 };

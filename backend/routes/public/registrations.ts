@@ -8,7 +8,7 @@ import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/emai
 import { safeJsonParse, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
-import { toFormField, validateRegistrationFormData } from "#utils/validation";
+import { resolveRegistrationAnswers } from "#utils/validation";
 import { buildRegistrationCancelledNotification, buildRegistrationConfirmedNotification, dispatchWebhook } from "#utils/webhook";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
@@ -248,7 +248,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("validating_form_data");
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields.map(toFormField), ticketId);
+				const { errors: formErrors, answers: registrationAnswers } = resolveRegistrationAnswers(formFields, ticketId, sanitizedFormData);
 				if (formErrors) {
 					span.addEvent("form_validation.failed");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "Form validation failed" });
@@ -305,7 +305,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								ticketId,
 								invitationCodeId,
 								email: user.email,
-								formData: safeJsonStringify(sanitizedFormData, "{}", "registration creation"),
+								formData: safeJsonStringify(registrationAnswers, "{}", "registration creation"),
 								status: "confirmed",
 								...(referrerRegistrationId && { referredBy: referrerRegistrationId })
 							},
@@ -789,7 +789,8 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("validating_form_data");
-				const formErrors = validateRegistrationFormData(sanitizedFormData, formFields.map(toFormField), registration.ticketId);
+				const previousAnswers = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration edit baseline");
+				const { errors: formErrors, answers: registrationAnswers } = resolveRegistrationAnswers(formFields, registration.ticketId, sanitizedFormData, previousAnswers);
 				if (formErrors) {
 					span.addEvent("form_validation.failed");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "Form validation failed" });
@@ -801,7 +802,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				const updatedRegistration = await prisma.registration.update({
 					where: { id },
 					data: {
-						formData: safeJsonStringify(sanitizedFormData, "{}", "registration update"),
+						formData: safeJsonStringify(registrationAnswers, "{}", "registration update"),
 						updatedAt: new Date()
 					},
 					include: {

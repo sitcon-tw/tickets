@@ -1,4 +1,5 @@
 import MarkdownContent from "@/components/MarkdownContent";
+import FieldError from "./FieldError";
 import { styled } from "styled-components";
 
 export type CheckboxOption = string | { value: string; label: string };
@@ -10,6 +11,8 @@ type MultiCheckboxProps = {
 	values?: string[];
 	onValueChange?: (values: string[]) => void;
 	description?: string;
+	error?: string;
+	disabled?: boolean;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -73,6 +76,10 @@ const StyledLabel = styled.label`
 		stroke: rgb(156 163 175);
 	}
 
+	${HiddenCheckbox}:focus-visible ~ svg .path {
+		stroke: rgb(59 130 246);
+	}
+
 	${HiddenCheckbox}:checked ~ svg .path {
 		stroke-dasharray: 70.5096664428711 9999999;
 		stroke-dashoffset: -262.2723388671875;
@@ -94,7 +101,9 @@ const StyledLabel = styled.label`
 
 const EMPTY_VALUES: string[] = [];
 
-export default function MultiCheckbox({ label, name, options, values = EMPTY_VALUES, onValueChange, description }: MultiCheckboxProps) {
+export default function MultiCheckbox({ label, name, options, values = EMPTY_VALUES, onValueChange, description, error, disabled }: MultiCheckboxProps) {
+	const errorId = `${name}-error`;
+
 	const handleCheckedChange = (optionValue: string, checked: boolean) => {
 		if (!onValueChange) return;
 
@@ -106,14 +115,14 @@ export default function MultiCheckbox({ label, name, options, values = EMPTY_VAL
 	};
 
 	return (
-		<StyledWrapper>
+		<StyledWrapper aria-describedby={error ? errorId : undefined} disabled={disabled}>
 			<legend className="legend">{label}</legend>
 			{description && (
 				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
 					<MarkdownContent content={description} className="text-sm" />
 				</div>
 			)}
-			<div className={`grid gap-3 ${options.length > 10 ? "grid-cols-2" : "grid-cols-1"}`}>
+			<div className={`grid gap-3 ${options.length > 10 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
 				{options.map(option => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
 					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
@@ -122,7 +131,7 @@ export default function MultiCheckbox({ label, name, options, values = EMPTY_VAL
 
 					return (
 						<StyledLabel key={optionId} htmlFor={optionId}>
-							<HiddenCheckbox id={optionId} name={name} checked={isChecked} onChange={e => handleCheckedChange(optionValue, e.target.checked)} />
+							<HiddenCheckbox id={optionId} name={name} aria-invalid={error ? true : undefined} checked={isChecked} onChange={e => handleCheckedChange(optionValue, e.target.checked)} />
 							<svg viewBox="0 0 64 64">
 								<path
 									d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
@@ -135,6 +144,7 @@ export default function MultiCheckbox({ label, name, options, values = EMPTY_VAL
 					);
 				})}
 			</div>
+			<FieldError id={errorId} message={error} />
 		</StyledWrapper>
 	);
 }
