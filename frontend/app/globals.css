@@ -122,8 +122,49 @@
 @layer components {
 	/* Ticket card */
 	.ticket {
-		@apply bg-white dark:bg-gray-800 border-2 border-gray-800 dark:border-gray-500 rounded-lg p-6 cursor-pointer transition-all duration-150;
-		@apply hover:border-gray-400 dark:hover:border-gray-200;
+		--ticket-stub: 6.5rem;
+		--ticket-notch: 0.5rem;
+		--ticket-border: var(--color-gray-800);
+		@apply relative bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-all duration-150;
+		box-shadow: inset 0 0 0 2px var(--ticket-border);
+		/* Half-circle notches punched out of the top and bottom edge at the perforation */
+		mask:
+			radial-gradient(circle var(--ticket-notch) at calc(100% - var(--ticket-stub)) 0, #0000 97%, #000),
+			radial-gradient(circle var(--ticket-notch) at calc(100% - var(--ticket-stub)) 100%, #0000 97%, #000);
+		-webkit-mask-composite: source-in;
+		mask-composite: intersect;
+	}
+
+	.ticket:hover {
+		--ticket-border: var(--color-gray-400);
+	}
+
+	.dark .ticket {
+		--ticket-border: var(--color-gray-500);
+	}
+
+	.dark .ticket:hover {
+		--ticket-border: var(--color-gray-200);
+	}
+
+	.ticket-body {
+		@apply flex h-full;
+	}
+
+	.ticket-main {
+		@apply min-w-0 flex-1 space-y-2 p-5;
+	}
+
+	.ticket-stub {
+		@apply flex shrink-0 flex-col items-center justify-center gap-1 p-3 text-center;
+		@apply bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-300;
+		width: var(--ticket-stub);
+		border-left: 2px dashed var(--ticket-border);
+	}
+
+	.ticket-barcode {
+		@apply mt-2 h-6 w-full opacity-40;
+		background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px, currentColor 4px 5px, transparent 5px 8px);
 	}
 
 	/* Universal Markdown/Text Content Typography */
