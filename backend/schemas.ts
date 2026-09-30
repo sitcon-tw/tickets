@@ -266,6 +266,7 @@ export const eventSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			422: ErrorResponseSchema
 		}
 	},
@@ -292,6 +293,7 @@ export const eventSchemas = {
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
 			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			422: ErrorResponseSchema
 		}
 	},
@@ -1833,7 +1835,9 @@ export const InvitationCodeBulkCreateBodySchema = z.object({
 export const InvitationCodeSendEmailBodySchema = z.object({
 	email: z.email(),
 	code: z.string(),
-	message: z.string().default("").optional()
+	// Codes are only unique per ticket, so callers should pass the ticket the code belongs to
+	ticketId: z.string().optional(),
+	message: z.string().max(5000).default("").optional()
 });
 
 export const adminInvitationCodeSchemas = {
@@ -1861,6 +1865,7 @@ export const adminInvitationCodeSchemas = {
 		response: {
 			200: SuccessResponseSchema,
 			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	}

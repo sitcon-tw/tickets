@@ -64,10 +64,18 @@ export const PublicEventListItemSchema = z.object({
 export type PublicEventListItem = z.infer<typeof PublicEventListItemSchema>;
 
 /**
+ * URL-friendly event slug: lowercase letters, digits and single hyphens
+ */
+export const EventSlugSchema = z
+	.string()
+	.max(100)
+	.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug may only contain lowercase letters, numbers and single hyphens");
+
+/**
  * Event create request
  */
 export const EventCreateRequestSchema = z.object({
-	slug: z.string().optional(),
+	slug: EventSlugSchema.optional(),
 	name: LocalizedTextSchema,
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),
@@ -76,7 +84,10 @@ export const EventCreateRequestSchema = z.object({
 	editDeadline: z.coerce.date().optional(),
 	locationText: LocalizedTextSchema.optional(),
 	mapLink: z.string().optional(),
-	ogImage: z.string().optional()
+	ogImage: z.string().optional(),
+	hideEvent: z.boolean().optional(),
+	useOpass: z.boolean().optional(),
+	opassEventId: z.string().nullable().optional()
 });
 export type EventCreateRequest = z.infer<typeof EventCreateRequestSchema>;
 
@@ -84,7 +95,11 @@ export type EventCreateRequest = z.infer<typeof EventCreateRequestSchema>;
  * Event update request
  */
 export const EventUpdateRequestSchema = z.object({
-	slug: z.string().optional(),
+	// null or "" clears the slug (the event then falls back to the last 6 characters of its id)
+	slug: z
+		.union([EventSlugSchema, z.literal("")])
+		.nullable()
+		.optional(),
 	name: LocalizedTextSchema.optional(),
 	description: LocalizedTextSchema.optional(),
 	plainDescription: LocalizedTextSchema.optional(),

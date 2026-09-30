@@ -73,8 +73,9 @@ export const TicketCreateRequestSchema = z.object({
 	plainDescription: LocalizedTextSchema.optional(),
 	price: z.number().min(0),
 	quantity: z.number().int().min(1),
-	saleStart: z.coerce.date().optional(),
-	saleEnd: z.coerce.date().optional(),
+	// null or omitted means no limit
+	saleStart: z.coerce.date().nullable().optional(),
+	saleEnd: z.coerce.date().nullable().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),
 	hidden: z.boolean().optional(),
@@ -92,8 +93,9 @@ export const TicketUpdateRequestSchema = z.object({
 	plainDescription: LocalizedTextSchema.optional(),
 	price: z.number().min(0).optional(),
 	quantity: z.number().int().min(0).optional(),
-	saleStart: z.coerce.date().optional(),
-	saleEnd: z.coerce.date().optional(),
+	// null clears the sale window boundary
+	saleStart: z.coerce.date().nullable().optional(),
+	saleEnd: z.coerce.date().nullable().optional(),
 	isActive: z.boolean().optional(),
 	requireInviteCode: z.boolean().optional(),
 	requireSmsVerification: z.boolean().optional(),

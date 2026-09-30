@@ -1,7 +1,7 @@
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { InvitationCode } from "@sitcontix/types";
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
@@ -11,8 +11,33 @@ import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
 import { sendInvitationCode } from "#utils/email";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { sanitizeHtml } from "#utils/sanitize";
 
 const componentLogger = logger.child({ component: "admin/invitationCodes" });
+
+/** Admins can manage every event; eventAdmins only the events listed in their permissions (mirrors requireEventAccess) */
+const canAccessEvent = (request: FastifyRequest, eventId: string): boolean => {
+	const user = request.user;
+	if (!user) return false;
+	if (user.role === "admin") return true;
+	return user.role === "eventAdmin" && (user.permissions ?? []).includes(eventId);
+};
+
+const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+/**
+ * The admin UI collects the email message as plain text, but the email template inserts it as HTML.
+ * Plain text is escaped and turned into paragraphs; anything that already looks like HTML is sanitized.
+ */
+const messageToHtml = (message?: string): string | undefined => {
+	const trimmed = message?.trim();
+	if (!trimmed) return undefined;
+	if (/<\/?[a-z][^>]*>/i.test(trimmed)) return sanitizeHtml(trimmed);
+	return trimmed
+		.split(/\n{2,}/)
+		.map(paragraph => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+		.join("");
+};
 
 const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new invitation code
@@ -636,15 +661,17 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 			});
 
 			try {
-				const { email, code, message } = request.body;
+				const { email, code, ticketId, message } = request.body;
 
 				span.addEvent("invitation_code.fetching");
 
-				// Fetch the invitation code details
-				const invitationCode = await prisma.invitationCode.findFirst({
+				// Codes are unique per ticket, so the same code can exist on several tickets/events.
+				// Only consider codes the caller may manage, then narrow by ticket if the caller named one.
+				const candidates = await prisma.invitationCode.findMany({
 					where: {
 						code: code,
-						isActive: true
+						isActive: true,
+						...(ticketId && { ticketId })
 					},
 					include: {
 						ticket: {
@@ -663,11 +690,22 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					}
 				});
 
-				if (!invitationCode) {
+				const accessible = candidates.filter(candidate => canAccessEvent(request, candidate.ticket.event.id));
+
+				// Same 404 whether the code is missing or belongs to an event the caller cannot manage
+				if (accessible.length === 0) {
 					span.addEvent("invitation_code.not_found");
 					const { response, statusCode } = notFoundResponse("邀請碼不存在");
 					return reply.code(statusCode).send(response);
 				}
+
+				if (accessible.length > 1) {
+					span.addEvent("invitation_code.ambiguous");
+					const { response, statusCode } = conflictResponse("此邀請碼存在於多個票券，請指定票券");
+					return reply.code(statusCode).send(response);
+				}
+
+				const invitationCode = accessible[0];
 
 				span.setAttribute("invitation_code.id", invitationCode.id);
 				span.setAttribute("ticket.id", invitationCode.ticket.id);
@@ -677,14 +715,14 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				// Build ticket URL
 				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
-				const ticketUrl = `${frontendUrl}/${invitationCode.ticket.event.slug}/ticket/${invitationCode.ticket.id}?inv=${code}`;
+				const ticketUrl = `${frontendUrl}/${invitationCode.ticket.event.slug || invitationCode.ticket.event.id}/ticket/${invitationCode.ticket.id}?inv=${encodeURIComponent(code)}`;
 
 				// Format valid until date
 				const validUntil = invitationCode.validUntil ? new Date(invitationCode.validUntil).toLocaleDateString("zh-TW") : "無期限";
 
 				span.addEvent("invitation_code.sending_email");
 
-				await sendInvitationCode(email, code, invitationCode.ticket.event.name, invitationCode.ticket.name, ticketUrl, validUntil, message);
+				await sendInvitationCode(email, code, invitationCode.ticket.event.name, invitationCode.ticket.name, ticketUrl, validUntil, messageToHtml(message));
 
 				span.addEvent("invitation_code.email_sent");
 				span.setStatus({ code: SpanStatusCode.OK });

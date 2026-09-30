@@ -114,7 +114,7 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 		const file = e.target.files?.[0];
 		if (!file) return;
 		const reader = new FileReader();
-		reader.onload = event => setCodesText(String(event.target?.result ?? ""));
+		reader.onload = event => setCodesText(typeof event.target?.result === "string" ? event.target.result : "");
 		reader.readAsText(file);
 		e.target.value = "";
 	}

@@ -152,7 +152,7 @@ export function SendEmailDialog({ codes, onClose }: SendEmailDialogProps) {
 						method: "POST",
 						credentials: "include",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ email: pair.email, code: pair.code.code, message: message.trim() })
+						body: JSON.stringify({ email: pair.email, code: pair.code.code, ticketId: pair.code.ticketId, message: message.trim() })
 					});
 					if (!response.ok) {
 						const body = await response.json().catch(() => null);

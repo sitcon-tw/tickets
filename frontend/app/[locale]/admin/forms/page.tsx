@@ -255,14 +255,12 @@ export default function FormsPage() {
 			if (saveErrors.length > 0) throw new Error(saveErrors.join("; "));
 			madeProgress = true;
 
-			// 3. Newly created fields have new ids: fix conditions that referenced their temporary ids, and settings the create endpoint ignores.
+			// 3. Newly created fields have new ids: fix conditions that referenced their temporary ids.
 			const fixResults = await Promise.allSettled(
 				questions.flatMap(q => {
 					const needsFilters = q.filters?.conditions.some(condition => condition.fieldId && idMap[condition.fieldId]);
-					const needsOther = isTempId(q.id) && q.type === "radio" && q.enableOther;
-					if (!needsFilters && !needsOther) return [];
-					const data = { ...(needsFilters && { filters: serializeFilters(remapFilters(q.filters, idMap)) }), ...(needsOther && { enableOther: true }) };
-					return [adminEventFormFieldsAPI.update(idMap[q.id] ?? q.id, data).then(assertOk)];
+					if (!needsFilters) return [];
+					return [adminEventFormFieldsAPI.update(idMap[q.id] ?? q.id, { filters: serializeFilters(remapFilters(q.filters, idMap)) }).then(assertOk)];
 				})
 			);
 			const fixErrors = fixResults.flatMap(result => (result.status === "rejected" ? [errorMessage(result.reason)] : []));

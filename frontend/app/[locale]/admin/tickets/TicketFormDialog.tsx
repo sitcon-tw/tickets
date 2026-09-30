@@ -211,19 +211,9 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 			"zh-Hans": "结束时间不能晚于活动开始时间（{date}）。",
 			en: "End time cannot be later than the event start ({date})."
 		},
-		errDateCannotClear: {
-			"zh-Hant": "已設定的販售時間無法清除，請改成其他時間。",
-			"zh-Hans": "已设置的贩售时间无法清除，请改成其他时间。",
-			en: "A sale time that has been set can't be removed. Change it to another time instead."
-		},
 		saveFailed: { "zh-Hant": "儲存失敗：", "zh-Hans": "保存失败：", en: "Could not save: " },
 		created: { "zh-Hant": "票種已新增", "zh-Hans": "票种已新增", en: "Ticket created" },
-		updated: { "zh-Hant": "票種已更新", "zh-Hans": "票种已更新", en: "Ticket updated" },
-		extrasFailed: {
-			"zh-Hant": "票種已新增，但純文字描述與簡訊驗證設定未能儲存，請編輯票種重新設定。",
-			"zh-Hans": "票种已新增，但纯文字描述与短信验证设置未能保存，请编辑票种重新设置。",
-			en: "The ticket was created, but the plain description and SMS verification setting could not be saved. Edit the ticket to set them again."
-		}
+		updated: { "zh-Hant": "票種已更新", "zh-Hans": "票种已更新", en: "Ticket updated" }
 	});
 
 	const [state, dispatch] = useReducer(formReducer, ticket, initialFormState);
@@ -248,8 +238,6 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 	const saleEnd = values.saleEnd ? fromDateTimeLocalString(values.saleEnd) : null;
 	if (saleStart && Number.isNaN(saleStart.getTime())) errors.saleStart = t.errDateInvalid;
 	if (saleEnd && Number.isNaN(saleEnd.getTime())) errors.saleEnd = t.errDateInvalid;
-	if (ticket?.saleStart && !values.saleStart) errors.saleStart = t.errDateCannotClear;
-	if (ticket?.saleEnd && !values.saleEnd) errors.saleEnd = t.errDateCannotClear;
 	if (!errors.saleEnd && saleStart && saleEnd && !Number.isNaN(saleStart.getTime()) && saleEnd <= saleStart) errors.saleEnd = t.errDateEndBeforeStart;
 	if (!errors.saleEnd && saleEnd && eventStart && saleEnd > eventStart) errors.saleEnd = t.errSaleEndAfterEvent.replace("{date}", formatDateTime(eventStart));
 
@@ -296,8 +284,9 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 			requireSmsVerification: values.requireSmsVerification,
 			hidden: values.hidden,
 			showRemaining: values.showRemaining,
-			...(saleStart && { saleStart }),
-			...(saleEnd && { saleEnd })
+			// null clears a sale boundary on update; on create an omitted value means "no limit"
+			saleStart,
+			saleEnd
 		};
 
 		try {
@@ -306,20 +295,9 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 				if (!response.success) throw new Error(response.message);
 				showAlert(t.updated, "success");
 			} else {
-				const response = await adminTicketsAPI.create({ eventId, ...common });
+				const response = await adminTicketsAPI.create({ eventId, ...common, saleStart: saleStart ?? undefined, saleEnd: saleEnd ?? undefined });
 				if (!response.success) throw new Error(response.message);
 				showAlert(t.created, "success");
-
-				// The create endpoint currently ignores these two fields, so set them with a follow-up update.
-				if (Object.keys(plainDescription).length > 0 || values.requireSmsVerification) {
-					try {
-						const followUp = await adminTicketsAPI.update(response.data.id, { plainDescription, requireSmsVerification: values.requireSmsVerification });
-						if (!followUp.success) throw new Error(followUp.message);
-					} catch (error) {
-						console.error("Failed to save extra ticket fields:", error);
-						showAlert(t.extrasFailed, "warning");
-					}
-				}
 			}
 		} catch (error) {
 			dispatch({ type: "saveFailed", message: t.saveFailed + errorMessage(error) });

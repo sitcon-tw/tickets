@@ -8,7 +8,7 @@ import { requireAdmin } from "#middleware/auth";
 import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { logger } from "#utils/logger";
-import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { conflictResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { UserRoleSchema } from "@sitcontix/types";
 
@@ -208,6 +208,13 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				if (!existingUser) {
 					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = notFoundResponse("用戶不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Prevent admins from locking themselves out by changing their own role or deactivating their own account
+				if (request.user?.id === id && ((updateData.role !== undefined && updateData.role !== existingUser.role) || updateData.isActive === false)) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = forbiddenResponse("無法變更自己的角色或停用自己的帳號");
 					return reply.code(statusCode).send(response);
 				}
 

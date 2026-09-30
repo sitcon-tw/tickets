@@ -185,11 +185,6 @@ export default function EventsPage() {
 		createdSuccess: { "zh-Hant": "活動已建立", "zh-Hans": "活动已创建", en: "Event created" },
 		updatedSuccess: { "zh-Hant": "活動已更新", "zh-Hans": "活动已更新", en: "Event updated" },
 		deletedSuccess: { "zh-Hant": "活動已刪除", "zh-Hans": "活动已删除", en: "Event deleted" },
-		createdPartial: {
-			"zh-Hant": "活動已建立，但 Slug／隱藏／OPass 設定未能儲存，請編輯活動後重試",
-			"zh-Hans": "活动已创建，但 Slug／隐藏／OPass 设置未能保存，请编辑活动后重试",
-			en: "Event created, but the slug / hide / OPass settings could not be saved. Edit the event to try again."
-		},
 		deleteTitle: { "zh-Hant": "刪除活動", "zh-Hans": "删除活动", en: "Delete event" },
 		deleteDescription: {
 			"zh-Hant": "確定要刪除「{name}」嗎？此操作無法復原。已有報名資料的活動無法刪除。",
@@ -314,30 +309,14 @@ export default function EventsPage() {
 
 		try {
 			if (editingEvent) {
-				// Send "" (not undefined) so that clearing these fields actually clears them on the server
-				const response = await adminEventsAPI.update(editingEvent.id, { ...data, mapLink, ogImage });
+				// Send "" / null (not undefined) so that clearing these fields actually clears them on the server
+				const response = await adminEventsAPI.update(editingEvent.id, { ...data, slug: slug || null, mapLink, ogImage });
 				if (!response.success) throw new Error(response.message || t.unknownError);
 				showAlert(t.updatedSuccess, "success");
 			} else {
 				const response = await adminEventsAPI.create(data);
 				if (!response.success) throw new Error(response.message || t.unknownError);
 				showAlert(t.createdSuccess, "success");
-
-				// The create endpoint only stores a subset of the fields, so persist the rest with a follow-up update
-				const extras: Partial<Event> = {};
-				if (slug) extras.slug = slug;
-				if (form.hideEvent) extras.hideEvent = true;
-				if (!form.useOpass) extras.useOpass = false;
-				if (opassEventId) extras.opassEventId = opassEventId;
-				if (response.data?.id && Object.keys(extras).length > 0) {
-					try {
-						const followUp = await adminEventsAPI.update(response.data.id, extras);
-						if (!followUp.success) throw new Error(followUp.message || t.unknownError);
-					} catch (error) {
-						console.error("Failed to save extra event settings:", error);
-						showAlert(t.createdPartial, "warning");
-					}
-				}
 			}
 			dispatch({ type: "closeModal" });
 			window.dispatchEvent(new Event("eventListChanged"));

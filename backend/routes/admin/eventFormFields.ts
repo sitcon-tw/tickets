@@ -33,7 +33,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 			});
 
 			try {
-				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts } = request.body;
+				const { eventId, order, type, validater, name, description, placeholder, required, values, filters, prompts, enableOther } = request.body;
 
 				span.addEvent("query.event.start");
 
@@ -74,6 +74,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						description: description,
 						placeholder: placeholder === "" ? null : (placeholder ?? null),
 						required: required || false,
+						enableOther: enableOther ?? false,
 						values: !values || values.length === 0 ? Prisma.DbNull : values,
 						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
 						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts

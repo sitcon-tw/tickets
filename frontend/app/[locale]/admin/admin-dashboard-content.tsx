@@ -154,7 +154,7 @@ export function AdminDashboardContent({ dashboardData, locale, t }: AdminDashboa
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 					<StatCard icon={Share2} label={t.totalReferrals} value={formatNumber(referralStats.totalReferrals)} />
 					<StatCard icon={UserCheck} label={t.activeReferrers} value={formatNumber(referralStats.activeReferrers)} />
-					<StatCard icon={Activity} label={t.conversionRate} value={formatNumber(referralStats.conversionRate)} />
+					<StatCard icon={Activity} label={t.conversionRate} value={`${formatNumber(referralStats.conversionRate)}%`} />
 				</div>
 			</Section>
 		</div>

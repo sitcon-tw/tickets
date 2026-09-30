@@ -146,7 +146,9 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					})
 				]);
 
-				const conversionRate = activeReferrers > 0 ? Number((totalReferrals / activeReferrers).toFixed(2)) : 0;
+				// Share of registrations that came through a referral (0-100). A registration uses at most one referral, but clamp anyway
+				// so the value always satisfies the shared dashboard schema.
+				const conversionRate = totalRegistrations > 0 ? Math.min(100, Number(((totalReferrals / totalRegistrations) * 100).toFixed(2))) : 0;
 
 				span.setAttribute("referrals.total", totalReferrals);
 				span.setAttribute("referrals.active_referrers", activeReferrers);
