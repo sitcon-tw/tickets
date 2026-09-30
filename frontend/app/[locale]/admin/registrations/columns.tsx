@@ -1,110 +1,117 @@
 "use client";
 
+import { StatusBadge } from "@/components/admin/StatusBadge";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Registration } from "@sitcontix/types";
 import { DataTableFeatures } from "@/lib/data-table-features";
 import { ColumnDef } from "@tanstack/react-table";
+import type { RegistrationsT } from "./translations";
+import { statusTone, type AdminRegistration } from "./utils";
 
-export type RegistrationDisplay = Registration & {
+export type RegistrationDisplay = AdminRegistration & {
 	displayId: string;
 	displayTicket: string;
-	displayEvent: string;
 	displayReferredBy: string;
 	formattedCreatedAt: string;
 	formattedUpdatedAt: string;
-	statusClass: string;
 };
 
 interface ColumnActions {
-	onViewDetails: (registration: Registration) => void;
-	t: {
-		viewDetails: string;
-	};
+	onViewDetails: (registration: RegistrationDisplay) => void;
+	t: Pick<
+		RegistrationsT,
+		"colSelectAll" | "colSelectRow" | "colId" | "colEmail" | "colStatus" | "colTicket" | "colReferredBy" | "colCreated" | "colUpdated" | "viewDetails" | "confirmed" | "pending" | "cancelled"
+	>;
 }
 
-export const createRegistrationsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, RegistrationDisplay>[] => [
-	{
-		id: "select",
-		header: ({ table }) => (
-			<Checkbox
-				checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected() && "indeterminate")}
-				onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
-				aria-label="Select all"
-			/>
-		),
-		cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} aria-label="Select row" />,
-		enableSorting: false,
-		enableHiding: false
-	},
-	{
-		accessorKey: "displayId",
-		header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
-		cell: ({ row }) => {
-			return <div className="font-mono text-xs">{row.getValue("displayId")}</div>;
-		}
-	},
-	{
-		accessorKey: "email",
-		header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-		cell: ({ row }) => {
-			return <div className="max-w-[200px] truncate">{row.getValue("email")}</div>;
-		}
-	},
-	{
-		accessorKey: "status",
-		header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-		cell: ({ row }) => {
-			const reg = row.original;
-			return <span className={`status-badge ${reg.statusClass}`}>{reg.status}</span>;
-		}
-	},
-	{
-		accessorKey: "displayTicket",
-		header: "Ticket",
-		cell: ({ row }) => {
-			return <div className="max-w-[150px] truncate">{row.getValue("displayTicket")}</div>;
-		}
-	},
-	{
-		accessorKey: "displayEvent",
-		header: "Event",
-		cell: ({ row }) => {
-			return <div className="max-w-[150px] truncate">{row.getValue("displayEvent")}</div>;
-		}
-	},
-	{
-		accessorKey: "displayReferredBy",
-		header: "Referred By",
-		cell: ({ row }) => {
-			return <div className="font-mono text-xs">{row.getValue("displayReferredBy")}</div>;
-		}
-	},
-	{
-		accessorKey: "formattedCreatedAt",
-		header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
-		cell: ({ row }) => {
-			return <div className="text-sm">{row.getValue("formattedCreatedAt")}</div>;
-		}
-	},
-	{
-		accessorKey: "formattedUpdatedAt",
-		header: "Updated",
-		cell: ({ row }) => {
-			return <div className="text-sm">{row.getValue("formattedUpdatedAt")}</div>;
-		}
-	},
-	{
-		id: "actions",
-		cell: ({ row }) => {
-			const registration = row.original;
+export const createRegistrationsColumns = ({ onViewDetails, t }: ColumnActions): ColumnDef<DataTableFeatures, RegistrationDisplay>[] => {
+	const statusLabels: Record<string, string> = { confirmed: t.confirmed, pending: t.pending, cancelled: t.cancelled };
 
-			return (
-				<Button size="sm" variant="secondary" onClick={() => actions.onViewDetails(registration)}>
-					{actions.t.viewDetails}
-				</Button>
-			);
+	return [
+		{
+			id: "select",
+			header: ({ table }) => (
+				<Checkbox
+					checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+					onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+					onClick={e => e.stopPropagation()}
+					aria-label={t.colSelectAll}
+				/>
+			),
+			cell: ({ row }) => <Checkbox checked={row.getIsSelected()} onCheckedChange={value => row.toggleSelected(!!value)} onClick={e => e.stopPropagation()} aria-label={t.colSelectRow} />,
+			enableSorting: false,
+			enableHiding: false
+		},
+		{
+			accessorKey: "displayId",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colId} />,
+			cell: ({ row }) => (
+				<span className="font-mono text-xs text-muted-foreground" title={row.original.id}>
+					{row.original.displayId}
+				</span>
+			)
+		},
+		{
+			accessorKey: "email",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colEmail} />,
+			cell: ({ row }) => (
+				<div className="max-w-[240px] truncate font-medium" title={row.original.email}>
+					{row.original.email}
+				</div>
+			)
+		},
+		{
+			accessorKey: "status",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colStatus} />,
+			cell: ({ row }) => <StatusBadge tone={statusTone(row.original.status)}>{statusLabels[row.original.status] ?? row.original.status}</StatusBadge>
+		},
+		{
+			accessorKey: "displayTicket",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colTicket} />,
+			cell: ({ row }) => (
+				<div className="max-w-[180px] truncate" title={row.original.displayTicket}>
+					{row.original.displayTicket}
+				</div>
+			)
+		},
+		{
+			accessorKey: "displayReferredBy",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colReferredBy} />,
+			cell: ({ row }) => (
+				<div className="max-w-[200px] truncate text-muted-foreground" title={row.original.displayReferredBy}>
+					{row.original.displayReferredBy || "-"}
+				</div>
+			)
+		},
+		{
+			accessorKey: "formattedCreatedAt",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colCreated} />,
+			cell: ({ row }) => <span className="whitespace-nowrap text-sm tabular-nums">{row.original.formattedCreatedAt}</span>
+		},
+		{
+			accessorKey: "formattedUpdatedAt",
+			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colUpdated} />,
+			cell: ({ row }) => <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">{row.original.formattedUpdatedAt}</span>
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">{t.viewDetails}</span>,
+			cell: ({ row }) => (
+				<div className="flex justify-end">
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={e => {
+							e.stopPropagation();
+							onViewDetails(row.original);
+						}}
+					>
+						{t.viewDetails}
+					</Button>
+				</div>
+			),
+			enableSorting: false
 		}
-	}
-];
+	];
+};

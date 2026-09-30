@@ -1,1170 +1,466 @@
 "use client";
 
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { SearchInput } from "@/components/admin/SearchInput";
 import AdminHeader from "@/components/AdminHeader";
-import PageSpinner from "@/components/PageSpinner";
+import { DataTable } from "@/components/data-table/data-table";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminInvitationCodesAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { getLocalizedText } from "@/lib/utils/localization";
-import type { InvitationCodeInfo, Ticket } from "@sitcontix/types";
-import { Download, Import, Mail, Plus, Search } from "lucide-react";
+import { formatDateTime } from "@/lib/utils/timezone";
+import type { InvitationCode, Ticket } from "@sitcontix/types";
+import type { RowSelectionState } from "@tanstack/react-table";
+import { Ban, Copy, Download, FileDown, Mail, Plus, Ticket as TicketIcon, X } from "lucide-react";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type InviteCode = {
-	id: string;
-	code: string;
-	usedCount: number;
-	usageLimit: number;
-	usedBy?: string;
-	active: boolean;
-	ticketId: string;
-};
+import { createInvitesColumns } from "./columns";
+import { CreateCodesDialog } from "./CreateCodesDialog";
+import { copyText, downloadFile, errorMessage, runInChunks, toCsv, toInviteRow, type InviteRow } from "./lib";
+import { SendEmailDialog } from "./SendEmailDialog";
 
-type InviteType = {
-	id: string;
-	name: string;
-	createdAt: Date;
-	codes: InviteCode[];
-};
+type StatusFilter = "all" | "unused" | "used" | "expired" | "disabled";
 
-type MatchedPair = { email: string; code: string; codeId: string };
-type InviteFormData = {
-	name: string;
-	amount: number;
-	usageLimit: number;
-	validFrom: string;
-	validUntil: string;
-};
+const allValue = "__all__";
+const noGroupValue = "__none__";
 
-type InvitesState = {
-	isSaving: boolean;
-	inviteTypes: InviteType[];
-	searchTerm: string;
-	isLoading: boolean;
-	showModal: boolean;
-	showBulkImportModal: boolean;
-	showCodesModal: boolean;
-	viewingCodesOf: string | null;
-	tickets: Ticket[];
-	selectedCodes: Set<string>;
-	showEmailModal: boolean;
-	isSendingEmail: boolean;
-	emailList: string;
-	emailMessage: string;
-	matchedPairs: MatchedPair[];
-	showPreview: boolean;
-	bulkImportCodes: string;
-	isImporting: boolean;
-	selectedTicketId: string;
-	bulkTicketId: string;
-	formData: InviteFormData;
-};
-
-type InvitesAction =
-	| { type: "patch"; patch: Partial<InvitesState> }
-	| { type: "setFormField"; field: keyof InviteFormData; value: string | number }
-	| { type: "invitesLoaded"; inviteTypes: InviteType[] }
-	| { type: "ticketsLoaded"; tickets: Ticket[] }
-	| { type: "createSuccess" }
-	| { type: "bulkImportSuccess" }
-	| { type: "toggleCodeSelection"; codeId: string }
-	| { type: "toggleSelectAll"; codeIds: string[] }
-	| { type: "openCodesModal"; typeId: string }
-	| { type: "emailMatched"; pairs: MatchedPair[] }
-	| { type: "emailFinished" }
-	| { type: "closeEmailModal" };
-
-const initialInviteFormData: InviteFormData = {
-	name: "",
-	amount: 10,
-	usageLimit: 1,
-	validFrom: "",
-	validUntil: ""
-};
-
-const initialInvitesState: InvitesState = {
-	isSaving: false,
-	inviteTypes: [],
-	searchTerm: "",
-	isLoading: false,
-	showModal: false,
-	showBulkImportModal: false,
-	showCodesModal: false,
-	viewingCodesOf: null,
-	tickets: [],
-	selectedCodes: new Set(),
-	showEmailModal: false,
-	isSendingEmail: false,
-	emailList: "",
-	emailMessage: "",
-	matchedPairs: [],
-	showPreview: false,
-	bulkImportCodes: "",
-	isImporting: false,
-	selectedTicketId: "",
-	bulkTicketId: "",
-	formData: initialInviteFormData
-};
-
-function invitesReducer(state: InvitesState, action: InvitesAction): InvitesState {
-	switch (action.type) {
-		case "patch":
-			return { ...state, ...action.patch };
-		case "setFormField":
-			return { ...state, formData: { ...state.formData, [action.field]: action.value } };
-		case "invitesLoaded":
-			return { ...state, inviteTypes: action.inviteTypes };
-		case "ticketsLoaded":
-			return { ...state, tickets: action.tickets };
-		case "createSuccess":
-			return { ...state, showModal: false, selectedTicketId: "", formData: initialInviteFormData };
-		case "bulkImportSuccess":
-			return { ...state, showBulkImportModal: false, bulkImportCodes: "" };
-		case "toggleCodeSelection": {
-			const selectedCodes = new Set(state.selectedCodes);
-			if (selectedCodes.has(action.codeId)) {
-				selectedCodes.delete(action.codeId);
-			} else {
-				selectedCodes.add(action.codeId);
-			}
-			return { ...state, selectedCodes };
-		}
-		case "toggleSelectAll":
-			return { ...state, selectedCodes: state.selectedCodes.size === action.codeIds.length ? new Set() : new Set(action.codeIds) };
-		case "openCodesModal":
-			return { ...state, viewingCodesOf: action.typeId, selectedCodes: new Set(), showCodesModal: true };
-		case "emailMatched":
-			return { ...state, matchedPairs: action.pairs };
-		case "emailFinished":
-			return { ...state, isSendingEmail: false };
-		case "closeEmailModal":
-			return { ...state, showEmailModal: false, emailList: "", emailMessage: "", matchedPairs: [], showPreview: false };
-	}
-}
-
-function EmailPreview({
-	matchedPairs,
-	tickets,
-	currentType,
-	emailMessage,
-	locale
-}: {
-	matchedPairs: MatchedPair[];
-	tickets: Ticket[];
-	currentType?: InviteType | null;
-	emailMessage: string;
-	locale: string;
-}) {
-	if (matchedPairs.length === 0) {
-		return <div className="text-sm text-muted-foreground">請先配對郵件與邀請碼以查看預覽</div>;
-	}
-
-	const samplePair = matchedPairs[0];
-	const sampleTicketId = currentType?.codes.find(c => c.code === samplePair.code)?.ticketId;
-	const ticket = tickets.find(t => t.id === sampleTicketId);
-
-	return (
-		<div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
-			<div style={{ background: "linear-gradient(#e5e7eb, #e5e7eb)", fontFamily: "sans-serif", padding: "48px 32px" }}>
-				<div style={{ margin: "0 auto", maxWidth: "600px", padding: "24px calc((min(100%, 600px) - 32px) * 0.04) 0", boxSizing: "border-box" }}>
-					<div style={{ background: "linear-gradient(#f9fafb, #f9fafb)", padding: "48px 24px 0" }}>
-						<h1 style={{ fontSize: "24px", margin: "32px 0", textAlign: "center", color: "#374151" }}>來自 SITCONTIX 的活動邀請碼</h1>
-						<div className="description" style={{ color: "#6b7280", lineHeight: "150%", whiteSpace: "pre-wrap" }}>
-							{emailMessage || "（訊息預覽）"}
-						</div>
-						<div style={{ background: "linear-gradient(#9ca3af, #9ca3af)", padding: "12px 32px", margin: "32px auto", display: "block", width: "fit-content", borderRadius: "12px" }}>
-							<span style={{ fontWeight: "bold", fontFamily: "monospace", fontSize: "x-large", color: "#f3f4f6" }}>{samplePair.code}</span>
-						</div>
-						<div style={{ color: "#6b7280", lineHeight: "150%" }}>
-							<p>您可以將邀請碼用於兌換票種「{ticket ? getLocalizedText(ticket.name, locale) : "票種名稱"}」，請至報名系統頁面點選填入，或直接點選下面按鈕領票。</p>
-							<p>請在有效期限前使用邀請碼，邀請碼逾期將失效，歡迎提前轉贈使用。</p>
-						</div>
-						<div style={{ background: "linear-gradient(#6b7280, #6b7280)", padding: "12px 32px", textDecoration: "none", margin: "auto", display: "block", width: "fit-content" }}>
-							<span style={{ fontWeight: "bold", color: "#f3f4f6" }}>直接前往領票</span>
-						</div>
-					</div>
-				</div>
-				<div style={{ color: "#6b7280", fontSize: "14px", lineHeight: "150%", textAlign: "center", marginTop: "24px" }}>
-					©SITCON
-					<br />
-					寄送給 {samplePair.email}
-				</div>
-			</div>
-		</div>
+function useInvitesTranslations(locale: string) {
+	return useMemo(
+		() =>
+			getTranslations(locale, {
+				title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
+				description: { "zh-Hant": "建立、發送與管理此活動的邀請碼。", "zh-Hans": "创建、发送与管理此活动的邀请码。", en: "Create, send and manage invitation codes for this event." },
+				add: { "zh-Hant": "新增邀請碼", "zh-Hans": "新增邀请码", en: "Add codes" },
+				exportCsv: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
+				exportCsvSelected: { "zh-Hant": "匯出已選 CSV ({count})", "zh-Hans": "导出已选 CSV ({count})", en: "Export selected CSV ({count})" },
+				search: { "zh-Hant": "搜尋代碼、群組或票種", "zh-Hans": "搜索代码、分组或票种", en: "Search code, group or ticket" },
+				clearSearch: { "zh-Hant": "清除搜尋", "zh-Hans": "清除搜索", en: "Clear search" },
+				allGroups: { "zh-Hant": "所有群組", "zh-Hans": "所有分组", en: "All groups" },
+				noGroup: { "zh-Hant": "（無群組）", "zh-Hans": "（无分组）", en: "(No group)" },
+				group: { "zh-Hant": "群組", "zh-Hans": "分组", en: "Group" },
+				allTickets: { "zh-Hant": "所有票種", "zh-Hans": "所有票种", en: "All tickets" },
+				ticketType: { "zh-Hant": "限用票種", "zh-Hans": "限用票种", en: "Ticket" },
+				allStatuses: { "zh-Hant": "所有狀態", "zh-Hans": "所有状态", en: "All statuses" },
+				filterUnused: { "zh-Hant": "未使用", "zh-Hans": "未使用", en: "Unused" },
+				filterUsed: { "zh-Hant": "已使用", "zh-Hans": "已使用", en: "Used" },
+				filterExpired: { "zh-Hant": "已過期", "zh-Hans": "已过期", en: "Expired" },
+				filterDisabled: { "zh-Hant": "已停用", "zh-Hans": "已停用", en: "Disabled" },
+				code: { "zh-Hant": "代碼", "zh-Hans": "代码", en: "Code" },
+				usage: { "zh-Hant": "使用次數", "zh-Hans": "使用次数", en: "Uses" },
+				unlimited: { "zh-Hant": "不限", "zh-Hans": "不限", en: "unlimited" },
+				validity: { "zh-Hant": "有效期間", "zh-Hans": "有效期间", en: "Validity" },
+				noExpiry: { "zh-Hant": "無期限", "zh-Hans": "无期限", en: "No expiry" },
+				from: { "zh-Hant": "起", "zh-Hans": "起", en: "From" },
+				until: { "zh-Hant": "迄", "zh-Hans": "迄", en: "Until" },
+				status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
+				status_available: { "zh-Hant": "可使用", "zh-Hans": "可使用", en: "Available" },
+				status_scheduled: { "zh-Hant": "尚未生效", "zh-Hans": "尚未生效", en: "Not started" },
+				status_exhausted: { "zh-Hant": "已用完", "zh-Hans": "已用完", en: "Used up" },
+				status_expired: { "zh-Hant": "已過期", "zh-Hans": "已过期", en: "Expired" },
+				status_disabled: { "zh-Hant": "已停用", "zh-Hans": "已停用", en: "Disabled" },
+				created: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created" },
+				actions: { "zh-Hant": "動作", "zh-Hans": "动作", en: "Actions" },
+				select: { "zh-Hant": "選取", "zh-Hans": "选取", en: "Select" },
+				selectPage: { "zh-Hant": "選取本頁全部", "zh-Hans": "选取本页全部", en: "Select all on this page" },
+				copy: { "zh-Hant": "複製代碼", "zh-Hans": "复制代码", en: "Copy code" },
+				disable: { "zh-Hant": "停用", "zh-Hans": "停用", en: "Disable" },
+				summary: {
+					"zh-Hant": "共 {total} 個 · 未使用 {unused} · 已使用 {used} · 已過期 {expired} · 已停用 {disabled}",
+					"zh-Hans": "共 {total} 个 · 未使用 {unused} · 已使用 {used} · 已过期 {expired} · 已停用 {disabled}",
+					en: "{total} codes · {unused} unused · {used} used · {expired} expired · {disabled} disabled"
+				},
+				selected: { "zh-Hant": "已選取 {count} 個", "zh-Hans": "已选取 {count} 个", en: "{count} selected" },
+				selectAllMatching: { "zh-Hant": "選取符合條件的 {count} 個", "zh-Hans": "选取符合条件的 {count} 个", en: "Select all {count} matching" },
+				clearSelection: { "zh-Hant": "取消選取", "zh-Hans": "取消选取", en: "Clear selection" },
+				copyCodes: { "zh-Hant": "複製代碼", "zh-Hans": "复制代码", en: "Copy codes" },
+				downloadTxt: { "zh-Hant": "下載 TXT", "zh-Hans": "下载 TXT", en: "Download TXT" },
+				sendEmail: { "zh-Hant": "寄送 Email", "zh-Hans": "发送 Email", en: "Send email" },
+				disableSelected: { "zh-Hant": "停用", "zh-Hans": "停用", en: "Disable" },
+				copied: { "zh-Hant": "已複製代碼", "zh-Hans": "已复制代码", en: "Code copied" },
+				copiedMany: { "zh-Hant": "已複製 {count} 個代碼", "zh-Hans": "已复制 {count} 个代码", en: "Copied {count} codes" },
+				copyFailed: { "zh-Hant": "無法複製，請手動複製", "zh-Hans": "无法复制，请手动复制", en: "Could not copy to the clipboard" },
+				downloaded: { "zh-Hant": "已下載 {count} 個邀請碼", "zh-Hans": "已下载 {count} 个邀请码", en: "Downloaded {count} codes" },
+				loadFailed: { "zh-Hant": "載入邀請碼失敗", "zh-Hans": "加载邀请码失败", en: "Failed to load invitation codes" },
+				confirmDisableTitle: { "zh-Hant": "停用 {count} 個邀請碼？", "zh-Hans": "停用 {count} 个邀请码？", en: "Disable {count} invitation codes?" },
+				confirmDisableDescription: {
+					"zh-Hant": "停用後這些邀請碼將無法再被兌換，已使用的紀錄不受影響。",
+					"zh-Hans": "停用后这些邀请码将无法再被兑换，已使用的记录不受影响。",
+					en: "Disabled codes can no longer be redeemed. Registrations that already used them are not affected."
+				},
+				confirmDisableUsed: { "zh-Hant": "其中 {used} 個已被使用過。", "zh-Hans": "其中 {used} 个已被使用过。", en: "{used} of them have already been used." },
+				alreadyDisabled: { "zh-Hant": "所選邀請碼都已停用。", "zh-Hans": "所选邀请码都已停用。", en: "The selected codes are already disabled." },
+				disableSuccess: { "zh-Hant": "已停用 {count} 個邀請碼", "zh-Hans": "已停用 {count} 个邀请码", en: "Disabled {count} invitation codes" },
+				disablePartial: { "zh-Hant": "已停用 {success} 個，{failed} 個失敗", "zh-Hans": "已停用 {success} 个，{failed} 个失败", en: "Disabled {success}, {failed} failed" },
+				disableFailed: { "zh-Hant": "停用失敗", "zh-Hans": "停用失败", en: "Failed to disable" },
+				emptyTitle: { "zh-Hant": "還沒有邀請碼", "zh-Hans": "还没有邀请码", en: "No invitation codes yet" },
+				emptyDescription: {
+					"zh-Hant": "為票種產生一批邀請碼，或匯入你已有的代碼。",
+					"zh-Hans": "为票种生成一批邀请码，或导入你已有的代码。",
+					en: "Generate a batch of codes for a ticket, or import codes you already have."
+				},
+				noMatches: { "zh-Hant": "沒有符合條件的邀請碼", "zh-Hans": "没有符合条件的邀请码", en: "No codes match your filters" },
+				selectEventTitle: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Select an event first" },
+				selectEventDescription: {
+					"zh-Hant": "請從側邊欄選擇要管理邀請碼的活動。",
+					"zh-Hans": "请从侧边栏选择要管理邀请码的活动。",
+					en: "Choose an event from the sidebar to manage its invitation codes."
+				}
+			}),
+		[locale]
 	);
 }
 
-function useInvitesPageView() {
+type SelectFilterProps = {
+	value: string;
+	onChange: (value: string) => void;
+	options: { value: string; label: string }[];
+	label: string;
+};
+
+function FilterSelect({ value, onChange, options, label }: SelectFilterProps) {
+	return (
+		<Select value={value} onValueChange={onChange}>
+			<SelectTrigger className="w-full sm:w-44" aria-label={label}>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{options.map(option => (
+					<SelectItem key={option.value} value={option.value}>
+						{option.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+function InvitesContent({ eventId }: { eventId: string }) {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
+	const confirm = useConfirm();
+	const t = useInvitesTranslations(locale);
 
-	const [state, dispatch] = useReducer(invitesReducer, initialInvitesState);
-	const {
-		isSaving,
-		inviteTypes,
-		searchTerm,
-		isLoading,
-		showModal,
-		showBulkImportModal,
-		showCodesModal,
-		viewingCodesOf,
-		tickets,
-		selectedCodes,
-		showEmailModal,
-		isSendingEmail,
-		emailList,
-		emailMessage,
-		matchedPairs,
-		showPreview,
-		bulkImportCodes,
-		isImporting,
-		selectedTicketId,
-		bulkTicketId,
-		formData
-	} = state;
-	const currentEventId = useSelectedEventId();
+	const [rawCodes, setRawCodes] = useState<InvitationCode[]>([]);
+	const [tickets, setTickets] = useState<Ticket[]>([]);
+	const [loadedAt, setLoadedAt] = useState(0);
+	const [isLoading, setIsLoading] = useState(true);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+	const [groupFilter, setGroupFilter] = useState(allValue);
+	const [ticketFilter, setTicketFilter] = useState(allValue);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [showCreate, setShowCreate] = useState(false);
+	const [emailCodes, setEmailCodes] = useState<InviteRow[] | null>(null);
 
-	const t = getTranslations(locale, {
-		title: { "zh-Hant": "邀請碼", "zh-Hans": "邀请码", en: "Invitation Codes" },
-		add: { "zh-Hant": "新增邀請碼組", "zh-Hans": "新增邀请码组", en: "Add Invitation Code Group" },
-		bulkImport: { "zh-Hant": "批次匯入", "zh-Hans": "批量导入", en: "Bulk Import" },
-		exportCSV: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
-		search: { "zh-Hant": "搜尋名稱 / 代碼", "zh-Hans": "搜索名称 / 代码", en: "Search Name / Code" },
-		name: { "zh-Hant": "名稱", "zh-Hans": "名称", en: "Name" },
-		total: { "zh-Hant": "總數", "zh-Hans": "总数", en: "Total" },
-		used: { "zh-Hant": "已用", "zh-Hans": "已用", en: "Used" },
-		remaining: { "zh-Hant": "剩餘", "zh-Hans": "剩余", en: "Remaining" },
-		created: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created" },
-		actions: { "zh-Hant": "動作", "zh-Hans": "动作", en: "Actions" },
-		codes: { "zh-Hant": "邀請碼列表", "zh-Hans": "邀请码列表", en: "Invitation Codes" },
-		code: { "zh-Hant": "代碼", "zh-Hans": "代码", en: "Code" },
-		usage: { "zh-Hant": "使用次數", "zh-Hans": "使用次数", en: "Usage" },
-		limit: { "zh-Hant": "使用上限", "zh-Hans": "使用上限", en: "Limit" },
-		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
-		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-		amount: { "zh-Hant": "數量", "zh-Hans": "数量", en: "Amount" },
-		usageLimit: { "zh-Hant": "使用次數限制", "zh-Hans": "使用次数限制", en: "Usage Limit" },
-		validFrom: { "zh-Hant": "有效起始時間", "zh-Hans": "有效起始时间", en: "Valid From" },
-		validUntil: { "zh-Hant": "有效結束時間", "zh-Hans": "有效结束时间", en: "Valid Until" },
-		optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "Optional" },
-		ticketType: { "zh-Hant": "票種", "zh-Hans": "票种", en: "Ticket Type" },
-		pleaseSelectTicket: { "zh-Hant": "請選擇票種", "zh-Hans": "请选择票种", en: "Please Select Ticket" },
-		createSuccess: { "zh-Hant": "成功建立 {count} 個邀請碼！", "zh-Hans": "成功建立 {count} 个邀请码！", en: "Successfully created {count} invitation codes!" },
-		delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
-		confirmDelete: { "zh-Hant": "確定要刪除此邀請碼嗎？", "zh-Hans": "确定要删除此邀请码吗？", en: "Are you sure you want to delete this invitation code?" },
-		deleteSuccess: { "zh-Hant": "成功刪除邀請碼！", "zh-Hans": "成功删除邀请码！", en: "Successfully deleted invitation code!" },
-		bulkDelete: { "zh-Hant": "批次刪除", "zh-Hans": "批次删除", en: "Bulk Delete" },
-		confirmBulkDelete: { "zh-Hant": "確定要刪除 {count} 個邀請碼嗎？", "zh-Hans": "确定要删除 {count} 个邀请码吗？", en: "Are you sure you want to delete {count} invitation codes?" },
-		bulkDeleteSuccess: { "zh-Hant": "成功刪除 {count} 個邀請碼！", "zh-Hans": "成功删除 {count} 个邀请码！", en: "Successfully deleted {count} invitation codes!" },
-		selectAll: { "zh-Hant": "全選", "zh-Hans": "全选", en: "Select All" },
-		deselectAll: { "zh-Hant": "取消全選", "zh-Hans": "取消全选", en: "Deselect All" },
-		selected: { "zh-Hant": "已選 {count} 個", "zh-Hans": "已选 {count} 个", en: "{count} selected" },
-		downloadTxt: { "zh-Hant": "下載 TXT", "zh-Hans": "下载 TXT", en: "Download TXT" },
-		downloadCsvWithLink: { "zh-Hant": "下載 CSV (含連結)", "zh-Hans": "下载 CSV (含链接)", en: "Download CSV (with link)" },
-		sendEmail: { "zh-Hant": "寄送 Email", "zh-Hans": "发送 Email", en: "Send Email" },
-		emailAddress: { "zh-Hant": "Email 地址", "zh-Hans": "Email 地址", en: "Email Address" },
-		emailPlaceholder: { "zh-Hant": "請輸入 Email 地址", "zh-Hans": "请输入 Email 地址", en: "Please enter email address" },
-		send: { "zh-Hant": "發送", "zh-Hans": "发送", en: "Send" },
-		sendSuccess: { "zh-Hant": "成功寄送郵件！", "zh-Hans": "成功发送邮件！", en: "Email sent successfully!" },
-		sendError: { "zh-Hant": "寄送失敗", "zh-Hans": "发送失败", en: "Failed to send email" },
-		pleaseSelectCodes: { "zh-Hant": "請選擇要操作的邀請碼", "zh-Hans": "请选择要操作的邀请码", en: "Please select invitation codes" },
-		downloadSuccess: { "zh-Hant": "下載成功！", "zh-Hans": "下载成功！", en: "Download successful!" },
-		bulkImportTitle: { "zh-Hant": "批次匯入邀請碼", "zh-Hans": "批量导入邀请码", en: "Bulk Import Invitation Codes" },
-		bulkImportDescription: { "zh-Hant": "每行一個邀請碼，或上傳文字檔", "zh-Hans": "每行一个邀请码，或上传文本文件", en: "One code per line, or upload a text file" },
-		uploadFile: { "zh-Hant": "上傳檔案", "zh-Hans": "上传文件", en: "Upload File" },
-		pasteOrType: { "zh-Hant": "貼上或輸入邀請碼", "zh-Hans": "粘贴或输入邀请码", en: "Paste or type invitation codes" },
-		codesPlaceholder: {
-			"zh-Hant": "每行一個邀請碼\n例如：\nVIP2026A\nVIP2026B\nVIP2026C",
-			"zh-Hans": "每行一个邀请码\n例如：\nVIP2026A\nVIP2026B\nVIP2026C",
-			en: "One code per line\nExample:\nVIP2026A\nVIP2026B\nVIP2026C"
+	// Only the latest request may write state, so a slow response for an older reload never overwrites newer data.
+	const requestRef = useRef(0);
+
+	const loadData = useCallback(
+		async (silent = false) => {
+			const requestId = ++requestRef.current;
+			if (!silent) setIsLoading(true);
+			try {
+				const [codesResponse, ticketsResponse] = await Promise.all([adminInvitationCodesAPI.getAll({ eventId }), adminTicketsAPI.getAll({ eventId })]);
+				if (requestId !== requestRef.current) return;
+				if (!codesResponse.success) throw new Error(t.loadFailed);
+				setRawCodes(codesResponse.data ?? []);
+				setTickets(ticketsResponse.success ? (ticketsResponse.data ?? []) : []);
+				setLoadedAt(Date.now());
+			} catch (error) {
+				if (requestId !== requestRef.current) return;
+				console.error("Failed to load invitation codes:", error);
+				showAlert(`${t.loadFailed}: ${errorMessage(error)}`, "error");
+			} finally {
+				if (requestId === requestRef.current) setIsLoading(false);
+			}
 		},
-		import: { "zh-Hant": "匯入", "zh-Hans": "导入", en: "Import" },
-		importSuccess: { "zh-Hant": "成功匯入 {count} 個邀請碼！", "zh-Hans": "成功导入 {count} 个邀请码！", en: "Successfully imported {count} invitation codes!" },
-		invalidFormat: { "zh-Hant": "格式錯誤：請確保每行一個邀請碼", "zh-Hans": "格式错误：请确保每行一个邀请码", en: "Invalid format: Please ensure one code per line" },
-		noCodes: { "zh-Hant": "請輸入至少一個邀請碼", "zh-Hans": "请输入至少一个邀请码", en: "Please enter at least one invitation code" },
-		bulkSendEmail: { "zh-Hant": "批次寄送 Email", "zh-Hans": "批量发送 Email", en: "Bulk Send Email" },
-		emailListLabel: { "zh-Hant": "Email 列表（每行一個）", "zh-Hans": "Email 列表（每行一个）", en: "Email List (one per line)" },
-		emailListPlaceholder: {
-			"zh-Hant": "請輸入 Email 地址，每行一個\n例如：\nuser1@example.com\nuser2@example.com",
-			"zh-Hans": "请输入 Email 地址，每行一个\n例如：\nuser1@example.com\nuser2@example.com",
-			en: "Enter email addresses, one per line\nExample:\nuser1@example.com\nuser2@example.com"
-		},
-		matchCodes: { "zh-Hant": "配對邀請碼", "zh-Hans": "配对邀请码", en: "Match Codes" },
-		messageLabel: { "zh-Hant": "訊息內容", "zh-Hans": "消息内容", en: "Message" },
-		messagePlaceholder: { "zh-Hant": "請輸入要在郵件中顯示的訊息 (支援 HTML)", "zh-Hans": "请输入要在邮件中显示的消息 (支持 HTML)", en: "Enter message to display in email (supports HTML)" },
-		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
-		matched: { "zh-Hant": "已配對", "zh-Hans": "已配对", en: "Matched" },
-		tooManyEmails: {
-			"zh-Hant": "Email 數量（{emailCount}）超過所選邀請碼數量（{codeCount}）",
-			"zh-Hans": "Email 数量（{emailCount}）超过所选邀请码数量（{codeCount}）",
-			en: "Email count ({emailCount}) exceeds selected codes count ({codeCount})"
-		},
-		noEmails: { "zh-Hant": "請輸入至少一個 Email 地址", "zh-Hans": "请输入至少一个 Email 地址", en: "Please enter at least one email address" },
-		matchSuccess: { "zh-Hant": "成功配對 {count} 組郵件與邀請碼", "zh-Hans": "成功配对 {count} 组邮件与邀请码", en: "Successfully matched {count} pairs" },
-		sendAll: { "zh-Hant": "全部發送", "zh-Hans": "全部发送", en: "Send All" },
-		sending: { "zh-Hant": "發送中...", "zh-Hans": "发送中...", en: "Sending..." },
-		sendAllSuccess: { "zh-Hant": "成功發送 {count} 封郵件！", "zh-Hans": "成功发送 {count} 封邮件！", en: "Successfully sent {count} emails!" },
-		sendPartialSuccess: { "zh-Hant": "成功發送 {success} 封，失敗 {failed} 封", "zh-Hans": "成功发送 {success} 封，失败 {failed} 封", en: "Sent {success} emails, {failed} failed" },
-		emailPreview: { "zh-Hant": "郵件預覽", "zh-Hans": "邮件预览", en: "Email Preview" },
-		closePreview: { "zh-Hant": "關閉預覽", "zh-Hans": "关闭预览", en: "Close Preview" },
-		importing: { "zh-Hant": "匯入中...", "zh-Hans": "导入中...", en: "Importing..." },
-		namePlaceholder: { "zh-Hant": "例如：VIP Media", "zh-Hans": "例如：VIP Media", en: "e.g. VIP Media" }
-	});
-
-	const loadInvitationCodes = useCallback(async () => {
-		if (!currentEventId) return;
-
-		dispatch({ type: "patch", patch: { isLoading: true } });
-		try {
-			const response = await adminInvitationCodesAPI.getAll({ eventId: currentEventId });
-			if (response.success) {
-				const codesByType: Record<string, InviteType> = {};
-				(response.data || []).forEach((code: InvitationCodeInfo) => {
-					const typeName = code.name || "Default";
-					if (!codesByType[typeName]) {
-						codesByType[typeName] = {
-							id: typeName,
-							name: typeName,
-							createdAt: code.createdAt,
-							codes: []
-						};
-					}
-					codesByType[typeName].codes.push({
-						id: code.id,
-						code: code.code,
-						usedCount: code.usedCount || 0,
-						usageLimit: code.usageLimit || 1,
-						usedBy: "",
-						active: code.isActive,
-						ticketId: code.ticketId
-					});
-				});
-				dispatch({ type: "invitesLoaded", inviteTypes: Object.values(codesByType) });
-			}
-		} catch (error) {
-			console.error("Failed to load invitation codes:", error);
-		} finally {
-			dispatch({ type: "patch", patch: { isLoading: false } });
-		}
-	}, [currentEventId]);
-
-	const loadTickets = useCallback(async () => {
-		if (!currentEventId) return;
-
-		try {
-			const response = await adminTicketsAPI.getAll({ eventId: currentEventId });
-			if (response.success) {
-				dispatch({ type: "ticketsLoaded", tickets: response.data || [] });
-			}
-		} catch (error) {
-			console.error("Failed to load tickets:", error);
-		}
-	}, [currentEventId]);
-
-	async function createInvitationCodes(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault();
-		dispatch({ type: "patch", patch: { isSaving: true } });
-
-		if (!selectedTicketId) {
-			showAlert(t.pleaseSelectTicket, "warning");
-			dispatch({ type: "patch", patch: { isSaving: false } });
-			return;
-		}
-
-		const data: {
-			ticketId: string;
-			name: string;
-			count: number;
-			usageLimit: number;
-			validFrom?: string;
-			validUntil?: string;
-		} = {
-			ticketId: selectedTicketId,
-			name: formData.name,
-			count: formData.amount,
-			usageLimit: formData.usageLimit
-		};
-
-		if (formData.validFrom) {
-			data.validFrom = new Date(formData.validFrom).toISOString();
-		}
-		if (formData.validUntil) {
-			data.validUntil = new Date(formData.validUntil).toISOString();
-		}
-
-		try {
-			await adminInvitationCodesAPI.bulkCreate(data);
-			await Promise.all([loadTickets(), loadInvitationCodes()]);
-			dispatch({ type: "createSuccess" });
-			showAlert(t.createSuccess.replace("{count}", formData.amount.toString()), "success");
-		} catch (error) {
-			showAlert("創建失敗：" + (error instanceof Error ? error.message : String(error)), "error");
-		} finally {
-			dispatch({ type: "patch", patch: { isSaving: false } });
-		}
-	}
-
-	async function deleteInvitationCode(codeId: string) {
-		if (!confirm(t.confirmDelete)) return;
-
-		try {
-			await adminInvitationCodesAPI.delete(codeId);
-			await Promise.all([loadTickets(), loadInvitationCodes()]);
-			showAlert(t.deleteSuccess, "success");
-		} catch (error) {
-			showAlert("刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
-		}
-	}
-
-	async function bulkDeleteInvitationCodes() {
-		if (selectedCodes.size === 0) {
-			showAlert("請選擇要刪除的邀請碼", "warning");
-			return;
-		}
-
-		if (!confirm(t.confirmBulkDelete.replace("{count}", selectedCodes.size.toString()))) return;
-
-		try {
-			const deleteResults = await Promise.all(
-				Array.from(selectedCodes).map(async codeId => {
-					try {
-						await adminInvitationCodesAPI.delete(codeId);
-						return true;
-					} catch (error) {
-						console.error(`Failed to delete code ${codeId}:`, error);
-						return false;
-					}
-				})
-			);
-			const successCount = deleteResults.filter(Boolean).length;
-			const errorCount = deleteResults.length - successCount;
-
-			await loadTickets();
-			await loadInvitationCodes();
-
-			dispatch({ type: "patch", patch: { selectedCodes: new Set() } });
-
-			if (errorCount > 0) {
-				showAlert(`成功刪除 ${successCount} 個，失敗 ${errorCount} 個`, "error");
-			} else {
-				showAlert(t.bulkDeleteSuccess.replace("{count}", successCount.toString()), "success");
-			}
-		} catch (error) {
-			showAlert("批次刪除失敗：" + (error instanceof Error ? error.message : String(error)), "error");
-		}
-	}
-
-	function downloadSelectedCodesAsTxt() {
-		if (selectedCodes.size === 0) {
-			showAlert(t.pleaseSelectCodes, "warning");
-			return;
-		}
-
-		if (!currentType) return;
-
-		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
-		const codesText = selectedCodesList.map(c => c.code).join("\n");
-
-		const blob = new Blob([codesText], { type: "text/plain;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `invitation-codes-${currentType.name}-${new Date().toISOString().split("T")[0]}.txt`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-
-		showAlert(t.downloadSuccess, "success");
-	}
-
-	function generateDirectLink(code: InviteCode) {
-		if (!currentEventId) return "";
-		const eventSlug = currentEventId.slice(-6);
-		const link = `/${locale}/${eventSlug}/ticket/${code.ticketId}?inv=${code.code}`;
-		return `${window.location.origin}${link}`;
-	}
-
-	function downloadSelectedCodesAsCsvWithLink() {
-		if (selectedCodes.size === 0) {
-			showAlert(t.pleaseSelectCodes, "warning");
-			return;
-		}
-
-		if (!currentType) return;
-
-		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
-		const csvHeader = "code,direct_link";
-		const csvRows = selectedCodesList.map(c => `${c.code},${generateDirectLink(c)}`);
-		const csvContent = [csvHeader, ...csvRows].join("\n");
-
-		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `invitation-codes-${currentType.name}-${new Date().toISOString().split("T")[0]}.csv`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(url);
-
-		showAlert(t.downloadSuccess, "success");
-	}
-
-	async function handleBulkImport(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const ticketId = formData.get("ticketId") as string;
-
-		if (!ticketId) {
-			showAlert(t.pleaseSelectTicket, "warning");
-			return;
-		}
-
-		const codesText = bulkImportCodes.trim();
-		if (!codesText) {
-			showAlert(t.noCodes, "warning");
-			return;
-		}
-
-		const codes = codesText
-			.split("\n")
-			.map(c => c.trim())
-			.filter(c => c.length > 0);
-
-		if (codes.length === 0) {
-			showAlert(t.noCodes, "warning");
-			return;
-		}
-
-		const name = formData.get("name") as string;
-		const usageLimit = parseInt(formData.get("usageLimit") as string) || 1;
-		const validFromStr = formData.get("validFrom") as string;
-		const validUntilStr = formData.get("validUntil") as string;
-
-		dispatch({ type: "patch", patch: { isImporting: true } });
-		try {
-			const importResults = await Promise.all(
-				codes.map(async code => {
-					try {
-						const data: {
-							ticketId: string;
-							code: string;
-							name?: string;
-							usageLimit: number;
-							validFrom?: string;
-							validUntil?: string;
-						} = {
-							ticketId,
-							code,
-							name: name || undefined,
-							usageLimit
-						};
-
-						if (validFromStr) {
-							data.validFrom = new Date(validFromStr).toISOString();
-						}
-						if (validUntilStr) {
-							data.validUntil = new Date(validUntilStr).toISOString();
-						}
-
-						await adminInvitationCodesAPI.create(data);
-						return true;
-					} catch (error) {
-						console.error(`Failed to import code ${code}:`, error);
-						return false;
-					}
-				})
-			);
-			const successCount = importResults.filter(Boolean).length;
-			const errorCount = importResults.length - successCount;
-
-			await loadTickets();
-			await loadInvitationCodes();
-
-			dispatch({ type: "bulkImportSuccess" });
-
-			if (errorCount > 0) {
-				showAlert(`成功匯入 ${successCount} 個，失敗 ${errorCount} 個`, "error");
-			} else {
-				showAlert(t.importSuccess.replace("{count}", successCount.toString()), "success");
-			}
-		} catch (error) {
-			showAlert("匯入失敗：" + (error instanceof Error ? error.message : String(error)), "error");
-		} finally {
-			dispatch({ type: "patch", patch: { isImporting: false } });
-		}
-	}
-
-	function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (!file) return;
-
-		const reader = new FileReader();
-		reader.onload = event => {
-			const text = event.target?.result as string;
-			dispatch({ type: "patch", patch: { bulkImportCodes: text } });
-		};
-		reader.readAsText(file);
-	}
-
-	function handleMatchCodes() {
-		if (selectedCodes.size === 0) {
-			showAlert(t.pleaseSelectCodes, "warning");
-			return;
-		}
-
-		if (!currentType) return;
-
-		const emailsText = emailList.trim();
-		if (!emailsText) {
-			showAlert(t.noEmails, "warning");
-			return;
-		}
-
-		const emails = emailsText
-			.split("\n")
-			.map(e => e.trim())
-			.filter(e => e.length > 0 && e.includes("@"));
-
-		if (emails.length === 0) {
-			showAlert(t.noEmails, "warning");
-			return;
-		}
-
-		const selectedCodesList = currentType.codes.filter(c => selectedCodes.has(c.id));
-
-		if (emails.length > selectedCodesList.length) {
-			showAlert(t.tooManyEmails.replace("{emailCount}", emails.length.toString()).replace("{codeCount}", selectedCodesList.length.toString()), "error");
-			return;
-		}
-
-		const pairs = emails.map((email, index) => ({
-			email,
-			code: selectedCodesList[index].code,
-			codeId: selectedCodesList[index].id
-		}));
-
-		dispatch({ type: "emailMatched", pairs });
-		showAlert(t.matchSuccess.replace("{count}", pairs.length.toString()), "success");
-	}
-
-	async function sendAllEmails() {
-		if (matchedPairs.length === 0) {
-			showAlert("請先配對郵件與邀請碼", "warning");
-			return;
-		}
-
-		if (!emailMessage.trim()) {
-			showAlert("請輸入郵件訊息", "warning");
-			return;
-		}
-
-		dispatch({ type: "patch", patch: { isSendingEmail: true } });
-		try {
-			const sendResults = await Promise.all(
-				matchedPairs.map(async pair => {
-					try {
-						const response = await fetch("/api/admin/invitation-codes/send-email", {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json"
-							},
-							body: JSON.stringify({
-								email: pair.email,
-								code: pair.code,
-								message: emailMessage
-							})
-						});
-
-						if (!response.ok) {
-							throw new Error("Failed to send email");
-						}
-						return true;
-					} catch (error) {
-						console.error(`Failed to send email to ${pair.email}:`, error);
-						return false;
-					}
-				})
-			);
-			const successCount = sendResults.filter(Boolean).length;
-			const errorCount = sendResults.length - successCount;
-
-			if (errorCount > 0) {
-				showAlert(t.sendPartialSuccess.replace("{success}", successCount.toString()).replace("{failed}", errorCount.toString()), "warning");
-			} else {
-				showAlert(t.sendAllSuccess.replace("{count}", successCount.toString()), "success");
-			}
-
-			dispatch({ type: "closeEmailModal" });
-		} catch (error) {
-			console.error("Error sending emails:", error);
-			showAlert(t.sendError + ": " + (error instanceof Error ? error.message : String(error)), "error");
-		} finally {
-			dispatch({ type: "emailFinished" });
-		}
-	}
-
-	function toggleCodeSelection(codeId: string) {
-		dispatch({ type: "toggleCodeSelection", codeId });
-	}
-
-	function toggleSelectAll() {
-		if (!currentType) return;
-
-		const allCodeIds = currentType.codes.map(c => c.id);
-		dispatch({ type: "toggleSelectAll", codeIds: allCodeIds });
-	}
-
-	function openCodesModal(typeId: string) {
-		dispatch({ type: "openCodesModal", typeId });
-	}
-
-	const currentType = inviteTypes.find(t => t.id === viewingCodesOf);
+		[eventId, showAlert, t.loadFailed]
+	);
 
 	useEffect(() => {
-		if (currentEventId) {
-			void Promise.all([loadTickets(), loadInvitationCodes()]);
-		}
-	}, [currentEventId, loadTickets, loadInvitationCodes]);
+		void loadData();
+		const requests = requestRef;
+		return () => {
+			requests.current++;
+		};
+	}, [loadData]);
 
-	const filteredTypes = useMemo(() => {
-		const q = searchTerm.toLowerCase();
-		return inviteTypes.filter(t => {
-			if (!q) return true;
-			if (t.name.toLowerCase().includes(q)) return true;
-			return t.codes.some(c => c.code.toLowerCase().includes(q));
+	const rows = useMemo(() => {
+		const ticketNames = new Map(tickets.map(ticket => [ticket.id, getLocalizedText(ticket.name, locale)]));
+		return rawCodes.map(code => toInviteRow(code, ticketNames.get(code.ticketId) ?? "", loadedAt));
+	}, [rawCodes, tickets, loadedAt, locale]);
+
+	const groupOptions = useMemo(() => {
+		const names = Array.from(new Set(rows.map(row => row.name))).sort((a, b) => a.localeCompare(b));
+		return names.map(name => ({ value: name === "" ? noGroupValue : name, label: name === "" ? t.noGroup : name }));
+	}, [rows, t.noGroup]);
+
+	const ticketOptions = useMemo(() => {
+		const seen = new Map<string, string>();
+		rows.forEach(row => seen.set(row.ticketId, row.ticketName || row.ticketId));
+		return Array.from(seen, ([value, label]) => ({ value, label }));
+	}, [rows]);
+
+	const filtered = useMemo(() => {
+		const q = searchTerm.trim().toLowerCase();
+		return rows.filter(row => {
+			if (q && !row.code.toLowerCase().includes(q) && !row.name.toLowerCase().includes(q) && !row.ticketName.toLowerCase().includes(q)) return false;
+			if (groupFilter !== allValue && row.name !== (groupFilter === noGroupValue ? "" : groupFilter)) return false;
+			if (ticketFilter !== allValue && row.ticketId !== ticketFilter) return false;
+			switch (statusFilter) {
+				case "unused":
+					return row.isActive && !row.isExpired && row.usedCount === 0;
+				case "used":
+					return row.usedCount > 0;
+				case "expired":
+					return row.isExpired;
+				case "disabled":
+					return !row.isActive;
+				default:
+					return true;
+			}
 		});
-	}, [inviteTypes, searchTerm]);
+	}, [rows, searchTerm, groupFilter, ticketFilter, statusFilter]);
+
+	// Actions only ever apply to rows that are currently visible.
+	const selectedRows = useMemo(() => filtered.filter(row => rowSelection[row.id]), [filtered, rowSelection]);
+
+	const counts = useMemo(
+		() => ({
+			total: rows.length,
+			unused: rows.filter(r => r.isActive && !r.isExpired && r.usedCount === 0).length,
+			used: rows.filter(r => r.usedCount > 0).length,
+			expired: rows.filter(r => r.isExpired).length,
+			disabled: rows.filter(r => !r.isActive).length
+		}),
+		[rows]
+	);
+
+	// Changing a filter clears the selection so hidden rows can never be acted upon by accident.
+	function changeFilter<T>(setter: (value: T) => void) {
+		return (value: T) => {
+			setter(value);
+			setRowSelection({});
+		};
+	}
+
+	function directLink(row: InviteRow) {
+		return `${window.location.origin}/${locale}/${eventId.slice(-6)}/ticket/${row.ticketId}?inv=${encodeURIComponent(row.code)}`;
+	}
+
+	const dateStamp = () => new Date().toISOString().split("T")[0];
+
+	async function copyCodes(target: InviteRow[]) {
+		const ok = await copyText(target.map(row => row.code).join("\n"));
+		showAlert(ok ? (target.length === 1 ? t.copied : t.copiedMany.replace("{count}", String(target.length))) : t.copyFailed, ok ? "success" : "error");
+	}
+
+	function downloadTxt(target: InviteRow[]) {
+		downloadFile(`invitation-codes-${dateStamp()}.txt`, target.map(row => row.code).join("\n"), "text/plain");
+		showAlert(t.downloaded.replace("{count}", String(target.length)), "success");
+	}
+
+	function exportCsv(target: InviteRow[]) {
+		const csv = toCsv(
+			["code", "group", "ticket", "used", "limit", "valid_from", "valid_until", "status", "direct_link"],
+			target.map(row => [
+				row.code,
+				row.name,
+				row.ticketName,
+				row.usedCount,
+				row.usageLimit ?? "",
+				row.validFrom ? formatDateTime(row.validFrom) : "",
+				row.validUntil ? formatDateTime(row.validUntil) : "",
+				row.status,
+				directLink(row)
+			])
+		);
+		downloadFile(`invitation-codes-${dateStamp()}.csv`, csv, "text/csv");
+		showAlert(t.downloaded.replace("{count}", String(target.length)), "success");
+	}
+
+	async function disableCodes(target: InviteRow[]) {
+		const active = target.filter(row => row.isActive);
+		if (active.length === 0) {
+			showAlert(t.alreadyDisabled, "warning");
+			return;
+		}
+
+		const usedCount = active.filter(row => row.usedCount > 0).length;
+		const description = [t.confirmDisableDescription, usedCount > 0 ? t.confirmDisableUsed.replace("{used}", String(usedCount)) : ""].filter(Boolean).join(" ");
+		if (!(await confirm({ title: t.confirmDisableTitle.replace("{count}", String(active.length)), description, confirmLabel: t.disable, destructive: true }))) return;
+
+		const results = await runInChunks(active, async row => {
+			try {
+				const response = await adminInvitationCodesAPI.delete(row.id);
+				return { id: row.id, ok: response.success };
+			} catch (error) {
+				console.error(`Failed to disable code ${row.id}:`, error);
+				return { id: row.id, ok: false };
+			}
+		});
+		const failedIds = results.filter(r => !r.ok).map(r => r.id);
+		const successCount = results.length - failedIds.length;
+
+		await loadData(true);
+		setRowSelection(Object.fromEntries(failedIds.map(id => [id, true])));
+
+		if (failedIds.length === 0) showAlert(t.disableSuccess.replace("{count}", String(successCount)), "success");
+		else if (successCount === 0) showAlert(t.disableFailed, "error");
+		else showAlert(t.disablePartial.replace("{success}", String(successCount)).replace("{failed}", String(failedIds.length)), "warning");
+	}
+
+	const columns = createInvitesColumns({
+		onCopy: row => void copyCodes([row]),
+		onDisable: row => void disableCodes([row]),
+		t
+	});
+
+	const statusOptions: { value: StatusFilter; label: string }[] = [
+		{ value: "all", label: t.allStatuses },
+		{ value: "unused", label: t.filterUnused },
+		{ value: "used", label: t.filterUsed },
+		{ value: "expired", label: t.filterExpired },
+		{ value: "disabled", label: t.filterDisabled }
+	];
+
+	const exportTarget = selectedRows.length > 0 ? selectedRows : filtered;
+	const hasRows = rows.length > 0;
 
 	return (
-		<>
-			<main>
-				<AdminHeader title={t.title} />
-				<section className="flex gap-2 mb-4">
-					<Button onClick={() => dispatch({ type: "patch", patch: { showModal: true } })}>
-						<Plus /> {t.add}
+		<main>
+			<AdminHeader
+				title={t.title}
+				description={t.description}
+				actions={
+					<>
+						<Button variant="outline" onClick={() => exportCsv(exportTarget)} disabled={exportTarget.length === 0}>
+							<FileDown className="size-4" />
+							{selectedRows.length > 0 ? t.exportCsvSelected.replace("{count}", String(selectedRows.length)) : t.exportCsv}
+						</Button>
+						<Button variant="primary" onClick={() => setShowCreate(true)}>
+							<Plus className="size-4" />
+							{t.add}
+						</Button>
+					</>
+				}
+			/>
+
+			{hasRows && (
+				<AdminToolbar>
+					<SearchInput
+						value={searchTerm}
+						onChange={value => {
+							setSearchTerm(value);
+							setRowSelection({});
+						}}
+						placeholder={t.search}
+						clearLabel={t.clearSearch}
+					/>
+					<FilterSelect value={statusFilter} onChange={changeFilter(value => setStatusFilter(value as StatusFilter))} options={statusOptions} label={t.status} />
+					{groupOptions.length > 1 && <FilterSelect value={groupFilter} onChange={changeFilter(setGroupFilter)} options={[{ value: allValue, label: t.allGroups }, ...groupOptions]} label={t.group} />}
+					{ticketOptions.length > 1 && (
+						<FilterSelect value={ticketFilter} onChange={changeFilter(setTicketFilter)} options={[{ value: allValue, label: t.allTickets }, ...ticketOptions]} label={t.ticketType} />
+					)}
+				</AdminToolbar>
+			)}
+
+			{hasRows && (
+				<p className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+					<span className="inline-flex items-center gap-1.5">
+						<TicketIcon className="size-4" />
+						{t.summary
+							.replace("{total}", String(counts.total))
+							.replace("{unused}", String(counts.unused))
+							.replace("{used}", String(counts.used))
+							.replace("{expired}", String(counts.expired))
+							.replace("{disabled}", String(counts.disabled))}
+					</span>
+				</p>
+			)}
+
+			{selectedRows.length > 0 && (
+				<div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2" role="region" aria-label={t.selected.replace("{count}", String(selectedRows.length))}>
+					<span className="mr-1 text-sm font-medium">{t.selected.replace("{count}", String(selectedRows.length))}</span>
+					{selectedRows.length < filtered.length && (
+						<Button variant="ghost" size="sm" onClick={() => setRowSelection(Object.fromEntries(filtered.map(row => [row.id, true])))}>
+							{t.selectAllMatching.replace("{count}", String(filtered.length))}
+						</Button>
+					)}
+					<div className="flex-1" />
+					<Button variant="outline" size="sm" onClick={() => void copyCodes(selectedRows)}>
+						<Copy className="size-4" />
+						{t.copyCodes}
 					</Button>
-					<Button variant="secondary" onClick={() => dispatch({ type: "patch", patch: { showBulkImportModal: true } })}>
-						<Import /> {t.bulkImport}
+					<Button variant="outline" size="sm" onClick={() => downloadTxt(selectedRows)}>
+						<Download className="size-4" />
+						{t.downloadTxt}
 					</Button>
-					<div className="relative max-w-xs">
-						<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-						<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => dispatch({ type: "patch", patch: { searchTerm: e.target.value } })} className="pl-10 h-11" />
-					</div>
-				</section>
+					<Button variant="outline" size="sm" onClick={() => setEmailCodes(selectedRows)}>
+						<Mail className="size-4" />
+						{t.sendEmail}
+					</Button>
+					<Button variant="destructive" size="sm" onClick={() => void disableCodes(selectedRows)}>
+						<Ban className="size-4" />
+						{t.disableSelected}
+					</Button>
+					<Button variant="ghost" size="icon" className="size-9" onClick={() => setRowSelection({})} aria-label={t.clearSelection} title={t.clearSelection}>
+						<X className="size-4" />
+					</Button>
+				</div>
+			)}
 
-				<section>
-					<div className="overflow-x-auto rounded-lg border border-gray-300 dark:border-gray-700">
-						{isLoading && (
-							<div className="flex justify-center py-8">
-								<PageSpinner />
-							</div>
-						)}
-						{!isLoading && (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>{t.name}</TableHead>
-										<TableHead>{t.total}</TableHead>
-										<TableHead>{t.used}</TableHead>
-										<TableHead>{t.remaining}</TableHead>
-										<TableHead>{t.created}</TableHead>
-										<TableHead>{t.actions}</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{filteredTypes.map(type => {
-										const used = type.codes.filter(c => c.usedCount > 0).length;
-										const total = type.codes.length;
-										return (
-											<TableRow key={type.id}>
-												<TableCell>{type.name}</TableCell>
-												<TableCell>{total}</TableCell>
-												<TableCell>{used}</TableCell>
-												<TableCell>{total - used}</TableCell>
-												<TableCell>{type.createdAt.toLocaleString()}</TableCell>
-												<TableCell>
-													<Button variant="secondary" size="sm" onClick={() => openCodesModal(type.id)}>
-														檢視
-													</Button>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
-						)}
-					</div>
-				</section>
-
-				<Dialog open={showModal} onOpenChange={value => dispatch({ type: "patch", patch: { showModal: value } })}>
-					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{t.add}</DialogTitle>
-						</DialogHeader>
-						<form onSubmit={createInvitationCodes} className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="ticketId">{t.ticketType}</Label>
-								<Select name="ticketId" value={selectedTicketId} onValueChange={value => dispatch({ type: "patch", patch: { selectedTicketId: value } })} required>
-									<SelectTrigger>
-										<SelectValue placeholder={t.pleaseSelectTicket} />
-									</SelectTrigger>
-									<SelectContent>
-										{tickets.map(ticket => (
-											<SelectItem key={ticket.id} value={ticket.id}>
-												{getLocalizedText(ticket.name, locale)}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="name">{t.name}</Label>
-								<Input
-									id="name"
-									name="name"
-									type="text"
-									required
-									placeholder="e.g. VIP Media"
-									value={formData.name}
-									onChange={e => dispatch({ type: "setFormField", field: "name", value: e.target.value })}
-								/>
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="amount">{t.amount}</Label>
-									<Input
-										id="amount"
-										name="amount"
-										type="number"
-										min="1"
-										max="1000"
-										required
-										value={formData.amount}
-										onChange={e => dispatch({ type: "setFormField", field: "amount", value: parseInt(e.target.value) })}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="usageLimit">{t.usageLimit}</Label>
-									<Input
-										id="usageLimit"
-										name="usageLimit"
-										type="number"
-										min="1"
-										max="100"
-										required
-										value={formData.usageLimit}
-										onChange={e => dispatch({ type: "setFormField", field: "usageLimit", value: parseInt(e.target.value) })}
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="validFrom">
-										{t.validFrom} ({t.optional})
-									</Label>
-									<Input
-										id="validFrom"
-										name="validFrom"
-										type="datetime-local"
-										value={formData.validFrom}
-										onChange={e => dispatch({ type: "setFormField", field: "validFrom", value: e.target.value })}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="validUntil">
-										{t.validUntil} ({t.optional})
-									</Label>
-									<Input
-										id="validUntil"
-										name="validUntil"
-										type="datetime-local"
-										value={formData.validUntil}
-										onChange={e => dispatch({ type: "setFormField", field: "validUntil", value: e.target.value })}
-									/>
-								</div>
-							</div>
-							<DialogFooter>
-								<Button type="button" variant="outline" onClick={() => dispatch({ type: "patch", patch: { showModal: false } })}>
-									{t.cancel}
+			<DataTable
+				columns={columns}
+				data={filtered}
+				isLoading={isLoading}
+				getRowId={row => row.id}
+				rowSelection={rowSelection}
+				onRowSelectionChange={setRowSelection}
+				emptyMessage={t.noMatches}
+				emptyState={
+					hasRows ? undefined : (
+						<EmptyState
+							className="border-0"
+							title={t.emptyTitle}
+							description={t.emptyDescription}
+							action={
+								<Button variant="primary" size="sm" onClick={() => setShowCreate(true)}>
+									<Plus className="size-4" />
+									{t.add}
 								</Button>
-								<Button type="submit" isLoading={isSaving}>
-									{t.save}
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
+							}
+						/>
+					)
+				}
+			/>
 
-				<Dialog open={showBulkImportModal} onOpenChange={value => dispatch({ type: "patch", patch: { showBulkImportModal: value } })}>
-					<DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{t.bulkImportTitle}</DialogTitle>
-						</DialogHeader>
-						<form onSubmit={handleBulkImport} className="space-y-4">
-							<p className="text-sm text-muted-foreground">{t.bulkImportDescription}</p>
-
-							<div className="space-y-2">
-								<Label htmlFor="bulkTicketId">{t.ticketType}</Label>
-								<Select name="ticketId" value={bulkTicketId} onValueChange={value => dispatch({ type: "patch", patch: { bulkTicketId: value } })} required>
-									<SelectTrigger>
-										<SelectValue placeholder={t.pleaseSelectTicket} />
-									</SelectTrigger>
-									<SelectContent>
-										{tickets.map(ticket => (
-											<SelectItem key={ticket.id} value={ticket.id}>
-												{getLocalizedText(ticket.name, locale)}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="bulkName">
-									{t.name} ({t.optional})
-								</Label>
-								<Input id="bulkName" name="name" type="text" placeholder={t.namePlaceholder} />
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="bulkFile">{t.uploadFile}</Label>
-								<Input id="bulkFile" type="file" accept=".txt,.csv" onChange={handleFileUpload} />
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="bulkCodes">{t.pasteOrType}</Label>
-								<Textarea
-									id="bulkCodes"
-									value={bulkImportCodes}
-									onChange={e => dispatch({ type: "patch", patch: { bulkImportCodes: e.target.value } })}
-									placeholder={t.codesPlaceholder}
-									rows={10}
-									className="font-mono"
-								/>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="bulkUsageLimit">{t.usageLimit}</Label>
-									<Input id="bulkUsageLimit" name="usageLimit" type="number" min="1" max="100" defaultValue="1" required />
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="bulkValidFrom">
-										{t.validFrom} ({t.optional})
-									</Label>
-									<Input id="bulkValidFrom" name="validFrom" type="datetime-local" />
-								</div>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="bulkValidUntil">
-									{t.validUntil} ({t.optional})
-								</Label>
-								<Input id="bulkValidUntil" name="validUntil" type="datetime-local" />
-							</div>
-
-							<DialogFooter>
-								<Button type="button" variant="outline" onClick={() => dispatch({ type: "patch", patch: { showBulkImportModal: false } })} disabled={isImporting}>
-									{t.cancel}
-								</Button>
-								<Button type="submit" isLoading={isImporting}>
-									{isImporting ? t.importing : t.import}
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
-
-				<Dialog open={showCodesModal} onOpenChange={value => dispatch({ type: "patch", patch: { showCodesModal: value } })}>
-					<DialogContent className="sm:max-w-2xl max-w-2xl max-h-[85vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>
-								{currentType && (
-									<>
-										{t.codes} - {currentType.name}
-										{selectedCodes.size > 0 && <span className="text-sm font-normal text-muted-foreground ml-2">({t.selected.replace("{count}", selectedCodes.size.toString())})</span>}
-									</>
-								)}
-							</DialogTitle>
-						</DialogHeader>
-						<div className="space-y-4">
-							<div className="flex flex-wrap gap-2">
-								<Button variant="outline" size="sm" onClick={toggleSelectAll}>
-									{currentType && selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
-								</Button>
-								{selectedCodes.size > 0 && (
-									<>
-										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsTxt}>
-											<Download size={20} /> {t.downloadTxt} ({selectedCodes.size})
-										</Button>
-										<Button variant="outline" size="sm" onClick={downloadSelectedCodesAsCsvWithLink}>
-											<Download size={20} /> {t.downloadCsvWithLink} ({selectedCodes.size})
-										</Button>
-										<Button variant="outline" size="sm" onClick={() => dispatch({ type: "patch", patch: { showEmailModal: true } })}>
-											<Mail size={20} /> {t.sendEmail} ({selectedCodes.size})
-										</Button>
-										<Button variant="destructive" size="sm" onClick={bulkDeleteInvitationCodes}>
-											{t.bulkDelete} ({selectedCodes.size})
-										</Button>
-									</>
-								)}
-							</div>
-							<div className="overflow-x-auto rounded-lg border">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead className="w-[50px] text-center">
-												<input
-													type="checkbox"
-													aria-label={currentType && selectedCodes.size === currentType.codes.length ? t.deselectAll : t.selectAll}
-													checked={currentType && selectedCodes.size === currentType.codes.length && currentType.codes.length > 0}
-													onChange={toggleSelectAll}
-													className="cursor-pointer"
-												/>
-											</TableHead>
-											<TableHead>{t.code}</TableHead>
-											<TableHead className="w-[100px] whitespace-nowrap">{t.usage}</TableHead>
-											<TableHead className="w-[100px] whitespace-nowrap">{t.limit}</TableHead>
-											<TableHead className="whitespace-nowrap">{t.status}</TableHead>
-											<TableHead className="whitespace-nowrap">{t.actions}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{currentType?.codes.map(code => {
-											const status = !code.active ? "inactive" : code.usedCount >= code.usageLimit ? "usedup" : "active";
-											const statusClass = status === "active" ? "active" : "ended";
-											return (
-												<TableRow key={code.id}>
-													<TableCell className="text-center">
-														<input
-															type="checkbox"
-															aria-label={`${t.code}: ${code.code}`}
-															checked={selectedCodes.has(code.id)}
-															onChange={() => toggleCodeSelection(code.id)}
-															className="cursor-pointer"
-														/>
-													</TableCell>
-													<TableCell className="font-mono text-sm">{code.code}</TableCell>
-													<TableCell className="whitespace-nowrap">{code.usedCount}</TableCell>
-													<TableCell className="whitespace-nowrap">{code.usageLimit}</TableCell>
-													<TableCell>
-														<span className={`status-badge ${statusClass}`}>{status}</span>
-													</TableCell>
-													<TableCell>
-														<Button variant="destructive" size="sm" onClick={() => deleteInvitationCode(code.id)}>
-															{t.delete}
-														</Button>
-													</TableCell>
-												</TableRow>
-											);
-										})}
-									</TableBody>
-								</Table>
-							</div>
-						</div>
-					</DialogContent>
-				</Dialog>
-
-				<Dialog open={showEmailModal} onOpenChange={value => dispatch({ type: "patch", patch: { showEmailModal: value } })}>
-					<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{t.bulkSendEmail}</DialogTitle>
-						</DialogHeader>
-						<div className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label htmlFor="emailList">{t.emailListLabel}</Label>
-									<Textarea
-										id="emailList"
-										value={emailList}
-										onChange={e => dispatch({ type: "patch", patch: { emailList: e.target.value } })}
-										placeholder={t.emailListPlaceholder}
-										rows={8}
-										className="font-mono text-sm"
-									/>
-									<p className="text-xs text-muted-foreground">已選擇 {selectedCodes.size} 個邀請碼</p>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="emailMessage">{t.messageLabel}</Label>
-									<Textarea id="emailMessage" value={emailMessage} onChange={e => dispatch({ type: "patch", patch: { emailMessage: e.target.value } })} placeholder={t.messagePlaceholder} rows={8} />
-								</div>
-							</div>
-
-							<div className="flex gap-2">
-								<Button type="button" onClick={handleMatchCodes} variant="secondary" disabled={isSendingEmail}>
-									{t.matchCodes}
-								</Button>
-								{matchedPairs.length > 0 && (
-									<>
-										<Button type="button" onClick={() => dispatch({ type: "patch", patch: { showPreview: !showPreview } })} variant="outline" disabled={isSendingEmail}>
-											{showPreview ? t.closePreview : t.preview}
-										</Button>
-										<div className="text-sm text-muted-foreground flex items-center">
-											{t.matched}: {matchedPairs.length} 組
-										</div>
-									</>
-								)}
-							</div>
-
-							{matchedPairs.length > 0 && (
-								<div className="space-y-2">
-									<Label>配對結果</Label>
-									<div className="border rounded-lg p-4 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-										<div className="space-y-1 font-mono text-sm">
-											{matchedPairs.map(pair => (
-												<div key={pair.codeId} className="flex justify-between items-center py-1 border-b last:border-b-0">
-													<span className="text-blue-600 dark:text-blue-400">{pair.email}</span>
-													<span className="text-gray-400">→</span>
-													<span className="text-green-600 dark:text-green-400">{pair.code}</span>
-												</div>
-											))}
-										</div>
-									</div>
-								</div>
-							)}
-
-							{showPreview && (
-								<div className="space-y-2">
-									<Label>{t.emailPreview}</Label>
-									<EmailPreview matchedPairs={matchedPairs} tickets={tickets} currentType={currentType} emailMessage={emailMessage} locale={locale} />
-								</div>
-							)}
-						</div>
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => {
-									dispatch({ type: "closeEmailModal" });
-								}}
-								disabled={isSendingEmail}
-							>
-								{t.cancel}
-							</Button>
-							<Button type="button" onClick={sendAllEmails} disabled={isSendingEmail || matchedPairs.length === 0}>
-								{isSendingEmail ? t.sending : t.sendAll}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			</main>
-		</>
+			{showCreate && <CreateCodesDialog tickets={tickets} onClose={() => setShowCreate(false)} onCreated={() => loadData(true)} />}
+			{emailCodes && <SendEmailDialog codes={emailCodes} onClose={() => setEmailCodes(null)} />}
+		</main>
 	);
 }
 
 export default function InvitesPage() {
-	return useInvitesPageView();
+	const locale = useLocale();
+	const eventId = useSelectedEventId();
+	const t = useInvitesTranslations(locale);
+
+	if (!eventId) {
+		return (
+			<main>
+				<AdminHeader title={t.title} description={t.description} />
+				<EmptyState icon={TicketIcon} title={t.selectEventTitle} description={t.selectEventDescription} />
+			</main>
+		);
+	}
+
+	// Keyed by event so switching events starts from a clean slate (filters, selection, dialogs, in-flight requests).
+	return <InvitesContent key={eventId} eventId={eventId} />;
 }

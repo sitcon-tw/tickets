@@ -1,751 +1,265 @@
 "use client";
 
+import { EmptyState } from "@/components/admin/EmptyState";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import AdminHeader from "@/components/AdminHeader";
-import PageSpinner from "@/components/PageSpinner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminWebhooksAPI, webhookTestSchema } from "@/lib/api/endpoints";
+import { adminWebhooksAPI } from "@/lib/api/endpoints";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
-import { formatDateTime } from "@/lib/utils/timezone";
 import { type WebhookDelivery, type WebhookEndpoint } from "@sitcontix/types";
-import { AlertTriangle, CheckCircle, ExternalLink, Play, RefreshCw, Settings, Trash2, XCircle } from "lucide-react";
+import { CalendarDays, Pencil, Plus, Webhook } from "lucide-react";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useReducer } from "react";
-import z from "zod/v4";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FailedDeliveries } from "./failed-deliveries";
+import { errorDetail, webhookTranslations, type WebhookT } from "./translations";
+import { WebhookCard } from "./webhook-card";
+import { WebhookDialog } from "./webhook-dialog";
 
-type WebhookTestResult = z.infer<typeof webhookTestSchema>;
-type WebhookFormField = "formUrl" | "formAuthHeaderName" | "formAuthHeaderValue";
-
-type WebhookPageState = {
-	isLoading: boolean;
-	isSaving: boolean;
-	isTesting: boolean;
+type LoadedState = {
+	eventId: string;
 	webhook: WebhookEndpoint | null;
-	failedDeliveries: WebhookDelivery[];
-	showConfigModal: boolean;
-	showDeleteConfirm: boolean;
-	showTestResult: boolean;
-	testResult: WebhookTestResult | null;
-	formUrl: string;
-	formAuthHeaderName: string;
-	formAuthHeaderValue: string;
-	formEventTypes: Set<string>;
+	deliveries: WebhookDelivery[];
+	deliveriesError: boolean;
+	error: boolean;
 };
 
-type WebhookPageAction =
-	| { type: "setLoading"; value: boolean }
-	| { type: "setSaving"; value: boolean }
-	| { type: "setTesting"; value: boolean }
-	| { type: "setWebhook"; value: WebhookEndpoint | null }
-	| { type: "setFailedDeliveries"; value: WebhookDelivery[] }
-	| { type: "setShowConfigModal"; value: boolean }
-	| { type: "setShowDeleteConfirm"; value: boolean }
-	| { type: "setShowTestResult"; value: boolean }
-	| { type: "setTestResult"; value: WebhookTestResult | null }
-	| { type: "setFormField"; field: WebhookFormField; value: string }
-	| { type: "toggleFormEventType"; eventType: string }
-	| { type: "openConfigModal"; webhook?: WebhookEndpoint }
-	| { type: "webhookDeleted" };
+const DELIVERIES_LIMIT = 50;
 
-function defaultWebhookEventTypes() {
-	return new Set(["registration_confirmed", "registration_cancelled"]);
-}
-
-function createInitialWebhookPageState(): WebhookPageState {
-	return {
-		isLoading: true,
-		isSaving: false,
-		isTesting: false,
-		webhook: null,
-		failedDeliveries: [],
-		showConfigModal: false,
-		showDeleteConfirm: false,
-		showTestResult: false,
-		testResult: null,
-		formUrl: "",
-		formAuthHeaderName: "",
-		formAuthHeaderValue: "",
-		formEventTypes: defaultWebhookEventTypes()
-	};
-}
-
-function webhookPageReducer(state: WebhookPageState, action: WebhookPageAction): WebhookPageState {
-	switch (action.type) {
-		case "setLoading":
-			return { ...state, isLoading: action.value };
-		case "setSaving":
-			return { ...state, isSaving: action.value };
-		case "setTesting":
-			return { ...state, isTesting: action.value };
-		case "setWebhook":
-			return { ...state, webhook: action.value };
-		case "setFailedDeliveries":
-			return { ...state, failedDeliveries: action.value };
-		case "setShowConfigModal":
-			return { ...state, showConfigModal: action.value };
-		case "setShowDeleteConfirm":
-			return { ...state, showDeleteConfirm: action.value };
-		case "setShowTestResult":
-			return { ...state, showTestResult: action.value };
-		case "setTestResult":
-			return { ...state, testResult: action.value };
-		case "setFormField":
-			return { ...state, [action.field]: action.value };
-		case "toggleFormEventType": {
-			const formEventTypes = new Set(state.formEventTypes);
-			if (formEventTypes.has(action.eventType)) {
-				formEventTypes.delete(action.eventType);
-			} else {
-				formEventTypes.add(action.eventType);
-			}
-			return { ...state, formEventTypes };
-		}
-		case "openConfigModal":
-			return {
-				...state,
-				showConfigModal: true,
-				formUrl: action.webhook?.url ?? "",
-				formAuthHeaderName: action.webhook?.authHeaderName ?? "",
-				formAuthHeaderValue: "",
-				formEventTypes: action.webhook ? new Set(action.webhook.eventTypes) : defaultWebhookEventTypes()
-			};
-		case "webhookDeleted":
-			return {
-				...state,
-				webhook: null,
-				failedDeliveries: [],
-				showDeleteConfirm: false
-			};
-	}
-}
-
-const webhookTranslations = {
-	title: { "zh-Hant": "Webhook 設定", "zh-Hans": "Webhook 设置", en: "Webhook Settings" },
-	description: {
-		"zh-Hant": "設定 Webhook 以在報名確認或取消時接收通知",
-		"zh-Hans": "设置 Webhook 以在报名确认或取消时接收通知",
-		en: "Configure webhooks to receive notifications when registrations are confirmed or cancelled"
-	},
-	noWebhook: { "zh-Hant": "尚未設定 Webhook", "zh-Hans": "尚未设置 Webhook", en: "No webhook configured" },
-	noWebhookDesc: {
-		"zh-Hant": "建立 Webhook 以在報名狀態變更時自動通知您的系統",
-		"zh-Hans": "创建 Webhook 以在报名状态变更时自动通知您的系统",
-		en: "Create a webhook to automatically notify your system when registration status changes"
-	},
-	createWebhook: { "zh-Hant": "建立 Webhook", "zh-Hans": "创建 Webhook", en: "Create Webhook" },
-	editWebhook: { "zh-Hant": "編輯 Webhook", "zh-Hans": "编辑 Webhook", en: "Edit Webhook" },
-	webhookUrl: { "zh-Hant": "Webhook URL", "zh-Hans": "Webhook URL", en: "Webhook URL" },
-	webhookUrlPlaceholder: { "zh-Hant": "https://your-server.com/webhook", "zh-Hans": "https://your-server.com/webhook", en: "https://your-server.com/webhook" },
-	webhookUrlHelp: { "zh-Hant": "必須使用 HTTPS 協定", "zh-Hans": "必须使用 HTTPS 协议", en: "Must use HTTPS protocol" },
-	authHeader: { "zh-Hant": "認證標頭（選填）", "zh-Hans": "认证标头（选填）", en: "Auth Header (Optional)" },
-	authHeaderName: { "zh-Hant": "標頭名稱", "zh-Hans": "标头名称", en: "Header Name" },
-	authHeaderNamePlaceholder: { "zh-Hant": "X-Sitcontix-Token", "zh-Hans": "X-Sitcontix-Token", en: "X-Sitcontix-Token" },
-	authHeaderValue: { "zh-Hant": "標頭值", "zh-Hans": "标头值", en: "Header Value" },
-	authHeaderValuePlaceholder: { "zh-Hant": "your-secret-token", "zh-Hans": "your-secret-token", en: "your-secret-token" },
-	eventTypes: { "zh-Hant": "事件類型", "zh-Hans": "事件类型", en: "Event Types" },
-	registrationConfirmed: { "zh-Hant": "報名確認", "zh-Hans": "报名确认", en: "Registration Confirmed" },
-	registrationCancelled: { "zh-Hant": "報名取消", "zh-Hans": "报名取消", en: "Registration Cancelled" },
-	status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
-	active: { "zh-Hant": "啟用", "zh-Hans": "启用", en: "Active" },
-	inactive: { "zh-Hant": "停用", "zh-Hans": "停用", en: "Inactive" },
-	autoDisabled: { "zh-Hant": "自動停用（連續失敗）", "zh-Hans": "自动停用（连续失败）", en: "Auto-disabled (consecutive failures)" },
-	testWebhook: { "zh-Hant": "測試 Webhook", "zh-Hans": "测试 Webhook", en: "Test Webhook" },
-	testing: { "zh-Hant": "測試中...", "zh-Hans": "测试中...", en: "Testing..." },
-	testSuccess: { "zh-Hant": "測試成功！", "zh-Hans": "测试成功！", en: "Test successful!" },
-	testFailed: { "zh-Hant": "測試失敗", "zh-Hans": "测试失败", en: "Test failed" },
-	save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-	saving: { "zh-Hant": "儲存中...", "zh-Hans": "保存中...", en: "Saving..." },
-	cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-	delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
-	deleteWebhook: { "zh-Hant": "刪除 Webhook", "zh-Hans": "删除 Webhook", en: "Delete Webhook" },
-	deleteConfirm: {
-		"zh-Hant": "確定要刪除此 Webhook 嗎？此操作無法復原。",
-		"zh-Hans": "确定要删除此 Webhook 吗？此操作无法恢复。",
-		en: "Are you sure you want to delete this webhook? This action cannot be undone."
-	},
-	failedDeliveries: { "zh-Hant": "發送失敗紀錄", "zh-Hans": "发送失败记录", en: "Failed Deliveries" },
-	noFailedDeliveries: { "zh-Hant": "沒有失敗紀錄", "zh-Hans": "没有失败记录", en: "No failed deliveries" },
-	retry: { "zh-Hant": "重試", "zh-Hans": "重试", en: "Retry" },
-	retrying: { "zh-Hant": "重試中...", "zh-Hans": "重试中...", en: "Retrying..." },
-	eventType: { "zh-Hant": "事件類型", "zh-Hans": "事件类型", en: "Event Type" },
-	statusCode: { "zh-Hant": "狀態碼", "zh-Hans": "状态码", en: "Status Code" },
-	errorMessage: { "zh-Hant": "錯誤訊息", "zh-Hans": "错误信息", en: "Error Message" },
-	createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" },
-	retryCount: { "zh-Hant": "重試次數", "zh-Hans": "重试次数", en: "Retry Count" },
-	actions: { "zh-Hant": "動作", "zh-Hans": "动作", en: "Actions" },
-	selectEvent: { "zh-Hant": "請先選擇活動", "zh-Hans": "请先选择活动", en: "Please select an event first" },
-	testResultTitle: { "zh-Hant": "測試結果", "zh-Hans": "测试结果", en: "Test Result" },
-	responseBody: { "zh-Hant": "回應內容", "zh-Hans": "响应内容", en: "Response Body" },
-	close: { "zh-Hant": "關閉", "zh-Hans": "关闭", en: "Close" },
-	enable: { "zh-Hant": "啟用", "zh-Hans": "启用", en: "Enable" },
-	disable: { "zh-Hant": "停用", "zh-Hans": "停用", en: "Disable" }
-};
-type WebhookTranslations = Record<string, string>;
-
-function WebhookConfigCard({
-	webhook,
-	t,
-	onToggleActive,
-	onEdit,
-	onDelete
-}: {
-	webhook: WebhookEndpoint | null;
-	t: WebhookTranslations;
-	onToggleActive: () => void;
-	onEdit: (webhook?: WebhookEndpoint) => void;
-	onDelete: () => void;
-}) {
+function CardSkeleton() {
 	return (
-		<div className="rounded-lg border bg-card p-6">
-			{webhook ? (
-				<div className="space-y-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-3">
-							<h3 className="text-lg font-semibold">Webhook</h3>
-							{webhook.isActive ? (
-								webhook.consecutiveFailurePeriods > 0 ? (
-									<Badge variant="destructive" className="flex items-center gap-1">
-										<AlertTriangle className="h-3 w-3" />
-										{t.autoDisabled}
-									</Badge>
-								) : (
-									<Badge variant="default" className="flex items-center gap-1">
-										<CheckCircle className="h-3 w-3" />
-										{t.active}
-									</Badge>
-								)
-							) : (
-								<Badge variant="secondary" className="flex items-center gap-1">
-									<XCircle className="h-3 w-3" />
-									{t.inactive}
-								</Badge>
-							)}
-						</div>
-						<div className="flex items-center gap-2">
-							<Button variant="outline" size="sm" onClick={onToggleActive}>
-								{webhook.isActive ? t.disable : t.enable}
-							</Button>
-							<Button variant="outline" size="sm" onClick={() => onEdit(webhook)}>
-								<Settings className="h-4 w-4 mr-1" />
-								{t.editWebhook}
-							</Button>
-							<Button variant="destructive" size="sm" onClick={onDelete}>
-								<Trash2 className="h-4 w-4 mr-1" />
-								{t.delete}
-							</Button>
-						</div>
-					</div>
-
-					<div className="grid gap-4 text-sm">
-						<div>
-							<Label className="text-muted-foreground">{t.webhookUrl}</Label>
-							<div className="flex items-center gap-2 mt-1">
-								<code className="bg-muted px-2 py-1 rounded text-xs break-all">{webhook.url}</code>
-								<a href={webhook.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
-									<ExternalLink className="h-4 w-4" />
-								</a>
-							</div>
-						</div>
-
-						{webhook.authHeaderName && (
-							<div>
-								<Label className="text-muted-foreground">{t.authHeader}</Label>
-								<div className="mt-1">
-									<code className="bg-muted px-2 py-1 rounded text-xs">
-										{webhook.authHeaderName}: {webhook.authHeaderValue}
-									</code>
-								</div>
-							</div>
-						)}
-
-						<div>
-							<Label className="text-muted-foreground">{t.eventTypes}</Label>
-							<div className="flex gap-2 mt-1">
-								{webhook.eventTypes.map(type => (
-									<Badge key={type} variant="outline">
-										{type === "registration_confirmed" ? t.registrationConfirmed : t.registrationCancelled}
-									</Badge>
-								))}
-							</div>
-						</div>
-					</div>
-				</div>
-			) : (
-				<div className="text-center py-8">
-					<Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-					<h3 className="text-lg font-semibold mb-2">{t.noWebhook}</h3>
-					<p className="text-muted-foreground mb-4">{t.noWebhookDesc}</p>
-					<Button onClick={() => onEdit()}>
-						<Plus className="h-4 w-4 mr-1" />
-						{t.createWebhook}
-					</Button>
-				</div>
-			)}
+		<div className="space-y-4" aria-busy="true">
+			<div className="h-72 animate-pulse rounded-xl border bg-muted/40" />
+			<div className="h-40 animate-pulse rounded-xl border bg-muted/40" />
 		</div>
-	);
-}
-
-function FailedDeliveriesPanel({
-	failedDeliveries,
-	t,
-	onRefresh,
-	onRetry
-}: {
-	failedDeliveries: WebhookDelivery[];
-	t: WebhookTranslations;
-	onRefresh: () => void;
-	onRetry: (deliveryId: string) => void;
-}) {
-	return (
-		<div className="rounded-lg border bg-card p-6">
-			<div className="flex items-center justify-between mb-4">
-				<h3 className="text-lg font-semibold">{t.failedDeliveries}</h3>
-				<Button variant="outline" size="sm" onClick={onRefresh}>
-					<RefreshCw className="h-4 w-4 mr-1" />
-					Refresh
-				</Button>
-			</div>
-
-			{failedDeliveries.length === 0 ? (
-				<p className="text-muted-foreground text-center py-4">{t.noFailedDeliveries}</p>
-			) : (
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>{t.eventType}</TableHead>
-							<TableHead>{t.statusCode}</TableHead>
-							<TableHead>{t.errorMessage}</TableHead>
-							<TableHead>{t.retryCount}</TableHead>
-							<TableHead>{t.createdAt}</TableHead>
-							<TableHead>{t.actions}</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{failedDeliveries.map(delivery => (
-							<TableRow key={delivery.id}>
-								<TableCell>
-									<Badge variant="outline">{delivery.eventType === "registration_confirmed" ? t.registrationConfirmed : t.registrationCancelled}</Badge>
-								</TableCell>
-								<TableCell>{delivery.statusCode || "-"}</TableCell>
-								<TableCell className="max-w-xs truncate">{delivery.errorMessage || "-"}</TableCell>
-								<TableCell>{delivery.retryCount}/3</TableCell>
-								<TableCell>{formatDateTime(delivery.createdAt)}</TableCell>
-								<TableCell>
-									<Button variant="outline" size="sm" onClick={() => onRetry(delivery.id)}>
-										<Play className="h-4 w-4 mr-1" />
-										{t.retry}
-									</Button>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-			)}
-		</div>
-	);
-}
-
-function WebhookDialogs({
-	webhook,
-	t,
-	state,
-	dispatch,
-	onTest,
-	onSave,
-	onDelete,
-	onToggleEventType
-}: {
-	webhook: WebhookEndpoint | null;
-	t: WebhookTranslations;
-	state: WebhookPageState;
-	dispatch: React.Dispatch<WebhookPageAction>;
-	onTest: () => void;
-	onSave: () => void;
-	onDelete: () => void;
-	onToggleEventType: (eventType: string) => void;
-}) {
-	const { isSaving, isTesting, showConfigModal, showDeleteConfirm, showTestResult, testResult, formUrl, formAuthHeaderName, formAuthHeaderValue, formEventTypes } = state;
-
-	return (
-		<>
-			<Dialog open={showConfigModal} onOpenChange={value => dispatch({ type: "setShowConfigModal", value })}>
-				<DialogContent className="max-w-lg">
-					<DialogHeader>
-						<DialogTitle>{webhook ? t.editWebhook : t.createWebhook}</DialogTitle>
-						<DialogDescription>{t.description}</DialogDescription>
-					</DialogHeader>
-
-					<div className="space-y-4 py-4">
-						<div className="space-y-2">
-							<Label htmlFor="webhookUrl">{t.webhookUrl} *</Label>
-							<Input id="webhookUrl" type="url" placeholder={t.webhookUrlPlaceholder} value={formUrl} onChange={e => dispatch({ type: "setFormField", field: "formUrl", value: e.target.value })} />
-							<p className="text-xs text-muted-foreground">{t.webhookUrlHelp}</p>
-						</div>
-
-						<div className="space-y-2">
-							<Label>{t.authHeader}</Label>
-							<div className="grid grid-cols-2 gap-2">
-								<Input placeholder={t.authHeaderNamePlaceholder} value={formAuthHeaderName} onChange={e => dispatch({ type: "setFormField", field: "formAuthHeaderName", value: e.target.value })} />
-								<Input
-									type="password"
-									placeholder={t.authHeaderValuePlaceholder}
-									value={formAuthHeaderValue}
-									onChange={e => dispatch({ type: "setFormField", field: "formAuthHeaderValue", value: e.target.value })}
-								/>
-							</div>
-						</div>
-
-						<div className="space-y-2">
-							<Label>{t.eventTypes} *</Label>
-							<div className="space-y-2">
-								<div className="flex items-center space-x-2">
-									<Checkbox id="registration_confirmed" checked={formEventTypes.has("registration_confirmed")} onCheckedChange={() => onToggleEventType("registration_confirmed")} />
-									<label htmlFor="registration_confirmed" className="text-sm cursor-pointer">
-										{t.registrationConfirmed}
-									</label>
-								</div>
-								<div className="flex items-center space-x-2">
-									<Checkbox id="registration_cancelled" checked={formEventTypes.has("registration_cancelled")} onCheckedChange={() => onToggleEventType("registration_cancelled")} />
-									<label htmlFor="registration_cancelled" className="text-sm cursor-pointer">
-										{t.registrationCancelled}
-									</label>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<DialogFooter className="flex-col sm:flex-row gap-2">
-						<Button variant="outline" onClick={onTest} disabled={isTesting || !formUrl}>
-							{isTesting ? t.testing : t.testWebhook}
-						</Button>
-						<div className="flex gap-2">
-							<Button variant="outline" onClick={() => dispatch({ type: "setShowConfigModal", value: false })}>
-								{t.cancel}
-							</Button>
-							<Button onClick={onSave} disabled={isSaving}>
-								{isSaving ? t.saving : t.save}
-							</Button>
-						</div>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog open={showDeleteConfirm} onOpenChange={value => dispatch({ type: "setShowDeleteConfirm", value })}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t.deleteWebhook}</DialogTitle>
-						<DialogDescription>{t.deleteConfirm}</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => dispatch({ type: "setShowDeleteConfirm", value: false })}>
-							{t.cancel}
-						</Button>
-						<Button variant="destructive" onClick={onDelete}>
-							{t.delete}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog open={showTestResult} onOpenChange={value => dispatch({ type: "setShowTestResult", value })}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t.testResultTitle}</DialogTitle>
-					</DialogHeader>
-					{testResult && (
-						<div className="space-y-4">
-							<div className="flex items-center gap-2">
-								{testResult.success ? (
-									<>
-										<CheckCircle className="h-5 w-5 text-green-500" />
-										<span className="text-green-500 font-medium">{t.testSuccess}</span>
-									</>
-								) : (
-									<>
-										<XCircle className="h-5 w-5 text-red-500" />
-										<span className="text-red-500 font-medium">{t.testFailed}</span>
-									</>
-								)}
-							</div>
-
-							{testResult.statusCode && (
-								<div>
-									<Label className="text-muted-foreground">{t.statusCode}</Label>
-									<p className="font-mono">{testResult.statusCode}</p>
-								</div>
-							)}
-
-							{testResult.errorMessage && (
-								<div>
-									<Label className="text-muted-foreground">{t.errorMessage}</Label>
-									<p className="text-red-500">{testResult.errorMessage}</p>
-								</div>
-							)}
-
-							{testResult.responseBody && (
-								<div>
-									<Label className="text-muted-foreground">{t.responseBody}</Label>
-									<pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-40">{testResult.responseBody}</pre>
-								</div>
-							)}
-						</div>
-					)}
-					<DialogFooter>
-						<Button onClick={() => dispatch({ type: "setShowTestResult", value: false })}>{t.close}</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
 	);
 }
 
 export default function WebhooksPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
+	const confirm = useConfirm();
+	const t = getTranslations(locale, webhookTranslations) as WebhookT;
 
 	const currentEventId = useSelectedEventId();
-	const [state, dispatch] = useReducer(webhookPageReducer, undefined, createInitialWebhookPageState);
-	const { isLoading, webhook, failedDeliveries, formUrl, formAuthHeaderName, formAuthHeaderValue, formEventTypes } = state;
+	const [loaded, setLoaded] = useState<LoadedState | null>(null);
+	const [dialogEventId, setDialogEventId] = useState<string | null>(null);
+	const [isToggling, setIsToggling] = useState(false);
+	const [isRefreshingDeliveries, setIsRefreshingDeliveries] = useState(false);
+	const [retryingId, setRetryingId] = useState<string | null>(null);
 
-	const t = getTranslations(locale, webhookTranslations);
+	// Guards against late responses from a previously selected event
+	const activeEventRef = useRef<string | null>(currentEventId);
+	const tRef = useRef(t);
+	useEffect(() => {
+		activeEventRef.current = currentEventId;
+		tRef.current = t;
+	});
 
-	const loadWebhook = useCallback(async () => {
-		if (!currentEventId) return;
-
-		dispatch({ type: "setLoading", value: true });
-		try {
-			const response = await adminWebhooksAPI.get(currentEventId);
-			if (response.success) {
-				dispatch({ type: "setWebhook", value: response.data || null });
-			}
-		} catch (error) {
-			console.error("Failed to load webhook:", error);
-		} finally {
-			dispatch({ type: "setLoading", value: false });
-		}
+	// A dialog opened for one event must not reappear when switching back to it later
+	useEffect(() => {
+		setDialogEventId(null);
 	}, [currentEventId]);
 
-	const loadFailedDeliveries = useCallback(async () => {
-		if (!currentEventId || !webhook) return;
+	// State belongs to the event it was loaded for; anything else is treated as "not loaded yet"
+	const current = loaded && loaded.eventId === currentEventId ? loaded : null;
+	const webhook = current?.webhook ?? null;
+	const dialogOpen = dialogEventId !== null && dialogEventId === currentEventId;
 
+	const updateCurrent = useCallback((eventId: string, updater: (state: LoadedState) => LoadedState) => {
+		setLoaded(prev => (prev && prev.eventId === eventId ? updater(prev) : prev));
+	}, []);
+
+	const fetchDeliveries = useCallback(async (eventId: string): Promise<{ deliveries: WebhookDelivery[]; error: boolean }> => {
 		try {
-			const response = await adminWebhooksAPI.getFailedDeliveries(currentEventId);
-			if (response.success && response.data) {
-				dispatch({ type: "setFailedDeliveries", value: response.data });
-			}
+			const response = await adminWebhooksAPI.getFailedDeliveries(eventId, { page: 1, limit: DELIVERIES_LIMIT });
+			if (response.success && response.data) return { deliveries: response.data, error: false };
 		} catch (error) {
 			console.error("Failed to load failed deliveries:", error);
 		}
-	}, [currentEventId, webhook]);
+		return { deliveries: [], error: true };
+	}, []);
 
-	useEffect(() => {
-		if (currentEventId) {
-			void loadWebhook();
-		}
-	}, [currentEventId, loadWebhook]);
-
-	useEffect(() => {
-		if (webhook) {
-			void loadFailedDeliveries();
-		}
-	}, [webhook, loadFailedDeliveries]);
-
-	const openConfigModal = (existingWebhook?: WebhookEndpoint) => {
-		dispatch({ type: "openConfigModal", webhook: existingWebhook });
-	};
-
-	const handleTestWebhook = async () => {
-		if (!formUrl) {
-			showAlert("Please enter a webhook URL", "error");
-			return;
-		}
-
-		if (!formUrl.startsWith("https://")) {
-			showAlert("Webhook URL must use HTTPS", "error");
-			return;
-		}
-
-		if (!currentEventId) return;
-
-		dispatch({ type: "setTesting", value: true });
-		try {
-			const response = await adminWebhooksAPI.test(currentEventId, {
-				url: formUrl,
-				authHeaderName: formAuthHeaderName || undefined,
-				authHeaderValue: formAuthHeaderValue || undefined
-			});
-
-			if (response.success && response.data) {
-				dispatch({ type: "setTestResult", value: response.data });
-				dispatch({ type: "setShowTestResult", value: true });
-			}
-		} catch {
-			showAlert("Failed to test webhook", "error");
-		} finally {
-			dispatch({ type: "setTesting", value: false });
-		}
-	};
-
-	const handleSaveWebhook = async () => {
-		if (!formUrl) {
-			showAlert("Please enter a webhook URL", "error");
-			return;
-		}
-
-		if (!formUrl.startsWith("https://")) {
-			showAlert("Webhook URL must use HTTPS", "error");
-			return;
-		}
-
-		if (formEventTypes.size === 0) {
-			showAlert("Please select at least one event type", "error");
-			return;
-		}
-
-		if (!currentEventId) return;
-
-		dispatch({ type: "setSaving", value: true });
-		try {
-			const data = {
-				url: formUrl,
-				authHeaderName: formAuthHeaderName || undefined,
-				authHeaderValue: formAuthHeaderValue || undefined,
-				eventTypes: Array.from(formEventTypes)
-			};
-
-			let response;
-			if (webhook) {
-				// The stored auth header value is masked, so auth headers are only sent when a new value is entered,
-				// or cleared (both null) when the name is removed
-				const authHeaderChanged = formAuthHeaderValue !== "" || formAuthHeaderName !== (webhook.authHeaderName ?? "");
-				if (authHeaderChanged && (formAuthHeaderName === "") !== (formAuthHeaderValue === "")) {
-					showAlert("Both auth header name and value must be provided together", "error");
+	const load = useCallback(
+		async (eventId: string) => {
+			try {
+				const response = await adminWebhooksAPI.get(eventId);
+				if (activeEventRef.current !== eventId) return;
+				if (!response.success) {
+					setLoaded({ eventId, webhook: null, deliveries: [], deliveriesError: false, error: true });
+					showAlert(`${tRef.current.loadFailed}${response.message ? `: ${response.message}` : ""}`, "error");
 					return;
 				}
-				const authHeaders = !authHeaderChanged
-					? {}
-					: formAuthHeaderName === "" && formAuthHeaderValue === ""
-						? { authHeaderName: null, authHeaderValue: null }
-						: { authHeaderName: formAuthHeaderName, authHeaderValue: formAuthHeaderValue };
-				response = await adminWebhooksAPI.update(currentEventId, { url: data.url, eventTypes: data.eventTypes, ...authHeaders });
-			} else {
-				response = await adminWebhooksAPI.create(currentEventId, data);
-			}
 
-			if (response.success) {
-				showAlert(webhook ? "Webhook updated" : "Webhook created", "success");
-				dispatch({ type: "setShowConfigModal", value: false });
-				void loadWebhook();
-			} else {
-				showAlert(response.message || "Failed to save webhook", "error");
+				const found = response.data ?? null;
+				setLoaded({ eventId, webhook: found, deliveries: [], deliveriesError: false, error: false });
+				if (found) {
+					const result = await fetchDeliveries(eventId);
+					if (activeEventRef.current !== eventId) return;
+					updateCurrent(eventId, state => ({ ...state, deliveries: result.deliveries, deliveriesError: result.error }));
+				}
+			} catch (error) {
+				console.error("Failed to load webhook:", error);
+				if (activeEventRef.current !== eventId) return;
+				setLoaded({ eventId, webhook: null, deliveries: [], deliveriesError: false, error: true });
+				showAlert(`${tRef.current.loadFailed}${errorDetail(error)}`, "error");
 			}
-		} catch {
-			showAlert("Failed to save webhook", "error");
-		} finally {
-			dispatch({ type: "setSaving", value: false });
-		}
+		},
+		[fetchDeliveries, showAlert, updateCurrent]
+	);
+
+	useEffect(() => {
+		if (currentEventId) void load(currentEventId);
+	}, [currentEventId, load]);
+
+	const handleRetryLoad = () => {
+		if (!currentEventId) return;
+		setLoaded(null);
+		void load(currentEventId);
 	};
 
-	const handleDeleteWebhook = async () => {
+	const handleRefreshDeliveries = async () => {
 		if (!currentEventId) return;
+		const eventId = currentEventId;
+		setIsRefreshingDeliveries(true);
+		const result = await fetchDeliveries(eventId);
+		setIsRefreshingDeliveries(false);
+		if (activeEventRef.current !== eventId) return;
+		updateCurrent(eventId, state => ({ ...state, deliveries: result.deliveries, deliveriesError: result.error }));
+	};
 
-		try {
-			const response = await adminWebhooksAPI.delete(currentEventId);
-			if (response.success) {
-				showAlert("Webhook deleted", "success");
-				dispatch({ type: "webhookDeleted" });
-			} else {
-				showAlert(response.message || "Failed to delete webhook", "error");
-			}
-		} catch {
-			showAlert("Failed to delete webhook", "error");
-		}
+	const handleSaved = (saved: WebhookEndpoint) => {
+		if (!currentEventId) return;
+		const eventId = currentEventId;
+		updateCurrent(eventId, state => ({ ...state, webhook: saved, error: false }));
+		void handleRefreshDeliveries();
 	};
 
 	const handleToggleActive = async () => {
 		if (!currentEventId || !webhook) return;
+		const eventId = currentEventId;
+		const nextActive = !webhook.isActive;
+
+		setIsToggling(true);
+		try {
+			const response = await adminWebhooksAPI.update(eventId, { isActive: nextActive });
+			if (response.success && response.data) {
+				const updated = response.data;
+				updateCurrent(eventId, state => ({ ...state, webhook: updated }));
+				showAlert(nextActive ? t.enabledToast : t.disabledToast, "success");
+			} else {
+				showAlert(`${t.updateFailed}${response.message ? `: ${response.message}` : ""}`, "error");
+			}
+		} catch (error) {
+			showAlert(`${t.updateFailed}${errorDetail(error)}`, "error");
+		} finally {
+			setIsToggling(false);
+		}
+	};
+
+	const handleDelete = async () => {
+		if (!currentEventId || !webhook) return;
+		const eventId = currentEventId;
+		if (!(await confirm({ title: t.deleteWebhook, description: t.deleteConfirm, destructive: true }))) return;
 
 		try {
-			const response = await adminWebhooksAPI.update(currentEventId, {
-				isActive: !webhook.isActive
-			});
-
+			const response = await adminWebhooksAPI.delete(eventId);
 			if (response.success) {
-				showAlert(webhook.isActive ? "Webhook disabled" : "Webhook enabled", "success");
-				void loadWebhook();
+				updateCurrent(eventId, state => ({ ...state, webhook: null, deliveries: [], deliveriesError: false }));
+				showAlert(t.deleted, "success");
+			} else {
+				showAlert(`${t.deleteFailed}${response.message ? `: ${response.message}` : ""}`, "error");
 			}
-		} catch {
-			showAlert("Failed to update webhook", "error");
+		} catch (error) {
+			showAlert(`${t.deleteFailed}${errorDetail(error)}`, "error");
 		}
 	};
 
 	const handleRetryDelivery = async (deliveryId: string) => {
 		if (!currentEventId) return;
+		const eventId = currentEventId;
 
+		setRetryingId(deliveryId);
 		try {
-			const response = await adminWebhooksAPI.retryDelivery(currentEventId, deliveryId);
-			if (response.success) {
-				showAlert("Retry successful", "success");
-				void loadFailedDeliveries();
-			} else {
-				showAlert("Retry failed", "error");
-			}
+			const response = await adminWebhooksAPI.retryDelivery(eventId, deliveryId);
+			showAlert(response.success ? t.retrySuccess : t.retryFailed, response.success ? "success" : "error");
 		} catch {
-			showAlert("Retry failed", "error");
+			showAlert(t.retryFailed, "error");
+		} finally {
+			setRetryingId(null);
 		}
+		await handleRefreshDeliveries();
 	};
 
-	const toggleEventType = (eventType: string) => {
-		dispatch({ type: "toggleFormEventType", eventType });
-	};
+	const headerActions = webhook ? (
+		<Button variant="outline" size="sm" onClick={() => setDialogEventId(currentEventId)}>
+			<Pencil className="size-4" />
+			{t.editWebhook}
+		</Button>
+	) : current && !current.error ? (
+		<Button variant="primary" size="sm" onClick={() => setDialogEventId(currentEventId)}>
+			<Plus className="size-4" />
+			{t.createWebhook}
+		</Button>
+	) : undefined;
 
+	let body;
 	if (!currentEventId) {
-		return (
-			<div className="flex flex-col items-center justify-center py-12">
-				<Settings className="h-12 w-12 text-muted-foreground mb-4" />
-				<p className="text-muted-foreground">{t.selectEvent}</p>
+		body = <EmptyState icon={CalendarDays} title={t.selectEvent} description={t.selectEventDesc} />;
+	} else if (!current) {
+		body = <CardSkeleton />;
+	} else if (current.error) {
+		body = (
+			<EmptyState
+				icon={Webhook}
+				title={t.loadFailed}
+				action={
+					<Button variant="outline" size="sm" onClick={handleRetryLoad}>
+						{t.tryAgain}
+					</Button>
+				}
+			/>
+		);
+	} else if (!webhook) {
+		body = (
+			<EmptyState
+				icon={Webhook}
+				title={t.noWebhook}
+				description={t.noWebhookDesc}
+				action={
+					<Button variant="primary" onClick={() => setDialogEventId(currentEventId)}>
+						<Plus className="size-4" />
+						{t.createWebhook}
+					</Button>
+				}
+			/>
+		);
+	} else {
+		body = (
+			<div className="space-y-6">
+				<WebhookCard webhook={webhook} t={t} isToggling={isToggling} onToggleActive={handleToggleActive} onEdit={() => setDialogEventId(currentEventId)} onDelete={handleDelete} />
+				<FailedDeliveries
+					deliveries={current.deliveries}
+					t={t}
+					isRefreshing={isRefreshingDeliveries}
+					loadError={current.deliveriesError}
+					retryingId={retryingId}
+					canRetry={webhook.isActive}
+					onRefresh={handleRefreshDeliveries}
+					onRetry={handleRetryDelivery}
+				/>
 			</div>
 		);
 	}
 
-	if (isLoading) {
-		return <PageSpinner />;
-	}
-
 	return (
-		<div className="space-y-6">
-			<AdminHeader title={t.title} description={t.description} />
-
-			<WebhookConfigCard webhook={webhook} t={t} onToggleActive={handleToggleActive} onEdit={openConfigModal} onDelete={() => dispatch({ type: "setShowDeleteConfirm", value: true })} />
-
-			{webhook && <FailedDeliveriesPanel failedDeliveries={failedDeliveries} t={t} onRefresh={loadFailedDeliveries} onRetry={handleRetryDelivery} />}
-			<WebhookDialogs
-				webhook={webhook}
-				t={t}
-				state={state}
-				dispatch={dispatch}
-				onTest={handleTestWebhook}
-				onSave={handleSaveWebhook}
-				onDelete={handleDeleteWebhook}
-				onToggleEventType={toggleEventType}
-			/>
-		</div>
-	);
-}
-
-// Plus icon component
-function Plus(props: React.SVGProps<SVGSVGElement>) {
-	return (
-		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-			<path d="M5 12h14" />
-			<path d="M12 5v14" />
-		</svg>
+		<main>
+			<AdminHeader title={t.title} description={t.description} actions={headerActions} />
+			{body}
+			{currentEventId && (
+				<WebhookDialog open={dialogOpen} onOpenChange={open => setDialogEventId(open ? currentEventId : null)} eventId={currentEventId} webhook={webhook} t={t} onSaved={handleSaved} />
+			)}
+		</main>
 	);
 }

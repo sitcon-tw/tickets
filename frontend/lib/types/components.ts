@@ -27,6 +27,8 @@ export interface MarkdownContentProps {
 export interface AdminHeaderProps {
 	title: string;
 	description?: string;
+	/** Buttons shown on the right of the title, e.g. the primary "Add" action. */
+	actions?: React.ReactNode;
 }
 
 // Lanyard

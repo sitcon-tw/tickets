@@ -2,77 +2,46 @@
 
 import { AdminNavLayout } from "@/components/AdminNavLayout";
 import { getTranslations } from "@/i18n/helpers";
-import { routing } from "@/i18n/routing";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
 import { setSelectedEventId, useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import type { Event, UserCapabilities } from "@sitcontix/types";
-import { useRouter as useNextRouter, usePathname } from "next/navigation";
-import { memo, useCallback, useEffect, useEffectEvent, useMemo, useReducer, useRef } from "react";
+import { useLocale } from "next-intl";
+import { usePathname as useRawPathname } from "next/navigation";
+import { memo, useCallback, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 
-type AdminNavState = {
-	hoveredLink: string | null;
-	events: Event[];
-	mobileMenuOpen: boolean;
-	isMobile: boolean;
-	capabilities: UserCapabilities | null;
-};
+// Keep in sync with the breakpoint used by <Nav> to hide the site header on admin pages.
+const mobileQuery = "(max-width: 768px)";
 
-type AdminNavAction =
-	| { type: "setHoveredLink"; hoveredLink: string | null }
-	| { type: "setEvents"; events: Event[] }
-	| { type: "setMobileMenuOpen"; mobileMenuOpen: boolean }
-	| { type: "setIsMobile"; isMobile: boolean }
-	| { type: "setCapabilities"; capabilities: UserCapabilities | null };
-
-function adminNavReducer(state: AdminNavState, action: AdminNavAction): AdminNavState {
-	switch (action.type) {
-		case "setHoveredLink":
-			return { ...state, hoveredLink: action.hoveredLink };
-		case "setEvents":
-			return { ...state, events: action.events };
-		case "setMobileMenuOpen":
-			return { ...state, mobileMenuOpen: action.mobileMenuOpen };
-		case "setIsMobile":
-			return { ...state, isMobile: action.isMobile };
-		case "setCapabilities":
-			return { ...state, capabilities: action.capabilities };
-		default:
-			return state;
-	}
+function subscribeMobile(callback: () => void) {
+	const media = window.matchMedia(mobileQuery);
+	media.addEventListener("change", callback);
+	return () => media.removeEventListener("change", callback);
 }
+const getMobileSnapshot = () => window.matchMedia(mobileQuery).matches;
+const getMobileServerSnapshot = () => false;
 
 function AdminNav() {
+	const locale = useLocale();
+	const router = useRouter();
+	// Locale-less pathname for active-link matching; the raw one only tells us whether we are on an admin page.
 	const pathname = usePathname();
-	const isAdminPage = pathname.includes("/admin");
-	const router = useNextRouter();
+	const isAdminPage = useRawPathname().includes("/admin");
 
-	const locale = useMemo(() => {
-		const detectedLocale = routing.locales.find(loc => pathname.startsWith(`/${loc}`));
-		return detectedLocale || routing.defaultLocale;
-	}, [pathname]);
-
-	const [{ hoveredLink, events, mobileMenuOpen, isMobile, capabilities }, dispatchAdminNav] = useReducer(adminNavReducer, {
-		hoveredLink: null,
-		events: [],
-		mobileMenuOpen: false,
-		isMobile: false,
-		capabilities: null
-	});
+	const [events, setEvents] = useState<Event[]>([]);
+	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot);
 	const currentEventId = useSelectedEventId();
 
 	const dataLoadedRef = useRef(false);
-
-	const handleLocaleChange = (newLocale: string) => {
-		// Replace the locale part in the pathname
-		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
-		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
-	};
 
 	const loadPermissions = useCallback(async () => {
 		try {
 			const response = await authAPI.getPermissions();
 			if (response.success && response.data) {
-				dispatchAdminNav({ type: "setCapabilities", capabilities: response.data.capabilities });
+				setCapabilities(response.data.capabilities);
 			}
 		} catch (error) {
 			console.error("Failed to load permissions:", error);
@@ -82,17 +51,20 @@ function AdminNav() {
 	const loadEvents = useCallback(async () => {
 		try {
 			const response = await adminEventsAPI.getAll();
-			if (response.success && response.data && response.data.length > 0) {
-				dispatchAdminNav({ type: "setEvents", events: response.data });
+			if (!response.success || !response.data) return;
 
-				const savedEventId = localStorage.getItem("selectedEventId");
-				const eventExists = response.data.find(e => e.id === savedEventId);
+			setEvents(response.data);
 
-				if (savedEventId && eventExists) {
-					window.dispatchEvent(new CustomEvent("selectedEventChanged", { detail: { eventId: savedEventId } }));
-				} else {
-					setSelectedEventId(response.data[0].id);
-				}
+			const savedEventId = localStorage.getItem("selectedEventId");
+			const savedEventExists = response.data.some(e => e.id === savedEventId);
+
+			if (savedEventId && savedEventExists) {
+				window.dispatchEvent(new CustomEvent("selectedEventChanged", { detail: { eventId: savedEventId } }));
+			} else if (response.data.length > 0) {
+				setSelectedEventId(response.data[0].id);
+			} else if (savedEventId) {
+				// The last event was deleted; don't keep pointing pages at a stale id.
+				setSelectedEventId("");
 			}
 		} catch (error) {
 			console.error("Failed to load events:", error);
@@ -122,110 +94,51 @@ function AdminNav() {
 		return () => window.removeEventListener("eventListChanged", handleEventListChanged);
 	}, [isAdminPage]);
 
+	// The drawer only exists on mobile; make sure it can't stay "open" after resizing to desktop.
 	useEffect(() => {
-		if (!isAdminPage) return;
+		if (!isMobile) setMobileMenuOpen(false);
+	}, [isMobile]);
 
-		const checkMobile = () => {
-			dispatchAdminNav({ type: "setIsMobile", isMobile: window.innerWidth <= 768 });
-		};
-
-		checkMobile();
-
-		window.addEventListener("resize", checkMobile);
-		return () => window.removeEventListener("resize", checkMobile);
-	}, [isAdminPage]);
-
-	const handleNavClick = (href: string) => {
-		// Add locale prefix to href
-		const localizedHref = `/${locale}${href}`;
-		router.push(localizedHref);
-		dispatchAdminNav({ type: "setMobileMenuOpen", mobileMenuOpen: false });
+	const handleLocaleChange = (newLocale: string) => {
+		router.replace(pathname, { locale: newLocale });
 	};
 
-	useEffect(() => {
-		if (!isAdminPage) return;
-
-		const handleEscape = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && mobileMenuOpen) {
-				dispatchAdminNav({ type: "setMobileMenuOpen", mobileMenuOpen: false });
-			}
-		};
-
-		document.addEventListener("keydown", handleEscape);
-		return () => document.removeEventListener("keydown", handleEscape);
-	}, [isAdminPage, mobileMenuOpen]);
+	const handleLogout = async () => {
+		if (isLoggingOut) return;
+		setIsLoggingOut(true);
+		try {
+			await authAPI.signOut();
+		} catch (error) {
+			console.error("Logout failed:", error);
+		} finally {
+			setIsLoggingOut(false);
+			setMobileMenuOpen(false);
+			router.push("/");
+		}
+	};
 
 	const t = getTranslations(locale, {
-		systemTitle: {
-			"zh-Hant": "管理員介面",
-			"zh-Hans": "管理员界面",
-			en: "Admin Panel"
-		},
-		statistics: {
-			"zh-Hant": "報名統計",
-			"zh-Hans": "报名统计",
-			en: "Statistics"
-		},
-		events: {
-			"zh-Hant": "活動管理",
-			"zh-Hans": "活动管理",
-			en: "Event Management"
-		},
-		ticketTypes: {
-			"zh-Hant": "票種管理",
-			"zh-Hans": "票种管理",
-			en: "Ticket Types"
-		},
-		forms: {
-			"zh-Hant": "表單管理",
-			"zh-Hans": "表单管理",
-			en: "Forms"
-		},
-		invitationCodes: {
-			"zh-Hant": "邀請碼管理",
-			"zh-Hans": "邀请码管理",
-			en: "Invitation Codes"
-		},
-		registrations: {
-			"zh-Hant": "報名資料",
-			"zh-Hans": "报名资料",
-			en: "Registrations"
-		},
-		webhooks: {
-			"zh-Hant": "Webhook 設定",
-			"zh-Hans": "Webhook 设置",
-			en: "Webhooks"
-		},
-		emailCampaigns: {
-			"zh-Hant": "郵件發送",
-			"zh-Hans": "邮件发送",
-			en: "Email Campaigns"
-		},
-		users: {
-			"zh-Hant": "使用者管理",
-			"zh-Hans": "用户管理",
-			en: "User Management"
-		},
-		userPlaceholder: {
-			"zh-Hant": "管理者",
-			"zh-Hans": "管理员",
-			en: "Admin"
-		},
-		logout: {
-			"zh-Hant": "登出",
-			"zh-Hans": "登出",
-			en: "Logout"
-		},
-		backHome: {
-			"zh-Hant": "回到首頁",
-			"zh-Hans": "回到首页",
-			en: "Back to Home"
-		},
-		selectEvent: {
-			"zh-Hant": "選擇活動",
-			"zh-Hans": "选择活动",
-			en: "Select Event"
-		}
+		systemTitle: { "zh-Hant": "管理員介面", "zh-Hans": "管理员界面", en: "Admin Panel" },
+		currentEvent: { "zh-Hant": "目前活動", "zh-Hans": "当前活动", en: "Current event" },
+		selectEvent: { "zh-Hant": "選擇活動", "zh-Hans": "选择活动", en: "Select event" },
+		noEvents: { "zh-Hant": "尚無活動", "zh-Hans": "暂无活动", en: "No events yet" },
+		statistics: { "zh-Hant": "報名統計", "zh-Hans": "报名统计", en: "Statistics" },
+		events: { "zh-Hant": "活動管理", "zh-Hans": "活动管理", en: "Events" },
+		ticketTypes: { "zh-Hant": "票種管理", "zh-Hans": "票种管理", en: "Ticket Types" },
+		forms: { "zh-Hant": "表單管理", "zh-Hans": "表单管理", en: "Forms" },
+		invitationCodes: { "zh-Hant": "邀請碼管理", "zh-Hans": "邀请码管理", en: "Invitation Codes" },
+		registrations: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
+		webhooks: { "zh-Hant": "Webhook 設定", "zh-Hans": "Webhook 设置", en: "Webhooks" },
+		emailCampaigns: { "zh-Hant": "郵件發送", "zh-Hans": "邮件发送", en: "Email Campaigns" },
+		users: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "Users" },
+		groupSetup: { "zh-Hant": "活動設定", "zh-Hans": "活动设置", en: "Event setup" },
+		groupAttendees: { "zh-Hant": "參加者", "zh-Hans": "参加者", en: "Attendees" },
+		groupSystem: { "zh-Hant": "系統", "zh-Hans": "系统", en: "System" },
+		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
+		backHome: { "zh-Hant": "回到首頁", "zh-Hans": "回到首页", en: "Back to Home" },
+		language: { "zh-Hant": "語言", "zh-Hans": "语言", en: "Language" },
+		openMenu: { "zh-Hant": "開啟選單", "zh-Hans": "打开菜单", en: "Open menu" },
+		closeMenu: { "zh-Hant": "關閉選單", "zh-Hans": "关闭菜单", en: "Close menu" }
 	});
 
 	if (!isAdminPage) {
@@ -240,14 +153,12 @@ function AdminNav() {
 			currentEventId={currentEventId}
 			events={events}
 			capabilities={capabilities}
-			hoveredLink={hoveredLink}
 			isMobile={isMobile}
 			mobileMenuOpen={mobileMenuOpen}
+			isLoggingOut={isLoggingOut}
 			onLocaleChange={handleLocaleChange}
-			onNavClick={handleNavClick}
-			onHoverLink={href => dispatchAdminNav({ type: "setHoveredLink", hoveredLink: href })}
-			onOpenMobileMenu={() => dispatchAdminNav({ type: "setMobileMenuOpen", mobileMenuOpen: true })}
-			onCloseMobileMenu={() => dispatchAdminNav({ type: "setMobileMenuOpen", mobileMenuOpen: false })}
+			onLogout={() => void handleLogout()}
+			onMobileMenuOpenChange={setMobileMenuOpen}
 		/>
 	);
 }
