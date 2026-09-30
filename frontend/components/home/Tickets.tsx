@@ -13,9 +13,9 @@ import { TicketsProps } from "@/lib/types/components";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime, isAfterNowUTC8, isBeforeNowUTC8 } from "@/lib/utils/timezone";
 import { PublicTicketListItemSchema } from "@sitcontix/types";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Ticket as TicketIcon, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useEffect, useReducer, useRef, type RefObject } from "react";
+import { useEffect, useReducer, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { z } from "zod/v4";
 
@@ -133,21 +133,29 @@ function isTicketSoldOut(ticket: TicketItem): boolean {
 
 type TicketTranslations = Record<string, string>;
 
-function TicketSummary({ ticket, locale, t, compact = false }: { ticket: TicketItem; locale: string; t: TicketTranslations; compact?: boolean }) {
+function TicketSummary({ ticket, locale, t, children }: { ticket: TicketItem; locale: string; t: TicketTranslations; children?: ReactNode }) {
 	return (
-		<div className={compact ? "" : "space-y-2"}>
-			<h3 className={compact ? "" : "text-xl font-bold"}>{getLocalizedText(ticket.name, locale)}</h3>
-			{!compact && <div className="border-t-2 border-gray-500 max-w-32" />}
-			<div>
-				<p>
+		<div className="ticket-body">
+			<div className="ticket-main">
+				<h3 className="text-xl font-bold leading-tight">{getLocalizedText(ticket.name, locale)}</h3>
+				<div className="border-t-2 border-dashed border-gray-400 max-w-32" />
+				<p className="text-sm text-gray-600 dark:text-gray-300">
 					{t.time}
 					{ticket.saleStart ? formatDateTime(ticket.saleStart) : "N/A"} - {ticket.saleEnd ? formatDateTime(ticket.saleEnd) : "N/A"}
 				</p>
-				{ticket.showRemaining && (
-					<p className="remain">
-						{t.remaining} {ticket.available} / {ticket.quantity}
-					</p>
+				{children}
+			</div>
+			<div className="ticket-stub">
+				{ticket.showRemaining ? (
+					<>
+						<span className="text-3xl font-bold tabular-nums leading-none text-gray-900 dark:text-gray-100">{ticket.available}</span>
+						<span className="text-xs">/ {ticket.quantity}</span>
+						<span className="text-[10px] uppercase tracking-widest">{t.remaining}</span>
+					</>
+				) : (
+					<TicketIcon size={32} strokeWidth={1.5} />
 				)}
+				<div className="ticket-barcode" />
 			</div>
 		</div>
 	);
@@ -186,11 +194,10 @@ function TicketsGrid({
 						className={`ticket w-full text-left ${isUnavailable ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer"}`}
 						onClick={e => onTicketSelect(ticket, e.currentTarget)}
 					>
-						<div className="space-y-2">
-							<TicketSummary ticket={ticket} locale={locale} t={t} />
+						<TicketSummary ticket={ticket} locale={locale} t={t}>
 							{isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.registrationEnded})</p>}
 							{isSoldOut && !isExpired && <p className="text-red-600 dark:text-red-400 font-bold">({t.soldOut})</p>}
-						</div>
+						</TicketSummary>
 					</button>
 				);
 			})}
@@ -230,9 +237,7 @@ function TicketConfirmContent({
 	return (
 		<div className="p-8 pt-12">
 			<div className="ticket ticketConfirm rotate-2" ref={ticketConfirmRef}>
-				<div className="space-y-2">
-					<TicketSummary ticket={selectedTicket} locale={locale} t={t} />
-				</div>
+				<TicketSummary ticket={selectedTicket} locale={locale} t={t} />
 			</div>
 			<div className="mb-6 mt-4 max-h-[50vh] overflow-y-auto">
 				<h2 className="text-2xl font-bold">{getLocalizedText(selectedTicket.name, locale)}</h2>
@@ -253,6 +258,7 @@ function TicketConfirmContent({
 								}}
 								required={true}
 								placeholder={t.invitationCode}
+								className="max-w-60"
 							/>
 						</div>
 						<div className="flex items-end">
@@ -281,21 +287,22 @@ function AnimatedTicket({
 	selectedTicket,
 	locale,
 	t,
-	ticketAnimationRef,
-	compact = false
+	ticketAnimationRef
 }: {
 	selectedTicket: TicketItem | null;
 	locale: string;
 	t: TicketTranslations;
 	ticketAnimationRef: RefObject<HTMLDivElement | null>;
-	compact?: boolean;
 }) {
 	return (
 		<div className="ticket" id="ticketAnimation" ref={ticketAnimationRef}>
-			{selectedTicket ? <TicketSummary ticket={selectedTicket} locale={locale} t={t} compact={compact} /> : null}
+			{selectedTicket ? <TicketSummary ticket={selectedTicket} locale={locale} t={t} /> : null}
 		</div>
 	);
 }
+
+const flightDuration = 480;
+const flightEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 function animateTicketSelection(element: HTMLElement, ticketAnimationRef: RefObject<HTMLDivElement | null>, ticketConfirmRef: RefObject<HTMLDivElement | null>, showConfirm: () => void) {
 	requestAnimationFrame(() => {
@@ -307,40 +314,52 @@ function animateTicketSelection(element: HTMLElement, ticketAnimationRef: RefObj
 			return;
 		}
 
-		const rect = element.getBoundingClientRect();
-		ticketAnimation.style.top = `${rect.top}px`;
-		ticketAnimation.style.left = `${rect.left}px`;
-		ticketAnimation.style.width = `${rect.width}px`;
-		ticketAnimation.style.height = `${rect.height}px`;
+		const from = element.getBoundingClientRect();
+		ticketAnimation.style.top = `${from.top}px`;
+		ticketAnimation.style.left = `${from.left}px`;
+		ticketAnimation.style.width = `${from.width}px`;
+		ticketAnimation.style.height = `${from.height}px`;
 		ticketAnimation.style.transform = "rotate(0deg)";
-		ticketAnimation.style.opacity = "1";
 		ticketAnimation.style.display = "block";
 
 		element.style.visibility = "hidden";
-		ticketConfirm.style.opacity = "0";
 		ticketConfirm.style.visibility = "hidden";
 		showConfirm();
 
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => {
-				const confirmRect = ticketConfirm.getBoundingClientRect();
-				ticketAnimation.style.top = `${confirmRect.top - 10}px`;
-				ticketAnimation.style.left = `${confirmRect.left}px`;
-				ticketAnimation.style.width = `${confirmRect.width}px`;
-				ticketAnimation.style.height = `${confirmRect.height}px`;
-				ticketAnimation.style.transform = "rotate(2deg)";
+				const target = ticketConfirmRef.current;
+				if (!target || !ticketAnimation.isConnected) return;
 
-				const handleTransitionEnd = () => {
-					ticketAnimation.removeEventListener("transitionend", handleTransitionEnd);
-					ticketAnimation.style.opacity = "0";
-					ticketConfirm.style.visibility = "visible";
-					ticketConfirm.style.opacity = "1";
-					setTimeout(() => {
-						ticketAnimation.style.display = "none";
-					}, 200);
+				// The confirm ticket is rotated, so its bounding box is larger than its layout box.
+				// Fly to the layout size, centred on the same point.
+				const box = target.getBoundingClientRect();
+				const width = target.offsetWidth;
+				const height = target.offsetHeight;
+				const to = {
+					top: `${box.top + box.height / 2 - height / 2}px`,
+					left: `${box.left + box.width / 2 - width / 2}px`,
+					width: `${width}px`,
+					height: `${height}px`,
+					transform: "rotate(2deg)"
 				};
 
-				ticketAnimation.addEventListener("transitionend", handleTransitionEnd, { once: true });
+				const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+				const flight = ticketAnimation.animate([{ top: `${from.top}px`, left: `${from.left}px`, width: `${from.width}px`, height: `${from.height}px`, transform: "rotate(0deg)" }, to], {
+					duration: reduceMotion ? 0 : flightDuration,
+					easing: flightEasing,
+					fill: "forwards"
+				});
+
+				// A cancelled flight (confirm closed mid-air) rejects; closeConfirm already reset everything.
+				flight.finished.then(
+					() => {
+						target.style.visibility = "visible";
+						flight.cancel();
+						ticketAnimation.style.display = "none";
+					},
+					() => {}
+				);
 			});
 		});
 	});
@@ -517,17 +536,35 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				localStorage.removeItem(legacyFormDataStorageKey);
 			}
 
-			const verificationCheck = await smsVerificationAPI.getStatus();
+			let needsVerification = false;
+			try {
+				const verificationCheck = await smsVerificationAPI.getStatus();
+				needsVerification = selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified;
+			} catch (error) {
+				console.error("Failed to check SMS verification:", error);
+			}
 
-			if (selectedTicket.requireSmsVerification && !verificationCheck.data.phoneVerified) {
+			if (needsVerification) {
+				// The form takes the hold once the phone is verified
 				const currentUrl = `/${eventSlug}/form`;
 				router.push(`/verify?redirect=${encodeURIComponent(currentUrl)}`);
-			} else {
-				router.push(`/${eventSlug}/form`);
+				return;
 			}
-		} catch (error) {
-			console.error("Failed to check SMS verification:", error);
+
+			// Reserve the seat now so nobody can take it while this user fills out the form
+			try {
+				await registrationsAPI.hold({ eventId, ticketId: selectedTicket.id, invitationCode: selectedTicket.requireInviteCode ? invitationCode.trim() : undefined });
+			} catch (error) {
+				const message = error instanceof Error ? error.message : "Unknown error";
+				showAlert(message.includes("已售完") ? t.ticketSoldOut : message, "error");
+				dispatch({ type: "submittingChanged", isSubmitting: false });
+				return;
+			}
+
 			router.push(`/${eventSlug}/form`);
+		} catch (error) {
+			console.error("Failed to prepare registration:", error);
+			dispatch({ type: "submittingChanged", isSubmitting: false });
 		}
 	}
 
@@ -542,12 +579,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 		// Hide the animation ticket
 		if (ticketAnimationRef.current) {
+			ticketAnimationRef.current.getAnimations().forEach(animation => animation.cancel());
 			ticketAnimationRef.current.style.display = "none";
 		}
 
 		// Reset the popup ticket opacity and visibility
 		if (ticketConfirmRef.current) {
-			ticketConfirmRef.current.style.opacity = "0";
 			ticketConfirmRef.current.style.visibility = "hidden";
 		}
 	}
@@ -571,7 +608,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			try {
 				const regDataRes = await registrationsAPI.getAll();
 				if (regDataRes.success && regDataRes.data) {
-					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status !== "cancelled");
+					const hasActiveRegistration = regDataRes.data.some(reg => reg.event?.id === eventId && reg.status === "confirmed");
 					dispatch({ type: "registrationEligibilityChanged", canRegister: !hasActiveRegistration });
 				}
 			} catch (error) {
@@ -642,7 +679,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				{/* Animation ticket - rendered at body level via portal */}
 				{isMounted && typeof window !== "undefined" && createPortal(<AnimatedTicket selectedTicket={selectedTicket} locale={locale} t={t} ticketAnimationRef={ticketAnimationRef} />, document.body)}
 				{/* Animation ticket */}
-				<AnimatedTicket selectedTicket={selectedTicket} locale={locale} t={t} ticketAnimationRef={ticketAnimationRef} compact />
+				<AnimatedTicket selectedTicket={selectedTicket} locale={locale} t={t} ticketAnimationRef={ticketAnimationRef} />
 			</div>
 		</>
 	);

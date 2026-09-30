@@ -128,6 +128,7 @@ model Event {
   referralUsage ReferralUsage[]
   formFields    EventFormFields[]
   webhook       WebhookEndpoint?
+  sponsors      Sponsor[]
 
   @@map("event")
 }
@@ -191,6 +192,7 @@ model Registration {
   formData        String?  // JSON form data
   status          String   @default("confirmed") // confirmed, cancelled, pending
   referredBy      String?  // registration ID of referrer
+  holdExpiresAt   DateTime? // pending registrations hold a seat until this time; null once confirmed
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -205,6 +207,7 @@ model Registration {
   
   @@index([email, eventId])
   @@index([invitationCodeId])
+  @@index([status, holdExpiresAt])
   @@map("registration")
 }
 
@@ -308,6 +311,15 @@ model MagicLinkAttempt {
   @@map("magic_link_attempt")
 }
 
+// Site-wide key/value settings (see SiteSettingsSchema in @sitcontix/types)
+model SiteSetting {
+  key       String   @id
+  value     String   // JSON-encoded value
+  updatedAt DateTime @updatedAt
+
+  @@map("site_setting")
+}
+
 // Webhook configuration for an event
 model WebhookEndpoint {
   id              String   @id @default(cuid())
@@ -356,4 +368,41 @@ model WebhookDelivery {
   @@index([webhookId, status])
   @@index([status, nextRetryAt])
   @@map("webhook_delivery")
+}
+
+// Sponsor logo shown on the event page; clicking it opens a popup with the sponsor's introduction
+model Sponsor {
+  id          String   @id @default(cuid())
+  eventId     String
+  order       Int      @default(0) // display order within a placement
+  name        Json     // Localized: {"en": "Company", "zh-Hant": "公司"}
+  description Json?    // Localized Markdown shown in the popup
+  logoUrl     String
+  logoDarkUrl String?  // Optional logo variant for dark mode
+  websiteUrl  String?
+  placements  String[] // "after_registration", "after_event_info"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  stats SponsorStat[]
+
+  @@index([eventId, order])
+  @@map("sponsor")
+}
+
+// Daily tracking counters (dates are in UTC+8), one row per sponsor / day / placement
+model SponsorStat {
+  sponsorId   String
+  date        DateTime @db.Date
+  placement   String
+  impressions Int      @default(0) // logo grid scrolled into view
+  clicks      Int      @default(0) // logo clicked (popup opened)
+  linkClicks  Int      @default(0) // website link in the popup clicked
+
+  sponsor Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@id([sponsorId, date, placement])
+  @@map("sponsor_stat")
 }

@@ -34,6 +34,8 @@ import {
 	ReferralValidateRequestSchema,
 	ReferralValidationSchema,
 	RegistrationCreateRequestSchema,
+	RegistrationHoldRequestSchema,
+	RegistrationHoldSchema,
 	// Registration schemas
 	RegistrationSchema,
 	RegistrationStatsSchema,
@@ -41,6 +43,18 @@ import {
 	RegistrationUpdateRequestSchema,
 	// SMS schemas
 	SendVerificationRequestSchema,
+	// Sponsor schemas
+	PublicSponsorSchema,
+	SponsorCreateRequestSchema,
+	SponsorDailyStatSchema,
+	SponsorReorderRequestSchema,
+	SponsorSchema,
+	SponsorTrackRequestSchema,
+	SponsorUpdateRequestSchema,
+	SponsorWithStatsSchema,
+	// Site settings schemas
+	SiteSettingsSchema,
+	SiteSettingsUpdateRequestSchema,
 	// Common schemas
 	SortOrderSchema,
 	// Email campaign schemas
@@ -266,6 +280,7 @@ export const eventSchemas = {
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			422: ErrorResponseSchema
 		}
 	},
@@ -292,6 +307,7 @@ export const eventSchemas = {
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
 			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			422: ErrorResponseSchema
 		}
 	},
@@ -851,6 +867,12 @@ export const RegistrationResponseSchema = z.object({
 	data: RegistrationSchema
 });
 
+export const RegistrationHoldResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: RegistrationHoldSchema
+});
+
 export const RegistrationsListResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string(),
@@ -904,6 +926,22 @@ export const registrationSchemas = {
 		body: RegistrationCreateBodySchema,
 		response: {
 			201: RegistrationResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	holdRegistration: {
+		description: "保留座位，讓用戶在時限內填寫報名表單",
+		tags: ["registrations"],
+		body: RegistrationHoldRequestSchema,
+		response: {
+			200: RegistrationHoldResponseSchema,
+			201: RegistrationHoldResponseSchema,
 			400: ErrorResponseSchema,
 			401: ErrorResponseSchema,
 			404: ErrorResponseSchema,
@@ -1833,7 +1871,9 @@ export const InvitationCodeBulkCreateBodySchema = z.object({
 export const InvitationCodeSendEmailBodySchema = z.object({
 	email: z.email(),
 	code: z.string(),
-	message: z.string().default("").optional()
+	// Codes are only unique per ticket, so callers should pass the ticket the code belongs to
+	ticketId: z.string().optional(),
+	message: z.string().max(5000).default("").optional()
 });
 
 export const adminInvitationCodeSchemas = {
@@ -1861,10 +1901,56 @@ export const adminInvitationCodeSchemas = {
 		response: {
 			200: SuccessResponseSchema,
 			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	}
 } as const;
+
+// ----------------------------------------------------------------------------
+// Site Settings Schemas
+// ----------------------------------------------------------------------------
+
+export const SiteSettingsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: SiteSettingsSchema
+});
+
+export const settingsSchemas = {
+	getPublicSettings: {
+		description: "取得網站公開設定",
+		tags: ["settings"],
+		response: {
+			200: SiteSettingsResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	getSettings: {
+		description: "取得網站設定",
+		tags: ["admin/settings"],
+		response: {
+			200: SiteSettingsResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	updateSettings: {
+		description: "更新網站設定",
+		tags: ["admin/settings"],
+		body: SiteSettingsUpdateRequestSchema,
+		response: {
+			200: SiteSettingsResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+};
 
 // ----------------------------------------------------------------------------
 // Public Auth Schemas
@@ -1883,6 +1969,7 @@ export const AuthPermissionsResponseSchema = z.object({
 			canManageEmailCampaigns: z.boolean(),
 			canManageReferrals: z.boolean(),
 			canManageSmsLogs: z.boolean(),
+			canManageSettings: z.boolean(),
 			managedEventIds: z.array(z.string())
 		})
 	})
@@ -2021,6 +2108,129 @@ export const webhookSchemas = {
 		response: {
 			200: SuccessResponseSchema,
 			400: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Sponsor Schemas
+// ----------------------------------------------------------------------------
+
+export const SponsorResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: SponsorSchema
+});
+
+export const SponsorsWithStatsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(SponsorWithStatsSchema)
+});
+
+export const SponsorDailyStatsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(SponsorDailyStatSchema)
+});
+
+export const PublicSponsorsResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(PublicSponsorSchema)
+});
+
+export const SponsorIdParamSchema = z.object({
+	id: z.string().describe("贊助商 ID")
+});
+
+export const publicSponsorSchemas = {
+	getSponsors: {
+		description: "取得活動的贊助商列表",
+		tags: ["sponsors"],
+		params: z.object({ id: z.string().describe("活動 ID、slug 或 ID 後六碼") }),
+		response: {
+			200: PublicSponsorsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	track: {
+		description: "回報贊助商曝光與點擊",
+		tags: ["sponsors"],
+		body: SponsorTrackRequestSchema,
+		response: {
+			200: SuccessResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+} as const;
+
+export const adminSponsorSchemas = {
+	listSponsors: {
+		description: "取得活動的贊助商列表與曝光數據",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		response: {
+			200: SponsorsWithStatsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getDailyStats: {
+		description: "取得活動贊助商每日曝光數據",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		response: {
+			200: SponsorDailyStatsResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	createSponsor: {
+		description: "新增贊助商",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		body: SponsorCreateRequestSchema,
+		response: {
+			201: SponsorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	updateSponsor: {
+		description: "更新贊助商",
+		tags: ["admin/sponsors"],
+		params: SponsorIdParamSchema,
+		body: SponsorUpdateRequestSchema,
+		response: {
+			200: SponsorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	deleteSponsor: {
+		description: "刪除贊助商",
+		tags: ["admin/sponsors"],
+		params: SponsorIdParamSchema,
+		response: {
+			200: SuccessResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	reorderSponsors: {
+		description: "重新排序贊助商",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		body: SponsorReorderRequestSchema,
+		response: {
+			200: SuccessResponseSchema,
+			404: ErrorResponseSchema,
 			422: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}

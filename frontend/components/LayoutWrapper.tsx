@@ -4,6 +4,7 @@ import AdminNav from "@/components/AdminNav";
 import Footer from "@/components/Footer";
 import Nav from "@/components/Nav";
 import TodayEventNotification from "@/components/TodayEventNotification";
+import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -13,15 +14,15 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 	return (
 		<>
 			<Nav />
-			<main className="min-h-svh flex items-stretch">
+			<div className="min-h-svh flex items-stretch">
 				<AdminNav />
-				<div className="grow">
-					<div className={`flex flex-col w-full h-full mx-auto ${isAdminLayout && "pt-20 max-w-6xl"}`}>
+				<div className="min-w-0 grow">
+					<div className={cn("flex flex-col w-full h-full mx-auto", isAdminLayout && "max-w-7xl px-4 pt-20 sm:px-8 max-md:pt-16")}>
 						<div className="grow">{children}</div>
 						<Footer />
 					</div>
 				</div>
-			</main>
+			</div>
 			<TodayEventNotification />
 		</>
 	);

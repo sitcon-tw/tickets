@@ -93,8 +93,11 @@ OTEL_TRACES_EXPORTER=console
 # MAX_BODY_SIZE=1048576
 # MAX_JSON_SIZE=524288
 # GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
+# SMS_PROVIDER=twsms  # twsms (default) or kot
 # TWSMS_USERNAME=...
 # TWSMS_PASSWORD=...
+# KOT_SMS_TOKEN=...
+# KOT_SMS_API_BASE=https://smsapi-sitcon.kot.gg
 ```
 
 #### frontend/.env.local（常用）

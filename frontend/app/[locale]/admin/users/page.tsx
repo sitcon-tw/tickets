@@ -1,34 +1,44 @@
 "use client";
 
+import { useConfirm } from "@/components/admin/ConfirmProvider";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { SearchInput } from "@/components/admin/SearchInput";
+import { StatusBadge, type StatusTone } from "@/components/admin/StatusBadge";
+import { AdminToolbar, AdminToolbarSpacer } from "@/components/admin/AdminToolbar";
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
-import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminEventsAPI, adminUsersAPI } from "@/lib/api/endpoints";
+import { adminEventsAPI, adminUsersAPI, authAPI } from "@/lib/api/endpoints";
 import type { Event, User } from "@sitcontix/types";
-import { Search } from "lucide-react";
+import { Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
 
 type UserRole = "admin" | "viewer" | "eventAdmin";
+type RoleFilter = UserRole | "all";
+type StatusFilter = "active" | "inactive" | "all";
+
 type UsersUiState = {
 	users: User[];
 	searchTerm: string;
+	roleFilter: RoleFilter;
+	statusFilter: StatusFilter;
 	events: Event[];
+	currentUserId: string | null;
 	isLoading: boolean;
 	isSaving: boolean;
 	showEditModal: boolean;
 	editingUser: User | null;
 	selectedEventIds: string[];
 	selectedRole: UserRole;
+	selectedActive: boolean;
 };
 
 type UsersUiAction =
@@ -36,14 +46,18 @@ type UsersUiAction =
 	| { type: "loadFinished" }
 	| { type: "usersLoaded"; users: User[] }
 	| { type: "eventsLoaded"; events: Event[] }
+	| { type: "currentUserLoaded"; id: string }
 	| { type: "searchChanged"; value: string }
+	| { type: "roleFilterChanged"; value: RoleFilter }
+	| { type: "statusFilterChanged"; value: StatusFilter }
+	| { type: "clearFilters" }
 	| { type: "openEdit"; user: User }
 	| { type: "closeEdit" }
 	| { type: "saveStarted" }
 	| { type: "saveFinished" }
 	| { type: "roleChanged"; role: UserRole }
-	| { type: "toggleEvent"; eventId: string }
-	| { type: "setEditOpen"; open: boolean };
+	| { type: "activeChanged"; active: boolean }
+	| { type: "toggleEvent"; eventId: string };
 
 function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiState {
 	switch (action.type) {
@@ -55,83 +69,141 @@ function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiStat
 			return { ...state, users: action.users };
 		case "eventsLoaded":
 			return { ...state, events: action.events };
+		case "currentUserLoaded":
+			return { ...state, currentUserId: action.id };
 		case "searchChanged":
 			return { ...state, searchTerm: action.value };
+		case "roleFilterChanged":
+			return { ...state, roleFilter: action.value };
+		case "statusFilterChanged":
+			return { ...state, statusFilter: action.value };
+		case "clearFilters":
+			return { ...state, searchTerm: "", roleFilter: "all", statusFilter: "all" };
 		case "openEdit":
 			return {
 				...state,
 				showEditModal: true,
 				editingUser: action.user,
 				selectedRole: action.user.role,
+				selectedActive: action.user.isActive,
 				selectedEventIds: action.user.permissions || []
 			};
 		case "closeEdit":
-			return { ...state, showEditModal: false, editingUser: null, selectedRole: "viewer", selectedEventIds: [] };
+			return { ...state, showEditModal: false, editingUser: null, selectedRole: "viewer", selectedActive: true, selectedEventIds: [] };
 		case "saveStarted":
 			return { ...state, isSaving: true };
 		case "saveFinished":
 			return { ...state, isSaving: false };
 		case "roleChanged":
-			return {
-				...state,
-				selectedRole: action.role,
-				selectedEventIds: action.role === "eventAdmin" ? state.selectedEventIds : []
-			};
+			return { ...state, selectedRole: action.role };
+		case "activeChanged":
+			return { ...state, selectedActive: action.active };
 		case "toggleEvent":
 			return {
 				...state,
 				selectedEventIds: state.selectedEventIds.includes(action.eventId) ? state.selectedEventIds.filter(id => id !== action.eventId) : [...state.selectedEventIds, action.eventId]
 			};
-		case "setEditOpen":
-			return action.open ? { ...state, showEditModal: true } : usersUiReducer(state, { type: "closeEdit" });
 		default:
 			return state;
 	}
 }
 
+const roleTones: Record<UserRole, StatusTone> = { admin: "info", eventAdmin: "warning", viewer: "neutral" };
+
+function getErrorMessage(error: unknown) {
+	return error instanceof Error ? error.message : String(error);
+}
+
 export default function UsersPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
+	const confirm = useConfirm();
 
-	const [{ users, searchTerm, events, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole }, dispatchUsersUi] = useReducer(usersUiReducer, {
-		users: [],
-		searchTerm: "",
-		events: [],
-		isLoading: false,
-		isSaving: false,
-		showEditModal: false,
-		editingUser: null,
-		selectedEventIds: [],
-		selectedRole: "viewer"
-	});
+	const [{ users, searchTerm, roleFilter, statusFilter, events, currentUserId, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole, selectedActive }, dispatchUsersUi] =
+		useReducer(usersUiReducer, {
+			users: [],
+			searchTerm: "",
+			roleFilter: "all",
+			statusFilter: "all",
+			events: [],
+			currentUserId: null,
+			isLoading: true,
+			isSaving: false,
+			showEditModal: false,
+			editingUser: null,
+			selectedEventIds: [],
+			selectedRole: "viewer",
+			selectedActive: true
+		});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "User Management" },
-		search: { "zh-Hant": "搜尋名稱 / 電子郵件", "zh-Hans": "搜索名称 / 电子邮件", en: "Search Name / Email" },
+		description: { "zh-Hant": "管理使用者的角色、狀態與可管理的活動。", "zh-Hans": "管理用户的角色、状态与可管理的活动。", en: "Manage user roles, status and which events they can manage." },
+		search: { "zh-Hant": "搜尋名稱 / 電子郵件 / 電話", "zh-Hans": "搜索名称 / 电子邮件 / 电话", en: "Search name / email / phone" },
+		clearSearch: { "zh-Hant": "清除搜尋", "zh-Hans": "清除搜索", en: "Clear search" },
 		name: { "zh-Hant": "名稱", "zh-Hans": "名称", en: "Name" },
 		email: { "zh-Hant": "電子郵件", "zh-Hans": "电子邮件", en: "Email" },
+		phone: { "zh-Hant": "電話號碼", "zh-Hans": "电话号码", en: "Phone Number" },
 		role: { "zh-Hant": "角色", "zh-Hans": "角色", en: "Role" },
 		status: { "zh-Hant": "狀態", "zh-Hans": "状态", en: "Status" },
 		createdAt: { "zh-Hant": "建立時間", "zh-Hans": "创建时间", en: "Created At" },
-		actions: { "zh-Hant": "動作", "zh-Hans": "动作", en: "Actions" },
 		edit: { "zh-Hant": "編輯", "zh-Hans": "编辑", en: "Edit" },
 		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
 		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
 		active: { "zh-Hant": "啟用", "zh-Hans": "启用", en: "Active" },
 		inactive: { "zh-Hant": "停用", "zh-Hans": "停用", en: "Inactive" },
+		allRoles: { "zh-Hant": "所有角色", "zh-Hans": "所有角色", en: "All roles" },
+		allStatuses: { "zh-Hant": "所有狀態", "zh-Hans": "所有状态", en: "All statuses" },
+		clearFilters: { "zh-Hant": "清除篩選", "zh-Hans": "清除筛选", en: "Clear filters" },
 		admin: { "zh-Hant": "管理員", "zh-Hans": "管理员", en: "Admin" },
 		viewer: { "zh-Hant": "檢視者", "zh-Hans": "查看者", en: "Viewer" },
 		eventAdmin: { "zh-Hant": "活動管理員", "zh-Hans": "活动管理员", en: "Event Admin" },
+		adminHelp: {
+			"zh-Hant": "管理員可以管理所有內容，包括所有活動與使用者。",
+			"zh-Hans": "管理员可以管理所有内容，包括所有活动与用户。",
+			en: "Admins can manage everything, including all events and users."
+		},
+		eventAdminHelp: { "zh-Hant": "活動管理員只能管理下方勾選的活動。", "zh-Hans": "活动管理员只能管理下方勾选的活动。", en: "Event admins can only manage the events selected below." },
+		viewerHelp: { "zh-Hant": "檢視者只能查看資料，無法進行任何修改。", "zh-Hans": "查看者只能查看数据，无法进行任何修改。", en: "Viewers have read-only access and cannot change anything." },
 		editUser: { "zh-Hant": "編輯使用者", "zh-Hans": "编辑用户", en: "Edit User" },
+		editUserDescription: { "zh-Hant": "調整此使用者的角色、狀態與活動權限。", "zh-Hans": "调整此用户的角色、状态与活动权限。", en: "Change this user's role, status and event access." },
 		updateSuccess: { "zh-Hant": "成功更新使用者！", "zh-Hans": "成功更新用户！", en: "Successfully updated user!" },
 		updateFailed: { "zh-Hant": "更新失敗", "zh-Hans": "更新失败", en: "Update failed" },
+		loadUsersFailed: { "zh-Hant": "無法載入使用者列表", "zh-Hans": "无法载入用户列表", en: "Failed to load users" },
+		loadEventsFailed: { "zh-Hant": "無法載入活動列表", "zh-Hans": "无法载入活动列表", en: "Failed to load events" },
 		emailVerified: { "zh-Hant": "已驗證", "zh-Hans": "已验证", en: "Verified" },
 		emailNotVerified: { "zh-Hant": "未驗證", "zh-Hans": "未验证", en: "Not Verified" },
 		manageableEvents: { "zh-Hant": "可管理的活動", "zh-Hans": "可管理的活动", en: "Manageable Events" },
-		selectEvents: { "zh-Hant": "選擇活動", "zh-Hans": "选择活动", en: "Select Events" },
-		noEventsSelected: { "zh-Hant": "未選擇任何活動", "zh-Hans": "未选择任何活动", en: "No events selected" },
-		phone: { "zh-Hant": "電話號碼", "zh-Hans": "电话号码", en: "Phone Number" }
+		selectedEvents: { "zh-Hant": "已選擇 {n} 個活動", "zh-Hans": "已选择 {n} 个活动", en: "{n} selected" },
+		noEvents: { "zh-Hant": "目前沒有任何活動", "zh-Hans": "目前没有任何活动", en: "There are no events yet" },
+		noEventsAssigned: {
+			"zh-Hant": "尚未選擇任何活動，此使用者將無法管理任何活動。",
+			"zh-Hans": "尚未选择任何活动，此用户将无法管理任何活动。",
+			en: "No events selected: this user won't be able to manage any event."
+		},
+		phoneNumbers: { "zh-Hant": "電話號碼", "zh-Hans": "电话号码", en: "Phone numbers" },
+		selfEditNotice: {
+			"zh-Hant": "這是你自己的帳號：為避免把自己鎖在外面，無法變更自己的角色與狀態。",
+			"zh-Hans": "这是你自己的账号：为避免把自己锁在外面，无法变更自己的角色与状态。",
+			en: "This is your own account: your role and status can't be changed here so you don't lock yourself out."
+		},
+		confirmDeactivateTitle: { "zh-Hant": "停用此使用者？", "zh-Hans": "停用此用户？", en: "Deactivate this user?" },
+		confirmDeactivateDescription: {
+			"zh-Hant": "停用後，此使用者將無法登入與使用後台。",
+			"zh-Hans": "停用后，此用户将无法登录与使用后台。",
+			en: "They will no longer be able to sign in or use the admin area."
+		},
+		confirmDemoteTitle: { "zh-Hant": "降低此管理員的權限？", "zh-Hans": "降低此管理员的权限？", en: "Remove admin access?" },
+		confirmDemoteDescription: { "zh-Hant": "此使用者將不再擁有所有內容的管理權限。", "zh-Hans": "此用户将不再拥有所有内容的管理权限。", en: "This user will no longer be able to manage everything." },
+		confirmAction: { "zh-Hant": "確認變更", "zh-Hans": "确认变更", en: "Apply change" },
+		noUsers: { "zh-Hant": "還沒有任何使用者", "zh-Hans": "还没有任何用户", en: "No users yet" },
+		noResults: { "zh-Hant": "找不到符合條件的使用者", "zh-Hans": "找不到符合条件的用户", en: "No users match your filters" },
+		noResultsHint: { "zh-Hant": "試試其他關鍵字，或清除篩選條件。", "zh-Hans": "试试其他关键字，或清除筛选条件。", en: "Try a different keyword or clear the filters." }
 	});
+
+	const roleLabels = useMemo<Record<UserRole, string>>(() => ({ admin: t.admin, eventAdmin: t.eventAdmin, viewer: t.viewer }), [t.admin, t.eventAdmin, t.viewer]);
+
+	const roleHelp: Record<UserRole, string> = { admin: t.adminHelp, eventAdmin: t.eventAdminHelp, viewer: t.viewerHelp };
 
 	const loadUsers = useCallback(async () => {
 		dispatchUsersUi({ type: "loadStarted" });
@@ -139,217 +211,314 @@ export default function UsersPage() {
 			const response = await adminUsersAPI.getAll();
 			if (response.success && response.data) {
 				dispatchUsersUi({ type: "usersLoaded", users: response.data });
+			} else {
+				showAlert(`${t.loadUsersFailed}${response.message ? `: ${response.message}` : ""}`, "error");
 			}
 		} catch (error) {
 			console.error("Failed to load users:", error);
+			showAlert(`${t.loadUsersFailed}: ${getErrorMessage(error)}`, "error");
 		} finally {
 			dispatchUsersUi({ type: "loadFinished" });
 		}
+	}, [showAlert, t.loadUsersFailed]);
+
+	useEffect(() => {
+		void loadUsers();
+	}, [loadUsers]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		adminEventsAPI
+			.getAll()
+			.then(response => {
+				if (cancelled) return;
+				if (response.success && response.data) dispatchUsersUi({ type: "eventsLoaded", events: response.data });
+				else showAlert(t.loadEventsFailed, "error");
+			})
+			.catch(error => {
+				console.error("Failed to load events:", error);
+				if (!cancelled) showAlert(`${t.loadEventsFailed}: ${getErrorMessage(error)}`, "error");
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [showAlert, t.loadEventsFailed]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		// Only used to stop admins from demoting or deactivating themselves; without it the guard is simply skipped.
+		authAPI
+			.getSession()
+			.then(session => {
+				if (!cancelled && session?.user?.id) dispatchUsersUi({ type: "currentUserLoaded", id: session.user.id });
+			})
+			.catch(error => console.error("Failed to load current session:", error));
+
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
-	const loadEvents = useCallback(async () => {
-		try {
-			const response = await adminEventsAPI.getAll();
-			if (response.success && response.data) {
-				dispatchUsersUi({ type: "eventsLoaded", events: response.data });
-			}
-		} catch (error) {
-			console.error("Failed to load events:", error);
-		}
-	}, []);
+	const openEditModal = useCallback((user: User) => dispatchUsersUi({ type: "openEdit", user }), []);
+	const closeEditModal = useCallback(() => dispatchUsersUi({ type: "closeEdit" }), []);
 
-	function openEditModal(user: User) {
-		dispatchUsersUi({ type: "openEdit", user });
-	}
-
-	function closeEditModal() {
-		dispatchUsersUi({ type: "closeEdit" });
-	}
+	const isEditingSelf = !!editingUser && editingUser.id === currentUserId;
 
 	async function handleUpdateUser(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		if (!editingUser) return;
+		if (!editingUser || isSaving) return;
+
+		if (!isEditingSelf) {
+			if (editingUser.isActive && !selectedActive) {
+				if (!(await confirm({ title: t.confirmDeactivateTitle, description: t.confirmDeactivateDescription, destructive: true, confirmLabel: t.confirmAction }))) return;
+			} else if (editingUser.role === "admin" && selectedRole !== "admin") {
+				if (!(await confirm({ title: t.confirmDemoteTitle, description: t.confirmDemoteDescription, destructive: true, confirmLabel: t.confirmAction }))) return;
+			}
+		}
+
 		dispatchUsersUi({ type: "saveStarted" });
-
-		const formData = new FormData(e.currentTarget);
-		const role = formData.get("role") as UserRole;
-		const data = {
-			role,
-			isActive: formData.get("isActive") === "true",
-			permissions: role === "eventAdmin" ? selectedEventIds : []
-		};
-
 		try {
-			await adminUsersAPI.update(editingUser.id, data);
-			await loadUsers();
+			const response = await adminUsersAPI.update(editingUser.id, {
+				role: selectedRole,
+				isActive: selectedActive,
+				permissions: selectedRole === "eventAdmin" ? selectedEventIds : []
+			});
+			if (!response.success) {
+				showAlert(`${t.updateFailed}${response.message ? `: ${response.message}` : ""}`, "error");
+				return;
+			}
 			closeEditModal();
 			showAlert(t.updateSuccess, "success");
+			await loadUsers();
 		} catch (error) {
-			showAlert(t.updateFailed + ": " + (error instanceof Error ? error.message : String(error)), "error");
+			showAlert(`${t.updateFailed}: ${getErrorMessage(error)}`, "error");
 		} finally {
 			dispatchUsersUi({ type: "saveFinished" });
 		}
 	}
 
-	function toggleEventSelection(eventId: string) {
-		dispatchUsersUi({ type: "toggleEvent", eventId });
-	}
-
-	const getRoleLabel = useCallback(
-		(role: string) => {
-			switch (role) {
-				case "admin":
-					return t.admin;
-				case "viewer":
-					return t.viewer;
-				case "eventAdmin":
-					return t.eventAdmin;
-				default:
-					return role;
-			}
-		},
-		[t.admin, t.eventAdmin, t.viewer]
-	);
-
-	useEffect(() => {
-		void loadUsers();
-		void loadEvents();
-	}, [loadUsers, loadEvents]);
-
 	const filteredUsers = useMemo(() => {
-		const q = searchTerm.toLowerCase();
+		const q = searchTerm.trim().toLowerCase();
+		const qDigits = q.replace(/[\s()-]/g, "");
 		return users.filter(user => {
+			if (roleFilter !== "all" && user.role !== roleFilter) return false;
+			if (statusFilter !== "all" && user.isActive !== (statusFilter === "active")) return false;
 			if (!q) return true;
-			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
+			const phones = [user.phoneNumber, ...(user.smsVerifications?.map(sms => sms.phoneNumber) ?? [])].filter((phone): phone is string => !!phone);
+			return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q) || (qDigits.length > 0 && phones.some(phone => phone.replace(/[\s()-]/g, "").includes(qDigits)));
 		});
-	}, [users, searchTerm]);
+	}, [users, searchTerm, roleFilter, statusFilter]);
 
 	const displayUsers = useMemo((): UserDisplay[] => {
-		return filteredUsers.map(user => ({
-			...user,
-			roleLabel: getRoleLabel(user.role),
-			roleClass: user.role === "admin" ? "primary" : user.role === "eventAdmin" ? "warning" : "secondary",
-			statusLabel: user.isActive ? t.active : t.inactive,
-			statusClass: user.isActive ? "active" : "ended",
-			formattedCreatedAt: new Date(user.createdAt).toLocaleString()
-		}));
-	}, [filteredUsers, t.active, t.inactive, getRoleLabel]);
+		const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+		return filteredUsers.map(user => {
+			const smsPhone = user.smsVerifications?.find(sms => sms.verified)?.phoneNumber ?? user.smsVerifications?.[0]?.phoneNumber;
+			return {
+				...user,
+				roleLabel: roleLabels[user.role] ?? user.role,
+				roleTone: roleTones[user.role] ?? "neutral",
+				statusLabel: user.isActive ? t.active : t.inactive,
+				statusTone: user.isActive ? "success" : "neutral",
+				phoneDisplay: user.phoneNumber || smsPhone || "",
+				phoneIsVerified: user.phoneNumber ? user.phoneVerified : !!user.smsVerifications?.some(sms => sms.verified),
+				createdAtTimestamp: new Date(user.createdAt).getTime(),
+				formattedCreatedAt: dateFormatter.format(new Date(user.createdAt))
+			};
+		});
+	}, [filteredUsers, locale, roleLabels, t.active, t.inactive]);
 
 	const columns = useMemo(
 		() =>
 			createUsersColumns({
 				onEdit: openEditModal,
 				t: {
+					name: t.name,
+					email: t.email,
+					phone: t.phone,
+					role: t.role,
+					status: t.status,
+					createdAt: t.createdAt,
 					edit: t.edit,
-					active: t.active,
-					inactive: t.inactive,
-					emailVerified: t.emailVerified
+					emailVerified: t.emailVerified,
+					emailNotVerified: t.emailNotVerified
 				}
 			}),
-		[t.edit, t.active, t.inactive, t.emailVerified]
+		[openEditModal, t.name, t.email, t.phone, t.role, t.status, t.createdAt, t.edit, t.emailVerified, t.emailNotVerified]
 	);
+
+	// One row per distinct phone number, verified if any record for it is verified.
+	const editingPhones = useMemo(() => {
+		if (!editingUser) return [];
+		const phones = new Map<string, boolean>();
+		if (editingUser.phoneNumber) phones.set(editingUser.phoneNumber, editingUser.phoneVerified);
+		for (const sms of editingUser.smsVerifications ?? []) {
+			phones.set(sms.phoneNumber, (phones.get(sms.phoneNumber) ?? false) || sms.verified);
+		}
+		return [...phones.entries()].map(([phoneNumber, verified]) => ({ phoneNumber, verified }));
+	}, [editingUser]);
+
+	const hasFilters = searchTerm !== "" || roleFilter !== "all" || statusFilter !== "all";
 
 	return (
 		<main>
-			<AdminHeader title={t.title} />
-			<div className="relative w-fit mb-4">
-				<Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-				<Input type="text" placeholder={t.search} value={searchTerm} onChange={e => dispatchUsersUi({ type: "searchChanged", value: e.target.value })} className="pl-10 h-11" />
-			</div>
+			<AdminHeader title={t.title} description={t.description} />
 
-			<section>
-				{isLoading ? (
-					<div className="flex justify-center py-8">
-						<PageSpinner />
-					</div>
-				) : (
-					<DataTable columns={columns} data={displayUsers} />
+			<AdminToolbar>
+				<SearchInput value={searchTerm} onChange={value => dispatchUsersUi({ type: "searchChanged", value })} placeholder={t.search} clearLabel={t.clearSearch} />
+				<Select value={roleFilter} onValueChange={value => dispatchUsersUi({ type: "roleFilterChanged", value: value as RoleFilter })}>
+					<SelectTrigger aria-label={t.role} className="h-10 w-full sm:w-44">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">{t.allRoles}</SelectItem>
+						<SelectItem value="admin">{t.admin}</SelectItem>
+						<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
+						<SelectItem value="viewer">{t.viewer}</SelectItem>
+					</SelectContent>
+				</Select>
+				<Select value={statusFilter} onValueChange={value => dispatchUsersUi({ type: "statusFilterChanged", value: value as StatusFilter })}>
+					<SelectTrigger aria-label={t.status} className="h-10 w-full sm:w-40">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">{t.allStatuses}</SelectItem>
+						<SelectItem value="active">{t.active}</SelectItem>
+						<SelectItem value="inactive">{t.inactive}</SelectItem>
+					</SelectContent>
+				</Select>
+				{hasFilters && (
+					<Button type="button" variant="ghost" size="sm" onClick={() => dispatchUsersUi({ type: "clearFilters" })}>
+						{t.clearFilters}
+					</Button>
 				)}
-			</section>
+				<AdminToolbarSpacer />
+			</AdminToolbar>
 
-			<Dialog open={showEditModal} onOpenChange={open => dispatchUsersUi({ type: "setEditOpen", open })}>
-				<DialogContent>
+			<DataTable
+				columns={columns}
+				data={displayUsers}
+				isLoading={isLoading}
+				getRowId={user => user.id}
+				onRowClick={openEditModal}
+				emptyState={
+					<EmptyState
+						icon={Users}
+						title={hasFilters ? t.noResults : t.noUsers}
+						description={hasFilters ? t.noResultsHint : undefined}
+						action={
+							hasFilters ? (
+								<Button type="button" variant="secondary" size="sm" onClick={() => dispatchUsersUi({ type: "clearFilters" })}>
+									{t.clearFilters}
+								</Button>
+							) : undefined
+						}
+						className="border-0"
+					/>
+				}
+			/>
+
+			<Dialog open={showEditModal} onOpenChange={open => !open && closeEditModal()}>
+				<DialogContent className="max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>{t.editUser}</DialogTitle>
+						<DialogDescription>{t.editUserDescription}</DialogDescription>
 					</DialogHeader>
-					<form onSubmit={handleUpdateUser}>
-						<div className="mb-6">
-							<p className="m-0 mb-2 text-sm opacity-70">
-								{t.name}: <strong>{editingUser?.name}</strong>
-							</p>
-							<p className="m-0 mb-2 text-sm opacity-70">
-								{t.email}: <strong>{editingUser?.email}</strong>
-							</p>
-							<p className="m-0 text-sm opacity-70">
-								{editingUser?.smsVerifications && editingUser.smsVerifications.length > 0
-									? editingUser.smsVerifications.map(sms => (
-											<span key={sms.id}>
-												{t.phone}: {sms.phoneNumber} - {sms.verified ? t.emailVerified : t.emailNotVerified}
-											</span>
-										))
-									: null}
-							</p>
-						</div>
-						<div className="mb-4">
-							<Label>{t.role}</Label>
-							<Select
-								name="role"
-								value={selectedRole}
-								onValueChange={value => {
-									dispatchUsersUi({ type: "roleChanged", role: value as UserRole });
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="admin">{t.admin}</SelectItem>
-									<SelectItem value="viewer">{t.viewer}</SelectItem>
-									<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="mb-4">
-							<Label>{t.status}</Label>
-							<Select name="isActive" defaultValue={editingUser?.isActive ? "true" : "false"}>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="true">{t.active}</SelectItem>
-									<SelectItem value="false">{t.inactive}</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						{selectedRole === "eventAdmin" && (
-							<div className="mb-4">
-								<Label>{t.manageableEvents}</Label>
-								<div className="max-h-[200px] overflow-y-auto border border-gray-300 dark:border-gray-700 rounded p-2">
-									{events.length === 0 ? (
-										<p className="m-0 text-sm opacity-70">{t.noEventsSelected}</p>
-									) : (
-										events.map(event => (
-											<Label key={event.id} className="flex items-center p-2 cursor-pointer border-b border-gray-200 dark:border-gray-700">
-												<Checkbox checked={selectedEventIds.includes(event.id)} onCheckedChange={() => toggleEventSelection(event.id)} className="mr-2" />
-												<span>{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
-											</Label>
-										))
-									)}
+					{editingUser && (
+						<form onSubmit={handleUpdateUser} className="space-y-5">
+							<dl className="space-y-2 rounded-lg border bg-muted/40 p-3 text-sm">
+								<div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
+									<dt className="text-muted-foreground">{t.name}</dt>
+									<dd className="font-medium">{editingUser.name}</dd>
 								</div>
-								<p className="text-xs mt-2 opacity-70">
-									{selectedEventIds.length} {t.selectEvents}
-								</p>
+								<div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
+									<dt className="text-muted-foreground">{t.email}</dt>
+									<dd className="flex flex-wrap items-center gap-2 font-medium">
+										{editingUser.email}
+										<StatusBadge tone={editingUser.emailVerified ? "success" : "neutral"}>{editingUser.emailVerified ? t.emailVerified : t.emailNotVerified}</StatusBadge>
+									</dd>
+								</div>
+								{editingPhones.length > 0 && (
+									<div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
+										<dt className="text-muted-foreground">{t.phoneNumbers}</dt>
+										<dd>
+											<ul className="space-y-1">
+												{editingPhones.map(phone => (
+													<li key={phone.phoneNumber} className="flex flex-wrap items-center justify-end gap-2 font-medium">
+														<span className="tabular-nums">{phone.phoneNumber}</span>
+														<StatusBadge tone={phone.verified ? "success" : "neutral"}>{phone.verified ? t.emailVerified : t.emailNotVerified}</StatusBadge>
+													</li>
+												))}
+											</ul>
+										</dd>
+									</div>
+								)}
+							</dl>
+
+							{isEditingSelf && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">{t.selfEditNotice}</p>}
+
+							<div className="space-y-2">
+								<Label htmlFor="user-role">{t.role}</Label>
+								<Select value={selectedRole} onValueChange={value => dispatchUsersUi({ type: "roleChanged", role: value as UserRole })} disabled={isEditingSelf}>
+									<SelectTrigger id="user-role" className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="admin">{t.admin}</SelectItem>
+										<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
+										<SelectItem value="viewer">{t.viewer}</SelectItem>
+									</SelectContent>
+								</Select>
+								<p className="text-sm text-muted-foreground">{roleHelp[selectedRole]}</p>
 							</div>
-						)}
-						<DialogFooter>
-							<Button type="submit" isLoading={isSaving}>
-								{t.save}
-							</Button>
-							<Button type="button" variant="secondary" onClick={closeEditModal}>
-								{t.cancel}
-							</Button>
-						</DialogFooter>
-					</form>
+
+							<div className="space-y-2">
+								<Label htmlFor="user-status">{t.status}</Label>
+								<Select value={selectedActive ? "true" : "false"} onValueChange={value => dispatchUsersUi({ type: "activeChanged", active: value === "true" })} disabled={isEditingSelf}>
+									<SelectTrigger id="user-status" className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="true">{t.active}</SelectItem>
+										<SelectItem value="false">{t.inactive}</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							{selectedRole === "eventAdmin" && (
+								<fieldset className="space-y-2">
+									<legend className="mb-2 flex w-full items-center justify-between gap-2 text-md font-bold">
+										{t.manageableEvents}
+										<span className="text-xs font-normal text-muted-foreground">{t.selectedEvents.replace("{n}", String(selectedEventIds.length))}</span>
+									</legend>
+									<div className="max-h-52 overflow-y-auto rounded-lg border">
+										{events.length === 0 ? (
+											<p className="p-3 text-sm text-muted-foreground">{t.noEvents}</p>
+										) : (
+											events.map(event => (
+												<Label key={event.id} htmlFor={`event-${event.id}`} className="flex cursor-pointer items-center gap-3 border-b p-3 font-normal last:border-b-0 hover:bg-muted/50">
+													<Checkbox id={`event-${event.id}`} checked={selectedEventIds.includes(event.id)} onCheckedChange={() => dispatchUsersUi({ type: "toggleEvent", eventId: event.id })} />
+													<span className="leading-snug">{event.name[locale] || event.name.en || Object.values(event.name)[0]}</span>
+												</Label>
+											))
+										)}
+									</div>
+									{selectedEventIds.length === 0 && <p className="text-sm text-amber-700 dark:text-amber-400">{t.noEventsAssigned}</p>}
+								</fieldset>
+							)}
+
+							<DialogFooter>
+								<Button type="button" variant="secondary" onClick={closeEditModal}>
+									{t.cancel}
+								</Button>
+								<Button type="submit" variant="primary" isLoading={isSaving}>
+									{t.save}
+								</Button>
+							</DialogFooter>
+						</form>
+					)}
 				</DialogContent>
 			</Dialog>
 		</main>

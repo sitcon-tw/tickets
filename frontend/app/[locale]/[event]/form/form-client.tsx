@@ -8,18 +8,25 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { eventsAPI, referralsAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
-import { shouldDisplayField } from "@/lib/utils/filterEvaluation";
-import { normalizeFormFieldOption } from "@/lib/utils/localization";
-import { FormFieldOption, LocalizedText, PublicTicketDetailSchema, TicketFormField } from "@sitcontix/types";
+import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields } from "@/lib/utils/formFields";
+import { getLocalizedText } from "@/lib/utils/localization";
+import { getVisibleFieldIds, LocalizedText, pruneFormData, TicketFormField, validateFormData } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
-import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { z } from "zod/v4";
+import { useParams } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 const formDataStorageKey = "formData:v1";
 const legacyFormDataStorageKey = "formData";
+const TERMS_FIELD_ID = "agreeToTerms";
+const VISIBILITY_REFRESH_MS = 30_000;
+
+function formatHoldRemaining(ms: number) {
+	const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+	return `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, "0")}`;
+}
 
 type AutosavedFormState = {
 	formData: FormDataType;
@@ -29,49 +36,42 @@ type AutosavedFormState = {
 
 type AutosavedFormAction =
 	| { type: "setField"; name: string; value: FormDataType[string] }
-	| { type: "setCheckbox"; name: string; checked: boolean }
-	| { type: "setMultiCheckbox"; name: string; values: string[] }
-	| { type: "toggleLegacyCheckbox"; name: string; checked: boolean; value: string }
 	| { type: "setReferralCode"; referralCode: string }
 	| { type: "setAgreeToTerms"; agreeToTerms: boolean }
-	| { type: "restore"; values: Partial<AutosavedFormState> };
+	| { type: "restore"; formData: FormDataType; referralCode: string };
 
 function autosavedFormReducer(state: AutosavedFormState, action: AutosavedFormAction): AutosavedFormState {
 	switch (action.type) {
 		case "setField":
 			return { ...state, formData: { ...state.formData, [action.name]: action.value } };
-		case "setCheckbox":
-			return { ...state, formData: { ...state.formData, [action.name]: action.checked } };
-		case "setMultiCheckbox":
-			return { ...state, formData: { ...state.formData, [action.name]: action.values } };
-		case "toggleLegacyCheckbox": {
-			const currentValues = Array.isArray(state.formData[action.name]) ? (state.formData[action.name] as string[]) : [];
-			const nextValues = action.checked ? [...currentValues, action.value] : currentValues.filter(item => item !== action.value);
-			return { ...state, formData: { ...state.formData, [action.name]: nextValues } };
-		}
 		case "setReferralCode":
 			return { ...state, referralCode: action.referralCode };
 		case "setAgreeToTerms":
 			return { ...state, agreeToTerms: action.agreeToTerms };
 		case "restore":
-			return { ...state, ...action.values };
+			// A referral code that came with the current link wins over an older saved one; consent is never restored.
+			return { ...state, formData: action.formData, referralCode: state.referralCode || action.referralCode };
 		default:
 			return state;
 	}
 }
 
+type PageError = { kind: "message"; message: string } | { kind: "failed"; message: string } | { kind: "verification" };
+
 type FormPageState = {
 	loading: boolean;
-	error: string | null;
+	error: PageError | null;
 	formFields: TicketFormField[];
 	ticketId: string | null;
+	ticketName: LocalizedText | null;
 	isSubmitting: boolean;
 };
 
 type FormPageAction =
 	| { type: "ticketLoaded"; ticketId: string }
-	| { type: "formLoaded"; formFields: TicketFormField[] }
-	| { type: "loadFailed"; error: string }
+	| { type: "formLoaded"; formFields: TicketFormField[]; ticketName: LocalizedText }
+	| { type: "loadFailed"; message: string }
+	| { type: "unavailable"; message: string }
 	| { type: "verificationRequired" }
 	| { type: "submitStarted" }
 	| { type: "submitFailed" };
@@ -81,11 +81,13 @@ function formPageReducer(state: FormPageState, action: FormPageAction): FormPage
 		case "ticketLoaded":
 			return { ...state, ticketId: action.ticketId };
 		case "formLoaded":
-			return { ...state, loading: false, error: null, formFields: action.formFields };
+			return { ...state, loading: false, error: null, formFields: action.formFields, ticketName: action.ticketName };
 		case "loadFailed":
-			return { ...state, loading: false, error: action.error };
+			return { ...state, loading: false, error: { kind: "failed", message: action.message } };
+		case "unavailable":
+			return { ...state, loading: false, error: { kind: "message", message: action.message } };
 		case "verificationRequired":
-			return { ...state, loading: false, error: "verificationRequired" };
+			return { ...state, loading: false, error: { kind: "verification" } };
 		case "submitStarted":
 			return { ...state, isSubmitting: true };
 		case "submitFailed":
@@ -116,6 +118,16 @@ const formPageTranslations = {
 		"zh-Hans": "请选择...",
 		en: "Please select..."
 	},
+	seatHeld: {
+		"zh-Hant": "座位已為你保留，請於時限內完成報名",
+		"zh-Hans": "座位已为你保留，请于时限内完成报名",
+		en: "Your seat is held. Complete your registration before the timer runs out"
+	},
+	holdExpired: {
+		"zh-Hant": "保留時間已過，座位已釋出，請重新選擇票種",
+		"zh-Hans": "保留时间已过，座位已释放，请重新选择票种",
+		en: "Your seat hold expired and the seat was released. Please select a ticket again"
+	},
 	reselectTicket: {
 		"zh-Hant": "重新選擇票種",
 		"zh-Hans": "重新选择票种",
@@ -125,6 +137,11 @@ const formPageTranslations = {
 		"zh-Hant": "填寫報名資訊",
 		"zh-Hans": "填写报名资讯",
 		en: "Fill Registration Form"
+	},
+	ticketLabel: {
+		"zh-Hant": "票種",
+		"zh-Hans": "票种",
+		en: "Ticket"
 	},
 	loadingForm: {
 		"zh-Hant": "載入表單中...",
@@ -136,20 +153,10 @@ const formPageTranslations = {
 		"zh-Hans": "载入表单失败：",
 		en: "Failed to load form: "
 	},
-	backToHome: {
-		"zh-Hant": "返回首頁",
-		"zh-Hans": "返回首页",
-		en: "Back to Home"
-	},
-	name: {
-		"zh-Hant": "姓名",
-		"zh-Hans": "姓名",
-		en: "Name"
-	},
-	invitationCode: {
-		"zh-Hant": "邀請碼",
-		"zh-Hans": "邀请码",
-		en: "Invitation Code"
+	eventNotFound: {
+		"zh-Hant": "找不到此活動",
+		"zh-Hans": "找不到此活动",
+		en: "Event not found"
 	},
 	referralCode: {
 		"zh-Hant": "推薦碼",
@@ -161,15 +168,45 @@ const formPageTranslations = {
 		"zh-Hans": "推荐码（选填）",
 		en: "Referral Code (Optional)"
 	},
+	referredBy: {
+		"zh-Hant": "推薦人：",
+		"zh-Hans": "推荐人：",
+		en: "Referred by: "
+	},
+	referralCodeInvalid: {
+		"zh-Hant": "推薦碼無效",
+		"zh-Hans": "推荐码无效",
+		en: "Invalid referral code"
+	},
 	submitRegistration: {
 		"zh-Hant": "提交報名",
 		"zh-Hans": "提交报名",
 		en: "Submit Registration"
 	},
-	agreeToTerms: {
-		"zh-Hant": "我已閱讀並同意服務條款與隱私政策",
-		"zh-Hans": "我已阅读并同意服务条款与隐私政策",
-		en: "I have read and agree to the Terms and Privacy Policy"
+	agreeToTermsPrefix: {
+		"zh-Hant": "我已閱讀並同意",
+		"zh-Hans": "我已阅读并同意",
+		en: "I have read and agree to the "
+	},
+	termsLinkText: {
+		"zh-Hant": "服務條款與隱私政策",
+		"zh-Hans": "服务条款与隐私政策",
+		en: "Terms and Privacy Policy"
+	},
+	termsRequired: {
+		"zh-Hant": "請先同意服務條款與隱私政策",
+		"zh-Hans": "请先同意服务条款与隐私政策",
+		en: "Please agree to the Terms and Privacy Policy"
+	},
+	checkFields: {
+		"zh-Hant": "請檢查標示的欄位後再提交",
+		"zh-Hans": "请检查标示的栏位后再提交",
+		en: "Please check the highlighted fields and submit again"
+	},
+	formChanged: {
+		"zh-Hant": "表單內容已更新，請重新檢查後再提交",
+		"zh-Hans": "表单内容已更新，请重新检查后再提交",
+		en: "The form has changed, please review it and submit again"
 	},
 	ticketSaleEnded: {
 		"zh-Hant": "此票種報名時間已結束",
@@ -177,14 +214,24 @@ const formPageTranslations = {
 		en: "This ticket's registration period has ended"
 	},
 	ticketNotYetAvailable: {
-		"zh-Hant": "此票種尚未開放報名，請先登入後再試",
-		"zh-Hans": "此票种尚未开放报名，请先登录后再试",
-		en: "This ticket is not yet available for registration. Please log in and try again later"
+		"zh-Hant": "此票種尚未開放報名",
+		"zh-Hans": "此票种尚未开放报名",
+		en: "Registration for this ticket has not opened yet"
 	},
 	ticketSoldOut: {
 		"zh-Hant": "此票種已售完",
 		"zh-Hans": "此票种已售完",
 		en: "This ticket is sold out"
+	},
+	phoneVerificationRequired: {
+		"zh-Hant": "此票種需要先驗證手機號碼才能報名",
+		"zh-Hans": "此票种需要先验证手机号码才能报名",
+		en: "This ticket requires a verified phone number before you can register"
+	},
+	verifyPhone: {
+		"zh-Hant": "前往驗證手機號碼",
+		"zh-Hans": "前往验证手机号码",
+		en: "Verify phone number"
 	},
 	autosaveRestored: {
 		"zh-Hant": "已自動恢復您之前填寫的表單資料",
@@ -193,77 +240,27 @@ const formPageTranslations = {
 	}
 };
 
-type RawTicketFormField = Omit<TicketFormField, "eventId" | "options"> &
-	Partial<Pick<TicketFormField, "eventId">> & {
-		options?: FormFieldOption[] | null;
-	};
-
-function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string): TicketFormField[] {
-	return fields.map(field => {
-		let name: LocalizedText = field.name;
-		if (typeof name === "string" && name === "[object Object]") {
-			name = { en: typeof field.description === "string" ? field.description : "field" };
-		} else if (typeof name === "string") {
-			const rawName = name;
-			try {
-				name = JSON.parse(rawName);
-			} catch {
-				name = { en: rawName };
-			}
-		}
-
-		// Legacy data may still store the description as a (JSON) string
-		let description = (field.description ?? undefined) as LocalizedText | string | undefined;
-		if (typeof description === "string" && description.startsWith("{")) {
-			const originalStr = description;
-			try {
-				description = JSON.parse(description);
-			} catch {
-				description = { en: originalStr };
-			}
-		} else if (typeof description === "string") {
-			description = { en: description };
-		}
-
-		const options = (field.options || []).map(normalizeFormFieldOption);
-
-		let filters = field.filters;
-		if (typeof filters === "string") {
-			try {
-				filters = JSON.parse(filters);
-			} catch {
-				filters = undefined;
-			}
-		}
-
-		return {
-			...field,
-			eventId,
-			type: field.type,
-			name,
-			description: description as LocalizedText | undefined,
-			options,
-			filters: filters,
-			prompts: field.prompts
-		};
-	});
-}
-
 type RegistrationFormViewProps = {
 	t: Record<string, string>;
 	loading: boolean;
-	error: string | null;
-	pathname: string;
+	error: PageError | null;
+	eventPath: string;
 	verifyHref: string;
+	ticketName: string;
 	visibleFields: TicketFormField[];
 	formData: FormDataType;
+	fieldErrors: Record<string, string>;
+	termsError: string | undefined;
 	referralCode: string;
+	referrerName: string | null;
+	referralInvalid: boolean;
 	agreeToTerms: boolean;
 	isSubmitting: boolean;
+	holdRemaining: string | null;
 	onBack: () => void;
 	onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-	onTextChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-	onCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onValueChange: (fieldId: string, value: string | boolean | string[]) => void;
+	onAgreeChange: (agree: boolean) => void;
 	dispatchAutosavedForm: React.Dispatch<AutosavedFormAction>;
 };
 
@@ -271,27 +268,47 @@ function RegistrationFormView({
 	t,
 	loading,
 	error,
-	pathname,
+	eventPath,
 	verifyHref,
+	ticketName,
 	visibleFields,
 	formData,
+	fieldErrors,
+	termsError,
 	referralCode,
+	referrerName,
+	referralInvalid,
 	agreeToTerms,
 	isSubmitting,
+	holdRemaining,
 	onBack,
 	onSubmit,
-	onTextChange,
-	onCheckboxChange,
+	onValueChange,
+	onAgreeChange,
 	dispatchAutosavedForm
 }: RegistrationFormViewProps) {
 	return (
-		<main className="mt-32">
-			<section className="max-w-3xl mx-auto p-16 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+		<main className="mt-24 px-4 pb-16 md:mt-32">
+			<section className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900 sm:p-10 md:p-16">
 				<Button variant="secondary" onClick={onBack}>
 					<ChevronLeft />
 					<p>{t.reselectTicket}</p>
 				</Button>
-				<h1 className="my-8 text-4xl">{t.fillForm}</h1>
+				<h1 className="mt-8 mb-2 text-3xl md:text-4xl">{t.fillForm}</h1>
+				{ticketName && (
+					<p className="mb-8 text-sm text-gray-600 dark:text-gray-400">
+						{t.ticketLabel}: {ticketName}
+					</p>
+				)}
+
+				{holdRemaining && !loading && !error && (
+					<div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+						<span>{t.seatHeld}</span>
+						<span className="font-mono text-lg font-bold tabular-nums" role="timer" aria-live="off">
+							{holdRemaining}
+						</span>
+					</div>
+				)}
 
 				{loading && (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
@@ -301,22 +318,22 @@ function RegistrationFormView({
 				)}
 
 				{error && (
-					<div className="text-center p-8">
-						{error === "verificationRequired" ? (
+					<div className="p-8 text-center">
+						{error.kind === "verification" ? (
 							<>
-								<p className="text-red-600 mb-4">{t.ticketNotYetAvailable}</p>
+								<p className="mb-4 text-red-600">{t.phoneVerificationRequired}</p>
 								<Button asChild>
-									<Link href={verifyHref}>{t.submitRegistration}</Link>
+									<Link href={verifyHref}>{t.verifyPhone}</Link>
 								</Button>
 							</>
 						) : (
 							<>
-								<p className="text-red-600 mb-4">
-									{t.loadFormFailed}
-									{error}
+								<p className="mb-4 text-red-600">
+									{error.kind === "failed" && t.loadFormFailed}
+									{error.message}
 								</p>
 								<Button asChild variant="secondary">
-									<Link href={pathname.replace("/form", "")}>{t.reselectTicket}</Link>
+									<Link href={eventPath}>{t.reselectTicket}</Link>
 								</Button>
 							</>
 						)}
@@ -324,9 +341,17 @@ function RegistrationFormView({
 				)}
 
 				{!loading && !error && (
-					<form onSubmit={onSubmit} className="flex flex-col gap-6">
+					<form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
 						{visibleFields.map(field => (
-							<FormField key={field.id} field={field} value={formData[field.id] || ""} onTextChange={onTextChange} onCheckboxChange={onCheckboxChange} pleaseSelectText={t.pleaseSelect} />
+							<FormField
+								key={field.id}
+								field={field}
+								value={formData[field.id]}
+								onValueChange={onValueChange}
+								pleaseSelectText={t.pleaseSelect}
+								error={fieldErrors[field.id]}
+								disabled={isSubmitting}
+							/>
 						))}
 
 						<Text
@@ -334,22 +359,36 @@ function RegistrationFormView({
 							id="referralCode"
 							value={referralCode}
 							required={false}
+							disabled={isSubmitting}
+							description={referrerName ? `${t.referredBy}**${referrerName}**` : undefined}
+							error={referralInvalid ? t.referralCodeInvalid : undefined}
 							onChange={e => dispatchAutosavedForm({ type: "setReferralCode", referralCode: e.target.value })}
 							placeholder={t.referralCode}
 						/>
 
-						<div>
-							<div className="flex items-center space-x-2">
-								<Checkbox id="agreeToTerms" required checked={agreeToTerms} onChange={e => dispatchAutosavedForm({ type: "setAgreeToTerms", agreeToTerms: e.target.checked })} label={t.agreeToTerms} />
-							</div>
+						<div data-field-id={TERMS_FIELD_ID}>
+							<Checkbox
+								id={TERMS_FIELD_ID}
+								required
+								checked={agreeToTerms}
+								disabled={isSubmitting}
+								error={termsError}
+								onChange={e => onAgreeChange(e.target.checked)}
+								label={
+									<span>
+										{t.agreeToTermsPrefix}
+										<Link href="/terms" target="_blank" className="underline underline-offset-2">
+											{t.termsLinkText}
+										</Link>
+									</span>
+								}
+							/>
 						</div>
 
-						<div className="justify-between flex">
-							<div />
-							<Button type="submit" isLoading={isSubmitting} size={"lg"}>
+						<div className="flex justify-center pt-2">
+							<Button type="submit" isLoading={isSubmitting} size="lg" className="w-full sm:w-auto">
 								{t.submitRegistration}
 							</Button>
-							<div />
 						</div>
 					</form>
 				)}
@@ -362,13 +401,16 @@ export default function FormPage() {
 	const router = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
+	const params = useParams();
 	const { showAlert } = useAlert();
+	const eventSlug = params.event as string;
 
-	const [{ loading, error, formFields, ticketId, isSubmitting }, dispatchFormPage] = useReducer(formPageReducer, {
+	const [{ loading, error, formFields, ticketId, ticketName, isSubmitting }, dispatchFormPage] = useReducer(formPageReducer, {
 		loading: true,
 		error: null,
 		formFields: [],
 		ticketId: null,
+		ticketName: null,
 		isSubmitting: false
 	});
 	const [{ formData, referralCode, agreeToTerms }, dispatchAutosavedForm] = useReducer(autosavedFormReducer, {
@@ -376,61 +418,97 @@ export default function FormPage() {
 		referralCode: "",
 		agreeToTerms: false
 	});
+	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+	const [termsError, setTermsError] = useState<string | undefined>();
+	// Time conditions are evaluated against this clock; it is refreshed periodically and on submit.
+	const [now, setNow] = useState(() => new Date());
+	const [referral, setReferral] = useState<{ code: string; referrerName: string | null; isValid: boolean } | null>(null);
+	const [hold, setHold] = useState<{ id: string; expiresAt: number } | null>(null);
+	const [holdNow, setHoldNow] = useState(() => Date.now());
+	const holdRequestRef = useRef<ReturnType<typeof registrationsAPI.hold> | null>(null);
 	const eventIdRef = useRef<string | null>(null);
 	const invitationCodeRef = useRef("");
 	const autosaveRestoredRef = useRef(false);
 
 	const autosaveKey = ticketId ? `formAutosave_${ticketId}` : null;
+	const eventPath = pathname.replace(/\/form$/, "");
 	const verifyHref = `/verify?redirect=${encodeURIComponent(pathname)}`;
 
 	const t = getTranslations(locale, formPageTranslations);
 
-	const isTicketExpired = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
-		if (!ticket.saleEnd) return false;
-		return ticket.saleEnd < new Date();
+	const handleValueChange = useCallback((fieldId: string, value: string | boolean | string[]) => {
+		dispatchAutosavedForm({ type: "setField", name: fieldId, value });
+		setFieldErrors(prev => {
+			if (!(fieldId in prev)) return prev;
+			const { [fieldId]: _cleared, ...rest } = prev;
+			return rest;
+		});
 	}, []);
 
-	const isTicketNotYetAvailable = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
-		if (!ticket.saleStart) return false;
-		return ticket.saleStart > new Date();
+	const handleAgreeChange = useCallback((agree: boolean) => {
+		dispatchAutosavedForm({ type: "setAgreeToTerms", agreeToTerms: agree });
+		if (agree) setTermsError(undefined);
 	}, []);
 
-	const isTicketSoldOut = useCallback((ticket: z.infer<typeof PublicTicketDetailSchema>): boolean => {
-		return ticket.available !== undefined && ticket.available <= 0;
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), VISIBILITY_REFRESH_MS);
+		return () => clearInterval(timer);
 	}, []);
 
-	const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-		const { name, value } = e.target;
-		dispatchAutosavedForm({ type: "setField", name, value });
-	}, []);
+	const visibleIds = useMemo(() => {
+		if (!ticketId) return new Set(formFields.map(field => field.id));
+		return getVisibleFieldIds(formFields, { ticketId, formData, now });
+	}, [formFields, ticketId, formData, now]);
 
-	const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value, checked } = e.target;
+	const visibleFields = useMemo(() => formFields.filter(field => visibleIds.has(field.id)), [formFields, visibleIds]);
 
-		if (value === "true") {
-			// Single checkbox (boolean value)
-			dispatchAutosavedForm({ type: "setCheckbox", name, checked });
-		} else if (checked && value !== "true") {
-			// Multi-checkbox with comma-separated values
-			// When checked is true and value is not "true", this is from MultiCheckbox
-			// The value contains the comma-separated list (or empty string if all unchecked)
-			const values = value === "" ? [] : value.split(",").filter(v => v.trim() !== "");
-			dispatchAutosavedForm({ type: "setMultiCheckbox", name, values });
-		} else {
-			// Single checkbox with a specific value (legacy support)
-			dispatchAutosavedForm({ type: "toggleLegacyCheckbox", name, checked, value });
+	const holdExpiresAt = hold?.expiresAt ?? null;
+	const holdRemainingMs = holdExpiresAt === null ? null : holdExpiresAt - holdNow;
+
+	useEffect(() => {
+		if (holdExpiresAt === null) return;
+		const timer = setInterval(() => setHoldNow(Date.now()), 1000);
+		return () => clearInterval(timer);
+	}, [holdExpiresAt]);
+
+	useEffect(() => {
+		if (holdRemainingMs === null || holdRemainingMs > 0) return;
+		showAlert(t.holdExpired, "warning");
+		router.push(eventPath);
+	}, [holdRemainingMs, showAlert, router, eventPath, t.holdExpired]);
+
+	async function handleBack() {
+		// Give the seat back right away instead of waiting for the hold to expire
+		if (hold && !isSubmitting) {
+			await registrationsAPI.cancel(hold.id).catch(() => undefined);
 		}
-	}, []);
+		router.push(eventPath);
+	}
 
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
 		const eventId = eventIdRef.current;
-		if (!ticketId || !eventId || isSubmitting) {
-			if (!ticketId || !eventId) {
-				showAlert(t.incompleteFormAlert, "warning");
-				router.push("/");
-			}
+		if (!ticketId || !eventId) {
+			showAlert(t.incompleteFormAlert, "warning");
+			router.push("/");
+			return;
+		}
+		if (isSubmitting) return;
+
+		const submitTime = new Date();
+		setNow(submitTime);
+		const context = { ticketId, formData, now: submitTime };
+
+		const messages = getFormErrorMessages(validateFormData(formFields, context), locale);
+		const missingTerms = !agreeToTerms;
+		setFieldErrors(messages);
+		setTermsError(missingTerms ? t.termsRequired : undefined);
+
+		const firstInvalidId = formFields.find(field => messages[field.id])?.id ?? (missingTerms ? TERMS_FIELD_ID : undefined);
+		if (firstInvalidId) {
+			showAlert(t.checkFields, "error");
+			focusFormField(firstInvalidId);
 			return;
 		}
 
@@ -439,9 +517,7 @@ export default function FormPage() {
 			const registrationData = {
 				eventId,
 				ticketId,
-				formData: {
-					...formData
-				},
+				formData: pruneFormData(formData, getVisibleFieldIds(formFields, context)),
 				invitationCode: invitationCodeRef.current.trim() || undefined,
 				referralCode: referralCode.trim() || undefined
 			};
@@ -457,12 +533,29 @@ export default function FormPage() {
 				if (autosaveKey) {
 					localStorage.removeItem(autosaveKey);
 				}
-				router.push(window.location.href.replace("/form", "/success"));
+				router.push(`${eventPath}/success`);
 			} else {
 				throw new Error(result.message || "Registration failed");
 			}
 		} catch (error) {
-			showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
+			const serverErrors = getFormErrorsFromApiError(error);
+			if (serverErrors) {
+				// The server disagrees with this form (validation rules or a time window changed meanwhile).
+				const refreshed = new Date();
+				setNow(refreshed);
+				const messagesFromServer = getFormErrorMessages(serverErrors, locale);
+				const refreshedVisible = getVisibleFieldIds(formFields, { ticketId, formData, now: refreshed });
+				const shown = formFields.filter(field => messagesFromServer[field.id] && refreshedVisible.has(field.id));
+				setFieldErrors(messagesFromServer);
+				if (shown.length > 0) {
+					showAlert(t.checkFields, "error");
+					focusFormField(shown[0].id);
+				} else {
+					showAlert(t.formChanged, "warning");
+				}
+			} else {
+				showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
+			}
 			dispatchFormPage({ type: "submitFailed" });
 		}
 	}
@@ -471,19 +564,35 @@ export default function FormPage() {
 		async function initForm() {
 			try {
 				const storedData = localStorage.getItem(formDataStorageKey) || localStorage.getItem(legacyFormDataStorageKey);
-				if (!storedData) {
-					showAlert(t.noTicketAlert, "warning");
-					dispatchFormPage({ type: "loadFailed", error: t.noTicketAlert });
+				let parsedData: { ticketId?: string; eventId?: string; referralCode?: string; invitationCode?: string } | null = null;
+				try {
+					parsedData = storedData ? JSON.parse(storedData) : null;
+				} catch {
+					parsedData = null;
+				}
+				if (!parsedData?.ticketId || !parsedData.eventId) {
+					dispatchFormPage({ type: "unavailable", message: t.noTicketAlert });
 					return;
 				}
 
-				const parsedData = JSON.parse(storedData);
+				const [eventsResponse, ticketResponse] = await Promise.all([eventsAPI.getAll(), ticketsAPI.getTicket(parsedData.ticketId)]);
+
+				// The stored ticket must belong to the event in the URL, otherwise it is left over from another event.
+				const currentEvent = eventsResponse.success ? eventsResponse.data.find(event => event.slug === eventSlug || event.id.slice(-6) === eventSlug) : undefined;
+				if (!currentEvent) {
+					dispatchFormPage({ type: "loadFailed", message: t.eventNotFound });
+					return;
+				}
+				if (currentEvent.id !== parsedData.eventId) {
+					dispatchFormPage({ type: "unavailable", message: t.noTicketAlert });
+					return;
+				}
+
 				dispatchFormPage({ type: "ticketLoaded", ticketId: parsedData.ticketId });
 				eventIdRef.current = parsedData.eventId;
 				dispatchAutosavedForm({ type: "setReferralCode", referralCode: parsedData.referralCode || "" });
 				invitationCodeRef.current = parsedData.invitationCode || "";
 
-				const ticketResponse = await ticketsAPI.getTicket(parsedData.ticketId);
 				if (!ticketResponse.success) {
 					throw new Error(ticketResponse.message || "Failed to load ticket information");
 				}
@@ -505,21 +614,28 @@ export default function FormPage() {
 					}
 				}
 
-				if (isTicketExpired(ticket)) {
-					showAlert(t.ticketSaleEnded, "error");
-					dispatchFormPage({ type: "loadFailed", error: t.ticketSaleEnded });
+				const currentTime = new Date();
+				if (ticket.saleEnd && ticket.saleEnd < currentTime) {
+					dispatchFormPage({ type: "unavailable", message: t.ticketSaleEnded });
 					return;
 				}
 
-				if (isTicketNotYetAvailable(ticket)) {
-					showAlert(t.ticketNotYetAvailable, "warning");
-					dispatchFormPage({ type: "loadFailed", error: t.ticketNotYetAvailable });
+				if (ticket.saleStart && ticket.saleStart > currentTime) {
+					dispatchFormPage({ type: "unavailable", message: t.ticketNotYetAvailable });
 					return;
 				}
 
-				if (isTicketSoldOut(ticket)) {
-					showAlert(t.ticketSoldOut, "error");
-					dispatchFormPage({ type: "loadFailed", error: t.ticketSoldOut });
+				// Reserve the seat while the form is filled out. It is idempotent: the ticket page may already have
+				// taken it, and the ref keeps a dev-mode double mount from sending two requests.
+				try {
+					holdRequestRef.current ??= registrationsAPI.hold({ eventId: parsedData.eventId, ticketId: parsedData.ticketId, invitationCode: parsedData.invitationCode || undefined });
+					const heldSeat = await holdRequestRef.current;
+					setHold({ id: heldSeat.data.id, expiresAt: heldSeat.data.holdExpiresAt.getTime() });
+					setHoldNow(Date.now());
+				} catch (error) {
+					holdRequestRef.current = null;
+					const message = error instanceof Error ? error.message : "Unknown error";
+					dispatchFormPage({ type: "unavailable", message: message.includes("已售完") ? t.ticketSoldOut : message });
 					return;
 				}
 
@@ -527,33 +643,50 @@ export default function FormPage() {
 				if (!formFieldsData.success) {
 					throw new Error(formFieldsData.message || "Failed to load form fields");
 				}
-				const processedFields = normalizeTicketFormFields(formFieldsData.data || [], parsedData.eventId);
 
-				dispatchFormPage({ type: "formLoaded", formFields: processedFields });
+				dispatchFormPage({ type: "formLoaded", formFields: normalizeTicketFormFields(formFieldsData.data || [], parsedData.eventId), ticketName: ticket.name });
 			} catch (error) {
 				console.error("Failed to initialize form:", error);
-				dispatchFormPage({ type: "loadFailed", error: error instanceof Error ? error.message : "Unknown error" });
+				dispatchFormPage({ type: "loadFailed", message: error instanceof Error ? error.message : "Unknown error" });
 			}
 		}
 
 		void initForm();
-	}, [showAlert, t.noTicketAlert, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, isTicketExpired, isTicketNotYetAvailable, isTicketSoldOut]);
+	}, [eventSlug, t.noTicketAlert, t.eventNotFound, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut]);
 
+	// Look up who the code belongs to so the form can show the referrer next to it.
 	useEffect(() => {
-		if (!autosaveKey || !autosaveRestoredRef.current) return;
+		const code = referralCode.trim();
+		const eventId = eventIdRef.current;
+		if (loading || !code || !eventId) return;
 
-		const dataToSave = {
-			formData,
-			referralCode,
-			agreeToTerms,
-			savedAt: Date.now()
+		let cancelled = false;
+		const timer = setTimeout(async () => {
+			try {
+				const result = await referralsAPI.validate({ code, eventId });
+				if (cancelled) return;
+				const data = result.success ? result.data : null;
+				setReferral({ code, isValid: !!data?.isValid, referrerName: data?.isValid ? (data.referrerName ?? null) : null });
+			} catch {
+				if (!cancelled) setReferral(null);
+			}
+		}, 400);
+
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
 		};
-
-		localStorage.setItem(autosaveKey, JSON.stringify(dataToSave));
-	}, [autosaveKey, formData, referralCode, agreeToTerms]);
+	}, [referralCode, loading]);
 
 	useEffect(() => {
-		if (!autosaveKey || loading || autosaveRestoredRef.current) return;
+		if (!autosaveKey || error || !autosaveRestoredRef.current) return;
+
+		// Consent is deliberately not saved: it has to be given again on every visit.
+		localStorage.setItem(autosaveKey, JSON.stringify({ formData, referralCode, savedAt: Date.now() }));
+	}, [autosaveKey, error, formData, referralCode]);
+
+	useEffect(() => {
+		if (!autosaveKey || loading || error || autosaveRestoredRef.current) return;
 
 		try {
 			const savedData = localStorage.getItem(autosaveKey);
@@ -562,24 +695,14 @@ export default function FormPage() {
 
 				const twentyFourHours = 24 * 60 * 60 * 1000;
 				if (parsed.savedAt && Date.now() - parsed.savedAt < twentyFourHours) {
-					let hasRestoredData = false;
-					const restoredValues: Partial<AutosavedFormState> = {};
+					// Only answers to fields that still exist can be restored.
+					const fieldIds = new Set(formFields.map(field => field.id));
+					const savedAnswers: FormDataType = parsed.formData && typeof parsed.formData === "object" ? parsed.formData : {};
+					const restoredAnswers = Object.fromEntries(Object.entries(savedAnswers).filter(([fieldId]) => fieldIds.has(fieldId)));
+					const restoredReferralCode = typeof parsed.referralCode === "string" ? parsed.referralCode : "";
 
-					if (parsed.formData && Object.keys(parsed.formData).length > 0) {
-						restoredValues.formData = parsed.formData;
-						hasRestoredData = true;
-					}
-					if (parsed.referralCode) {
-						restoredValues.referralCode = parsed.referralCode;
-						hasRestoredData = true;
-					}
-					if (parsed.agreeToTerms !== undefined) {
-						restoredValues.agreeToTerms = parsed.agreeToTerms;
-						hasRestoredData = true;
-					}
-
-					if (hasRestoredData) {
-						dispatchAutosavedForm({ type: "restore", values: restoredValues });
+					if (Object.keys(restoredAnswers).length > 0 || restoredReferralCode) {
+						dispatchAutosavedForm({ type: "restore", formData: restoredAnswers, referralCode: restoredReferralCode });
 						showAlert(t.autosaveRestored, "info");
 					}
 				} else {
@@ -591,40 +714,30 @@ export default function FormPage() {
 		}
 
 		autosaveRestoredRef.current = true;
-	}, [autosaveKey, loading, showAlert, t.autosaveRestored]);
-
-	const visibleFields = useMemo(() => {
-		if (!ticketId) return formFields;
-
-		return formFields.filter(field =>
-			shouldDisplayField(
-				field,
-				{
-					selectedTicketId: ticketId,
-					formData,
-					currentTime: new Date()
-				},
-				formFields
-			)
-		);
-	}, [formFields, ticketId, formData]);
+	}, [autosaveKey, loading, error, formFields, showAlert, t.autosaveRestored]);
 
 	return (
 		<RegistrationFormView
 			t={t}
 			loading={loading}
 			error={error}
-			pathname={pathname}
+			eventPath={eventPath}
 			verifyHref={verifyHref}
+			ticketName={ticketName ? getLocalizedText(ticketName, locale) : ""}
 			visibleFields={visibleFields}
 			formData={formData}
+			fieldErrors={fieldErrors}
+			termsError={termsError}
 			referralCode={referralCode}
+			referrerName={referral?.code === referralCode.trim() ? referral.referrerName : null}
+			referralInvalid={referral?.code === referralCode.trim() && !referral.isValid}
 			agreeToTerms={agreeToTerms}
 			isSubmitting={isSubmitting}
-			onBack={() => router.push(pathname.replace("/form", ""))}
+			holdRemaining={holdRemainingMs === null ? null : formatHoldRemaining(holdRemainingMs)}
+			onBack={() => void handleBack()}
 			onSubmit={handleSubmit}
-			onTextChange={handleTextChange}
-			onCheckboxChange={handleCheckboxChange}
+			onValueChange={handleValueChange}
+			onAgreeChange={handleAgreeChange}
 			dispatchAutosavedForm={dispatchAutosavedForm}
 		/>
 	);

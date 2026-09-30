@@ -16,6 +16,7 @@ export const RegistrationSchema = z.object({
 	email: z.email(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
+	holdExpiresAt: z.coerce.date().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
@@ -59,6 +60,7 @@ export const UserRegistrationListItemSchema = z.object({
 	email: z.string(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
+	holdExpiresAt: z.coerce.date().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
@@ -97,6 +99,24 @@ export const RegistrationCreateRequestSchema = z.object({
 	formData: z.record(z.string(), z.unknown())
 });
 export type RegistrationCreateRequest = z.infer<typeof RegistrationCreateRequestSchema>;
+
+/**
+ * Seat hold: reserves a ticket for a user while they fill out the registration form
+ */
+export const RegistrationHoldRequestSchema = z.object({
+	eventId: z.string(),
+	ticketId: z.string(),
+	invitationCode: z.string().optional()
+});
+export type RegistrationHoldRequest = z.infer<typeof RegistrationHoldRequestSchema>;
+
+export const RegistrationHoldSchema = z.object({
+	id: z.string(),
+	eventId: z.string(),
+	ticketId: z.string(),
+	holdExpiresAt: z.coerce.date()
+});
+export type RegistrationHold = z.infer<typeof RegistrationHoldSchema>;
 
 /**
  * Registration update request

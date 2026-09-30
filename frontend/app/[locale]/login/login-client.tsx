@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { authAPI } from "@/lib/api/endpoints";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { KeyRound } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { Suspense, useEffect, useReducer, useState } from "react";
+import React, { Suspense, useEffect, useReducer, useRef, useState } from "react";
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
@@ -54,6 +54,8 @@ function safeReturnPath(returnUrl: string | null, locale: string): string {
 	return `/${locale}/`;
 }
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 function validateEmail(email: string): boolean {
 	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 	return emailRegex.test(email);
@@ -91,7 +93,7 @@ function loginReducer(state: LoginState, action: LoginAction): LoginState {
 		case "sendFailed":
 			return { ...state, isLoading: false, turnstileToken: null };
 		case "resetEmail":
-			return { ...state, viewState: "login", email: "", turnstileToken: null };
+			return { ...state, viewState: "login", turnstileToken: null };
 		default:
 			return state;
 	}
@@ -111,6 +113,8 @@ function LoginContent() {
 		turnstileToken: null
 	});
 	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+	const [resendCooldown, setResendCooldown] = useState(0);
+	const resendTurnstileRef = useRef<TurnstileInstance>(null);
 
 	const t = getTranslations(locale, {
 		login: {
@@ -203,10 +207,30 @@ function LoginContent() {
 			"zh-Hans": "此浏览器不支持通行密钥",
 			en: "This browser doesn't support passkeys"
 		},
-		reenterEmail: {
-			"zh-Hant": "重新輸入電子郵件",
-			"zh-Hans": "重新输入电子邮件",
-			en: "Re-enter Email"
+		resend: {
+			"zh-Hant": "重新寄送 Magic Link",
+			"zh-Hans": "重新发送 Magic Link",
+			en: "Resend Magic Link"
+		},
+		resendIn: {
+			"zh-Hant": "秒後可重新寄送",
+			"zh-Hans": "秒后可重新发送",
+			en: "s until you can resend"
+		},
+		resent: {
+			"zh-Hant": "已重新寄送 Magic Link",
+			"zh-Hans": "已重新发送 Magic Link",
+			en: "Magic Link resent"
+		},
+		completeVerification: {
+			"zh-Hant": "請完成驗證",
+			"zh-Hans": "请完成验证",
+			en: "Please complete the verification"
+		},
+		editEmail: {
+			"zh-Hant": "修改電子郵件",
+			"zh-Hans": "修改电子邮件",
+			en: "Edit Email"
 		}
 	});
 
@@ -233,7 +257,13 @@ function LoginContent() {
 		}
 	}, [errorParam, showAlert, t.error, t.invalidToken, t.serverError, t.tokenExpired, t.verificationFailed]);
 
-	const login = async () => {
+	useEffect(() => {
+		if (resendCooldown <= 0) return;
+		const timer = setTimeout(() => setResendCooldown(seconds => seconds - 1), 1000);
+		return () => clearTimeout(timer);
+	}, [resendCooldown]);
+
+	const login = async (isResend = false) => {
 		if (!email || isLoading) return;
 
 		if (!validateEmail(email)) {
@@ -242,7 +272,7 @@ function LoginContent() {
 		}
 
 		if (!turnstileToken) {
-			showAlert("請完成驗證", "error");
+			showAlert(t.completeVerification, "error");
 			return;
 		}
 
@@ -250,6 +280,12 @@ function LoginContent() {
 		try {
 			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
 			dispatchLogin({ type: "sendSucceeded" });
+			setResendCooldown(RESEND_COOLDOWN_SECONDS);
+			if (isResend) {
+				showAlert(t.resent, "success");
+				// Turnstile tokens are single-use; fetch a fresh one for the next resend
+				resendTurnstileRef.current?.reset();
+			}
 		} catch (error) {
 			console.error("Login error:", error);
 
@@ -269,6 +305,7 @@ function LoginContent() {
 
 			showAlert(errorMessage, "error");
 			dispatchLogin({ type: "sendFailed" });
+			if (isResend) resendTurnstileRef.current?.reset();
 		}
 	};
 
@@ -307,7 +344,7 @@ function LoginContent() {
 					<label htmlFor="email" className="block mb-2 font-bold">
 						Email
 					</label>
-					<Input type="email" name="email" id="email" onChange={e => dispatchLogin({ type: "emailChanged", email: e.target.value })} className="max-w-xs" />
+					<Input type="email" name="email" id="email" value={email} onChange={e => dispatchLogin({ type: "emailChanged", email: e.target.value })} className="max-w-xs" />
 					<div className="flex justify-center my-4">
 						<Turnstile
 							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
@@ -321,7 +358,7 @@ function LoginContent() {
 							}}
 						/>
 					</div>
-					<SendButton onClick={login} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
+					<SendButton onClick={() => login()} disabled={isLoading || !turnstileToken} isLoading={isLoading}>
 						{t.continue}
 					</SendButton>
 					<div className="flex items-center gap-3 w-full max-w-xs text-sm text-gray-500">
@@ -348,9 +385,29 @@ function LoginContent() {
 							<span className="text-primary">{email}</span>
 						</h2>
 						<p className="leading-relaxed mb-6">{t.message}</p>
-						<Button onClick={() => dispatchLogin({ type: "resetEmail" })} variant="outline" size="lg">
-							{t.reenterEmail}
-						</Button>
+						<div className="flex justify-center mb-4">
+							<Turnstile
+								ref={resendTurnstileRef}
+								siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
+								onSuccess={token => dispatchLogin({ type: "turnstileChanged", token })}
+								onError={() => dispatchLogin({ type: "turnstileChanged", token: null })}
+								onExpire={() => dispatchLogin({ type: "turnstileChanged", token: null })}
+								options={{
+									action: "magic-link",
+									theme: "auto",
+									size: "normal"
+								}}
+							/>
+						</div>
+						<div className="flex flex-col items-center gap-3">
+							<Button onClick={() => login(true)} disabled={isLoading || resendCooldown > 0 || !turnstileToken} size="lg">
+								{isLoading && <Spinner size="sm" />}
+								{resendCooldown > 0 ? `${resendCooldown}${t.resendIn}` : t.resend}
+							</Button>
+							<Button onClick={() => dispatchLogin({ type: "resetEmail" })} variant="outline" size="lg">
+								{t.editEmail}
+							</Button>
+						</div>
 					</div>
 				</div>
 			)}

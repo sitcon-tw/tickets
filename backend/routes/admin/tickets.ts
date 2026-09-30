@@ -20,7 +20,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 			schema: ticketSchemas.createTicket
 		},
 		async (request, reply) => {
-			const { eventId, name, description, price, quantity, saleStart, saleEnd, requireInviteCode, hidden, showRemaining } = request.body;
+			const { eventId, name, description, plainDescription, price, quantity, saleStart, saleEnd, requireInviteCode, requireSmsVerification, hidden, showRemaining } = request.body;
 
 			const span = tracer.startSpan("route.admin.tickets.create", {
 				attributes: {
@@ -47,11 +47,11 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (saleStart && saleEnd) {
-					const saleStartDate = new Date(saleStart);
-					const saleEndDate = new Date(saleEnd);
+				if (saleStart || saleEnd) {
+					const saleStartDate = saleStart ? new Date(saleStart) : null;
+					const saleEndDate = saleEnd ? new Date(saleEnd) : null;
 
-					if (isNaN(saleStartDate.getTime()) || isNaN(saleEndDate.getTime())) {
+					if ((saleStartDate && isNaN(saleStartDate.getTime())) || (saleEndDate && isNaN(saleEndDate.getTime()))) {
 						span.addEvent("ticket.validation.invalid_date_format");
 						span.setStatus({ code: SpanStatusCode.OK });
 
@@ -59,7 +59,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					if (saleStartDate >= saleEndDate) {
+					if (saleStartDate && saleEndDate && saleStartDate >= saleEndDate) {
 						span.addEvent("ticket.validation.invalid_date_range");
 						span.setStatus({ code: SpanStatusCode.OK });
 
@@ -67,7 +67,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					if (saleEndDate > event.startDate) {
+					if (saleEndDate && saleEndDate > event.startDate) {
 						span.addEvent("ticket.validation.sale_end_after_event_start");
 						span.setStatus({ code: SpanStatusCode.OK });
 
@@ -94,6 +94,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						order: request.body.order ?? nextOrder,
 						name,
 						description,
+						plainDescription,
 						price,
 						quantity,
 						soldCount: 0,
@@ -101,6 +102,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						saleEnd: saleEnd ? new Date(saleEnd) : null,
 						isActive: true,
 						requireInviteCode,
+						requireSmsVerification: requireSmsVerification ?? false,
 						hidden: hidden ?? false,
 						showRemaining: showRemaining ?? true
 					}
@@ -269,9 +271,10 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				if (updateData.saleStart || updateData.saleEnd) {
-					const saleStart = updateData.saleStart ? new Date(updateData.saleStart) : existingTicket.saleStart;
-					const saleEnd = updateData.saleEnd ? new Date(updateData.saleEnd) : existingTicket.saleEnd;
+				if (updateData.saleStart !== undefined || updateData.saleEnd !== undefined) {
+					// null clears a boundary, undefined keeps the stored value
+					const saleStart = updateData.saleStart === undefined ? existingTicket.saleStart : updateData.saleStart ? new Date(updateData.saleStart) : null;
+					const saleEnd = updateData.saleEnd === undefined ? existingTicket.saleEnd : updateData.saleEnd ? new Date(updateData.saleEnd) : null;
 
 					if (updateData.saleStart && isNaN(new Date(updateData.saleStart).getTime())) {
 						span.addEvent("ticket.validation.invalid_sale_start_format");
@@ -297,7 +300,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						return reply.code(statusCode).send(response);
 					}
 
-					if (saleEnd && saleEnd > existingTicket.event.startDate) {
+					// Only judge the end date against the event when it is being changed, so unrelated edits are not blocked by legacy data
+					if (updateData.saleEnd && saleEnd && saleEnd > existingTicket.event.startDate) {
 						span.addEvent("ticket.validation.sale_end_after_event_start");
 						span.setStatus({ code: SpanStatusCode.OK });
 
@@ -308,8 +312,8 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 
 				const updatePayload: Prisma.TicketUpdateInput = {
 					...updateData,
-					...(updateData.saleStart && { saleStart: new Date(updateData.saleStart) }),
-					...(updateData.saleEnd && { saleEnd: new Date(updateData.saleEnd) }),
+					...(updateData.saleStart !== undefined && { saleStart: updateData.saleStart ? new Date(updateData.saleStart) : null }),
+					...(updateData.saleEnd !== undefined && { saleEnd: updateData.saleEnd ? new Date(updateData.saleEnd) : null }),
 					updatedAt: new Date()
 				};
 

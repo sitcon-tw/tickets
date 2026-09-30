@@ -55,6 +55,10 @@
 			"types": "./dist/sms.d.ts",
 			"import": "./dist/sms.js"
 		},
+		"./sponsor": {
+			"types": "./dist/sponsor.d.ts",
+			"import": "./dist/sponsor.js"
+		},
 		"./turnstile": {
 			"types": "./dist/turnstile.d.ts",
 			"import": "./dist/turnstile.js"
@@ -80,10 +84,14 @@
 	"types": "./dist/index.d.ts",
 	"scripts": {
 		"build": "tsc",
-		"dev": "tsc --watch"
+		"dev": "tsc --watch",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"typescript": "^7.0.2",
 		"zod": "^4.6.5"
+	},
+	"devDependencies": {
+		"vitest": "^5.0.2"
 	}
 }

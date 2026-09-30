@@ -1,49 +1,34 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeaderProps } from "@/lib/types/data-table";
-import { RowData } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
+import { RowData } from "@tanstack/react-table";
 
+/** Sortable column header. Click cycles ascending → descending → unsorted. */
 export function DataTableColumnHeader<TData extends RowData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
 	if (!column.getCanSort()) {
 		return <div className={cn(className)}>{title}</div>;
 	}
 
+	const sorted = column.getIsSorted();
+
+	function cycleSort() {
+		if (sorted === false) column.toggleSorting(false);
+		else if (sorted === "asc") column.toggleSorting(true);
+		else column.clearSorting();
+	}
+
 	return (
-		<div className={cn("flex items-center space-x-2", className)}>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="sm" className="-ml-3 h-8 data-[state=open]:bg-accent">
-						<span>{title}</span>
-						{column.getIsSorted() === "desc" ? (
-							<ArrowDown className="ml-2 h-4 w-4" />
-						) : column.getIsSorted() === "asc" ? (
-							<ArrowUp className="ml-2 h-4 w-4" />
-						) : (
-							<ChevronsUpDown className="ml-2 h-4 w-4" />
-						)}
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start">
-					<DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-						<ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-						Asc
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-						<ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-						Desc
-					</DropdownMenuItem>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-						<EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-						Hide
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</div>
+		<button
+			type="button"
+			onClick={cycleSort}
+			aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"}
+			className={cn("-ml-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2 font-medium hover:bg-accent hover:text-accent-foreground", className)}
+		>
+			<span>{title}</span>
+			{sorted === "desc" ? <ArrowDown className="size-3.5" /> : sorted === "asc" ? <ArrowUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5 opacity-40" />}
+		</button>
 	);
 }

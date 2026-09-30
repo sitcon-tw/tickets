@@ -48,6 +48,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 								canManageEmailCampaigns: false,
 								canManageReferrals: false,
 								canManageSmsLogs: false,
+								canManageSettings: false,
 								managedEventIds: []
 							}
 						})
@@ -85,6 +86,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 					canManageEmailCampaigns: role === "admin",
 					canManageReferrals: role === "admin",
 					canManageSmsLogs: role === "admin",
+					canManageSettings: role === "admin",
 					managedEventIds: role === "eventAdmin" ? permissions : []
 				};
 

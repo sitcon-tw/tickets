@@ -3,10 +3,12 @@ import {
 	PublicEventListItemSchema,
 	PublicReferralRankingDataSchema,
 	RegistrationStatsSchema,
+	SiteSettingsSchema,
 	UserRegistrationListItemSchema,
 	type PublicEventListItem,
 	type PublicReferralRankingData,
 	type RegistrationStats,
+	type SiteSettings,
 	type UserRegistrationListItem
 } from "@sitcontix/types";
 import { cookies } from "next/headers";
@@ -41,6 +43,11 @@ async function serverGet<T>(endpoint: string, schema: z.ZodType<T>, params?: Rec
 
 export async function getServerPublicEvents(): Promise<PublicEventListItem[] | null> {
 	const response = await serverGet("/api/events", ApiResponseSchema(z.array(PublicEventListItemSchema)));
+	return response?.success ? response.data : null;
+}
+
+export async function getServerSiteSettings(): Promise<SiteSettings | null> {
+	const response = await serverGet("/api/settings", ApiResponseSchema(SiteSettingsSchema));
 	return response?.success ? response.data : null;
 }
 

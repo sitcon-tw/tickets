@@ -1,9 +1,10 @@
 import MarkdownContent from "@/components/MarkdownContent";
 import { getTranslations } from "@/i18n/helpers";
 import { useLocale } from "next-intl";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { Input } from "../ui/input";
+import FieldError from "./FieldError";
 
 export type RadioOption = string | { value: string; label: string };
 
@@ -13,12 +14,12 @@ type RadioProps = {
 	options: RadioOption[];
 	required?: boolean;
 	value?: string;
-	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	onValueChange?: (value: string) => void;
 	enableOther?: boolean;
-	otherLabel?: string;
 	otherPlaceholder?: string;
 	description?: string;
+	error?: string;
+	disabled?: boolean;
 };
 
 const StyledWrapper = styled.fieldset`
@@ -43,9 +44,11 @@ const StyledWrapper = styled.fieldset`
 	}
 
 	.radio-button {
+		position: relative;
 		display: flex;
 		align-items: center;
-		margin-bottom: 10px;
+		min-height: 2rem;
+		padding: 0.125rem 0;
 		cursor: pointer;
 	}
 
@@ -94,9 +97,13 @@ const StyledWrapper = styled.fieldset`
 		transform: translate(-50%, -50%) scale(1);
 	}
 
+	.radio-button input[type="radio"]:focus-visible + .radio-circle {
+		outline: 2px solid rgb(59 130 246);
+		outline-offset: 2px;
+	}
+
 	.radio-label {
 		font-size: 16px;
-		font-weight: bold;
 		color: rgb(17 24 39);
 	}
 
@@ -114,13 +121,16 @@ const StyledWrapper = styled.fieldset`
 
 	.other-input-wrapper {
 		margin-left: 30px;
-		margin-top: 8px;
+		margin-bottom: 8px;
 	}
 `;
 
-export default function Radio({ label, name, options, required = true, value, onChange, onValueChange, enableOther = false, otherPlaceholder = "", description }: RadioProps) {
-	const OTHER_VALUE = "__other__";
+const OTHER_VALUE = "__other__";
+
+export default function Radio({ label, name, options, required = true, value = "", onValueChange, enableOther = false, otherPlaceholder = "", description, error, disabled }: RadioProps) {
 	const locale = useLocale();
+	const errorId = `${name}-error`;
+	const otherInputRef = useRef<HTMLInputElement>(null);
 
 	const t = getTranslations(locale, {
 		other: {
@@ -130,81 +140,52 @@ export default function Radio({ label, name, options, required = true, value, on
 		}
 	});
 
-	const defaultOtherLabel = t.other;
-
 	const optionValues = options.map(opt => (typeof opt === "object" && opt !== null && "value" in opt ? opt.value : opt));
+	const valueIsPredefined = value !== "" && optionValues.includes(value);
 
-	const valueIsAPredefinedOption = value !== undefined && value !== "" && optionValues.includes(value);
-	const [otherText, setOtherText] = useState(valueIsAPredefinedOption ? "" : value || "");
-	const isOtherRadioSelected = !valueIsAPredefinedOption && enableOther && value !== undefined && value !== "";
-	const displayedOtherText = isOtherRadioSelected ? value || otherText : otherText;
+	// "Other" must stay selected while its text is still empty, so the selection cannot be derived from the value alone.
+	const [otherActive, setOtherActive] = useState(false);
+	const [lastOtherText, setLastOtherText] = useState(!valueIsPredefined ? value : "");
+	const otherSelected = enableOther && (otherActive || (value !== "" && !valueIsPredefined));
+	const otherText = otherSelected ? value : lastOtherText;
 
-	const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
-		const selectedValue = e.target.value;
+	useEffect(() => {
+		if (otherActive) otherInputRef.current?.focus();
+	}, [otherActive]);
 
-		if (selectedValue === OTHER_VALUE) {
-			const newValue = displayedOtherText || "";
-			const syntheticEvent = {
-				...e,
-				target: {
-					name: e.target.name,
-					value: newValue
-				}
-			} as ChangeEvent<HTMLInputElement>;
-
-			if (onChange) {
-				onChange(syntheticEvent);
-			}
-			if (onValueChange) {
-				onValueChange(newValue);
-			}
-		} else {
-			if (onChange) {
-				onChange(e);
-			}
-			if (onValueChange) {
-				onValueChange(selectedValue);
-			}
-		}
+	const selectOption = (optionValue: string) => {
+		setOtherActive(false);
+		onValueChange?.(optionValue);
 	};
 
-	const handleOtherTextChange = (e: ChangeEvent<HTMLInputElement>) => {
-		const newText = e.target.value;
-		setOtherText(newText);
+	const selectOther = () => {
+		setOtherActive(true);
+		onValueChange?.(lastOtherText);
+	};
 
-		const syntheticEvent = {
-			target: {
-				name: name,
-				value: newText
-			}
-		} as ChangeEvent<HTMLInputElement>;
-
-		if (onChange) {
-			onChange(syntheticEvent);
-		}
-		if (onValueChange) {
-			onValueChange(newText);
-		}
+	const changeOtherText = (e: ChangeEvent<HTMLInputElement>) => {
+		setLastOtherText(e.target.value);
+		onValueChange?.(e.target.value);
 	};
 
 	return (
-		<StyledWrapper>
+		<StyledWrapper disabled={disabled} aria-describedby={error ? errorId : undefined}>
 			<legend className="legend">{label}</legend>
 			{description && (
 				<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
 					<MarkdownContent content={description} className="text-sm" />
 				</div>
 			)}
-			<div className="radio-buttons">
+			<div className="radio-buttons" role="radiogroup" aria-required={required || undefined} aria-invalid={error ? true : undefined}>
 				{options.map((option, i) => {
 					const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option;
 					const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option;
 					const optionId = `${name}-${optionValue}`;
-					const isChecked = value === optionValue;
+					const isChecked = !otherSelected && value === optionValue;
 
 					return (
 						<label key={optionId} className="radio-button">
-							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={handleRadioChange} />
+							<input type="radio" id={optionId} name={name} value={optionValue} required={required && i === 0} checked={isChecked} onChange={() => selectOption(optionValue)} />
 							<div className="radio-circle" />
 							<span className="radio-label">{optionLabel}</span>
 						</label>
@@ -213,14 +194,29 @@ export default function Radio({ label, name, options, required = true, value, on
 				{enableOther && (
 					<>
 						<label className="radio-button">
-							<input type="radio" id={`${name}-other`} name={name} value={OTHER_VALUE} required={required && options.length === 0} checked={isOtherRadioSelected} onChange={handleRadioChange} />
+							<input type="radio" id={`${name}-other`} name={name} value={OTHER_VALUE} required={required && options.length === 0} checked={otherSelected} onChange={selectOther} />
 							<div className="radio-circle" />
-							<span className="radio-label">{defaultOtherLabel}</span>
+							<span className="radio-label">{t.other}</span>
 						</label>
-						{isOtherRadioSelected && <Input type="text" className="max-w-64" placeholder={otherPlaceholder} value={displayedOtherText} onChange={handleOtherTextChange} required={required} />}
+						{otherSelected && (
+							<div className="other-input-wrapper">
+								<Input
+									ref={otherInputRef}
+									type="text"
+									aria-label={`${label} (${t.other})`}
+									placeholder={otherPlaceholder}
+									value={otherText}
+									onChange={changeOtherText}
+									required={required}
+									aria-invalid={error ? true : undefined}
+									disabled={disabled}
+								/>
+							</div>
+						)}
 					</>
 				)}
 			</div>
+			<FieldError id={errorId} message={error} />
 		</StyledWrapper>
 	);
 }

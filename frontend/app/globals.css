@@ -21,7 +21,7 @@
 	--destructive: hsl(0 84.2% 60.2%);
 	--destructive-foreground: hsl(210 40% 98%);
 	--border: hsl(214.3 31.8% 91.4%);
-	--input: hsl(214.3 31.8% 91.4%);
+	--input: hsl(214 20% 80%);
 	--ring: hsl(221.2 83.2% 53.3%);
 	--radius: 0.5rem;
 }
@@ -44,7 +44,7 @@
 	--destructive: hsl(0 62.8% 30.6%);
 	--destructive-foreground: hsl(210 40% 98%);
 	--border: hsl(217.2 32.6% 17.5%);
-	--input: hsl(217.2 32.6% 17.5%);
+	--input: hsl(217 20% 30%);
 	--ring: hsl(224.3 76.3% 48%);
 }
 
@@ -122,8 +122,62 @@
 @layer components {
 	/* Ticket card */
 	.ticket {
-		@apply bg-white dark:bg-gray-800 border-2 border-gray-800 dark:border-gray-500 rounded-lg p-6 cursor-pointer transition-all duration-150;
-		@apply hover:border-gray-400 dark:hover:border-gray-200;
+		--ticket-stub: 6.5rem;
+		--ticket-notch: 0.5rem;
+		--ticket-border: var(--color-gray-800);
+		@apply relative bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-all duration-150;
+		box-shadow: inset 0 0 0 2px var(--ticket-border);
+		/* Half-circle notches punched out of the top and bottom edge at the perforation */
+		mask:
+			radial-gradient(circle var(--ticket-notch) at calc(100% - var(--ticket-stub)) 0, #0000 97%, #000),
+			radial-gradient(circle var(--ticket-notch) at calc(100% - var(--ticket-stub)) 100%, #0000 97%, #000);
+		-webkit-mask-composite: source-in;
+		mask-composite: intersect;
+	}
+
+	.ticket:hover {
+		--ticket-border: var(--color-gray-400);
+	}
+
+	.dark .ticket {
+		--ticket-border: var(--color-gray-500);
+	}
+
+	.dark .ticket:hover {
+		--ticket-border: var(--color-gray-200);
+	}
+
+	/* Non-interactive ticket (detail views) */
+	.ticket-static {
+		@apply cursor-default;
+	}
+
+	.ticket-static:hover {
+		--ticket-border: var(--color-gray-800);
+	}
+
+	.dark .ticket-static:hover {
+		--ticket-border: var(--color-gray-500);
+	}
+
+	.ticket-body {
+		@apply flex h-full;
+	}
+
+	.ticket-main {
+		@apply min-w-0 flex-1 space-y-2 p-5;
+	}
+
+	.ticket-stub {
+		@apply flex shrink-0 flex-col items-center justify-center gap-1 p-3 text-center;
+		@apply bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-300;
+		width: var(--ticket-stub);
+		border-left: 2px dashed var(--ticket-border);
+	}
+
+	.ticket-barcode {
+		@apply mt-2 h-6 w-full opacity-40;
+		background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px, currentColor 4px 5px, transparent 5px 8px);
 	}
 
 	/* Universal Markdown/Text Content Typography */
@@ -306,16 +360,15 @@
 		@apply fixed pointer-events-none;
 		z-index: 9999;
 		display: none;
-		transition:
-			all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			opacity 0.2s ease-out;
+		/* Driven by the Web Animations API; a CSS transition here would fight it */
+		transition: none;
+		will-change: top, left, width, height, transform;
 	}
 
 	.ticketConfirm {
 		@apply mb-6;
-		opacity: 0;
 		visibility: hidden;
-		transition: opacity 0.2s ease-out;
+		transition: none;
 	}
 }
 

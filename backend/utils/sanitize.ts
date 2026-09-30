@@ -41,6 +41,11 @@ export const sanitizeText = (dirty: unknown): string => {
  * @returns Sanitized object
  */
 export const sanitizeObject = <T>(obj: T, allowHtml: boolean = false): T => {
+	// Strings inside arrays reach this point as bare values, so they must be sanitized here too.
+	if (typeof obj === "string") {
+		return (allowHtml ? sanitizeHtml(obj) : sanitizeText(obj)) as T;
+	}
+
 	if (typeof obj !== "object" || obj === null) {
 		return obj;
 	}

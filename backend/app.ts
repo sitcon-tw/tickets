@@ -22,6 +22,7 @@ import { MAGIC_LINK_EXPIRY_SECONDS } from "./lib/magic-link-quota";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
+import { startHoldSweeper } from "./utils/registration-hold";
 
 const fastifyLogger = logger.child({ component: "fastify" });
 
@@ -86,7 +87,9 @@ await fastify.register(fastifySwagger, {
 			{ name: "admin/registrations", description: "管理後台報名相關操作 requires: Admin Role" },
 			{ name: "admin/invitation-codes", description: "管理後台邀請碼相關操作 requires: Admin Role" },
 			{ name: "admin/referrals", description: "管理後台標籤相關操作 requires: Admin Role" },
-			{ name: "admin/email-campaigns", description: "管理後台郵件活動相關操作 requires: Admin Role" }
+			{ name: "admin/email-campaigns", description: "管理後台郵件活動相關操作 requires: Admin Role" },
+			{ name: "sponsors", description: "贊助商 Logo 與曝光追蹤" },
+			{ name: "admin/sponsors", description: "管理後台贊助商相關操作 requires: Admin Role" }
 		]
 	},
 	transform: jsonSchemaTransform
@@ -522,6 +525,8 @@ fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest,
 
 // 剩下的 routes
 await fastify.register(routes);
+
+startHoldSweeper();
 
 const port = Number(process.env.PORT) || 3000;
 

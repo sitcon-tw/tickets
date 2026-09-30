@@ -11,6 +11,12 @@ import { conflictResponse, notFoundResponse, successResponse, validationErrorRes
 import { sanitizeObject } from "#utils/sanitize";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
+const isSlugConflict = (error: unknown) => {
+	const prismaError = error as { code?: string; meta?: { target?: string | string[] } };
+	const target = prismaError?.meta?.target;
+	return prismaError?.code === "P2002" && (Array.isArray(target) ? target.includes("slug") : (target?.includes("slug") ?? false));
+};
+
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event - only admin can create events
 	fastify.withTypeProvider<ZodTypeProvider>().post(
@@ -26,7 +32,8 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				const rawBody = request.body;
 
 				const sanitizedBody = sanitizeObject(rawBody, true);
-				const { name, description, plainDescription, startDate, endDate, editDeadline, locationText, mapLink, ogImage } = sanitizedBody;
+				const { name, description, plainDescription, startDate, endDate, editDeadline, locationText, mapLink, ogImage, hideEvent, useOpass, opassEventId } = sanitizedBody;
+				const slug = sanitizedBody.slug || null;
 
 				const start = new Date(startDate);
 				const end = new Date(endDate);
@@ -54,10 +61,16 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				}
 
+				if (slug && (await prisma.event.findUnique({ where: { slug }, select: { id: true } }))) {
+					const { response, statusCode } = conflictResponse("此網址代稱已被其他活動使用");
+					return reply.code(statusCode).send(response);
+				}
+
 				span.addEvent("event.creating");
 
 				const createdEvent = await prisma.event.create({
 					data: {
+						slug,
 						name,
 						description,
 						plainDescription,
@@ -67,7 +80,10 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 						locationText,
 						mapLink,
 						ogImage,
-						isActive: true
+						isActive: true,
+						...(hideEvent !== undefined && { hideEvent }),
+						...(useOpass !== undefined && { useOpass }),
+						...(opassEventId !== undefined && { opassEventId })
 					}
 				});
 
@@ -90,6 +106,10 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
 			} catch (error) {
+				if (isSlugConflict(error)) {
+					const { response, statusCode } = conflictResponse("此網址代稱已被其他活動使用");
+					return reply.code(statusCode).send(response);
+				}
 				span.recordException(error as Error);
 				span.setStatus({
 					code: SpanStatusCode.ERROR,
@@ -228,8 +248,21 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					}
 				}
 
+				// "" clears the slug; the unique index treats "" as a real value, so store null instead
+				const { slug: rawSlug, ...restUpdateData } = updateData;
+				const slugUpdate = rawSlug === undefined ? undefined : rawSlug || null;
+
+				if (slugUpdate && slugUpdate !== existingEvent.slug) {
+					const slugOwner = await prisma.event.findUnique({ where: { slug: slugUpdate }, select: { id: true } });
+					if (slugOwner && slugOwner.id !== id) {
+						const { response, statusCode } = conflictResponse("此網址代稱已被其他活動使用");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
 				const updatePayload: Prisma.EventUpdateInput = {
-					...updateData,
+					...restUpdateData,
+					...(slugUpdate !== undefined && { slug: slugUpdate }),
 					...(updateData.startDate && { startDate: new Date(updateData.startDate) }),
 					...(updateData.endDate && { endDate: new Date(updateData.endDate) }),
 					...(updateData.editDeadline !== undefined && {
@@ -263,6 +296,10 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(event, "活動更新成功"));
 			} catch (error) {
+				if (isSlugConflict(error)) {
+					const { response, statusCode } = conflictResponse("此網址代稱已被其他活動使用");
+					return reply.code(statusCode).send(response);
+				}
 				span.recordException(error as Error);
 				span.setStatus({
 					code: SpanStatusCode.ERROR,

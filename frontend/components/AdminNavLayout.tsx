@@ -1,186 +1,236 @@
 "use client";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { setSelectedEventId } from "@/lib/hooks/useSelectedEventId";
+import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type { Event, UserCapabilities } from "@sitcontix/types";
-import { Globe, Menu, X } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardList, Globe, Handshake, Home, KeyRound, LogOut, Mail, Menu, Settings, ShieldCheck, Ticket, Users, Webhook, X, type LucideIcon } from "lucide-react";
 
-const activityLinks = [
-	{ href: "/admin/", i18nKey: "statistics", requireCapability: "canViewAnalytics" },
-	{ href: "/admin/events/", i18nKey: "events", requireCapability: null },
-	{ href: "/admin/tickets/", i18nKey: "ticketTypes", requireCapability: null },
-	{ href: "/admin/forms/", i18nKey: "forms", requireCapability: null },
-	{ href: "/admin/invites/", i18nKey: "invitationCodes", requireCapability: null },
-	{ href: "/admin/registrations/", i18nKey: "registrations", requireCapability: null },
-	{ href: "/admin/webhooks/", i18nKey: "webhooks", requireCapability: null },
-	{ href: "/admin/campaigns/", i18nKey: "emailCampaigns", requireCapability: "canManageEmailCampaigns" },
-	{ href: "/admin/users/", i18nKey: "users", requireCapability: "canManageUsers" }
-] as const;
+type NavItem = {
+	href: string;
+	i18nKey: string;
+	icon: LucideIcon;
+	requireCapability?: keyof UserCapabilities;
+};
+
+type NavGroup = {
+	i18nKey: string | null;
+	items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
+	{
+		i18nKey: null,
+		items: [
+			{ href: "/admin", i18nKey: "statistics", icon: BarChart3, requireCapability: "canViewAnalytics" },
+			{ href: "/admin/events", i18nKey: "events", icon: CalendarDays }
+		]
+	},
+	{
+		i18nKey: "groupSetup",
+		items: [
+			{ href: "/admin/tickets", i18nKey: "ticketTypes", icon: Ticket },
+			{ href: "/admin/forms", i18nKey: "forms", icon: ClipboardList },
+			{ href: "/admin/invites", i18nKey: "invitationCodes", icon: KeyRound },
+			{ href: "/admin/sponsors", i18nKey: "sponsors", icon: Handshake },
+			{ href: "/admin/webhooks", i18nKey: "webhooks", icon: Webhook }
+		]
+	},
+	{
+		i18nKey: "groupAttendees",
+		items: [
+			{ href: "/admin/registrations", i18nKey: "registrations", icon: Users },
+			{ href: "/admin/campaigns", i18nKey: "emailCampaigns", icon: Mail, requireCapability: "canManageEmailCampaigns" }
+		]
+	},
+	{
+		i18nKey: "groupSystem",
+		items: [
+			{ href: "/admin/users", i18nKey: "users", icon: ShieldCheck, requireCapability: "canManageUsers" },
+			{ href: "/admin/settings", i18nKey: "settings", icon: Settings, requireCapability: "canManageSettings" }
+		]
+	}
+];
 
 const localeNames: Record<string, string> = {
 	en: "English",
-	"zh-Hant": "\u7e41\u9ad4\u4e2d\u6587",
-	"zh-Hans": "\u7b80\u4f53\u4e2d\u6587"
+	"zh-Hant": "繁體中文",
+	"zh-Hans": "简体中文"
 };
 
-type AdminNavLayoutProps = {
+export type AdminNavLayoutProps = {
 	t: Record<string, string>;
 	locale: string;
+	/** Pathname without the locale prefix, e.g. "/admin/events". */
 	pathname: string;
 	currentEventId: string | null;
 	events: Event[];
 	capabilities: UserCapabilities | null;
-	hoveredLink: string | null;
 	isMobile: boolean;
 	mobileMenuOpen: boolean;
+	isLoggingOut: boolean;
 	onLocaleChange: (locale: string) => void;
-	onNavClick: (href: string) => void;
-	onHoverLink: (href: string | null) => void;
-	onOpenMobileMenu: () => void;
-	onCloseMobileMenu: () => void;
+	onLogout: () => void;
+	onMobileMenuOpenChange: (open: boolean) => void;
 };
 
-function handleEventChange(eventId: string) {
-	setSelectedEventId(eventId);
+function isItemActive(pathname: string, href: string) {
+	const path = pathname.replace(/\/+$/, "") || "/";
+	return href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`);
 }
 
-export function AdminNavLayout({
+function SidebarBody({
 	t,
 	locale,
 	pathname,
 	currentEventId,
 	events,
 	capabilities,
-	hoveredLink,
-	isMobile,
-	mobileMenuOpen,
+	isLoggingOut,
 	onLocaleChange,
-	onNavClick,
-	onHoverLink,
-	onOpenMobileMenu,
-	onCloseMobileMenu
-}: AdminNavLayoutProps) {
-	const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
-	const normalizedPath = pathWithoutLocale.endsWith("/") ? pathWithoutLocale : pathWithoutLocale + "/";
+	onLogout,
+	onNavigate,
+	showThemeToggle
+}: AdminNavLayoutProps & { onNavigate?: () => void; showThemeToggle?: boolean }) {
+	const visibleGroups = navGroups
+		.map(group => ({ ...group, items: group.items.filter(item => !item.requireCapability || capabilities?.[item.requireCapability]) }))
+		.filter(group => group.items.length > 0);
+
+	return (
+		<div className="flex h-full flex-col gap-5 p-4">
+			<div className="space-y-1.5">
+				<span id="admin-event-select-label" className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+					{t.currentEvent}
+				</span>
+				<Select value={currentEventId || ""} onValueChange={setSelectedEventId} disabled={events.length === 0}>
+					<SelectTrigger className="h-10 w-full bg-background" aria-labelledby="admin-event-select-label">
+						<SelectValue placeholder={events.length === 0 ? t.noEvents : t.selectEvent} />
+					</SelectTrigger>
+					<SelectContent>
+						{events.map(event => (
+							<SelectItem key={event.id} value={event.id}>
+								{getLocalizedText(event.name, locale)}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			<nav aria-label={t.systemTitle} className="-mx-1 flex-1 space-y-5 overflow-y-auto px-1">
+				{visibleGroups.map(group => (
+					<div key={group.i18nKey ?? "main"} className="space-y-1">
+						{group.i18nKey && <div className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t[group.i18nKey]}</div>}
+						{group.items.map(({ href, i18nKey, icon: Icon }) => {
+							const active = isItemActive(pathname, href);
+							return (
+								<Link
+									key={href}
+									href={href}
+									onClick={onNavigate}
+									aria-current={active ? "page" : undefined}
+									className={cn(
+										"flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+										active ? "bg-blue-600/10 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+									)}
+								>
+									<Icon className="size-4 shrink-0" />
+									<span className="truncate">{t[i18nKey]}</span>
+								</Link>
+							);
+						})}
+					</div>
+				))}
+			</nav>
+
+			<div className="space-y-2 border-t pt-4">
+				<Link href="/" onClick={onNavigate} className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+					<Home className="size-4 shrink-0" />
+					{t.backHome}
+				</Link>
+				<button
+					type="button"
+					onClick={onLogout}
+					disabled={isLoggingOut}
+					className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+				>
+					<LogOut className="size-4 shrink-0" />
+					{t.logout}
+				</button>
+				<div className="flex items-center gap-2 px-1 pt-1">
+					<Globe aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+					<Select value={locale} onValueChange={onLocaleChange}>
+						<SelectTrigger size="sm" className="flex-1" aria-label={t.language}>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{routing.locales.map(loc => (
+								<SelectItem key={loc} value={loc}>
+									{localeNames[loc]}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					{showThemeToggle && <ThemeToggle />}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export function AdminNavLayout(props: AdminNavLayoutProps) {
+	const { t, locale, pathname, currentEventId, events, isMobile, mobileMenuOpen, onMobileMenuOpenChange } = props;
+
+	const currentItem = navGroups.flatMap(group => group.items).find(item => isItemActive(pathname, item.href));
+	const currentEvent = events.find(event => event.id === currentEventId);
+	const closeMobileMenu = () => onMobileMenuOpenChange(false);
+
+	if (!isMobile) {
+		return (
+			<aside aria-label={t.systemTitle} className="sticky top-[73px] mt-[73px] h-[calc(100dvh-73px)] w-64 shrink-0 self-start overflow-y-auto border-r bg-muted/30">
+				<SidebarBody {...props} />
+			</aside>
+		);
+	}
 
 	return (
 		<>
-			{isMobile && (
-				<div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-950 p-4 z-10 flex items-center gap-2 border-b border-gray-200 dark:border-gray-800">
-					<Button variant="ghost" size="icon" onClick={onOpenMobileMenu} aria-label="Open menu">
-						<Menu size={24} />
-					</Button>
-					<div className="text-xl font-semibold">{t.systemTitle}</div>
-					<div className="w-10" />
+			<div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
+				<Button variant="ghost" size="icon" onClick={() => onMobileMenuOpenChange(true)} aria-label={t.openMenu}>
+					<Menu className="size-5" />
+				</Button>
+				<div className="min-w-0 flex-1 leading-tight">
+					<div className="truncate text-sm font-semibold">{currentItem ? t[currentItem.i18nKey] : t.systemTitle}</div>
+					{currentEvent && <div className="truncate text-xs text-muted-foreground">{getLocalizedText(currentEvent.name, locale)}</div>}
 				</div>
-			)}
+			</div>
 
-			{isMobile && mobileMenuOpen && <button type="button" className="fixed inset-0 bg-black/50 z-40" onClick={onCloseMobileMenu} aria-label="Close menu overlay" />}
-
-			<aside
-				className={`
-					bg-gray-50 dark:bg-gray-950 p-8 h-screen fixed top-0 left-0 z-45
-					border-r border-gray-200 dark:border-gray-800 flex flex-col w-64
-					transition-transform duration-300 ease-in-out sm:pt-24
-					${isMobile ? (mobileMenuOpen ? "translate-x-0" : "-translate-x-full") : "translate-x-0"}
-					md:sticky md:translate-x-0
-				`}
-			>
-				{isMobile && (
-					<Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={onCloseMobileMenu} aria-label="Close menu">
-						<X size={24} />
-					</Button>
-				)}
-
-				<div className="text-2xl mt-2 sm:text-xl text-center font-semibold">{t.systemTitle}</div>
-				<div className="mb-6 mt-4">
-					<Label className="flex flex-col gap-2">
-						<span className="font-semibold text-sm opacity-80">{t.selectEvent}</span>
-						<Select value={currentEventId || ""} onValueChange={handleEventChange}>
-							<SelectTrigger className="w-full">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{events.map(event => (
-									<SelectItem key={event.id} value={event.id}>
-										{getLocalizedText(event.name, locale)}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</Label>
-				</div>
-
-				<nav className="mt-8 flex-1 overflow-y-auto">
-					<ul className="pl-3 m-0">
-						{activityLinks.flatMap(({ href, i18nKey, requireCapability }) => {
-							if (requireCapability && (!capabilities || !capabilities[requireCapability as keyof UserCapabilities])) return [];
-							const normalizedHref = href.endsWith("/") ? href : href + "/";
-							const isActive = normalizedPath === normalizedHref || (normalizedHref !== "/admin/" && normalizedPath.startsWith(normalizedHref));
-
-							return (
-								<div key={href}>
-									<li className="list-none mb-4">
-										<button
-											type="button"
-											onClick={() => onNavClick(href)}
-											onMouseEnter={() => onHoverLink(href)}
-											onMouseLeave={() => onHoverLink(null)}
-											className={`block w-full bg-transparent text-left pl-2 -ml-2 transition-all duration-200 cursor-pointer ${hoveredLink === href ? "underline" : ""} ${isActive ? "font-bold text-blue-600 dark:text-blue-500 border-l-[3px] border-blue-600 dark:border-blue-500" : "font-normal border-l-[3px] border-transparent"}`}
-										>
-											{t[i18nKey]}
-										</button>
-									</li>
-									{i18nKey === "webhooks" && <hr className="border-0 border-t border-gray-300 dark:border-gray-700 my-4" />}
-								</div>
-							);
-						})}
-					</ul>
-				</nav>
-
-				<div className="flex flex-col gap-3 mt-4">
-					<div className="font-semibold">{t.userPlaceholder}</div>
-					<div className="flex gap-2">
-						<button
-							type="button"
-							onClick={() => onNavClick("/logout")}
-							onMouseEnter={() => onHoverLink("logout")}
-							onMouseLeave={() => onHoverLink(null)}
-							className={`bg-transparent p-0 text-inherit cursor-pointer ${hoveredLink === "logout" ? "underline" : ""}`}
-						>
-							{t.logout}
-						</button>
-						<span>・</span>
-						<button
-							type="button"
-							onClick={() => onNavClick("/")}
-							onMouseEnter={() => onHoverLink("home")}
-							onMouseLeave={() => onHoverLink(null)}
-							className={`bg-transparent p-0 text-inherit cursor-pointer ${hoveredLink === "home" ? "underline" : ""}`}
-						>
-							{t.backHome}
-						</button>
-					</div>
-					<div className="flex justify-center items-center gap-2 mb-3">
-						<Globe size={16} className="text-gray-500" />
-						<select
-							value={locale}
-							onChange={e => onLocaleChange(e.target.value)}
-							className="bg-transparent text-gray-700 dark:text-gray-600 border border-gray-400 dark:border-gray-500 rounded text-sm cursor-pointer hover:border-gray-500 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-gray-400 py-1 px-2"
-						>
-							{routing.locales.map(loc => (
-								<option key={loc} value={loc}>
-									{localeNames[loc]}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
-			</aside>
+			<DialogPrimitive.Root open={mobileMenuOpen} onOpenChange={onMobileMenuOpenChange}>
+				<DialogPrimitive.Portal>
+					<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+					<DialogPrimitive.Content
+						aria-describedby={undefined}
+						className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto border-r bg-background shadow-xl outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left"
+					>
+						<VisuallyHidden>
+							<DialogPrimitive.Title>{t.systemTitle}</DialogPrimitive.Title>
+						</VisuallyHidden>
+						<DialogPrimitive.Close asChild>
+							<Button variant="ghost" size="icon" className="absolute right-2 top-2 z-10" aria-label={t.closeMenu}>
+								<X className="size-5" />
+							</Button>
+						</DialogPrimitive.Close>
+						<div className="px-4 pt-4 text-lg font-semibold">{t.systemTitle}</div>
+						<SidebarBody {...props} onNavigate={closeMobileMenu} showThemeToggle />
+					</DialogPrimitive.Content>
+				</DialogPrimitive.Portal>
+			</DialogPrimitive.Root>
 		</>
 	);
 }

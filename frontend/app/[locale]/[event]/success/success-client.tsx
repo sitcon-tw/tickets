@@ -14,7 +14,7 @@ import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useReducer, useState } from "react";
+import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 
 type SuccessRegistrationState = {
 	referralCode: string;
@@ -216,6 +216,7 @@ function SuccessContent() {
 		viewRegLoading: false
 	});
 	const [{ showQRCode, qrValue }, dispatchQrPopup] = useReducer(qrPopupReducer, { showQRCode: false, qrValue: "" });
+	const lanyardAnchorRef = useRef<HTMLDivElement>(null);
 	const [isScreenReallySmall, setIsScreenReallySmall] = useState(() => typeof window !== "undefined" && window.innerWidth < 315);
 
 	const t = getTranslations(locale, {
@@ -445,8 +446,8 @@ function SuccessContent() {
 							</Button>
 						</div>
 					</section>
-					<div className="relative overflow-hidden hidden sm:block h-screen">
-						<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} />
+					<div ref={lanyardAnchorRef} className="hidden sm:block h-screen">
+						<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} anchorRef={lanyardAnchorRef} />
 					</div>
 				</div>
 			)}

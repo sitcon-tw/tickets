@@ -544,6 +544,13 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		}
 	);
 
+	// Spreadsheet apps run cells starting with = + - @ (or tab/CR) as formulas, so user-submitted values could execute in the admin's Excel.
+	// Plain numbers and phone-number-like values (e.g. +886 912-345-678) are left untouched.
+	function neutralizeFormula(value: string) {
+		if (!/^[=+\-@\t\r]/.test(value) || /^[+-]?[\d\s().-]+$/.test(value)) return value;
+		return `'${value}`;
+	}
+
 	function generateCSV(registrations: ExportRegistration[], fieldMap: Map<string, ExportFieldInfo>) {
 		const parsedRegistrations = registrations.map(reg => ({
 			...reg,
@@ -637,7 +644,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		});
 
 		const csvRows = [headers, ...rows];
-		return csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+		return csvRows.map(row => row.map(field => `"${neutralizeFormula(String(field)).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
 
 	// Delete registration and personal data

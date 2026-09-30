@@ -315,7 +315,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 						isActive: true
 					},
 					include: {
-						registration: true
+						registration: { include: { user: { select: { name: true } } } }
 					}
 				});
 
@@ -330,7 +330,8 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 
 				return successResponse({
 					isValid: isValid,
-					referrerId: referral?.registrationId || null
+					referrerId: referral?.registrationId || null,
+					referrerName: isValid ? referral.registration.user.name : null
 				});
 			} catch (error) {
 				componentLogger.error({ error }, "Validate referral code error");

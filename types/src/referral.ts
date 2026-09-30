@@ -43,7 +43,8 @@ export type ReferralValidateRequest = z.infer<typeof ReferralValidateRequestSche
  */
 export const ReferralValidationSchema = z.object({
 	isValid: z.boolean(),
-	referrerId: z.string().nullable()
+	referrerId: z.string().nullable(),
+	referrerName: z.string().nullable().optional()
 });
 export type ReferralValidation = z.infer<typeof ReferralValidationSchema>;
 

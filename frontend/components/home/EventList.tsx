@@ -5,6 +5,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link } from "@/i18n/navigation";
 import { eventsAPI } from "@/lib/api/endpoints";
+import { sortEventsForDisplay } from "@/lib/utils/events";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatEventDateRange } from "@/lib/utils/timezone";
 import { PublicEventListItem } from "@sitcontix/types";
@@ -42,21 +43,8 @@ export default function EventList() {
 				const eventsData = await eventsAPI.getAll({ isActive: true });
 
 				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					const now = new Date();
 					// Note: Backend already filters out hidden events (hideEvent: false)
-					const sortedEvents = eventsData.data.sort((a, b) => {
-						const aIsUpcoming = a.startDate >= now;
-						const bIsUpcoming = b.startDate >= now;
-
-						if (aIsUpcoming && !bIsUpcoming) return -1;
-						if (!aIsUpcoming && bIsUpcoming) return 1;
-
-						if (aIsUpcoming) {
-							return a.startDate.getTime() - b.startDate.getTime();
-						} else {
-							return b.startDate.getTime() - a.startDate.getTime();
-						}
-					});
+					const sortedEvents = sortEventsForDisplay(eventsData.data);
 
 					setEvents(sortedEvents);
 					setLoading(false);

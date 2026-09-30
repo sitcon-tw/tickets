@@ -2,10 +2,10 @@
 
 "use client";
 import { Environment, Lightformer, Text, useGLTF, useTexture } from "@react-three/drei";
-import { Canvas, extend, useFrame, type ObjectMap, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, extend, useFrame, useThree, type ObjectMap, type ThreeEvent } from "@react-three/fiber";
 import { BallCollider, CuboidCollider, Physics, RigidBody, RigidBodyProps, useRopeJoint, useSphericalJoint, type RapierRigidBody } from "@react-three/rapier";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 
 const cardGLB = "/assets/card.glb";
@@ -63,10 +63,37 @@ interface LanyardProps {
 	fov?: number;
 	transparent?: boolean;
 	name?: string;
+	/** Element whose center the lanyard hangs from. The canvas itself covers the whole viewport so the card is never clipped. */
+	anchorRef?: RefObject<HTMLElement | null>;
 }
 
-export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name = "一般票" }: LanyardProps) {
+// Shifts the rendered scene so the world origin appears at the center of the anchor element.
+function AnchorOffset({ anchorRef }: { anchorRef?: RefObject<HTMLElement | null> }) {
+	const camera = useThree(state => state.camera) as THREE.PerspectiveCamera;
+	const size = useThree(state => state.size);
+
+	useEffect(() => {
+		const apply = (): void => {
+			const rect = anchorRef?.current?.getBoundingClientRect();
+			if (!rect) return;
+			const dx = rect.left + rect.width / 2 - size.width / 2;
+			const dy = rect.top + window.scrollY + rect.height / 2 - size.height / 2;
+			camera.setViewOffset(size.width, size.height, -dx, -dy, size.width, size.height);
+		};
+		apply();
+		window.addEventListener("resize", apply);
+		return () => {
+			window.removeEventListener("resize", apply);
+			camera.clearViewOffset();
+		};
+	}, [anchorRef, camera, size.width, size.height]);
+
+	return null;
+}
+
+export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], fov = 20, transparent = true, name = "一般票", anchorRef }: LanyardProps) {
 	const [isMobile, setIsMobile] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth < 768);
+	const [eventSource, setEventSource] = useState<HTMLElement>();
 
 	useEffect(() => {
 		const handleResize = (): void => setIsMobile(window.innerWidth < 768);
@@ -74,9 +101,24 @@ export default function Lanyard({ position = [0, 0, 30], gravity = [0, -40, 0], 
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
+	useEffect(() => {
+		setEventSource(document.body);
+	}, []);
+
+	if (!eventSource) return null;
+
 	return (
-		<div className="relative z-0 w-full h-screen flex justify-center items-center transform scale-100 origin-center">
-			<Canvas camera={{ position, fov }} dpr={[1, isMobile ? 1.5 : 2]} gl={{ alpha: transparent }} onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}>
+		// Full-viewport canvas; pointer events are read from <body> so the page underneath stays clickable.
+		<div className="fixed inset-0 z-0 pointer-events-none">
+			<Canvas
+				camera={{ position, fov }}
+				dpr={[1, isMobile ? 1.5 : 2]}
+				gl={{ alpha: transparent }}
+				eventSource={eventSource}
+				eventPrefix="client"
+				onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
+			>
+				<AnchorOffset anchorRef={anchorRef} />
 				<AmbientLight intensity={Math.PI} />
 				<Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
 					<Band isMobile={isMobile} name={name} />
@@ -125,6 +167,14 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 		[0, 0, 0],
 		[0, 1.45, 0]
 	]);
+
+	useEffect(() => {
+		if (!dragged) return;
+		document.body.style.userSelect = "none";
+		return () => {
+			document.body.style.userSelect = "";
+		};
+	}, [dragged]);
 
 	useEffect(() => {
 		if (hovered) {
