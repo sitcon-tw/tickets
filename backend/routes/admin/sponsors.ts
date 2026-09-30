@@ -3,7 +3,7 @@
  */
 
 import prisma from "#config/database";
-import type { Prisma } from "#prisma/generated/prisma/client";
+import { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaSponsorId } from "#middleware/auth";
 import { adminSponsorSchemas } from "#schemas";
@@ -229,7 +229,7 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 			const data: Prisma.SponsorUpdateInput = {};
 			if (name !== undefined) data.name = name;
 			// An empty description clears it.
-			if (description !== undefined) data.description = hasText(description) ? description : { set: null };
+			if (description !== undefined) data.description = hasText(description) ? description : Prisma.DbNull;
 			if (logoUrl !== undefined) data.logoUrl = logoUrl;
 			if (logoDarkUrl !== undefined) data.logoDarkUrl = logoDarkUrl;
 			if (websiteUrl !== undefined) data.websiteUrl = websiteUrl;
