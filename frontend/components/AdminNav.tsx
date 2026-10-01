@@ -5,7 +5,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
 import { setSelectedEventId, useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
-import type { Event, UserCapabilities } from "@sitcontix/types";
+import type { Event } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import { usePathname as useRawPathname } from "next/navigation";
 import { memo, useCallback, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
@@ -29,7 +29,7 @@ function AdminNav() {
 	const isAdminPage = useRawPathname().includes("/admin");
 
 	const [events, setEvents] = useState<Event[]>([]);
-	const [capabilities, setCapabilities] = useState<UserCapabilities | null>(null);
+	const [grantedPermissions, setGrantedPermissions] = useState<string[] | null>(null);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot);
@@ -41,7 +41,7 @@ function AdminNav() {
 		try {
 			const response = await authAPI.getPermissions();
 			if (response.success && response.data) {
-				setCapabilities(response.data.capabilities);
+				setGrantedPermissions(response.data.grantedPermissions);
 			}
 		} catch (error) {
 			console.error("Failed to load permissions:", error);
@@ -132,6 +132,7 @@ function AdminNav() {
 		webhooks: { "zh-Hant": "Webhook 設定", "zh-Hans": "Webhook 设置", en: "Webhooks" },
 		emailCampaigns: { "zh-Hant": "郵件發送", "zh-Hans": "邮件发送", en: "Email Campaigns" },
 		users: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "Users" },
+		roles: { "zh-Hant": "角色管理", "zh-Hans": "角色管理", en: "Roles" },
 		settings: { "zh-Hant": "網站設定", "zh-Hans": "网站设置", en: "Site Settings" },
 		groupSetup: { "zh-Hant": "活動設定", "zh-Hans": "活动设置", en: "Event setup" },
 		groupAttendees: { "zh-Hant": "參加者", "zh-Hans": "参加者", en: "Attendees" },
@@ -154,7 +155,7 @@ function AdminNav() {
 			pathname={pathname}
 			currentEventId={currentEventId}
 			events={events}
-			capabilities={capabilities}
+			grantedPermissions={grantedPermissions}
 			isMobile={isMobile}
 			mobileMenuOpen={mobileMenuOpen}
 			isLoggingOut={isLoggingOut}

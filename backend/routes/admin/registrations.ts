@@ -5,7 +5,7 @@
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaRegistrationId } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaRegistrationId, requirePermission } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
 import { logger } from "#utils/logger";
@@ -39,7 +39,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("registrations:view"),
 			schema: registrationSchemas.listRegistrations
 		},
 		async (request, reply) => {
@@ -185,7 +185,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/:id",
 		{
-			preHandler: requireEventAccessViaRegistrationId,
+			preHandler: requireEventAccessViaRegistrationId("registrations:view"),
 			schema: { ...registrationSchemas.getRegistration, tags: ["admin/registrations"] }
 		},
 		async (request, reply) => {
@@ -288,7 +288,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id",
 		{
-			preHandler: requireEventAccessViaRegistrationId,
+			preHandler: requireEventAccessViaRegistrationId("registrations:update"),
 			schema: { ...registrationSchemas.updateRegistration, tags: ["admin/registrations"] }
 		},
 		async (request, reply) => {
@@ -435,7 +435,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/export",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("registrations:export"),
 			schema: adminRegistrationSchemas.exportRegistrations
 		},
 		async (request, reply) => {
@@ -651,7 +651,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/registrations/:id",
 		{
-			preHandler: requireEventAccessViaRegistrationId,
+			preHandler: requireEventAccessViaRegistrationId("registrations:delete"),
 			schema: adminRegistrationSchemas.deleteRegistration
 		},
 		async (request, reply) => {
@@ -734,6 +734,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/registrations/google-sheets/service-account",
 		{
+			preHandler: requirePermission("registrations:export"),
 			schema: adminRegistrationSchemas.getGoogleSheetsServiceAccount
 		},
 		async (_request, reply) => {
@@ -748,7 +749,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 	}>(
 		"/registrations/google-sheets/sync",
 		{
-			preHandler: requireEventAccessViaEventBody,
+			preHandler: requireEventAccessViaEventBody("registrations:export"),
 			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
 		async (request, reply) => {

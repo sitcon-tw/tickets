@@ -19,7 +19,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields",
 		{
-			preHandler: requireEventAccessViaEventBody,
+			preHandler: requireEventAccessViaEventBody("forms:create"),
 			schema: eventFormFieldSchemas.createEventFormField
 		},
 		async (request: FastifyRequest<{ Body: EventFormFieldCreateRequest }>, reply: FastifyReply) => {
@@ -112,7 +112,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields/:id",
 		{
-			preHandler: requireEventAccessViaFieldId,
+			preHandler: requireEventAccessViaFieldId("forms:view"),
 			schema: eventFormFieldSchemas.getEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
@@ -170,7 +170,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields/:id",
 		{
-			preHandler: requireEventAccessViaFieldId,
+			preHandler: requireEventAccessViaFieldId("forms:update"),
 			schema: eventFormFieldSchemas.updateEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string }; Body: EventFormFieldUpdateRequest }>, reply: FastifyReply) => {
@@ -269,7 +269,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields/:id",
 		{
-			preHandler: requireEventAccessViaFieldId,
+			preHandler: requireEventAccessViaFieldId("forms:delete"),
 			schema: eventFormFieldSchemas.deleteEventFormField
 		},
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
@@ -326,7 +326,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/event-form-fields",
 		{
-			preHandler: requireEventListAccess,
+			preHandler: requireEventListAccess("forms:view"),
 			schema: eventFormFieldSchemas.listEventFormFields
 		},
 		async (request: FastifyRequest<{ Querystring: { eventId?: string } }>, reply: FastifyReply) => {
@@ -404,7 +404,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 	}>(
 		"/events/:eventId/form-fields/reorder",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("forms:update"),
 			schema: adminEventFormFieldSchemas.reorderEventFormFields
 		},
 		async (request: FastifyRequest<{ Params: { eventId: string }; Body: { fieldOrders: Array<{ id: string; order: number }> } }>, reply: FastifyReply) => {

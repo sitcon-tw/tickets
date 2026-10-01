@@ -3,10 +3,10 @@
  */
 
 import prisma from "#config/database";
+import { resolveAccess } from "#lib/access";
 import { auth } from "#lib/auth";
 import { tracer } from "#lib/tracing";
 import { publicAuthSchemas } from "#schemas";
-import { safeJsonParse } from "#utils/json";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync } from "fastify";
@@ -41,6 +41,8 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 						successResponse({
 							role: "viewer",
 							permissions: [],
+							grantedPermissions: [],
+							allEvents: false,
 							capabilities: {
 								canManageUsers: false,
 								canManageAllEvents: false,
@@ -49,6 +51,7 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 								canManageReferrals: false,
 								canManageSmsLogs: false,
 								canManageSettings: false,
+								canManageRoles: false,
 								managedEventIds: []
 							}
 						})
@@ -62,7 +65,8 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 					where: { id: session.user.id },
 					select: {
 						role: true,
-						permissions: true
+						permissions: true,
+						customRole: { select: { permissions: true, allEvents: true } }
 					}
 				});
 
@@ -73,28 +77,32 @@ const authRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const role = user.role || "viewer";
-				const permissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
+				const access = resolveAccess(user);
+				const role = access.role;
+				const grantedPermissions = [...access.permissions];
 
 				span.setAttribute("auth.user.role", role);
-				span.setAttribute("auth.permissions.count", permissions.length);
+				span.setAttribute("auth.permissions.count", grantedPermissions.length);
 
 				const capabilities = {
-					canManageUsers: role === "admin",
-					canManageAllEvents: role === "admin",
-					canViewAnalytics: role === "admin",
-					canManageEmailCampaigns: role === "admin",
-					canManageReferrals: role === "admin",
-					canManageSmsLogs: role === "admin",
-					canManageSettings: role === "admin",
-					managedEventIds: role === "eventAdmin" ? permissions : []
+					canManageUsers: access.permissions.has("users:view"),
+					canManageAllEvents: access.allEvents,
+					canViewAnalytics: access.permissions.has("dashboard:view"),
+					canManageEmailCampaigns: access.permissions.has("emailCampaigns:view"),
+					canManageReferrals: access.permissions.has("referrals:view"),
+					canManageSmsLogs: access.permissions.has("smsLogs:view"),
+					canManageSettings: access.permissions.has("settings:view"),
+					canManageRoles: access.permissions.has("roles:view"),
+					managedEventIds: access.allEvents ? [] : access.eventIds
 				};
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(
 					successResponse({
 						role,
-						permissions,
+						permissions: access.eventIds,
+						grantedPermissions,
+						allEvents: access.allEvents,
 						capabilities
 					})
 				);

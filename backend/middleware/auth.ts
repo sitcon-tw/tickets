@@ -1,109 +1,75 @@
-import type { EventAccessRequest, IdParams, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "@sitcontix/types";
+import type { EventAccessRequest, IdParams, Permission, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "@sitcontix/types";
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
+import { canAccessEvent, resolveAccess, type AccessContext } from "../lib/access";
 import { auth } from "../lib/auth";
 import { safeJsonParse } from "../utils/json";
-import { accountDisabledResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
+import { accountDisabledResponse, errorResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 import { fromNodeHeaders } from "better-auth/node";
 
 declare module "fastify" {
 	interface FastifyRequest {
 		user?: SessionUser;
 		session?: Session;
+		/** What the signed-in user may do in the admin area */
+		access?: AccessContext;
+		/** Set by the list guards for users limited to specific events; undefined means "all events" */
 		userEventPermissions?: string[];
 	}
 }
 
 async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
-	if (!request.user || !request.session) {
-		const session = await auth.api.getSession({
-			headers: fromNodeHeaders(request.headers)
-		});
+	if (request.user && request.session && request.access) return true;
 
-		if (!session) {
-			const { response, statusCode } = unauthorizedResponse("請先登入");
-			reply.code(statusCode).send(response);
-			return false;
-		}
+	const session = await auth.api.getSession({
+		headers: fromNodeHeaders(request.headers)
+	});
 
-		const user = await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { isActive: true, role: true, permissions: true }
-		});
-
-		if (!user || !user.isActive) {
-			const { response, statusCode } = accountDisabledResponse();
-			reply.code(statusCode).send(response);
-			return false;
-		}
-
-		const userPermissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
-
-		request.user = {
-			...session.user,
-			role: user.role as "admin" | "viewer" | "eventAdmin",
-			permissions: userPermissions,
-			isActive: user.isActive
-		};
-		request.session = {
-			user: {
-				...session.user,
-				createdAt: session.user.createdAt,
-				updatedAt: session.user.updatedAt
-			},
-			session: {
-				...session.session,
-				createdAt: session.session.createdAt,
-				updatedAt: session.session.updatedAt,
-				expiresAt: session.session.expiresAt
-			}
-		};
+	if (!session) {
+		const { response, statusCode } = unauthorizedResponse("請先登入");
+		reply.code(statusCode).send(response);
+		return false;
 	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: session.user.id },
+		select: { isActive: true, role: true, permissions: true, customRole: { select: { permissions: true, allEvents: true } } }
+	});
+
+	if (!user || !user.isActive) {
+		const { response, statusCode } = accountDisabledResponse();
+		reply.code(statusCode).send(response);
+		return false;
+	}
+
+	const access = resolveAccess(user);
+
+	request.access = access;
+	request.user = {
+		...session.user,
+		role: access.role,
+		permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+		isActive: user.isActive
+	};
+	request.session = {
+		user: {
+			...session.user,
+			createdAt: session.user.createdAt,
+			updatedAt: session.user.updatedAt
+		},
+		session: {
+			...session.session,
+			createdAt: session.session.createdAt,
+			updatedAt: session.session.updatedAt,
+			expiresAt: session.session.expiresAt
+		}
+	};
 	return true;
 }
 
 export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	try {
-		const session = await auth.api.getSession({
-			headers: fromNodeHeaders(request.headers)
-		});
-
-		if (!session) {
-			const { response, statusCode } = unauthorizedResponse("請先登入");
-			return reply.code(statusCode).send(response);
-		}
-
-		const user = await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { isActive: true, role: true, permissions: true }
-		});
-
-		if (!user || !user.isActive) {
-			const { response, statusCode } = accountDisabledResponse("帳號已停用");
-			return reply.code(statusCode).send(response);
-		}
-
-		const userPermissions = safeJsonParse<string[]>(user.permissions, [], "user permissions");
-
-		request.user = {
-			...session.user,
-			role: user.role as "admin" | "viewer" | "eventAdmin",
-			permissions: userPermissions,
-			isActive: user.isActive
-		};
-		request.session = {
-			user: {
-				...session.user,
-				createdAt: session.user.createdAt,
-				updatedAt: session.user.updatedAt
-			},
-			session: {
-				...session.session,
-				createdAt: session.session.createdAt,
-				updatedAt: session.session.updatedAt,
-				expiresAt: session.session.expiresAt
-			}
-		};
+		await ensureAuth(request, reply);
 	} catch (error) {
 		request.log.error({ error }, "Auth middleware error");
 		const { response, statusCode } = unauthorizedResponse("認證失敗");
@@ -111,314 +77,155 @@ export const requireAuth: preHandlerHookHandler = async (request: FastifyRequest
 	}
 };
 
-export const requireRole = (allowedRoles: string[]): preHandlerHookHandler => {
-	return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-		const authenticated = await ensureAuth(request, reply);
-		if (!authenticated || reply.sent) return;
-
-		const user = await prisma.user.findUnique({
-			where: { id: request.user!.id },
-			select: { role: true }
-		});
-
-		const userRole = user?.role || "user";
-
-		const userRoles = userRole.split(",").map(role => role.trim());
-
-		const hasPermission = allowedRoles.some(allowedRole => userRoles.includes(allowedRole));
-
-		if (!hasPermission) {
-			const { response, statusCode } = forbiddenResponse("權限不足 [R]");
-			return reply.code(statusCode).send(response);
-		}
-	};
+const denyPermission = (reply: FastifyReply, permission: string) => {
+	// A dedicated code lets the frontend show an error instead of treating the 403 as "not an admin" and redirecting home.
+	const { response, statusCode } = errorResponse("PERMISSION_DENIED", `權限不足：缺少 ${permission} 權限`, null, 403);
+	return reply.code(statusCode).send(response);
 };
 
-export const requirePermission = (permission: string): preHandlerHookHandler => {
-	return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-		const authenticated = await ensureAuth(request, reply);
-		if (!authenticated || reply.sent) return;
+/** Authenticate and require `permission`. Sends the error reply and returns undefined when the request must stop. */
+async function authorize(request: FastifyRequest, reply: FastifyReply, permission: Permission): Promise<AccessContext | undefined> {
+	const authenticated = await ensureAuth(request, reply);
+	if (!authenticated || reply.sent) return undefined;
 
-		const userPermissions = request.user!.permissions;
+	const access = request.access!;
+	if (!access.permissions.has(permission)) {
+		await denyPermission(reply, permission);
+		return undefined;
+	}
+	return access;
+}
 
-		if (!userPermissions.includes(permission) && request.user!.role !== "admin") {
-			const { response, statusCode } = forbiddenResponse("權限不足 [P]");
-			return reply.code(statusCode).send(response);
-		}
-	};
-};
-
-export const requireAdmin = requireRole(["admin"]);
-export const requireAdminOrEventAdmin = requireRole(["admin", "eventAdmin"]);
-
-async function checkEventAccess(request: FastifyRequest, reply: FastifyReply, eventId: string | undefined): Promise<void> {
+/** Lets anyone with at least one admin permission into the admin area; individual routes still check their own permission. */
+export const requireAdminAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
 	const authenticated = await ensureAuth(request, reply);
 	if (!authenticated || reply.sent) return;
 
-	const user = await prisma.user.findUnique({
-		where: { id: request.user!.id },
-		select: { role: true, permissions: true }
-	});
-
-	const userRole = user?.role || "user";
-
-	if (userRole === "admin") {
-		return;
+	if (request.access!.permissions.size === 0) {
+		const { response, statusCode } = forbiddenResponse("權限不足 [R]");
+		return reply.code(statusCode).send(response);
 	}
+};
 
-	if (userRole === "eventAdmin") {
-		if (!eventId) {
-			const { response, statusCode } = notFoundResponse("活動不存在");
-			return reply.code(statusCode).send(response);
+/** Requires a permission that is not tied to a single event (users, settings, ...). */
+export const requirePermission = (permission: Permission): Guard => {
+	return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+		await authorize(request, reply, permission);
+	};
+};
+
+/** Requires at least one of the given permissions. */
+export const requireAnyPermission = (permissions: Permission[]): Guard => {
+	return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+		const authenticated = await ensureAuth(request, reply);
+		if (!authenticated || reply.sent) return;
+
+		if (!permissions.some(permission => request.access!.permissions.has(permission))) {
+			return denyPermission(reply, permissions.join(" | "));
 		}
+	};
+};
 
-		const userPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
+/** A guard that can also be awaited directly from inside a handler */
+type Guard = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 
-		if (!userPermissions.includes(eventId)) {
-			const { response, statusCode } = notFoundResponse("活動不存在");
-			return reply.code(statusCode).send(response);
-		}
-
-		return;
-	}
-
-	const { response, statusCode } = forbiddenResponse("權限不足");
-	return reply.code(statusCode).send(response);
-}
+type EventIdResolver = (request: FastifyRequest) => Promise<string | undefined> | string | undefined;
 
 /**
- * Middleware to check if user can access a specific event
- * Admins can access all events, eventAdmins can only access events in their permissions
- * Returns 404 for eventAdmins without permission (to avoid redirect)
+ * Builds an event-scoped guard factory: the user needs `permission`, and the resolved event must be one they may manage.
+ * Users without access to the event get a 404 (not a 403) so the frontend does not redirect them.
  */
-export const requireEventAccess = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+const eventGuard = (resolveEventId: EventIdResolver) => {
+	return (permission: Permission): Guard =>
+		async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+			const access = await authorize(request, reply, permission);
+			if (!access || access.allEvents) return;
+
+			const eventId = await resolveEventId(request);
+			if (!eventId || !canAccessEvent(access, eventId)) {
+				const { response, statusCode } = notFoundResponse("活動不存在");
+				return reply.code(statusCode).send(response);
+			}
+		};
+};
+
+const eventIdViaRelation = (find: (id: string) => Promise<string | undefined>): EventIdResolver => {
+	return async request => {
+		const { id } = request.params as IdParams;
+		return id ? find(id) : undefined;
+	};
+};
+
+/** Guard for routes whose event ID is in params (`eventId` / `id`), the query or the body */
+export const requireEventAccess = eventGuard(request => {
 	const query = request.query as EventAccessRequest;
 	const params = request.params as EventAccessRequest;
 	const body = request.body as EventAccessRequest;
-	await checkEventAccess(request, reply, params?.eventId || params?.id || query?.eventId || body?.eventId);
-};
+	return params?.eventId || params?.id || query?.eventId || body?.eventId;
+});
 
 /** Authorize the event that a body-based handler will actually use. */
-export const requireEventAccessViaEventBody: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const body = request.body as EventAccessRequest;
-	await checkEventAccess(request, reply, body?.eventId);
+export const requireEventAccessViaEventBody = eventGuard(request => (request.body as EventAccessRequest)?.eventId);
+
+const eventIdOfTicket = async (ticketId: string | undefined) => {
+	if (!ticketId) return undefined;
+	const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { eventId: true } });
+	return ticket?.eventId;
 };
+
+/** Event access via ticketId in the request body */
+export const requireEventAccessViaTicketBody = eventGuard(request => eventIdOfTicket((request.body as TicketBody).ticketId));
+
+/** Event access via ticketId in params */
+export const requireEventAccessViaTicketParam = eventGuard(request => eventIdOfTicket((request.params as TicketIdParams).ticketId));
+
+/** Event access via ticketId in the query string */
+export const requireEventAccessViaTicketQuery = eventGuard(request => eventIdOfTicket((request.query as TicketIdQuery).ticketId));
+
+/** Event access via ticket ID in params (`:id`) */
+export const requireEventAccessViaTicketId = eventGuard(eventIdViaRelation(eventIdOfTicket));
+
+/** Event access via form field ID in params */
+export const requireEventAccessViaFieldId = eventGuard(
+	eventIdViaRelation(async id => {
+		const field = await prisma.eventFormFields.findUnique({ where: { id }, select: { eventId: true } });
+		return field?.eventId;
+	})
+);
+
+/** Event access via invitation code ID in params */
+export const requireEventAccessViaCodeId = eventGuard(
+	eventIdViaRelation(async id => {
+		const code = await prisma.invitationCode.findUnique({ where: { id }, include: { ticket: { select: { eventId: true } } } });
+		return code?.ticket?.eventId;
+	})
+);
+
+/** Event access via registration ID in params */
+export const requireEventAccessViaRegistrationId = eventGuard(
+	eventIdViaRelation(async id => {
+		const registration = await prisma.registration.findUnique({ where: { id }, select: { eventId: true } });
+		return registration?.eventId;
+	})
+);
+
+/** Event access via sponsor ID in params */
+export const requireEventAccessViaSponsorId = eventGuard(
+	eventIdViaRelation(async id => {
+		const sponsor = await prisma.sponsor.findUnique({ where: { id }, select: { eventId: true } });
+		return sponsor?.eventId;
+	})
+);
 
 /**
- * Middleware to check if user can list events
- * Admins can see all events, eventAdmins can only see their assigned events
+ * List guard: requires `permission` and exposes the events the user is limited to through `request.userEventPermissions`.
+ * Users who may manage every event get `undefined`; everyone else gets their event IDs (possibly empty, meaning "no events").
  */
-export const requireEventListAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const authenticated = await ensureAuth(request, reply);
-	if (!authenticated || reply.sent) return;
+export const requireEventListAccess = (permission: Permission): Guard => {
+	return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+		const access = await authorize(request, reply, permission);
+		if (!access) return;
 
-	const user = await prisma.user.findUnique({
-		where: { id: request.user!.id },
-		select: { role: true, permissions: true }
-	});
-
-	const userRole = user?.role || "user";
-
-	if (userRole === "admin") {
-		return;
-	}
-
-	if (userRole === "eventAdmin") {
-		request.userEventPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
-		return;
-	}
-
-	const { response, statusCode } = forbiddenResponse("權限不足");
-	return reply.code(statusCode).send(response);
-};
-
-/**
- * Helper middleware to check event access via ticketId in request body
- */
-export const requireEventAccessViaTicketBody = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const body = request.body as TicketBody;
-	const { ticketId } = body;
-	let eventId: string | undefined;
-	if (ticketId) {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: ticketId },
-			select: { eventId: true }
-		});
-		if (ticket) {
-			eventId = ticket.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via ticketId in params
- */
-export const requireEventAccessViaTicketParam: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as TicketIdParams;
-	const { ticketId } = params;
-	let eventId: string | undefined;
-	if (ticketId) {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: ticketId },
-			select: { eventId: true }
-		});
-		if (ticket) {
-			eventId = ticket.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via ticketId in query string
- */
-export const requireEventAccessViaTicketQuery: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const query = request.query as TicketIdQuery;
-	const { ticketId } = query;
-	let eventId: string | undefined;
-	if (ticketId) {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id: ticketId },
-			select: { eventId: true }
-		});
-		if (ticket) {
-			eventId = ticket.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via form field ID in params
- */
-export const requireEventAccessViaFieldId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as IdParams;
-	const { id } = params;
-	let eventId: string | undefined;
-	if (id) {
-		const field = await prisma.eventFormFields.findUnique({
-			where: { id },
-			select: { eventId: true }
-		});
-		if (field) {
-			eventId = field.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via invitation code ID in params
- */
-export const requireEventAccessViaCodeId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as IdParams;
-	const { id } = params;
-	let eventId: string | undefined;
-	if (id) {
-		const code = await prisma.invitationCode.findUnique({
-			where: { id },
-			include: { ticket: { select: { eventId: true } } }
-		});
-		if (code?.ticket) {
-			eventId = code.ticket.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via registration ID in params
- */
-export const requireEventAccessViaRegistrationId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as IdParams;
-	const { id } = params;
-	let eventId: string | undefined;
-	if (id) {
-		const registration = await prisma.registration.findUnique({
-			where: { id },
-			select: { eventId: true }
-		});
-		if (registration) {
-			eventId = registration.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via ticket ID in params
- */
-export const requireEventAccessViaTicketId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as IdParams;
-	const { id } = params;
-	let eventId: string | undefined;
-	if (id) {
-		const ticket = await prisma.ticket.findUnique({
-			where: { id },
-			select: { eventId: true }
-		});
-		if (ticket) {
-			eventId = ticket.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-/**
- * Helper middleware to check event access via sponsor ID in params
- */
-export const requireEventAccessViaSponsorId: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const params = request.params as IdParams;
-	const { id } = params;
-	let eventId: string | undefined;
-	if (id) {
-		const sponsor = await prisma.sponsor.findUnique({
-			where: { id },
-			select: { eventId: true }
-		});
-		if (sponsor) {
-			eventId = sponsor.eventId;
-		}
-	}
-	await checkEventAccess(request, reply, eventId);
-};
-
-export const requireEventDashboardAccess: preHandlerHookHandler = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-	const authenticated = await ensureAuth(request, reply);
-	if (!authenticated || reply.sent) return;
-
-	const user = await prisma.user.findUnique({
-		where: { id: request.user!.id },
-		select: { role: true, permissions: true }
-	});
-
-	const userRole = user?.role || "user";
-
-	if (userRole === "admin") {
-		return;
-	}
-
-	if (userRole === "eventAdmin") {
-		const url = request.url;
-		const eventIdMatch = url.match(/\/events\/([a-zA-Z0-9-_]+)\/dashboard/);
-		const eventId = eventIdMatch ? eventIdMatch[1] : null;
-
-		if (!eventId) {
-			const { response, statusCode } = notFoundResponse("活動不存在");
-			return reply.code(statusCode).send(response);
-		}
-
-		const userPermissions = safeJsonParse<string[]>(user?.permissions || null, [], "user permissions");
-
-		if (!userPermissions.includes(eventId)) {
-			const { response, statusCode } = notFoundResponse("活動不存在");
-			return reply.code(statusCode).send(response);
-		}
-
-		return;
-	}
-
-	const { response, statusCode } = forbiddenResponse("權限不足");
-	return reply.code(statusCode).send(response);
+		request.userEventPermissions = access.allEvents ? undefined : access.eventIds;
+	};
 };

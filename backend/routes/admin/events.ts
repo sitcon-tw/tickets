@@ -5,7 +5,7 @@ import type { FastifyPluginAsync } from "fastify";
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
-import { requireAdmin, requireEventAccess, requireEventListAccess } from "#middleware/auth";
+import { requireEventAccess, requireEventListAccess, requirePermission } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
@@ -18,11 +18,11 @@ const isSlugConflict = (error: unknown) => {
 };
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	// Create new event - only admin can create events
+	// Create new event
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events",
 		{
-			preHandler: requireAdmin,
+			preHandler: requirePermission("events:create"),
 			schema: { ...eventSchemas.createEvent, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
@@ -90,6 +90,14 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				span.setAttribute("event.id", createdEvent.id);
 				span.addEvent("event.created");
 
+				// Users limited to specific events would otherwise lose sight of the event they just created
+				if (request.access && !request.access.allEvents && request.user) {
+					await prisma.user.update({
+						where: { id: request.user.id },
+						data: { permissions: JSON.stringify([...request.access.eventIds, createdEvent.id]) }
+					});
+				}
+
 				const event: Event = {
 					...createdEvent,
 					name: createdEvent.name as Record<string, string>,
@@ -126,7 +134,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:id",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("events:view"),
 			schema: { ...eventSchemas.getEvent, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
@@ -186,7 +194,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/events/:id",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("events:update"),
 			schema: eventSchemas.updateEvent
 		},
 		async (request, reply) => {
@@ -316,7 +324,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/events/:id",
 		{
-			preHandler: requireAdmin,
+			preHandler: requireEventAccess("events:delete"),
 			schema: eventSchemas.deleteEvent
 		},
 		async (request, reply) => {
@@ -381,7 +389,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events",
 		{
-			preHandler: requireEventListAccess,
+			preHandler: requireEventListAccess("events:view"),
 			schema: { ...eventSchemas.listEvents, tags: ["admin/events"] }
 		},
 		async (request, reply) => {
@@ -400,7 +408,8 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					whereClause.isActive = isActive;
 				}
 
-				if (request.userEventPermissions && request.userEventPermissions.length > 0) {
+				// undefined = may manage every event; an empty list means the user has no events at all
+				if (request.userEventPermissions) {
 					whereClause.id = { in: request.userEventPermissions };
 					span.setAttribute("events.user_permissions_count", request.userEventPermissions.length);
 				}

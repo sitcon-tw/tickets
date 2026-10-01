@@ -10,14 +10,14 @@ import { setSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import type { Event, UserCapabilities } from "@sitcontix/types";
-import { BarChart3, CalendarDays, ClipboardList, Globe, Handshake, Home, KeyRound, LogOut, Mail, Menu, Settings, ShieldCheck, Ticket, Users, Webhook, X, type LucideIcon } from "lucide-react";
+import type { Event, Permission } from "@sitcontix/types";
+import { BarChart3, CalendarDays, ClipboardList, Globe, Handshake, Home, KeyRound, LogOut, Mail, Menu, Settings, ShieldCheck, Ticket, UserCog, Users, Webhook, X, type LucideIcon } from "lucide-react";
 
 type NavItem = {
 	href: string;
 	i18nKey: string;
 	icon: LucideIcon;
-	requireCapability?: keyof UserCapabilities;
+	requirePermission: Permission;
 };
 
 type NavGroup = {
@@ -29,32 +29,33 @@ const navGroups: NavGroup[] = [
 	{
 		i18nKey: null,
 		items: [
-			{ href: "/admin", i18nKey: "statistics", icon: BarChart3, requireCapability: "canViewAnalytics" },
-			{ href: "/admin/events", i18nKey: "events", icon: CalendarDays }
+			{ href: "/admin", i18nKey: "statistics", icon: BarChart3, requirePermission: "dashboard:view" },
+			{ href: "/admin/events", i18nKey: "events", icon: CalendarDays, requirePermission: "events:view" }
 		]
 	},
 	{
 		i18nKey: "groupSetup",
 		items: [
-			{ href: "/admin/tickets", i18nKey: "ticketTypes", icon: Ticket },
-			{ href: "/admin/forms", i18nKey: "forms", icon: ClipboardList },
-			{ href: "/admin/invites", i18nKey: "invitationCodes", icon: KeyRound },
-			{ href: "/admin/sponsors", i18nKey: "sponsors", icon: Handshake },
-			{ href: "/admin/webhooks", i18nKey: "webhooks", icon: Webhook }
+			{ href: "/admin/tickets", i18nKey: "ticketTypes", icon: Ticket, requirePermission: "tickets:view" },
+			{ href: "/admin/forms", i18nKey: "forms", icon: ClipboardList, requirePermission: "forms:view" },
+			{ href: "/admin/invites", i18nKey: "invitationCodes", icon: KeyRound, requirePermission: "invitationCodes:view" },
+			{ href: "/admin/sponsors", i18nKey: "sponsors", icon: Handshake, requirePermission: "sponsors:view" },
+			{ href: "/admin/webhooks", i18nKey: "webhooks", icon: Webhook, requirePermission: "webhooks:view" }
 		]
 	},
 	{
 		i18nKey: "groupAttendees",
 		items: [
-			{ href: "/admin/registrations", i18nKey: "registrations", icon: Users },
-			{ href: "/admin/campaigns", i18nKey: "emailCampaigns", icon: Mail, requireCapability: "canManageEmailCampaigns" }
+			{ href: "/admin/registrations", i18nKey: "registrations", icon: Users, requirePermission: "registrations:view" },
+			{ href: "/admin/campaigns", i18nKey: "emailCampaigns", icon: Mail, requirePermission: "emailCampaigns:view" }
 		]
 	},
 	{
 		i18nKey: "groupSystem",
 		items: [
-			{ href: "/admin/users", i18nKey: "users", icon: ShieldCheck, requireCapability: "canManageUsers" },
-			{ href: "/admin/settings", i18nKey: "settings", icon: Settings, requireCapability: "canManageSettings" }
+			{ href: "/admin/users", i18nKey: "users", icon: ShieldCheck, requirePermission: "users:view" },
+			{ href: "/admin/roles", i18nKey: "roles", icon: UserCog, requirePermission: "roles:view" },
+			{ href: "/admin/settings", i18nKey: "settings", icon: Settings, requirePermission: "settings:view" }
 		]
 	}
 ];
@@ -72,7 +73,8 @@ export type AdminNavLayoutProps = {
 	pathname: string;
 	currentEventId: string | null;
 	events: Event[];
-	capabilities: UserCapabilities | null;
+	/** Permissions granted to the signed-in user; null while they are still loading. */
+	grantedPermissions: readonly string[] | null;
 	isMobile: boolean;
 	mobileMenuOpen: boolean;
 	isLoggingOut: boolean;
@@ -92,16 +94,14 @@ function SidebarBody({
 	pathname,
 	currentEventId,
 	events,
-	capabilities,
+	grantedPermissions,
 	isLoggingOut,
 	onLocaleChange,
 	onLogout,
 	onNavigate,
 	showThemeToggle
 }: AdminNavLayoutProps & { onNavigate?: () => void; showThemeToggle?: boolean }) {
-	const visibleGroups = navGroups
-		.map(group => ({ ...group, items: group.items.filter(item => !item.requireCapability || capabilities?.[item.requireCapability]) }))
-		.filter(group => group.items.length > 0);
+	const visibleGroups = navGroups.map(group => ({ ...group, items: group.items.filter(item => grantedPermissions?.includes(item.requirePermission)) })).filter(group => group.items.length > 0);
 
 	return (
 		<div className="flex h-full flex-col gap-5 p-4">

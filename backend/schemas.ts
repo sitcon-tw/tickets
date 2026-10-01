@@ -39,6 +39,9 @@ import {
 	// Registration schemas
 	RegistrationSchema,
 	RegistrationStatsSchema,
+	RoleCreateRequestSchema,
+	RoleSchema,
+	RoleUpdateRequestSchema,
 	RegistrationStatusSchema,
 	RegistrationUpdateRequestSchema,
 	// SMS schemas
@@ -1142,7 +1145,8 @@ export const UserUpdateBodySchema = z.object({
 	name: z.string().min(1).optional().describe("用戶名稱"),
 	email: z.email().optional().describe("電子郵件"),
 	role: UserRoleSchema.optional().describe("用戶角色"),
-	permissions: z.array(z.string()).optional().describe("用戶權限列表"),
+	permissions: z.array(z.string()).optional().describe("可管理的活動 ID 列表"),
+	roleId: z.string().nullable().optional().describe("自訂角色 ID（role 為 custom 時使用）"),
 	isActive: z.boolean().optional().describe("是否啟用")
 });
 
@@ -1248,6 +1252,79 @@ export const userSchemas = {
 			200: UsersListResponseSchema,
 			401: ErrorResponseSchema,
 			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	}
+} as const;
+
+// ----------------------------------------------------------------------------
+// Admin Role Schemas
+// ----------------------------------------------------------------------------
+
+export const RoleResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: RoleSchema
+});
+
+export const RolesListResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: z.array(RoleSchema)
+});
+
+export const roleSchemas = {
+	listRoles: {
+		description: "取得自訂角色列表",
+		tags: ["admin/roles"],
+		response: {
+			200: RolesListResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	createRole: {
+		description: "建立自訂角色",
+		tags: ["admin/roles"],
+		body: RoleCreateRequestSchema,
+		response: {
+			201: RoleResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	updateRole: {
+		description: "更新自訂角色",
+		tags: ["admin/roles"],
+		params: IdParamSchema,
+		body: RoleUpdateRequestSchema,
+		response: {
+			200: RoleResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
+	deleteRole: {
+		description: "刪除自訂角色（仍有用戶使用時無法刪除）",
+		tags: ["admin/roles"],
+		params: IdParamSchema,
+		response: {
+			200: SuccessResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			409: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	}
@@ -1970,8 +2047,11 @@ export const AuthPermissionsResponseSchema = z.object({
 			canManageReferrals: z.boolean(),
 			canManageSmsLogs: z.boolean(),
 			canManageSettings: z.boolean(),
+			canManageRoles: z.boolean(),
 			managedEventIds: z.array(z.string())
-		})
+		}),
+		grantedPermissions: z.array(z.string()),
+		allEvents: z.boolean()
 	})
 });
 

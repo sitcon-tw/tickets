@@ -14,6 +14,7 @@ export * from "./form.js";
 export * from "./formLogic.js";
 export * from "./helpers.js";
 export * from "./invitation.js";
+export * from "./permissions.js";
 export * from "./referral.js";
 export * from "./registration.js";
 export * from "./settings.js";

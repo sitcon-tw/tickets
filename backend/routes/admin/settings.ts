@@ -1,5 +1,5 @@
 import { tracer } from "#lib/tracing";
-import { requireAdmin } from "#middleware/auth";
+import { requirePermission } from "#middleware/auth";
 import { settingsSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { serverErrorResponse, successResponse } from "#utils/response";
@@ -11,7 +11,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 const componentLogger = logger.child({ component: "admin/settings" });
 
 const adminSettingsRoutes: FastifyPluginAsync = async fastify => {
-	fastify.withTypeProvider<ZodTypeProvider>().get("/settings", { preHandler: requireAdmin, schema: settingsSchemas.getSettings }, async (_request, reply) => {
+	fastify.withTypeProvider<ZodTypeProvider>().get("/settings", { preHandler: requirePermission("settings:view"), schema: settingsSchemas.getSettings }, async (_request, reply) => {
 		const span = tracer.startSpan("route.admin.settings.get");
 
 		try {
@@ -29,7 +29,7 @@ const adminSettingsRoutes: FastifyPluginAsync = async fastify => {
 		}
 	});
 
-	fastify.withTypeProvider<ZodTypeProvider>().put("/settings", { preHandler: requireAdmin, schema: settingsSchemas.updateSettings }, async (request, reply) => {
+	fastify.withTypeProvider<ZodTypeProvider>().put("/settings", { preHandler: requirePermission("settings:update"), schema: settingsSchemas.updateSettings }, async (request, reply) => {
 		const span = tracer.startSpan("route.admin.settings.update");
 
 		try {

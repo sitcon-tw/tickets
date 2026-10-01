@@ -110,6 +110,14 @@ class APIClient {
 		}
 
 		if (response.status === 403) {
+			// A missing permission inside the admin area is reported in place; any other 403 means "not allowed here at all".
+			const body: APIError | null = await response
+				.clone()
+				.json()
+				.catch(() => null);
+			if (body?.error?.code === "PERMISSION_DENIED") {
+				return new Error(body.error.message);
+			}
 			this.redirectForAuthStatus(response);
 			return new Error("Forbidden access");
 		}

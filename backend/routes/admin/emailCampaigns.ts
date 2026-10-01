@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireAdmin } from "#middleware/auth";
+import { requirePermission } from "#middleware/auth";
 import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas, EmailCampaignUpdateBodySchema2, PreviewRecipientsBodySchema } from "#schemas";
 import { calculateRecipients, getAvailableTemplates, previewCampaignEmail, sendCampaignEmail } from "#utils/email";
 import { logger } from "#utils/logger";
@@ -18,14 +18,13 @@ type PreviewRecipientsBody = z.infer<typeof PreviewRecipientsBodySchema>;
 type EmailCampaignUpdateBody = z.infer<typeof EmailCampaignUpdateBodySchema2>;
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	fastify.addHook("preHandler", requireAdmin);
-
 	// List campaigns
 	fastify.get<{
 		Querystring: Partial<PaginationQuery>;
 	}>(
 		"/email-campaigns",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.listEmailCampaigns
 		},
 		async (request: FastifyRequest<{ Querystring: Partial<PaginationQuery> }>, reply: FastifyReply) => {
@@ -79,6 +78,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns",
 		{
+			preHandler: requirePermission("emailCampaigns:create"),
 			schema: emailCampaignSchemas.createEmailCampaign
 		},
 		async (request: FastifyRequest<{ Body: EmailCampaignCreateBody }>, reply: FastifyReply) => {
@@ -134,6 +134,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId",
 		{
+			preHandler: requirePermission("emailCampaigns:update"),
 			schema: adminEmailCampaignSchemas.updateEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: EmailCampaignUpdateBody }>, reply: FastifyReply) => {
@@ -193,6 +194,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/preview-recipients",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.previewRecipients
 		},
 		async (request: FastifyRequest<{ Body: PreviewRecipientsBody }>, reply: FastifyReply) => {
@@ -228,6 +230,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	fastify.get(
 		"/email-campaigns/templates",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.listTemplates
 		},
 		async (_request: FastifyRequest, reply: FastifyReply) => {
@@ -247,6 +250,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/status",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.getEmailCampaignStatus
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -293,6 +297,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/preview",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.previewEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -327,6 +332,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/calculate-recipients",
 		{
+			preHandler: requirePermission("emailCampaigns:view"),
 			schema: adminEmailCampaignSchemas.calculateRecipients
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
@@ -372,6 +378,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId/send",
 		{
+			preHandler: requirePermission("emailCampaigns:send"),
 			schema: adminEmailCampaignSchemas.sendEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
@@ -482,6 +489,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	}>(
 		"/email-campaigns/:campaignId",
 		{
+			preHandler: requirePermission("emailCampaigns:delete"),
 			schema: adminEmailCampaignSchemas.cancelEmailCampaign
 		},
 		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {

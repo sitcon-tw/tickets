@@ -1,7 +1,7 @@
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
-import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaTicketId } from "#middleware/auth";
+import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaTicketId, requirePermission } from "#middleware/auth";
 import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
@@ -16,7 +16,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/tickets",
 		{
-			preHandler: requireEventAccessViaEventBody,
+			preHandler: requireEventAccessViaEventBody("tickets:create"),
 			schema: ticketSchemas.createTicket
 		},
 		async (request, reply) => {
@@ -139,7 +139,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id",
 		{
-			preHandler: requireEventAccessViaTicketId,
+			preHandler: requireEventAccessViaTicketId("tickets:view"),
 			schema: ticketSchemas.getTicket
 		},
 		async (request, reply) => {
@@ -219,7 +219,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/tickets/:id",
 		{
-			preHandler: requireEventAccessViaTicketId,
+			preHandler: requireEventAccessViaTicketId("tickets:update"),
 			schema: ticketSchemas.updateTicket
 		},
 		async (request, reply) => {
@@ -361,7 +361,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/tickets/:id",
 		{
-			preHandler: requireEventAccessViaTicketId,
+			preHandler: requireEventAccessViaTicketId("tickets:delete"),
 			schema: ticketSchemas.deleteTicket
 		},
 		async (request, reply) => {
@@ -432,7 +432,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets",
 		{
-			preHandler: requireEventAccess,
+			preHandler: requireEventAccess("tickets:view"),
 			schema: ticketSchemas.listTickets
 		},
 		async (request, reply) => {
@@ -519,7 +519,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/tickets/:id/analytics",
 		{
-			preHandler: requireEventAccessViaTicketId,
+			preHandler: requireEventAccessViaTicketId("tickets:view"),
 			schema: adminTicketSchemas.getTicketAnalytics
 		},
 		async (request, reply) => {
@@ -609,6 +609,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/tickets/reorder",
 		{
+			preHandler: requirePermission("tickets:update"),
 			schema: adminTicketSchemas.reorderTickets
 		},
 		async (request, reply) => {
@@ -664,7 +665,7 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("tickets.eventId", eventIds[0]);
 
 				request.query = { ...(request.query || {}), eventId: eventIds[0] };
-				await requireEventAccess(request, reply);
+				await requireEventAccess("tickets:update")(request, reply);
 				if (reply.sent) return;
 
 				// Validate no duplicate orders

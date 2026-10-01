@@ -18,9 +18,10 @@ export const SortOrderSchema = z.enum(["asc", "desc"]);
 export type SortOrder = z.infer<typeof SortOrderSchema>;
 
 /**
- * User roles in the system
+ * User roles in the system.
+ * "custom" means the user's permissions come from the custom role referenced by `roleId`.
  */
-export const UserRoleSchema = z.enum(["admin", "viewer", "eventAdmin"]);
+export const UserRoleSchema = z.enum(["admin", "viewer", "eventAdmin", "custom"]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
 /**

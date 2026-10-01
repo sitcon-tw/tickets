@@ -4,15 +4,13 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
-import { requireAdmin } from "#middleware/auth";
+import { requirePermission } from "#middleware/auth";
 import { smsVerificationLogsSchemas } from "#schemas";
 import { serverErrorResponse, successResponse } from "#utils/response";
 import { nowInUTC8 } from "#utils/timezone";
 import { SpanStatusCode } from "@opentelemetry/api";
 
 const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
-	fastify.addHook("preHandler", requireAdmin);
-
 	/**
 	 * GET /api/admin/sms-verification-logs
 	 * Get SMS verification logs with filters
@@ -20,6 +18,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/sms-verification-logs",
 		{
+			preHandler: requirePermission("smsLogs:view"),
 			schema: smsVerificationLogsSchemas.getSmsVerificationLogs
 		},
 		async (request, reply) => {
@@ -112,6 +111,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/sms-verification-stats",
 		{
+			preHandler: requirePermission("smsLogs:view"),
 			schema: smsVerificationLogsSchemas.getSmsVerificationStats
 		},
 		async (request, reply) => {

@@ -19,8 +19,10 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
-  role          String    @default("viewer") // admin, eventAdmmin, viewer
-  permissions   String?   // JSON array of permissions
+  role          String    @default("viewer") // admin, eventAdmin, viewer, custom
+  permissions   String?   // JSON array of event IDs the user may manage (for roles not scoped to all events)
+  roleId        String?   // custom role, used when role = "custom"
+  customRole    Role?     @relation(fields: [roleId], references: [id], onDelete: Restrict)
   isActive      Boolean   @default(true)
   phoneNumber   String?
   phoneVerified Boolean   @default(false)
@@ -35,6 +37,22 @@ model User {
 
   @@unique([email])
   @@map("user")
+}
+
+// Admin-defined role: a named set of fine-grained permissions (see types/src/permissions.ts)
+model Role {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  permissions String   // JSON array of permission keys, e.g. ["registrations:view","registrations:export"]
+  allEvents   Boolean  @default(false) // false = only the events assigned to each user
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+
+  @@unique([name])
+  @@map("role")
 }
 
 model Session {

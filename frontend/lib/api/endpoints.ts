@@ -24,6 +24,7 @@ import {
 	RegistrationSchema,
 	RegistrationStatsSchema,
 	RegistrationStatusSchema,
+	RoleSchema,
 	SessionSchema,
 	SiteSettingsSchema,
 	SponsorDailyStatSchema,
@@ -42,6 +43,8 @@ import {
 	type EventFormFieldReorderRequest,
 	type InvitationCodeInfo,
 	type LocalizedText,
+	type RoleCreateRequest,
+	type RoleUpdateRequest,
 	type SiteSettingsUpdateRequest,
 	type SponsorCreateRequest,
 	type SponsorReorderRequest,
@@ -49,7 +52,8 @@ import {
 	type SponsorUpdateRequest,
 	type Ticket,
 	type TicketReorderRequest,
-	type User
+	type User,
+	type UserRole
 } from "@sitcontix/types";
 import z from "zod/v4";
 import { startAuthentication, startRegistration, type PublicKeyCredentialCreationOptionsJSON, type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
@@ -192,11 +196,22 @@ export const adminAnalyticsAPI = {
 
 // Admin - Users
 export const adminUsersAPI = {
-	getAll: (params?: { role?: "admin" | "viewer" | "eventAdmin"; isActive?: boolean }) => apiClient.get("/api/admin/users", params, ApiResponseSchema(z.array(UserSchema))),
+	getAll: (params?: { role?: UserRole; isActive?: boolean }) => apiClient.get("/api/admin/users", params, ApiResponseSchema(z.array(UserSchema))),
 
 	getById: (id: string) => apiClient.get(`/api/admin/users/${id}`, {}, ApiResponseSchema(UserSchema)),
 
 	update: (id: string, data: Partial<User>) => apiClient.put(`/api/admin/users/${id}`, data, ApiResponseSchema(UserSchema))
+};
+
+// Admin - Roles
+export const adminRolesAPI = {
+	getAll: () => apiClient.get("/api/admin/roles", {}, ApiResponseSchema(z.array(RoleSchema))),
+
+	create: (data: RoleCreateRequest) => apiClient.post("/api/admin/roles", data, ApiResponseSchema(RoleSchema)),
+
+	update: (id: string, data: RoleUpdateRequest) => apiClient.put(`/api/admin/roles/${id}`, data, ApiResponseSchema(RoleSchema)),
+
+	delete: (id: string) => apiClient.delete(`/api/admin/roles/${id}`, ApiResponseSchema(z.null()))
 };
 
 // Admin - Settings

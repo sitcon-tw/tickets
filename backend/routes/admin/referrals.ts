@@ -6,7 +6,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
-import { requireAdmin } from "#middleware/auth";
+import { requirePermission } from "#middleware/auth";
 import { adminReferralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
@@ -14,12 +14,11 @@ import { notFoundResponse, serverErrorResponse, successResponse, validationError
 const componentLogger = logger.child({ component: "admin/referrals" });
 
 const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	fastify.addHook("preHandler", requireAdmin);
-
 	// 推薦機制總覽統計
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/overview",
 		{
+			preHandler: requirePermission("referrals:view"),
 			schema: adminReferralSchemas.getReferralOverview
 		},
 		async (_request, reply) => {
@@ -97,6 +96,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/leaderboard",
 		{
+			preHandler: requirePermission("referrals:view"),
 			schema: adminReferralSchemas.getReferralLeaderboard
 		},
 		async (request, reply) => {
@@ -168,6 +168,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/tree/:regId",
 		{
+			preHandler: requirePermission("referrals:view"),
 			schema: adminReferralSchemas.getReferralTree
 		},
 		async (request, reply) => {
@@ -264,6 +265,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/qualified",
 		{
+			preHandler: requirePermission("referrals:view"),
 			schema: adminReferralSchemas.getQualifiedReferrers
 		},
 		async (request, reply) => {
@@ -337,6 +339,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/referrals/draw",
 		{
+			preHandler: requirePermission("referrals:draw"),
 			schema: adminReferralSchemas.drawReferrers
 		},
 		async (request, reply) => {
@@ -446,6 +449,7 @@ const adminReferralsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/referrals/stats",
 		{
+			preHandler: requirePermission("referrals:view"),
 			schema: adminReferralSchemas.getReferralStats
 		},
 		async (request, reply) => {

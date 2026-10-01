@@ -78,6 +78,7 @@ export const AdminUserUpdateRequestSchema = z.object({
 	email: z.email().optional(),
 	role: UserRoleSchema.optional(),
 	permissions: z.array(z.string()).optional(),
+	roleId: z.string().nullable().optional(),
 	isActive: z.boolean().optional()
 });
 export type AdminUserUpdateRequest = z.infer<typeof AdminUserUpdateRequestSchema>;

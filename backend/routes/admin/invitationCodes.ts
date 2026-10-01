@@ -6,22 +6,18 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess } from "#middleware/auth";
+import { requireEventAccessViaCodeId, requireEventAccessViaTicketBody, requireEventListAccess, requirePermission } from "#middleware/auth";
 import { adminInvitationCodeSchemas, invitationCodeSchemas } from "#schemas";
 import { sendInvitationCode } from "#utils/email";
+import { canAccessEvent as canAccessEventScope } from "#lib/access";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeHtml } from "#utils/sanitize";
 
 const componentLogger = logger.child({ component: "admin/invitationCodes" });
 
-/** Admins can manage every event; eventAdmins only the events listed in their permissions (mirrors requireEventAccess) */
-const canAccessEvent = (request: FastifyRequest, eventId: string): boolean => {
-	const user = request.user;
-	if (!user) return false;
-	if (user.role === "admin") return true;
-	return user.role === "eventAdmin" && (user.permissions ?? []).includes(eventId);
-};
+/** Whether the requester may manage `eventId` (mirrors requireEventAccess) */
+const canAccessEvent = (request: FastifyRequest, eventId: string): boolean => !!request.access && canAccessEventScope(request.access, eventId);
 
 const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -44,7 +40,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes",
 		{
-			preHandler: requireEventAccessViaTicketBody,
+			preHandler: requireEventAccessViaTicketBody("invitationCodes:create"),
 			schema: invitationCodeSchemas.createInvitationCode
 		},
 		async (request, reply) => {
@@ -161,7 +157,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/invitation-codes/:id",
 		{
-			preHandler: requireEventAccessViaCodeId,
+			preHandler: requireEventAccessViaCodeId("invitationCodes:view"),
 			schema: invitationCodeSchemas.getInvitationCode
 		},
 		async (request, reply) => {
@@ -240,10 +236,10 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 		"/invitation-codes/:id",
 		{
 			preHandler: [
-				requireEventAccessViaCodeId,
+				requireEventAccessViaCodeId("invitationCodes:update"),
 				async (request, reply) => {
 					if (request.body.ticketId !== undefined) {
-						await requireEventAccessViaTicketBody(request, reply);
+						await requireEventAccessViaTicketBody("invitationCodes:update")(request, reply);
 					}
 				}
 			],
@@ -377,7 +373,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/invitation-codes/:id",
 		{
-			preHandler: requireEventAccessViaCodeId,
+			preHandler: requireEventAccessViaCodeId("invitationCodes:delete"),
 			schema: invitationCodeSchemas.deleteInvitationCode
 		},
 		async (request, reply) => {
@@ -436,7 +432,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/invitation-codes",
 		{
-			preHandler: requireEventListAccess,
+			preHandler: requireEventListAccess("invitationCodes:view"),
 			schema: invitationCodeSchemas.listInvitationCodes
 		},
 		async (request, reply) => {
@@ -540,7 +536,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes/bulk",
 		{
-			preHandler: requireEventAccessViaTicketBody,
+			preHandler: requireEventAccessViaTicketBody("invitationCodes:create"),
 			schema: adminInvitationCodeSchemas.bulkCreateInvitationCodes
 		},
 		async (request, reply) => {
@@ -650,6 +646,7 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/invitation-codes/send-email",
 		{
+			preHandler: requirePermission("invitationCodes:send"),
 			schema: adminInvitationCodeSchemas.sendInvitationCodeEmail
 		},
 		async (request, reply) => {

@@ -22,7 +22,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:eventId/webhook",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:view")],
 			schema: webhookSchemas.getWebhook
 		},
 		async (request, reply) => {
@@ -82,7 +82,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:manage")],
 			schema: webhookSchemas.createWebhook
 		},
 		async (request, reply) => {
@@ -192,7 +192,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/events/:eventId/webhook",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:manage")],
 			schema: webhookSchemas.updateWebhook
 		},
 		async (request, reply) => {
@@ -296,7 +296,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/events/:eventId/webhook",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:manage")],
 			schema: webhookSchemas.deleteWebhook
 		},
 		async (request, reply) => {
@@ -351,7 +351,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook/test",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:manage")],
 			schema: webhookSchemas.testWebhook
 		},
 		async (request, reply) => {
@@ -409,7 +409,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:eventId/webhook/failed-deliveries",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:view")],
 			schema: webhookSchemas.getFailedDeliveries
 		},
 		async (request, reply) => {
@@ -475,7 +475,7 @@ const webhooksRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/events/:eventId/webhook/deliveries/:deliveryId/retry",
 		{
-			preHandler: [requireEventAccess],
+			preHandler: [requireEventAccess("webhooks:manage")],
 			schema: webhookSchemas.retryDelivery
 		},
 		async (request, reply) => {

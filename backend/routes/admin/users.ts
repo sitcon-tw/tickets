@@ -3,23 +3,24 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
+import { missingPermissions, parsePermissionList } from "#lib/access";
 import { tracer } from "#lib/tracing";
-import { requireAdmin } from "#middleware/auth";
+import { requirePermission } from "#middleware/auth";
 import { userSchemas } from "#schemas";
 import { safeJsonParse } from "#utils/json";
 import { logger } from "#utils/logger";
 import { conflictResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { UserRoleSchema } from "@sitcontix/types";
+import { BUILTIN_ROLE_PERMISSIONS, UserRoleSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/users" });
 
 const adminUsersRoutes: FastifyPluginAsync = async fastify => {
-	// List users - admin only
+	// List users
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users",
 		{
-			preHandler: requireAdmin,
+			preHandler: requirePermission("users:view"),
 			schema: userSchemas.listUsers
 		},
 		async (request, reply) => {
@@ -49,6 +50,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						image: true,
 						role: true,
 						permissions: true,
+						roleId: true,
+						customRole: { select: { id: true, name: true } },
 						isActive: true,
 						phoneNumber: true,
 						phoneVerified: true,
@@ -94,11 +97,11 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Get user by ID - admin only
+	// Get user by ID
 	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/users/:id",
 		{
-			preHandler: requireAdmin,
+			preHandler: requirePermission("users:view"),
 			schema: userSchemas.getUser
 		},
 		async (request, reply) => {
@@ -122,6 +125,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						image: true,
 						role: true,
 						permissions: true,
+						roleId: true,
+						customRole: { select: { id: true, name: true } },
 						isActive: true,
 						phoneNumber: true,
 						phoneVerified: true,
@@ -181,11 +186,11 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 		}
 	);
 
-	// Update user - admin only
+	// Update user
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/users/:id",
 		{
-			preHandler: requireAdmin,
+			preHandler: requirePermission("users:update"),
 			schema: userSchemas.updateUser
 		},
 		async (request, reply) => {
@@ -211,10 +216,20 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
+				const actor = request.access!;
+
 				// Prevent admins from locking themselves out by changing their own role or deactivating their own account
-				if (request.user?.id === id && ((updateData.role !== undefined && updateData.role !== existingUser.role) || updateData.isActive === false)) {
+				const changesOwnRole = (updateData.role !== undefined && updateData.role !== existingUser.role) || (updateData.roleId !== undefined && updateData.roleId !== existingUser.roleId);
+				if (request.user?.id === id && (changesOwnRole || updateData.isActive === false)) {
 					span.setStatus({ code: SpanStatusCode.OK });
 					const { response, statusCode } = forbiddenResponse("無法變更自己的角色或停用自己的帳號");
+					return reply.code(statusCode).send(response);
+				}
+
+				// Only full admins may touch admin accounts or hand out the admin role
+				if (actor.role !== "admin" && (existingUser.role === "admin" || updateData.role === "admin")) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = forbiddenResponse("只有管理員可以修改管理員帳號或指派管理員角色");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -235,7 +250,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					}
 				}
 
-				const validRoles = ["admin", "viewer", "eventAdmin"];
+				const validRoles = ["admin", "viewer", "eventAdmin", "custom"];
 				if (updateData.role && !validRoles.includes(updateData.role)) {
 					span.setAttribute("validation.error", `Invalid role: ${updateData.role}`);
 					span.setAttribute("validation.field", "role");
@@ -249,10 +264,47 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 					span.setAttribute("user.role.new", updateData.role);
 				}
 
-				const { permissions, ...restUpdateData } = updateData;
-				const updatePayload: Prisma.UserUpdateInput = {
+				// Work out the custom role the user ends up with (undefined = unchanged)
+				const nextRole = updateData.role ?? existingUser.role;
+				let nextRoleId: string | null | undefined;
+				if (updateData.role !== undefined || updateData.roleId !== undefined) {
+					nextRoleId = nextRole === "custom" ? (updateData.roleId ?? existingUser.roleId) : null;
+				}
+
+				// Nobody may hand out more access than they have themselves
+				let grantedPermissions: readonly string[] = [];
+				let grantsAllEvents = false;
+				if (nextRole === "custom" && nextRoleId !== undefined) {
+					const customRole = nextRoleId ? await prisma.role.findUnique({ where: { id: nextRoleId } }) : null;
+					if (!customRole) {
+						span.setStatus({ code: SpanStatusCode.OK });
+						const { response, statusCode } = validationErrorResponse("請選擇有效的自訂角色");
+						return reply.code(statusCode).send(response);
+					}
+					grantedPermissions = parsePermissionList(customRole.permissions);
+					grantsAllEvents = customRole.allEvents;
+				} else if (nextRole === "eventAdmin" && (updateData.role !== undefined || updateData.roleId !== undefined)) {
+					grantedPermissions = BUILTIN_ROLE_PERMISSIONS.eventAdmin;
+				}
+
+				const missing = actor.role === "admin" ? [] : missingPermissions(actor, grantedPermissions);
+				if (missing.length > 0 || (grantsAllEvents && !actor.allEvents)) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = forbiddenResponse("無法指派超出自己權限範圍的角色");
+					return reply.code(statusCode).send(response);
+				}
+
+				if (updateData.permissions && !actor.allEvents && updateData.permissions.some(eventId => !actor.eventIds.includes(eventId))) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = forbiddenResponse("無法指派自己無權管理的活動");
+					return reply.code(statusCode).send(response);
+				}
+
+				const { permissions, roleId: _roleId, ...restUpdateData } = updateData;
+				const updatePayload: Prisma.UserUncheckedUpdateInput = {
 					...restUpdateData,
 					...(permissions && { permissions: JSON.stringify(permissions) }),
+					...(nextRoleId !== undefined && { roleId: nextRoleId }),
 					updatedAt: new Date()
 				};
 
@@ -269,6 +321,8 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						image: true,
 						role: true,
 						permissions: true,
+						roleId: true,
+						customRole: { select: { id: true, name: true } },
 						isActive: true,
 						phoneNumber: true,
 						phoneVerified: true,

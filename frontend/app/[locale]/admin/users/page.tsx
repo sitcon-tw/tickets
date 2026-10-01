@@ -11,17 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminEventsAPI, adminUsersAPI, authAPI } from "@/lib/api/endpoints";
-import type { Event, User } from "@sitcontix/types";
+import { adminEventsAPI, adminRolesAPI, adminUsersAPI, authAPI } from "@/lib/api/endpoints";
+import type { Event, Role, User } from "@sitcontix/types";
 import { Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
 
-type UserRole = "admin" | "viewer" | "eventAdmin";
+type UserRole = "admin" | "viewer" | "eventAdmin" | "custom";
 type RoleFilter = UserRole | "all";
 type StatusFilter = "active" | "inactive" | "all";
 
@@ -31,6 +31,7 @@ type UsersUiState = {
 	roleFilter: RoleFilter;
 	statusFilter: StatusFilter;
 	events: Event[];
+	roles: Role[];
 	currentUserId: string | null;
 	isLoading: boolean;
 	isSaving: boolean;
@@ -38,6 +39,7 @@ type UsersUiState = {
 	editingUser: User | null;
 	selectedEventIds: string[];
 	selectedRole: UserRole;
+	selectedRoleId: string;
 	selectedActive: boolean;
 };
 
@@ -46,6 +48,7 @@ type UsersUiAction =
 	| { type: "loadFinished" }
 	| { type: "usersLoaded"; users: User[] }
 	| { type: "eventsLoaded"; events: Event[] }
+	| { type: "rolesLoaded"; roles: Role[] }
 	| { type: "currentUserLoaded"; id: string }
 	| { type: "searchChanged"; value: string }
 	| { type: "roleFilterChanged"; value: RoleFilter }
@@ -55,7 +58,7 @@ type UsersUiAction =
 	| { type: "closeEdit" }
 	| { type: "saveStarted" }
 	| { type: "saveFinished" }
-	| { type: "roleChanged"; role: UserRole }
+	| { type: "roleChanged"; role: UserRole; roleId: string }
 	| { type: "activeChanged"; active: boolean }
 	| { type: "toggleEvent"; eventId: string };
 
@@ -69,6 +72,8 @@ function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiStat
 			return { ...state, users: action.users };
 		case "eventsLoaded":
 			return { ...state, events: action.events };
+		case "rolesLoaded":
+			return { ...state, roles: action.roles };
 		case "currentUserLoaded":
 			return { ...state, currentUserId: action.id };
 		case "searchChanged":
@@ -85,17 +90,18 @@ function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiStat
 				showEditModal: true,
 				editingUser: action.user,
 				selectedRole: action.user.role,
+				selectedRoleId: action.user.roleId ?? "",
 				selectedActive: action.user.isActive,
 				selectedEventIds: action.user.permissions || []
 			};
 		case "closeEdit":
-			return { ...state, showEditModal: false, editingUser: null, selectedRole: "viewer", selectedActive: true, selectedEventIds: [] };
+			return { ...state, showEditModal: false, editingUser: null, selectedRole: "viewer", selectedRoleId: "", selectedActive: true, selectedEventIds: [] };
 		case "saveStarted":
 			return { ...state, isSaving: true };
 		case "saveFinished":
 			return { ...state, isSaving: false };
 		case "roleChanged":
-			return { ...state, selectedRole: action.role };
+			return { ...state, selectedRole: action.role, selectedRoleId: action.roleId };
 		case "activeChanged":
 			return { ...state, selectedActive: action.active };
 		case "toggleEvent":
@@ -108,7 +114,7 @@ function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiStat
 	}
 }
 
-const roleTones: Record<UserRole, StatusTone> = { admin: "info", eventAdmin: "warning", viewer: "neutral" };
+const roleTones: Record<UserRole, StatusTone> = { admin: "info", eventAdmin: "warning", custom: "warning", viewer: "neutral" };
 
 function getErrorMessage(error: unknown) {
 	return error instanceof Error ? error.message : String(error);
@@ -119,22 +125,26 @@ export default function UsersPage() {
 	const { showAlert } = useAlert();
 	const confirm = useConfirm();
 
-	const [{ users, searchTerm, roleFilter, statusFilter, events, currentUserId, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole, selectedActive }, dispatchUsersUi] =
-		useReducer(usersUiReducer, {
-			users: [],
-			searchTerm: "",
-			roleFilter: "all",
-			statusFilter: "all",
-			events: [],
-			currentUserId: null,
-			isLoading: true,
-			isSaving: false,
-			showEditModal: false,
-			editingUser: null,
-			selectedEventIds: [],
-			selectedRole: "viewer",
-			selectedActive: true
-		});
+	const [
+		{ users, searchTerm, roleFilter, statusFilter, events, roles, currentUserId, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole, selectedRoleId, selectedActive },
+		dispatchUsersUi
+	] = useReducer(usersUiReducer, {
+		users: [],
+		searchTerm: "",
+		roleFilter: "all",
+		statusFilter: "all",
+		events: [],
+		roles: [],
+		currentUserId: null,
+		isLoading: true,
+		isSaving: false,
+		showEditModal: false,
+		editingUser: null,
+		selectedEventIds: [],
+		selectedRole: "viewer",
+		selectedRoleId: "",
+		selectedActive: true
+	});
 
 	const t = getTranslations(locale, {
 		title: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "User Management" },
@@ -158,6 +168,16 @@ export default function UsersPage() {
 		admin: { "zh-Hant": "管理員", "zh-Hans": "管理员", en: "Admin" },
 		viewer: { "zh-Hant": "檢視者", "zh-Hans": "查看者", en: "Viewer" },
 		eventAdmin: { "zh-Hant": "活動管理員", "zh-Hans": "活动管理员", en: "Event Admin" },
+		customRole: { "zh-Hant": "自訂角色", "zh-Hans": "自定义角色", en: "Custom role" },
+		customRoles: { "zh-Hant": "自訂角色", "zh-Hans": "自定义角色", en: "Custom roles" },
+		builtinRoles: { "zh-Hant": "內建角色", "zh-Hans": "内置角色", en: "Built-in roles" },
+		customRoleHelp: {
+			"zh-Hant": "此使用者擁有「{name}」角色的 {n} 項權限。可在「角色管理」調整內容。",
+			"zh-Hans": "此用户拥有「{name}」角色的 {n} 项权限。可在「角色管理」调整内容。",
+			en: 'This user gets the {n} permissions of the "{name}" role. Edit it under Roles.'
+		},
+		pickRole: { "zh-Hant": "請選擇角色", "zh-Hans": "请选择角色", en: "Select a role" },
+		loadRolesFailed: { "zh-Hant": "無法載入角色列表", "zh-Hans": "无法载入角色列表", en: "Failed to load roles" },
 		adminHelp: {
 			"zh-Hant": "管理員可以管理所有內容，包括所有活動與使用者。",
 			"zh-Hans": "管理员可以管理所有内容，包括所有活动与用户。",
@@ -201,9 +221,17 @@ export default function UsersPage() {
 		noResultsHint: { "zh-Hant": "試試其他關鍵字，或清除篩選條件。", "zh-Hans": "试试其他关键字，或清除筛选条件。", en: "Try a different keyword or clear the filters." }
 	});
 
-	const roleLabels = useMemo<Record<UserRole, string>>(() => ({ admin: t.admin, eventAdmin: t.eventAdmin, viewer: t.viewer }), [t.admin, t.eventAdmin, t.viewer]);
+	const roleLabels = useMemo<Record<UserRole, string>>(() => ({ admin: t.admin, eventAdmin: t.eventAdmin, viewer: t.viewer, custom: t.customRole }), [t.admin, t.eventAdmin, t.viewer, t.customRole]);
 
-	const roleHelp: Record<UserRole, string> = { admin: t.adminHelp, eventAdmin: t.eventAdminHelp, viewer: t.viewerHelp };
+	const selectedCustomRole = selectedRole === "custom" ? roles.find(role => role.id === selectedRoleId) : undefined;
+	const roleHelp =
+		selectedRole === "custom"
+			? selectedCustomRole
+				? t.customRoleHelp.replace("{name}", selectedCustomRole.name).replace("{n}", String(selectedCustomRole.permissions.length))
+				: t.pickRole
+			: { admin: t.adminHelp, eventAdmin: t.eventAdminHelp, viewer: t.viewerHelp }[selectedRole];
+	// Roles that are not scoped to every event only apply to the events picked below
+	const needsEventSelection = selectedRole === "eventAdmin" || (selectedRole === "custom" && !!selectedCustomRole && !selectedCustomRole.allEvents);
 
 	const loadUsers = useCallback(async () => {
 		dispatchUsersUi({ type: "loadStarted" });
@@ -249,6 +277,25 @@ export default function UsersPage() {
 	useEffect(() => {
 		let cancelled = false;
 
+		adminRolesAPI
+			.getAll()
+			.then(response => {
+				if (cancelled) return;
+				if (response.success && response.data) dispatchUsersUi({ type: "rolesLoaded", roles: response.data });
+			})
+			.catch(error => {
+				console.error("Failed to load roles:", error);
+				if (!cancelled) showAlert(`${t.loadRolesFailed}: ${getErrorMessage(error)}`, "error");
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [showAlert, t.loadRolesFailed]);
+
+	useEffect(() => {
+		let cancelled = false;
+
 		// Only used to stop admins from demoting or deactivating themselves; without it the guard is simply skipped.
 		authAPI
 			.getSession()
@@ -279,12 +326,18 @@ export default function UsersPage() {
 			}
 		}
 
+		if (selectedRole === "custom" && !selectedCustomRole) {
+			showAlert(t.pickRole, "error");
+			return;
+		}
+
 		dispatchUsersUi({ type: "saveStarted" });
 		try {
 			const response = await adminUsersAPI.update(editingUser.id, {
 				role: selectedRole,
+				roleId: selectedRole === "custom" ? selectedRoleId : null,
 				isActive: selectedActive,
-				permissions: selectedRole === "eventAdmin" ? selectedEventIds : []
+				permissions: needsEventSelection ? selectedEventIds : []
 			});
 			if (!response.success) {
 				showAlert(`${t.updateFailed}${response.message ? `: ${response.message}` : ""}`, "error");
@@ -318,7 +371,7 @@ export default function UsersPage() {
 			const smsPhone = user.smsVerifications?.find(sms => sms.verified)?.phoneNumber ?? user.smsVerifications?.[0]?.phoneNumber;
 			return {
 				...user,
-				roleLabel: roleLabels[user.role] ?? user.role,
+				roleLabel: user.role === "custom" ? (user.customRole?.name ?? roleLabels.custom) : (roleLabels[user.role] ?? user.role),
 				roleTone: roleTones[user.role] ?? "neutral",
 				statusLabel: user.isActive ? t.active : t.inactive,
 				statusTone: user.isActive ? "success" : "neutral",
@@ -376,6 +429,7 @@ export default function UsersPage() {
 						<SelectItem value="all">{t.allRoles}</SelectItem>
 						<SelectItem value="admin">{t.admin}</SelectItem>
 						<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
+						<SelectItem value="custom">{t.customRole}</SelectItem>
 						<SelectItem value="viewer">{t.viewer}</SelectItem>
 					</SelectContent>
 				</Select>
@@ -461,17 +515,38 @@ export default function UsersPage() {
 
 							<div className="space-y-2">
 								<Label htmlFor="user-role">{t.role}</Label>
-								<Select value={selectedRole} onValueChange={value => dispatchUsersUi({ type: "roleChanged", role: value as UserRole })} disabled={isEditingSelf}>
+								<Select
+									value={selectedRole === "custom" ? `custom:${selectedRoleId}` : selectedRole}
+									onValueChange={value =>
+										value.startsWith("custom:")
+											? dispatchUsersUi({ type: "roleChanged", role: "custom", roleId: value.slice("custom:".length) })
+											: dispatchUsersUi({ type: "roleChanged", role: value as UserRole, roleId: "" })
+									}
+									disabled={isEditingSelf}
+								>
 									<SelectTrigger id="user-role" className="w-full">
-										<SelectValue />
+										<SelectValue placeholder={t.pickRole} />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="admin">{t.admin}</SelectItem>
-										<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
-										<SelectItem value="viewer">{t.viewer}</SelectItem>
+										<SelectGroup>
+											<SelectLabel>{t.builtinRoles}</SelectLabel>
+											<SelectItem value="admin">{t.admin}</SelectItem>
+											<SelectItem value="eventAdmin">{t.eventAdmin}</SelectItem>
+											<SelectItem value="viewer">{t.viewer}</SelectItem>
+										</SelectGroup>
+										{roles.length > 0 && (
+											<SelectGroup>
+												<SelectLabel>{t.customRoles}</SelectLabel>
+												{roles.map(role => (
+													<SelectItem key={role.id} value={`custom:${role.id}`}>
+														{role.name}
+													</SelectItem>
+												))}
+											</SelectGroup>
+										)}
 									</SelectContent>
 								</Select>
-								<p className="text-sm text-muted-foreground">{roleHelp[selectedRole]}</p>
+								<p className="text-sm text-muted-foreground">{roleHelp}</p>
 							</div>
 
 							<div className="space-y-2">
@@ -487,7 +562,7 @@ export default function UsersPage() {
 								</Select>
 							</div>
 
-							{selectedRole === "eventAdmin" && (
+							{needsEventSelection && (
 								<fieldset className="space-y-2">
 									<legend className="mb-2 flex w-full items-center justify-between gap-2 text-md font-bold">
 										{t.manageableEvents}

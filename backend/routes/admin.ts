@@ -1,4 +1,4 @@
-import { requireAdminOrEventAdmin } from "#middleware/auth";
+import { requireAdminAccess } from "#middleware/auth";
 import type { FastifyPluginAsync } from "fastify";
 
 import emailCampaignsRoutes from "./admin/emailCampaigns";
@@ -8,6 +8,7 @@ import eventsRoutes from "./admin/events";
 import invitationCodesRoutes from "./admin/invitationCodes";
 import referralsRoutes from "./admin/referrals";
 import registrationsRoutes from "./admin/registrations";
+import rolesRoutes from "./admin/roles";
 import settingsRoutes from "./admin/settings";
 import smsVerificationLogsRoutes from "./admin/smsVerificationLogs";
 import sponsorsRoutes from "./admin/sponsors";
@@ -16,10 +17,11 @@ import usersRoutes from "./admin/users";
 import webhooksRoutes from "./admin/webhooks";
 
 const adminRoutes: FastifyPluginAsync = async fastify => {
-	fastify.addHook("preHandler", requireAdminOrEventAdmin);
+	fastify.addHook("preHandler", requireAdminAccess);
 
 	await fastify.register(eventDashboardRoutes);
 	await fastify.register(usersRoutes);
+	await fastify.register(rolesRoutes);
 	await fastify.register(eventsRoutes);
 	await fastify.register(ticketsRoutes);
 	await fastify.register(eventFormFieldsRoutes);

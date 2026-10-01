@@ -1,6 +1,6 @@
 import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
-import { requireEventDashboardAccess } from "#middleware/auth";
+import { requireEventAccess } from "#middleware/auth";
 import { eventDashboardSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
@@ -11,7 +11,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 const componentLogger = logger.child({ component: "admin/eventDashboard" });
 
 const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
-	fastify.addHook("preHandler", requireEventDashboardAccess);
+	fastify.addHook("preHandler", requireEventAccess("dashboard:view"));
 
 	// Get per-event dashboard data
 	fastify.get(

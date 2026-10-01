@@ -19,6 +19,8 @@ type SessionUser = {
 	name?: string;
 	email?: string;
 	role?: string | string[];
+	/** Whether the user holds at least one admin permission (covers custom roles) */
+	hasAdminPermissions?: boolean;
 };
 
 type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
@@ -89,10 +91,7 @@ export default function Nav() {
 	}
 
 	const hasAdminAccess = useMemo(() => {
-		if (session.status !== "authenticated" || !session.user.role) return false;
-		const roles = Array.isArray(session.user.role) ? session.user.role : [session.user.role];
-		const hasAccess = roles.some(role => role === "admin" || role === "eventAdmin");
-		return hasAccess;
+		return session.status === "authenticated" && !!session.user.hasAdminPermissions;
 	}, [session]);
 
 	const gravatarUrl = useMemo(() => {
@@ -147,7 +146,8 @@ export default function Nav() {
 									status: "authenticated",
 									user: {
 										...data.user,
-										role: permissionsData.data.role
+										role: permissionsData.data.role,
+										hasAdminPermissions: permissionsData.data.grantedPermissions.length > 0
 									}
 								});
 							} else {
