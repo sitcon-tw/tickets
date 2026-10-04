@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { DataTableFeatures } from "@/lib/data-table-features";
+import { LOGO_BG_CLASS, logoBackgroundStyle, safeLogoSrc } from "@/lib/utils/sponsor-logo";
 import type { SponsorPlacement, SponsorWithStats } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
@@ -50,9 +51,9 @@ export const createSponsorsColumns = (actions: ColumnActions): ColumnDef<DataTab
 		enableSorting: false,
 		header: () => <span className="sr-only">{actions.t.logo}</span>,
 		cell: ({ row }) => (
-			<div className="flex h-12 w-24 items-center justify-center rounded-md border bg-white p-1.5">
+			<div style={logoBackgroundStyle(row.original)} className={`flex h-12 w-24 items-center justify-center rounded-md border p-1.5 ${LOGO_BG_CLASS}`}>
 				{/* oxlint-disable-next-line nextjs/no-img-element */}
-				<img src={row.original.logoUrl} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
+				<img src={safeLogoSrc(row.original.logoUrl) ?? undefined} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
 			</div>
 		)
 	},

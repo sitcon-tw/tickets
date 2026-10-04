@@ -126,6 +126,7 @@ export function useFormsTranslations(locale: string) {
 				requiredHelp: { "zh-Hant": "報名者必須填寫此欄位", "zh-Hans": "报名者必须填写此栏位", en: "Attendees must answer this field" },
 				fieldDescription: { "zh-Hant": "說明文字", "zh-Hans": "说明文字", en: "Description" },
 				descriptionHelp: { "zh-Hant": "顯示在欄位下方，支援 Markdown。", "zh-Hans": "显示在栏位下方，支持 Markdown。", en: "Shown with the field. Markdown is supported." },
+				markdownPreview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
 				optionSettings: { "zh-Hant": "選項", "zh-Hans": "选项", en: "Options" },
 				optionsHelp: {
 					"zh-Hant": "英文名稱必填且不可重複，同時作為儲存的答案值。",

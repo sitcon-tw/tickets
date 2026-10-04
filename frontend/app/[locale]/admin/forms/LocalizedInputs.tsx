@@ -1,5 +1,6 @@
 "use client";
 
+import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,13 +18,15 @@ type LocalizedInputsProps = {
 	required?: boolean;
 	invalid?: boolean;
 	helper?: ReactNode;
+	/** Render each non-empty value as Markdown below its textarea, labelled with this text (multiline only). */
+	markdownPreviewLabel?: string;
 	/** Hide the group label (when a parent already renders one). */
 	compact?: boolean;
 	className?: string;
 };
 
 /** One text value in the three supported languages, stacked with a language tag in front of each input. */
-export function LocalizedInputs({ id, label, values, onChange, placeholders, multiline, required, invalid, helper, compact, className }: LocalizedInputsProps) {
+export function LocalizedInputs({ id, label, values, onChange, placeholders, multiline, required, invalid, helper, markdownPreviewLabel, compact, className }: LocalizedInputsProps) {
 	return (
 		<fieldset className={cn("min-w-0 space-y-2", className)}>
 			{!compact && (
@@ -51,7 +54,15 @@ export function LocalizedInputs({ id, label, values, onChange, placeholders, mul
 						<Label htmlFor={inputId} title={lang.label} className="mt-2 w-7 shrink-0 justify-center rounded bg-muted px-0 py-1 text-[0.7rem] font-semibold text-muted-foreground">
 							{lang.short}
 						</Label>
-						{multiline ? <Textarea {...props} className="min-h-16 text-sm" /> : <Input {...props} type="text" className="h-9 text-sm" />}
+						<div className="min-w-0 flex-1 space-y-2">
+							{multiline ? <Textarea {...props} className="min-h-16 text-sm" /> : <Input {...props} type="text" className="h-9 text-sm" />}
+							{multiline && markdownPreviewLabel && values[lang.key].trim() && (
+								<div className="rounded-lg border bg-muted/40 p-3">
+									<div className="mb-1.5 text-xs font-semibold text-muted-foreground">{markdownPreviewLabel}</div>
+									<MarkdownContent content={values[lang.key]} className="text-sm" />
+								</div>
+							)}
+						</div>
 					</div>
 				);
 			})}

@@ -7,7 +7,8 @@ import { getTranslations } from "@/i18n/helpers";
 import { sponsorsAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
-import type { PublicSponsor, SponsorPlacement } from "@sitcontix/types";
+import { LOGO_BG_CLASS, logoBackgroundStyle, safeLogoSrc } from "@/lib/utils/sponsor-logo";
+import type { PublicSponsor, SponsorPlacement, SponsorSectionTitles } from "@sitcontix/types";
 import { ExternalLink } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -27,8 +28,8 @@ function safeWebUrl(url: string | null | undefined) {
 function SponsorLogo({ sponsor, name, className, sizes }: { sponsor: PublicSponsor; name: string; className?: string; sizes: string }) {
 	const [failed, setFailed] = useState(false);
 	const [darkFailed, setDarkFailed] = useState(false);
-	const logoUrl = safeWebUrl(sponsor.logoUrl);
-	const darkUrl = safeWebUrl(sponsor.logoDarkUrl);
+	const logoUrl = safeLogoSrc(sponsor.logoUrl);
+	const darkUrl = safeLogoSrc(sponsor.logoDarkUrl);
 	const useDark = Boolean(darkUrl) && !darkFailed;
 
 	if (!logoUrl || failed) {
@@ -37,7 +38,7 @@ function SponsorLogo({ sponsor, name, className, sizes }: { sponsor: PublicSpons
 
 	return (
 		<div className={cn("relative size-full", className)}>
-			{/* next/image with `unoptimized`: sponsor logos live on arbitrary hosts that are not in the image optimizer allow-list. */}
+			{/* next/image with `unoptimized`: sponsor logos live on arbitrary hosts that are not in the image optimizer allow-list, or are uploaded images stored inline. */}
 			<Image src={logoUrl} alt={name} fill sizes={sizes} unoptimized className={cn("object-contain", useDark && "dark:hidden")} onError={() => setFailed(true)} />
 			{useDark && darkUrl && <Image src={darkUrl} alt="" aria-hidden="true" fill sizes={sizes} unoptimized className="hidden object-contain dark:block" onError={() => setDarkFailed(true)} />}
 		</div>
@@ -47,6 +48,8 @@ function SponsorLogo({ sponsor, name, className, sizes }: { sponsor: PublicSpons
 type SponsorSectionProps = {
 	sponsors: PublicSponsor[];
 	placement: SponsorPlacement;
+	/** Custom heading per placement, set by the event admins. Falls back to a default title. */
+	titles?: SponsorSectionTitles;
 	className?: string;
 };
 
@@ -54,10 +57,10 @@ type SponsorSectionProps = {
  * Responsive grid of sponsor logos for one page slot. Clicking a logo opens a popup with the sponsor's introduction.
  * Reports impressions (grid scrolled into view once per page view), clicks (popup opened) and website link clicks.
  */
-export default function SponsorSection({ sponsors, placement, className }: SponsorSectionProps) {
+export default function SponsorSection({ sponsors, placement, titles, className }: SponsorSectionProps) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		sponsorPartners: { "zh-Hant": "贊助夥伴", "zh-Hans": "赞助伙伴", en: "Sponsor Partners" },
+		defaultTitle: { "zh-Hant": "特別感謝", "zh-Hans": "特别感谢", en: "Special Thanks" },
 		visitWebsite: { "zh-Hant": "前往官方網站", "zh-Hans": "前往官方网站", en: "Visit website" }
 	});
 
@@ -96,11 +99,12 @@ export default function SponsorSection({ sponsors, placement, className }: Spons
 	const selectedDescription = selected ? getLocalizedText(selected.description, locale) : "";
 	const selectedWebsite = selected ? safeWebUrl(selected.websiteUrl) : null;
 	const headingId = `sponsors-${placement}`;
+	const title = getLocalizedText(titles?.[placement], locale) || t.defaultTitle;
 
 	return (
 		<section ref={sectionRef} aria-labelledby={headingId} className={className}>
 			<h2 id={headingId} className="mb-4 text-center text-sm font-semibold tracking-widest text-muted-foreground uppercase">
-				{t.sponsorPartners}
+				{title}
 			</h2>
 
 			{/* Equal-size cards that wrap and stay centered, so 1–10 logos look balanced at every width. */}
@@ -114,9 +118,10 @@ export default function SponsorSection({ sponsors, placement, className }: Spons
 								onClick={() => openSponsor(sponsor)}
 								aria-haspopup="dialog"
 								aria-label={name}
+								style={logoBackgroundStyle(sponsor)}
 								className={cn(
 									"flex h-20 w-full items-center justify-center rounded-xl border border-border p-3 shadow-xs transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:h-24",
-									sponsor.logoDarkUrl ? "bg-white dark:bg-gray-900" : "bg-white"
+									LOGO_BG_CLASS
 								)}
 							>
 								<SponsorLogo sponsor={sponsor} name={name} sizes="(max-width: 640px) 45vw, 200px" />
@@ -130,7 +135,7 @@ export default function SponsorSection({ sponsors, placement, className }: Spons
 				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
 					{selected && (
 						<>
-							<div className={cn("mx-auto flex h-28 w-full max-w-64 items-center justify-center rounded-xl border p-4", selected.logoDarkUrl ? "bg-white dark:bg-gray-900" : "bg-white")}>
+							<div style={logoBackgroundStyle(selected)} className={cn("mx-auto flex h-28 w-full max-w-64 items-center justify-center rounded-xl border p-4", LOGO_BG_CLASS)}>
 								<SponsorLogo sponsor={selected} name={selectedName} sizes="256px" />
 							</div>
 							<DialogHeader>

@@ -15,7 +15,7 @@ import {
 	PublicEventFormFieldSchema,
 	PublicEventListItemSchema,
 	PublicReferralRankingDataSchema,
-	PublicSponsorSchema,
+	PublicSponsorsDataSchema,
 	PublicTicketDetailSchema,
 	PublicTicketListItemSchema,
 	ReferralLinkSchema,
@@ -29,6 +29,7 @@ import {
 	SiteSettingsSchema,
 	SponsorDailyStatSchema,
 	SponsorSchema,
+	SponsorSectionTitlesSchema,
 	SponsorWithStatsSchema,
 	TargetAudienceSchema,
 	TicketAnalyticsSchema,
@@ -48,6 +49,7 @@ import {
 	type SiteSettingsUpdateRequest,
 	type SponsorCreateRequest,
 	type SponsorReorderRequest,
+	type SponsorSectionTitles,
 	type SponsorTrackRequest,
 	type SponsorUpdateRequest,
 	type Ticket,
@@ -102,7 +104,7 @@ export const eventsAPI = {
 
 	getStats: (id: string) => apiClient.get(`/api/events/${id}/stats`, {}, ApiResponseSchema(EventStatsSchema)),
 
-	getSponsors: (id: string) => apiClient.get(`/api/events/${id}/sponsors`, {}, ApiResponseSchema(z.array(PublicSponsorSchema)))
+	getSponsors: (id: string) => apiClient.get(`/api/events/${id}/sponsors`, {}, ApiResponseSchema(PublicSponsorsDataSchema))
 };
 
 // Sponsors - Public tracking. Fire-and-forget: it must never retry, redirect or surface errors to the visitor.
@@ -256,6 +258,10 @@ export const adminTicketsAPI = {
 // Admin - Sponsors
 export const adminSponsorsAPI = {
 	getAll: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/sponsors`, {}, ApiResponseSchema(z.array(SponsorWithStatsSchema))),
+
+	getSectionTitles: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/sponsors/titles`, {}, ApiResponseSchema(SponsorSectionTitlesSchema)),
+
+	updateSectionTitles: (eventId: string, data: SponsorSectionTitles) => apiClient.put(`/api/admin/events/${eventId}/sponsors/titles`, data, ApiResponseSchema(SponsorSectionTitlesSchema)),
 
 	getDailyStats: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/sponsors/stats/daily`, {}, ApiResponseSchema(z.array(SponsorDailyStatSchema))),
 

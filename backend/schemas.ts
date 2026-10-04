@@ -47,11 +47,12 @@ import {
 	// SMS schemas
 	SendVerificationRequestSchema,
 	// Sponsor schemas
-	PublicSponsorSchema,
+	PublicSponsorsDataSchema,
 	SponsorCreateRequestSchema,
 	SponsorDailyStatSchema,
 	SponsorReorderRequestSchema,
 	SponsorSchema,
+	SponsorSectionTitlesSchema,
 	SponsorTrackRequestSchema,
 	SponsorUpdateRequestSchema,
 	SponsorWithStatsSchema,
@@ -2219,7 +2220,13 @@ export const SponsorDailyStatsResponseSchema = z.object({
 export const PublicSponsorsResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string(),
-	data: z.array(PublicSponsorSchema)
+	data: PublicSponsorsDataSchema
+});
+
+export const SponsorSectionTitlesResponseSchema = z.object({
+	success: z.literal(true),
+	message: z.string(),
+	data: SponsorSectionTitlesSchema
 });
 
 export const SponsorIdParamSchema = z.object({
@@ -2256,6 +2263,28 @@ export const adminSponsorSchemas = {
 		response: {
 			200: SponsorsWithStatsResponseSchema,
 			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getSectionTitles: {
+		description: "取得活動贊助商區塊標題",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		response: {
+			200: SponsorSectionTitlesResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	updateSectionTitles: {
+		description: "更新活動贊助商區塊標題",
+		tags: ["admin/sponsors"],
+		params: EventIdParamSchema,
+		body: SponsorSectionTitlesSchema,
+		response: {
+			200: SponsorSectionTitlesResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	},

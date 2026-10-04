@@ -115,6 +115,7 @@ export function FieldEditor({ question, questions, eventTickets, issues, locale,
 						values={{ en: question.descriptionEn, "zh-Hant": question.descriptionZhHant, "zh-Hans": question.descriptionZhHans }}
 						onChange={(lang: LangKey, value) => update({ [descriptionKeys[lang]]: value })}
 						helper={t.descriptionHelp}
+						markdownPreviewLabel={t.markdownPreview}
 					/>
 				</TabsContent>
 

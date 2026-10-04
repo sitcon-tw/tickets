@@ -14,10 +14,11 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { SponsorWithStats } from "@sitcontix/types";
-import { CalendarDays, Download, Handshake, Plus, RefreshCw } from "lucide-react";
+import { CalendarDays, Download, Handshake, Plus, RefreshCw, Type } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 import { createSponsorsColumns, formatCtr, type SponsorDisplay } from "./columns";
+import { SectionTitlesDialog } from "./SectionTitlesDialog";
 import { SponsorFormDialog } from "./SponsorFormDialog";
 
 function errorMessage(error: unknown) {
@@ -96,6 +97,7 @@ export default function SponsorsPage() {
 	const [state, dispatch] = useReducer(sponsorsPageReducer, initialSponsorsPageState);
 	const { sponsors, isLoading, loadError, showModal, editingSponsor, isSorting } = state;
 	const [isExporting, setIsExporting] = useState(false);
+	const [showTitles, setShowTitles] = useState(false);
 
 	const requestRef = useRef(0);
 	const eventIdRef = useRef(eventId);
@@ -116,6 +118,7 @@ export default function SponsorsPage() {
 			en: "Manage the sponsor logos on the event page. Clicking a logo opens the sponsor's introduction, and impressions and clicks are tracked automatically. Drag the handle (or use the arrows) to change the order."
 		},
 		addSponsor: { "zh-Hant": "新增廠商", "zh-Hans": "新增厂商", en: "Add Sponsor" },
+		sectionTitles: { "zh-Hant": "區塊標題", "zh-Hans": "区块标题", en: "Section titles" },
 		exportCsv: { "zh-Hant": "匯出每日數據 (CSV)", "zh-Hans": "导出每日数据 (CSV)", en: "Export daily data (CSV)" },
 		exportFailed: { "zh-Hant": "匯出失敗：", "zh-Hans": "导出失败：", en: "Could not export: " },
 		logo: { "zh-Hant": "Logo", "zh-Hans": "Logo", en: "Logo" },
@@ -402,6 +405,13 @@ export default function SponsorsPage() {
 		</Button>
 	);
 
+	const titlesButton = (
+		<Button variant="outline" onClick={() => setShowTitles(true)} disabled={!eventId}>
+			<Type className="size-4" />
+			{t.sectionTitles}
+		</Button>
+	);
+
 	let content: ReactNode;
 	if (!eventId) {
 		content = <EmptyState icon={CalendarDays} title={t.noEventTitle} description={t.noEventDescription} />;
@@ -460,6 +470,7 @@ export default function SponsorsPage() {
 				description={t.description}
 				actions={
 					<>
+						{titlesButton}
 						{exportButton}
 						{addButton}
 					</>
@@ -467,6 +478,8 @@ export default function SponsorsPage() {
 			/>
 
 			{content}
+
+			<SectionTitlesDialog open={showTitles} eventId={eventId} onOpenChange={setShowTitles} />
 
 			<SponsorFormDialog open={showModal} sponsor={editingSponsor} eventId={eventId} onOpenChange={value => dispatch({ type: "setModalOpen", value })} onSaved={refreshSponsors} />
 		</main>

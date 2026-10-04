@@ -9,7 +9,7 @@ import { requireEventAccess, requireEventAccessViaSponsorId } from "#middleware/
 import { adminSponsorSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
-import { emptySponsorStats, parseSponsorRow } from "#utils/sponsors";
+import { cleanSponsorTitles, emptySponsorStats, parseSponsorRow, parseSponsorTitles } from "#utils/sponsors";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { SponsorPlacementSchema, type SponsorStats } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
@@ -78,6 +78,68 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 
 	fastify
 		.withTypeProvider<ZodTypeProvider>()
+		.get("/events/:eventId/sponsors/titles", { preHandler: requireEventAccess("sponsors:view"), schema: adminSponsorSchemas.getSectionTitles }, async (request, reply) => {
+			const { eventId } = request.params;
+			const span = tracer.startSpan("route.admin.sponsors.titles.get", { attributes: { "event.id": eventId } });
+
+			try {
+				const event = await prisma.event.findUnique({ where: { id: eventId }, select: { sponsorTitles: true } });
+				if (!event) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.send(successResponse(parseSponsorTitles(event.sponsorTitles)));
+			} catch (error) {
+				componentLogger.error({ error }, "Get sponsor titles error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to get sponsor titles" });
+				const { response, statusCode } = serverErrorResponse("取得區塊標題失敗");
+				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
+			}
+		});
+
+	fastify
+		.withTypeProvider<ZodTypeProvider>()
+		.put("/events/:eventId/sponsors/titles", { preHandler: requireEventAccess("sponsors:update"), schema: adminSponsorSchemas.updateSectionTitles }, async (request, reply) => {
+			const { eventId } = request.params;
+			const span = tracer.startSpan("route.admin.sponsors.titles.update", { attributes: { "event.id": eventId } });
+
+			try {
+				const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+				if (!event) {
+					span.setStatus({ code: SpanStatusCode.OK });
+					const { response, statusCode } = notFoundResponse("活動不存在");
+					return reply.code(statusCode).send(response);
+				}
+
+				const titles = cleanSponsorTitles(request.body);
+				const updated = await prisma.event.update({
+					where: { id: eventId },
+					// With no custom title left, clear the column so the default titles apply again.
+					data: { sponsorTitles: Object.keys(titles).length > 0 ? titles : Prisma.DbNull },
+					select: { sponsorTitles: true }
+				});
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return reply.send(successResponse(parseSponsorTitles(updated.sponsorTitles), "區塊標題更新成功"));
+			} catch (error) {
+				componentLogger.error({ error }, "Update sponsor titles error");
+				span.recordException(error as Error);
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to update sponsor titles" });
+				const { response, statusCode } = serverErrorResponse("更新區塊標題失敗");
+				return reply.code(statusCode).send(response);
+			} finally {
+				span.end();
+			}
+		});
+
+	fastify
+		.withTypeProvider<ZodTypeProvider>()
 		.get("/events/:eventId/sponsors/stats/daily", { preHandler: requireEventAccess("sponsors:view"), schema: adminSponsorSchemas.getDailyStats }, async (request, reply) => {
 			const { eventId } = request.params;
 			const span = tracer.startSpan("route.admin.sponsors.daily_stats", { attributes: { "event.id": eventId } });
@@ -129,7 +191,7 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 		.withTypeProvider<ZodTypeProvider>()
 		.post("/events/:eventId/sponsors", { preHandler: requireEventAccess("sponsors:create"), schema: adminSponsorSchemas.createSponsor }, async (request, reply) => {
 			const { eventId } = request.params;
-			const { name, description, logoUrl, logoDarkUrl, websiteUrl, placements, isActive } = request.body;
+			const { name, description, logoUrl, logoDarkUrl, logoBgColor, logoDarkBgColor, websiteUrl, placements, isActive } = request.body;
 			const span = tracer.startSpan("route.admin.sponsors.create", { attributes: { "event.id": eventId } });
 
 			try {
@@ -156,6 +218,8 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 						description: hasText(description) ? description : undefined,
 						logoUrl,
 						logoDarkUrl: logoDarkUrl ?? null,
+						logoBgColor: logoBgColor ?? null,
+						logoDarkBgColor: logoDarkBgColor ?? null,
 						websiteUrl: websiteUrl ?? null,
 						placements: placements ? [...new Set(placements)] : DEFAULT_PLACEMENTS,
 						isActive: isActive ?? true
@@ -219,7 +283,7 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 		.withTypeProvider<ZodTypeProvider>()
 		.put("/sponsors/:id", { preHandler: requireEventAccessViaSponsorId("sponsors:update"), schema: adminSponsorSchemas.updateSponsor }, async (request, reply) => {
 			const { id } = request.params;
-			const { name, description, logoUrl, logoDarkUrl, websiteUrl, placements, isActive } = request.body;
+			const { name, description, logoUrl, logoDarkUrl, logoBgColor, logoDarkBgColor, websiteUrl, placements, isActive } = request.body;
 			const span = tracer.startSpan("route.admin.sponsors.update", { attributes: { "sponsor.id": id } });
 
 			try {
@@ -242,6 +306,8 @@ const adminSponsorsRoutes: FastifyPluginAsync = async fastify => {
 				if (description !== undefined) data.description = hasText(description) ? description : Prisma.DbNull;
 				if (logoUrl !== undefined) data.logoUrl = logoUrl;
 				if (logoDarkUrl !== undefined) data.logoDarkUrl = logoDarkUrl;
+				if (logoBgColor !== undefined) data.logoBgColor = logoBgColor;
+				if (logoDarkBgColor !== undefined) data.logoDarkBgColor = logoDarkBgColor;
 				if (websiteUrl !== undefined) data.websiteUrl = websiteUrl;
 				if (placements !== undefined) data.placements = [...new Set(placements)];
 				if (isActive !== undefined) data.isActive = isActive;

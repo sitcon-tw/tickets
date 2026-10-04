@@ -24,8 +24,31 @@ export const sponsorPlacements = SponsorPlacementSchema.options;
 export const SponsorTrackTypeSchema = z.enum(["impression", "click", "link_click"]);
 export type SponsorTrackType = z.infer<typeof SponsorTrackTypeSchema>;
 
-/** Only web links are allowed for logos and sponsor websites (blocks javascript: / data: URLs). */
+/** Only web links are allowed for sponsor websites (blocks javascript: / data: URLs). */
 const HttpUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
+
+/**
+ * Largest uploaded logo, as a data URL. Uploads are resized in the browser first, and two logos must fit in the JSON body limit together.
+ */
+export const SPONSOR_LOGO_DATA_URL_MAX_LENGTH = 200_000;
+
+/** An uploaded image stored inline. Only raster / SVG images are allowed, and `<img>` never runs scripts inside an SVG. */
+const LOGO_DATA_URL_PATTERN = /^data:image\/(?:png|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+/** A logo is either an http(s) image link or an uploaded image (data URL). */
+const LogoSourceSchema = z.union([HttpUrlSchema, z.string().max(SPONSOR_LOGO_DATA_URL_MAX_LENGTH).regex(LOGO_DATA_URL_PATTERN)]);
+
+/** Background behind a logo, as `#rrggbb`. */
+export const SponsorColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+/**
+ * Heading shown above the logo grid of each placement. A missing / empty entry falls back to the built-in default title.
+ */
+export const SponsorSectionTitlesSchema = z.object({
+	after_registration: z.record(z.string(), z.string().max(100)).optional(),
+	after_event_info: z.record(z.string(), z.string().max(100)).optional()
+});
+export type SponsorSectionTitles = z.infer<typeof SponsorSectionTitlesSchema>;
 
 /**
  * Counters for a sponsor
@@ -48,6 +71,8 @@ export const SponsorSchema = z.object({
 	description: LocalizedTextSchema.nullable().optional(),
 	logoUrl: z.string(),
 	logoDarkUrl: z.string().nullable().optional(),
+	logoBgColor: SponsorColorSchema.nullable().optional(),
+	logoDarkBgColor: SponsorColorSchema.nullable().optional(),
 	websiteUrl: z.string().nullable().optional(),
 	placements: z.array(SponsorPlacementSchema),
 	isActive: z.boolean(),
@@ -71,10 +96,21 @@ export const PublicSponsorSchema = z.object({
 	description: LocalizedTextSchema.nullable().optional(),
 	logoUrl: z.string(),
 	logoDarkUrl: z.string().nullable().optional(),
+	logoBgColor: SponsorColorSchema.nullable().optional(),
+	logoDarkBgColor: SponsorColorSchema.nullable().optional(),
 	websiteUrl: z.string().nullable().optional(),
 	placements: z.array(SponsorPlacementSchema)
 });
 export type PublicSponsor = z.infer<typeof PublicSponsorSchema>;
+
+/**
+ * Everything the event page needs to render its sponsor sections
+ */
+export const PublicSponsorsDataSchema = z.object({
+	sponsors: z.array(PublicSponsorSchema),
+	sectionTitles: SponsorSectionTitlesSchema
+});
+export type PublicSponsorsData = z.infer<typeof PublicSponsorsDataSchema>;
 
 /**
  * Sponsor create request
@@ -82,8 +118,10 @@ export type PublicSponsor = z.infer<typeof PublicSponsorSchema>;
 export const SponsorCreateRequestSchema = z.object({
 	name: LocalizedTextSchema,
 	description: LocalizedTextSchema.optional(),
-	logoUrl: HttpUrlSchema,
-	logoDarkUrl: HttpUrlSchema.nullable().optional(),
+	logoUrl: LogoSourceSchema,
+	logoDarkUrl: LogoSourceSchema.nullable().optional(),
+	logoBgColor: SponsorColorSchema.nullable().optional(),
+	logoDarkBgColor: SponsorColorSchema.nullable().optional(),
 	websiteUrl: HttpUrlSchema.nullable().optional(),
 	placements: z.array(SponsorPlacementSchema).min(1).max(sponsorPlacements.length).optional(),
 	isActive: z.boolean().optional()

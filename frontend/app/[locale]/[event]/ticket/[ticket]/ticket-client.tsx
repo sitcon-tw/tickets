@@ -4,12 +4,13 @@ import PageSpinner from "@/components/PageSpinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { eventsAPI, invitationCodesAPI, ticketsAPI } from "@/lib/api/endpoints";
 import { PublicTicketDetailSchema } from "@sitcontix/types";
 import { useLocale } from "next-intl";
+import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { z } from "zod/v4";
 
 const formDataStorageKey = "formData:v1";
@@ -65,10 +66,31 @@ function isTicketSoldOut(ticket: z.infer<typeof PublicTicketDetailSchema>): bool
 	return ticket.available !== undefined && ticket.available <= 0;
 }
 
+/** Fallback link, shown only if the automatic redirect has not happened after a few seconds. */
+function ManualContinue({ href, label }: { href: string; label: string }) {
+	const [visible, setVisible] = useState(false);
+
+	useEffect(() => {
+		const timer = window.setTimeout(() => setVisible(true), 4000);
+		return () => window.clearTimeout(timer);
+	}, []);
+
+	return (
+		<Link
+			href={href}
+			className={`text-sm text-muted-foreground underline underline-offset-4 transition-opacity duration-500 hover:text-foreground ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
+			tabIndex={visible ? 0 : -1}
+		>
+			{label}
+		</Link>
+	);
+}
+
 export default function SetTicket() {
 	const { showAlert } = useAlert();
 	const locale = useLocale();
 	const params = useParams();
+	const router = useRouter();
 
 	const [state, dispatch] = useReducer(ticketPageReducer, initialTicketPageState);
 	const { isLoading, errorMessage, isNotYetAvailable, isReady } = state;
@@ -95,9 +117,19 @@ export default function SetTicket() {
 			en: "An error occurred. Please try again later."
 		},
 		redirecting: {
-			"zh-Hant": "正在重新導向...",
-			"zh-Hans": "正在重定向...",
-			en: "Redirecting..."
+			"zh-Hant": "正在前往報名表單",
+			"zh-Hans": "正在前往报名表单",
+			en: "Taking you to the registration form"
+		},
+		redirectingHint: {
+			"zh-Hant": "票券已確認，馬上就好。",
+			"zh-Hans": "票券已确认，马上就好。",
+			en: "Your ticket is confirmed. Just a moment."
+		},
+		redirectManual: {
+			"zh-Hant": "沒有自動跳轉？點此繼續",
+			"zh-Hans": "没有自动跳转？点此继续",
+			en: "Not redirected? Continue here"
 		},
 		eventNotFound: {
 			"zh-Hant": "找不到活動",
@@ -287,6 +319,12 @@ export default function SetTicket() {
 		});
 	}, [fetchEvent, fetchTicket, handleTicketSelect]);
 
+	// The ticket is validated and stashed in localStorage, so send the visitor straight on to the form.
+	// The link below stays as a fallback if the navigation does not happen.
+	useEffect(() => {
+		if (isReady) router.replace(`/${params.event as string}/form`);
+	}, [isReady, router, params.event]);
+
 	return (
 		<>
 			{isLoading ? (
@@ -296,10 +334,16 @@ export default function SetTicket() {
 					</div>
 				</main>
 			) : isReady ? (
-				<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">
-					<Button asChild>
-						<Link href={`/${params.event as string}/form`}>{t.redirecting}</Link>
-					</Button>
+				<main className="h-screen flex flex-col items-center justify-center gap-5 p-8 text-center" aria-live="polite">
+					<Image src="/assets/small-stone.png" alt="" width={56} height={56} className="animate-spin" />
+					<div className="space-y-2">
+						<h1 className="text-2xl font-bold text-foreground">{t.redirecting}</h1>
+						<p className="text-muted-foreground">{t.redirectingHint}</p>
+					</div>
+					<div className="h-1 w-48 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+						<div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+					</div>
+					<ManualContinue href={`/${params.event as string}/form`} label={t.redirectManual} />
 				</main>
 			) : (
 				<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">

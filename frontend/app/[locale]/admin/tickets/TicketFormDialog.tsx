@@ -18,8 +18,8 @@ import { useLocale } from "next-intl";
 import React, { useReducer, useRef } from "react";
 
 const LANGUAGES = [
-	{ code: "en", label: "English" },
 	{ code: "zh-Hant", label: "繁體中文" },
+	{ code: "en", label: "English" },
 	{ code: "zh-Hans", label: "简体中文" }
 ] as const;
 
@@ -59,7 +59,7 @@ type FormAction =
 	| { type: "saveFailed"; message: string }
 	| { type: "saveFinished" };
 
-const emptyLocalized = (): LocalizedValues => ({ en: "", "zh-Hant": "", "zh-Hans": "" });
+const emptyLocalized = (): LocalizedValues => ({ "zh-Hant": "", en: "", "zh-Hans": "" });
 
 function localizedFromTicket(value: LocalizedText | string | null | undefined): LocalizedValues {
 	const source: LocalizedText = value && typeof value === "object" ? value : { en: value || "" };
@@ -107,7 +107,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 	}
 }
 
-type FormErrors = Partial<Record<"nameEn" | "price" | "quantity" | "saleStart" | "saleEnd", string>>;
+type FormErrors = Partial<Record<"nameZhHant" | "price" | "quantity" | "saleStart" | "saleEnd", string>>;
 
 function compactLocalized(values: LocalizedValues, trim: boolean): LocalizedText {
 	const result: LocalizedText = {};
@@ -197,7 +197,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
 		optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "optional" },
 		hasErrors: { "zh-Hant": "此分頁有需要修正的欄位", "zh-Hans": "此分页有需要修正的字段", en: "This tab has fields to fix" },
-		errNameRequired: { "zh-Hant": "請輸入英文票種名稱。", "zh-Hans": "请输入英文票种名称。", en: "Enter the English ticket name." },
+		errNameRequired: { "zh-Hant": "請輸入繁體中文票種名稱。", "zh-Hans": "请输入繁体中文票种名称。", en: "Enter the Traditional Chinese ticket name." },
 		errPriceRequired: { "zh-Hant": "請輸入價格（免費請填 0）。", "zh-Hans": "请输入价格（免费请填 0）。", en: "Enter a price (0 for free)." },
 		errPriceInvalid: { "zh-Hant": "價格必須是 0 或以上的整數。", "zh-Hans": "价格必须是 0 或以上的整数。", en: "Price must be a whole number, 0 or more." },
 		errQuantityRequired: { "zh-Hant": "請輸入數量。", "zh-Hans": "请输入数量。", en: "Enter a quantity." },
@@ -222,7 +222,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 	const soldCount = ticket?.soldCount ?? 0;
 
 	const errors: FormErrors = {};
-	if (!values.name.en.trim()) errors.nameEn = t.errNameRequired;
+	if (!values.name["zh-Hant"].trim()) errors.nameZhHant = t.errNameRequired;
 
 	const priceText = values.price.trim();
 	if (!priceText) errors.price = t.errPriceRequired;
@@ -244,7 +244,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 	// Date range problems are shown as soon as both dates are filled in; everything else after the first submit attempt.
 	const liveError = (field: keyof FormErrors) => (submitted || field === "saleEnd" ? errors[field] : undefined);
 	const tabHasError = (tab: TicketTab) =>
-		submitted && (tab === "en" ? Boolean(errors.nameEn) : tab === "info" ? Boolean(errors.price || errors.quantity || errors.saleStart || errors.saleEnd) : false);
+		submitted && (tab === "zh-Hant" ? Boolean(errors.nameZhHant) : tab === "info" ? Boolean(errors.price || errors.quantity || errors.saleStart || errors.saleEnd) : false);
 
 	function focusField(id: string) {
 		window.setTimeout(() => document.getElementById(id)?.focus(), 50);
@@ -261,9 +261,9 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 			focusField(`ticket-${firstInfoError}`);
 			return;
 		}
-		if (errors.nameEn) {
-			dispatch({ type: "setTab", tab: "en" });
-			focusField("ticket-name-en");
+		if (errors.nameZhHant) {
+			dispatch({ type: "setTab", tab: "zh-Hant" });
+			focusField("ticket-name-zh-Hant");
 			return;
 		}
 
@@ -271,7 +271,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 		onSavingChange(true);
 		dispatch({ type: "saveStarted" });
 
-		const name = compactLocalized({ ...values.name, en: values.name.en.trim() }, true);
+		const name = compactLocalized(values.name, true);
 		const description = compactLocalized(values.description, false);
 		const plainDescription = compactLocalized(values.plainDescription, false);
 		const common = {
@@ -439,8 +439,8 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 					</TabsContent>
 
 					{LANGUAGES.map(({ code, label }) => {
-						const required = code === "en";
-						const nameError = required ? liveError("nameEn") : undefined;
+						const required = code === "zh-Hant";
+						const nameError = required ? liveError("nameZhHant") : undefined;
 						return (
 							<TabsContent key={code} value={code} className="space-y-4 pt-2">
 								<div className="space-y-2">

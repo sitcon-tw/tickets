@@ -3,7 +3,7 @@ import { tracer } from "#lib/tracing";
 import { publicSponsorSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
-import { incrementSponsorStats, isBotUserAgent, parseSponsorRow, type SponsorCounter } from "#utils/sponsors";
+import { incrementSponsorStats, isBotUserAgent, parseSponsorRow, parseSponsorTitles, type SponsorCounter } from "#utils/sponsors";
 import { SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -23,7 +23,7 @@ const publicSponsorsRoutes: FastifyPluginAsync = async fastify => {
 					OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
 					isActive: true
 				},
-				select: { id: true }
+				select: { id: true, sponsorTitles: true }
 			});
 
 			if (!event) {
@@ -35,12 +35,12 @@ const publicSponsorsRoutes: FastifyPluginAsync = async fastify => {
 			const sponsors = await prisma.sponsor.findMany({
 				where: { eventId: event.id, isActive: true },
 				orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-				select: { id: true, name: true, description: true, logoUrl: true, logoDarkUrl: true, websiteUrl: true, placements: true }
+				select: { id: true, name: true, description: true, logoUrl: true, logoDarkUrl: true, logoBgColor: true, logoDarkBgColor: true, websiteUrl: true, placements: true }
 			});
 
 			span.setAttribute("sponsors.count", sponsors.length);
 			span.setStatus({ code: SpanStatusCode.OK });
-			return reply.send(successResponse(sponsors.map(parseSponsorRow)));
+			return reply.send(successResponse({ sponsors: sponsors.map(parseSponsorRow), sectionTitles: parseSponsorTitles(event.sponsorTitles) }));
 		} catch (error) {
 			componentLogger.error({ error }, "Get public sponsors error");
 			span.recordException(error as Error);

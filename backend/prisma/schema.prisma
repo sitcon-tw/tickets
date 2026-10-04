@@ -137,6 +137,7 @@ model Event {
   hideEvent   Boolean  @default(false) // Hide from event list
   useOpass    Boolean  @default(true)  // Use OPass for check-in
   opassEventId String? // OPass event ID for generating OPass app link
+  sponsorTitles Json?  // Heading of each sponsor section: {"after_registration": {"zh-Hant": "特別感謝"}, ...}
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -397,6 +398,8 @@ model Sponsor {
   description Json?    // Localized Markdown shown in the popup
   logoUrl     String
   logoDarkUrl String?  // Optional logo variant for dark mode
+  logoBgColor String?  // Background behind the logo, "#rrggbb" (default: white)
+  logoDarkBgColor String? // Background behind the logo in dark mode, "#rrggbb" (default: derived from logoBgColor)
   websiteUrl  String?
   placements  String[] // "after_registration", "after_event_info"
   isActive    Boolean  @default(true)
