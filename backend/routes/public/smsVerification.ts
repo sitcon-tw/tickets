@@ -96,21 +96,6 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const existingUser = await prisma.user.findFirst({
-					where: {
-						phoneNumber: sanitizedPhoneNumber,
-						phoneVerified: true,
-						id: { not: userId }
-					}
-				});
-
-				if (existingUser) {
-					span.addEvent("sms_verification.phone_in_use");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Phone number in use" });
-					const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
-					return reply.code(statusCode).send(response);
-				}
-
 				const code = generateVerificationCode();
 				const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 				span.setAttribute("sms.code.length", code.length);
@@ -305,74 +290,74 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("sms.phone.masked", maskedPhone);
 				span.setAttribute("sms.code.length", sanitizedCode.length);
 
-				const user = await prisma.user.findUnique({
-					where: { id: userId },
-					select: { phoneVerified: true }
-				});
+				const result = await prisma.$transaction(
+					async tx => {
+						const user = await tx.user.findUnique({
+							where: { id: userId },
+							select: { phoneVerified: true }
+						});
 
-				if (user?.phoneVerified) {
-					span.addEvent("sms_verification.already_verified");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Phone already verified" });
-					const { response, statusCode } = validationErrorResponse("您的手機號碼已經驗證過了");
-					return reply.code(statusCode).send(response);
-				}
+						if (user?.phoneVerified) {
+							span.addEvent("sms_verification.already_verified");
+							span.setStatus({ code: SpanStatusCode.ERROR, message: "Phone already verified" });
+							return { error: "您的手機號碼已經驗證過了" };
+						}
 
-				span.addEvent("sms_verification.lookup_code");
-				const verification = await prisma.smsVerification.findFirst({
-					where: {
-						userId,
-						phoneNumber: sanitizedPhoneNumber,
-						code: sanitizedCode,
-						verified: false
+						span.addEvent("sms_verification.lookup_code");
+						const verification = await tx.smsVerification.findFirst({
+							where: {
+								userId,
+								phoneNumber: sanitizedPhoneNumber,
+								code: sanitizedCode,
+								verified: false
+							},
+							orderBy: {
+								createdAt: "desc"
+							}
+						});
+
+						if (!verification) {
+							span.addEvent("sms_verification.code_not_found");
+							span.setStatus({ code: SpanStatusCode.ERROR, message: "Code not found" });
+							return { error: "驗證碼錯誤或不存在" };
+						}
+
+						if (new Date() > verification.expiresAt) {
+							span.addEvent("sms_verification.code_expired");
+							span.setStatus({ code: SpanStatusCode.ERROR, message: "Code expired" });
+							return { error: "驗證碼已過期，請重新發送" };
+						}
+
+						span.addEvent("sms_verification.update_verification");
+						await tx.smsVerification.update({
+							where: { id: verification.id },
+							data: { verified: true }
+						});
+
+						// Transfer ownership only after proving possession of the number.
+						await tx.user.updateMany({
+							where: { phoneNumber: sanitizedPhoneNumber, id: { not: userId } },
+							data: { phoneNumber: null, phoneVerified: false }
+						});
+
+						span.addEvent("sms_verification.update_user");
+						await tx.user.update({
+							where: { id: userId },
+							data: {
+								phoneNumber: sanitizedPhoneNumber,
+								phoneVerified: true
+							}
+						});
+
+						return { verified: true };
 					},
-					orderBy: {
-						createdAt: "desc"
-					}
-				});
+					{ isolationLevel: "Serializable" }
+				);
 
-				if (!verification) {
-					span.addEvent("sms_verification.code_not_found");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Code not found" });
-					const { response, statusCode } = validationErrorResponse("驗證碼錯誤或不存在");
+				if ("error" in result) {
+					const { response, statusCode } = validationErrorResponse(result.error);
 					return reply.code(statusCode).send(response);
 				}
-
-				if (new Date() > verification.expiresAt) {
-					span.addEvent("sms_verification.code_expired");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Code expired" });
-					const { response, statusCode } = validationErrorResponse("驗證碼已過期，請重新發送");
-					return reply.code(statusCode).send(response);
-				}
-
-				const existingUser = await prisma.user.findFirst({
-					where: {
-						phoneNumber: sanitizedPhoneNumber,
-						phoneVerified: true,
-						id: { not: userId }
-					}
-				});
-
-				if (existingUser) {
-					span.addEvent("sms_verification.phone_in_use");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Phone number in use" });
-					const { response, statusCode } = validationErrorResponse("此手機號碼已被其他用戶使用");
-					return reply.code(statusCode).send(response);
-				}
-
-				span.addEvent("sms_verification.update_verification");
-				await prisma.smsVerification.update({
-					where: { id: verification.id },
-					data: { verified: true }
-				});
-
-				span.addEvent("sms_verification.update_user");
-				await prisma.user.update({
-					where: { id: userId },
-					data: {
-						phoneNumber: sanitizedPhoneNumber,
-						phoneVerified: true
-					}
-				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(
@@ -384,6 +369,17 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					const prismaError = error as Prisma.PrismaClientKnownRequestError;
+					if (prismaError.code === "P2034") {
+						request.log.warn({ error }, "SMS verification transaction conflict detected");
+						span.addEvent("sms_verification.transaction_conflict");
+						span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
+						const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+						return reply.code(statusCode).send(response);
+					}
+				}
+
 				request.log.error({ error }, "Verify SMS code error");
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to verify SMS code" });
