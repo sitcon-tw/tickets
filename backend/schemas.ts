@@ -1492,6 +1492,7 @@ export const RegistrationDeleteResponseSchema = z.object({
 
 export const GoogleSheetsServiceAccountResponseSchema = z.object({
 	success: z.boolean(),
+	message: z.string().optional(),
 	data: z
 		.object({
 			email: z.string()
