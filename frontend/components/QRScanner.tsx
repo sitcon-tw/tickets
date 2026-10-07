@@ -49,6 +49,7 @@ export default function QRScanner({ active, onScan, cooldownMs = 3000, className
 	const [errorKind, setErrorKind] = useState<"denied" | "noCamera" | "insecure" | "unknown">("unknown");
 	const [cameras, setCameras] = useState<Camera[]>([]);
 	const [cameraId, setCameraId] = useState<string | null>(null);
+	const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
 	const [attempt, setAttempt] = useState(0);
 
 	// The latest callback without restarting the camera whenever the parent re-renders
@@ -106,7 +107,6 @@ export default function QRScanner({ active, onScan, cooldownMs = 3000, className
 					cameraId ?? { facingMode: "environment" },
 					{
 						fps: 10,
-						aspectRatio: 1,
 						qrbox: (width, height) => {
 							const size = Math.floor(Math.min(width, height) * 0.7);
 							return { width: size, height: size };
@@ -134,10 +134,18 @@ export default function QRScanner({ active, onScan, cooldownMs = 3000, className
 			}
 			if (cancelled) return;
 			setStatus("scanning");
-			// Labels are only available once the user has granted permission
-			Html5Qrcode.getCameras()
-				.then(found => {
-					if (!cancelled) setCameras(found.map(camera => ({ id: camera.id, label: camera.label })));
+			try {
+				setActiveCameraId(scanner.getRunningTrackSettings().deviceId ?? null);
+			} catch {
+				// Not every browser reports the device id
+			}
+			// enumerateDevices() instead of Html5Qrcode.getCameras(): that one opens a second camera stream, and iOS Safari
+			// answers it with the front camera, which takes the back camera away from the running scanner.
+			navigator.mediaDevices
+				.enumerateDevices()
+				.then(devices => {
+					if (cancelled) return;
+					setCameras(devices.filter(device => device.kind === "videoinput" && device.deviceId).map(device => ({ id: device.deviceId, label: device.label })));
 				})
 				.catch(() => {});
 		});
@@ -150,8 +158,7 @@ export default function QRScanner({ active, onScan, cooldownMs = 3000, className
 
 	function switchCamera() {
 		if (cameras.length < 2) return;
-		const index = cameras.findIndex(camera => camera.id === cameraId);
-		// Without an explicit choice the browser picked the back camera; start cycling from the first entry
+		const index = cameras.findIndex(camera => camera.id === (cameraId ?? activeCameraId));
 		setCameraId(cameras[(index + 1) % cameras.length].id);
 	}
 
