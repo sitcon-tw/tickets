@@ -45,21 +45,25 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 
 	useEffect(() => {
 		let cancelled = false;
-		Promise.all([
-			adminEventsAPI.getById(eventId).then(response => (response.success ? (response.data?.googleSheetsUrl ?? "") : "")),
-			adminRegistrationsAPI.getServiceAccountEmail().then(response => (response.success ? (response.data?.email ?? null) : null))
-		])
-			.then(([url, email]) => {
-				if (cancelled) return;
+		// Load independently so one failing request doesn't discard the other's result
+		const loadUrl = adminEventsAPI
+			.getById(eventId)
+			.then(response => {
+				if (cancelled || !response.success) return;
+				const url = response.data?.googleSheetsUrl ?? "";
 				setSheetsUrl(current => current || url);
-				setServiceAccountEmail(email);
 			})
-			.catch(error => {
-				console.error("Failed to load Google Sheets export info:", error);
+			.catch(error => console.error("Failed to load saved Google Sheets URL:", error));
+		const loadEmail = adminRegistrationsAPI
+			.getServiceAccountEmail()
+			.then(response => {
+				if (cancelled || !response.success) return;
+				setServiceAccountEmail(response.data?.email ?? null);
 			})
-			.finally(() => {
-				if (!cancelled) setIsLoadingInfo(false);
-			});
+			.catch(error => console.error("Failed to load service account email:", error));
+		Promise.all([loadUrl, loadEmail]).finally(() => {
+			if (!cancelled) setIsLoadingInfo(false);
+		});
 		return () => {
 			cancelled = true;
 		};
