@@ -229,7 +229,11 @@ function DetailBody({ registration, ticketHash, formFields, locale, t, onClose, 
 								</SelectContent>
 							</Select>
 						) : (
-							<StatusBadge tone={statusTone(registration.status)}>{statusLabels[registration.status] ?? registration.status}</StatusBadge>
+							<div className="flex flex-wrap items-center gap-1.5">
+								<StatusBadge tone={statusTone(registration.status)}>{statusLabels[registration.status] ?? registration.status}</StatusBadge>
+								<StatusBadge tone={registration.checkedIn ? "info" : "neutral"}>{registration.checkedIn ? t.checkedIn : t.notCheckedIn}</StatusBadge>
+								{registration.checkedIn && registration.checkedInAt && <span className="text-xs tabular-nums text-muted-foreground">{formatDateTime(registration.checkedInAt)}</span>}
+							</div>
 						)}
 					</Field>
 					{registration.ticket && (

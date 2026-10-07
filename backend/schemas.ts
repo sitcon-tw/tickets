@@ -2,6 +2,9 @@
 // ============================================================================
 
 import {
+	CheckInAttendeeSchema,
+	CheckInResultSchema,
+	CheckInUpdateRequestSchema,
 	EmailCampaignCreateRequestSchema,
 	EmailCampaignSchema,
 	EmailCampaignSendRequestSchema,
@@ -892,6 +895,8 @@ export const AdminRegistrationSchema = z.object({
 	email: z.string(),
 	status: RegistrationStatusSchema,
 	referredBy: z.string().nullable().optional(),
+	checkedIn: z.boolean().optional(),
+	checkedInAt: z.date().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
 	createdAt: z.date(),
 	updatedAt: z.date(),
@@ -1509,6 +1514,33 @@ export const GoogleSheetsSyncResponseSchema = z.object({
 		})
 		.optional()
 });
+
+export const adminCheckInSchemas = {
+	listAttendees: {
+		description: "取得活動的報到名單",
+		tags: ["admin/check-ins"],
+		querystring: z.object({ eventId: z.string().min(1).describe("活動 ID") }),
+		response: {
+			200: z.object({ success: z.literal(true), message: z.string(), data: z.array(CheckInAttendeeSchema) }),
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema
+		}
+	},
+	updateCheckIn: {
+		description: "報到或取消報到",
+		tags: ["admin/check-ins"],
+		params: IdParamSchema,
+		body: CheckInUpdateRequestSchema,
+		response: {
+			200: z.object({ success: z.literal(true), message: z.string(), data: CheckInResultSchema }),
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema
+		}
+	}
+} as const;
 
 export const adminRegistrationSchemas = {
 	exportRegistrations: {

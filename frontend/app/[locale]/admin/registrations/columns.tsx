@@ -21,7 +21,21 @@ interface ColumnActions {
 	onViewDetails: (registration: RegistrationDisplay) => void;
 	t: Pick<
 		RegistrationsT,
-		"colSelectAll" | "colSelectRow" | "colId" | "colEmail" | "colStatus" | "colTicket" | "colReferredBy" | "colCreated" | "colUpdated" | "viewDetails" | "confirmed" | "pending" | "cancelled"
+		| "colSelectAll"
+		| "colSelectRow"
+		| "colId"
+		| "colEmail"
+		| "colStatus"
+		| "colTicket"
+		| "colReferredBy"
+		| "colCreated"
+		| "colUpdated"
+		| "viewDetails"
+		| "confirmed"
+		| "pending"
+		| "cancelled"
+		| "checkedIn"
+		| "notCheckedIn"
 	>;
 }
 
@@ -64,7 +78,12 @@ export const createRegistrationsColumns = ({ onViewDetails, t }: ColumnActions):
 		{
 			accessorKey: "status",
 			header: ({ column }) => <DataTableColumnHeader column={column} title={t.colStatus} />,
-			cell: ({ row }) => <StatusBadge tone={statusTone(row.original.status)}>{statusLabels[row.original.status] ?? row.original.status}</StatusBadge>
+			cell: ({ row }) => (
+				<div className="flex flex-wrap items-center gap-1.5">
+					<StatusBadge tone={statusTone(row.original.status)}>{statusLabels[row.original.status] ?? row.original.status}</StatusBadge>
+					<StatusBadge tone={row.original.checkedIn ? "info" : "neutral"}>{row.original.checkedIn ? t.checkedIn : t.notCheckedIn}</StatusBadge>
+				</div>
+			)
 		},
 		{
 			accessorKey: "displayTicket",

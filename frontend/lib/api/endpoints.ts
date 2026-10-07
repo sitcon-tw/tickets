@@ -1,6 +1,8 @@
 import { fetchGravatarName } from "@/lib/gravatar";
 import {
 	ApiResponseSchema,
+	CheckInAttendeeSchema,
+	CheckInResultSchema,
 	EmailCampaignSchema,
 	EventDashboardDataSchema,
 	EventFormFieldSchema,
@@ -315,6 +317,8 @@ const AdminRegistrationSchema = z.object({
 		})
 		.nullable()
 		.optional(),
+	checkedIn: z.boolean().optional(),
+	checkedInAt: z.coerce.date().nullable().optional(),
 	formData: z.record(z.string(), z.unknown()),
 	createdAt: z.coerce.date(),
 	updatedAt: z.coerce.date(),
@@ -359,6 +363,13 @@ export const adminRegistrationsAPI = {
 
 	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) =>
 		apiClient.post("/api/admin/registrations/google-sheets/sync", data, ApiResponseSchema(z.object({ count: z.number(), sheetsUrl: z.string() })))
+};
+
+// Admin - Check-ins
+export const adminCheckInsAPI = {
+	getAttendees: (params: { eventId: string }) => apiClient.get("/api/admin/check-ins", params, ApiResponseSchema(z.array(CheckInAttendeeSchema))),
+
+	update: (id: string, checkedIn: boolean) => apiClient.put(`/api/admin/check-ins/${id}`, { checkedIn }, ApiResponseSchema(CheckInResultSchema))
 };
 
 // Admin - Invitation Codes

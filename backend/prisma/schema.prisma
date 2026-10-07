@@ -212,6 +212,8 @@ model Registration {
   status          String   @default("confirmed") // confirmed, cancelled, pending
   referredBy      String?  // registration ID of referrer
   holdExpiresAt   DateTime? // pending registrations hold a seat until this time; null once confirmed
+  checkedIn       Boolean  @default(false) // set by the admin check-in tools; not every event uses check-in
+  checkedInAt     DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -227,6 +229,7 @@ model Registration {
   @@index([email, eventId])
   @@index([invitationCodeId])
   @@index([status, holdExpiresAt])
+  @@index([eventId, checkedIn])
   @@map("registration")
 }
 

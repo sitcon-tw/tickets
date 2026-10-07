@@ -5,7 +5,6 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { SearchInput } from "@/components/admin/SearchInput";
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
-import QRScanner from "@/components/QRScanner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAlert } from "@/contexts/AlertContext";
@@ -19,7 +18,7 @@ import { formatDateTime } from "@/lib/utils/timezone";
 import { cn } from "@/lib/utils";
 import type { EventFormField } from "@sitcontix/types";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { CircleAlert, Download, FileSpreadsheet, QrCode, RotateCw, UserX, X } from "lucide-react";
+import { CircleAlert, Download, FileSpreadsheet, RotateCw, UserX, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRegistrationsColumns, type RegistrationDisplay } from "./columns";
@@ -75,7 +74,6 @@ function useRegistrationsPage() {
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [detailId, setDetailId] = useState<string | null>(null);
 	const [showSheets, setShowSheets] = useState(false);
-	const [showQRScanner, setShowQRScanner] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
 	const requestIdRef = useRef(0);
 
@@ -292,22 +290,6 @@ function useRegistrationsPage() {
 		}
 	}
 
-	const handleQRScan = useCallback(
-		(scanned: string) => {
-			const token = scanned.trim();
-			const match = token ? Object.entries(ticketHashes).find(([, hash]) => token === hash || token.includes(hash)) : undefined;
-			if (match) {
-				showAlert(t.registrationFound, "success");
-				setDetailId(match[0]);
-			} else {
-				showAlert(t.registrationNotFound, "error");
-			}
-		},
-		[ticketHashes, showAlert, t]
-	);
-
-	const closeQRScanner = useCallback(() => setShowQRScanner(false), []);
-
 	return {
 		t,
 		locale,
@@ -329,9 +311,6 @@ function useRegistrationsPage() {
 		setDetailId,
 		showSheets,
 		setShowSheets,
-		showQRScanner,
-		setShowQRScanner,
-		closeQRScanner,
 		isExporting,
 		loadRegistrations,
 		changeSearch,
@@ -340,8 +319,7 @@ function useRegistrationsPage() {
 		exportCsv,
 		exportSelected,
 		saveRegistration,
-		deleteRegistration,
-		handleQRScan
+		deleteRegistration
 	};
 }
 
@@ -354,10 +332,6 @@ export default function RegistrationsPage() {
 
 	const headerActions = currentEventId ? (
 		<>
-			<Button variant="primary" size="sm" onClick={() => page.setShowQRScanner(true)}>
-				<QrCode className="size-4" />
-				{t.scanQR}
-			</Button>
 			<Button variant="outline" size="sm" onClick={page.exportCsv} isLoading={page.isExporting}>
 				{!page.isExporting && <Download className="size-4" />}
 				{t.exportCsv}
@@ -465,7 +439,6 @@ export default function RegistrationsPage() {
 				onDelete={page.deleteRegistration}
 			/>
 			<GoogleSheetsExportDialog open={page.showSheets} eventId={currentEventId} t={t} onClose={() => page.setShowSheets(false)} />
-			<QRScanner isOpen={page.showQRScanner} onClose={page.closeQRScanner} onScan={page.handleQRScan} title={t.scanQRTitle} />
 		</main>
 	);
 }

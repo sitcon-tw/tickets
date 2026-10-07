@@ -16,10 +16,8 @@ export const registrationsTranslations = {
 	total: { "zh-Hant": "總計", "zh-Hans": "总计", en: "Total" },
 	stats: { "zh-Hant": "統計", "zh-Hans": "统计", en: "Statistics" },
 
-	scanQR: { "zh-Hant": "掃描 QR Code", "zh-Hans": "扫描 QR Code", en: "Scan QR code" },
-	scanQRTitle: { "zh-Hant": "掃描報名 QR Code", "zh-Hans": "扫描报名 QR Code", en: "Scan Registration QR Code" },
-	registrationNotFound: { "zh-Hant": "找不到報名資料", "zh-Hans": "找不到报名资料", en: "Registration not found" },
-	registrationFound: { "zh-Hant": "已找到報名資料", "zh-Hans": "已找到报名资料", en: "Registration found" },
+	checkedIn: { "zh-Hant": "已報到", "zh-Hans": "已报到", en: "Checked in" },
+	notCheckedIn: { "zh-Hant": "未報到", "zh-Hans": "未报到", en: "Not checked in" },
 
 	exportCsv: { "zh-Hant": "匯出 CSV", "zh-Hans": "导出 CSV", en: "Export CSV" },
 	exportToSheets: { "zh-Hant": "匯出到 Google Sheets", "zh-Hans": "导出到 Google Sheets", en: "Export to Google Sheets" },

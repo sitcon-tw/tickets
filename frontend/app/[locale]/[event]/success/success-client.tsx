@@ -22,6 +22,7 @@ type SuccessRegistrationState = {
 	registerationTicketName: string | null;
 	registrationTime: Date | null;
 	isCancelled: boolean;
+	checkedIn: boolean;
 	useOpass: boolean;
 	opassEventId: string | null;
 	isMissingRegistration: boolean;
@@ -35,6 +36,7 @@ type SuccessRegistrationAction =
 			registrationTime: Date;
 			registerationTicketName: string;
 			isCancelled: boolean;
+			checkedIn: boolean;
 			referralCode: string;
 	  }
 	| { type: "referralLoaded"; referralCode: string }
@@ -52,6 +54,7 @@ function successRegistrationReducer(state: SuccessRegistrationState, action: Suc
 				registrationTime: action.registrationTime,
 				registerationTicketName: action.registerationTicketName,
 				isCancelled: action.isCancelled,
+				checkedIn: action.checkedIn,
 				referralCode: action.referralCode,
 				isMissingRegistration: false
 			};
@@ -196,7 +199,7 @@ function SuccessContent() {
 	const autoCheckin = searchParams.has("checkin");
 	const eventSlug = params.event as string;
 
-	const [{ referralCode, registrationId, registerationTicketName, registrationTime, isCancelled, useOpass, opassEventId, isMissingRegistration }, dispatchRegistration] = useReducer(
+	const [{ referralCode, registrationId, registerationTicketName, registrationTime, isCancelled, checkedIn, useOpass, opassEventId, isMissingRegistration }, dispatchRegistration] = useReducer(
 		successRegistrationReducer,
 		{
 			referralCode: "Loading...",
@@ -204,6 +207,7 @@ function SuccessContent() {
 			registerationTicketName: null,
 			registrationTime: null,
 			isCancelled: false,
+			checkedIn: false,
 			useOpass: true,
 			opassEventId: null,
 			isMissingRegistration: false
@@ -269,6 +273,11 @@ function SuccessContent() {
 			"zh-Hant": "查看/編輯報名",
 			"zh-Hans": "查看/编辑报名",
 			en: "View/Edit Registration"
+		},
+		checkedIn: {
+			"zh-Hant": "已報到",
+			"zh-Hans": "已报到",
+			en: "Checked in"
 		},
 		viewQRCode: {
 			"zh-Hant": "查看報到方式",
@@ -341,6 +350,7 @@ function SuccessContent() {
 								registrationTime: eventRegistration.createdAt,
 								registerationTicketName: ticketname,
 								isCancelled: true,
+								checkedIn: false,
 								referralCode: "Failed"
 							});
 						} else {
@@ -350,6 +360,7 @@ function SuccessContent() {
 								registrationTime: eventRegistration.createdAt,
 								registerationTicketName: ticketname,
 								isCancelled: false,
+								checkedIn: eventRegistration.checkedIn ?? false,
 								referralCode: "Loading..."
 							});
 							if (autoCheckin) {
@@ -391,6 +402,12 @@ function SuccessContent() {
 					<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
 						<div className="flex flex-col gap-4">
 							<h1 className="my-4 text-5xl font-bold">{isCancelled ? t.cancelled : t.success}</h1>
+							{!isCancelled && checkedIn && (
+								<span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:text-green-400 dark:ring-green-400/20">
+									<CheckCheck size={16} />
+									{t.checkedIn}
+								</span>
+							)}
 							{!isCancelled && <p>{t.emailCheck}</p>}
 							{!isCancelled && (
 								<>

@@ -129,6 +129,7 @@ function AdminNav() {
 		invitationCodes: { "zh-Hant": "邀請碼管理", "zh-Hans": "邀请码管理", en: "Invitation Codes" },
 		sponsors: { "zh-Hant": "廠商廣告", "zh-Hans": "厂商广告", en: "Sponsors" },
 		registrations: { "zh-Hant": "報名資料", "zh-Hans": "报名资料", en: "Registrations" },
+		checkIns: { "zh-Hant": "報到", "zh-Hans": "报到", en: "Check-ins" },
 		webhooks: { "zh-Hant": "Webhook 設定", "zh-Hans": "Webhook 设置", en: "Webhooks" },
 		emailCampaigns: { "zh-Hant": "郵件發送", "zh-Hans": "邮件发送", en: "Email Campaigns" },
 		users: { "zh-Hant": "使用者管理", "zh-Hans": "用户管理", en: "Users" },

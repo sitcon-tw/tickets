@@ -27,6 +27,7 @@ const PERMISSION_GROUP_DEFINITIONS = [
 	{ key: "sponsors", scope: "event", actions: ["view", "create", "update", "delete"] },
 	{ key: "webhooks", scope: "event", actions: ["view", "manage"] },
 	{ key: "registrations", scope: "event", actions: ["view", "update", "delete", "export"] },
+	{ key: "checkIns", scope: "event", actions: ["view", "update"] },
 	{ key: "emailCampaigns", scope: "global", actions: ["view", "create", "update", "send", "delete"] },
 	{ key: "referrals", scope: "global", actions: ["view", "draw"] },
 	{ key: "smsLogs", scope: "global", actions: ["view"] },

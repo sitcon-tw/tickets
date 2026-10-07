@@ -632,6 +632,8 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						status: RegistrationStatusSchema.parse(reg.status),
 						referredBy: reg.referredBy ?? null,
 						holdExpiresAt: reg.holdExpiresAt,
+						checkedIn: reg.checkedIn,
+						checkedInAt: reg.checkedInAt,
 						formData: parsedFormData,
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
