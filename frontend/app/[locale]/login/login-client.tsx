@@ -344,7 +344,20 @@ function LoginContent() {
 					<label htmlFor="email" className="block mb-2 font-bold">
 						Email
 					</label>
-					<Input type="email" name="email" id="email" value={email} onChange={e => dispatchLogin({ type: "emailChanged", email: e.target.value })} className="max-w-xs" />
+					<Input
+						type="email"
+						name="email"
+						id="email"
+						value={email}
+						onChange={e => dispatchLogin({ type: "emailChanged", email: e.target.value })}
+						onKeyDown={e => {
+							if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+								e.preventDefault();
+								login();
+							}
+						}}
+						className="max-w-xs"
+					/>
 					<div className="flex justify-center my-4">
 						<Turnstile
 							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}

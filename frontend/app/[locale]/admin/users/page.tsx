@@ -368,15 +368,14 @@ export default function UsersPage() {
 	const displayUsers = useMemo((): UserDisplay[] => {
 		const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 		return filteredUsers.map(user => {
-			const smsPhone = user.smsVerifications?.find(sms => sms.verified)?.phoneNumber ?? user.smsVerifications?.[0]?.phoneNumber;
 			return {
 				...user,
 				roleLabel: user.role === "custom" ? (user.customRole?.name ?? roleLabels.custom) : (roleLabels[user.role] ?? user.role),
 				roleTone: roleTones[user.role] ?? "neutral",
 				statusLabel: user.isActive ? t.active : t.inactive,
 				statusTone: user.isActive ? "success" : "neutral",
-				phoneDisplay: user.phoneNumber || smsPhone || "",
-				phoneIsVerified: user.phoneNumber ? user.phoneVerified : !!user.smsVerifications?.some(sms => sms.verified),
+				phoneDisplay: user.phoneNumber || "",
+				phoneIsVerified: !!user.phoneNumber && user.phoneVerified,
 				createdAtTimestamp: new Date(user.createdAt).getTime(),
 				formattedCreatedAt: dateFormatter.format(new Date(user.createdAt))
 			};
@@ -402,13 +401,13 @@ export default function UsersPage() {
 		[openEditModal, t.name, t.email, t.phone, t.role, t.status, t.createdAt, t.edit, t.emailVerified, t.emailNotVerified]
 	);
 
-	// One row per distinct phone number, verified if any record for it is verified.
+	// Historical SMS success does not establish current ownership of a number.
 	const editingPhones = useMemo(() => {
 		if (!editingUser) return [];
 		const phones = new Map<string, boolean>();
 		if (editingUser.phoneNumber) phones.set(editingUser.phoneNumber, editingUser.phoneVerified);
 		for (const sms of editingUser.smsVerifications ?? []) {
-			phones.set(sms.phoneNumber, (phones.get(sms.phoneNumber) ?? false) || sms.verified);
+			if (!phones.has(sms.phoneNumber)) phones.set(sms.phoneNumber, false);
 		}
 		return [...phones.entries()].map(([phoneNumber, verified]) => ({ phoneNumber, verified }));
 	}, [editingUser]);
