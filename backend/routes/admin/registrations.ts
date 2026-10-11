@@ -7,27 +7,14 @@ import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaRegistrationId, requirePermission } from "#middleware/auth";
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
-import { exportToGoogleSheets, extractSpreadsheetId, getServiceAccountEmail } from "#utils/google-sheets";
+import { extractSpreadsheetId, getServiceAccountEmail, resetSheetsSyncBackoff, spreadsheetUrl, syncRegistrationsToSheet } from "#utils/google-sheets";
+import { buildRegistrationExportTable, type ExportTable } from "#utils/registration-export";
 import { logger } from "#utils/logger";
-import { toText } from "#utils/text";
 import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/registrations" });
-
-type ExportFieldOption = string | Record<string, string>;
-type ExportFieldInfo = { name: string; type: string; values: Prisma.JsonValue };
-type ExportRegistration = {
-	id: string;
-	email: string;
-	status: string;
-	createdAt: Date;
-	formData: string | null;
-	event: { name: Prisma.JsonValue } | null;
-	ticket: { name: Prisma.JsonValue; price: number } | null;
-	referralUsage: { referral: { registration: { email: string } } }[];
-};
 
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -459,74 +446,15 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 				if (status) where.status = status;
 
 				span.addEvent("database.query.findMany");
+				const table = await buildRegistrationExportTable(where);
 
-				/** @type {Registration[]} */
-				const registrations = await prisma.registration.findMany({
-					where,
-					include: {
-						user: {
-							select: {
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								name: true,
-								price: true
-							}
-						},
-						referralUsage: {
-							select: {
-								referral: {
-									select: {
-										registration: {
-											select: { email: true }
-										}
-									}
-								}
-							}
-						}
-					},
-					orderBy: { createdAt: "desc" }
-				});
-
-				// Fetch form fields to get localized names for CSV headers and values
-				const eventIds = [...new Set(registrations.map(r => r.eventId))];
-				const formFields = await prisma.eventFormFields.findMany({
-					where: { eventId: { in: eventIds } },
-					orderBy: { order: "asc" }
-				});
-
-				// Create a map from field ID to field info (name, type, values)
-				const fieldMap = new Map<string, ExportFieldInfo>();
-				for (const field of formFields) {
-					let localizedName = field.id;
-					if (field.name && typeof field.name === "object" && !Array.isArray(field.name)) {
-						const nameObj = field.name as Record<string, string>;
-						localizedName = nameObj["zh-Hant"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
-					} else if (typeof field.name === "string") {
-						localizedName = field.name;
-					}
-					fieldMap.set(field.id, {
-						name: localizedName,
-						type: field.type,
-						values: field.values
-					});
-				}
-
-				span.setAttribute("export.count", registrations.length);
+				span.setAttribute("export.count", table.rows.length);
 				span.addEvent("export.generate_csv");
 
 				const timestamp = Date.now();
 				const filename = `registrations_${timestamp}.${format === "excel" ? "csv" : format}`;
 
-				const csvContent = generateCSV(registrations, fieldMap);
+				const csvContent = generateCSV(table);
 
 				span.setAttribute("export.filename", filename);
 				span.setAttribute("export.size", csvContent.length);
@@ -555,100 +483,8 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		return `'${value}`;
 	}
 
-	function generateCSV(registrations: ExportRegistration[], fieldMap: Map<string, ExportFieldInfo>) {
-		const parsedRegistrations = registrations.map(reg => ({
-			...reg,
-			formData: (reg.formData ? JSON.parse(reg.formData) : {}) as Record<string, unknown>
-		}));
-
-		const formFieldKeys = new Set<string>();
-		parsedRegistrations.forEach(reg => {
-			Object.keys(reg.formData).forEach(key => formFieldKeys.add(key));
-		});
-
-		const sortedFormFields = Array.from(formFieldKeys).sort();
-
-		const baseHeaders = ["ID", "Email", "Event", "Ticket", "Price", "Status", "Referred By", "Created At"];
-		const formDataHeaders = sortedFormFields.map(key => `Form: ${fieldMap.get(key)?.name || key}`);
-		const headers = [...baseHeaders, ...formDataHeaders];
-
-		const getLocalizedName = (json: Prisma.JsonValue | undefined): string => {
-			if (!json || typeof json !== "object" || Array.isArray(json)) return "";
-			const nameObj = json as Record<string, string>;
-			return nameObj["zh-Hant"] || nameObj["en"] || Object.values(nameObj)[0] || "";
-		};
-
-		const parseOptions = (values: Prisma.JsonValue): ExportFieldOption[] => (typeof values === "string" ? JSON.parse(values) : values) as ExportFieldOption[];
-		const matchesOption = (opt: ExportFieldOption, v: unknown): boolean => {
-			if (typeof opt === "object" && opt !== null) {
-				return Object.values(opt).some(optValue => optValue === v);
-			}
-			return opt === v;
-		};
-
-		const getLocalizedOptionValue = (fieldId: string, value: unknown, locale: string = "zh-Hant"): string => {
-			const field = fieldMap.get(fieldId);
-			if (!field) return String(value);
-
-			// Handle checkbox (multiple selection)
-			if (field.type === "checkbox" && Array.isArray(value)) {
-				if (field.values) {
-					try {
-						const options = parseOptions(field.values);
-						const localizedValues = value.map(v => {
-							const option = options.find(opt => matchesOption(opt, v));
-
-							if (option && typeof option === "object") {
-								return option[locale] || option["en"] || Object.values(option)[0] || v;
-							}
-							return v;
-						});
-						return localizedValues.join(", ");
-					} catch {
-						return value.join(", ");
-					}
-				}
-				return value.join(", ");
-			}
-
-			// Handle select/radio (single selection)
-			if ((field.type === "select" || field.type === "radio") && field.values) {
-				try {
-					const options = parseOptions(field.values);
-					const option = options.find(opt => matchesOption(opt, value));
-
-					if (option && typeof option === "object") {
-						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
-					}
-				} catch {
-					return String(value);
-				}
-			}
-
-			if (value === null || value === undefined) return "";
-			if (typeof value === "object") return JSON.stringify(value);
-			return toText(value);
-		};
-
-		const rows = parsedRegistrations.map(reg => {
-			const baseValues = [
-				reg.id,
-				reg.email,
-				getLocalizedName(reg.event?.name),
-				getLocalizedName(reg.ticket?.name),
-				reg.ticket?.price || 0,
-				reg.status,
-				reg.referralUsage[0]?.referral.registration.email || "",
-				new Date(reg.createdAt).toISOString()
-			];
-
-			const formDataValues = sortedFormFields.map((key: string) => getLocalizedOptionValue(key, reg.formData[key]));
-
-			return [...baseValues, ...formDataValues];
-		});
-
-		const csvRows = [headers, ...rows];
-		return csvRows.map(row => row.map(field => `"${neutralizeFormula(String(field)).replace(/"/g, '""')}"`).join(",")).join("\n");
+	function generateCSV({ headers, rows }: ExportTable) {
+		return [headers, ...rows].map(row => row.map(field => `"${neutralizeFormula(String(field)).replace(/"/g, '""')}"`).join(",")).join("\n");
 	}
 
 	// Delete registration and personal data
@@ -747,130 +583,114 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		}
 	);
 
-	// Sync registrations to Google Sheets
-	fastify.withTypeProvider<ZodTypeProvider>().post<{
-		Body: { eventId: string; sheetsUrl: string };
-	}>(
+	const sheetsSettingsSelect = { googleSheetsUrl: true, googleSheetsAutoSync: true, googleSheetsSyncedAt: true, googleSheetsSyncError: true } as const;
+	type SheetsSettingsRow = { googleSheetsUrl: string | null; googleSheetsAutoSync: boolean; googleSheetsSyncedAt: Date | null; googleSheetsSyncError: string | null };
+	const toSheetsSettings = (event: SheetsSettingsRow) => ({
+		sheetsUrl: event.googleSheetsUrl,
+		autoSync: event.googleSheetsAutoSync,
+		lastSyncedAt: event.googleSheetsSyncedAt?.toISOString() ?? null,
+		lastSyncError: event.googleSheetsSyncError
+	});
+
+	// Get an event's Google Sheets sync settings and last sync status
+	fastify.withTypeProvider<ZodTypeProvider>().get(
+		"/registrations/google-sheets/settings",
+		{
+			preHandler: requireEventAccess("registrations:export"),
+			schema: adminRegistrationSchemas.getGoogleSheetsSettings
+		},
+		async (request, reply) => {
+			const event = await prisma.event.findUnique({ where: { id: request.query.eventId }, select: sheetsSettingsSelect });
+			if (!event) {
+				const { response, statusCode } = notFoundResponse("活動不存在");
+				return reply.code(statusCode).send(response);
+			}
+			return reply.send(successResponse(toSheetsSettings(event)));
+		}
+	);
+
+	// Turn Google Sheets auto-sync on or off
+	fastify.withTypeProvider<ZodTypeProvider>().put(
+		"/registrations/google-sheets/settings",
+		{
+			preHandler: requireEventAccessViaEventBody("registrations:export"),
+			schema: adminRegistrationSchemas.updateGoogleSheetsSettings
+		},
+		async (request, reply) => {
+			const { eventId, autoSync } = request.body;
+
+			const event = await prisma.event.findUnique({ where: { id: eventId }, select: sheetsSettingsSelect });
+			if (!event) {
+				const { response, statusCode } = notFoundResponse("活動不存在");
+				return reply.code(statusCode).send(response);
+			}
+			if (autoSync && !event.googleSheetsUrl) {
+				const { response, statusCode } = validationErrorResponse("請先完成一次匯出以設定 Google Sheets 網址");
+				return reply.code(statusCode).send(response);
+			}
+
+			const updated = await prisma.event.update({ where: { id: eventId }, data: { googleSheetsAutoSync: autoSync }, select: sheetsSettingsSelect });
+			resetSheetsSyncBackoff(eventId);
+			return reply.send(successResponse(toSheetsSettings(updated), autoSync ? "已開啟自動同步" : "已關閉自動同步"));
+		}
+	);
+
+	// Export registrations to Google Sheets now, saving the sheet (and optionally auto-sync) for the event
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/registrations/google-sheets/sync",
 		{
 			preHandler: requireEventAccessViaEventBody("registrations:export"),
 			schema: adminRegistrationSchemas.syncGoogleSheets
 		},
 		async (request, reply) => {
-			const { eventId, sheetsUrl } = request.body;
+			const { eventId, sheetsUrl, autoSync } = request.body;
 
 			const span = tracer.startSpan("route.admin.registrations.google_sheets_sync", {
-				attributes: {
-					"googlesheets.eventId": eventId,
-					"googlesheets.url.masked": sheetsUrl ? "https://docs.google.com/spreadsheets/***" : ""
-				}
+				attributes: { "event.id": eventId }
 			});
 
 			try {
 				const spreadsheetId = extractSpreadsheetId(sheetsUrl);
 				if (!spreadsheetId) {
 					span.addEvent("googlesheets.invalid_url");
-					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
-
 					const { response, statusCode } = validationErrorResponse("無效的 Google Sheets URL");
 					return reply.code(statusCode).send(response);
 				}
 
-				span.setAttribute("googlesheets.spreadsheetId", spreadsheetId);
-
-				span.addEvent("database.query.findUnique");
-				const event = await prisma.event.findUnique({
-					where: { id: eventId }
-				});
-
+				const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
 				if (!event) {
 					span.addEvent("event.not_found");
-					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
-
 					const { response, statusCode } = notFoundResponse("活動不存在");
 					return reply.code(statusCode).send(response);
 				}
 
-				span.setAttribute("event.id", event.id);
-				span.addEvent("database.query.findMany");
-				const registrations = await prisma.registration.findMany({
-					where: { eventId },
-					include: {
-						user: {
-							select: {
-								name: true,
-								email: true
-							}
-						},
-						event: {
-							select: {
-								name: true
-							}
-						},
-						ticket: {
-							select: {
-								name: true,
-								price: true
-							}
-						},
-						referralUsage: {
-							select: {
-								referral: {
-									select: {
-										registration: {
-											select: { email: true }
-										}
-									}
-								}
-							}
-						}
-					},
-					orderBy: { createdAt: "desc" }
-				});
-
-				span.setAttribute("googlesheets.registrations.count", registrations.length);
-				span.addEvent("googlesheets.export.start");
-
-				const result = await exportToGoogleSheets(spreadsheetId, registrations);
-
+				const result = await syncRegistrationsToSheet(eventId, spreadsheetId);
 				if (!result.success) {
-					span.addEvent("googlesheets.export.failed", {
-						"error.message": result.message
-					});
-					span.setStatus({ code: SpanStatusCode.OK });
-					span.end();
-
+					span.addEvent("googlesheets.export.failed", { "error.message": result.message });
 					const { response, statusCode } = serverErrorResponse(result.message);
 					return reply.code(statusCode).send(response);
 				}
 
-				span.addEvent("googlesheets.export.success");
-				span.addEvent("database.query.update");
-
-				await prisma.event.update({
+				// Saved only after a successful export, so auto-sync never targets a sheet we can't write to.
+				// The fingerprint is cleared so the next auto-sync sweep re-checks against fresh data.
+				const updated = await prisma.event.update({
 					where: { id: eventId },
-					data: { googleSheetsUrl: sheetsUrl }
+					data: {
+						googleSheetsUrl: spreadsheetUrl(spreadsheetId),
+						googleSheetsSyncedAt: new Date(),
+						googleSheetsSyncError: null,
+						googleSheetsSyncFingerprint: null,
+						...(autoSync !== undefined && { googleSheetsAutoSync: autoSync })
+					},
+					select: sheetsSettingsSelect
 				});
+				resetSheetsSyncBackoff(eventId);
 
 				span.setStatus({ code: SpanStatusCode.OK });
-
-				return reply.send(
-					successResponse(
-						{
-							count: registrations.length,
-							sheetsUrl
-						},
-						result.message
-					)
-				);
+				return reply.send(successResponse({ ...toSheetsSettings(updated), count: result.count ?? 0 }, result.message));
 			} catch (error) {
 				span.recordException(error as Error);
-				span.setStatus({
-					code: SpanStatusCode.ERROR,
-					message: "Failed to sync to Google Sheets"
-				});
+				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to sync to Google Sheets" });
 				throw error;
 			} finally {
 				span.end();

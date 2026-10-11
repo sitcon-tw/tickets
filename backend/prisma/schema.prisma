@@ -133,6 +133,10 @@ model Event {
   ogImage     String?
   landingPage String?  // JSON content
   googleSheetsUrl String? // Google Sheets URL for data export
+  googleSheetsAutoSync Boolean @default(false) // Keep the sheet in sync with registrations automatically
+  googleSheetsSyncedAt DateTime? // Last successful sync
+  googleSheetsSyncError String? // Error from the last failed sync, cleared on success
+  googleSheetsSyncFingerprint String? // Hash of the data last synced, used to skip unchanged syncs
   isActive    Boolean  @default(true)
   hideEvent   Boolean  @default(false) // Hide from event list
   useOpass    Boolean  @default(true)  // Use OPass for check-in

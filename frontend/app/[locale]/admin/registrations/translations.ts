@@ -83,7 +83,7 @@ export const registrationsTranslations = {
 	deleteSuccess: { "zh-Hant": "報名資料已成功刪除", en: "Registration deleted successfully" },
 	deleteError: { "zh-Hant": "刪除失敗", en: "Delete failed" },
 
-	sheetsTitle: { "zh-Hant": "匯出到 Google Sheets", en: "Export to Google Sheets" },
+	sheetsTitle: { "zh-Hant": "同步到 Google Sheets", en: "Sync to Google Sheets" },
 	sheetsDesc: {
 		"zh-Hant": "請先將以下服務帳號加入該試算表的編輯權限，再貼上試算表網址：",
 		en: "First share your spreadsheet with the service account below (Editor access), then paste its URL:"
@@ -97,6 +97,18 @@ export const registrationsTranslations = {
 	exporting: { "zh-Hant": "匯出中...", en: "Exporting..." },
 	exportSuccessMsg: { "zh-Hant": "成功匯出到 Google Sheets", en: "Successfully exported to Google Sheets" },
 	exportErrorMsg: { "zh-Hant": "匯出失敗", en: "Export failed" },
+	autoSync: { "zh-Hant": "自動同步", en: "Auto-sync" },
+	autoSyncDesc: {
+		"zh-Hant": "報名資料有變動時自動更新試算表（約 30 秒內）。「報名系統匯出」工作表會被覆寫，請勿在其中手動編輯。",
+		en: 'Update the spreadsheet automatically when registrations change (within ~30 seconds). The "報名系統匯出" sheet is overwritten, so don\'t edit it by hand.'
+	},
+	autoSyncOn: { "zh-Hant": "已開啟自動同步", en: "Auto-sync turned on" },
+	autoSyncOff: { "zh-Hant": "已關閉自動同步", en: "Auto-sync turned off" },
+	autoSyncUpdateFailed: { "zh-Hant": "更新自動同步設定失敗", en: "Failed to update auto-sync" },
+	lastSynced: { "zh-Hant": "上次同步", en: "Last synced" },
+	neverSynced: { "zh-Hant": "尚未同步", en: "Not synced yet" },
+	lastSyncFailed: { "zh-Hant": "上次自動同步失敗", en: "Last auto-sync failed" },
+	syncNow: { "zh-Hant": "立即同步", en: "Sync now" },
 
 	csvId: { "zh-Hant": "ID", en: "ID" },
 	csvEmail: { "zh-Hant": "Email", en: "Email" },

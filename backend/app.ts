@@ -22,6 +22,7 @@ import { MAGIC_LINK_EXPIRY_SECONDS } from "./lib/magic-link-quota";
 import { getClientIP, validateTurnstile } from "./lib/turnstile";
 import routes from "./routes/index";
 import { cleanup } from "./utils/database-init";
+import { startGoogleSheetsAutoSync } from "./utils/google-sheets";
 import { startHoldSweeper } from "./utils/registration-hold";
 
 const fastifyLogger = logger.child({ component: "fastify" });
@@ -528,6 +529,7 @@ fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest,
 await fastify.register(routes);
 
 startHoldSweeper();
+startGoogleSheetsAutoSync();
 
 const port = Number(process.env.PORT) || 3000;
 

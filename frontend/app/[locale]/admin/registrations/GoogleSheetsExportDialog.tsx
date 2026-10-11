@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAlert } from "@/contexts/AlertContext";
-import { adminEventsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
-import { CheckCircle2, Copy, ExternalLink } from "lucide-react";
+import { adminRegistrationsAPI, type GoogleSheetsSettings } from "@/lib/api/endpoints";
+import { CheckCircle2, CircleAlert, Copy, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RegistrationsT } from "./translations";
 import { errorMessage } from "./utils";
@@ -19,6 +20,10 @@ type Props = {
 };
 
 const sheetsUrlPattern = /^https?:\/\/\S+\/spreadsheets\/d\/[\w-]+/;
+
+function extractSpreadsheetId(url: string) {
+	return url.match(/\/spreadsheets\/d\/([\w-]+)/)?.[1] ?? null;
+}
 
 export function GoogleSheetsExportDialog({ open, eventId, t, onClose }: Props) {
 	return (
@@ -38,30 +43,34 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 	const { showAlert } = useAlert();
 	const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
 	const [isLoadingInfo, setIsLoadingInfo] = useState(true);
+	const [settings, setSettings] = useState<GoogleSheetsSettings | null>(null);
 	const [sheetsUrl, setSheetsUrl] = useState("");
+	const [autoSync, setAutoSync] = useState(false);
 	const [urlTouched, setUrlTouched] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
-	const [exported, setExported] = useState(false);
+	const [isTogglingAutoSync, setIsTogglingAutoSync] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
 		// Load independently so one failing request doesn't discard the other's result
-		const loadUrl = adminEventsAPI
-			.getById(eventId)
+		const loadSettings = adminRegistrationsAPI
+			.getGoogleSheetsSettings(eventId)
 			.then(response => {
-				if (cancelled || !response.success) return;
-				const url = response.data?.googleSheetsUrl ?? "";
-				setSheetsUrl(current => current || url);
+				if (cancelled || !response.success || !response.data) return;
+				const data = response.data;
+				setSettings(data);
+				setSheetsUrl(current => current || data.sheetsUrl || "");
+				setAutoSync(data.autoSync);
 			})
-			.catch(error => console.error("Failed to load saved Google Sheets URL:", error));
+			.catch(error => console.error("Failed to load Google Sheets settings:", error));
 		const loadEmail = adminRegistrationsAPI
 			.getServiceAccountEmail()
 			.then(response => {
 				if (cancelled || !response.success) return;
-				setServiceAccountEmail(response.data?.email ?? null);
+				setServiceAccountEmail(response.data?.email || null);
 			})
 			.catch(error => console.error("Failed to load service account email:", error));
-		Promise.all([loadUrl, loadEmail]).finally(() => {
+		void Promise.all([loadSettings, loadEmail]).finally(() => {
 			if (!cancelled) setIsLoadingInfo(false);
 		});
 		return () => {
@@ -71,6 +80,9 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 
 	const trimmedUrl = sheetsUrl.trim();
 	const urlInvalid = trimmedUrl !== "" && !sheetsUrlPattern.test(trimmedUrl);
+	// Toggling auto-sync applies right away only to the already saved sheet; for a new URL it is saved with the export
+	const isSavedSheet = !!settings?.sheetsUrl && !urlInvalid && extractSpreadsheetId(settings.sheetsUrl) === extractSpreadsheetId(trimmedUrl);
+	const busy = isExporting || isTogglingAutoSync;
 
 	async function copyEmail() {
 		if (!serviceAccountEmail) return;
@@ -82,16 +94,42 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 		}
 	}
 
+	async function changeAutoSync(enabled: boolean) {
+		if (!isSavedSheet) {
+			setAutoSync(enabled);
+			return;
+		}
+
+		setIsTogglingAutoSync(true);
+		try {
+			const response = await adminRegistrationsAPI.updateGoogleSheetsSettings({ eventId, autoSync: enabled });
+			if (response.success && response.data) {
+				setSettings(response.data);
+				setAutoSync(response.data.autoSync);
+				showAlert(enabled ? t.autoSyncOn : t.autoSyncOff, "success");
+			} else {
+				showAlert(`${t.autoSyncUpdateFailed}: ${response.message || t.unknownError}`, "error");
+			}
+		} catch (error) {
+			console.error("Failed to update Google Sheets auto-sync:", error);
+			showAlert(`${t.autoSyncUpdateFailed}: ${errorMessage(error, t.unknownError)}`, "error");
+		} finally {
+			setIsTogglingAutoSync(false);
+		}
+	}
+
 	async function exportToSheets() {
 		setUrlTouched(true);
-		if (!trimmedUrl || urlInvalid || isExporting) return;
+		if (!trimmedUrl || urlInvalid || busy) return;
 
 		setIsExporting(true);
 		try {
-			const response = await adminRegistrationsAPI.syncToGoogleSheets({ eventId, sheetsUrl: trimmedUrl });
-			if (response.success) {
+			const response = await adminRegistrationsAPI.syncToGoogleSheets({ eventId, sheetsUrl: trimmedUrl, autoSync });
+			if (response.success && response.data) {
+				setSettings(response.data);
+				setAutoSync(response.data.autoSync);
+				setSheetsUrl(response.data.sheetsUrl ?? trimmedUrl);
 				showAlert(response.message || t.exportSuccessMsg, "success");
-				setExported(true);
 			} else {
 				showAlert(`${t.exportErrorMsg}: ${response.message || t.unknownError}`, "error");
 			}
@@ -129,21 +167,36 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 						type="url"
 						placeholder="https://docs.google.com/spreadsheets/d/..."
 						value={sheetsUrl}
-						onChange={e => {
-							setSheetsUrl(e.target.value);
-							setExported(false);
-						}}
+						onChange={e => setSheetsUrl(e.target.value)}
 						onBlur={() => setUrlTouched(true)}
-						disabled={isExporting}
+						disabled={busy}
 						aria-invalid={urlTouched && urlInvalid}
 					/>
 					{urlTouched && urlInvalid && <p className="text-xs text-destructive">{t.sheetsUrlInvalid}</p>}
 				</div>
 
-				{exported && (
-					<div role="status" className="flex items-center gap-2 rounded-lg border border-green-600/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
-						<CheckCircle2 className="size-4 shrink-0" />
-						{t.exportSuccessMsg}
+				<label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+					<Checkbox className="mt-0.5" checked={autoSync} onCheckedChange={checked => changeAutoSync(checked === true)} disabled={busy || isLoadingInfo} />
+					<span className="space-y-1">
+						<span className="block text-sm font-medium">{t.autoSync}</span>
+						<span className="block text-xs text-muted-foreground">{t.autoSyncDesc}</span>
+					</span>
+				</label>
+
+				{isSavedSheet && settings && (
+					<div role="status" className="space-y-2 text-sm">
+						<p className="flex items-center gap-2 text-muted-foreground">
+							<CheckCircle2 className="size-4 shrink-0" />
+							{t.lastSynced}: {settings.lastSyncedAt ? new Date(settings.lastSyncedAt).toLocaleString() : t.neverSynced}
+						</p>
+						{settings.lastSyncError && (
+							<p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+								<CircleAlert className="mt-0.5 size-4 shrink-0" />
+								<span>
+									{t.lastSyncFailed}: {settings.lastSyncError}
+								</span>
+							</p>
+						)}
 					</div>
 				)}
 			</div>
@@ -156,8 +209,8 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 					<ExternalLink className="size-4" />
 					{t.openSheets}
 				</Button>
-				<Button variant="primary" onClick={exportToSheets} isLoading={isExporting} disabled={!trimmedUrl || urlInvalid}>
-					{isExporting ? t.exporting : t.confirmExport}
+				<Button variant="primary" onClick={exportToSheets} isLoading={isExporting} disabled={!trimmedUrl || urlInvalid || isTogglingAutoSync}>
+					{isExporting ? t.exporting : isSavedSheet ? t.syncNow : t.confirmExport}
 				</Button>
 			</DialogFooter>
 		</>

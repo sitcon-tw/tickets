@@ -1502,18 +1502,36 @@ export const GoogleSheetsServiceAccountResponseSchema = z.object({
 
 export const GoogleSheetsSyncBodySchema = z.object({
 	eventId: z.string(),
-	sheetsUrl: z.string()
+	sheetsUrl: z.string().trim().min(1),
+	autoSync: z.boolean().optional()
+});
+
+export const GoogleSheetsSettingsQuerySchema = z.object({
+	eventId: z.string()
+});
+
+export const GoogleSheetsSettingsBodySchema = z.object({
+	eventId: z.string(),
+	autoSync: z.boolean()
+});
+
+export const GoogleSheetsSettingsSchema = z.object({
+	sheetsUrl: z.string().nullable(),
+	autoSync: z.boolean(),
+	lastSyncedAt: z.string().nullable(),
+	lastSyncError: z.string().nullable()
+});
+
+export const GoogleSheetsSettingsResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	data: GoogleSheetsSettingsSchema.optional()
 });
 
 export const GoogleSheetsSyncResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
-	data: z
-		.object({
-			count: z.number(),
-			sheetsUrl: z.string()
-		})
-		.optional()
+	data: GoogleSheetsSettingsSchema.extend({ count: z.number() }).optional()
 });
 
 export const adminCheckInSchemas = {
@@ -1570,7 +1588,29 @@ export const adminRegistrationSchemas = {
 		tags: ["admin/registrations"],
 		body: GoogleSheetsSyncBodySchema,
 		response: {
-			200: GoogleSheetsSyncResponseSchema
+			200: GoogleSheetsSyncResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+	getGoogleSheetsSettings: {
+		description: "取得活動的 Google Sheets 同步設定與狀態",
+		tags: ["admin/registrations"],
+		querystring: GoogleSheetsSettingsQuerySchema,
+		response: {
+			200: GoogleSheetsSettingsResponseSchema,
+			404: ErrorResponseSchema
+		}
+	},
+	updateGoogleSheetsSettings: {
+		description: "開啟或關閉 Google Sheets 自動同步",
+		tags: ["admin/registrations"],
+		body: GoogleSheetsSettingsBodySchema,
+		response: {
+			200: GoogleSheetsSettingsResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema
 		}
 	}
 } as const;

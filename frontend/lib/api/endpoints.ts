@@ -340,6 +340,14 @@ const AdminRegistrationSchema = z.object({
 });
 
 // Admin - Registrations
+const GoogleSheetsSettingsSchema = z.object({
+	sheetsUrl: z.string().nullable(),
+	autoSync: z.boolean(),
+	lastSyncedAt: z.string().nullable(),
+	lastSyncError: z.string().nullable()
+});
+export type GoogleSheetsSettings = z.infer<typeof GoogleSheetsSettingsSchema>;
+
 export const adminRegistrationsAPI = {
 	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: "pending" | "confirmed" | "cancelled"; userId?: string }) =>
 		apiClient.get("/api/admin/registrations", params, ApiResponseSchema(z.array(AdminRegistrationSchema))),
@@ -361,8 +369,12 @@ export const adminRegistrationsAPI = {
 
 	getServiceAccountEmail: () => apiClient.get("/api/admin/registrations/google-sheets/service-account", {}, ApiResponseSchema(z.object({ email: z.string() }))),
 
-	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string }) =>
-		apiClient.post("/api/admin/registrations/google-sheets/sync", data, ApiResponseSchema(z.object({ count: z.number(), sheetsUrl: z.string() })))
+	getGoogleSheetsSettings: (eventId: string) => apiClient.get("/api/admin/registrations/google-sheets/settings", { eventId }, ApiResponseSchema(GoogleSheetsSettingsSchema)),
+
+	updateGoogleSheetsSettings: (data: { eventId: string; autoSync: boolean }) => apiClient.put("/api/admin/registrations/google-sheets/settings", data, ApiResponseSchema(GoogleSheetsSettingsSchema)),
+
+	syncToGoogleSheets: (data: { eventId: string; sheetsUrl: string; autoSync?: boolean }) =>
+		apiClient.post("/api/admin/registrations/google-sheets/sync", data, ApiResponseSchema(GoogleSheetsSettingsSchema.extend({ count: z.number() })))
 };
 
 // Admin - Check-ins
