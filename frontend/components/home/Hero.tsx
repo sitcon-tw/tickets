@@ -10,7 +10,6 @@ export default function Hero() {
 	const t = getTranslations(locale, {
 		description: {
 			"zh-Hant": "SITCON 票務系統",
-			"zh-Hans": "SITCON 票務系統",
 			en: "SITCON Ticketing System"
 		}
 	});

@@ -15,37 +15,31 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 	const [copied, setCopied] = useState<boolean>(false);
 
 	const t = getTranslations(locale, {
-		title: { "zh-Hant": "報到方式", "zh-Hans": "报到方式", en: "Check-in Method" },
+		title: { "zh-Hant": "報到方式", en: "Check-in Method" },
 		openInOpass: {
 			"zh-Hant": "使用 OPass app 開啟票券：",
-			"zh-Hans": "使用 OPass app 开启票券：",
 			en: "Open ticket in OPass app:"
 		},
 		openOpassLink: {
 			"zh-Hant": "點此開啟 OPass",
-			"zh-Hans": "点此开启 OPass",
 			en: "Click to open OPass"
 		},
-		or: { "zh-Hant": "或", "zh-Hans": "或", en: "or" },
-		useQrCode: { "zh-Hant": "使用此 QR Code 進行驗證", "zh-Hans": "使用此 QR Code 进行验证", en: "Use this QR Code for verification" },
+		or: { "zh-Hant": "或", en: "or" },
+		useQrCode: { "zh-Hant": "使用此 QR Code 進行驗證", en: "Use this QR Code for verification" },
 		scanInfo: {
 			"zh-Hant": "若無法使用 OPass 進行報到，請向服務台人員出示此 QR Code 以進行驗證",
-			"zh-Hans": "若无法使用 OPass 进行报到，请向服务台人员出示此 QR Code 以进行验证",
 			en: "If you cannot use OPass for check-in, please show this QR code to the service desk staff for verification"
 		},
 		scanInfoOpassDisabled: {
 			"zh-Hant": "請向服務台人員出示此 QR Code 以進行驗證",
-			"zh-Hans": "请向服务台人员出示此 QR Code 以进行验证",
 			en: "Please show this QR code to the service desk staff for verification"
 		},
 		qrAlert: {
 			"zh-Hant": "請勿將此 QR Code 外洩給他人，不然他可以偷吃你便當跟玩大地遊戲。",
-			"zh-Hans": "请勿将此 QR Code 外泄给他人，不然他可以偷吃你便当跟玩大地游戏。",
 			en: "Please do not share this QR code with others or they may use it to check in on your behalf."
 		},
 		qrAlert2: {
 			"zh-Hant": "＊ 此 QR Code 包含之 Token 為 hash，並不包含個人資料。若您想要將您報名後的票分送給其他人，您可以分享 OPass 連結或截圖 QR Code 給他。",
-			"zh-Hans": "＊ 此 QR Code 包含之 Token 为 hash，并不包含个人资料。若您想要将您报名后的票分送给其他人，您可以分享 OPass 连结或截图 QR Code 给他。",
 			en: "* The token contained in this QR code is a hash and does not contain personal information. If you want to transfer your ticket to someone else, you can share the OPass link or take a screenshot of the QR code."
 		}
 	});

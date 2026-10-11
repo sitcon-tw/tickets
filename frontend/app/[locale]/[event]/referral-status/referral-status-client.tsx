@@ -40,92 +40,74 @@ export default function ReferralStatus({ initialStats, initialRankingData }: Ref
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "推薦狀態",
-			"zh-Hans": "推荐状态",
 			en: "Referral Status"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
-			"zh-Hans": "载入中...",
 			en: "Loading..."
 		},
 		totalReferrals: {
 			"zh-Hant": "總推薦數",
-			"zh-Hans": "总推荐数",
 			en: "Total Referrals"
 		},
 		successfulReferrals: {
 			"zh-Hant": "成功推薦數",
-			"zh-Hans": "成功推荐数",
 			en: "Successful Referrals"
 		},
 		referralList: {
 			"zh-Hant": "推薦清單",
-			"zh-Hans": "推荐清单",
 			en: "Referral List"
 		},
 		email: {
 			"zh-Hant": "電子郵件",
-			"zh-Hans": "电子邮件",
 			en: "Email"
 		},
 		status: {
 			"zh-Hant": "狀態",
-			"zh-Hans": "状态",
 			en: "Status"
 		},
 		ticketName: {
 			"zh-Hant": "票券名稱",
-			"zh-Hans": "票券名称",
 			en: "Ticket Name"
 		},
 		registeredAt: {
 			"zh-Hant": "註冊時間",
-			"zh-Hans": "注册时间",
 			en: "Registered At"
 		},
 		confirmed: {
 			"zh-Hant": "已確認",
-			"zh-Hans": "已确认",
 			en: "Confirmed"
 		},
 		pending: {
 			"zh-Hant": "待確認",
-			"zh-Hans": "待确认",
 			en: "Pending"
 		},
 		cancelled: {
 			"zh-Hant": "已取消",
-			"zh-Hans": "已取消",
 			en: "Cancelled"
 		},
 		noReferrals: {
 			"zh-Hant": "尚無推薦記錄",
-			"zh-Hans": "尚无推荐记录",
 			en: "No referrals yet"
 		},
 		backToSuccess: {
 			"zh-Hant": "返回成功頁面",
-			"zh-Hans": "返回成功页面",
 			en: "Back to Success"
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
-			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
 		yourRank: {
 			"zh-Hant": "你的排名",
-			"zh-Hans": "你的排名",
 			en: "Your Rank"
 		},
 		notRanked: {
 			"zh-Hant": "尚未上榜",
-			"zh-Hans": "尚未上榜",
 			en: "Not ranked yet"
 		},
 		viewLeaderboard: {
 			"zh-Hant": "查看排行榜",
-			"zh-Hans": "查看排行榜",
 			en: "View Leaderboard"
 		}
 	});

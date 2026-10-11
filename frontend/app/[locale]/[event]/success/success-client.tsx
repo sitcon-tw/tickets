@@ -226,62 +226,50 @@ function SuccessContent() {
 	const t = getTranslations(locale, {
 		success: {
 			"zh-Hant": "報名成功！",
-			"zh-Hans": "报名成功！",
 			en: "You're In!"
 		},
 		cancelled: {
 			"zh-Hant": "報名已取消",
-			"zh-Hans": "报名已取消",
 			en: "Registration Cancelled"
 		},
 		emailCheck: {
 			"zh-Hant": "請多留意電子信箱",
-			"zh-Hans": "请多留意电子信箱",
 			en: "Please check your email inbox"
 		},
 		inviteFriends: {
 			"zh-Hant": "歡迎使用以下推薦碼 邀請朋友一起參加：",
-			"zh-Hans": "欢迎使用以下推荐码 邀请朋友一起参加：",
 			en: "Use the following code to invite friends:"
 		},
 		copyInviteLink: {
 			"zh-Hant": "或複製推薦連結：",
-			"zh-Hans": "或复制推荐链接：",
 			en: "Or copy referral link:"
 		},
 		qrDesc: {
 			"zh-Hant": "如何報到？",
-			"zh-Hans": "如何报到？",
 			en: "How to check in?"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
-			"zh-Hans": "载入中...",
 			en: "Loading..."
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
-			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
 		viewReferralStatus: {
 			"zh-Hant": "查看推薦狀態",
-			"zh-Hans": "查看推荐状态",
 			en: "View Referral Status"
 		},
 		viewMyRegistration: {
 			"zh-Hant": "查看/編輯報名",
-			"zh-Hans": "查看/编辑报名",
 			en: "View/Edit Registration"
 		},
 		checkedIn: {
 			"zh-Hant": "已報到",
-			"zh-Hans": "已报到",
 			en: "Checked in"
 		},
 		viewQRCode: {
 			"zh-Hant": "查看報到方式",
-			"zh-Hans": "查看报到方式",
 			en: "View Check-in Info"
 		}
 	});

@@ -6,14 +6,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 	const siteNameMap: Record<string, string> = {
 		"zh-Hant": "SITCONTIX",
-		"zh-Hans": "SITCON 报名系统",
 		en: "SITCON Registration System"
 	};
 	const siteName = siteNameMap[locale] || siteNameMap["zh-Hant"];
 
 	const fallbackDescriptionMap: Record<string, string> = {
 		"zh-Hant": "趕快來報名 SITCON 的活動吧！",
-		"zh-Hans": "赶快来报名 SITCON 的活动吧！",
 		en: "Register for SITCON events now!"
 	};
 	const fallbackDescription = fallbackDescriptionMap[locale] || fallbackDescriptionMap["zh-Hant"];

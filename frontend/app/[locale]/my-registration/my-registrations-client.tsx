@@ -48,62 +48,50 @@ export default function MyRegistrationsPage() {
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "我的報名",
-			"zh-Hans": "我的报名",
 			en: "My Registrations"
 		},
 		noRegistrations: {
 			"zh-Hant": "您還沒有任何報名記錄",
-			"zh-Hans": "您还没有任何报名记录",
 			en: "You don't have any registrations yet"
 		},
 		noFilteredRegistrations: {
 			"zh-Hant": "沒有符合條件的報名記錄",
-			"zh-Hans": "没有符合条件的报名记录",
 			en: "No registrations match this filter"
 		},
 		loadError: {
 			"zh-Hant": "載入報名資料時發生錯誤",
-			"zh-Hans": "加载报名资料时发生错误",
 			en: "Failed to load registrations"
 		},
 		upcoming: {
 			"zh-Hant": "即將到來",
-			"zh-Hans": "即将到来",
 			en: "Upcoming"
 		},
 		past: {
 			"zh-Hant": "已結束",
-			"zh-Hans": "已结束",
 			en: "Past"
 		},
 		all: {
 			"zh-Hant": "全部",
-			"zh-Hans": "全部",
 			en: "All"
 		},
 		confirmed: {
 			"zh-Hant": "已確認",
-			"zh-Hans": "已确认",
 			en: "Confirmed"
 		},
 		cancelled: {
 			"zh-Hant": "已取消",
-			"zh-Hans": "已取消",
 			en: "Cancelled"
 		},
 		pending: {
 			"zh-Hant": "待處理",
-			"zh-Hans": "待处理",
 			en: "Pending"
 		},
 		viewDetails: {
 			"zh-Hant": "查看詳情",
-			"zh-Hans": "查看详情",
 			en: "View Details"
 		},
 		registeredOn: {
 			"zh-Hant": "報名於",
-			"zh-Hans": "报名于",
 			en: "Registered on"
 		}
 	});

@@ -30,67 +30,54 @@ export default function ReferralRanking({ initialRankingData }: ReferralRankingP
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "推薦排行榜",
-			"zh-Hans": "推荐排行榜",
 			en: "Referral Leaderboard"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
-			"zh-Hans": "载入中...",
 			en: "Loading..."
 		},
 		rank: {
 			"zh-Hant": "名次",
-			"zh-Hans": "名次",
 			en: "Rank"
 		},
 		name: {
 			"zh-Hant": "名稱",
-			"zh-Hans": "名称",
 			en: "Name"
 		},
 		referralCount: {
 			"zh-Hant": "推薦數",
-			"zh-Hans": "推荐数",
 			en: "Referrals"
 		},
 		yourRank: {
 			"zh-Hant": "你的排名",
-			"zh-Hans": "你的排名",
 			en: "Your Rank"
 		},
 		yourReferrals: {
 			"zh-Hant": "你的推薦數",
-			"zh-Hans": "你的推荐数",
 			en: "Your Referrals"
 		},
 		notRanked: {
 			"zh-Hant": "尚未上榜",
-			"zh-Hans": "尚未上榜",
 			en: "Not ranked yet"
 		},
 		noRankings: {
 			"zh-Hant": "目前尚無排行資料",
-			"zh-Hans": "目前尚无排行资料",
 			en: "No rankings yet"
 		},
 		totalParticipants: {
 			"zh-Hant": "總參與人數",
-			"zh-Hans": "总参与人数",
 			en: "Total Participants"
 		},
 		backToStatus: {
 			"zh-Hant": "返回推薦狀態",
-			"zh-Hans": "返回推荐状态",
 			en: "Back to Referral Status"
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
-			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
 		you: {
 			"zh-Hant": "（你）",
-			"zh-Hans": "（你）",
 			en: "(You)"
 		}
 	});

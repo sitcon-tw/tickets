@@ -72,7 +72,7 @@ class APIClient {
 		const locale = currentPath.split("/")[1] || "zh-Hant";
 
 		if (response.status === 401) {
-			const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+			const pathWithoutLocale = currentPath.replace(/^\/(en|zh-Hant)/, "");
 			const isHomePage = pathWithoutLocale === "/" || pathWithoutLocale === "";
 
 			if (!currentPath.includes("/login") && !isHomePage) {

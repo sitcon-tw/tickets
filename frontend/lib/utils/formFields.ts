@@ -57,11 +57,11 @@ export function normalizeTicketFormFields(fields: RawTicketFormField[], eventId:
 }
 
 const formErrorTranslations = {
-	required: { "zh-Hant": "此欄位為必填", "zh-Hans": "此栏位为必填", en: "This field is required" },
-	invalid_type: { "zh-Hant": "答案格式不正確", "zh-Hans": "答案格式不正确", en: "This answer has an invalid format" },
-	invalid_option: { "zh-Hant": "請選擇有效的選項", "zh-Hans": "请选择有效的选项", en: "Please choose one of the available options" },
-	pattern: { "zh-Hant": "格式不正確，請檢查後再試", "zh-Hans": "格式不正确，请检查后再试", en: "The format is not valid, please check it" },
-	invalid_config: { "zh-Hant": "此欄位設定有誤，請聯絡主辦單位", "zh-Hans": "此栏位设置有误，请联系主办单位", en: "This field is misconfigured, please contact the organizers" }
+	required: { "zh-Hant": "此欄位為必填", en: "This field is required" },
+	invalid_type: { "zh-Hant": "答案格式不正確", en: "This answer has an invalid format" },
+	invalid_option: { "zh-Hant": "請選擇有效的選項", en: "Please choose one of the available options" },
+	pattern: { "zh-Hant": "格式不正確，請檢查後再試", en: "The format is not valid, please check it" },
+	invalid_config: { "zh-Hant": "此欄位設定有誤，請聯絡主辦單位", en: "This field is misconfigured, please contact the organizers" }
 };
 
 const formErrorCodes = new Set<string>(Object.keys(formErrorTranslations));

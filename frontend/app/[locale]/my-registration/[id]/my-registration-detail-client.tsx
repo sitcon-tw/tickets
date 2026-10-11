@@ -112,189 +112,152 @@ function formatDate(date: Date | null | undefined) {
 const registrationDetailTranslations = {
 	myRegistration: {
 		"zh-Hant": "我的報名",
-		"zh-Hans": "我的报名",
 		en: "My Registration"
 	},
 	loading: {
 		"zh-Hant": "載入中...",
-		"zh-Hans": "载入中...",
 		en: "Loading..."
 	},
 	loadFailed: {
 		"zh-Hant": "載入失敗：",
-		"zh-Hans": "载入失败：",
 		en: "Failed to load: "
 	},
 	backToSuccessPage: {
 		"zh-Hant": "返回報名成功頁面",
-		"zh-Hans": "返回报名成功页面",
 		en: "Back to Registration Success Page"
 	},
 	goToSuccessPage: {
 		"zh-Hant": "前往報名成功頁面",
-		"zh-Hans": "前往报名成功页面",
 		en: "Go to Registration Success Page"
 	},
 	backToRegistrations: {
 		"zh-Hant": "返回我的報名列表",
-		"zh-Hans": "返回我的报名列表",
 		en: "Back to My Registrations"
 	},
 	eventInfo: {
 		"zh-Hant": "活動資訊",
-		"zh-Hans": "活动资讯",
 		en: "Event Information"
 	},
 	eventName: {
 		"zh-Hant": "活動名稱",
-		"zh-Hans": "活动名称",
 		en: "Event Name"
 	},
 	eventLocation: {
 		"zh-Hant": "活動地點",
-		"zh-Hans": "活动地点",
 		en: "Event Location"
 	},
 	eventTime: {
 		"zh-Hant": "活動時間",
-		"zh-Hans": "活动时间",
 		en: "Event Time"
 	},
 	ticketInfo: {
 		"zh-Hant": "票券資訊",
-		"zh-Hans": "票券资讯",
 		en: "Ticket Information"
 	},
 	ticketType: {
 		"zh-Hant": "票種",
-		"zh-Hans": "票种",
 		en: "Ticket Type"
 	},
 	ticketPrice: {
 		"zh-Hant": "價格",
-		"zh-Hans": "价格",
 		en: "Price"
 	},
 	registrationStatus: {
 		"zh-Hant": "報名狀態",
-		"zh-Hans": "报名状态",
 		en: "Registration Status"
 	},
 	statusConfirmed: {
 		"zh-Hant": "已確認",
-		"zh-Hans": "已确认",
 		en: "Confirmed"
 	},
 	statusCancelled: {
 		"zh-Hant": "已取消",
-		"zh-Hans": "已取消",
 		en: "Cancelled"
 	},
 	statusPending: {
 		"zh-Hant": "待處理",
-		"zh-Hans": "待处理",
 		en: "Pending"
 	},
 	registrationInfo: {
 		"zh-Hant": "報名資料",
-		"zh-Hans": "报名资料",
 		en: "Registration Information"
 	},
 	edit: {
 		"zh-Hant": "編輯",
-		"zh-Hans": "编辑",
 		en: "Edit"
 	},
 	cancel: {
 		"zh-Hant": "取消",
-		"zh-Hans": "取消",
 		en: "Cancel"
 	},
 	save: {
 		"zh-Hant": "儲存",
-		"zh-Hans": "保存",
 		en: "Save"
 	},
 	saving: {
 		"zh-Hant": "儲存中...",
-		"zh-Hans": "保存中...",
 		en: "Saving..."
 	},
 	saveSuccess: {
 		"zh-Hant": "儲存成功！",
-		"zh-Hans": "保存成功！",
 		en: "Saved successfully!"
 	},
 	saveFailed: {
 		"zh-Hant": "儲存失敗：",
-		"zh-Hans": "保存失败：",
 		en: "Failed to save: "
 	},
 	cannotEdit: {
 		"zh-Hant": "此報名無法編輯",
-		"zh-Hans": "此报名无法编辑",
 		en: "This registration cannot be edited"
 	},
-	yes: { "zh-Hant": "是", "zh-Hans": "是", en: "Yes" },
-	no: { "zh-Hant": "否", "zh-Hans": "否", en: "No" },
+	yes: { "zh-Hant": "是", en: "Yes" },
+	no: { "zh-Hant": "否", en: "No" },
 	checkFields: {
 		"zh-Hant": "請檢查標示的欄位後再儲存",
-		"zh-Hans": "请检查标示的栏位后再保存",
 		en: "Please check the highlighted fields and save again"
 	},
 	pleaseSelect: {
 		"zh-Hant": "請選擇...",
-		"zh-Hans": "请选择...",
 		en: "Please select..."
 	},
 	notFound: {
 		"zh-Hant": "找不到報名記錄",
-		"zh-Hans": "找不到报名记录",
 		en: "Registration not found"
 	},
 	registeredAt: {
 		"zh-Hant": "報名時間",
-		"zh-Hans": "报名时间",
 		en: "Registered At"
 	},
 	free: {
 		"zh-Hant": "免費",
-		"zh-Hans": "免费",
 		en: "Free"
 	},
 	cancelRegistration: {
 		"zh-Hant": "取消報名",
-		"zh-Hans": "取消报名",
 		en: "Cancel Registration"
 	},
 	cancelCancelRegistration: {
 		"zh-Hant": "算了",
-		"zh-Hans": "算了",
 		en: "Never mind"
 	},
 	cancelConfirm: {
 		"zh-Hant": "確定要取消此報名嗎？您將無法再次編輯或恢復此報名。",
-		"zh-Hans": "确定要取消此报名吗？您将无法再次编辑或恢复此报名。",
 		en: "Are you sure you want to cancel this registration? You will not be able to edit or recover this registration again."
 	},
 	cancelling: {
 		"zh-Hant": "取消中...",
-		"zh-Hans": "取消中...",
 		en: "Cancelling..."
 	},
 	cancelSuccess: {
 		"zh-Hant": "報名已成功取消",
-		"zh-Hans": "报名已成功取消",
 		en: "Registration cancelled successfully"
 	},
 	cancelFailed: {
 		"zh-Hant": "取消失敗：",
-		"zh-Hans": "取消失败：",
 		en: "Failed to cancel: "
 	},
 	cannotCancel: {
 		"zh-Hant": "此報名無法取消",
-		"zh-Hans": "此报名无法取消",
 		en: "This registration cannot be cancelled"
 	}
 };

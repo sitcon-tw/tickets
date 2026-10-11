@@ -17,17 +17,14 @@ export default function NotFound() {
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "找不到頁面",
-			"zh-Hans": "找不到页面",
 			en: "Page Not Found"
 		},
 		description: {
 			"zh-Hant": "抱歉，您訪問的頁面不存在。",
-			"zh-Hans": "抱歉，您访问的页面不存在。",
 			en: "Sorry, the page you are looking for does not exist."
 		},
 		backHome: {
 			"zh-Hant": "回首頁",
-			"zh-Hans": "回首页",
 			en: "Back to Home"
 		}
 	});

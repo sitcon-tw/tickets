@@ -8,8 +8,7 @@ import { useMemo } from "react";
 
 const localeNames: Record<string, string> = {
 	en: "English",
-	"zh-Hant": "\u7e41\u9ad4\u4e2d\u6587",
-	"zh-Hans": "\u7b80\u4f53\u4e2d\u6587"
+	"zh-Hant": "\u7e41\u9ad4\u4e2d\u6587"
 };
 
 export default function Footer() {
@@ -24,7 +23,7 @@ export default function Footer() {
 
 	const handleLocaleChange = (newLocale: string) => {
 		// Replace the locale part in the pathname
-		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant|zh-Hans)/, "");
+		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant)/, "");
 		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
 	};
 

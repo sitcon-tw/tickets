@@ -135,7 +135,6 @@ export default function Radio({ label, name, options, required = true, value = "
 	const t = getTranslations(locale, {
 		other: {
 			"zh-Hant": "其他",
-			"zh-Hans": "其他",
 			en: "Other"
 		}
 	});

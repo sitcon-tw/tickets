@@ -37,38 +37,35 @@ export default function ProfileDialog({ open, onOpenChange, user, onNameUpdated 
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const t = getTranslations(locale, {
-		title: { "zh-Hant": "個人資料", "zh-Hans": "个人资料", en: "Profile" },
-		description: { "zh-Hant": "管理您的名稱與通行金鑰", "zh-Hans": "管理您的名称与通行密钥", en: "Manage your name and passkeys" },
-		name: { "zh-Hant": "名稱", "zh-Hans": "名称", en: "Name" },
-		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-		nameSaved: { "zh-Hant": "名稱已更新", "zh-Hans": "名称已更新", en: "Name updated" },
+		title: { "zh-Hant": "個人資料", en: "Profile" },
+		description: { "zh-Hant": "管理您的名稱與通行金鑰", en: "Manage your name and passkeys" },
+		name: { "zh-Hant": "名稱", en: "Name" },
+		save: { "zh-Hant": "儲存", en: "Save" },
+		nameSaved: { "zh-Hant": "名稱已更新", en: "Name updated" },
 		nameInvalid: {
 			"zh-Hant": `名稱需為 1 至 ${MAX_NAME_LENGTH} 個字元`,
-			"zh-Hans": `名称需为 1 至 ${MAX_NAME_LENGTH} 个字符`,
 			en: `Name must be 1 to ${MAX_NAME_LENGTH} characters`
 		},
-		passkeys: { "zh-Hant": "通行金鑰", "zh-Hans": "通行密钥", en: "Passkeys" },
+		passkeys: { "zh-Hant": "通行金鑰", en: "Passkeys" },
 		passkeysHint: {
 			"zh-Hant": "使用指紋、臉部辨識或裝置密碼登入，不需等待登入信。",
-			"zh-Hans": "使用指纹、面部识别或设备密码登录，无需等待登录信。",
 			en: "Sign in with your fingerprint, face, or device PIN — no email needed."
 		},
-		noPasskeys: { "zh-Hant": "尚未新增通行金鑰", "zh-Hans": "尚未添加通行密钥", en: "No passkeys yet" },
-		addPasskey: { "zh-Hant": "新增通行金鑰", "zh-Hans": "添加通行密钥", en: "Add passkey" },
-		passkeyAdded: { "zh-Hant": "已新增通行金鑰", "zh-Hans": "已添加通行密钥", en: "Passkey added" },
-		passkeyDeleted: { "zh-Hant": "已移除通行金鑰", "zh-Hans": "已移除通行密钥", en: "Passkey removed" },
-		passkeyExists: { "zh-Hant": "此裝置已註冊過通行金鑰", "zh-Hans": "此设备已注册过通行密钥", en: "This device already has a passkey" },
+		noPasskeys: { "zh-Hant": "尚未新增通行金鑰", en: "No passkeys yet" },
+		addPasskey: { "zh-Hant": "新增通行金鑰", en: "Add passkey" },
+		passkeyAdded: { "zh-Hant": "已新增通行金鑰", en: "Passkey added" },
+		passkeyDeleted: { "zh-Hant": "已移除通行金鑰", en: "Passkey removed" },
+		passkeyExists: { "zh-Hant": "此裝置已註冊過通行金鑰", en: "This device already has a passkey" },
 		sessionNotFresh: {
 			"zh-Hant": "為了安全，請重新登入後再新增通行金鑰",
-			"zh-Hans": "为了安全，请重新登录后再添加通行密钥",
 			en: "For security, please sign in again before adding a passkey"
 		},
-		unsupported: { "zh-Hant": "此瀏覽器不支援通行金鑰", "zh-Hans": "此浏览器不支持通行密钥", en: "This browser doesn't support passkeys" },
-		remove: { "zh-Hant": "移除", "zh-Hans": "移除", en: "Remove" },
-		unnamed: { "zh-Hant": "通行金鑰", "zh-Hans": "通行密钥", en: "Passkey" },
-		synced: { "zh-Hant": "已同步", "zh-Hans": "已同步", en: "Synced" },
-		addedOn: { "zh-Hant": "新增於", "zh-Hans": "添加于", en: "Added" },
-		error: { "zh-Hant": "發生錯誤，請稍後再試", "zh-Hans": "发生错误，请稍后再试", en: "Something went wrong. Please try again" }
+		unsupported: { "zh-Hant": "此瀏覽器不支援通行金鑰", en: "This browser doesn't support passkeys" },
+		remove: { "zh-Hant": "移除", en: "Remove" },
+		unnamed: { "zh-Hant": "通行金鑰", en: "Passkey" },
+		synced: { "zh-Hant": "已同步", en: "Synced" },
+		addedOn: { "zh-Hant": "新增於", en: "Added" },
+		error: { "zh-Hant": "發生錯誤，請稍後再試", en: "Something went wrong. Please try again" }
 	});
 
 	const loadPasskeys = useCallback(async () => {

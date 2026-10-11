@@ -25,8 +25,8 @@ type FieldEditorProps = {
 	updateQuestion: (id: string, updates: Partial<Question>) => void;
 };
 
-const nameKeys = { en: "labelEn", "zh-Hant": "labelZhHant", "zh-Hans": "labelZhHans" } as const;
-const descriptionKeys = { en: "descriptionEn", "zh-Hant": "descriptionZhHant", "zh-Hans": "descriptionZhHans" } as const;
+const nameKeys = { en: "labelEn", "zh-Hant": "labelZhHant" } as const;
+const descriptionKeys = { en: "descriptionEn", "zh-Hant": "descriptionZhHant" } as const;
 
 export function FieldEditor({ question, questions, eventTickets, issues, locale, t, updateQuestion }: FieldEditorProps) {
 	const [tab, setTab] = useState<IssueSection>("content");
@@ -73,7 +73,7 @@ export function FieldEditor({ question, questions, eventTickets, issues, locale,
 						label={t.fieldName}
 						required
 						invalid={hasIssue("content")}
-						values={{ en: question.labelEn, "zh-Hant": question.labelZhHant, "zh-Hans": question.labelZhHans }}
+						values={{ en: question.labelEn, "zh-Hant": question.labelZhHant }}
 						onChange={(lang: LangKey, value) => update({ [nameKeys[lang]]: value })}
 						placeholders={{ en: t.nameEnPlaceholder }}
 						helper={t.fieldNameHelp}
@@ -112,7 +112,7 @@ export function FieldEditor({ question, questions, eventTickets, issues, locale,
 						id={`description-${id}`}
 						label={t.fieldDescription}
 						multiline
-						values={{ en: question.descriptionEn, "zh-Hant": question.descriptionZhHant, "zh-Hans": question.descriptionZhHans }}
+						values={{ en: question.descriptionEn, "zh-Hant": question.descriptionZhHant }}
 						onChange={(lang: LangKey, value) => update({ [descriptionKeys[lang]]: value })}
 						helper={t.descriptionHelp}
 						markdownPreviewLabel={t.markdownPreview}

@@ -27,12 +27,10 @@ export default function EventList() {
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "活動列表",
-			"zh-Hans": "活动列表",
 			en: "Events"
 		},
 		noEvents: {
 			"zh-Hant": "目前沒有活動",
-			"zh-Hans": "目前没有活动",
 			en: "No events available"
 		}
 	});

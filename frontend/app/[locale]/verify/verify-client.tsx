@@ -111,117 +111,94 @@ function verifyReducer(state: VerifyState, action: VerifyAction): VerifyState {
 const verifyPageTranslations = {
 	title: {
 		"zh-Hant": "簡訊驗證",
-		"zh-Hans": "短信验证",
 		en: "Phone Verification"
 	},
 	phoneNumberLabel: {
 		"zh-Hant": "手機號碼",
-		"zh-Hans": "手机号码",
 		en: "Phone Number"
 	},
 	phoneNumberPlaceholder: {
 		"zh-Hant": "請輸入手機號碼（09xxxxxxxx）",
-		"zh-Hans": "请输入手机号码（09xxxxxxxx）",
 		en: "Enter phone number (09xxxxxxxx)"
 	},
 	sendCode: {
 		"zh-Hant": "發送驗證碼",
-		"zh-Hans": "发送验证码",
 		en: "Send Code"
 	},
 	resendCode: {
 		"zh-Hant": "重新發送",
-		"zh-Hans": "重新发送",
 		en: "Resend"
 	},
 	codeLabel: {
 		"zh-Hant": "驗證碼",
-		"zh-Hans": "验证码",
 		en: "Verification Code"
 	},
 	codePlaceholder: {
 		"zh-Hant": "請輸入 6 位數驗證碼",
-		"zh-Hans": "请输入 6 位数验证码",
 		en: "Enter 6-digit code"
 	},
 	verify: {
 		"zh-Hant": "驗證",
-		"zh-Hans": "验证",
 		en: "Verify"
 	},
 	verified: {
 		"zh-Hant": "已驗證",
-		"zh-Hans": "已验证",
 		en: "Verified"
 	},
 	verifying: {
 		"zh-Hant": "驗證中...",
-		"zh-Hans": "验证中...",
 		en: "Verifying..."
 	},
 	verifyFail: {
 		"zh-Hant": "驗證失敗，請重試",
-		"zh-Hans": "验证失败，请重试",
 		en: "Verification failed, please try again"
 	},
 	invalidPhoneNumber: {
 		"zh-Hant": "無效的手機號碼格式",
-		"zh-Hans": "无效的手机号码格式",
 		en: "Invalid phone number format"
 	},
 	codeSent: {
 		"zh-Hant": "驗證碼已發送至您的手機",
-		"zh-Hans": "验证码已发送至您的手机",
 		en: "Verification code sent to your phone"
 	},
 	verificationSuccess: {
 		"zh-Hant": "驗證成功！正在重新導向...",
-		"zh-Hans": "验证成功！正在重定向...",
 		en: "Verification successful! Redirecting..."
 	},
 	description: {
 		"zh-Hant": "請驗證您的手機號碼",
-		"zh-Hans": "请验证您的手机号码",
 		en: "Please verify your phone number"
 	},
 	waitSeconds: {
 		"zh-Hant": "秒後可重新發送",
-		"zh-Hans": "秒后可重新发送",
 		en: "seconds until resend"
 	},
 	invalidCode: {
 		"zh-Hant": "驗證碼必須為 6 位數字",
-		"zh-Hans": "验证码必须为 6 位数字",
 		en: "Verification code must be 6 digits"
 	},
 	didntReceiveCode: {
 		"zh-Hant": "沒有收到驗證碼？",
-		"zh-Hans": "没有收到验证码？",
 		en: "Didn't receive the code?"
 	},
 	resendIn: {
 		"zh-Hant": "在",
-		"zh-Hans": "在",
 		en: "Resend in"
 	},
 	resendSeconds: {
 		"zh-Hant": "秒後重新發送...",
-		"zh-Hans": "秒后重新发送...",
 		en: "s"
 	},
 	changePhoneNumber: {
 		"zh-Hant": "更換手機號碼",
-		"zh-Hans": "更换手机号码",
 		en: "Change phone number"
 	},
 	sendingCode: {
 		"zh-Hant": "發送中...",
-		"zh-Hans": "发送中...",
 		en: "Sending..."
 	},
 	continue: {
 		"zh-Hant": "繼續",
-		"zh-Hans": "继续",
 		en: "Continue"
 	}
 };

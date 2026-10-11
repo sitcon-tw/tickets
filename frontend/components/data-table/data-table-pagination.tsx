@@ -14,14 +14,14 @@ const pageSizes = [10, 20, 50, 100];
 export function DataTablePagination<TData extends RowData>({ table, showSelection = false }: DataTablePaginationProps<TData>) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		total: { "zh-Hant": "共 {count} 筆", "zh-Hans": "共 {count} 条", en: "{count} results" },
-		selected: { "zh-Hant": "已選取 {selected} / {count} 筆", "zh-Hans": "已选取 {selected} / {count} 条", en: "{selected} of {count} selected" },
-		rowsPerPage: { "zh-Hant": "每頁筆數", "zh-Hans": "每页条数", en: "Rows per page" },
-		page: { "zh-Hant": "第 {page} / {pages} 頁", "zh-Hans": "第 {page} / {pages} 页", en: "Page {page} of {pages}" },
-		first: { "zh-Hant": "第一頁", "zh-Hans": "第一页", en: "First page" },
-		previous: { "zh-Hant": "上一頁", "zh-Hans": "上一页", en: "Previous page" },
-		next: { "zh-Hant": "下一頁", "zh-Hans": "下一页", en: "Next page" },
-		last: { "zh-Hant": "最後一頁", "zh-Hans": "最后一页", en: "Last page" }
+		total: { "zh-Hant": "共 {count} 筆", en: "{count} results" },
+		selected: { "zh-Hant": "已選取 {selected} / {count} 筆", en: "{selected} of {count} selected" },
+		rowsPerPage: { "zh-Hant": "每頁筆數", en: "Rows per page" },
+		page: { "zh-Hant": "第 {page} / {pages} 頁", en: "Page {page} of {pages}" },
+		first: { "zh-Hant": "第一頁", en: "First page" },
+		previous: { "zh-Hant": "上一頁", en: "Previous page" },
+		next: { "zh-Hant": "下一頁", en: "Next page" },
+		last: { "zh-Hant": "最後一頁", en: "Last page" }
 	});
 
 	const { pageIndex, pageSize } = table.store.state.pagination;

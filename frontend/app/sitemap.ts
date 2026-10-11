@@ -4,7 +4,7 @@ import z from "zod/v4";
 
 const BASE_URL = process.env.FRONTEND_URI || "https://tickets.sitcon.org";
 const API_URL = process.env.BACKEND_URI || "http://localhost:8000";
-const locales = ["en", "zh-Hant", "zh-Hans"];
+const locales = ["en", "zh-Hant"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const sitemap: MetadataRoute.Sitemap = [];

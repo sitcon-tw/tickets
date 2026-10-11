@@ -176,7 +176,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 						if (callbackURL) {
 							const callbackUrl = new URL(callbackURL);
 							const callbackPathParts = callbackUrl.pathname.split("/").filter(Boolean);
-							if (callbackPathParts.length > 0 && ["en", "zh-Hant", "zh-Hans"].includes(callbackPathParts[0])) {
+							if (callbackPathParts.length > 0 && ["en", "zh-Hant"].includes(callbackPathParts[0])) {
 								locale = callbackPathParts[0];
 							}
 							returnUrl = callbackUrl.pathname + callbackUrl.search;

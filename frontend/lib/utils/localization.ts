@@ -21,7 +21,7 @@ export function getLocalizedText(obj: LocalizedText | string | undefined | null,
 	if (obj[locale]) return obj[locale];
 
 	// Fallback to other languages if available
-	const localePriority = ["en", "zh-Hant", "zh-Hans"];
+	const localePriority = ["en", "zh-Hant"];
 	for (const lang of localePriority) {
 		if (obj[lang]) return obj[lang];
 	}
@@ -48,5 +48,5 @@ export function normalizeFormFieldOption(opt: FormFieldOption): LocalizedText {
  */
 export function getOptionValue(option: LocalizedText | string): string {
 	if (typeof option === "string") return option;
-	return option["en"] || option["zh-Hant"] || option["zh-Hans"] || Object.values(option).find(Boolean) || "";
+	return option["en"] || option["zh-Hant"] || Object.values(option).find(Boolean) || "";
 }

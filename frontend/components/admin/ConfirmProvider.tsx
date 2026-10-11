@@ -36,9 +36,9 @@ export function useConfirm(): ConfirmFn {
 export function ConfirmProvider({ children }: { children: ReactNode }) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		confirm: { "zh-Hant": "確認", "zh-Hans": "确认", en: "Confirm" },
-		delete: { "zh-Hant": "刪除", "zh-Hans": "删除", en: "Delete" },
-		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" }
+		confirm: { "zh-Hant": "確認", en: "Confirm" },
+		delete: { "zh-Hant": "刪除", en: "Delete" },
+		cancel: { "zh-Hant": "取消", en: "Cancel" }
 	});
 
 	const [options, setOptions] = useState<ConfirmOptions | null>(null);

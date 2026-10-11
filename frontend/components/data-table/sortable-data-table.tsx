@@ -47,7 +47,7 @@ function SortableRow<TData extends SortableRowData>({ row, children }: SortableR
 export function SortableDataTable<TData extends SortableRowData>({ columns, data, isLoading = false, emptyMessage, emptyState, getRowId }: DataTableProps<TData>) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		noResults: { "zh-Hant": "沒有符合的資料", "zh-Hans": "没有符合的数据", en: "No results" }
+		noResults: { "zh-Hant": "沒有符合的資料", en: "No results" }
 	});
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 

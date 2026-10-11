@@ -98,92 +98,74 @@ export default function SetTicket() {
 	const t = getTranslations(locale, {
 		ticketSaleEnded: {
 			"zh-Hant": "票券銷售已結束。",
-			"zh-Hans": "票券销售已结束。",
 			en: "Ticket sale has ended."
 		},
 		ticketNotYetAvailable: {
 			"zh-Hant": "此票種尚未開放報名。您可以先登入，並在開放時間後再試。",
-			"zh-Hans": "此票种尚未开放报名。您可以先登录，并在开放时间后再试。",
 			en: "This ticket is not yet available for registration. You can log in first and try again after the sale starts."
 		},
 		ticketSoldOut: {
 			"zh-Hant": "票券已售完。",
-			"zh-Hans": "票券已售完。",
 			en: "Ticket is sold out."
 		},
 		error: {
 			"zh-Hant": "發生錯誤，請稍後再試。",
-			"zh-Hans": "发生错误，请稍后再试。",
 			en: "An error occurred. Please try again later."
 		},
 		redirecting: {
 			"zh-Hant": "正在前往報名表單",
-			"zh-Hans": "正在前往报名表单",
 			en: "Taking you to the registration form"
 		},
 		redirectingHint: {
 			"zh-Hant": "票券已確認，馬上就好。",
-			"zh-Hans": "票券已确认，马上就好。",
 			en: "Your ticket is confirmed. Just a moment."
 		},
 		redirectManual: {
 			"zh-Hant": "沒有自動跳轉？點此繼續",
-			"zh-Hans": "没有自动跳转？点此继续",
 			en: "Not redirected? Continue here"
 		},
 		eventNotFound: {
 			"zh-Hant": "找不到活動",
-			"zh-Hans": "找不到活动",
 			en: "Event not found"
 		},
 		failedToLoadEvents: {
 			"zh-Hant": "載入活動失敗 :(",
-			"zh-Hans": "载入活动失败 :(",
 			en: "Failed to load events :("
 		},
 		tryToDebug: {
 			"zh-Hant": "請確認網址正確，或嘗試於稍後重新整理。",
-			"zh-Hans": "请确认网址正确，或尝试于稍后重新刷新。",
 			en: "Please ensure the URL is correct, or try refreshing later."
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
-			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
 		ticketNotFound: {
 			"zh-Hant": "找不到票券",
-			"zh-Hans": "找不到票券",
 			en: "Ticket not found"
 		},
 		pleaseLoginFirst: {
 			"zh-Hant": "請先登入以查看報名時間",
-			"zh-Hans": "请先登录以查看报名时间",
 			en: "Please log in first to view registration schedule"
 		},
 		goToLogin: {
 			"zh-Hant": "前往登入",
-			"zh-Hans": "前往登录",
 			en: "Go to Login"
 		},
 		ticketUnavailable: {
 			"zh-Hant": "票券暫時無法使用",
-			"zh-Hans": "票券暂时无法使用",
 			en: "Ticket Currently Unavailable"
 		},
 		backToEvent: {
 			"zh-Hant": "返回活動頁面",
-			"zh-Hans": "返回活动页面",
 			en: "Back to Event"
 		},
 		inviteCodeRequired: {
 			"zh-Hant": "此票券需要邀請碼才能報名。",
-			"zh-Hans": "此票券需要邀请码才能报名。",
 			en: "This ticket requires an invitation code to register."
 		},
 		inviteCodeInvalid: {
 			"zh-Hant": "邀請碼無效或已過期。",
-			"zh-Hans": "邀请码无效或已过期。",
 			en: "The invitation code is invalid or has expired."
 		}
 	});

@@ -21,17 +21,12 @@ const languagePlaceholders: Record<EventLanguage, { plainDesc: string; locationT
 	"zh-Hant": {
 		plainDesc: "純文字描述，不含 Markdown 格式",
 		locationText: "例如：中央研究院人文社會科學館"
-	},
-	"zh-Hans": {
-		plainDesc: "纯文字描述，不含 Markdown 格式",
-		locationText: "例如：中央研究院人文社会科学馆"
 	}
 };
 
 const languageConfig: { value: EventLanguage; label: string; fields: { name: EventFormTextField; desc: EventFormTextField; plainDesc: EventFormTextField; location: EventFormTextField } }[] = [
 	{ value: "en", label: "English", fields: { name: "nameEn", desc: "descEn", plainDesc: "plainDescEn", location: "locationTextEn" } },
-	{ value: "zh-Hant", label: "繁體中文", fields: { name: "nameZhHant", desc: "descZhHant", plainDesc: "plainDescZhHant", location: "locationTextZhHant" } },
-	{ value: "zh-Hans", label: "简体中文", fields: { name: "nameZhHans", desc: "descZhHans", plainDesc: "plainDescZhHans", location: "locationTextZhHans" } }
+	{ value: "zh-Hant", label: "繁體中文", fields: { name: "nameZhHant", desc: "descZhHant", plainDesc: "plainDescZhHant", location: "locationTextZhHant" } }
 ];
 
 type FieldProps = {
@@ -101,7 +96,7 @@ type EventEditorDialogProps = {
 export function EventEditorDialog({ open, editingEvent, activeTab, form, errors, submitError, isSaving, slugPreviewBase, t, dispatch, onSubmit, onRequestClose }: EventEditorDialogProps) {
 	const errorTabs = tabsWithErrors(errors);
 	const errorCount = Object.keys(errors).length;
-	const tabLabels: Record<EventTab, string> = { info: t.eventInfo, en: "English", "zh-Hant": "繁體中文", "zh-Hans": "简体中文" };
+	const tabLabels: Record<EventTab, string> = { info: t.eventInfo, en: "English", "zh-Hant": "繁體中文" };
 
 	const setText = (field: EventFormTextField) => (value: string) => dispatch({ type: "setFormText", field, value });
 	const setBool = (field: "hideEvent" | "useOpass") => (checked: boolean | "indeterminate") => dispatch({ type: "setFormBoolean", field, value: checked === true });

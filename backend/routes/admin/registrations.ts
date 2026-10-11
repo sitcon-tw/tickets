@@ -509,7 +509,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					let localizedName = field.id;
 					if (field.name && typeof field.name === "object" && !Array.isArray(field.name)) {
 						const nameObj = field.name as Record<string, string>;
-						localizedName = nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
+						localizedName = nameObj["zh-Hant"] || nameObj["en"] || Object.values(nameObj)[0] || field.id;
 					} else if (typeof field.name === "string") {
 						localizedName = field.name;
 					}
@@ -575,7 +575,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 		const getLocalizedName = (json: Prisma.JsonValue | undefined): string => {
 			if (!json || typeof json !== "object" || Array.isArray(json)) return "";
 			const nameObj = json as Record<string, string>;
-			return nameObj["zh-Hant"] || nameObj["zh-Hans"] || nameObj["en"] || Object.values(nameObj)[0] || "";
+			return nameObj["zh-Hant"] || nameObj["en"] || Object.values(nameObj)[0] || "";
 		};
 
 		const parseOptions = (values: Prisma.JsonValue): ExportFieldOption[] => (typeof values === "string" ? JSON.parse(values) : values) as ExportFieldOption[];

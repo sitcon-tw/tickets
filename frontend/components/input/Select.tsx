@@ -41,9 +41,9 @@ export default function Select({ label, id, options, required = true, value, onC
 	const listRef = useRef<HTMLDivElement>(null);
 
 	const t = getTranslations(locale, {
-		pleaseSelect: { "zh-Hant": "請選擇...", "zh-Hans": "请选择...", en: "Please select..." },
-		search: { "zh-Hant": "搜尋...", "zh-Hans": "搜索...", en: "Search..." },
-		noResults: { "zh-Hant": "找不到結果", "zh-Hans": "找不到结果", en: "No results found" }
+		pleaseSelect: { "zh-Hant": "請選擇...", en: "Please select..." },
+		search: { "zh-Hant": "搜尋...", en: "Search..." },
+		noResults: { "zh-Hant": "找不到結果", en: "No results found" }
 	});
 
 	const placeholder = pleaseSelectText || t.pleaseSelect;

@@ -60,8 +60,8 @@ type SponsorSectionProps = {
 export default function SponsorSection({ sponsors, placement, titles, className }: SponsorSectionProps) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		defaultTitle: { "zh-Hant": "特別感謝", "zh-Hans": "特别感谢", en: "Special Thanks" },
-		visitWebsite: { "zh-Hant": "前往官方網站", "zh-Hans": "前往官方网站", en: "Visit website" }
+		defaultTitle: { "zh-Hant": "特別感謝", en: "Special Thanks" },
+		visitWebsite: { "zh-Hant": "前往官方網站", en: "Visit website" }
 	});
 
 	const visible = useMemo(() => sponsors.filter(sponsor => sponsor.placements.includes(placement)), [sponsors, placement]);

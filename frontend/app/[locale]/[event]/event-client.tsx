@@ -81,32 +81,26 @@ export default function Main() {
 	const t = getTranslations(locale, {
 		eventNotFound: {
 			"zh-Hant": "找不到活動",
-			"zh-Hans": "找不到活动",
 			en: "Event not found"
 		},
 		failedToLoadEvents: {
 			"zh-Hant": "載入活動失敗 :(",
-			"zh-Hans": "载入活动失败 :(",
 			en: "Failed to load events :("
 		},
 		tryToDebug: {
 			"zh-Hant": "請確認網址正確，或嘗試於稍後重新整理。",
-			"zh-Hans": "请确认网址正确，或尝试于稍后重新刷新。",
 			en: "Please ensure the URL is correct, or try refreshing later."
 		},
 		peopleSignedUp: {
 			"zh-Hant": "人已報名",
-			"zh-Hans": "人已报名",
 			en: "people already signed up"
 		},
 		eventInfo: {
 			"zh-Hant": "活動資訊",
-			"zh-Hans": "活动资讯",
 			en: "Event Information"
 		},
 		ticketInfo: {
 			"zh-Hant": "票券資訊",
-			"zh-Hans": "票券资讯",
 			en: "Ticket Information"
 		}
 	});

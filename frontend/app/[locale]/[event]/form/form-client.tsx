@@ -100,142 +100,114 @@ function formPageReducer(state: FormPageState, action: FormPageAction): FormPage
 const formPageTranslations = {
 	noTicketAlert: {
 		"zh-Hant": "未指定票種，請重新選擇",
-		"zh-Hans": "未指定票种，请重新选择",
 		en: "No ticket specified, please select again"
 	},
 	incompleteFormAlert: {
 		"zh-Hant": "表單資料不完整，請重新選擇票種",
-		"zh-Hans": "表单资料不完整，请重新选择票种",
 		en: "Form data incomplete, please select ticket again"
 	},
 	registrationFailedAlert: {
 		"zh-Hant": "報名失敗：",
-		"zh-Hans": "报名失败：",
 		en: "Registration failed: "
 	},
 	pleaseSelect: {
 		"zh-Hant": "請選擇...",
-		"zh-Hans": "请选择...",
 		en: "Please select..."
 	},
 	seatHeld: {
 		"zh-Hant": "座位已為你保留，請於時限內完成報名",
-		"zh-Hans": "座位已为你保留，请于时限内完成报名",
 		en: "Your seat is held. Complete your registration before the timer runs out"
 	},
 	holdExpired: {
 		"zh-Hant": "保留時間已過，座位已釋出，請重新選擇票種",
-		"zh-Hans": "保留时间已过，座位已释放，请重新选择票种",
 		en: "Your seat hold expired and the seat was released. Please select a ticket again"
 	},
 	reselectTicket: {
 		"zh-Hant": "重新選擇票種",
-		"zh-Hans": "重新选择票种",
 		en: "Reselect Ticket"
 	},
 	fillForm: {
 		"zh-Hant": "填寫報名資訊",
-		"zh-Hans": "填写报名资讯",
 		en: "Fill Registration Form"
 	},
 	ticketLabel: {
 		"zh-Hant": "票種",
-		"zh-Hans": "票种",
 		en: "Ticket"
 	},
 	loadingForm: {
 		"zh-Hant": "載入表單中...",
-		"zh-Hans": "载入表单中...",
 		en: "Loading form..."
 	},
 	loadFormFailed: {
 		"zh-Hant": "載入表單失敗：",
-		"zh-Hans": "载入表单失败：",
 		en: "Failed to load form: "
 	},
 	eventNotFound: {
 		"zh-Hant": "找不到此活動",
-		"zh-Hans": "找不到此活动",
 		en: "Event not found"
 	},
 	referralCode: {
 		"zh-Hant": "推薦碼",
-		"zh-Hans": "推荐码",
 		en: "Referral Code"
 	},
 	referralCodeOptional: {
 		"zh-Hant": "推薦碼（選填）",
-		"zh-Hans": "推荐码（选填）",
 		en: "Referral Code (Optional)"
 	},
 	referredBy: {
 		"zh-Hant": "推薦人：",
-		"zh-Hans": "推荐人：",
 		en: "Referred by: "
 	},
 	referralCodeInvalid: {
 		"zh-Hant": "推薦碼無效",
-		"zh-Hans": "推荐码无效",
 		en: "Invalid referral code"
 	},
 	submitRegistration: {
 		"zh-Hant": "提交報名",
-		"zh-Hans": "提交报名",
 		en: "Submit Registration"
 	},
 	agreeToTermsPrefix: {
 		"zh-Hant": "我已閱讀並同意",
-		"zh-Hans": "我已阅读并同意",
 		en: "I have read and agree to the "
 	},
 	termsLinkText: {
 		"zh-Hant": "服務條款與隱私政策",
-		"zh-Hans": "服务条款与隐私政策",
 		en: "Terms and Privacy Policy"
 	},
 	termsRequired: {
 		"zh-Hant": "請先同意服務條款與隱私政策",
-		"zh-Hans": "请先同意服务条款与隐私政策",
 		en: "Please agree to the Terms and Privacy Policy"
 	},
 	checkFields: {
 		"zh-Hant": "請檢查標示的欄位後再提交",
-		"zh-Hans": "请检查标示的栏位后再提交",
 		en: "Please check the highlighted fields and submit again"
 	},
 	formChanged: {
 		"zh-Hant": "表單內容已更新，請重新檢查後再提交",
-		"zh-Hans": "表单内容已更新，请重新检查后再提交",
 		en: "The form has changed, please review it and submit again"
 	},
 	ticketSaleEnded: {
 		"zh-Hant": "此票種報名時間已結束",
-		"zh-Hans": "此票种报名时间已结束",
 		en: "This ticket's registration period has ended"
 	},
 	ticketNotYetAvailable: {
 		"zh-Hant": "此票種尚未開放報名",
-		"zh-Hans": "此票种尚未开放报名",
 		en: "Registration for this ticket has not opened yet"
 	},
 	ticketSoldOut: {
 		"zh-Hant": "此票種已售完",
-		"zh-Hans": "此票种已售完",
 		en: "This ticket is sold out"
 	},
 	phoneVerificationRequired: {
 		"zh-Hant": "此票種需要先驗證手機號碼才能報名",
-		"zh-Hans": "此票种需要先验证手机号码才能报名",
 		en: "This ticket requires a verified phone number before you can register"
 	},
 	verifyPhone: {
 		"zh-Hant": "前往驗證手機號碼",
-		"zh-Hans": "前往验证手机号码",
 		en: "Verify phone number"
 	},
 	autosaveRestored: {
 		"zh-Hant": "已自動恢復您之前填寫的表單資料",
-		"zh-Hans": "已自动恢复您之前填写的表单资料",
 		en: "Your previously entered form data has been restored"
 	}
 };

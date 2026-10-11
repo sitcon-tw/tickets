@@ -68,12 +68,12 @@ export default function Nav() {
 	const isAdminPage = pathname.includes("/admin");
 
 	const t = getTranslations(locale, {
-		adminPanel: { "zh-Hant": "管理員介面", "zh-Hans": "管理员介面", en: "Admin Panel" },
-		myRegistrations: { "zh-Hant": "我的報名", "zh-Hans": "我的报名", en: "My Registrations" },
-		profile: { "zh-Hant": "個人資料", "zh-Hans": "个人资料", en: "Profile" },
-		userMenu: { "zh-Hant": "使用者選單", "zh-Hans": "用户菜单", en: "User menu" },
-		logout: { "zh-Hant": "登出", "zh-Hans": "登出", en: "Logout" },
-		login: { "zh-Hant": "登入", "zh-Hans": "登录", en: "Login" }
+		adminPanel: { "zh-Hant": "管理員介面", en: "Admin Panel" },
+		myRegistrations: { "zh-Hant": "我的報名", en: "My Registrations" },
+		profile: { "zh-Hant": "個人資料", en: "Profile" },
+		userMenu: { "zh-Hant": "使用者選單", en: "User menu" },
+		logout: { "zh-Hant": "登出", en: "Logout" },
+		login: { "zh-Hant": "登入", en: "Login" }
 	});
 
 	async function handleLogout() {

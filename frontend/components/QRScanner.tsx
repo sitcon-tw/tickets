@@ -63,22 +63,20 @@ export default function QRScanner({ active, onScan, cooldownMs = 3000, className
 	const lastScanRef = useRef<{ text: string; at: number } | null>(null);
 
 	const t = getTranslations(locale, {
-		starting: { "zh-Hant": "正在啟動相機...", "zh-Hans": "正在启动相机...", en: "Starting camera..." },
-		hint: { "zh-Hant": "將 QR Code 對準框內", "zh-Hans": "将 QR Code 对准框内", en: "Point the camera at a QR code" },
+		starting: { "zh-Hant": "正在啟動相機...", en: "Starting camera..." },
+		hint: { "zh-Hant": "將 QR Code 對準框內", en: "Point the camera at a QR code" },
 		denied: {
 			"zh-Hant": "無法使用相機。請在瀏覽器網址列允許相機權限後重試。",
-			"zh-Hans": "无法使用相机。请在浏览器地址栏允许相机权限后重试。",
 			en: "Camera access was blocked. Allow camera permission in the address bar and try again."
 		},
-		noCamera: { "zh-Hant": "找不到可用的相機。", "zh-Hans": "找不到可用的相机。", en: "No camera was found on this device." },
+		noCamera: { "zh-Hant": "找不到可用的相機。", en: "No camera was found on this device." },
 		insecure: {
 			"zh-Hant": "瀏覽器僅在 HTTPS 連線下允許使用相機。",
-			"zh-Hans": "浏览器仅在 HTTPS 连接下允许使用相机。",
 			en: "Browsers only allow camera access on HTTPS connections."
 		},
-		unknown: { "zh-Hant": "相機啟動失敗。", "zh-Hans": "相机启动失败。", en: "Failed to start the camera." },
-		retry: { "zh-Hant": "重試", "zh-Hans": "重试", en: "Retry" },
-		switchCamera: { "zh-Hant": "切換相機", "zh-Hans": "切换相机", en: "Switch camera" }
+		unknown: { "zh-Hant": "相機啟動失敗。", en: "Failed to start the camera." },
+		retry: { "zh-Hant": "重試", en: "Retry" },
+		switchCamera: { "zh-Hant": "切換相機", en: "Switch camera" }
 	});
 
 	useEffect(() => {

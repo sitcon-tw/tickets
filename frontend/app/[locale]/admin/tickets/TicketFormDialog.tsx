@@ -19,8 +19,7 @@ import React, { useReducer, useRef } from "react";
 
 const LANGUAGES = [
 	{ code: "zh-Hant", label: "繁體中文" },
-	{ code: "en", label: "English" },
-	{ code: "zh-Hans", label: "简体中文" }
+	{ code: "en", label: "English" }
 ] as const;
 
 type Lang = (typeof LANGUAGES)[number]["code"];
@@ -59,11 +58,11 @@ type FormAction =
 	| { type: "saveFailed"; message: string }
 	| { type: "saveFinished" };
 
-const emptyLocalized = (): LocalizedValues => ({ "zh-Hant": "", en: "", "zh-Hans": "" });
+const emptyLocalized = (): LocalizedValues => ({ "zh-Hant": "", en: "" });
 
 function localizedFromTicket(value: LocalizedText | string | null | undefined): LocalizedValues {
 	const source: LocalizedText = value && typeof value === "object" ? value : { en: value || "" };
-	return { en: source.en || "", "zh-Hant": source["zh-Hant"] || "", "zh-Hans": source["zh-Hans"] || "" };
+	return { en: source.en || "", "zh-Hant": source["zh-Hant"] || "" };
 }
 
 function initialFormState(ticket: Ticket | null): FormState {
@@ -158,62 +157,59 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const t = getTranslations(locale, {
-		addTicket: { "zh-Hant": "新增票種", "zh-Hans": "新增票种", en: "Add Ticket" },
-		editTicket: { "zh-Hant": "編輯票種", "zh-Hans": "编辑票种", en: "Edit Ticket" },
+		addTicket: { "zh-Hant": "新增票種", en: "Add Ticket" },
+		editTicket: { "zh-Hant": "編輯票種", en: "Edit Ticket" },
 		dialogDescription: {
 			"zh-Hant": "設定票種的價格、數量、販售時間與多語言名稱。",
-			"zh-Hans": "设置票种的价格、数量、贩售时间与多语言名称。",
 			en: "Set the ticket's price, quantity, sale window and names in each language."
 		},
-		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-		basicInfo: { "zh-Hant": "基本設定", "zh-Hans": "基本设置", en: "Basics" },
-		pricingSection: { "zh-Hant": "價格與數量", "zh-Hans": "价格与数量", en: "Price & quantity" },
-		price: { "zh-Hant": "價格 (NT$)", "zh-Hans": "价格 (NT$)", en: "Price (NT$)" },
-		priceHint: { "zh-Hant": "填 0 代表免費票。", "zh-Hans": "填 0 代表免费票。", en: "Enter 0 for a free ticket." },
-		quantity: { "zh-Hant": "總數量", "zh-Hans": "总数量", en: "Total quantity" },
-		quantityHint: { "zh-Hant": "已售出 {sold} 張，數量不能低於此數。", "zh-Hans": "已售出 {sold} 张，数量不能低于此数。", en: "{sold} already sold; the quantity cannot go below this." },
-		saleSection: { "zh-Hant": "販售時間", "zh-Hans": "贩售时间", en: "Sale window" },
-		saleHint: { "zh-Hant": "時間為 UTC+8（台北時間）。留空代表不限制。", "zh-Hans": "时间为 UTC+8（台北时间）。留空代表不限制。", en: "Times are UTC+8 (Taipei). Leave empty for no limit." },
-		startTime: { "zh-Hant": "開始時間", "zh-Hans": "开始时间", en: "Start time" },
-		endTime: { "zh-Hant": "結束時間", "zh-Hans": "结束时间", en: "End time" },
-		accessSection: { "zh-Hant": "存取與顯示", "zh-Hans": "访问与显示", en: "Access & visibility" },
-		requireInviteCode: { "zh-Hant": "需要邀請碼", "zh-Hans": "需要邀请码", en: "Require invite code" },
-		requireInviteCodeHint: { "zh-Hant": "只有輸入有效邀請碼的人才能購買。", "zh-Hans": "只有输入有效邀请码的人才能购买。", en: "Only people with a valid invite code can get this ticket." },
-		requireSmsVerification: { "zh-Hant": "需要簡訊驗證", "zh-Hans": "需要短信验证", en: "Require SMS verification" },
-		requireSmsVerificationHint: { "zh-Hant": "報名時需驗證手機號碼。", "zh-Hans": "报名时需验证手机号码。", en: "Attendees must verify their phone number when registering." },
-		hideTicket: { "zh-Hant": "隱藏票種", "zh-Hans": "隐藏票种", en: "Hide ticket" },
+		save: { "zh-Hant": "儲存", en: "Save" },
+		cancel: { "zh-Hant": "取消", en: "Cancel" },
+		basicInfo: { "zh-Hant": "基本設定", en: "Basics" },
+		pricingSection: { "zh-Hant": "價格與數量", en: "Price & quantity" },
+		price: { "zh-Hant": "價格 (NT$)", en: "Price (NT$)" },
+		priceHint: { "zh-Hant": "填 0 代表免費票。", en: "Enter 0 for a free ticket." },
+		quantity: { "zh-Hant": "總數量", en: "Total quantity" },
+		quantityHint: { "zh-Hant": "已售出 {sold} 張，數量不能低於此數。", en: "{sold} already sold; the quantity cannot go below this." },
+		saleSection: { "zh-Hant": "販售時間", en: "Sale window" },
+		saleHint: { "zh-Hant": "時間為 UTC+8（台北時間）。留空代表不限制。", en: "Times are UTC+8 (Taipei). Leave empty for no limit." },
+		startTime: { "zh-Hant": "開始時間", en: "Start time" },
+		endTime: { "zh-Hant": "結束時間", en: "End time" },
+		accessSection: { "zh-Hant": "存取與顯示", en: "Access & visibility" },
+		requireInviteCode: { "zh-Hant": "需要邀請碼", en: "Require invite code" },
+		requireInviteCodeHint: { "zh-Hant": "只有輸入有效邀請碼的人才能購買。", en: "Only people with a valid invite code can get this ticket." },
+		requireSmsVerification: { "zh-Hant": "需要簡訊驗證", en: "Require SMS verification" },
+		requireSmsVerificationHint: { "zh-Hant": "報名時需驗證手機號碼。", en: "Attendees must verify their phone number when registering." },
+		hideTicket: { "zh-Hant": "隱藏票種", en: "Hide ticket" },
 		hideTicketHint: {
 			"zh-Hant": "不在公開頁面顯示，僅能透過直接連結取得。",
-			"zh-Hans": "不在公开页面显示，仅能通过直接链接获取。",
 			en: "Not shown on public pages; only reachable through a direct link."
 		},
-		showRemaining: { "zh-Hant": "顯示剩餘票數", "zh-Hans": "显示剩余票数", en: "Show remaining tickets" },
-		showRemainingHint: { "zh-Hant": "在公開頁面顯示還剩多少張票。", "zh-Hans": "在公开页面显示还剩多少张票。", en: "Show how many tickets are left on the public page." },
-		ticketName: { "zh-Hant": "票種名稱", "zh-Hans": "票种名称", en: "Ticket name" },
-		description: { "zh-Hant": "描述（Markdown）", "zh-Hans": "描述（Markdown）", en: "Description (Markdown)" },
-		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", "zh-Hans": "纯文字描述（用于 Metadata）", en: "Plain description (used for metadata)" },
-		plainDescriptionHint: { "zh-Hant": "純文字描述，不含 Markdown 格式。", "zh-Hans": "纯文字描述，不含 Markdown 格式。", en: "Plain text without Markdown formatting." },
-		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
-		optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "optional" },
-		hasErrors: { "zh-Hant": "此分頁有需要修正的欄位", "zh-Hans": "此分页有需要修正的字段", en: "This tab has fields to fix" },
-		errNameRequired: { "zh-Hant": "請輸入繁體中文票種名稱。", "zh-Hans": "请输入繁体中文票种名称。", en: "Enter the Traditional Chinese ticket name." },
-		errPriceRequired: { "zh-Hant": "請輸入價格（免費請填 0）。", "zh-Hans": "请输入价格（免费请填 0）。", en: "Enter a price (0 for free)." },
-		errPriceInvalid: { "zh-Hant": "價格必須是 0 或以上的整數。", "zh-Hans": "价格必须是 0 或以上的整数。", en: "Price must be a whole number, 0 or more." },
-		errQuantityRequired: { "zh-Hant": "請輸入數量。", "zh-Hans": "请输入数量。", en: "Enter a quantity." },
-		errQuantityInvalid: { "zh-Hant": "數量必須是整數。", "zh-Hans": "数量必须是整数。", en: "Quantity must be a whole number." },
-		errQuantityMin: { "zh-Hant": "數量至少要有 1 張。", "zh-Hans": "数量至少要有 1 张。", en: "Quantity must be at least 1." },
-		errQuantitySold: { "zh-Hant": "數量不能低於已售出的 {sold} 張。", "zh-Hans": "数量不能低于已售出的 {sold} 张。", en: "Quantity cannot be lower than the {sold} tickets already sold." },
-		errDateInvalid: { "zh-Hant": "日期格式不正確。", "zh-Hans": "日期格式不正确。", en: "Enter a valid date and time." },
-		errDateEndBeforeStart: { "zh-Hant": "結束時間必須晚於開始時間。", "zh-Hans": "结束时间必须晚于开始时间。", en: "End time must be later than the start time." },
+		showRemaining: { "zh-Hant": "顯示剩餘票數", en: "Show remaining tickets" },
+		showRemainingHint: { "zh-Hant": "在公開頁面顯示還剩多少張票。", en: "Show how many tickets are left on the public page." },
+		ticketName: { "zh-Hant": "票種名稱", en: "Ticket name" },
+		description: { "zh-Hant": "描述（Markdown）", en: "Description (Markdown)" },
+		plainDescription: { "zh-Hant": "純文字描述（用於 Metadata）", en: "Plain description (used for metadata)" },
+		plainDescriptionHint: { "zh-Hant": "純文字描述，不含 Markdown 格式。", en: "Plain text without Markdown formatting." },
+		preview: { "zh-Hant": "預覽", en: "Preview" },
+		optional: { "zh-Hant": "選填", en: "optional" },
+		hasErrors: { "zh-Hant": "此分頁有需要修正的欄位", en: "This tab has fields to fix" },
+		errNameRequired: { "zh-Hant": "請輸入繁體中文票種名稱。", en: "Enter the Traditional Chinese ticket name." },
+		errPriceRequired: { "zh-Hant": "請輸入價格（免費請填 0）。", en: "Enter a price (0 for free)." },
+		errPriceInvalid: { "zh-Hant": "價格必須是 0 或以上的整數。", en: "Price must be a whole number, 0 or more." },
+		errQuantityRequired: { "zh-Hant": "請輸入數量。", en: "Enter a quantity." },
+		errQuantityInvalid: { "zh-Hant": "數量必須是整數。", en: "Quantity must be a whole number." },
+		errQuantityMin: { "zh-Hant": "數量至少要有 1 張。", en: "Quantity must be at least 1." },
+		errQuantitySold: { "zh-Hant": "數量不能低於已售出的 {sold} 張。", en: "Quantity cannot be lower than the {sold} tickets already sold." },
+		errDateInvalid: { "zh-Hant": "日期格式不正確。", en: "Enter a valid date and time." },
+		errDateEndBeforeStart: { "zh-Hant": "結束時間必須晚於開始時間。", en: "End time must be later than the start time." },
 		errSaleEndAfterEvent: {
 			"zh-Hant": "結束時間不能晚於活動開始時間（{date}）。",
-			"zh-Hans": "结束时间不能晚于活动开始时间（{date}）。",
 			en: "End time cannot be later than the event start ({date})."
 		},
-		saveFailed: { "zh-Hant": "儲存失敗：", "zh-Hans": "保存失败：", en: "Could not save: " },
-		created: { "zh-Hant": "票種已新增", "zh-Hans": "票种已新增", en: "Ticket created" },
-		updated: { "zh-Hant": "票種已更新", "zh-Hans": "票种已更新", en: "Ticket updated" }
+		saveFailed: { "zh-Hant": "儲存失敗：", en: "Could not save: " },
+		created: { "zh-Hant": "票種已新增", en: "Ticket created" },
+		updated: { "zh-Hant": "票種已更新", en: "Ticket updated" }
 	});
 
 	const [state, dispatch] = useReducer(formReducer, ticket, initialFormState);

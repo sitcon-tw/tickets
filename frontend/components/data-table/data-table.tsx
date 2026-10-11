@@ -39,7 +39,7 @@ export function DataTable<TData extends RowData>({
 }: DataTableProps<TData>) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		noResults: { "zh-Hant": "沒有符合的資料", "zh-Hans": "没有符合的数据", en: "No results" }
+		noResults: { "zh-Hant": "沒有符合的資料", en: "No results" }
 	});
 
 	const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({});

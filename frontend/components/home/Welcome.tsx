@@ -53,72 +53,58 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const t = getTranslations(locale, {
 		loginToRegister: {
 			"zh-Hant": "登入後即可報名！",
-			"zh-Hans": "登录后即可报名！",
 			en: "Login to register!"
 		},
 		login: {
 			"zh-Hant": "立刻登入",
-			"zh-Hans": "立刻登录",
 			en: "Login now"
 		},
 		loggedInWelcome: {
 			"zh-Hant": "歡迎回來！趕緊開始報名吧！",
-			"zh-Hans": "欢迎回来！赶紧开始报名吧！",
 			en: "Welcome back! Let's get you registered!"
 		},
 		loggedInWelcomeDescription: {
 			"zh-Hant": "選擇下方的票種開始報名。",
-			"zh-Hans": "选择下方的票种开始报名。",
 			en: "Choose a ticket type below to get started."
 		},
 		haveNotVerifySMS1: {
 			"zh-Hant": "您還沒有完成簡訊驗證！",
-			"zh-Hans": "您还没有完成短信验证！",
 			en: "You haven't completed SMS verification!"
 		},
 		haveNotVerifySMS2: {
 			"zh-Hant": "某些票券可能需要驗證手機號碼才能報名。前往驗證：",
-			"zh-Hans": "某些票券可能需要验证手机号码才能报名。前往验证：",
 			en: "Some tickets may require a verified phone number to register. Verify now:"
 		},
 		verifyNow: {
 			"zh-Hant": "驗證手機",
-			"zh-Hans": "验证手机",
 			en: "Verify now"
 		},
 		registeredWelcome: {
 			"zh-Hant": "你已完成報名！",
-			"zh-Hans": "你已完成报名！",
 			en: "Registration Complete!"
 		},
 		viewRegDetail: {
 			"zh-Hant": "查看報名資料",
-			"zh-Hans": "查看报名资料",
 			en: "View Registration Details"
 		},
 		referralWelcome: {
 			"zh-Hant": "邀請你一起參加 SITCON！",
-			"zh-Hans": "邀请你一起参加 SITCON！",
 			en: "invites you to join SITCON!"
 		},
 		loading: {
 			"zh-Hant": "載入中...",
-			"zh-Hans": "载入中...",
 			en: "Loading..."
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
-			"zh-Hans": "载入失败",
 			en: "Load failed"
 		},
 		promotionalText: {
 			"zh-Hant": "選擇下方您的票種開始報名吧！",
-			"zh-Hans": "选择下方您的票种开始报名吧！",
 			en: "Choose your ticket type below to get started!"
 		},
 		friend: {
 			"zh-Hant": "朋友",
-			"zh-Hans": "朋友",
 			en: "Friend"
 		}
 	});

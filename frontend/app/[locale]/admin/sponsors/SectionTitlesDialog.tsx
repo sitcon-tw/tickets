@@ -14,14 +14,14 @@ import type { LangKey } from "../forms/types";
 type TitleValues = Record<SponsorPlacement, Record<LangKey, string>>;
 
 const emptyValues = (): TitleValues => ({
-	after_registration: { en: "", "zh-Hant": "", "zh-Hans": "" },
-	after_event_info: { en: "", "zh-Hant": "", "zh-Hans": "" }
+	after_registration: { en: "", "zh-Hant": "" },
+	after_event_info: { en: "", "zh-Hant": "" }
 });
 
 function fromTitles(titles: SponsorSectionTitles): TitleValues {
 	const values = emptyValues();
 	for (const placement of sponsorPlacements) {
-		for (const lang of ["en", "zh-Hant", "zh-Hans"] as const) {
+		for (const lang of ["en", "zh-Hant"] as const) {
 			values[placement][lang] = titles[placement]?.[lang] ?? "";
 		}
 	}
@@ -54,20 +54,19 @@ export function SectionTitlesDialog({ open, eventId, onOpenChange }: SectionTitl
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const t = getTranslations(locale, {
-		title: { "zh-Hant": "區塊標題", "zh-Hans": "区块标题", en: "Section titles" },
+		title: { "zh-Hant": "區塊標題", en: "Section titles" },
 		description: {
 			"zh-Hant": "設定活動頁面上廠商 Logo 區塊上方的標題。留空會使用預設標題「特別感謝」。",
-			"zh-Hans": "设置活动页面上厂商 Logo 区块上方的标题。留空会使用默认标题「特别感谢」。",
 			en: "Set the heading above each sponsor logo section on the event page. Leave it empty to use the default, “Special Thanks”."
 		},
-		afterRegistration: { "zh-Hant": "報名與票券區之後", "zh-Hans": "报名与票券区之后", en: "After the registration & tickets area" },
-		afterEventInfo: { "zh-Hant": "活動資訊與票券資訊之間", "zh-Hans": "活动资讯与票券资讯之间", en: "Between event information and ticket information" },
-		sectionTitle: { "zh-Hant": "標題", "zh-Hans": "标题", en: "Title" },
-		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-		loadFailed: { "zh-Hant": "無法載入標題：", "zh-Hans": "无法加载标题：", en: "Could not load the titles: " },
-		saveFailed: { "zh-Hant": "儲存失敗：", "zh-Hans": "保存失败：", en: "Could not save: " },
-		saved: { "zh-Hant": "區塊標題已更新", "zh-Hans": "区块标题已更新", en: "Section titles updated" }
+		afterRegistration: { "zh-Hant": "報名與票券區之後", en: "After the registration & tickets area" },
+		afterEventInfo: { "zh-Hant": "活動資訊與票券資訊之間", en: "Between event information and ticket information" },
+		sectionTitle: { "zh-Hant": "標題", en: "Title" },
+		save: { "zh-Hant": "儲存", en: "Save" },
+		cancel: { "zh-Hant": "取消", en: "Cancel" },
+		loadFailed: { "zh-Hant": "無法載入標題：", en: "Could not load the titles: " },
+		saveFailed: { "zh-Hant": "儲存失敗：", en: "Could not save: " },
+		saved: { "zh-Hant": "區塊標題已更新", en: "Section titles updated" }
 	});
 
 	const [values, setValues] = useState<TitleValues>(emptyValues);
@@ -121,7 +120,7 @@ export function SectionTitlesDialog({ open, eventId, onOpenChange }: SectionTitl
 		{ key: "after_registration", label: t.afterRegistration },
 		{ key: "after_event_info", label: t.afterEventInfo }
 	];
-	const defaults: Record<LangKey, string> = { en: "Special Thanks", "zh-Hant": "特別感謝", "zh-Hans": "特别感谢" };
+	const defaults: Record<LangKey, string> = { en: "Special Thanks", "zh-Hant": "特別感謝" };
 
 	return (
 		<Dialog open={open} onOpenChange={next => !isSaving && onOpenChange(next)}>

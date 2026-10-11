@@ -40,32 +40,26 @@ function MagicLinkVerifyContent() {
 	const t = getTranslations(locale, {
 		verifying: {
 			"zh-Hant": "正在驗證登入連結...",
-			"zh-Hans": "正在验证登录链接...",
 			en: "Verifying your login link..."
 		},
 		success: {
 			"zh-Hant": "登入成功！",
-			"zh-Hans": "登录成功！",
 			en: "Login successful!"
 		},
 		redirecting: {
 			"zh-Hant": "正在重新導向...",
-			"zh-Hans": "正在重定向...",
 			en: "Redirecting..."
 		},
 		error: {
 			"zh-Hant": "登入失敗",
-			"zh-Hans": "登录失败",
 			en: "Login failed"
 		},
 		errorInvalidLink: {
 			"zh-Hant": "此連結無效或已過期。請重新請求登入連結。",
-			"zh-Hans": "此链接无效或已过期。请重新请求登录链接。",
 			en: "This link is invalid or has expired. Please request a new login link."
 		},
 		backToLogin: {
 			"zh-Hant": "返回登入頁面",
-			"zh-Hans": "返回登录页面",
 			en: "Back to Login"
 		}
 	});

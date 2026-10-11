@@ -55,27 +55,22 @@ export default function TodayEventNotification() {
 	const t = getTranslations(locale, {
 		title: {
 			"zh-Hant": "您今天有活動！",
-			"zh-Hans": "您今天有活动！",
 			en: "You have an event today!"
 		},
 		message: {
 			"zh-Hant": "點擊按鈕前往報到",
-			"zh-Hans": "点击按钮前往报到",
 			en: "Click the button below to check in"
 		},
 		checkIn: {
 			"zh-Hant": "前往報到",
-			"zh-Hans": "前往报到",
 			en: "Check In"
 		},
 		dontShowAgain: {
 			"zh-Hant": "不再顯示",
-			"zh-Hans": "不再显示",
 			en: "Don't show again"
 		},
 		close: {
 			"zh-Hant": "關閉",
-			"zh-Hans": "关闭",
 			en: "Close"
 		}
 	});

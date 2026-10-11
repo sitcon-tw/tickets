@@ -119,117 +119,94 @@ function LoginContent() {
 	const t = getTranslations(locale, {
 		login: {
 			"zh-Hant": "登入／註冊",
-			"zh-Hans": "登录／注册",
 			en: "Login / Register"
 		},
 		continue: {
 			"zh-Hant": "寄送 Magic Link",
-			"zh-Hans": "发送 Magic Link",
 			en: "Send Magic Link"
 		},
 		sent: {
 			"zh-Hant": "已發送 Magic Link 至 ",
-			"zh-Hans": "已发送 Magic Link 至 ",
 			en: "Magic Link Sent to "
 		},
 		message: {
 			"zh-Hant": "請檢查您的電子郵件收件匣，並點擊連結以登入。若在垃圾郵件請記得回報為非垃圾郵件，以免錯過後續重要信件。",
-			"zh-Hans": "请检查您的电子邮件收件箱，并点击链接以登录。若在垃圾邮件请记得举报为非垃圾邮件，以免错过后续重要信件。",
 			en: "Please check your email inbox and click the link to log in. If you find it in the spam folder, please mark it as not spam to avoid missing important future emails."
 		},
 		error: {
 			"zh-Hant": "錯誤",
-			"zh-Hans": "错误",
 			en: "Error"
 		},
 		invalidEmail: {
 			"zh-Hant": "請輸入有效的電子郵件地址",
-			"zh-Hans": "请输入有效的电子邮件地址",
 			en: "Please enter a valid email address"
 		},
 		rateLimitError: {
 			"zh-Hant": "請求過於頻繁，請稍後再試",
-			"zh-Hans": "请求过于频繁，请稍后再试",
 			en: "Too many requests. Please try again later"
 		},
 		verificationFailed: {
 			"zh-Hant": "驗證失敗，請重新請求登入連結",
-			"zh-Hans": "验证失败，请重新请求登录链接",
 			en: "Verification failed. Please request a new login link"
 		},
 		invalidToken: {
 			"zh-Hant": "無效的連結，請重新請求登入連結",
-			"zh-Hans": "无效的链接，请重新请求登录链接",
 			en: "Invalid link. Please request a new login link"
 		},
 		serverError: {
 			"zh-Hant": "伺服器錯誤，請稍後再試",
-			"zh-Hans": "服务器错误，请稍后再试",
 			en: "Server error. Please try again later"
 		},
 		emailSendError: {
 			"zh-Hant": "無法發送電子郵件，請稍後再試",
-			"zh-Hans": "无法发送电子邮件，请稍后再试",
 			en: "Failed to send email. Please try again later"
 		},
 		tokenExpired: {
 			"zh-Hant": "連結已過期，請重新請求登入連結",
-			"zh-Hans": "链接已过期，请重新请求登录链接",
 			en: "Link has expired. Please request a new login link"
 		},
 		acceptTermsAsLoggedIn: {
 			"zh-Hant": "登入即代表您同意我們的",
-			"zh-Hans": "登录即代表您同意我们的",
 			en: "By logging in, you agree to our "
 		},
 		termsLink: {
 			"zh-Hant": "服務條款與隱私政策",
-			"zh-Hans": "服务条款与隐私政策",
 			en: "Terms of Service and Privacy Policy"
 		},
 		or: {
 			"zh-Hant": "或",
-			"zh-Hans": "或",
 			en: "or"
 		},
 		passkeyLogin: {
 			"zh-Hant": "使用通行金鑰登入",
-			"zh-Hans": "使用通行密钥登录",
 			en: "Sign in with Passkey"
 		},
 		passkeyFailed: {
 			"zh-Hant": "通行金鑰登入失敗，請改用 Magic Link 登入",
-			"zh-Hans": "通行密钥登录失败，请改用 Magic Link 登录",
 			en: "Passkey sign-in failed. Please use a magic link instead"
 		},
 		passkeyUnsupported: {
 			"zh-Hant": "此瀏覽器不支援通行金鑰",
-			"zh-Hans": "此浏览器不支持通行密钥",
 			en: "This browser doesn't support passkeys"
 		},
 		resend: {
 			"zh-Hant": "重新寄送 Magic Link",
-			"zh-Hans": "重新发送 Magic Link",
 			en: "Resend Magic Link"
 		},
 		resendIn: {
 			"zh-Hant": "秒後可重新寄送",
-			"zh-Hans": "秒后可重新发送",
 			en: "s until you can resend"
 		},
 		resent: {
 			"zh-Hant": "已重新寄送 Magic Link",
-			"zh-Hans": "已重新发送 Magic Link",
 			en: "Magic Link resent"
 		},
 		completeVerification: {
 			"zh-Hant": "請完成驗證",
-			"zh-Hans": "请完成验证",
 			en: "Please complete the verification"
 		},
 		editEmail: {
 			"zh-Hant": "修改電子郵件",
-			"zh-Hans": "修改电子邮件",
 			en: "Edit Email"
 		}
 	});

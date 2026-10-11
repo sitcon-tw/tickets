@@ -6,7 +6,7 @@ type TranslationRecord = Record<string, Record<string, string>>;
  * Helper function to get translations for a given locale
  * Similar to the old i18n.t function but works with any locale string
  *
- * @param locale - Current locale (e.g., "en", "zh-Hant", "zh-Hans")
+ * @param locale - Current locale (e.g., "en", "zh-Hant")
  * @param data - Translation object with keys mapping to locale-specific values
  * @returns Object with translation keys as properties
  *

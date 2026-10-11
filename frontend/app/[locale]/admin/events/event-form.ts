@@ -1,22 +1,18 @@
 import { toDateTimeLocalString } from "@/lib/utils/timezone";
 import type { Event } from "@sitcontix/types";
 
-export type EventTab = "info" | "en" | "zh-Hant" | "zh-Hans";
-export type EventLanguage = "en" | "zh-Hant" | "zh-Hans";
+export type EventTab = "info" | "en" | "zh-Hant";
+export type EventLanguage = "en" | "zh-Hant";
 
 export type EventFormTextField =
 	| "nameEn"
 	| "nameZhHant"
-	| "nameZhHans"
 	| "descEn"
 	| "descZhHant"
-	| "descZhHans"
 	| "plainDescEn"
 	| "plainDescZhHant"
-	| "plainDescZhHans"
 	| "locationTextEn"
 	| "locationTextZhHant"
-	| "locationTextZhHans"
 	| "eventStartTime"
 	| "eventEndTime"
 	| "editDeadline"
@@ -61,16 +57,12 @@ export type EventsPageAction =
 export const initialEventFormState: EventFormState = {
 	nameEn: "",
 	nameZhHant: "",
-	nameZhHans: "",
 	descEn: "",
 	descZhHant: "",
-	descZhHans: "",
 	plainDescEn: "",
 	plainDescZhHant: "",
-	plainDescZhHans: "",
 	locationTextEn: "",
 	locationTextZhHant: "",
-	locationTextZhHans: "",
 	eventStartTime: "",
 	eventEndTime: "",
 	editDeadline: "",
@@ -105,16 +97,12 @@ export function formStateFromEvent(event: Event | null): EventFormState {
 	return {
 		nameEn: name.en || "",
 		nameZhHant: name["zh-Hant"] || "",
-		nameZhHans: name["zh-Hans"] || "",
 		descEn: desc.en || "",
 		descZhHant: desc["zh-Hant"] || "",
-		descZhHans: desc["zh-Hans"] || "",
 		plainDescEn: plainDesc.en || "",
 		plainDescZhHant: plainDesc["zh-Hant"] || "",
-		plainDescZhHans: plainDesc["zh-Hans"] || "",
 		locationTextEn: locText.en || "",
 		locationTextZhHant: locText["zh-Hant"] || "",
-		locationTextZhHans: locText["zh-Hans"] || "",
 		mapLink: event.mapLink || "",
 		slug: event.slug || "",
 		eventStartTime: event.startDate ? toDateTimeLocalString(event.startDate) : "",
@@ -166,10 +154,6 @@ export const fieldTab: Record<EventFormTextField, EventTab> = {
 	descZhHant: "zh-Hant",
 	plainDescZhHant: "zh-Hant",
 	locationTextZhHant: "zh-Hant",
-	nameZhHans: "zh-Hans",
-	descZhHans: "zh-Hans",
-	plainDescZhHans: "zh-Hans",
-	locationTextZhHans: "zh-Hans",
 	eventStartTime: "info",
 	eventEndTime: "info",
 	editDeadline: "info",
@@ -219,7 +203,7 @@ export function validateEventForm(form: EventFormState, messages: ValidationMess
 }
 
 /** Order used to pick the first tab that contains an error. */
-export const tabOrder: EventTab[] = ["info", "en", "zh-Hant", "zh-Hans"];
+export const tabOrder: EventTab[] = ["info", "en", "zh-Hant"];
 
 export function tabsWithErrors(errors: EventFormErrors): Set<EventTab> {
 	return new Set((Object.keys(errors) as EventFormTextField[]).map(field => fieldTab[field]));

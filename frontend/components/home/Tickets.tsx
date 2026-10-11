@@ -368,77 +368,62 @@ function animateTicketSelection(element: HTMLElement, ticketAnimationRef: RefObj
 const ticketsTranslations = {
 	time: {
 		"zh-Hant": "報名時間：",
-		"zh-Hans": "报名时间：",
 		en: "Registration Time: "
 	},
 	remaining: {
 		"zh-Hant": "剩餘",
-		"zh-Hans": "剩余",
 		en: "Remaining"
 	},
 	confirm: {
 		"zh-Hant": "確認報名",
-		"zh-Hans": "确认报名",
 		en: "Confirm Registration"
 	},
 	cannotRegister: {
 		"zh-Hant": "你已經報名過了！",
-		"zh-Hans": "你已经报名过了！",
 		en: "You have already registered!"
 	},
 	registrationEnded: {
 		"zh-Hant": "報名已截止",
-		"zh-Hans": "报名已截止",
 		en: "Registration Ended"
 	},
 	ticketSaleEnded: {
 		"zh-Hant": "此票種報名時間已結束",
-		"zh-Hans": "此票种报名时间已结束",
 		en: "This ticket's registration period has ended"
 	},
 	ticketNotYetAvailable: {
 		"zh-Hant": "此票種尚未開放報名",
-		"zh-Hans": "此票种尚未开放报名",
 		en: "This ticket is not yet available for registration"
 	},
 	soldOut: {
 		"zh-Hant": "已售完",
-		"zh-Hans": "已售完",
 		en: "Sold Out"
 	},
 	ticketSoldOut: {
 		"zh-Hant": "此票種已售完",
-		"zh-Hans": "此票种已售完",
 		en: "This ticket is sold out"
 	},
 	invitationCode: {
 		"zh-Hant": "邀請碼",
-		"zh-Hans": "邀请码",
 		en: "Invitation Code"
 	},
 	verifyCode: {
 		"zh-Hant": "驗證",
-		"zh-Hans": "验证",
 		en: "Verify"
 	},
 	verifying: {
 		"zh-Hant": "驗證中...",
-		"zh-Hans": "验证中...",
 		en: "Verifying..."
 	},
 	codeValid: {
 		"zh-Hant": "邀請碼有效",
-		"zh-Hans": "邀请码有效",
 		en: "Code is valid"
 	},
 	codeInvalid: {
 		"zh-Hant": "邀請碼無效或已過期",
-		"zh-Hans": "邀请码无效或已过期",
 		en: "Code is invalid or expired"
 	},
 	enterCodeFirst: {
 		"zh-Hant": "請先驗證邀請碼",
-		"zh-Hans": "请先验证邀请码",
 		en: "Please verify invitation code first"
 	}
 };

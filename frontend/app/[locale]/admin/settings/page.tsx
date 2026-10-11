@@ -36,19 +36,18 @@ export default function SettingsPage() {
 	const { showAlert } = useAlert();
 
 	const t = getTranslations(locale, {
-		title: { "zh-Hant": "網站設定", "zh-Hans": "网站设置", en: "Site Settings" },
-		description: { "zh-Hant": "調整整個網站的行為", "zh-Hans": "调整整个网站的行为", en: "Adjust site-wide behavior" },
-		redirectTitle: { "zh-Hant": "首頁直接前往第一個活動", "zh-Hans": "首页直接前往第一个活动", en: "Redirect homepage to the first event" },
+		title: { "zh-Hant": "網站設定", en: "Site Settings" },
+		description: { "zh-Hant": "調整整個網站的行為", en: "Adjust site-wide behavior" },
+		redirectTitle: { "zh-Hant": "首頁直接前往第一個活動", en: "Redirect homepage to the first event" },
 		redirectDesc: {
 			"zh-Hant": "開啟後，訪客進入首頁時會直接跳轉到活動列表中的第一個活動頁面（即時間最近的即將舉辦活動）。若沒有任何公開活動，仍會顯示首頁。",
-			"zh-Hans": "开启后，访客进入首页时会直接跳转到活动列表中的第一个活动页面（即时间最近的即将举办活动）。若没有任何公开活动，仍会显示首页。",
 			en: "When enabled, visitors who open the homepage are sent straight to the first event in the event list (the nearest upcoming event). If there are no public events, the homepage is shown as usual."
 		},
-		loadFailed: { "zh-Hant": "無法載入網站設定", "zh-Hans": "无法载入网站设置", en: "Failed to load site settings" },
-		tryAgain: { "zh-Hant": "重試", "zh-Hans": "重试", en: "Try again" },
-		updateFailed: { "zh-Hant": "更新設定失敗", "zh-Hans": "更新设置失败", en: "Failed to update settings" },
-		enabledToast: { "zh-Hant": "已開啟首頁自動跳轉", "zh-Hans": "已开启首页自动跳转", en: "Homepage redirect enabled" },
-		disabledToast: { "zh-Hant": "已關閉首頁自動跳轉", "zh-Hans": "已关闭首页自动跳转", en: "Homepage redirect disabled" }
+		loadFailed: { "zh-Hant": "無法載入網站設定", en: "Failed to load site settings" },
+		tryAgain: { "zh-Hant": "重試", en: "Try again" },
+		updateFailed: { "zh-Hant": "更新設定失敗", en: "Failed to update settings" },
+		enabledToast: { "zh-Hant": "已開啟首頁自動跳轉", en: "Homepage redirect enabled" },
+		disabledToast: { "zh-Hant": "已關閉首頁自動跳轉", en: "Homepage redirect disabled" }
 	});
 
 	const [settings, setSettings] = useState<SiteSettings | null>(null);

@@ -19,7 +19,6 @@ export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
 	const t = getTranslations(locale, {
 		toggleTheme: {
 			"zh-Hant": "切換主題成",
-			"zh-Hans": "切换主题成",
 			en: "Toggle theme to"
 		}
 	});

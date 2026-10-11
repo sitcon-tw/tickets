@@ -3,8 +3,7 @@ import type { EventFormField, FieldFilter, FormFieldOption, FormFieldType, Local
 
 export const LANGS = [
 	{ key: "en", short: "EN", label: "English" },
-	{ key: "zh-Hant", short: "繁", label: "繁體中文" },
-	{ key: "zh-Hans", short: "简", label: "简体中文" }
+	{ key: "zh-Hant", short: "繁", label: "繁體中文" }
 ] as const;
 export type LangKey = (typeof LANGS)[number]["key"];
 
@@ -32,19 +31,16 @@ export type QuestionOption = {
 	id: string;
 	en: string;
 	"zh-Hant": string;
-	"zh-Hans": string;
 };
 
 export type Question = {
 	id: string;
 	labelEn: string;
 	labelZhHant: string;
-	labelZhHans: string;
 	type: FormFieldType;
 	required: boolean;
 	descriptionEn: string;
 	descriptionZhHant: string;
-	descriptionZhHans: string;
 	placeholder: string;
 	validater: string;
 	options: QuestionOption[];
@@ -62,17 +58,17 @@ export function isTempId(id: string) {
 }
 
 export function newOption(partial: Partial<QuestionOption> = {}): QuestionOption {
-	return { id: crypto.randomUUID(), en: "", "zh-Hant": "", "zh-Hans": "", ...partial };
+	return { id: crypto.randomUUID(), en: "", "zh-Hant": "", ...partial };
 }
 
 function toQuestionOption(opt: FormFieldOption): QuestionOption {
 	if (typeof opt === "string") return newOption({ en: opt });
 	if ("label" in opt && typeof opt.label === "object") {
 		const label = opt.label;
-		return newOption({ en: label["en"] || (typeof opt.value === "string" ? opt.value : "") || "", "zh-Hant": label["zh-Hant"] || "", "zh-Hans": label["zh-Hans"] || "" });
+		return newOption({ en: label["en"] || (typeof opt.value === "string" ? opt.value : "") || "", "zh-Hant": label["zh-Hant"] || "" });
 	}
 	const record = opt as LocalizedText;
-	return newOption({ en: record["en"] || "", "zh-Hant": record["zh-Hant"] || "", "zh-Hans": record["zh-Hans"] || "" });
+	return newOption({ en: record["en"] || "", "zh-Hant": record["zh-Hant"] || "" });
 }
 
 function parseMaybeJson<T>(raw: unknown): T | undefined {
@@ -126,12 +122,10 @@ export function fieldToQuestion(field: EventFormField, id: string = field.id): Q
 		id,
 		labelEn: fallbackName,
 		labelZhHant: name["zh-Hant"] || "",
-		labelZhHans: name["zh-Hans"] || "",
 		type: field.type,
 		required: field.required || false,
 		descriptionEn: description["en"] || "",
 		descriptionZhHant: description["zh-Hant"] || "",
-		descriptionZhHans: description["zh-Hans"] || "",
 		placeholder: field.placeholder || "",
 		validater: field.validater || "",
 		options: parseOptions(field),
@@ -161,7 +155,7 @@ export function copyFieldsToQuestions(fields: EventFormField[]): Question[] {
 	});
 }
 
-export function createBlankQuestion(existing: Question[], defaults: { en: string; zhHant: string; zhHans: string }): Question {
+export function createBlankQuestion(existing: Question[], defaults: { en: string; zhHant: string }): Question {
 	const names = new Set(existing.map(q => q.labelEn.trim().toLowerCase()));
 	let n = existing.length + 1;
 	while (names.has(`${defaults.en} ${n}`.toLowerCase())) n++;
@@ -169,12 +163,10 @@ export function createBlankQuestion(existing: Question[], defaults: { en: string
 		id: newTempId(),
 		labelEn: `${defaults.en} ${n}`,
 		labelZhHant: `${defaults.zhHant} ${n}`,
-		labelZhHans: `${defaults.zhHans} ${n}`,
 		type: "text",
 		required: false,
 		descriptionEn: "",
 		descriptionZhHant: "",
-		descriptionZhHans: "",
 		placeholder: "",
 		validater: "",
 		options: [],
@@ -183,7 +175,7 @@ export function createBlankQuestion(existing: Question[], defaults: { en: string
 	};
 }
 
-export function duplicateQuestion(source: Question, existing: Question[], suffix: { en: string; zhHant: string; zhHans: string }): Question {
+export function duplicateQuestion(source: Question, existing: Question[], suffix: { en: string; zhHant: string }): Question {
 	const names = new Set(existing.map(q => q.labelEn.trim().toLowerCase()));
 	let en = `${source.labelEn} ${suffix.en}`;
 	let n = 2;
@@ -193,13 +185,12 @@ export function duplicateQuestion(source: Question, existing: Question[], suffix
 		id: newTempId(),
 		labelEn: en,
 		labelZhHant: source.labelZhHant ? `${source.labelZhHant} ${suffix.zhHant}` : "",
-		labelZhHans: source.labelZhHans ? `${source.labelZhHans} ${suffix.zhHans}` : "",
 		options: source.options.map(option => ({ ...option, id: crypto.randomUUID() }))
 	};
 }
 
 export function getQuestionTitle(q: Question, locale: string, fallback = ""): string {
-	return ((locale === "zh-Hant" && q.labelZhHant) || (locale === "zh-Hans" && q.labelZhHans) || q.labelEn || q.labelZhHant || q.labelZhHans || fallback).trim() || fallback;
+	return ((locale === "zh-Hant" && q.labelZhHant) || q.labelEn || q.labelZhHant || fallback).trim() || fallback;
 }
 
 export function serializeFilters(filters: FieldFilterState | undefined): FieldFilter | undefined {
@@ -218,8 +209,8 @@ export function serializeFilters(filters: FieldFilterState | undefined): FieldFi
 export function buildFieldData(q: Question) {
 	return {
 		type: q.type,
-		name: { en: q.labelEn, "zh-Hant": q.labelZhHant, "zh-Hans": q.labelZhHans },
-		description: { en: q.descriptionEn, "zh-Hant": q.descriptionZhHant, "zh-Hans": q.descriptionZhHans },
+		name: { en: q.labelEn, "zh-Hant": q.labelZhHant },
+		description: { en: q.descriptionEn, "zh-Hant": q.descriptionZhHant },
 		placeholder: q.placeholder,
 		required: q.required,
 		validater: q.type === "text" || q.type === "textarea" ? q.validater : "",

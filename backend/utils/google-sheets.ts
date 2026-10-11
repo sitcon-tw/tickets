@@ -180,7 +180,7 @@ export async function exportToGoogleSheets(spreadsheetId: string, registrations:
 			if (typeof nameObj === "string") return nameObj;
 			if (typeof nameObj !== "object" || Array.isArray(nameObj)) return "";
 			const obj = nameObj as Record<string, string>;
-			return obj["zh-Hant"] || obj["zh-Hans"] || obj["en"] || Object.values(obj)[0] || "";
+			return obj["zh-Hant"] || obj["en"] || Object.values(obj)[0] || "";
 		};
 
 		const formatFormValue = (value: unknown): string => {

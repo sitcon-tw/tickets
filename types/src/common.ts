@@ -45,5 +45,5 @@ export type FormFieldType = z.infer<typeof FormFieldTypeSchema>;
 /**
  * Supported locales for SMS
  */
-export const LocaleSchema = z.enum(["zh-Hant", "zh-Hans", "en"]);
+export const LocaleSchema = z.enum(["zh-Hant", "en"]);
 export type Locale = z.infer<typeof LocaleSchema>;

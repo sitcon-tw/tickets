@@ -19,8 +19,7 @@ import React, { useReducer, useRef, useState } from "react";
 
 const LANGUAGES = [
 	{ code: "zh-Hant", label: "繁體中文" },
-	{ code: "en", label: "English" },
-	{ code: "zh-Hans", label: "简体中文" }
+	{ code: "en", label: "English" }
 ] as const;
 
 type Lang = (typeof LANGUAGES)[number]["code"];
@@ -57,10 +56,10 @@ type FormAction =
 	| { type: "saveFailed"; message: string }
 	| { type: "saveFinished" };
 
-const emptyLocalized = (): LocalizedValues => ({ "zh-Hant": "", en: "", "zh-Hans": "" });
+const emptyLocalized = (): LocalizedValues => ({ "zh-Hant": "", en: "" });
 
 function localizedFromValue(value: LocalizedText | null | undefined): LocalizedValues {
-	return { "zh-Hant": value?.["zh-Hant"] || "", en: value?.en || "", "zh-Hans": value?.["zh-Hans"] || "" };
+	return { "zh-Hant": value?.["zh-Hant"] || "", en: value?.en || "" };
 }
 
 function compactLocalized(values: LocalizedValues): LocalizedText {
@@ -310,93 +309,84 @@ function SponsorForm({ sponsor, eventId, onSavingChange, onClose, onSaved }: Spo
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const t = getTranslations(locale, {
-		addSponsor: { "zh-Hant": "新增贊助商", "zh-Hans": "新增赞助商", en: "Add Sponsor" },
-		editSponsor: { "zh-Hant": "編輯贊助商", "zh-Hans": "编辑赞助商", en: "Edit Sponsor" },
+		addSponsor: { "zh-Hant": "新增贊助商", en: "Add Sponsor" },
+		editSponsor: { "zh-Hant": "編輯贊助商", en: "Edit Sponsor" },
 		dialogDescription: {
 			"zh-Hant": "設定贊助商的 Logo、顯示位置，以及點擊 Logo 後彈出的介紹文案。",
-			"zh-Hans": "设置赞助商的 Logo、显示位置，以及点击 Logo 后弹出的介绍文案。",
 			en: "Set the sponsor's logo, where it appears, and the introduction shown when the logo is clicked."
 		},
-		save: { "zh-Hant": "儲存", "zh-Hans": "保存", en: "Save" },
-		cancel: { "zh-Hant": "取消", "zh-Hans": "取消", en: "Cancel" },
-		basicInfo: { "zh-Hant": "基本設定", "zh-Hans": "基本设置", en: "Basics" },
-		logoSection: { "zh-Hant": "Logo", "zh-Hans": "Logo", en: "Logo" },
-		logoUrl: { "zh-Hant": "Logo 圖片", "zh-Hans": "Logo 图片", en: "Logo image" },
+		save: { "zh-Hant": "儲存", en: "Save" },
+		cancel: { "zh-Hant": "取消", en: "Cancel" },
+		basicInfo: { "zh-Hant": "基本設定", en: "Basics" },
+		logoSection: { "zh-Hant": "Logo", en: "Logo" },
+		logoUrl: { "zh-Hant": "Logo 圖片", en: "Logo image" },
 		logoHint: {
 			"zh-Hant": "貼上 https 圖片連結，或上傳 PNG / JPG / WebP / SVG（橫式、寬高比約 3:2 較好看）。上傳的圖片會自動縮小。",
-			"zh-Hans": "贴上 https 图片链接，或上传 PNG / JPG / WebP / SVG（横式、宽高比约 3:2 较好看）。上传的图片会自动缩小。",
 			en: "Paste an https image link, or upload a PNG / JPG / WebP / SVG (landscape, about 3:2 looks best). Uploads are resized automatically."
 		},
-		logoDarkUrl: { "zh-Hant": "深色模式 Logo", "zh-Hans": "深色模式 Logo", en: "Dark mode logo" },
+		logoDarkUrl: { "zh-Hant": "深色模式 Logo", en: "Dark mode logo" },
 		logoDarkHint: {
 			"zh-Hant": "選填。Logo 在深色背景看不清楚時，可另外提供淺色版本。",
-			"zh-Hans": "选填。Logo 在深色背景看不清楚时，可另外提供浅色版本。",
 			en: "Optional. Provide a light version if the logo is hard to read on a dark background."
 		},
-		uploadImage: { "zh-Hant": "上傳圖片", "zh-Hans": "上传图片", en: "Upload image" },
-		replaceImage: { "zh-Hant": "重新上傳", "zh-Hans": "重新上传", en: "Replace" },
-		removeImage: { "zh-Hant": "移除圖片", "zh-Hans": "移除图片", en: "Remove image" },
-		uploadedImage: { "zh-Hant": "已上傳圖片", "zh-Hans": "已上传图片", en: "Uploaded image" },
-		errUploadType: { "zh-Hant": "只支援 PNG、JPG、WebP 或 SVG 圖片。", "zh-Hans": "只支持 PNG、JPG、WebP 或 SVG 图片。", en: "Only PNG, JPG, WebP or SVG images are supported." },
-		errUploadInputTooLarge: { "zh-Hant": "圖片檔案不能超過 8 MB。", "zh-Hans": "图片文件不能超过 8 MB。", en: "The image file must be 8 MB or smaller." },
+		uploadImage: { "zh-Hant": "上傳圖片", en: "Upload image" },
+		replaceImage: { "zh-Hant": "重新上傳", en: "Replace" },
+		removeImage: { "zh-Hant": "移除圖片", en: "Remove image" },
+		uploadedImage: { "zh-Hant": "已上傳圖片", en: "Uploaded image" },
+		errUploadType: { "zh-Hant": "只支援 PNG、JPG、WebP 或 SVG 圖片。", en: "Only PNG, JPG, WebP or SVG images are supported." },
+		errUploadInputTooLarge: { "zh-Hant": "圖片檔案不能超過 8 MB。", en: "The image file must be 8 MB or smaller." },
 		errUploadTooLarge: {
 			"zh-Hant": "圖片壓縮後仍然太大，請改用較小或較簡單的圖片（SVG 上限約 150 KB）。",
-			"zh-Hans": "图片压缩后仍然太大，请改用较小或较简单的图片（SVG 上限约 150 KB）。",
 			en: "The image is still too large after resizing. Use a smaller or simpler image (SVG is limited to about 150 KB)."
 		},
-		errUploadDecode: { "zh-Hant": "無法讀取這張圖片。", "zh-Hans": "无法读取这张图片。", en: "Could not read this image." },
-		backgroundSection: { "zh-Hant": "Logo 背景", "zh-Hans": "Logo 背景", en: "Logo background" },
+		errUploadDecode: { "zh-Hant": "無法讀取這張圖片。", en: "Could not read this image." },
+		backgroundSection: { "zh-Hant": "Logo 背景", en: "Logo background" },
 		backgroundHint: {
 			"zh-Hant": "Logo 卡片的底色。例如黑底的 Logo 可以改成黑色，看起來會更自然。留空則使用預設顏色。",
-			"zh-Hans": "Logo 卡片的底色。例如黑底的 Logo 可以改成黑色，看起来会更自然。留空则使用默认颜色。",
 			en: "The color behind the logo. For example, set it to black for a logo with a black background. Leave empty for the default."
 		},
-		bgColor: { "zh-Hant": "背景顏色", "zh-Hans": "背景颜色", en: "Background color" },
-		bgDarkColor: { "zh-Hant": "深色模式背景顏色", "zh-Hans": "深色模式背景颜色", en: "Dark mode background color" },
-		resetColor: { "zh-Hant": "還原預設", "zh-Hans": "还原默认", en: "Reset" },
-		previewLight: { "zh-Hant": "淺色模式", "zh-Hans": "浅色模式", en: "Light mode" },
-		previewDark: { "zh-Hant": "深色模式", "zh-Hans": "深色模式", en: "Dark mode" },
-		websiteUrl: { "zh-Hant": "官方網站", "zh-Hans": "官方网站", en: "Website" },
+		bgColor: { "zh-Hant": "背景顏色", en: "Background color" },
+		bgDarkColor: { "zh-Hant": "深色模式背景顏色", en: "Dark mode background color" },
+		resetColor: { "zh-Hant": "還原預設", en: "Reset" },
+		previewLight: { "zh-Hant": "淺色模式", en: "Light mode" },
+		previewDark: { "zh-Hant": "深色模式", en: "Dark mode" },
+		websiteUrl: { "zh-Hant": "官方網站", en: "Website" },
 		websiteHint: {
 			"zh-Hant": "選填。彈出視窗會顯示「前往官方網站」按鈕，並統計點擊數。",
-			"zh-Hans": "选填。弹出窗口会显示「前往官方网站」按钮，并统计点击数。",
 			en: "Optional. Adds a “Visit website” button to the popup and counts its clicks."
 		},
-		placementsSection: { "zh-Hant": "顯示位置", "zh-Hans": "显示位置", en: "Placement" },
+		placementsSection: { "zh-Hant": "顯示位置", en: "Placement" },
 		placementsHint: {
 			"zh-Hant": "可複選。同一個位置的 Logo 會依列表順序排成等大的響應式網格。",
-			"zh-Hans": "可多选。同一个位置的 Logo 会依列表顺序排成等大的响应式网格。",
 			en: "Choose one or both. Logos in the same slot form an equal-size responsive grid, in list order."
 		},
-		afterRegistration: { "zh-Hant": "報名與票券區之後（第一順位）", "zh-Hans": "报名与票券区之后（第一顺位）", en: "After the registration & tickets area (primary)" },
-		afterRegistrationHint: { "zh-Hant": "緊接票券選擇區，活動資訊之前。", "zh-Hans": "紧接票券选择区，活动资讯之前。", en: "Right below the ticket picker, before the event information." },
-		afterEventInfo: { "zh-Hant": "活動資訊與票券資訊之間（第二順位）", "zh-Hans": "活动资讯与票券资讯之间（第二顺位）", en: "Between event information and ticket information (secondary)" },
-		afterEventInfoHint: { "zh-Hant": "讀完活動介紹後才會看到。", "zh-Hans": "读完活动介绍后才会看到。", en: "Seen after reading the event description." },
-		visibility: { "zh-Hant": "在活動頁面顯示", "zh-Hans": "在活动页面显示", en: "Show on the event page" },
-		visibilityHint: { "zh-Hant": "取消勾選可暫時隱藏，數據會保留。", "zh-Hans": "取消勾选可暂时隐藏，数据会保留。", en: "Untick to hide it temporarily; its data is kept." },
-		sponsorName: { "zh-Hant": "廠商名稱", "zh-Hans": "厂商名称", en: "Sponsor name" },
-		description: { "zh-Hant": "介紹文案（Markdown）", "zh-Hans": "介绍文案（Markdown）", en: "Introduction (Markdown)" },
-		descriptionHint: { "zh-Hant": "點擊 Logo 後在彈出視窗中顯示。", "zh-Hans": "点击 Logo 后在弹出窗口中显示。", en: "Shown in the popup when the logo is clicked." },
-		preview: { "zh-Hant": "預覽", "zh-Hans": "预览", en: "Preview" },
-		optional: { "zh-Hant": "選填", "zh-Hans": "选填", en: "optional" },
-		hasErrors: { "zh-Hant": "此分頁有需要修正的欄位", "zh-Hans": "此分页有需要修正的字段", en: "This tab has fields to fix" },
-		errNameRequired: { "zh-Hant": "請至少輸入一種語言的廠商名稱。", "zh-Hans": "请至少输入一种语言的厂商名称。", en: "Enter the sponsor name in at least one language." },
-		errLogoRequired: { "zh-Hant": "請輸入 Logo 圖片網址，或上傳圖片。", "zh-Hans": "请输入 Logo 图片网址，或上传图片。", en: "Enter the logo image URL or upload an image." },
+		afterRegistration: { "zh-Hant": "報名與票券區之後（第一順位）", en: "After the registration & tickets area (primary)" },
+		afterRegistrationHint: { "zh-Hant": "緊接票券選擇區，活動資訊之前。", en: "Right below the ticket picker, before the event information." },
+		afterEventInfo: { "zh-Hant": "活動資訊與票券資訊之間（第二順位）", en: "Between event information and ticket information (secondary)" },
+		afterEventInfoHint: { "zh-Hant": "讀完活動介紹後才會看到。", en: "Seen after reading the event description." },
+		visibility: { "zh-Hant": "在活動頁面顯示", en: "Show on the event page" },
+		visibilityHint: { "zh-Hant": "取消勾選可暫時隱藏，數據會保留。", en: "Untick to hide it temporarily; its data is kept." },
+		sponsorName: { "zh-Hant": "廠商名稱", en: "Sponsor name" },
+		description: { "zh-Hant": "介紹文案（Markdown）", en: "Introduction (Markdown)" },
+		descriptionHint: { "zh-Hant": "點擊 Logo 後在彈出視窗中顯示。", en: "Shown in the popup when the logo is clicked." },
+		preview: { "zh-Hant": "預覽", en: "Preview" },
+		optional: { "zh-Hant": "選填", en: "optional" },
+		hasErrors: { "zh-Hant": "此分頁有需要修正的欄位", en: "This tab has fields to fix" },
+		errNameRequired: { "zh-Hant": "請至少輸入一種語言的廠商名稱。", en: "Enter the sponsor name in at least one language." },
+		errLogoRequired: { "zh-Hant": "請輸入 Logo 圖片網址，或上傳圖片。", en: "Enter the logo image URL or upload an image." },
 		errLogoInvalid: {
 			"zh-Hant": "請輸入以 http:// 或 https:// 開頭的有效網址，或上傳圖片。",
-			"zh-Hans": "请输入以 http:// 或 https:// 开头的有效网址，或上传图片。",
 			en: "Enter a valid URL starting with http:// or https://, or upload an image."
 		},
 		errUrlInvalid: {
 			"zh-Hant": "請輸入以 http:// 或 https:// 開頭的有效網址。",
-			"zh-Hans": "请输入以 http:// 或 https:// 开头的有效网址。",
 			en: "Enter a valid URL starting with http:// or https://."
 		},
-		errColorInvalid: { "zh-Hant": "請輸入 #RRGGBB 格式的顏色，例如 #000000。", "zh-Hans": "请输入 #RRGGBB 格式的颜色，例如 #000000。", en: "Enter a color like #000000 (#RRGGBB)." },
-		errPlacements: { "zh-Hant": "請至少選擇一個顯示位置。", "zh-Hans": "请至少选择一个显示位置。", en: "Choose at least one placement." },
-		saveFailed: { "zh-Hant": "儲存失敗：", "zh-Hans": "保存失败：", en: "Could not save: " },
-		created: { "zh-Hant": "贊助商已新增", "zh-Hans": "赞助商已新增", en: "Sponsor added" },
-		updated: { "zh-Hant": "贊助商已更新", "zh-Hans": "赞助商已更新", en: "Sponsor updated" }
+		errColorInvalid: { "zh-Hant": "請輸入 #RRGGBB 格式的顏色，例如 #000000。", en: "Enter a color like #000000 (#RRGGBB)." },
+		errPlacements: { "zh-Hant": "請至少選擇一個顯示位置。", en: "Choose at least one placement." },
+		saveFailed: { "zh-Hant": "儲存失敗：", en: "Could not save: " },
+		created: { "zh-Hant": "贊助商已新增", en: "Sponsor added" },
+		updated: { "zh-Hant": "贊助商已更新", en: "Sponsor updated" }
 	});
 
 	const [state, dispatch] = useReducer(formReducer, sponsor, initialFormState);
