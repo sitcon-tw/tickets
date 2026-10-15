@@ -2,6 +2,7 @@
 
 import { AdminToolbar, AdminToolbarSpacer } from "@/components/admin/AdminToolbar";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { PageSkeleton } from "@/components/admin/PageSkeleton";
 import { SearchInput } from "@/components/admin/SearchInput";
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventFormFieldsAPI, adminRegistrationsAPI } from "@/lib/api/endpoints";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -103,7 +105,7 @@ function useRegistrationsPage() {
 			const response = await adminRegistrationsAPI.getAll({ limit: 9999, eventId: currentEventId });
 			if (requestId !== requestIdRef.current) return;
 			if (!response.success) {
-				const message = response.message || "Unknown error";
+				const message = response.message || t.unknownError;
 				setLoadError(message);
 				showAlert(message, "error");
 				return;
@@ -120,13 +122,13 @@ function useRegistrationsPage() {
 		} catch (error) {
 			if (requestId !== requestIdRef.current) return;
 			console.error("Failed to load registrations:", error);
-			const message = errorMessage(error, "Unknown error");
+			const message = errorMessage(error, t.unknownError);
 			setLoadError(message);
 			showAlert(message, "error");
 		} finally {
 			if (requestId === requestIdRef.current) setIsLoading(false);
 		}
-	}, [currentEventId, showAlert]);
+	}, [currentEventId, showAlert, t]);
 
 	useEffect(() => {
 		if (!currentEventId) {
@@ -325,6 +327,7 @@ function useRegistrationsPage() {
 
 export default function RegistrationsPage() {
 	const page = useRegistrationsPage();
+	const hydrated = useHydrated();
 	const { t, locale, currentEventId, registrations, isLoading, loadError, searchTerm, statusFilter, rowSelection, selectedRegistrations } = page;
 
 	const hasFilters = searchTerm.trim() !== "" || statusFilter !== "all";
@@ -362,7 +365,9 @@ export default function RegistrationsPage() {
 		<main>
 			<AdminHeader title={t.title} description={t.description} actions={headerActions} />
 
-			{!currentEventId ? (
+			{!hydrated ? (
+				<PageSkeleton />
+			) : !currentEventId ? (
 				<EmptyState title={t.noEventTitle} description={t.noEventDescription} />
 			) : showLoadError ? (
 				<EmptyState
@@ -418,6 +423,7 @@ export default function RegistrationsPage() {
 					<DataTable
 						columns={page.columns}
 						data={page.displayData}
+						resetPageKey={`${statusFilter}|${searchTerm}`}
 						isLoading={isLoading && registrations.length === 0}
 						getRowId={row => row.id}
 						rowSelection={rowSelection}

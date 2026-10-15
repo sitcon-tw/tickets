@@ -104,8 +104,8 @@ function registrationDetailReducer(state: RegistrationDetailState, action: Regis
 	}
 }
 
-function formatDate(date: Date | null | undefined) {
-	if (!date) return "N/A";
+function formatDate(date: Date | null | undefined, notAvailable: string) {
+	if (!date) return notAvailable;
 	return formatDateTime(date);
 }
 
@@ -259,6 +259,14 @@ const registrationDetailTranslations = {
 	cannotCancel: {
 		"zh-Hant": "此報名無法取消",
 		en: "This registration cannot be cancelled"
+	},
+	notAvailable: {
+		"zh-Hant": "未提供",
+		en: "N/A"
+	},
+	unknownError: {
+		"zh-Hant": "未知的錯誤",
+		en: "Unknown error"
 	}
 };
 
@@ -277,6 +285,7 @@ function RegistrationTicket({ registration, locale, t }: { registration: Registr
 		registration.status === "confirmed" ? t.statusConfirmed : registration.status === "cancelled" ? t.statusCancelled : registration.status === "pending" ? t.statusPending : registration.status;
 	const locationText = getLocalizedText(registration.event?.locationText, locale);
 	const isCancelled = registration.status === "cancelled";
+	const price = registration.ticket?.price ? new Intl.NumberFormat(locale, { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(registration.ticket.price) : t.free;
 
 	return (
 		<div className={`ticket ticket-static w-full ${isCancelled ? "opacity-70 grayscale" : ""}`}>
@@ -287,7 +296,7 @@ function RegistrationTicket({ registration, locale, t }: { registration: Registr
 							<Ticket size={14} />
 							{getLocalizedText(registration.ticket?.name || {}, locale)}
 						</span>
-						<span className="text-gray-600 dark:text-gray-300">{registration.ticket?.price ? `${registration.ticket.price}` : t.free}</span>
+						<span className="text-gray-600 dark:text-gray-300">{price}</span>
 					</div>
 					<h1 className="text-2xl font-bold leading-tight md:text-3xl">{getLocalizedText(registration.event?.name || {}, locale)}</h1>
 					<div className="max-w-32 border-t-2 border-dashed border-gray-400" />
@@ -295,9 +304,9 @@ function RegistrationTicket({ registration, locale, t }: { registration: Registr
 						<div className="flex items-start gap-3">
 							<CalendarDays size={18} className="mt-0.5 shrink-0" />
 							<span>
-								{formatDate(registration.event?.startDate)}
+								{formatDate(registration.event?.startDate, t.notAvailable)}
 								<span className="mx-1.5 text-gray-500">→</span>
-								{formatDate(registration.event?.endDate)}
+								{formatDate(registration.event?.endDate, t.notAvailable)}
 							</span>
 						</div>
 						{locationText && (
@@ -315,7 +324,7 @@ function RegistrationTicket({ registration, locale, t }: { registration: Registr
 						)}
 					</div>
 					<p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
-						{t.registeredAt} · {formatDate(registration.createdAt)}
+						{t.registeredAt} · {formatDate(registration.createdAt, t.notAvailable)}
 					</p>
 				</div>
 				<div className="ticket-stub">
@@ -480,7 +489,7 @@ function MyRegistrationPageContent() {
 				showAlert(t.saveSuccess, "success");
 				dispatchRegistrationDetail({ type: "saveSucceeded", formData: result.data.formData });
 			} else {
-				throw new Error(result.message || "Failed to update registration");
+				throw new Error(result.message || t.unknownError);
 			}
 		} catch (error) {
 			console.error("Save error:", error);
@@ -492,7 +501,7 @@ function MyRegistrationPageContent() {
 				const firstServerError = formFields.find(field => serverMessages[field.id])?.id;
 				if (firstServerError) focusFormField(firstServerError);
 			} else {
-				showAlert(t.saveFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+				showAlert(t.saveFailed + (error instanceof Error && error.message ? error.message : t.unknownError), "error");
 			}
 		} finally {
 			dispatchRegistrationDetail({ type: "saveFinished" });
@@ -518,11 +527,11 @@ function MyRegistrationPageContent() {
 				showAlert(t.cancelSuccess, "success");
 				dispatchRegistrationDetail({ type: "cancelSucceeded" });
 			} else {
-				throw new Error(result.message || "Failed to cancel registration");
+				throw new Error(result.message || t.unknownError);
 			}
 		} catch (error) {
 			console.error("Cancel error:", error);
-			showAlert(t.cancelFailed + (error instanceof Error ? error.message : "Unknown error"), "error");
+			showAlert(t.cancelFailed + (error instanceof Error && error.message ? error.message : t.unknownError), "error");
 		} finally {
 			dispatchRegistrationDetail({ type: "cancelFinished" });
 		}
@@ -559,12 +568,15 @@ function MyRegistrationPageContent() {
 				});
 			} catch (error) {
 				console.error("Failed to load registration:", error);
-				dispatchRegistrationDetail({ type: "loadFailed", error: error instanceof Error ? error.message : "Unknown error" });
+				dispatchRegistrationDetail({ type: "loadFailed", error: error instanceof Error && error.message ? error.message : t.unknownError });
 			}
 		}
 
 		void loadRegistration();
-	}, [registrationId, router, t.notFound]);
+	}, [registrationId, router, t.notFound, t.unknownError]);
+
+	// Only known once the registration has loaded; until then there is no event to go back to
+	const successPagePath = registration ? `/${registration.event?.slug || registration.eventId.slice(-6)}/success` : null;
 
 	return (
 		<>
@@ -576,16 +588,20 @@ function MyRegistrationPageContent() {
 								<ChevronLeft />
 								<p>{t.backToRegistrations}</p>
 							</Button>
-							<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
-								<p>{t.goToSuccessPage}</p>
-								<ChevronRight />
-							</Button>
+							{successPagePath && (
+								<Button variant="secondary" onClick={() => router.push(successPagePath)}>
+									<p>{t.goToSuccessPage}</p>
+									<ChevronRight />
+								</Button>
+							)}
 						</div>
 					) : (
-						<Button variant="secondary" onClick={() => router.push(registration?.event?.slug ? `/${registration?.event?.slug}/success` : `/${registration?.eventId.slice(-6)}/success`)}>
-							<ChevronLeft />
-							<p>{t.backToSuccessPage}</p>
-						</Button>
+						successPagePath && (
+							<Button variant="secondary" onClick={() => router.push(successPagePath)}>
+								<ChevronLeft />
+								<p>{t.backToSuccessPage}</p>
+							</Button>
+						)
 					)}
 					<p className="mb-3 mt-6 text-sm font-medium uppercase tracking-widest text-(--text-secondary)">{t.myRegistration}</p>
 					{loading && (
@@ -596,11 +612,13 @@ function MyRegistrationPageContent() {
 					)}
 					{error && (
 						<div className="text-center p-8">
-							<p className="text-red-500">
+							<p className="text-destructive">
 								{t.loadFailed}
 								{error}
 							</p>
-							<Link href="/">{t.backToRegistrations}</Link>
+							<Link href="/my-registration" className="mt-4 inline-block underline">
+								{t.backToRegistrations}
+							</Link>
 						</div>
 					)}
 					{!loading && !error && registration && (

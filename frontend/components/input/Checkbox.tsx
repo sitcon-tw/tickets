@@ -71,12 +71,18 @@ const StyledLabel = styled.label`
 		stroke: rgb(55 65 81);
 	}
 
-	&:hover .path {
+	&:not(:has(${HiddenCheckbox}:disabled)):hover .path {
 		stroke: rgb(107 114 128);
 	}
 
-	:is(.dark, .dark *) &:hover .path {
+	:is(.dark, .dark *) &:not(:has(${HiddenCheckbox}:disabled)):hover .path {
 		stroke: rgb(209 213 219);
+	}
+
+	/* Also matches while an ancestor fieldset is disabled */
+	&:has(${HiddenCheckbox}:disabled) {
+		cursor: not-allowed;
+		opacity: 0.5;
 	}
 
 	:is(.dark, .dark *) & ${HiddenCheckbox}:checked ~ svg .path {

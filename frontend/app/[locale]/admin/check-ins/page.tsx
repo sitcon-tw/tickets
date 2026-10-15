@@ -1,7 +1,9 @@
 "use client";
 
 import { AdminToolbar, AdminToolbarSpacer } from "@/components/admin/AdminToolbar";
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { PageSkeleton } from "@/components/admin/PageSkeleton";
 import { SearchInput } from "@/components/admin/SearchInput";
 import AdminHeader from "@/components/AdminHeader";
 import { DataTable } from "@/components/data-table/data-table";
@@ -13,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminCheckInsAPI } from "@/lib/api/endpoints";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
@@ -51,6 +54,7 @@ function buildSearchIndex(attendee: CheckInAttendee, ticket: string) {
 function useCheckInsPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
+	const confirm = useConfirm();
 	const currentEventId = useSelectedEventId();
 	const t = useMemo(() => getTranslations(locale, checkInsTranslations) as CheckInsT, [locale]);
 
@@ -88,7 +92,7 @@ function useCheckInsPage() {
 			const response = await adminCheckInsAPI.getAttendees({ eventId: currentEventId });
 			if (requestId !== requestIdRef.current) return null;
 			if (!response.success) {
-				const message = response.message || checkInsTranslations.unknownError.en;
+				const message = response.message || t.unknownError;
 				setLoadError(message);
 				showAlert(message, "error");
 				return null;
@@ -98,14 +102,14 @@ function useCheckInsPage() {
 		} catch (error) {
 			if (requestId !== requestIdRef.current) return null;
 			console.error("Failed to load check-in list:", error);
-			const message = errorMessage(error, checkInsTranslations.unknownError.en);
+			const message = errorMessage(error, t.unknownError);
 			setLoadError(message);
 			showAlert(message, "error");
 			return null;
 		} finally {
 			if (requestId === requestIdRef.current) setIsLoading(false);
 		}
-	}, [currentEventId, showAlert]);
+	}, [currentEventId, showAlert, t]);
 
 	useEffect(() => {
 		if (!currentEventId) {
@@ -174,8 +178,22 @@ function useCheckInsPage() {
 		[t]
 	);
 
+	// Undoing clears the original check-in time for good, so it needs an explicit confirmation.
+	const confirmUndo = useCallback(
+		(name: string) =>
+			confirm({
+				title: t.undoConfirmTitle,
+				description: t.undoConfirmDescription.replace("{name}", name),
+				confirmLabel: t.undoConfirm,
+				cancelLabel: t.undoKeep,
+				destructive: true
+			}),
+		[confirm, t]
+	);
+
 	const toggleCheckIn = useCallback(
 		async (attendee: CheckInRow, checkedIn: boolean) => {
+			if (!checkedIn && !(await confirmUndo(attendee.displayName))) return;
 			const outcome = await changeCheckIn(attendee, checkedIn);
 			if (!outcome.ok) {
 				showAlert(`${t.updateFailed}: ${outcome.message}`, "error");
@@ -185,12 +203,13 @@ function useCheckInsPage() {
 			else if (outcome.result.alreadyCheckedIn) showAlert(t.checkInAlready.replace("{name}", attendee.displayName), "warning");
 			else showAlert(t.checkInSuccess.replace("{name}", attendee.displayName), "success");
 		},
-		[changeCheckIn, showAlert, t]
+		[changeCheckIn, confirmUndo, showAlert, t]
 	);
 
 	async function undoScan(attendeeId: string) {
 		const attendee = attendees.find(item => item.id === attendeeId);
 		if (!attendee) return;
+		if (!(await confirmUndo(attendee.name || attendee.email))) return;
 		const outcome = await changeCheckIn(attendee, false);
 		if (outcome.ok) setScanResult({ kind: "undone", attendeeId });
 		else showAlert(`${t.updateFailed}: ${outcome.message}`, "error");
@@ -416,6 +435,7 @@ function ScanPanel({ page }: { page: ReturnType<typeof useCheckInsPage> }) {
 
 export default function CheckInsPage() {
 	const page = useCheckInsPage();
+	const hydrated = useHydrated();
 	const { t, currentEventId, attendees, isLoading, loadError, searchTerm, statusFilter } = page;
 
 	const hasFilters = searchTerm.trim() !== "" || statusFilter !== "all";
@@ -458,7 +478,9 @@ export default function CheckInsPage() {
 				}
 			/>
 
-			{!currentEventId ? (
+			{!hydrated ? (
+				<PageSkeleton />
+			) : !currentEventId ? (
 				<EmptyState icon={ClipboardCheck} title={t.noEventTitle} description={t.noEventDescription} />
 			) : showLoadError ? (
 				<EmptyState
@@ -508,7 +530,14 @@ export default function CheckInsPage() {
 								<AdminToolbarSpacer />
 							</AdminToolbar>
 
-							<DataTable columns={page.columns} data={page.visibleRows} isLoading={isLoading && attendees.length === 0} getRowId={row => row.id} emptyState={emptyState} />
+							<DataTable
+								columns={page.columns}
+								data={page.visibleRows}
+								resetPageKey={`${statusFilter}|${searchTerm}`}
+								isLoading={isLoading && attendees.length === 0}
+								getRowId={row => row.id}
+								emptyState={emptyState}
+							/>
 						</TabsContent>
 					</Tabs>
 				</>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAlert } from "@/contexts/AlertContext";
 import { adminRegistrationsAPI, type GoogleSheetsSettings } from "@/lib/api/endpoints";
+import { formatDateTime } from "@/lib/utils/timezone";
 import { CheckCircle2, CircleAlert, Copy, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RegistrationsT } from "./translations";
@@ -187,7 +188,7 @@ function SheetsForm({ eventId, t, onClose }: { eventId: string; t: Registrations
 					<div role="status" className="space-y-2 text-sm">
 						<p className="flex items-center gap-2 text-muted-foreground">
 							<CheckCircle2 className="size-4 shrink-0" />
-							{t.lastSynced}: {settings.lastSyncedAt ? new Date(settings.lastSyncedAt).toLocaleString() : t.neverSynced}
+							{t.lastSynced}: {settings.lastSyncedAt ? formatDateTime(new Date(settings.lastSyncedAt)) : t.neverSynced}
 						</p>
 						{settings.lastSyncError && (
 							<p className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive">

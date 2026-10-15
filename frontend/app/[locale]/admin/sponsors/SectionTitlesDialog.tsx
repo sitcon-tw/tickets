@@ -77,6 +77,8 @@ export function SectionTitlesDialog({ open, eventId, onOpenChange }: SectionTitl
 	useEffect(() => {
 		if (!open || !eventId) return;
 		let cancelled = false;
+		// Clear the previous values so stale titles never show (or get saved) while the fresh ones load.
+		setValues(emptyValues());
 		setIsLoading(true);
 		void adminSponsorsAPI
 			.getSectionTitles(eventId)
@@ -130,19 +132,21 @@ export function SectionTitlesDialog({ open, eventId, onOpenChange }: SectionTitl
 					<DialogDescription>{t.description}</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
-					{placements.map(({ key, label }) => (
-						<FieldGroup key={key}>
-							<SectionHeading title={label} />
-							<LocalizedInputs
-								id={`sponsor-title-${key}`}
-								label={`${label} - ${t.sectionTitle}`}
-								compact
-								values={values[key]}
-								placeholders={defaults}
-								onChange={(lang, value) => setValues(current => ({ ...current, [key]: { ...current[key], [lang]: value } }))}
-							/>
-						</FieldGroup>
-					))}
+					<fieldset disabled={isLoading || isSaving} className="min-w-0 space-y-4">
+						{placements.map(({ key, label }) => (
+							<FieldGroup key={key}>
+								<SectionHeading title={label} />
+								<LocalizedInputs
+									id={`sponsor-title-${key}`}
+									label={`${label} - ${t.sectionTitle}`}
+									compact
+									values={values[key]}
+									placeholders={defaults}
+									onChange={(lang, value) => setValues(current => ({ ...current, [key]: { ...current[key], [lang]: value } }))}
+								/>
+							</FieldGroup>
+						))}
+					</fieldset>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
 							{t.cancel}

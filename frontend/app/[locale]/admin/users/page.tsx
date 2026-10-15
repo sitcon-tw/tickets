@@ -15,8 +15,9 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminRolesAPI, adminUsersAPI, authAPI } from "@/lib/api/endpoints";
+import { formatDateTime } from "@/lib/utils/timezone";
 import type { Event, Role, User } from "@sitcontix/types";
-import { Users } from "lucide-react";
+import { RefreshCw, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
@@ -34,6 +35,8 @@ type UsersUiState = {
 	roles: Role[];
 	currentUserId: string | null;
 	isLoading: boolean;
+	/** Set when the user list could not be loaded, so the table shows an error instead of "no users". */
+	loadError: string | null;
 	isSaving: boolean;
 	showEditModal: boolean;
 	editingUser: User | null;
@@ -47,6 +50,7 @@ type UsersUiAction =
 	| { type: "loadStarted" }
 	| { type: "loadFinished" }
 	| { type: "usersLoaded"; users: User[] }
+	| { type: "loadFailed"; message: string }
 	| { type: "eventsLoaded"; events: Event[] }
 	| { type: "rolesLoaded"; roles: Role[] }
 	| { type: "currentUserLoaded"; id: string }
@@ -65,11 +69,13 @@ type UsersUiAction =
 function usersUiReducer(state: UsersUiState, action: UsersUiAction): UsersUiState {
 	switch (action.type) {
 		case "loadStarted":
-			return { ...state, isLoading: true };
+			return { ...state, isLoading: true, loadError: null };
 		case "loadFinished":
 			return { ...state, isLoading: false };
 		case "usersLoaded":
-			return { ...state, users: action.users };
+			return { ...state, users: action.users, loadError: null };
+		case "loadFailed":
+			return { ...state, loadError: action.message };
 		case "eventsLoaded":
 			return { ...state, events: action.events };
 		case "rolesLoaded":
@@ -126,7 +132,24 @@ export default function UsersPage() {
 	const confirm = useConfirm();
 
 	const [
-		{ users, searchTerm, roleFilter, statusFilter, events, roles, currentUserId, isLoading, isSaving, showEditModal, editingUser, selectedEventIds, selectedRole, selectedRoleId, selectedActive },
+		{
+			users,
+			searchTerm,
+			roleFilter,
+			statusFilter,
+			events,
+			roles,
+			currentUserId,
+			isLoading,
+			loadError,
+			isSaving,
+			showEditModal,
+			editingUser,
+			selectedEventIds,
+			selectedRole,
+			selectedRoleId,
+			selectedActive
+		},
 		dispatchUsersUi
 	] = useReducer(usersUiReducer, {
 		users: [],
@@ -137,6 +160,7 @@ export default function UsersPage() {
 		roles: [],
 		currentUserId: null,
 		isLoading: true,
+		loadError: null,
 		isSaving: false,
 		showEditModal: false,
 		editingUser: null,
@@ -189,6 +213,7 @@ export default function UsersPage() {
 		updateFailed: { "zh-Hant": "更新失敗", en: "Update failed" },
 		loadUsersFailed: { "zh-Hant": "無法載入使用者列表", en: "Failed to load users" },
 		loadEventsFailed: { "zh-Hant": "無法載入活動列表", en: "Failed to load events" },
+		retry: { "zh-Hant": "重試", en: "Retry" },
 		emailVerified: { "zh-Hant": "已驗證", en: "Verified" },
 		emailNotVerified: { "zh-Hant": "未驗證", en: "Not Verified" },
 		manageableEvents: { "zh-Hant": "可管理的活動", en: "Manageable Events" },
@@ -235,10 +260,12 @@ export default function UsersPage() {
 			if (response.success && response.data) {
 				dispatchUsersUi({ type: "usersLoaded", users: response.data });
 			} else {
+				dispatchUsersUi({ type: "loadFailed", message: response.message || "" });
 				showAlert(`${t.loadUsersFailed}${response.message ? `: ${response.message}` : ""}`, "error");
 			}
 		} catch (error) {
 			console.error("Failed to load users:", error);
+			dispatchUsersUi({ type: "loadFailed", message: getErrorMessage(error) });
 			showAlert(`${t.loadUsersFailed}: ${getErrorMessage(error)}`, "error");
 		} finally {
 			dispatchUsersUi({ type: "loadFinished" });
@@ -361,7 +388,6 @@ export default function UsersPage() {
 	}, [users, searchTerm, roleFilter, statusFilter]);
 
 	const displayUsers = useMemo((): UserDisplay[] => {
-		const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 		return filteredUsers.map(user => {
 			return {
 				...user,
@@ -372,10 +398,10 @@ export default function UsersPage() {
 				phoneDisplay: user.phoneNumber || "",
 				phoneIsVerified: !!user.phoneNumber && user.phoneVerified,
 				createdAtTimestamp: new Date(user.createdAt).getTime(),
-				formattedCreatedAt: dateFormatter.format(new Date(user.createdAt))
+				formattedCreatedAt: formatDateTime(new Date(user.createdAt))
 			};
 		});
-	}, [filteredUsers, locale, roleLabels, t.active, t.inactive]);
+	}, [filteredUsers, roleLabels, t.active, t.inactive]);
 
 	const columns = useMemo(
 		() =>
@@ -448,23 +474,39 @@ export default function UsersPage() {
 			<DataTable
 				columns={columns}
 				data={displayUsers}
+				resetPageKey={`${statusFilter}|${roleFilter}|${searchTerm}`}
 				isLoading={isLoading}
 				getRowId={user => user.id}
 				onRowClick={openEditModal}
 				emptyState={
-					<EmptyState
-						icon={Users}
-						title={hasFilters ? t.noResults : t.noUsers}
-						description={hasFilters ? t.noResultsHint : undefined}
-						action={
-							hasFilters ? (
-								<Button type="button" variant="secondary" size="sm" onClick={() => dispatchUsersUi({ type: "clearFilters" })}>
-									{t.clearFilters}
+					loadError !== null && users.length === 0 ? (
+						<EmptyState
+							icon={Users}
+							title={t.loadUsersFailed}
+							description={loadError || undefined}
+							action={
+								<Button type="button" variant="outline" size="sm" onClick={() => void loadUsers()}>
+									<RefreshCw className="size-4" />
+									{t.retry}
 								</Button>
-							) : undefined
-						}
-						className="border-0"
-					/>
+							}
+							className="border-0"
+						/>
+					) : (
+						<EmptyState
+							icon={Users}
+							title={hasFilters ? t.noResults : t.noUsers}
+							description={hasFilters ? t.noResultsHint : undefined}
+							action={
+								hasFilters ? (
+									<Button type="button" variant="secondary" size="sm" onClick={() => dispatchUsersUi({ type: "clearFilters" })}>
+										{t.clearFilters}
+									</Button>
+								) : undefined
+							}
+							className="border-0"
+						/>
+					)
 				}
 			/>
 
@@ -483,8 +525,8 @@ export default function UsersPage() {
 								</div>
 								<div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
 									<dt className="text-muted-foreground">{t.email}</dt>
-									<dd className="flex flex-wrap items-center gap-2 font-medium">
-										{editingUser.email}
+									<dd className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
+										<span className="min-w-0 break-all">{editingUser.email}</span>
 										<StatusBadge tone={editingUser.emailVerified ? "success" : "neutral"}>{editingUser.emailVerified ? t.emailVerified : t.emailNotVerified}</StatusBadge>
 									</dd>
 								</div>
@@ -558,7 +600,7 @@ export default function UsersPage() {
 
 							{needsEventSelection && (
 								<fieldset className="space-y-2">
-									<legend className="mb-2 flex w-full items-center justify-between gap-2 text-md font-bold">
+									<legend className="mb-2 flex w-full items-center justify-between gap-2 text-base font-bold">
 										{t.manageableEvents}
 										<span className="text-xs font-normal text-muted-foreground">{t.selectedEvents.replace("{n}", String(selectedEventIds.length))}</span>
 									</legend>

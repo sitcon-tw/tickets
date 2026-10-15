@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { getTranslations } from "@/i18n/helpers";
 import { QRCodePopupProps } from "@/lib/types/components";
 import { Check, Copy, ExternalLink, TriangleAlert, X } from "lucide-react";
@@ -41,7 +42,8 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 		qrAlert2: {
 			"zh-Hant": "＊ 此 QR Code 包含之 Token 為 hash，並不包含個人資料。若您想要將您報名後的票分送給其他人，您可以分享 OPass 連結或截圖 QR Code 給他。",
 			en: "* The token contained in this QR code is a hash and does not contain personal information. If you want to transfer your ticket to someone else, you can share the OPass link or take a screenshot of the QR code."
-		}
+		},
+		close: { "zh-Hant": "關閉", en: "Close" }
 	});
 
 	function copyToClipboard() {
@@ -53,27 +55,30 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 		}
 	}
 
-	if (!isOpen) return null;
-
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-			<button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Close" />
-			<div className="relative bg-white/80 dark:bg-gray-800 rounded-lg max-w-md w-full shadow-xl p-8 mx-4">
-				<Button variant="ghost" size="icon" onClick={onClose} className="absolute top-4 right-4" aria-label="Close">
-					<X size={24} />
-				</Button>
+		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+			<DialogContent
+				overlayClassName="bg-black/40 backdrop-blur-sm"
+				showCloseButton={false}
+				className="bg-white/80 dark:bg-gray-800 rounded-lg border-0 shadow-xl p-6 sm:p-8 sm:max-w-md md:top-1/2 top-1/2 max-h-[calc(100dvh-2rem)]"
+			>
+				<DialogClose asChild>
+					<Button variant="ghost" size="icon" className="absolute top-4 right-4" aria-label={t.close}>
+						<X size={24} />
+					</Button>
+				</DialogClose>
 
-				<div className="flex flex-col items-center gap-4">
-					<h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{t.title}</h2>
+				<div className="flex flex-col items-center gap-4 min-w-0">
+					<DialogTitle className="text-2xl font-bold leading-normal text-gray-800 dark:text-gray-200 px-10 text-center">{t.title}</DialogTitle>
 					{useOpass && opassEventId && qrValue && (
 						<>
-							<p className="text-md text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
+							<p className="text-base text-gray-700 dark:text-gray-300 text-center sm:flex items-center gap-1">
 								<span>{t.openInOpass} </span>
 								<Link
 									href={`https://opass.app/open/?event_id=${opassEventId}&token=${qrValue}`}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="text-blue-400 hover:underline flex items-center gap-1"
+									className="text-blue-400 hover:underline inline-flex items-center gap-1"
 								>
 									{t.openOpassLink}
 									<ExternalLink size={16} />
@@ -81,22 +86,24 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 							</p>
 							<div className="flex w-full space-x-4 px-8 items-start">
 								<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
-								<p className="text-md text-gray-700 dark:text-gray-200 text-center">{t.or}</p>
+								<p className="text-base text-gray-700 dark:text-gray-200 text-center">{t.or}</p>
 								<div className="flex-1 border-b border-gray-500 dark:border-gray-300 mt-3" />
 							</div>
 						</>
 					)}
-					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t.useQrCode}</h3>
+					<h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 text-center">{t.useQrCode}</h3>
 
 					{qrValue ? (
-						<div className="flex flex-col items-center gap-3">
-							<div className="rounded-lg border-16 border-white w-fit">
+						<div className="flex w-full flex-col items-center gap-3">
+							{/* Up to 256px, but shrinks with the dialog on narrow phones */}
+							<div className="rounded-lg border-16 border-white w-full max-w-[288px] bg-white">
 								<QRCodeSVG
 									value={qrValue}
 									size={256}
 									level="H"
 									bgColor="white"
 									fgColor="var(--color-gray-800)"
+									className="block h-auto w-full"
 									imageSettings={{
 										src: "/assets/SITCON.svg",
 										height: 80,
@@ -112,19 +119,21 @@ export default function QRCodePopup({ isOpen, onClose, qrValue, useOpass = true,
 							</button>
 						</div>
 					) : (
-						<div className="w-64 h-64 flex items-center justify-center">
+						<div className="aspect-square w-full max-w-64 flex items-center justify-center">
 							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
 						</div>
 					)}
 
-					<p className="text-md text-gray-800 dark:text-gray-200 text-center">{useOpass && opassEventId ? t.scanInfo : t.scanInfoOpassDisabled}</p>
+					<DialogDescription className="text-base text-gray-800 dark:text-gray-200 text-center">{useOpass && opassEventId ? t.scanInfo : t.scanInfoOpassDisabled}</DialogDescription>
 					<div className="text-xs flex text-yellow-600 dark:text-yellow-200 items-center text-center gap-1">
 						<TriangleAlert size={20} className="w-[100px]" />
-						{t.qrAlert}
-						{t.qrAlert2}
+						<span>
+							{t.qrAlert}
+							{t.qrAlert2}
+						</span>
 					</div>
 				</div>
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

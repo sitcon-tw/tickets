@@ -111,12 +111,22 @@ const StyledWrapper = styled.fieldset`
 		color: rgb(243 244 246);
 	}
 
-	.radio-button:hover .radio-circle {
+	.radio-button:not(:has(input:disabled)):hover .radio-circle {
 		border-color: rgb(75 85 99);
 	}
 
-	:is(.dark, .dark *) & .radio-button:hover .radio-circle {
+	:is(.dark, .dark *) & .radio-button:not(:has(input:disabled)):hover .radio-circle {
 		border-color: rgb(229 231 235);
+	}
+
+	/* Also matches while an ancestor fieldset (this one or a form's) is disabled */
+	.radio-button:has(input:disabled) {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.radio-button input[type="radio"]:disabled {
+		cursor: not-allowed;
 	}
 
 	.other-input-wrapper {

@@ -61,6 +61,8 @@ export function useFormsTranslations(locale: string) {
 				copyFailed: { "zh-Hant": "複製失敗：", en: "Copy failed: " },
 				loadFailed: { "zh-Hant": "無法載入表單欄位", en: "Could not load the form fields" },
 				retry: { "zh-Hant": "重試", en: "Retry" },
+				requestFailed: { "zh-Hant": "請求失敗", en: "Request failed" },
+				missingFieldId: { "zh-Hant": "伺服器回應缺少欄位 ID", en: "The server response is missing the field ID" },
 				untitled: { "zh-Hant": "未命名欄位", en: "Untitled field" },
 				cancel: { "zh-Hant": "取消", en: "Cancel" },
 				close: { "zh-Hant": "關閉", en: "Close" },

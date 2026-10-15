@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { setSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { cn } from "@/lib/utils";
 import { getLocalizedText } from "@/lib/utils/localization";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -23,6 +22,7 @@ import {
 	LogOut,
 	Mail,
 	Menu,
+	RefreshCw,
 	Settings,
 	ShieldCheck,
 	Ticket,
@@ -93,13 +93,17 @@ export type AdminNavLayoutProps = {
 	pathname: string;
 	currentEventId: string | null;
 	events: Event[];
-	/** Permissions granted to the signed-in user; null while they are still loading. */
+	/** Permissions granted to the signed-in user; null while they are still loading (or failed to load). */
 	grantedPermissions: readonly string[] | null;
+	/** Loading the permissions failed; the menu shows a retry button instead of the links. */
+	permissionsFailed: boolean;
 	isMobile: boolean;
 	mobileMenuOpen: boolean;
 	isLoggingOut: boolean;
+	onEventChange: (eventId: string) => void;
 	onLocaleChange: (locale: string) => void;
 	onLogout: () => void;
+	onRetryPermissions: () => void;
 	onMobileMenuOpenChange: (open: boolean) => void;
 };
 
@@ -115,9 +119,12 @@ function SidebarBody({
 	currentEventId,
 	events,
 	grantedPermissions,
+	permissionsFailed,
 	isLoggingOut,
+	onEventChange,
 	onLocaleChange,
 	onLogout,
+	onRetryPermissions,
 	onNavigate,
 	showThemeToggle
 }: AdminNavLayoutProps & { onNavigate?: () => void; showThemeToggle?: boolean }) {
@@ -129,7 +136,7 @@ function SidebarBody({
 				<span id="admin-event-select-label" className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					{t.currentEvent}
 				</span>
-				<Select value={currentEventId || ""} onValueChange={setSelectedEventId} disabled={events.length === 0}>
+				<Select value={currentEventId || ""} onValueChange={onEventChange} disabled={events.length === 0}>
 					<SelectTrigger className="h-10 w-full bg-background" aria-labelledby="admin-event-select-label">
 						<SelectValue placeholder={events.length === 0 ? t.noEvents : t.selectEvent} />
 					</SelectTrigger>
@@ -143,7 +150,17 @@ function SidebarBody({
 				</Select>
 			</div>
 
-			<nav aria-label={t.systemTitle} className="-mx-1 flex-1 space-y-5 overflow-y-auto px-1">
+			<nav aria-label={t.systemTitle} aria-busy={grantedPermissions === null && !permissionsFailed} className="-mx-1 flex-1 space-y-5 overflow-y-auto px-1">
+				{permissionsFailed && (
+					<div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+						<p>{t.menuLoadFailed}</p>
+						<Button type="button" variant="outline" size="sm" onClick={onRetryPermissions}>
+							<RefreshCw className="size-4" />
+							{t.retry}
+						</Button>
+					</div>
+				)}
+				{grantedPermissions === null && !permissionsFailed && <NavSkeleton label={t.loadingMenu} />}
 				{visibleGroups.map(group => (
 					<div key={group.i18nKey ?? "main"} className="space-y-1">
 						{group.i18nKey && <div className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t[group.i18nKey]}</div>}
@@ -202,6 +219,28 @@ function SidebarBody({
 			</div>
 		</div>
 	);
+}
+
+function NavSkeleton({ label }: { label: string }) {
+	return (
+		<div role="status" className="space-y-1">
+			<span className="sr-only">{label}</span>
+			{Array.from({ length: 7 }, (_, index) => (
+				<div key={index} aria-hidden="true" className="flex items-center gap-3 px-2.5 py-2">
+					<div className="size-4 shrink-0 animate-pulse rounded bg-muted" />
+					<div className="h-4 animate-pulse rounded bg-muted" style={{ width: `${50 + ((index * 17) % 35)}%` }} />
+				</div>
+			))}
+		</div>
+	);
+}
+
+/**
+ * Rendered before hydration, while it is unknown whether the viewport is mobile: reserves the desktop
+ * sidebar's space with CSS only (matching the `(max-width: 768px)` query in AdminNav), and nothing on phones.
+ */
+export function AdminNavPlaceholder() {
+	return <div aria-hidden="true" className="sticky top-[73px] mt-[73px] hidden h-[calc(100dvh-73px)] w-64 shrink-0 self-start border-r bg-muted/30 min-[769px]:block" />;
 }
 
 export function AdminNavLayout(props: AdminNavLayoutProps) {

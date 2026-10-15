@@ -61,7 +61,7 @@ import {
 } from "@sitcontix/types";
 import z from "zod/v4";
 import { startAuthentication, startRegistration, type PublicKeyCredentialCreationOptionsJSON, type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
-import { apiClient } from "./client";
+import { apiClient, type RequestOptions } from "./client";
 
 // Auth (handled by BetterAuth)
 export const authAPI = {
@@ -78,7 +78,7 @@ export const authAPI = {
 			turnstileToken
 		});
 	},
-	getSession: () => apiClient.get("/api/auth/get-session", {}, SessionSchema.nullable().optional()),
+	getSession: (options?: RequestOptions) => apiClient.get("/api/auth/get-session", {}, SessionSchema.nullable().optional(), options),
 	getPermissions: () => apiClient.get("/api/auth/permissions", {}, ApiResponseSchema(PermissionsResponseSchema.nullable().optional())),
 	signOut: () => apiClient.post("/api/auth/sign-out"),
 	updateName: (name: string) => apiClient.post("/api/auth/update-user", { name }),
@@ -139,7 +139,7 @@ export const registrationsAPI = {
 
 	hold: (data: { eventId: string; ticketId: string; invitationCode?: string }) => apiClient.post("/api/registrations/hold", data, ApiResponseSchema(RegistrationHoldSchema)),
 
-	getAll: () => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(UserRegistrationListItemSchema))),
+	getAll: (options?: RequestOptions) => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(UserRegistrationListItemSchema)), options),
 
 	getById: (id: string) => apiClient.get(`/api/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 

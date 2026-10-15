@@ -7,6 +7,7 @@ export const campaignTranslations = {
 	createNew: { "zh-Hant": "建立新郵件", en: "Create Campaign" },
 	refresh: { "zh-Hant": "重新整理", en: "Refresh" },
 	loadFailed: { "zh-Hant": "載入郵件任務失敗", en: "Failed to load campaigns" },
+	retry: { "zh-Hant": "重試", en: "Retry" },
 	name: { "zh-Hant": "名稱", en: "Name" },
 	subject: { "zh-Hant": "主旨", en: "Subject" },
 	status: { "zh-Hant": "狀態", en: "Status" },
@@ -43,6 +44,11 @@ export const campaignTranslations = {
 	recipientCountHint: { "zh-Hant": "發送前會再次計算實際收件人。", en: "Recipients are calculated again right before sending." },
 	viewRecipients: { "zh-Hant": "查看名單", en: "View list" },
 	recipientList: { "zh-Hant": "收件人名單", en: "Recipient list" },
+	currentlyMatching: { "zh-Hant": "目前符合條件", en: "Currently matching" },
+	currentlyMatchingHint: {
+		"zh-Hant": "此名單依目前的報名資料計算，並非實際寄送紀錄。",
+		en: "Based on current registrations, not a record of who was actually emailed."
+	},
 	noMatchingRecipients: { "zh-Hant": "無符合收件人", en: "No matching recipients" },
 	emailPreview: { "zh-Hant": "郵件預覽", en: "Email preview" },
 	insertVar: {

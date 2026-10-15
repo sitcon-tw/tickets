@@ -10,7 +10,7 @@ import { registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDate, formatTime, isSameDayUTC8 } from "@/lib/utils/timezone";
 import { Registration } from "@sitcontix/types";
-import { Calendar, Clock, ExternalLink, Eye, MapPin, Ticket } from "lucide-react";
+import { Calendar, Clock, ExternalLink, Eye, MapPin, RefreshCw, Ticket } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -43,6 +43,8 @@ export default function MyRegistrationsPage() {
 	const { showAlert } = useAlert();
 	const [registrations, setRegistrations] = useState<Registration[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [loadFailed, setLoadFailed] = useState(false);
+	const [reloadKey, setReloadKey] = useState(0);
 	const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
 
 	const t = getTranslations(locale, {
@@ -93,6 +95,18 @@ export default function MyRegistrationsPage() {
 		registeredOn: {
 			"zh-Hant": "報名於",
 			en: "Registered on"
+		},
+		retry: {
+			"zh-Hant": "重試",
+			en: "Retry"
+		},
+		unknownEvent: {
+			"zh-Hant": "未知的活動",
+			en: "Unknown Event"
+		},
+		unknownTicket: {
+			"zh-Hant": "未知的票種",
+			en: "Unknown Ticket"
 		}
 	});
 
@@ -100,11 +114,13 @@ export default function MyRegistrationsPage() {
 		const fetchRegistrations = async () => {
 			try {
 				setLoading(true);
+				setLoadFailed(false);
 
 				const response = await registrationsAPI.getAll();
 				setRegistrations(response.data || []);
 			} catch (error) {
 				console.error("Error fetching registrations:", error);
+				setLoadFailed(true);
 				showAlert(t.loadError, "error");
 			} finally {
 				setLoading(false);
@@ -112,7 +128,7 @@ export default function MyRegistrationsPage() {
 		};
 
 		void fetchRegistrations();
-	}, [locale, router, showAlert, t.loadError]);
+	}, [locale, router, showAlert, t.loadError, reloadKey]);
 
 	const handleViewDetails = (id: string) => {
 		router.push(`/${locale}/my-registration/${id}?h`);
@@ -152,7 +168,15 @@ export default function MyRegistrationsPage() {
 				</div>
 			</div>
 
-			{registrations.length === 0 ? (
+			{loadFailed ? (
+				<div className="flex flex-col items-center gap-4 py-12 text-center">
+					<p className="text-destructive text-lg">{t.loadError}</p>
+					<Button variant="outline" onClick={() => setReloadKey(key => key + 1)}>
+						<RefreshCw className="h-4 w-4" />
+						{t.retry}
+					</Button>
+				</div>
+			) : registrations.length === 0 ? (
 				<div className="text-center py-12">
 					<p className="text-muted-foreground text-lg">{t.noRegistrations}</p>
 				</div>
@@ -163,8 +187,8 @@ export default function MyRegistrationsPage() {
 			) : (
 				<div className="grid gap-4 md:gap-6">
 					{filteredRegistrations.map(registration => {
-						const eventName = registration.event?.name ? getLocalizedText(registration.event.name, locale) : "Unknown Event";
-						const ticketName = registration.ticket?.name ? getLocalizedText(registration.ticket.name, locale) : "Unknown Ticket";
+						const eventName = registration.event?.name ? getLocalizedText(registration.event.name, locale) : t.unknownEvent;
+						const ticketName = registration.ticket?.name ? getLocalizedText(registration.ticket.name, locale) : t.unknownTicket;
 						const locationText = registration.event?.locationText ? getLocalizedText(registration.event.locationText, locale) : null;
 						const { date, time } = registration.event?.startDate && registration.event?.endDate ? formatEventDate(registration.event.startDate, registration.event.endDate) : { date: "-", time: "-" };
 

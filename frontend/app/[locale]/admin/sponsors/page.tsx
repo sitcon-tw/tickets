@@ -51,7 +51,8 @@ type SponsorsPageAction =
 
 const initialSponsorsPageState: SponsorsPageState = {
 	sponsors: [],
-	isLoading: false,
+	// Never-loaded counts as loading, so the first paint shows the skeleton instead of flashing the empty state.
+	isLoading: true,
 	loadError: null,
 	showModal: false,
 	editingSponsor: null,

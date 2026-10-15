@@ -95,6 +95,8 @@ export function CampaignDialogs({
 		templates,
 		events
 	} = state;
+	// No per-campaign delivery log exists, so for finished campaigns the list only shows who matches the filters today.
+	const isPastCampaign = selectedCampaign?.status === "sent" || selectedCampaign?.status === "cancelled";
 
 	return (
 		<>
@@ -279,7 +281,7 @@ export function CampaignDialogs({
 							<TabsTrigger value="html">{t.emailPreview}</TabsTrigger>
 							<TabsTrigger value="recipients">
 								<Users />
-								{t.recipientList}
+								{isPastCampaign ? t.currentlyMatching : t.recipientList}
 								<Badge variant="secondary" className="px-1.5 py-0 text-xs">
 									{previewRecipients.length}
 								</Badge>
@@ -289,6 +291,7 @@ export function CampaignDialogs({
 							<iframe title={selectedCampaign?.subject || t.preview} srcDoc={previewHtml} sandbox="" referrerPolicy="no-referrer" className="h-[55vh] w-full border-0" />
 						</TabsContent>
 						<TabsContent value="recipients" className="max-h-[55vh] min-h-0 overflow-auto rounded-lg border">
+							{isPastCampaign && <p className="border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">{t.currentlyMatchingHint}</p>}
 							<RecipientRows recipients={previewRecipients} emptyText={t.noMatchingRecipients} />
 						</TabsContent>
 					</Tabs>

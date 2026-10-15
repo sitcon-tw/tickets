@@ -94,15 +94,15 @@ function MagicLinkVerifyContent() {
 	return (
 		<>
 			<main>
-				<section>
-					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-[500px] p-8">
+				<section className="flex min-h-svh items-center justify-center">
+					<div className="w-full max-w-[500px] p-8 text-center">
 						{status === "verifying" && (
 							<>
 								<div className="mb-6">
 									<Spinner size="lg" />
 								</div>
 								<h1 className="mb-2">{t.verifying}</h1>
-								<p className="text-gray-700">{t.redirecting}</p>
+								<p className="text-muted-foreground">{t.redirecting}</p>
 							</>
 						)}
 
@@ -110,7 +110,7 @@ function MagicLinkVerifyContent() {
 							<>
 								<div className="text-5xl mb-4 text-primary">✓</div>
 								<h1 className="mb-2 text-primary">{t.success}</h1>
-								<p className="text-gray-700">{t.redirecting}</p>
+								<p className="text-muted-foreground">{t.redirecting}</p>
 							</>
 						)}
 
@@ -118,7 +118,7 @@ function MagicLinkVerifyContent() {
 							<>
 								<div className="text-5xl mb-4 text-(--color-error,#dc2626)">✗</div>
 								<h1 className="mb-4 text-(--color-error,#dc2626)">{t.error}</h1>
-								<p className="mb-8 text-gray-700">{errorMessage}</p>
+								<p className="mb-8 text-muted-foreground">{errorMessage}</p>
 								<Button className="mx-auto" onClick={() => router.push(`/${locale}/login`)}>
 									{t.backToLogin}
 								</Button>
@@ -136,8 +136,8 @@ export default function MagicLinkVerify() {
 		<Suspense
 			fallback={
 				<main>
-					<section>
-						<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-[500px] p-8">
+					<section className="flex min-h-svh items-center justify-center">
+						<div className="w-full max-w-[500px] p-8 text-center">
 							<div className="mb-6">
 								<Spinner size="lg" />
 							</div>

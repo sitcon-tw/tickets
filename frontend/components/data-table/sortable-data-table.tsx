@@ -14,14 +14,17 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
+import { getAriaSort } from "./data-table-column-header";
+
 type SortableRowData = RowData & { id: string };
 
 interface SortableRowProps<TData extends SortableRowData> {
 	row: Row<DataTableFeatures, TData>;
+	dragLabel: string;
 	children: React.ReactNode;
 }
 
-function SortableRow<TData extends SortableRowData>({ row, children }: SortableRowProps<TData>) {
+function SortableRow<TData extends SortableRowData>({ row, dragLabel, children }: SortableRowProps<TData>) {
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: row.original.id
 	});
@@ -35,7 +38,7 @@ function SortableRow<TData extends SortableRowData>({ row, children }: SortableR
 	return (
 		<TableRow ref={setNodeRef} style={style} data-state={row.getIsSelected() && "selected"}>
 			<TableCell className="w-8 p-2">
-				<div {...attributes} {...listeners} className="inline-flex cursor-grab touch-none rounded p-1 hover:bg-muted active:cursor-grabbing">
+				<div {...attributes} {...listeners} aria-label={dragLabel} className="inline-flex cursor-grab touch-none rounded p-1 hover:bg-muted active:cursor-grabbing">
 					<GripVertical className="h-4 w-4 text-muted-foreground" />
 				</div>
 			</TableCell>
@@ -47,7 +50,8 @@ function SortableRow<TData extends SortableRowData>({ row, children }: SortableR
 export function SortableDataTable<TData extends SortableRowData>({ columns, data, isLoading = false, emptyMessage, emptyState, getRowId }: DataTableProps<TData>) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
-		noResults: { "zh-Hant": "沒有符合的資料", en: "No results" }
+		noResults: { "zh-Hant": "沒有符合的資料", en: "No results" },
+		dragToReorder: { "zh-Hant": "拖曳以調整順序", en: "Drag to reorder" }
 	});
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -59,6 +63,7 @@ export function SortableDataTable<TData extends SortableRowData>({ columns, data
 		// Drag-reordering can't cross pages, so this table is never paginated.
 		initialState: { pagination: { pageIndex: 0, pageSize: Number.MAX_SAFE_INTEGER } },
 		state: { sorting },
+		autoResetPageIndex: false,
 		onSortingChange: setSorting
 	});
 
@@ -73,7 +78,7 @@ export function SortableDataTable<TData extends SortableRowData>({ columns, data
 							<TableRow key={headerGroup.id} className="hover:bg-transparent">
 								<TableHead className="w-8"></TableHead>
 								{headerGroup.headers.map(header => (
-									<TableHead key={header.id} colSpan={header.colSpan} className="whitespace-nowrap">
+									<TableHead key={header.id} colSpan={header.colSpan} aria-sort={header.isPlaceholder ? undefined : getAriaSort(header.column)} className="whitespace-nowrap">
 										{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
 									</TableHead>
 								))}
@@ -83,7 +88,7 @@ export function SortableDataTable<TData extends SortableRowData>({ columns, data
 					<TableBody>
 						{rows.length ? (
 							rows.map(row => (
-								<SortableRow key={row.id} row={row}>
+								<SortableRow key={row.id} row={row} dragLabel={t.dragToReorder}>
 									{row.getVisibleCells().map(cell => (
 										<TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
 									))}

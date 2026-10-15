@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { useRouter } from "@/i18n/navigation";
-import { eventsAPI, registrationsAPI } from "@/lib/api/endpoints";
+import { authAPI, eventsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { nowInUTC8, toUTC8 } from "@/lib/utils/timezone";
 import { Calendar, X } from "lucide-react";
@@ -76,9 +76,17 @@ export default function TodayEventNotification() {
 	});
 
 	useEffect(() => {
+		let cancelled = false;
+
 		const load = async () => {
 			try {
-				const [registrationsRes, eventsRes] = await Promise.all([registrationsAPI.getAll(), eventsAPI.getAll()]);
+				// Mounted for every visitor: only signed-in users have registrations, and this background check must never
+				// send anyone to the login page.
+				const session = await authAPI.getSession({ skipAuthRedirect: true });
+				if (cancelled || !session?.user) return;
+
+				const [registrationsRes, eventsRes] = await Promise.all([registrationsAPI.getAll({ skipAuthRedirect: true }), eventsAPI.getAll()]);
+				if (cancelled) return;
 
 				const publicEventsById = new Map(eventsRes.data.map(event => [event.id, event]));
 				const found: TodayEvent[] = [];
@@ -103,11 +111,14 @@ export default function TodayEventNotification() {
 					setVisible(true);
 				}
 			} catch {
-				// Silently fail — user may not be logged in
+				// Silently fail — the session may have expired in the meantime
 			}
 		};
 
 		void load();
+		return () => {
+			cancelled = true;
+		};
 	}, [locale]);
 
 	function hideForever(slug: string) {

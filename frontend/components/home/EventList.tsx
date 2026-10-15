@@ -23,6 +23,7 @@ export default function EventList() {
 	const { showAlert } = useAlert();
 	const [events, setEvents] = useState<PublicEventListItem[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [loadFailed, setLoadFailed] = useState(false);
 
 	const t = getTranslations(locale, {
 		title: {
@@ -32,8 +33,14 @@ export default function EventList() {
 		noEvents: {
 			"zh-Hant": "目前沒有活動",
 			en: "No events available"
+		},
+		loadFailed: {
+			"zh-Hant": "活動載入失敗，請重新整理頁面再試一次",
+			en: "Failed to load events. Please refresh the page and try again"
 		}
 	});
+
+	const failedMessage = t.loadFailed;
 
 	useEffect(() => {
 		async function fetchEvents() {
@@ -45,16 +52,19 @@ export default function EventList() {
 					const sortedEvents = sortEventsForDisplay(eventsData.data);
 
 					setEvents(sortedEvents);
-					setLoading(false);
+				} else {
+					setLoadFailed(true);
 				}
 			} catch {
-				showAlert("Failed to fetch events.", "error");
+				setLoadFailed(true);
+				showAlert(failedMessage, "error");
+			} finally {
 				setLoading(false);
 			}
 		}
 
 		void fetchEvents();
-	}, [showAlert]);
+	}, [showAlert, failedMessage]);
 
 	if (loading) {
 		return (
@@ -66,7 +76,11 @@ export default function EventList() {
 
 	return (
 		<div className="container mx-auto">
-			{events.length === 0 ? (
+			{loadFailed ? (
+				<div role="alert" className="text-center text-destructive py-12">
+					<p className="text-xl">{t.loadFailed}</p>
+				</div>
+			) : events.length === 0 ? (
 				<div className="text-center text-muted-foreground py-12">
 					<p className="text-xl">{t.noEvents}</p>
 				</div>

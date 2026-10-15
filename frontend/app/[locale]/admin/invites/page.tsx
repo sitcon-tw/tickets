@@ -16,7 +16,7 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
 import type { InvitationCode, Ticket } from "@sitcontix/types";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { Ban, Copy, Download, FileDown, Mail, Plus, Ticket as TicketIcon, X } from "lucide-react";
+import { Ban, Copy, Download, FileDown, Mail, Plus, RefreshCw, Ticket as TicketIcon, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -86,6 +86,7 @@ function useInvitesTranslations(locale: string) {
 				copyFailed: { "zh-Hant": "無法複製，請手動複製", en: "Could not copy to the clipboard" },
 				downloaded: { "zh-Hant": "已下載 {count} 個邀請碼", en: "Downloaded {count} codes" },
 				loadFailed: { "zh-Hant": "載入邀請碼失敗", en: "Failed to load invitation codes" },
+				retry: { "zh-Hant": "重試", en: "Retry" },
 				confirmDisableTitle: { "zh-Hant": "停用 {count} 個邀請碼？", en: "Disable {count} invitation codes?" },
 				confirmDisableDescription: {
 					"zh-Hant": "停用後這些邀請碼將無法再被兌換，已使用的紀錄不受影響。",
@@ -146,6 +147,7 @@ function InvitesContent({ eventId }: { eventId: string }) {
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 	const [loadedAt, setLoadedAt] = useState(0);
 	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [groupFilter, setGroupFilter] = useState(allValue);
@@ -168,9 +170,11 @@ function InvitesContent({ eventId }: { eventId: string }) {
 				setRawCodes(codesResponse.data ?? []);
 				setTickets(ticketsResponse.success ? (ticketsResponse.data ?? []) : []);
 				setLoadedAt(Date.now());
+				setLoadError(null);
 			} catch (error) {
 				if (requestId !== requestRef.current) return;
 				console.error("Failed to load invitation codes:", error);
+				setLoadError(errorMessage(error));
 				showAlert(`${t.loadFailed}: ${errorMessage(error)}`, "error");
 			} finally {
 				if (requestId === requestRef.current) setIsLoading(false);
@@ -415,13 +419,26 @@ function InvitesContent({ eventId }: { eventId: string }) {
 			<DataTable
 				columns={columns}
 				data={filtered}
+				resetPageKey={`${statusFilter}|${groupFilter}|${ticketFilter}|${searchTerm}`}
 				isLoading={isLoading}
 				getRowId={row => row.id}
 				rowSelection={rowSelection}
 				onRowSelectionChange={setRowSelection}
 				emptyMessage={t.noMatches}
 				emptyState={
-					hasRows ? undefined : (
+					hasRows ? undefined : loadError !== null ? (
+						<EmptyState
+							className="border-0"
+							title={t.loadFailed}
+							description={loadError !== t.loadFailed ? loadError : undefined}
+							action={
+								<Button variant="outline" size="sm" onClick={() => void loadData()}>
+									<RefreshCw className="size-4" />
+									{t.retry}
+								</Button>
+							}
+						/>
+					) : (
 						<EmptyState
 							className="border-0"
 							title={t.emptyTitle}
@@ -438,7 +455,18 @@ function InvitesContent({ eventId }: { eventId: string }) {
 			/>
 
 			{showCreate && <CreateCodesDialog tickets={tickets} onClose={() => setShowCreate(false)} onCreated={() => loadData(true)} />}
-			{emailCodes && <SendEmailDialog codes={emailCodes} onClose={() => setEmailCodes(null)} />}
+			{emailCodes && (
+				<SendEmailDialog
+					codes={emailCodes}
+					tickets={tickets}
+					eventId={eventId}
+					onClose={() => setEmailCodes(null)}
+					onSent={() => {
+						setRowSelection({});
+						void loadData(true);
+					}}
+				/>
+			)}
 		</main>
 	);
 }

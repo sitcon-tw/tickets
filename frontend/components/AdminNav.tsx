@@ -1,9 +1,11 @@
 "use client";
 
-import { AdminNavLayout } from "@/components/AdminNavLayout";
+import { AdminNavLayout, AdminNavPlaceholder } from "@/components/AdminNavLayout";
 import { getTranslations } from "@/i18n/helpers";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { adminEventsAPI, authAPI } from "@/lib/api/endpoints";
+import { useHydrated } from "@/lib/hooks/useHydrated";
+import { confirmNavigation } from "@/lib/hooks/useNavigationGuard";
 import { setSelectedEventId, useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import type { Event } from "@sitcontix/types";
 import { useLocale } from "next-intl";
@@ -30,21 +32,29 @@ function AdminNav() {
 
 	const [events, setEvents] = useState<Event[]>([]);
 	const [grantedPermissions, setGrantedPermissions] = useState<string[] | null>(null);
+	const [permissionsFailed, setPermissionsFailed] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot);
+	// isMobile is only known on the client; rendering before hydration would flash the desktop sidebar on phones.
+	const hydrated = useHydrated();
 	const currentEventId = useSelectedEventId();
 
 	const dataLoadedRef = useRef(false);
 
 	const loadPermissions = useCallback(async () => {
+		setPermissionsFailed(false);
 		try {
 			const response = await authAPI.getPermissions();
 			if (response.success && response.data) {
 				setGrantedPermissions(response.data.grantedPermissions);
+			} else {
+				console.error("Failed to load permissions:", response.message);
+				setPermissionsFailed(true);
 			}
 		} catch (error) {
 			console.error("Failed to load permissions:", error);
+			setPermissionsFailed(true);
 		}
 	}, []);
 
@@ -99,12 +109,22 @@ function AdminNav() {
 		if (!isMobile) setMobileMenuOpen(false);
 	}, [isMobile]);
 
-	const handleLocaleChange = (newLocale: string) => {
+	// Event, locale and logout changes don't go through a link, so ask pages with unsaved changes first.
+	const handleEventChange = async (eventId: string) => {
+		if (eventId === currentEventId) return;
+		if (!(await confirmNavigation())) return;
+		setSelectedEventId(eventId);
+	};
+
+	const handleLocaleChange = async (newLocale: string) => {
+		if (newLocale === locale) return;
+		if (!(await confirmNavigation())) return;
 		router.replace(pathname, { locale: newLocale });
 	};
 
 	const handleLogout = async () => {
 		if (isLoggingOut) return;
+		if (!(await confirmNavigation())) return;
 		setIsLoggingOut(true);
 		try {
 			await authAPI.signOut();
@@ -142,11 +162,18 @@ function AdminNav() {
 		backHome: { "zh-Hant": "回到首頁", en: "Back to Home" },
 		language: { "zh-Hant": "語言", en: "Language" },
 		openMenu: { "zh-Hant": "開啟選單", en: "Open menu" },
-		closeMenu: { "zh-Hant": "關閉選單", en: "Close menu" }
+		closeMenu: { "zh-Hant": "關閉選單", en: "Close menu" },
+		loadingMenu: { "zh-Hant": "正在載入選單…", en: "Loading menu…" },
+		menuLoadFailed: { "zh-Hant": "無法載入選單", en: "Could not load the menu" },
+		retry: { "zh-Hant": "重試", en: "Retry" }
 	});
 
 	if (!isAdminPage) {
 		return null;
+	}
+
+	if (!hydrated) {
+		return <AdminNavPlaceholder />;
 	}
 
 	return (
@@ -157,11 +184,14 @@ function AdminNav() {
 			currentEventId={currentEventId}
 			events={events}
 			grantedPermissions={grantedPermissions}
+			permissionsFailed={permissionsFailed}
 			isMobile={isMobile}
 			mobileMenuOpen={mobileMenuOpen}
 			isLoggingOut={isLoggingOut}
-			onLocaleChange={handleLocaleChange}
+			onEventChange={eventId => void handleEventChange(eventId)}
+			onLocaleChange={newLocale => void handleLocaleChange(newLocale)}
 			onLogout={() => void handleLogout()}
+			onRetryPermissions={() => void loadPermissions()}
 			onMobileMenuOpenChange={setMobileMenuOpen}
 		/>
 	);

@@ -60,8 +60,9 @@ export default function Nav() {
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const [{ isMobile, isScrolled, isMobileMenuOpen }, dispatchNavUi] = useReducer(navUiReducer, {
-		isMobile: typeof window !== "undefined" && window.innerWidth <= 768,
-		isScrolled: typeof window !== "undefined" && window.scrollY > 5,
+		// SSR-safe defaults; the real values are read in effects after hydration
+		isMobile: false,
+		isScrolled: false,
 		isMobileMenuOpen: false
 	});
 
@@ -73,7 +74,11 @@ export default function Nav() {
 		profile: { "zh-Hant": "個人資料", en: "Profile" },
 		userMenu: { "zh-Hant": "使用者選單", en: "User menu" },
 		logout: { "zh-Hant": "登出", en: "Logout" },
-		login: { "zh-Hant": "登入", en: "Login" }
+		login: { "zh-Hant": "登入", en: "Login" },
+		home: { "zh-Hant": "SITCONTIX 首頁", en: "SITCONTIX Home" },
+		userAvatar: { "zh-Hant": "使用者頭像", en: "User avatar" },
+		toggleMenu: { "zh-Hant": "切換選單", en: "Toggle menu" },
+		closeMenu: { "zh-Hant": "關閉選單", en: "Close menu" }
 	});
 
 	async function handleLogout() {
@@ -106,6 +111,7 @@ export default function Nav() {
 			dispatchNavUi({ type: "setMobile", isMobile: window.innerWidth <= 768 });
 		};
 
+		checkMobile();
 		window.addEventListener("resize", checkMobile);
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
@@ -179,6 +185,7 @@ export default function Nav() {
 			dispatchNavUi({ type: "setScrolled", isScrolled: window.scrollY > 5 });
 		}
 
+		handleScroll();
 		window.addEventListener("scroll", handleScroll, { passive: true });
 
 		return () => {
@@ -196,7 +203,7 @@ export default function Nav() {
 				className={`fixed top-0 left-0 z-1000 w-full bg-gray-600 ${isScrolled ? " dark:bg-gray-900/50 backdrop-blur-sm" : "dark:bg-gray-900 sm:dark:bg-transparent"} text-gray-200 dark:text-gray-300 border-b border-gray-700 dark:border-gray-800 transition-colors duration-250`}
 			>
 				<div className={`flex items-center justify-between w-full mx-auto px-4 py-4 ${isAdminPage ? "px-12" : "max-w-7xl"}`}>
-					<Link href="/" aria-label="SITCON Home" className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
+					<Link href="/" aria-label={t.home} className="flex items-center hover:opacity-80 transition-opacity translate-y-[-6%]">
 						<Image src={"/assets/SITCONTIX.svg"} width={162} height={32} alt="SITCONTIX" className="hidden sm:block" />
 						<Image src={"/assets/SITCON_WHITE.svg"} width={32} height={32} alt="SITCONTIX" className="sm:hidden" />
 					</Link>
@@ -209,7 +216,7 @@ export default function Nav() {
 										{isLoggingOut ? (
 											<Spinner size="sm" />
 										) : gravatarUrl ? (
-											<Image src={gravatarUrl} alt="User Avatar" width={32} height={32} className="w-8 h-8 rounded-full" />
+											<Image src={gravatarUrl} alt={t.userAvatar} width={32} height={32} className="w-8 h-8 rounded-full" />
 										) : (
 											<UserRound size={24} />
 										)}
@@ -265,7 +272,8 @@ export default function Nav() {
 								type="button"
 								onClick={() => dispatchNavUi({ type: "toggleMobileMenu" })}
 								className="burger-button p-2 text-gray-200 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-								aria-label="Toggle menu"
+								aria-label={t.toggleMenu}
+								aria-expanded={isMobileMenuOpen}
 							>
 								{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
 							</button>
@@ -291,14 +299,15 @@ export default function Nav() {
 					type="button"
 					className="fixed inset-0 z-200 bg-black/50 sm:hidden cursor-default"
 					onClick={() => dispatchNavUi({ type: "setMobileMenuOpen", isMobileMenuOpen: false })}
-					aria-label="Close menu"
+					aria-label={t.closeMenu}
 				/>
 			)}
 
 			{/* Mobile Menu */}
 			<div
+				inert={!isMobileMenuOpen}
 				className={cn(
-					"mobile-menu fixed top-[73px] right-0 z-300 h-[calc(100vh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
+					"mobile-menu fixed top-[73px] right-0 z-300 h-[calc(100dvh-73px)] w-64 bg-gray-600 dark:bg-gray-900 border-l border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out sm:hidden",
 					isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
 				)}
 			>
@@ -308,10 +317,10 @@ export default function Nav() {
 							<div className="flex flex-col space-y-4">
 								{gravatarUrl && (
 									<div className="flex items-center space-x-3 pb-4 border-b border-gray-700 dark:border-gray-800">
-										<Image src={gravatarUrl} alt="User Avatar" width={40} height={40} className="w-10 h-10 rounded-full" />
-										<div className="flex flex-col">
-											<span className="text-sm font-medium text-gray-200 dark:text-gray-300">{session.user.name}</span>
-											<span className="text-xs text-gray-400">{session.user.email}</span>
+										<Image src={gravatarUrl} alt={t.userAvatar} width={40} height={40} className="w-10 h-10 shrink-0 rounded-full" />
+										<div className="flex min-w-0 flex-col">
+											<span className="truncate text-sm font-medium text-gray-200 dark:text-gray-300">{session.user.name}</span>
+											<span className="truncate text-xs text-gray-400">{session.user.email}</span>
 										</div>
 									</div>
 								)}

@@ -3,7 +3,7 @@
 import { FormField } from "@/components/form/FormField";
 import Checkbox from "@/components/input/Checkbox";
 import Text from "@/components/input/Text";
-import PageSpinner from "@/components/PageSpinner";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -209,6 +209,18 @@ const formPageTranslations = {
 	autosaveRestored: {
 		"zh-Hant": "已自動恢復您之前填寫的表單資料",
 		en: "Your previously entered form data has been restored"
+	},
+	unknownError: {
+		"zh-Hant": "發生未知的錯誤",
+		en: "An unknown error occurred"
+	},
+	loadTicketFailed: {
+		"zh-Hant": "無法載入票種資訊",
+		en: "Failed to load ticket information"
+	},
+	loadFormFieldsFailed: {
+		"zh-Hant": "無法載入表單欄位",
+		en: "Failed to load form fields"
 	}
 };
 
@@ -284,7 +296,7 @@ function RegistrationFormView({
 
 				{loading && (
 					<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70">
-						<PageSpinner />
+						<Spinner size="lg" />
 						<p>{t.loadingForm}</p>
 					</div>
 				)}
@@ -293,14 +305,14 @@ function RegistrationFormView({
 					<div className="p-8 text-center">
 						{error.kind === "verification" ? (
 							<>
-								<p className="mb-4 text-red-600">{t.phoneVerificationRequired}</p>
+								<p className="mb-4 text-destructive">{t.phoneVerificationRequired}</p>
 								<Button asChild>
 									<Link href={verifyHref}>{t.verifyPhone}</Link>
 								</Button>
 							</>
 						) : (
 							<>
-								<p className="mb-4 text-red-600">
+								<p className="mb-4 text-destructive">
 									{error.kind === "failed" && t.loadFormFailed}
 									{error.message}
 								</p>
@@ -398,6 +410,7 @@ export default function FormPage() {
 	const [hold, setHold] = useState<{ id: string; expiresAt: number } | null>(null);
 	const [holdNow, setHoldNow] = useState(() => Date.now());
 	const holdRequestRef = useRef<ReturnType<typeof registrationsAPI.hold> | null>(null);
+	const holdExpiryHandledRef = useRef(false);
 	const eventIdRef = useRef<string | null>(null);
 	const invitationCodeRef = useRef("");
 	const autosaveRestoredRef = useRef(false);
@@ -443,11 +456,15 @@ export default function FormPage() {
 		return () => clearInterval(timer);
 	}, [holdExpiresAt]);
 
+	const isHoldExpired = holdRemainingMs !== null && holdRemainingMs <= 0;
+
 	useEffect(() => {
-		if (holdRemainingMs === null || holdRemainingMs > 0) return;
+		// Handle expiry only once, and never while a submission is in flight (the server decides that one).
+		if (!isHoldExpired || isSubmitting || holdExpiryHandledRef.current) return;
+		holdExpiryHandledRef.current = true;
 		showAlert(t.holdExpired, "warning");
 		router.push(eventPath);
-	}, [holdRemainingMs, showAlert, router, eventPath, t.holdExpired]);
+	}, [isHoldExpired, isSubmitting, showAlert, router, eventPath, t.holdExpired]);
 
 	async function handleBack() {
 		// Give the seat back right away instead of waiting for the hold to expire
@@ -526,7 +543,7 @@ export default function FormPage() {
 					showAlert(t.formChanged, "warning");
 				}
 			} else {
-				showAlert(t.registrationFailedAlert + (error instanceof Error ? error.message : "Unknown error"), "error");
+				showAlert(t.registrationFailedAlert + (error instanceof Error && error.message ? error.message : t.unknownError), "error");
 			}
 			dispatchFormPage({ type: "submitFailed" });
 		}
@@ -566,7 +583,7 @@ export default function FormPage() {
 				invitationCodeRef.current = parsedData.invitationCode || "";
 
 				if (!ticketResponse.success) {
-					throw new Error(ticketResponse.message || "Failed to load ticket information");
+					throw new Error(ticketResponse.message || t.loadTicketFailed);
 				}
 
 				const ticket = ticketResponse.data;
@@ -606,25 +623,25 @@ export default function FormPage() {
 					setHoldNow(Date.now());
 				} catch (error) {
 					holdRequestRef.current = null;
-					const message = error instanceof Error ? error.message : "Unknown error";
+					const message = error instanceof Error && error.message ? error.message : t.unknownError;
 					dispatchFormPage({ type: "unavailable", message: message.includes("已售完") ? t.ticketSoldOut : message });
 					return;
 				}
 
 				const formFieldsData = await ticketsAPI.getFormFields(parsedData.ticketId);
 				if (!formFieldsData.success) {
-					throw new Error(formFieldsData.message || "Failed to load form fields");
+					throw new Error(formFieldsData.message || t.loadFormFieldsFailed);
 				}
 
 				dispatchFormPage({ type: "formLoaded", formFields: normalizeTicketFormFields(formFieldsData.data || [], parsedData.eventId), ticketName: ticket.name });
 			} catch (error) {
 				console.error("Failed to initialize form:", error);
-				dispatchFormPage({ type: "loadFailed", message: error instanceof Error ? error.message : "Unknown error" });
+				dispatchFormPage({ type: "loadFailed", message: error instanceof Error && error.message ? error.message : t.unknownError });
 			}
 		}
 
 		void initForm();
-	}, [eventSlug, t.noTicketAlert, t.eventNotFound, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut]);
+	}, [eventSlug, t.noTicketAlert, t.eventNotFound, t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, t.unknownError, t.loadTicketFailed, t.loadFormFieldsFailed]);
 
 	// Look up who the code belongs to so the form can show the referrer next to it.
 	useEffect(() => {

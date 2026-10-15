@@ -14,11 +14,13 @@ import { formatDateTime } from "@/lib/utils/timezone";
 import type { EventFormField } from "@sitcontix/types";
 import { Check, Copy, Pencil, Trash } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { RegistrationsT } from "./translations";
 import { formatFormValue, getFormDataEntries, getReferrer, registrationStatuses, statusTone, type AdminRegistration, type FormDataEntry, type RegistrationStatus } from "./utils";
 
 export type RegistrationChanges = { status?: RegistrationStatus; formData?: Record<string, unknown> };
+
+type BodyState = { dirty: boolean; busy: boolean };
 
 type DetailDialogProps = {
 	registration: AdminRegistration | null;
@@ -35,15 +37,28 @@ type DetailDialogProps = {
 
 export function RegistrationDetailDialog(props: DetailDialogProps) {
 	const { registration, onClose, t } = props;
+	const confirm = useConfirm();
+	const bodyStateRef = useRef<BodyState>({ dirty: false, busy: false });
+	const reportBodyState = useCallback((state: BodyState) => {
+		bodyStateRef.current = state;
+	}, []);
+
+	// Esc, the overlay and the X button: never close mid-save, and ask before throwing away edits.
+	async function requestClose() {
+		const { dirty, busy } = bodyStateRef.current;
+		if (busy) return;
+		if (dirty && !(await confirm({ title: t.discardTitle, description: t.discardDescription, destructive: true, confirmLabel: t.discard, cancelLabel: t.keepEditing }))) return;
+		onClose();
+	}
 
 	return (
-		<Dialog open={registration !== null} onOpenChange={open => !open && onClose()}>
+		<Dialog open={registration !== null} onOpenChange={open => !open && void requestClose()}>
 			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>{t.registrationDetails}</DialogTitle>
 					<DialogDescription className="break-all">{registration?.email}</DialogDescription>
 				</DialogHeader>
-				{registration && <DetailBody key={registration.id} {...props} registration={registration} />}
+				{registration && <DetailBody key={registration.id} {...props} registration={registration} onStateChange={reportBodyState} />}
 			</DialogContent>
 		</Dialog>
 	);
@@ -76,7 +91,17 @@ function CopyButton({ text, label, copiedLabel, copied, onCopy }: { text: string
 	);
 }
 
-function DetailBody({ registration, ticketHash, formFields, locale, t, onClose, onSave, onDelete }: DetailDialogProps & { registration: AdminRegistration }) {
+function DetailBody({
+	registration,
+	ticketHash,
+	formFields,
+	locale,
+	t,
+	onClose,
+	onSave,
+	onDelete,
+	onStateChange
+}: DetailDialogProps & { registration: AdminRegistration; onStateChange: (state: BodyState) => void }) {
 	const { showAlert } = useAlert();
 	const confirm = useConfirm();
 
@@ -96,6 +121,13 @@ function DetailBody({ registration, ticketHash, formFields, locale, t, onClose, 
 	const entries = getFormDataEntries(registration.formData, formFields, locale);
 	const busy = isSaving || isDeleting;
 	const referrer = getReferrer(registration);
+	const isDirty = isEditing && (status !== registration.status || JSON.stringify(drafts) !== JSON.stringify(initDrafts(registration)));
+	const priceFormatter = new Intl.NumberFormat(locale, { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
+
+	useEffect(() => {
+		onStateChange({ dirty: isDirty, busy });
+		return () => onStateChange({ dirty: false, busy: false });
+	}, [isDirty, busy, onStateChange]);
 
 	async function copy(text: string) {
 		try {
@@ -239,7 +271,7 @@ function DetailBody({ registration, ticketHash, formFields, locale, t, onClose, 
 					{registration.ticket && (
 						<Field label={t.ticket}>
 							<div>{getLocalizedText(registration.ticket.name, locale)}</div>
-							<div className="text-muted-foreground">{registration.ticket.price > 0 ? `${t.price}: $${registration.ticket.price}` : t.free}</div>
+							<div className="text-muted-foreground">{registration.ticket.price > 0 ? `${t.price}: ${priceFormatter.format(registration.ticket.price)}` : t.free}</div>
 						</Field>
 					)}
 					{registration.event && (

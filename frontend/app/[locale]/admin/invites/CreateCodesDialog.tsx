@@ -16,7 +16,7 @@ import type { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 
-import { errorMessage, parseTaipeiInput, runInChunks } from "./lib";
+import { codesFromCsv, errorMessage, parseTaipeiInput, runInChunks } from "./lib";
 
 type Mode = "generate" | "import";
 
@@ -51,6 +51,10 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 		count: { "zh-Hant": "產生數量", en: "Number of codes" },
 		countHelp: { "zh-Hant": "每次最多 {max} 個，會產生 6 碼隨機代碼。", en: "Up to {max} at a time, each a random 6-character code." },
 		uploadFile: { "zh-Hant": "上傳文字檔（.txt / .csv）", en: "Upload a text file (.txt / .csv)" },
+		uploadFileHelp: {
+			"zh-Hant": "CSV 檔只會讀取標題為 code 的欄位（沒有標題時讀取第一欄）。",
+			en: "For CSV files only the column headed “code” is read (or the first column if there is no header)."
+		},
 		codes: { "zh-Hant": "邀請碼", en: "Codes" },
 		codesHelp: { "zh-Hant": "每行一個邀請碼，重複的代碼會自動略過。", en: "One code per line. Duplicates are ignored." },
 		codesPlaceholder: {
@@ -110,7 +114,12 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 		const file = e.target.files?.[0];
 		if (!file) return;
 		const reader = new FileReader();
-		reader.onload = event => setCodesText(typeof event.target?.result === "string" ? event.target.result : "");
+		const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+		reader.onload = event => {
+			const text = typeof event.target?.result === "string" ? event.target.result : "";
+			// A CSV row has other columns too (group, ticket, links...), so only keep the code column.
+			setCodesText(isCsv ? codesFromCsv(text).join("\n") : text);
+		};
 		reader.readAsText(file);
 		e.target.value = "";
 	}
@@ -194,7 +203,7 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 
 	return (
 		<Dialog open onOpenChange={open => !open && !isSaving && onClose()}>
-			<DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>{t.title}</DialogTitle>
 					<DialogDescription>{t.description}</DialogDescription>
@@ -226,7 +235,10 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="invite-file">{t.uploadFile}</Label>
-								<Input id="invite-file" type="file" accept=".txt,.csv,text/plain,text/csv" onChange={handleFile} />
+								<Input id="invite-file" type="file" accept=".txt,.csv,text/plain,text/csv" onChange={handleFile} aria-describedby="invite-file-help" />
+								<p id="invite-file-help" className="text-xs text-muted-foreground">
+									{t.uploadFileHelp}
+								</p>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="invite-codes">{t.codes} *</Label>

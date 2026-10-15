@@ -8,7 +8,7 @@ import { WelcomeProps } from "@/lib/types/components";
 import { useLocale } from "next-intl";
 import { useEffect, useReducer, useState } from "react";
 
-type WelcomeState = "notloggedin" | "registered" | "referral" | "default";
+type WelcomeState = "loading" | "notloggedin" | "registered" | "referral" | "default";
 type WelcomeViewState = {
 	welcomeState: WelcomeState;
 	isSmsVerified: boolean;
@@ -43,7 +43,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 	const router = useRouter();
 
 	const [{ welcomeState, isSmsVerified, isLoggedIn }, dispatchWelcomeView] = useReducer(welcomeViewReducer, {
-		welcomeState: "notloggedin",
+		welcomeState: "loading",
 		isSmsVerified: false,
 		isLoggedIn: false
 	});
@@ -166,6 +166,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 
 	return (
 		<section className="pb-4">
+			{welcomeState === "loading" && (
+				<div className="flex flex-col items-center gap-3" aria-busy="true" aria-label={t.loading}>
+					<div className="h-8 w-64 max-w-full animate-pulse rounded-md bg-muted" />
+					<div className="h-9 w-28 animate-pulse rounded-md bg-muted" />
+				</div>
+			)}
+
 			{welcomeState === "registered" && (
 				<section className={`text-center animate-[fadeInUp_0.5s_ease-out]`}>
 					<h2 className="text-2xl mb-2 text-gray-900 dark:text-gray-100">{t.registeredWelcome}</h2>
@@ -194,7 +201,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 							<p>{t.haveNotVerifySMS1}</p>
 							<p>{t.haveNotVerifySMS2}</p>
 							<Button
-								className="text-gray-900 dark:text-gray-100 mt-3"
+								className="mt-3"
 								onClick={() => {
 									router.push(`/verify`);
 								}}
@@ -217,7 +224,7 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 								<p>{t.haveNotVerifySMS1}</p>
 								<p>{t.haveNotVerifySMS2}</p>
 								<Button
-									className="text-gray-900 dark:text-gray-100 mt-3"
+									className="mt-3"
 									onClick={() => {
 										router.push(`/verify`);
 									}}
@@ -230,13 +237,13 @@ export default function Welcome({ eventId, eventSlug }: WelcomeProps) {
 				</>
 			)}
 
-			{welcomeState === "notloggedin" && (
+			{(welcomeState === "notloggedin" || (welcomeState === "referral" && !isLoggedIn)) && (
 				<>
-					<h2 className="text-2xl mb-4 text-gray-900 dark:text-gray-100 text-center">{t.loginToRegister}</h2>
+					<h2 className={`text-2xl mb-4 text-gray-900 dark:text-gray-100 text-center ${welcomeState === "referral" ? "mt-6" : ""}`}>{t.loginToRegister}</h2>
 					<div className="items-center justify-center flex">
 						<Button
 							onClick={() => {
-								router.push(`/login`);
+								router.push(`/login/?returnUrl=${encodeURIComponent(`/${locale}/${eventSlug}`)}`);
 							}}
 						>
 							{t.login}

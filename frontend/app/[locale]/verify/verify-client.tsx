@@ -4,11 +4,12 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useReducer, useRef } from "react";
+import { safeReturnPath } from "../login/safe-return-path";
 
 const verificationCodeSlots = [
 	{ id: "first", index: 0 },
@@ -18,6 +19,9 @@ const verificationCodeSlots = [
 	{ id: "fifth", index: 4 },
 	{ id: "sixth", index: 5 }
 ] as const;
+
+const CODE_LENGTH = verificationCodeSlots.length;
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
 
 function formatPhoneNumber(value: string) {
 	const digits = value.replace(/\D/g, "");
@@ -54,7 +58,8 @@ type VerifyAction =
 	| { type: "phoneChanged"; phoneNumber: string }
 	| { type: "turnstileChanged"; token: string | null }
 	| { type: "sendStarted" }
-	| { type: "sendFailed"; error: string; resetToPhone?: boolean }
+	| { type: "inputInvalid"; error: string }
+	| { type: "sendFailed"; error: string }
 	| { type: "sendSucceeded" }
 	| { type: "codeChanged"; code: string[] }
 	| { type: "verifyStarted" }
@@ -72,14 +77,12 @@ function verifyReducer(state: VerifyState, action: VerifyAction): VerifyState {
 			return { ...state, turnstileToken: action.token };
 		case "sendStarted":
 			return { ...state, sendingCode: true, error: "" };
+		case "inputInvalid":
+			// Nothing was sent, so the Turnstile token is still unused and stays valid
+			return { ...state, sendingCode: false, error: action.error };
 		case "sendFailed":
-			return {
-				...state,
-				sendingCode: false,
-				error: action.error,
-				turnstileToken: null,
-				step: action.resetToPhone ? "phone" : state.step
-			};
+			// The token was spent on the request; the widget has to be reset to issue a new one
+			return { ...state, sendingCode: false, error: action.error, turnstileToken: null };
 		case "sendSucceeded":
 			return {
 				...state,
@@ -200,6 +203,18 @@ const verifyPageTranslations = {
 	continue: {
 		"zh-Hant": "繼續",
 		en: "Continue"
+	},
+	completeVerification: {
+		"zh-Hant": "請完成驗證",
+		en: "Please complete the verification"
+	},
+	sendFailed: {
+		"zh-Hant": "無法發送驗證碼，請稍後再試",
+		en: "Failed to send verification code"
+	},
+	resendFailed: {
+		"zh-Hant": "無法重新發送驗證碼，請稍後再試",
+		en: "Failed to resend verification code"
 	}
 };
 
@@ -211,6 +226,7 @@ function PhoneStep({
 	error,
 	sendingCode,
 	turnstileToken,
+	turnstileRef,
 	onPhoneChange,
 	onSendCode,
 	dispatchVerify
@@ -220,6 +236,7 @@ function PhoneStep({
 	error: string;
 	sendingCode: boolean;
 	turnstileToken: string | null;
+	turnstileRef: React.RefObject<TurnstileInstance | null>;
 	onPhoneChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	onSendCode: () => void;
 	dispatchVerify: React.Dispatch<VerifyAction>;
@@ -231,7 +248,7 @@ function PhoneStep({
 					<MessageSquare size={32} />
 				</div>
 				<h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{t.title}</h2>
-				<p className="text-gray-400 text-sm">{t.description}</p>
+				<p className="text-muted-foreground text-sm">{t.description}</p>
 			</div>
 
 			<div className="justify-center items-center flex flex-col">
@@ -244,30 +261,27 @@ function PhoneStep({
 						type="tel"
 						value={phoneNumber}
 						onChange={onPhoneChange}
+						autoComplete="tel-national"
+						aria-invalid={error ? true : undefined}
+						aria-describedby={error ? "phone-number-error" : undefined}
 						placeholder="09XX-XXX-XXX"
-						className={`w-xs bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-md py-2 px-3
+						className={`w-xs bg-gray-300/50 dark:bg-gray-700/50 border-2 rounded-md text-gray-700 dark:text-white text-base py-2 px-3
 							transition-all duration-200 outline-none
 							${error ? "border-red-500" : "border-gray-600"}
 							focus:border-gray-400 focus:ring-2 focus:ring-gray-400/20
 							placeholder-gray-500`}
 						onKeyDown={e => e.key === "Enter" && onSendCode()}
 					/>
-					{error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+					{error && (
+						<p id="phone-number-error" className="text-destructive text-sm mt-2">
+							{error}
+						</p>
+					)}
 				</div>
 			</div>
 
 			<div className="flex justify-center mb-6">
-				<Turnstile
-					siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
-					onSuccess={token => dispatchVerify({ type: "turnstileChanged", token })}
-					onError={() => dispatchVerify({ type: "turnstileChanged", token: null })}
-					onExpire={() => dispatchVerify({ type: "turnstileChanged", token: null })}
-					options={{
-						action: "sms-verification",
-						theme: "dark",
-						size: "normal"
-					}}
-				/>
+				<VerifyTurnstile turnstileRef={turnstileRef} dispatchVerify={dispatchVerify} />
 			</div>
 
 			<div className="flex justify-center">
@@ -297,6 +311,23 @@ function PhoneStep({
 	);
 }
 
+function VerifyTurnstile({ turnstileRef, dispatchVerify }: { turnstileRef: React.RefObject<TurnstileInstance | null>; dispatchVerify: React.Dispatch<VerifyAction> }) {
+	return (
+		<Turnstile
+			ref={turnstileRef}
+			siteKey={TURNSTILE_SITE_KEY}
+			onSuccess={token => dispatchVerify({ type: "turnstileChanged", token })}
+			onError={() => dispatchVerify({ type: "turnstileChanged", token: null })}
+			onExpire={() => dispatchVerify({ type: "turnstileChanged", token: null })}
+			options={{
+				action: "sms-verification",
+				theme: "auto",
+				size: "normal"
+			}}
+		/>
+	);
+}
+
 function VerifiedStep({ t, onContinue }: { t: VerifyTranslations; onContinue: () => void }) {
 	return (
 		<div className="text-center py-4">
@@ -321,6 +352,9 @@ function CodeStep({
 	sendingCode,
 	error,
 	countdown,
+	turnstileToken,
+	turnstileRef,
+	dispatchVerify,
 	codeInputRefs,
 	onCodeChange,
 	onCodeKeyDown,
@@ -335,6 +369,9 @@ function CodeStep({
 	sendingCode: boolean;
 	error: string;
 	countdown: number;
+	turnstileToken: string | null;
+	turnstileRef: React.RefObject<TurnstileInstance | null>;
+	dispatchVerify: React.Dispatch<VerifyAction>;
 	codeInputRefs: React.MutableRefObject<(HTMLInputElement | null)[]>;
 	onCodeChange: (index: number, value: string) => void;
 	onCodeKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -364,7 +401,8 @@ function CodeStep({
 							}}
 							type="text"
 							inputMode="numeric"
-							maxLength={1}
+							// No maxLength: an autofilled one-time code arrives in a single box and is spread over the others
+							autoComplete="one-time-code"
 							aria-label={`${t.codeLabel} ${slot.index + 1}`}
 							value={verificationCode[slot.index]}
 							onChange={e => onCodeChange(slot.index, e.target.value)}
@@ -381,7 +419,7 @@ function CodeStep({
 					))}
 				</div>
 
-				{error && <p className="text-red-400 text-sm text-center mt-3">{error}</p>}
+				{error && <p className="text-destructive text-sm text-center mt-3">{error}</p>}
 
 				{loading && (
 					<div className="flex items-center justify-center gap-2 mt-4">
@@ -402,9 +440,18 @@ function CodeStep({
 						</span>
 					</p>
 				) : (
-					<Button variant="link" onClick={onResend} disabled={sendingCode} className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline h-auto p-0">
-						{sendingCode ? "Sending..." : t.resendCode}
-					</Button>
+					<div className="flex flex-col items-center gap-3">
+						{/* Every send spends a Turnstile token, so a resend needs a fresh challenge of its own */}
+						<VerifyTurnstile turnstileRef={turnstileRef} dispatchVerify={dispatchVerify} />
+						<Button
+							variant="link"
+							onClick={onResend}
+							disabled={sendingCode || !turnstileToken}
+							className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline h-auto p-0"
+						>
+							{sendingCode ? t.sendingCode : t.resendCode}
+						</Button>
+					</div>
 				)}
 			</div>
 
@@ -421,7 +468,10 @@ function VerifyPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-	const redirectUrl = searchParams.get("redirect") || `/${locale}/`;
+	const turnstileRef = useRef<TurnstileInstance>(null);
+	// Set when a failed verification should move focus back to the first box once the inputs are enabled again
+	const focusFirstCodeInputRef = useRef(false);
+	const redirectUrl = safeReturnPath(searchParams.get("redirect"), locale);
 
 	const [{ step, phoneNumber, verificationCode, loading, sendingCode, error, countdown, isVerified, turnstileToken }, dispatchVerify] = useReducer(verifyReducer, {
 		step: "phone",
@@ -447,12 +497,12 @@ function VerifyPageContent() {
 		dispatchVerify({ type: "sendStarted" });
 
 		if (!isValidPhone(phoneNumber)) {
-			dispatchVerify({ type: "sendFailed", error: t.invalidPhoneNumber });
+			dispatchVerify({ type: "inputInvalid", error: t.invalidPhoneNumber });
 			return;
 		}
 
 		if (!turnstileToken) {
-			dispatchVerify({ type: "sendFailed", error: "請完成驗證" });
+			dispatchVerify({ type: "inputInvalid", error: t.completeVerification });
 			return;
 		}
 
@@ -471,22 +521,56 @@ function VerifyPageContent() {
 		} catch (err) {
 			const error = err as Error;
 			console.error("Failed to send SMS:", error);
-			dispatchVerify({ type: "sendFailed", error: error.message || "Failed to send verification code" });
+			dispatchVerify({ type: "sendFailed", error: error.message || t.sendFailed });
+			turnstileRef.current?.reset();
+		}
+	}
+
+	/** Spreads several digits over the boxes from `start` (a paste or an autofilled one-time code) and verifies once all are filled. */
+	function fillCode(digits: string, start: number) {
+		const newCode = [...verificationCode];
+		digits
+			.slice(0, CODE_LENGTH - start)
+			.split("")
+			.forEach((char, i) => {
+				newCode[start + i] = char;
+			});
+		dispatchVerify({ type: "codeChanged", code: newCode });
+
+		const nextEmpty = newCode.findIndex(digit => digit === "");
+		if (nextEmpty !== -1) {
+			codeInputRefs.current[nextEmpty]?.focus();
+		} else {
+			codeInputRefs.current[CODE_LENGTH - 1]?.focus();
+			void verifyCode(newCode.join(""));
 		}
 	}
 
 	function handleCodeChange(index: number, value: string) {
-		if (!/^\d*$/.test(value)) return;
+		const digits = value.replace(/\D/g, "");
+		if (value !== "" && digits === "") return;
+
+		const current = verificationCode[index];
+		// SMS autofill (autocomplete="one-time-code") drops the whole code into whichever box is focused
+		if (digits.length >= CODE_LENGTH) {
+			fillCode(digits, 0);
+			return;
+		}
+		if (digits.length > 1 && !current) {
+			fillCode(digits, index);
+			return;
+		}
 
 		const newCode = [...verificationCode];
-		newCode[index] = value.slice(-1);
+		// Typing into a filled box yields the old digit plus the new one, on either side of it
+		newCode[index] = digits.length === 2 && current ? (digits[0] === current ? digits[1] : digits[0]) : digits.slice(-1);
 		dispatchVerify({ type: "codeChanged", code: newCode });
 
-		if (value && index < 5) {
+		if (digits && index < CODE_LENGTH - 1) {
 			codeInputRefs.current[index + 1]?.focus();
 		}
 
-		if (newCode.every(digit => digit !== "") && newCode.join("").length === 6) {
+		if (newCode.every(digit => digit !== "") && newCode.join("").length === CODE_LENGTH) {
 			void verifyCode(newCode.join(""));
 		}
 	}
@@ -501,22 +585,10 @@ function VerifyPageContent() {
 
 	function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
 		e.preventDefault();
-		const pastedData = e.clipboardData.getData("text").slice(0, 6);
+		const pastedData = e.clipboardData.getData("text").trim();
 		if (!/^\d+$/.test(pastedData)) return;
 
-		const newCode = [...verificationCode];
-		pastedData.split("").forEach((char, i) => {
-			if (i < 6) newCode[i] = char;
-		});
-		dispatchVerify({ type: "codeChanged", code: newCode });
-
-		const nextEmpty = newCode.findIndex(digit => digit === "");
-		if (nextEmpty !== -1) {
-			codeInputRefs.current[nextEmpty]?.focus();
-		} else {
-			codeInputRefs.current[5]?.focus();
-			void verifyCode(newCode.join(""));
-		}
+		fillCode(pastedData, 0);
 	}
 
 	async function verifyCode(codeStr: string) {
@@ -546,7 +618,8 @@ function VerifyPageContent() {
 			const error = err as Error;
 			console.error("Verification failed:", error);
 			dispatchVerify({ type: "verifyFailed", error: error.message || t.verifyFail });
-			codeInputRefs.current[0]?.focus();
+			// The boxes are still disabled at this point; the effect below focuses the first one once they are enabled
+			focusFirstCodeInputRef.current = true;
 		}
 	}
 
@@ -554,7 +627,7 @@ function VerifyPageContent() {
 		dispatchVerify({ type: "sendStarted" });
 
 		if (!turnstileToken) {
-			dispatchVerify({ type: "sendFailed", error: "請完成驗證", resetToPhone: true });
+			dispatchVerify({ type: "inputInvalid", error: t.completeVerification });
 			return;
 		}
 
@@ -574,7 +647,8 @@ function VerifyPageContent() {
 		} catch (err) {
 			const error = err as Error;
 			console.error("Failed to resend SMS:", error);
-			dispatchVerify({ type: "sendFailed", error: error.message || "Failed to resend verification code" });
+			dispatchVerify({ type: "sendFailed", error: error.message || t.resendFailed });
+			turnstileRef.current?.reset();
 		}
 	}
 
@@ -585,6 +659,13 @@ function VerifyPageContent() {
 	const handleContinue = () => {
 		router.push(redirectUrl);
 	};
+
+	useEffect(() => {
+		if (!loading && focusFirstCodeInputRef.current) {
+			focusFirstCodeInputRef.current = false;
+			codeInputRefs.current[0]?.focus();
+		}
+	}, [loading]);
 
 	useEffect(() => {
 		if (countdown > 0) {
@@ -605,6 +686,7 @@ function VerifyPageContent() {
 								error={error}
 								sendingCode={sendingCode}
 								turnstileToken={turnstileToken}
+								turnstileRef={turnstileRef}
 								onPhoneChange={handlePhoneChange}
 								onSendCode={handleSendCode}
 								dispatchVerify={dispatchVerify}
@@ -619,6 +701,9 @@ function VerifyPageContent() {
 								sendingCode={sendingCode}
 								error={error}
 								countdown={countdown}
+								turnstileToken={turnstileToken}
+								turnstileRef={turnstileRef}
+								dispatchVerify={dispatchVerify}
 								codeInputRefs={codeInputRefs}
 								onCodeChange={handleCodeChange}
 								onCodeKeyDown={handleCodeKeyDown}

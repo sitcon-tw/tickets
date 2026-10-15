@@ -1,6 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/components/admin/EmptyState";
+import { PageSkeleton } from "@/components/admin/PageSkeleton";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import AdminHeader from "@/components/AdminHeader";
 import { SortableDataTable } from "@/components/data-table/sortable-data-table";
@@ -8,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors, type Announcements } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import type { Ticket } from "@sitcontix/types";
-import { CalendarDays, Plus, RefreshCw, Ticket as TicketIcon } from "lucide-react";
+import { CalendarDays, CircleAlert, Plus, RefreshCw, Ticket as TicketIcon } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from "react";
 import { createTicketsColumns, type TicketDisplay } from "./columns";
@@ -100,6 +102,7 @@ export default function TicketsPage() {
 	const { showAlert } = useAlert();
 	const confirm = useConfirm();
 	const eventId = useSelectedEventId();
+	const hydrated = useHydrated();
 
 	const [state, dispatch] = useReducer(ticketsPageReducer, initialTicketsPageState);
 	const { tickets, isLoading, loadError, showModal, editingTicket, showLinkModal, selectedTicketForLink, isSorting } = state;
@@ -152,6 +155,8 @@ export default function TicketsPage() {
 		emptyDescription: { "zh-Hant": "新增第一個票種，讓參加者可以報名。", en: "Add your first ticket type so attendees can register." },
 		loadFailedTitle: { "zh-Hant": "無法載入票種", en: "Could not load ticket types" },
 		retry: { "zh-Hant": "重試", en: "Retry" },
+		refreshFailed: { "zh-Hant": "無法重新載入票種，目前顯示的可能不是最新資料：", en: "Could not reload ticket types; the list below may be out of date: " },
+		unknownError: { "zh-Hant": "未知的錯誤", en: "Unknown error" },
 		deleteTitle: { "zh-Hant": "刪除票種", en: "Delete ticket type" },
 		deleteConfirm: {
 			"zh-Hant": "確定要刪除「{name}」嗎？此操作無法復原；已有報名的票種無法刪除。",
@@ -175,6 +180,12 @@ export default function TicketsPage() {
 		eventIdRef.current = eventId;
 	}, [eventId]);
 
+	// loadTickets is stable (it must not re-trigger the load effect), so it reads the fallback message from a ref.
+	const unknownErrorRef = useRef(t.unknownError);
+	useEffect(() => {
+		unknownErrorRef.current = t.unknownError;
+	});
+
 	const loadTickets = useCallback(async (targetEventId: string, { silent = false }: { silent?: boolean } = {}) => {
 		const requestId = ++requestRef.current;
 		if (!silent) dispatch({ type: "loadStarted" });
@@ -182,7 +193,7 @@ export default function TicketsPage() {
 		try {
 			const response = await adminTicketsAPI.getAll({ eventId: targetEventId });
 			if (requestRef.current !== requestId) return;
-			if (!response.success) throw new Error(response.message);
+			if (!response.success) throw new Error(response.message || unknownErrorRef.current);
 			const sorted = [...(response.data || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 			dispatch({ type: "ticketsLoaded", tickets: sorted });
 		} catch (error) {
@@ -246,7 +257,7 @@ export default function TicketsPage() {
 
 			try {
 				const response = await adminTicketsAPI.delete(ticket.id);
-				if (!response.success) throw new Error(response.message);
+				if (!response.success) throw new Error(response.message || t.unknownError);
 				showAlert(t.deleted, "success");
 			} catch (error) {
 				showAlert(t.deleteFailed + errorMessage(error), "error");
@@ -254,7 +265,7 @@ export default function TicketsPage() {
 			}
 			await refreshTickets();
 		},
-		[confirm, locale, refreshTickets, showAlert, t.deleteConfirm, t.deleteFailed, t.deleteTitle, t.deleted]
+		[confirm, locale, refreshTickets, showAlert, t.deleteConfirm, t.deleteFailed, t.deleteTitle, t.deleted, t.unknownError]
 	);
 
 	const persistOrder = useCallback(
@@ -267,7 +278,7 @@ export default function TicketsPage() {
 			dispatch({ type: "setSorting", value: true });
 			try {
 				const response = await adminTicketsAPI.reorder({ tickets: reordered.map(ticket => ({ id: ticket.id, order: ticket.order ?? 0 })) });
-				if (!response.success) throw new Error(response.message);
+				if (!response.success) throw new Error(response.message || t.unknownError);
 				if (eventIdRef.current === targetEventId) showAlert(t.orderSaved, "success");
 			} catch (error) {
 				// Roll back the optimistic update, unless the user has switched event in the meantime.
@@ -278,7 +289,7 @@ export default function TicketsPage() {
 				dispatch({ type: "setSorting", value: false });
 			}
 		},
-		[showAlert, t.orderSaved, t.reorderFailed]
+		[showAlert, t.orderSaved, t.reorderFailed, t.unknownError]
 	);
 
 	function handleDragEnd(event: DragEndEvent) {
@@ -319,6 +330,7 @@ export default function TicketsPage() {
 
 	const ticketsWithStatus = useMemo((): TicketDisplay[] => {
 		const now = new Date();
+		const priceFormatter = new Intl.NumberFormat(locale, { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
 		return tickets.map(ticket => {
 			const status =
 				ticket.saleStart && new Date(ticket.saleStart) > now
@@ -333,6 +345,7 @@ export default function TicketsPage() {
 				displayName: getTicketName(ticket, locale),
 				formattedSaleStart: formatTicketDateTime(ticket.saleStart),
 				formattedSaleEnd: formatTicketDateTime(ticket.saleEnd),
+				formattedPrice: priceFormatter.format(ticket.price),
 				statusLabel: status.label,
 				statusTone: status.tone
 			};
@@ -401,7 +414,10 @@ export default function TicketsPage() {
 	);
 
 	let content: ReactNode;
-	if (!eventId) {
+	if (!hydrated) {
+		// The selected event lives in localStorage, so it is unknown until hydration finishes.
+		content = <PageSkeleton rows={4} />;
+	} else if (!eventId) {
 		content = <EmptyState icon={CalendarDays} title={t.noEventTitle} description={t.noEventDescription} />;
 	} else if (loadError && tickets.length === 0) {
 		content = (
@@ -429,17 +445,32 @@ export default function TicketsPage() {
 		);
 	} else {
 		content = (
-			<DndContext
-				sensors={sensors}
-				collisionDetection={closestCenter}
-				onDragEnd={handleDragEnd}
-				modifiers={[restrictToVerticalAxis]}
-				accessibility={{ announcements, screenReaderInstructions: { draggable: t.dragInstructions } }}
-			>
-				<SortableContext items={tickets.map(ticket => ticket.id)} strategy={verticalListSortingStrategy}>
-					<SortableDataTable columns={columns} data={ticketsWithStatus} isLoading={isLoading} />
-				</SortableContext>
-			</DndContext>
+			<>
+				{loadError && (
+					<div role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+						<CircleAlert className="size-4 shrink-0" />
+						<span className="min-w-0 flex-1">
+							{t.refreshFailed}
+							{loadError}
+						</span>
+						<Button variant="outline" size="sm" onClick={() => void loadTickets(eventId, { silent: true })}>
+							<RefreshCw className="size-4" />
+							{t.retry}
+						</Button>
+					</div>
+				)}
+				<DndContext
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragEnd={handleDragEnd}
+					modifiers={[restrictToVerticalAxis]}
+					accessibility={{ announcements, screenReaderInstructions: { draggable: t.dragInstructions } }}
+				>
+					<SortableContext items={tickets.map(ticket => ticket.id)} strategy={verticalListSortingStrategy}>
+						<SortableDataTable columns={columns} data={ticketsWithStatus} isLoading={isLoading} />
+					</SortableContext>
+				</DndContext>
+			</>
 		);
 	}
 

@@ -101,7 +101,7 @@ export default function ReferralRanking({ initialRankingData }: ReferralRankingP
 	const rank = rankingData.currentUserRank;
 
 	return (
-		<main className="mx-auto mt-32 w-full max-w-4xl px-4 pt-20 pb-16">
+		<main className="mx-auto mt-24 w-full max-w-4xl px-4 pb-16 md:mt-32">
 			<Link
 				href={`/${eventSlug}/referral-status`}
 				className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"

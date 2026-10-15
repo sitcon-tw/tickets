@@ -309,10 +309,10 @@ function SponsorForm({ sponsor, eventId, onSavingChange, onClose, onSaved }: Spo
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const t = getTranslations(locale, {
-		addSponsor: { "zh-Hant": "新增贊助商", en: "Add Sponsor" },
-		editSponsor: { "zh-Hant": "編輯贊助商", en: "Edit Sponsor" },
+		addSponsor: { "zh-Hant": "新增廠商", en: "Add Sponsor" },
+		editSponsor: { "zh-Hant": "編輯廠商", en: "Edit Sponsor" },
 		dialogDescription: {
-			"zh-Hant": "設定贊助商的 Logo、顯示位置，以及點擊 Logo 後彈出的介紹文案。",
+			"zh-Hant": "設定廠商的 Logo、顯示位置，以及點擊 Logo 後彈出的介紹文案。",
 			en: "Set the sponsor's logo, where it appears, and the introduction shown when the logo is clicked."
 		},
 		save: { "zh-Hant": "儲存", en: "Save" },
@@ -385,8 +385,8 @@ function SponsorForm({ sponsor, eventId, onSavingChange, onClose, onSaved }: Spo
 		errColorInvalid: { "zh-Hant": "請輸入 #RRGGBB 格式的顏色，例如 #000000。", en: "Enter a color like #000000 (#RRGGBB)." },
 		errPlacements: { "zh-Hant": "請至少選擇一個顯示位置。", en: "Choose at least one placement." },
 		saveFailed: { "zh-Hant": "儲存失敗：", en: "Could not save: " },
-		created: { "zh-Hant": "贊助商已新增", en: "Sponsor added" },
-		updated: { "zh-Hant": "贊助商已更新", en: "Sponsor updated" }
+		created: { "zh-Hant": "廠商已新增", en: "Sponsor added" },
+		updated: { "zh-Hant": "廠商已更新", en: "Sponsor updated" }
 	});
 
 	const [state, dispatch] = useReducer(formReducer, sponsor, initialFormState);
@@ -515,7 +515,7 @@ function SponsorForm({ sponsor, eventId, onSavingChange, onClose, onSaved }: Spo
 			</DialogHeader>
 			<form onSubmit={handleSubmit} noValidate className="space-y-4">
 				<Tabs value={activeTab} onValueChange={value => dispatch({ type: "setTab", tab: value as SponsorTab })}>
-					<TabsList className="grid h-auto w-full grid-cols-4">
+					<TabsList className="grid h-auto w-full grid-cols-3">
 						<TabsTrigger value="info">
 							{t.basicInfo}
 							{tabHasError("info") && <span role="img" aria-label={t.hasErrors} className="size-1.5 rounded-full bg-destructive" />}

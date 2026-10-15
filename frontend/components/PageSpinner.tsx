@@ -14,7 +14,7 @@ export default function PageSpinner() {
 
 	return (
 		<div className={`flex flex-col items-center justify-center ${isAdminPage ? "h-max" : "h-screen"}`}>
-			<Image src="/assets/small-stone.png" alt="Loading..." width={48} height={48} className="block animate-spin mb-6" />
+			<Image src="/assets/small-stone.png" alt={t.loading} width={48} height={48} className="block animate-spin mb-6" />
 			<DecryptedText text={t.loading} animateOn="view" />
 		</div>
 	);

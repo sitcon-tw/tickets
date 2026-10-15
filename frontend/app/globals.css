@@ -27,11 +27,12 @@
 }
 
 .dark {
-	--background: hsl(222.2 84% 4.9%);
+	/* gray-900: keeps the page's existing dark tone; cards/popovers match it (separated by border, as in light mode) */
+	--background: hsl(221.1 39.3% 11%);
 	--foreground: hsl(210 40% 98%);
-	--card: hsl(222.2 84% 4.9%);
+	--card: hsl(221.1 39.3% 11%);
 	--card-foreground: hsl(210 40% 98%);
-	--popover: hsl(222.2 84% 4.9%);
+	--popover: hsl(221.1 39.3% 11%);
 	--popover-foreground: hsl(210 40% 98%);
 	--primary: hsl(217.2 91.2% 59.8%);
 	--primary-foreground: hsl(222.2 47.4% 11.2%);
@@ -41,8 +42,9 @@
 	--muted-foreground: hsl(215 20.2% 65.1%);
 	--accent: hsl(217.2 32.6% 17.5%);
 	--accent-foreground: hsl(210 40% 98%);
-	--destructive: hsl(0 62.8% 30.6%);
-	--destructive-foreground: hsl(210 40% 98%);
+	/* red-400: ~6.4:1 as text on --background; fills use dark foreground text (~6:1) */
+	--destructive: hsl(0 91.2% 71.4%);
+	--destructive-foreground: hsl(222.2 47.4% 11.2%);
 	--border: hsl(217.2 32.6% 17.5%);
 	--input: hsl(217 20% 30%);
 	--ring: hsl(224.3 76.3% 48%);
@@ -77,7 +79,7 @@
 	}
 
 	body {
-		@apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+		@apply bg-background text-foreground;
 		@apply antialiased;
 		min-height: 100dvh;
 		font-family:

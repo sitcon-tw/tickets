@@ -75,6 +75,62 @@ function csvCell(value: string | number) {
 	return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/** Minimal RFC 4180 parser: handles quoted cells, escaped quotes and CRLF/LF line endings. */
+export function parseCsv(text: string): string[][] {
+	const rows: string[][] = [];
+	let row: string[] = [];
+	let cell = "";
+	let inQuotes = false;
+	const bom = String.fromCharCode(0xfeff);
+	const input = text.startsWith(bom) ? text.slice(1) : text;
+	for (let i = 0; i < input.length; i++) {
+		const char = input[i];
+		if (inQuotes) {
+			if (char === '"' && input[i + 1] === '"') {
+				cell += '"';
+				i++;
+			} else if (char === '"') {
+				inQuotes = false;
+			} else {
+				cell += char;
+			}
+		} else if (char === '"') {
+			inQuotes = true;
+		} else if (char === ",") {
+			row.push(cell);
+			cell = "";
+		} else if (char === "\n" || char === "\r") {
+			if (char === "\r" && input[i + 1] === "\n") i++;
+			row.push(cell);
+			rows.push(row);
+			row = [];
+			cell = "";
+		} else {
+			cell += char;
+		}
+	}
+	if (cell !== "" || row.length > 0) {
+		row.push(cell);
+		rows.push(row);
+	}
+	return rows;
+}
+
+const codeHeaderPattern = /^(code|codes|invitation[ _-]?code|邀請碼|代碼)$/i;
+
+/**
+ * Pulls invitation codes out of a CSV file: the `code` column when the first row is a header that has one
+ * (e.g. this page's own export), otherwise the first column. Other columns are ignored.
+ */
+export function codesFromCsv(text: string): string[] {
+	const rows = parseCsv(text).filter(row => row.some(cell => cell.trim()));
+	if (rows.length === 0) return [];
+	const headerIndex = rows[0].findIndex(cell => codeHeaderPattern.test(cell.trim()));
+	const column = headerIndex === -1 ? 0 : headerIndex;
+	const body = headerIndex === -1 ? rows : rows.slice(1);
+	return body.map(row => (row[column] ?? "").trim()).filter(Boolean);
+}
+
 export function toCsv(header: string[], rows: (string | number)[][]) {
 	return String.fromCharCode(0xfeff) + [header, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n");
 }

@@ -2,6 +2,14 @@ import { APIError, ApiResponseError, RetryConfig } from "@/lib/types/client";
 import { toText } from "@/lib/utils/text";
 import { z } from "zod";
 
+export type RequestOptions = {
+	/**
+	 * Don't navigate away on 401/403/423 (login, home or account-disabled redirects); just throw.
+	 * For background or optional calls that must never move a visitor off the page they are on.
+	 */
+	skipAuthRedirect?: boolean;
+};
+
 class APIClient {
 	private baseURL: string;
 	private retryConfig: RetryConfig;
@@ -98,14 +106,18 @@ class APIClient {
 		}
 	}
 
-	private async getResponseError(response: Response): Promise<Error> {
+	private async getResponseError(response: Response, requestOptions?: RequestOptions): Promise<Error> {
+		const redirect = () => {
+			if (!requestOptions?.skipAuthRedirect) this.redirectForAuthStatus(response);
+		};
+
 		if (response.status === 401) {
-			this.redirectForAuthStatus(response);
+			redirect();
 			return new Error("Unauthorized - please login");
 		}
 
 		if (response.status === 423) {
-			this.redirectForAuthStatus(response);
+			redirect();
 			return new Error("Account disabled");
 		}
 
@@ -118,7 +130,7 @@ class APIClient {
 			if (body?.error?.code === "PERMISSION_DENIED") {
 				return new Error(body.error.message);
 			}
-			this.redirectForAuthStatus(response);
+			redirect();
 			return new Error("Forbidden access");
 		}
 
@@ -172,17 +184,17 @@ class APIClient {
 		return result.data;
 	}
 
-	private async requestAttempt<T>(endpoint: string, url: string, config: RequestInit, schema?: z.ZodType<T>): Promise<T> {
+	private async requestAttempt<T>(endpoint: string, url: string, config: RequestInit, schema?: z.ZodType<T>, requestOptions?: RequestOptions): Promise<T> {
 		const response = await this.fetchWithTimeout(url, config);
 		if (!response.ok) {
-			throw await this.getResponseError(response);
+			throw await this.getResponseError(response, requestOptions);
 		}
 		return this.parseResponse(response, endpoint, schema);
 	}
 
-	private async retryRequest<T>(endpoint: string, url: string, config: RequestInit, schema: z.ZodType<T> | undefined, attempt: number): Promise<T> {
+	private async retryRequest<T>(endpoint: string, url: string, config: RequestInit, schema: z.ZodType<T> | undefined, attempt: number, requestOptions?: RequestOptions): Promise<T> {
 		try {
-			return await this.requestAttempt(endpoint, url, config, schema);
+			return await this.requestAttempt(endpoint, url, config, schema, requestOptions);
 		} catch (error) {
 			const errorInstance = error instanceof Error ? error : new Error("網路發生問題 [C]");
 			if (attempt > this.retryConfig.maxRetries || !this.isRetryableError(errorInstance)) {
@@ -191,11 +203,11 @@ class APIClient {
 
 			const delay = this.calculateDelay(attempt);
 			await this.sleep(delay);
-			return this.retryRequest(endpoint, url, config, schema, attempt + 1);
+			return this.retryRequest(endpoint, url, config, schema, attempt + 1, requestOptions);
 		}
 	}
 
-	private request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>): Promise<T> {
+	private request<T>(endpoint: string, options: RequestInit = {}, schema?: z.ZodType<T>, requestOptions?: RequestOptions): Promise<T> {
 		const url = `${this.baseURL}${endpoint}`;
 		const config: RequestInit = {
 			credentials: "include",
@@ -206,10 +218,10 @@ class APIClient {
 			}
 		};
 
-		return this.retryRequest(endpoint, url, config, schema, 1);
+		return this.retryRequest(endpoint, url, config, schema, 1, requestOptions);
 	}
 
-	async get<T>(endpoint: string, params?: Record<string, unknown>, schema?: z.ZodType<T>): Promise<T> {
+	async get<T>(endpoint: string, params?: Record<string, unknown>, schema?: z.ZodType<T>, requestOptions?: RequestOptions): Promise<T> {
 		let finalEndpoint = endpoint;
 		if (params) {
 			const searchParams = new URLSearchParams();
@@ -221,7 +233,7 @@ class APIClient {
 			const queryString = searchParams.toString();
 			finalEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
 		}
-		return this.request<T>(finalEndpoint, { method: "GET" }, schema);
+		return this.request<T>(finalEndpoint, { method: "GET" }, schema, requestOptions);
 	}
 
 	async post<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {

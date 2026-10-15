@@ -1,6 +1,7 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getTranslations } from "@/i18n/helpers";
 import { routing } from "@/i18n/routing";
 import { Globe, Heart } from "lucide-react";
 import { useRouter as useNextRouter, usePathname } from "next/navigation";
@@ -21,10 +22,37 @@ export default function Footer() {
 		return detectedLocale || routing.defaultLocale;
 	}, [pathname]);
 
+	const t = getTranslations(locale, {
+		language: {
+			"zh-Hant": "語言",
+			en: "Language"
+		},
+		madeByPrefix: {
+			"zh-Hant": "由",
+			en: "Made by"
+		},
+		madeByMiddle: {
+			"zh-Hant": "用",
+			en: "with"
+		},
+		madeBySuffix: {
+			"zh-Hant": "打造",
+			en: ""
+		},
+		viewOnGitHub: {
+			"zh-Hant": "在 GitHub 上查看",
+			en: "View on GitHub"
+		},
+		termsAndPrivacy: {
+			"zh-Hant": "服務條款與隱私政策",
+			en: "ToS & PP"
+		}
+	});
+
 	const handleLocaleChange = (newLocale: string) => {
 		// Replace the locale part in the pathname
 		const pathWithoutLocale = pathname.replace(/^\/(en|zh-Hant)/, "");
-		router.push(`/${newLocale}${pathWithoutLocale || "/"}`);
+		router.push(`/${newLocale}${pathWithoutLocale || "/"}${window.location.search}`);
 	};
 
 	// const isAdminPage = pathname.includes("/admin");
@@ -39,7 +67,7 @@ export default function Footer() {
 			<div className="flex justify-center items-center gap-2 mb-3">
 				<Globe size={16} className="text-muted-foreground" />
 				<Select value={locale} onValueChange={handleLocaleChange} name="Locale-Selector">
-					<SelectTrigger className="w-[140px] h-8 text-sm">
+					<SelectTrigger className="w-[140px] h-8 text-sm" aria-label={t.language}>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -53,21 +81,22 @@ export default function Footer() {
 			</div>
 			<div className="flex justify-center items-center gap-1">
 				<p className="text-muted-foreground">
-					Made by{" "}
+					{t.madeByPrefix}{" "}
 					<a href="https://sitcon.org" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
 						SITCON
 					</a>{" "}
-					with{" "}
+					{t.madeByMiddle}{" "}
 				</p>
 				<Heart size={16} className="text-red-700 hover:text-blue-600 transition-colors cursor-pointer" />
+				{t.madeBySuffix && <p className="text-muted-foreground">{t.madeBySuffix}</p>}
 			</div>
 			<p className="text-sm text-muted-foreground mt-1">
 				<a href="https://github.com/sitcon-tw/tickets" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">
-					View on GitHub
+					{t.viewOnGitHub}
 				</a>
 				・
 				<a href={`/${locale}/terms`} className="hover:text-blue-600 transition-colors">
-					ToS & PP
+					{t.termsAndPrivacy}
 				</a>
 			</p>
 		</footer>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirm } from "@/components/admin/ConfirmProvider";
 import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { formatDateTime, fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
 import type { LocalizedText, Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
-import React, { useReducer, useRef } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 const LANGUAGES = [
 	{ code: "zh-Hant", label: "繁體中文" },
@@ -149,11 +150,15 @@ type TicketFormProps = {
 	/** Start of the event; ticket sales must end before it. */
 	eventStart: Date | null;
 	onSavingChange: (saving: boolean) => void;
+	onDirtyChange: (dirty: boolean) => void;
+	/** Cancel button: asks before discarding edits. */
+	onCancel: () => void;
+	/** Closes without asking (after a successful save). */
 	onClose: () => void;
 	onSaved: () => Promise<void>;
 };
 
-function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSaved }: TicketFormProps) {
+function TicketForm({ ticket, eventId, eventStart, onSavingChange, onDirtyChange, onCancel, onClose, onSaved }: TicketFormProps) {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const t = getTranslations(locale, {
@@ -216,6 +221,13 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 	const { values, activeTab, isSaving, submitted, submitError } = state;
 	const submitLock = useRef(false);
 	const soldCount = ticket?.soldCount ?? 0;
+
+	const [baseline] = useState(() => JSON.stringify(initialFormState(ticket).values));
+	const isDirty = JSON.stringify(values) !== baseline;
+	useEffect(() => {
+		onDirtyChange(isDirty);
+		return () => onDirtyChange(false);
+	}, [isDirty, onDirtyChange]);
 
 	const errors: FormErrors = {};
 	if (!values.name["zh-Hant"].trim()) errors.nameZhHant = t.errNameRequired;
@@ -327,7 +339,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 			</DialogHeader>
 			<form onSubmit={handleSubmit} noValidate className="space-y-4">
 				<Tabs value={activeTab} onValueChange={value => dispatch({ type: "setTab", tab: value as TicketTab })}>
-					<TabsList className="grid h-auto w-full grid-cols-4">
+					<TabsList className="grid h-auto w-full grid-cols-3">
 						<TabsTrigger value="info">
 							{t.basicInfo}
 							{tabHasError("info") && <span role="img" aria-label={t.hasErrors} className="size-1.5 rounded-full bg-destructive" />}
@@ -492,7 +504,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onClose, onSa
 				)}
 
 				<DialogFooter>
-					<Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
+					<Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
 						{t.cancel}
 					</Button>
 					<Button type="submit" variant="primary" isLoading={isSaving}>
@@ -514,12 +526,34 @@ type TicketFormDialogProps = {
 };
 
 export function TicketFormDialog({ open, ticket, eventId, eventStart, onOpenChange, onSaved }: TicketFormDialogProps) {
+	const locale = useLocale();
+	const confirm = useConfirm();
+	const t = getTranslations(locale, {
+		discardTitle: { "zh-Hant": "放棄未儲存的變更？", en: "Discard unsaved changes?" },
+		discardDescription: {
+			"zh-Hant": "關閉後，您在此表單填寫的內容將會遺失。",
+			en: "If you close now, what you entered in this form will be lost."
+		},
+		discard: { "zh-Hant": "放棄變更", en: "Discard changes" },
+		keepEditing: { "zh-Hant": "繼續編輯", en: "Keep editing" }
+	});
 	const savingRef = useRef(false);
+	const dirtyRef = useRef(false);
+	const setDirty = useCallback((dirty: boolean) => {
+		dirtyRef.current = dirty;
+	}, []);
+
+	async function requestClose() {
+		// Don't let the dialog be dismissed while a save is in flight, and ask before throwing away edits.
+		if (savingRef.current) return;
+		if (dirtyRef.current && !(await confirm({ title: t.discardTitle, description: t.discardDescription, destructive: true, confirmLabel: t.discard, cancelLabel: t.keepEditing }))) return;
+		dirtyRef.current = false;
+		onOpenChange(false);
+	}
 
 	function handleOpenChange(next: boolean) {
-		// Don't let the dialog be dismissed while a save is in flight.
-		if (!next && savingRef.current) return;
-		onOpenChange(next);
+		if (next) onOpenChange(true);
+		else void requestClose();
 	}
 
 	return (
@@ -534,7 +568,12 @@ export function TicketFormDialog({ open, ticket, eventId, eventStart, onOpenChan
 						onSavingChange={saving => {
 							savingRef.current = saving;
 						}}
-						onClose={() => onOpenChange(false)}
+						onDirtyChange={setDirty}
+						onCancel={() => void requestClose()}
+						onClose={() => {
+							dirtyRef.current = false;
+							onOpenChange(false);
+						}}
 						onSaved={onSaved}
 					/>
 				)}

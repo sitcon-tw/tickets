@@ -28,7 +28,7 @@ export function CopyButton({ value, t, label }: { value: string; t: WebhookT; la
 
 	return (
 		<Button type="button" variant="ghost" size="sm" className="size-8 shrink-0 px-0" onClick={handleCopy} aria-label={label ?? t.copy} title={label ?? t.copy}>
-			{copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+			{copied ? <Check className="size-4 text-green-600 dark:text-green-400" /> : <Copy className="size-4" />}
 		</Button>
 	);
 }

@@ -432,6 +432,7 @@ export default function EventsPage() {
 			<DataTable
 				columns={columns}
 				data={filteredEvents}
+				resetPageKey={`${statusFilter}|${search}`}
 				isLoading={isLoading}
 				getRowId={row => row.id}
 				emptyMessage={t.noMatch}

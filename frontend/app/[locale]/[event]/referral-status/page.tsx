@@ -1,6 +1,7 @@
 import { getServerPublicEvents, getServerReferralRanking, getServerReferralStats, getServerRegistrations } from "@/lib/api/server-endpoints";
 import { redirect } from "next/navigation";
 import { generateMetadata as generateEventMetadata } from "../layout";
+import { findEventRegistration } from "../registration-utils";
 import ReferralStatus from "./referral-status-client";
 
 export function generateMetadata(props: Parameters<typeof generateEventMetadata>[0]) {
@@ -22,7 +23,7 @@ export default async function ReferralStatusRoutePage({ params }: ReferralStatus
 		redirect(`/${locale}/`);
 	}
 
-	const eventRegistration = registrations?.find(registration => registration.event?.id === foundEvent.id);
+	const eventRegistration = registrations ? findEventRegistration(registrations, foundEvent.id) : undefined;
 	if (registrations && !eventRegistration) {
 		redirect(`/${locale}/`);
 	}

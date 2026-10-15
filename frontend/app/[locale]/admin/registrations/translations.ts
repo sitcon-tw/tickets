@@ -45,6 +45,13 @@ export const registrationsTranslations = {
 	loadFailed: { "zh-Hant": "無法載入報名資料", en: "Failed to load registrations" },
 	retry: { "zh-Hant": "重試", en: "Retry" },
 	unknownError: { "zh-Hant": "未知的錯誤", en: "Unknown error" },
+	discardTitle: { "zh-Hant": "放棄未儲存的變更？", en: "Discard unsaved changes?" },
+	discardDescription: {
+		"zh-Hant": "關閉後，您對這筆報名資料所做的修改將會遺失。",
+		en: "If you close now, the changes you made to this registration will be lost."
+	},
+	discard: { "zh-Hant": "放棄變更", en: "Discard changes" },
+	keepEditing: { "zh-Hant": "繼續編輯", en: "Keep editing" },
 
 	registrationDetails: { "zh-Hant": "報名詳情", en: "Registration Details" },
 	ticketToken: { "zh-Hant": "票券 QR Token", en: "Ticket QR token" },

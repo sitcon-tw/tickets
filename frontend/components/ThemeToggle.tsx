@@ -20,12 +20,24 @@ export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
 		toggleTheme: {
 			"zh-Hant": "切換主題成",
 			en: "Toggle theme to"
+		},
+		toggleThemeLabel: {
+			"zh-Hant": "切換主題",
+			en: "Toggle theme"
+		},
+		switchToLight: {
+			"zh-Hant": "切換至淺色模式",
+			en: "Switch to light mode"
+		},
+		switchToDark: {
+			"zh-Hant": "切換至深色模式",
+			en: "Switch to dark mode"
 		}
 	});
 
 	if (!mounted) {
 		return (
-			<Button type="button" variant="ghost" size="icon" aria-label="Toggle theme" disabled>
+			<Button type="button" variant="ghost" size="icon" aria-label={t.toggleThemeLabel} disabled>
 				<div className="w-5 h-5" />
 			</Button>
 		);
@@ -50,8 +62,8 @@ export function ThemeToggle({ verbose = false }: { verbose?: boolean }) {
 			variant="ghost"
 			size="icon"
 			onClick={handleToggle}
-			aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-			title={`Current: ${resolvedTheme} | Click to switch to ${isDark ? "light" : "dark"}`}
+			aria-label={isDark ? t.switchToLight : t.switchToDark}
+			title={isDark ? t.switchToLight : t.switchToDark}
 			className={`hover:bg-transparent hover:text-gray-900 dark:hover:text-gray-100 transition-colors ${verbose ? "w-full text-left justify-start" : ""}`}
 		>
 			{verbose && t.toggleTheme}

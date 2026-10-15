@@ -1,5 +1,6 @@
 "use client";
 
+import { useNavigationGuard } from "@/lib/hooks/useNavigationGuard";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
@@ -17,8 +18,9 @@ export function useMediaQuery(query: string, defaultValue = false) {
 }
 
 /**
- * Warns before leaving the page while there are unsaved changes: browser reload/close (beforeunload)
- * and in-app link clicks (the sidebar), which are routed through `confirmLeave`.
+ * Warns before leaving the page while there are unsaved changes: browser reload/close (beforeunload),
+ * in-app link clicks (the sidebar), and navigation guarded by `confirmNavigation()` (switching event or
+ * locale, logging out). The last two are routed through `confirmLeave`.
  */
 export function useUnsavedChangesGuard(isDirty: boolean, confirmLeave: () => Promise<boolean>) {
 	const router = useRouter();
@@ -27,6 +29,8 @@ export function useUnsavedChangesGuard(isDirty: boolean, confirmLeave: () => Pro
 	useEffect(() => {
 		confirmRef.current = confirmLeave;
 	});
+
+	useNavigationGuard(isDirty, () => confirmRef.current());
 
 	useEffect(() => {
 		if (!isDirty) return;

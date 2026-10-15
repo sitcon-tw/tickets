@@ -93,7 +93,7 @@ export const webhookTranslations = {
 		"zh-Hant": "最近的通知傳送失敗（自 {date} 起）。若持續失敗，系統會自動停用此 Webhook。",
 		en: "Recent deliveries are failing (since {date}). The webhook will be disabled automatically if this continues."
 	},
-	enabled: { "zh-Hant": "啟用 Webhook", en: "Webhook enabled" },
+	enabled: { "zh-Hant": "啟用 Webhook", en: "Enable webhook" },
 	toggleHelpOn: { "zh-Hant": "停用後將不再傳送通知", en: "Turn off to stop sending notifications" },
 	toggleHelpOff: { "zh-Hant": "啟用後會重置失敗計數", en: "Turning on resets the failure counter" },
 	testWebhook: { "zh-Hant": "傳送測試", en: "Send test" },

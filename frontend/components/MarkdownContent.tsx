@@ -24,8 +24,9 @@ function InlineTokens({ tokens, fallback, keyPrefix }: { tokens: MarkdownToken[]
 		const key = `${keyPrefix}-${index}`;
 		switch (token.type) {
 			case "text":
+				return token.tokens ? <InlineTokens key={key} tokens={token.tokens} fallback={token.text} keyPrefix={key} /> : token.text;
 			case "escape":
-				return token.raw;
+				return token.text;
 			case "strong":
 				return (
 					<strong key={key}>
@@ -144,6 +145,9 @@ function BlockTokens({ tokens, keyPrefix = "md" }: { tokens: MarkdownToken[] | u
 						</tbody>
 					</table>
 				);
+			case "text":
+				// Tight list items hold block-level text tokens whose inline formatting lives in `tokens`.
+				return <InlineTokens key={key} tokens={token.tokens} fallback={token.text} keyPrefix={key} />;
 			case "html":
 				return token.text;
 			default:

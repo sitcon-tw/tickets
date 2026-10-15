@@ -162,7 +162,7 @@ export function EventEditorDialog({ open, editingEvent, activeTab, form, errors,
 						)}
 
 						<Tabs value={activeTab} onValueChange={value => dispatch({ type: "setActiveTab", value: value as EventTab })}>
-							<TabsList className="grid h-auto w-full grid-cols-4">
+							<TabsList className="grid h-auto w-full grid-cols-3">
 								<TabsTrigger value="info" className="py-1.5">
 									{t.eventInfo}
 									{tabIndicator("info")}

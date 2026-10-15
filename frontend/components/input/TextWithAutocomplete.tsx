@@ -4,7 +4,7 @@ import MarkdownContent from "@/components/MarkdownContent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import FieldError from "./FieldError";
-import { ChangeEvent, memo, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, memo, useMemo, useState } from "react";
 
 type TextWithAutocompleteProps = {
 	label: string;
@@ -24,10 +24,10 @@ const EMPTY_PROMPTS: string[] = [];
 
 function TextWithAutocompleteComponent({ label, id, required = true, value, onChange, placeholder, readOnly, prompts = EMPTY_PROMPTS, description, error, disabled }: TextWithAutocompleteProps) {
 	const errorId = `${id}-error`;
+	const listboxId = `${id}-listbox`;
+	const optionId = (index: number) => `${id}-option-${index}`;
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(-1);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const suggestionsRef = useRef<HTMLDivElement>(null);
 
 	const filteredPrompts = useMemo(() => {
 		if (!value || value.trim() === "" || prompts.length === 0) {
@@ -38,16 +38,7 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 		return prompts.filter(prompt => prompt.toLowerCase().includes(inputValue));
 	}, [value, prompts]);
 
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) && inputRef.current && !inputRef.current.contains(event.target as Node)) {
-				setShowSuggestions(false);
-			}
-		};
-
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, []);
+	const isOpen = showSuggestions && filteredPrompts.length > 0;
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (!showSuggestions || filteredPrompts.length === 0) return;
@@ -97,6 +88,11 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 		setSelectedIndex(-1);
 	};
 
+	const closeSuggestions = () => {
+		setShowSuggestions(false);
+		setSelectedIndex(-1);
+	};
+
 	return (
 		<div className="space-y-2 relative">
 			<Label htmlFor={id}>{label}</Label>
@@ -107,28 +103,39 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 			)}
 			<div className="relative">
 				<Input
-					ref={inputRef}
 					type="text"
 					id={id}
 					name={id}
+					role="combobox"
 					required={required}
 					disabled={disabled}
 					aria-invalid={error ? true : undefined}
 					aria-describedby={error ? errorId : undefined}
 					aria-autocomplete="list"
-					aria-expanded={showSuggestions && filteredPrompts.length > 0}
+					aria-expanded={isOpen}
+					aria-controls={isOpen ? listboxId : undefined}
+					aria-activedescendant={isOpen && selectedIndex >= 0 ? optionId(selectedIndex) : undefined}
 					value={value}
 					onChange={handleInputChange}
 					onKeyDown={handleKeyDown}
+					onBlur={closeSuggestions}
 					placeholder={placeholder}
 					readOnly={readOnly}
 					autoComplete="off"
 				/>
-				{showSuggestions && filteredPrompts.length > 0 && (
-					<div ref={suggestionsRef} className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+				{isOpen && (
+					// Focus stays in the input (options are referenced via aria-activedescendant), so mousedown must not blur it or the list would close before the click lands
+					<div
+						id={listboxId}
+						role="listbox"
+						className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
+						onMouseDown={e => e.preventDefault()}
+					>
 						{filteredPrompts.map((prompt, index) => (
-							<button
-								type="button"
+							<div
+								id={optionId(index)}
+								role="option"
+								aria-selected={index === selectedIndex}
 								key={prompt}
 								className={`block w-full px-3 py-2 cursor-pointer text-left text-sm transition-colors ${
 									index === selectedIndex ? "bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -137,7 +144,7 @@ function TextWithAutocompleteComponent({ label, id, required = true, value, onCh
 								onMouseEnter={() => setSelectedIndex(index)}
 							>
 								{prompt}
-							</button>
+							</div>
 						))}
 					</div>
 				)}

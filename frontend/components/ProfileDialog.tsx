@@ -99,7 +99,8 @@ export default function ProfileDialog({ open, onOpenChange, user, onNameUpdated 
 			showAlert(t.nameSaved, "success");
 		} catch (error) {
 			console.error("Failed to update name:", error);
-			showAlert(error instanceof Error ? error.message : t.error, "error");
+			// Server messages aren't localized; lead with a translated message and keep the detail for support
+			showAlert(error instanceof Error && error.message ? `${t.error} (${error.message})` : t.error, "error");
 		} finally {
 			setIsSavingName(false);
 		}

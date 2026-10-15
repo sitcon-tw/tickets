@@ -6,18 +6,23 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI } from "@/lib/api/endpoints";
 import generateHash from "@/lib/utils/hash";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { ArrowLeft, Check, CheckCheck, Copy } from "lucide-react";
 import { useLocale } from "next-intl";
-import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useReducer, useRef, useState } from "react";
+import { findEventRegistration } from "../registration-utils";
+
+type PageStatus = "loading" | "loaded" | "pending" | "notRegistered" | "eventNotFound" | "error";
+
+type ReferralState = { status: "loading" } | { status: "ready"; code: string } | { status: "failed" };
 
 type SuccessRegistrationState = {
-	referralCode: string;
+	pageStatus: PageStatus;
+	referral: ReferralState;
 	registrationId: string | null;
 	registerationTicketName: string | null;
 	registrationTime: Date | null;
@@ -25,7 +30,6 @@ type SuccessRegistrationState = {
 	checkedIn: boolean;
 	useOpass: boolean;
 	opassEventId: string | null;
-	isMissingRegistration: boolean;
 };
 
 type SuccessRegistrationAction =
@@ -37,10 +41,12 @@ type SuccessRegistrationAction =
 			registerationTicketName: string;
 			isCancelled: boolean;
 			checkedIn: boolean;
-			referralCode: string;
 	  }
 	| { type: "referralLoaded"; referralCode: string }
+	| { type: "referralFailed" }
+	| { type: "pendingRegistration" }
 	| { type: "missingRegistration" }
+	| { type: "eventNotFound" }
 	| { type: "failed" };
 
 function successRegistrationReducer(state: SuccessRegistrationState, action: SuccessRegistrationAction): SuccessRegistrationState {
@@ -50,20 +56,26 @@ function successRegistrationReducer(state: SuccessRegistrationState, action: Suc
 		case "registrationLoaded":
 			return {
 				...state,
+				pageStatus: "loaded",
 				registrationId: action.registrationId,
 				registrationTime: action.registrationTime,
 				registerationTicketName: action.registerationTicketName,
 				isCancelled: action.isCancelled,
 				checkedIn: action.checkedIn,
-				referralCode: action.referralCode,
-				isMissingRegistration: false
+				referral: action.isCancelled ? { status: "failed" } : { status: "loading" }
 			};
 		case "referralLoaded":
-			return { ...state, referralCode: action.referralCode };
+			return { ...state, referral: { status: "ready", code: action.referralCode } };
+		case "referralFailed":
+			return { ...state, referral: { status: "failed" } };
+		case "pendingRegistration":
+			return { ...state, pageStatus: "pending" };
 		case "missingRegistration":
-			return { ...state, referralCode: "Failed", isMissingRegistration: true };
+			return { ...state, pageStatus: "notRegistered" };
+		case "eventNotFound":
+			return { ...state, pageStatus: "eventNotFound" };
 		case "failed":
-			return { ...state, referralCode: "Failed" };
+			return { ...state, pageStatus: "error" };
 		default:
 			return state;
 	}
@@ -107,37 +119,39 @@ function navigationLoadingReducer(state: NavigationLoadingState, action: Navigat
 
 type SuccessTranslations = Record<string, string>;
 
-function MissingRegistrationView({ eventSlug, t }: { eventSlug: string; t: SuccessTranslations }) {
+function StatusView({ title, description, backHref, backLabel }: { title: string; description?: string; backHref: string; backLabel: string }) {
 	return (
 		<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">
-			<h1 className="text-4xl font-bold text-center text-foreground">{t.loadFailed}</h1>
+			<h1 className="text-4xl font-bold text-center text-foreground">{title}</h1>
+			{description && <p className="max-w-md text-center text-muted-foreground">{description}</p>}
 			<Button asChild variant="secondary">
-				<Link href={`/${eventSlug}`}>
+				<Link href={backHref}>
 					<ArrowLeft size={24} />
-					{eventSlug}
+					{backLabel}
 				</Link>
 			</Button>
 		</main>
 	);
 }
 
-function ReferralCodeCopyButton({ referralCode, t, copiedCode, onCopy }: { referralCode: string; t: SuccessTranslations; copiedCode: boolean; onCopy: () => void }) {
+function ReferralCodeCopyButton({ referral, t, copiedCode, onCopy }: { referral: ReferralState; t: SuccessTranslations; copiedCode: boolean; onCopy: () => void }) {
 	return (
 		<button
 			type="button"
 			onClick={onCopy}
-			className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2 text-left"
+			disabled={referral.status !== "ready"}
+			className="cursor-pointer disabled:cursor-default border-2 border-gray-400 dark:border-gray-500 enabled:hover:bg-gray-300 dark:enabled:hover:bg-gray-700 transition-all duration-200 rounded-md w-fit max-w-full p-1 px-2 text-left"
 		>
-			{referralCode === "Loading..." ? (
+			{referral.status === "loading" ? (
 				<Spinner />
+			) : referral.status === "failed" ? (
+				<span className="font-mono text-lg">{t.loadFailed}</span>
 			) : (
 				<div className="flex items-center gap-2">
-					<span className="font-mono text-sm sm:text-lg">{referralCode}</span>
-					{referralCode !== t.loadFailed && (
-						<span className="cursor-pointer" title={t.copyInvite}>
-							{copiedCode ? <Check className="text-green-500" /> : <Copy />}
-						</span>
-					)}
+					<span className="font-mono text-sm sm:text-lg break-all">{referral.code}</span>
+					<span className="cursor-pointer shrink-0" title={t.copyInvite}>
+						{copiedCode ? <Check className="text-green-500" /> : <Copy />}
+					</span>
 				</div>
 			)}
 		</button>
@@ -145,7 +159,7 @@ function ReferralCodeCopyButton({ referralCode, t, copiedCode, onCopy }: { refer
 }
 
 function ReferralUrlCopyButton({
-	referralCode,
+	referral,
 	t,
 	copiedUrl,
 	eventSlug,
@@ -153,7 +167,7 @@ function ReferralUrlCopyButton({
 	isScreenReallySmall,
 	onCopy
 }: {
-	referralCode: string;
+	referral: ReferralState;
 	t: SuccessTranslations;
 	copiedUrl: boolean;
 	eventSlug: string;
@@ -161,6 +175,7 @@ function ReferralUrlCopyButton({
 	isScreenReallySmall: boolean;
 	onCopy: () => void;
 }) {
+	const referralCode = referral.status === "ready" ? referral.code : "";
 	const referralUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/${eventSlug}?ref=${referralCode}`;
 	const displayUrl = isScreenReallySmall ? `${referralUrl.substring(0, 10)}...` : referralUrl.length > 20 && !locale.includes("zh") ? `${referralUrl.substring(0, 20)}...` : referralUrl;
 
@@ -168,22 +183,21 @@ function ReferralUrlCopyButton({
 		<button
 			type="button"
 			onClick={onCopy}
-			className="cursor-pointer border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700 transition-all duration-200 rounded-md w-min p-1 px-2 text-left"
+			disabled={referral.status !== "ready"}
+			className="cursor-pointer disabled:cursor-default border-2 border-gray-400 dark:border-gray-500 enabled:hover:bg-gray-300 dark:enabled:hover:bg-gray-700 transition-all duration-200 rounded-md w-fit max-w-full p-1 px-2 text-left"
 		>
-			{referralCode === "Loading..." ? (
+			{referral.status === "loading" ? (
 				<Spinner />
-			) : referralCode === "Failed" ? (
+			) : referral.status === "failed" ? (
 				<span className="font-mono text-lg">{t.loadFailed}</span>
 			) : (
-				<div className="flex items-center gap-2">
-					<span className="font-mono text-sm sm:text-lg" title={referralUrl}>
+				<div className="flex items-center gap-2 min-w-0">
+					<span className="font-mono text-sm sm:text-lg break-all min-w-0" title={referralUrl}>
 						{displayUrl}
 					</span>
-					{referralCode !== "Failed" && (
-						<span className="cursor-pointer" title={t.copyInvite}>
-							{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
-						</span>
-					)}
+					<span className="cursor-pointer shrink-0" title={t.copyInvite}>
+						{copiedUrl ? <Check className="text-green-500" /> : <Copy />}
+					</span>
 				</div>
 			)}
 		</button>
@@ -199,18 +213,18 @@ function SuccessContent() {
 	const autoCheckin = searchParams.has("checkin");
 	const eventSlug = params.event as string;
 
-	const [{ referralCode, registrationId, registerationTicketName, registrationTime, isCancelled, checkedIn, useOpass, opassEventId, isMissingRegistration }, dispatchRegistration] = useReducer(
+	const [{ pageStatus, referral, registrationId, registerationTicketName, registrationTime, isCancelled, checkedIn, useOpass, opassEventId }, dispatchRegistration] = useReducer(
 		successRegistrationReducer,
 		{
-			referralCode: "Loading...",
+			pageStatus: "loading",
+			referral: { status: "loading" },
 			registrationId: null,
 			registerationTicketName: null,
 			registrationTime: null,
 			isCancelled: false,
 			checkedIn: false,
 			useOpass: true,
-			opassEventId: null,
-			isMissingRegistration: false
+			opassEventId: null
 		}
 	);
 	const [copiedCode, setCopiedCode] = useState(false);
@@ -221,7 +235,7 @@ function SuccessContent() {
 	});
 	const [{ showQRCode, qrValue }, dispatchQrPopup] = useReducer(qrPopupReducer, { showQRCode: false, qrValue: "" });
 	const lanyardAnchorRef = useRef<HTMLDivElement>(null);
-	const [isScreenReallySmall, setIsScreenReallySmall] = useState(() => typeof window !== "undefined" && window.innerWidth < 315);
+	const [isScreenReallySmall, setIsScreenReallySmall] = useState(false);
 
 	const t = getTranslations(locale, {
 		success: {
@@ -231,6 +245,34 @@ function SuccessContent() {
 		cancelled: {
 			"zh-Hant": "報名已取消",
 			en: "Registration Cancelled"
+		},
+		cancelledDesc: {
+			"zh-Hant": "你的這筆報名已取消。如需參加，請回到活動頁面重新報名。",
+			en: "This registration has been cancelled. To attend, go back to the event page and register again."
+		},
+		pendingTitle: {
+			"zh-Hant": "報名尚未完成",
+			en: "Registration Not Complete"
+		},
+		pendingDesc: {
+			"zh-Hant": "你的座位目前僅暫時保留，報名尚未完成。請回到活動頁面選擇票種並送出報名表單。",
+			en: "Your seat is only temporarily held and your registration isn't finished yet. Go back to the event page, select a ticket and submit the registration form."
+		},
+		notRegisteredTitle: {
+			"zh-Hant": "你尚未報名此活動",
+			en: "You haven't registered for this event"
+		},
+		eventNotFound: {
+			"zh-Hant": "找不到此活動",
+			en: "Event not found"
+		},
+		backToEvent: {
+			"zh-Hant": "返回活動頁面",
+			en: "Back to event"
+		},
+		backToHome: {
+			"zh-Hant": "返回首頁",
+			en: "Back to home"
 		},
 		emailCheck: {
 			"zh-Hant": "請多留意電子信箱",
@@ -244,13 +286,17 @@ function SuccessContent() {
 			"zh-Hant": "或複製推薦連結：",
 			en: "Or copy referral link:"
 		},
+		copyInvite: {
+			"zh-Hant": "點擊複製",
+			en: "Click to copy"
+		},
+		copyFailed: {
+			"zh-Hant": "複製失敗，請手動複製：",
+			en: "Copy failed, please copy it manually: "
+		},
 		qrDesc: {
 			"zh-Hant": "如何報到？",
 			en: "How to check in?"
-		},
-		loading: {
-			"zh-Hant": "載入中...",
-			en: "Loading..."
 		},
 		loadFailed: {
 			"zh-Hant": "載入失敗",
@@ -281,22 +327,23 @@ function SuccessContent() {
 
 	function handleCopyRefCode() {
 		setCopiedCode(false);
-		if (referralCode === t.loading || referralCode === t.loadFailed) return;
+		if (referral.status !== "ready") return;
+		const code = referral.code;
 		navigator.clipboard
-			.writeText(referralCode)
+			.writeText(code)
 			.then(() => {
 				setCopiedCode(true);
 			})
 			.catch(() => {
-				showAlert(t.copyFailed + referralCode, "error");
+				showAlert(t.copyFailed + code, "error");
 			});
 		setTimeout(() => setCopiedCode(false), 2000);
 	}
 
 	function handleCopyRefUrl() {
 		setCopiedUrl(false);
-		if (referralCode === t.loading || referralCode === t.loadFailed) return;
-		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referralCode}`;
+		if (referral.status !== "ready") return;
+		const url = `${window.location.origin}/${locale}/${eventSlug}?ref=${referral.code}`;
 		navigator.clipboard
 			.writeText(url)
 			.then(() => {
@@ -310,152 +357,161 @@ function SuccessContent() {
 
 	useEffect(() => {
 		const loadSuccessInfo = async () => {
+			let eventRegistration;
 			try {
-				try {
-					const eventsData = await eventsAPI.getAll();
-					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
+				const eventsData = await eventsAPI.getAll();
+				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
-					if (!foundEvent) {
-						dispatchRegistration({ type: "failed" });
-						return;
-					}
-
-					const currentEventId = foundEvent.id;
-					dispatchRegistration({ type: "eventLoaded", useOpass: foundEvent.useOpass ?? true, opassEventId: foundEvent.opassEventId ?? null });
-
-					const registrations = await registrationsAPI.getAll();
-					const eventRegistration = registrations.data.find(reg => reg.event?.id === currentEventId);
-					if (eventRegistration) {
-						let ticketname = getLocalizedText(eventRegistration.ticket?.name, locale) || "Ticket";
-						ticketname = ticketname
-							.replace(/\(.*?\)/g, "")
-							.replace(/（.*?）/g, "")
-							.trim();
-						if (eventRegistration.status === "cancelled") {
-							dispatchRegistration({
-								type: "registrationLoaded",
-								registrationId: eventRegistration.id,
-								registrationTime: eventRegistration.createdAt,
-								registerationTicketName: ticketname,
-								isCancelled: true,
-								checkedIn: false,
-								referralCode: "Failed"
-							});
-						} else {
-							dispatchRegistration({
-								type: "registrationLoaded",
-								registrationId: eventRegistration.id,
-								registrationTime: eventRegistration.createdAt,
-								registerationTicketName: ticketname,
-								isCancelled: false,
-								checkedIn: eventRegistration.checkedIn ?? false,
-								referralCode: "Loading..."
-							});
-							if (autoCheckin) {
-								await openQRCode(eventRegistration.id, eventRegistration.createdAt);
-							}
-							const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
-							dispatchRegistration({ type: "referralLoaded", referralCode: code });
-						}
-					} else {
-						dispatchRegistration({ type: "missingRegistration" });
-					}
-				} catch (error) {
-					console.error("Failed to load registrations:", error);
-					dispatchRegistration({ type: "failed" });
+				if (!foundEvent) {
+					dispatchRegistration({ type: "eventNotFound" });
+					return;
 				}
+
+				dispatchRegistration({ type: "eventLoaded", useOpass: foundEvent.useOpass ?? true, opassEventId: foundEvent.opassEventId ?? null });
+
+				const registrations = await registrationsAPI.getAll();
+				eventRegistration = findEventRegistration(registrations.data, foundEvent.id);
 			} catch (error) {
-				console.error("Failed to load success info:", error);
-				const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-				window.location.href = `/login/?returnUrl=${returnUrl}`;
+				console.error("Failed to load registrations:", error);
+				dispatchRegistration({ type: "failed" });
+				return;
+			}
+
+			if (!eventRegistration) {
+				dispatchRegistration({ type: "missingRegistration" });
+				return;
+			}
+			// A pending row is only an unfinished seat hold, not a completed registration.
+			if (eventRegistration.status === "pending") {
+				dispatchRegistration({ type: "pendingRegistration" });
+				return;
+			}
+
+			let ticketname = getLocalizedText(eventRegistration.ticket?.name, locale) || "Ticket";
+			ticketname = ticketname
+				.replace(/\(.*?\)/g, "")
+				.replace(/（.*?）/g, "")
+				.trim();
+			const isRegistrationCancelled = eventRegistration.status === "cancelled";
+			dispatchRegistration({
+				type: "registrationLoaded",
+				registrationId: eventRegistration.id,
+				registrationTime: eventRegistration.createdAt,
+				registerationTicketName: ticketname,
+				isCancelled: isRegistrationCancelled,
+				checkedIn: isRegistrationCancelled ? false : (eventRegistration.checkedIn ?? false)
+			});
+			if (isRegistrationCancelled) return;
+
+			if (autoCheckin) {
+				await openQRCode(eventRegistration.id, eventRegistration.createdAt);
+			}
+			try {
+				const code = (await referralsAPI.getReferralLink(eventRegistration.id)).data.referralCode;
+				dispatchRegistration({ type: "referralLoaded", referralCode: code });
+			} catch (error) {
+				console.error("Failed to load referral code:", error);
+				dispatchRegistration({ type: "referralFailed" });
 			}
 		};
 		void loadSuccessInfo();
-	}, [autoCheckin, eventSlug, locale, t.loadFailed]);
+	}, [autoCheckin, eventSlug, locale]);
 
 	useEffect(() => {
 		const handleResize = () => {
 			setIsScreenReallySmall(window.innerWidth < 315);
 		};
+		handleResize();
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
+	const eventPath = `/${eventSlug}`;
+
+	if (pageStatus === "loading") {
+		return (
+			<div className="flex items-center justify-center h-screen">
+				<Spinner />
+			</div>
+		);
+	}
+	if (pageStatus === "eventNotFound") {
+		return <StatusView title={t.eventNotFound} backHref="/" backLabel={t.backToHome} />;
+	}
+	if (pageStatus === "error") {
+		return <StatusView title={t.loadFailed} backHref={eventPath} backLabel={t.backToEvent} />;
+	}
+	if (pageStatus === "notRegistered") {
+		return <StatusView title={t.notRegisteredTitle} backHref={eventPath} backLabel={t.backToEvent} />;
+	}
+	if (pageStatus === "pending") {
+		return <StatusView title={t.pendingTitle} description={t.pendingDesc} backHref={eventPath} backLabel={t.backToEvent} />;
+	}
+
 	return (
 		<>
-			{isMissingRegistration ? (
-				<MissingRegistrationView eventSlug={eventSlug} t={t} />
-			) : (
-				<div className="grid grid-cols-1 sm:grid-cols-[60%_40%] md:grid-cols-[50%_50%] max-w-full overflow-hidden">
-					<section className="pt-20 flex flex-col justify-center sm:items-end items-center">
-						<div className="flex flex-col gap-4">
-							<h1 className="my-4 text-5xl font-bold">{isCancelled ? t.cancelled : t.success}</h1>
-							{!isCancelled && checkedIn && (
-								<span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:text-green-400 dark:ring-green-400/20">
-									<CheckCheck size={16} />
-									{t.checkedIn}
-								</span>
+			<div className="grid grid-cols-1 sm:grid-cols-[60%_40%] md:grid-cols-[50%_50%] max-w-full overflow-hidden">
+				<section className="pt-20 px-4 flex flex-col justify-center sm:items-end items-center min-w-0">
+					<div className="flex w-full max-w-md flex-col gap-4">
+						<h1 className="my-4 text-5xl font-bold">{isCancelled ? t.cancelled : t.success}</h1>
+						{isCancelled && <p className="text-muted-foreground">{t.cancelledDesc}</p>}
+						{!isCancelled && checkedIn && (
+							<span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:text-green-400 dark:ring-green-400/20">
+								<CheckCheck size={16} />
+								{t.checkedIn}
+							</span>
+						)}
+						{!isCancelled && <p>{t.emailCheck}</p>}
+						{!isCancelled && (
+							<>
+								<p>{t.inviteFriends}</p>
+								<ReferralCodeCopyButton referral={referral} t={t} copiedCode={copiedCode} onCopy={handleCopyRefCode} />
+								<p>{t.copyInviteLink}</p>
+								<ReferralUrlCopyButton referral={referral} t={t} copiedUrl={copiedUrl} eventSlug={eventSlug} locale={locale} isScreenReallySmall={isScreenReallySmall} onCopy={handleCopyRefUrl} />
+								<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
+								{registrationId && registrationTime && (
+									<Button onClick={() => void openQRCode(registrationId, registrationTime)} className="flex items-center gap-2 mb-2">
+										<CheckCheck size={24} /> {t.viewQRCode}
+									</Button>
+								)}
+							</>
+						)}
+						<div className="border-t-2 border-gray-700" />
+						<div className="mt-2 flex flex-wrap gap-4">
+							{registrationId && (
+								<Button
+									className="flex-1 px-3"
+									isLoading={viewRegLoading}
+									onClick={() => {
+										dispatchNavigationLoading({ type: "viewRegistration" });
+										router.push(`/my-registration/${registrationId}`);
+									}}
+								>
+									{t.viewMyRegistration}
+								</Button>
 							)}
-							{!isCancelled && <p>{t.emailCheck}</p>}
 							{!isCancelled && (
-								<>
-									<p>{t.inviteFriends}</p>
-									<ReferralCodeCopyButton referralCode={referralCode} t={t} copiedCode={copiedCode} onCopy={handleCopyRefCode} />
-									<p>{t.copyInviteLink}</p>
-									<ReferralUrlCopyButton
-										referralCode={referralCode}
-										t={t}
-										copiedUrl={copiedUrl}
-										eventSlug={eventSlug}
-										locale={locale}
-										isScreenReallySmall={isScreenReallySmall}
-										onCopy={handleCopyRefUrl}
-									/>
-									<h3 className="text-xl font-semibold mt-2">{t.qrDesc}</h3>
-									{registrationId && registrationTime && (
-										<Button onClick={() => void openQRCode(registrationId, registrationTime)} className="flex items-center gap-2 mb-2">
-											<CheckCheck size={24} /> {t.viewQRCode}
-										</Button>
-									)}
-								</>
+								<Button
+									className="flex-1 px-3"
+									isLoading={viewRefLoading}
+									onClick={() => {
+										dispatchNavigationLoading({ type: "viewReferral" });
+										router.push(`${eventPath}/referral-status`);
+									}}
+								>
+									{t.viewReferralStatus}
+								</Button>
 							)}
-							<div className="border-t-2 border-gray-700" />
-							<div className={`gap-4 mt-2 flex ${locale.includes("en") && "flex-col"}`}>
-								{registrationId && (
-									<Button
-										className="px-3"
-										isLoading={viewRegLoading}
-										onClick={() => {
-											dispatchNavigationLoading({ type: "viewRegistration" });
-											router.push(`/my-registration/${registrationId}`);
-										}}
-									>
-										{t.viewMyRegistration}
-									</Button>
-								)}
-								{!isCancelled && (
-									<Button
-										className="px-3"
-										isLoading={viewRefLoading}
-										onClick={() => {
-											dispatchNavigationLoading({ type: "viewReferral" });
-											router.push(`${window.location.href.replace(/\/success$/, "")}/referral-status`);
-										}}
-									>
-										{t.viewReferralStatus}
-									</Button>
-								)}
-							</div>
-							<Button className="w-fit" onClick={() => router.push(window.location.href.replace(/\/success$/, ""))}>
-								<ArrowLeft size={24} />
-							</Button>
 						</div>
-					</section>
-					<div ref={lanyardAnchorRef} className="hidden sm:block h-screen">
-						<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} anchorRef={lanyardAnchorRef} />
+						<Button variant="outline" className="w-fit" onClick={() => router.push(eventPath)}>
+							<ArrowLeft size={18} /> {t.backToEvent}
+						</Button>
 					</div>
+				</section>
+				<div ref={lanyardAnchorRef} className="hidden sm:block h-screen">
+					<Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} name={registerationTicketName || undefined} anchorRef={lanyardAnchorRef} />
 				</div>
-			)}
+			</div>
 			{registrationId && registrationTime && <QRCodePopup isOpen={showQRCode} onClose={() => dispatchQrPopup({ type: "closed" })} qrValue={qrValue} useOpass={useOpass} opassEventId={opassEventId} />}
 		</>
 	);

@@ -12,6 +12,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useReducer, useRef, useState } from "react";
+import { safeReturnPath } from "./safe-return-path";
 
 const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () => void; disabled: boolean; isLoading: boolean; children: React.ReactNode }) => {
 	return (
@@ -45,14 +46,6 @@ const SendButton = ({ onClick, disabled, isLoading, children }: { onClick: () =>
 		</div>
 	);
 };
-
-/** Only allow same-origin relative paths so returnUrl can't be used as an open redirect. */
-function safeReturnPath(returnUrl: string | null, locale: string): string {
-	if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//") && !returnUrl.startsWith("/\\")) {
-		return returnUrl;
-	}
-	return `/${locale}/`;
-}
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -114,6 +107,7 @@ function LoginContent() {
 	});
 	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 	const [resendCooldown, setResendCooldown] = useState(0);
+	const turnstileRef = useRef<TurnstileInstance>(null);
 	const resendTurnstileRef = useRef<TurnstileInstance>(null);
 
 	const t = getTranslations(locale, {
@@ -208,6 +202,14 @@ function LoginContent() {
 		editEmail: {
 			"zh-Hant": "修改電子郵件",
 			en: "Edit Email"
+		},
+		email: {
+			"zh-Hant": "電子郵件",
+			en: "Email"
+		},
+		sendFailed: {
+			"zh-Hant": "無法寄送登入連結，請稍後再試",
+			en: "Couldn't send the login link. Please try again later"
 		}
 	});
 
@@ -255,7 +257,7 @@ function LoginContent() {
 
 		dispatchLogin({ type: "sendStarted" });
 		try {
-			await authAPI.getMagicLink(email, locale, returnUrl || undefined, turnstileToken);
+			await authAPI.getMagicLink(email, locale, returnUrl ? safeReturnPath(returnUrl, locale) : undefined, turnstileToken);
 			dispatchLogin({ type: "sendSucceeded" });
 			setResendCooldown(RESEND_COOLDOWN_SECONDS);
 			if (isResend) {
@@ -276,13 +278,15 @@ function LoginContent() {
 				} else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
 					errorMessage = t.serverError;
 				} else {
-					errorMessage = error.message;
+					// Server messages aren't localized; lead with a translated summary and keep the detail for support.
+					errorMessage = error.message ? `${t.sendFailed} (${error.message})` : t.sendFailed;
 				}
 			}
 
 			showAlert(errorMessage, "error");
 			dispatchLogin({ type: "sendFailed" });
-			if (isResend) resendTurnstileRef.current?.reset();
+			// Turnstile tokens are single-use and sendFailed clears it, so the widget must issue a new one or the button stays disabled
+			(isResend ? resendTurnstileRef : turnstileRef).current?.reset();
 		}
 	};
 
@@ -319,7 +323,7 @@ function LoginContent() {
 				<>
 					<h1 className="my-4 text-center text-2xl font-bold">{t.login}</h1>
 					<label htmlFor="email" className="block mb-2 font-bold">
-						Email
+						{t.email}
 					</label>
 					<Input
 						type="email"
@@ -330,13 +334,14 @@ function LoginContent() {
 						onKeyDown={e => {
 							if (e.key === "Enter" && !e.nativeEvent.isComposing) {
 								e.preventDefault();
-								login();
+								void login();
 							}
 						}}
 						className="max-w-xs"
 					/>
 					<div className="flex justify-center my-4">
 						<Turnstile
+							ref={turnstileRef}
 							siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"}
 							onSuccess={token => dispatchLogin({ type: "turnstileChanged", token })}
 							onError={() => dispatchLogin({ type: "turnstileChanged", token: null })}

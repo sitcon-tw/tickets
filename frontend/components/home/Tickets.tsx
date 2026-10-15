@@ -3,7 +3,7 @@
 import Confirm from "@/components/Confirm";
 import Text from "@/components/input/Text";
 import MarkdownContent from "@/components/MarkdownContent";
-import PageSpinner from "@/components/PageSpinner";
+import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
@@ -27,6 +27,7 @@ type CodeVerificationStatus = "idle" | "valid" | "invalid";
 type TicketsState = {
 	tickets: TicketItem[];
 	isLoading: boolean;
+	loadFailed: boolean;
 	selectedTicket: TicketItem | null;
 	isConfirming: boolean;
 	isSubmitting: boolean;
@@ -40,6 +41,7 @@ type TicketsState = {
 
 type TicketsAction =
 	| { type: "ticketsLoaded"; tickets: TicketItem[] }
+	| { type: "ticketsLoadFailed" }
 	| { type: "loadingFinished" }
 	| { type: "ticketSelected"; ticket: TicketItem }
 	| { type: "confirmationVisibilityChanged"; isConfirming: boolean }
@@ -54,6 +56,7 @@ type TicketsAction =
 const initialTicketsState: TicketsState = {
 	tickets: [],
 	isLoading: true,
+	loadFailed: false,
 	selectedTicket: null,
 	isConfirming: false,
 	isSubmitting: false,
@@ -68,7 +71,9 @@ const initialTicketsState: TicketsState = {
 function ticketsReducer(state: TicketsState, action: TicketsAction): TicketsState {
 	switch (action.type) {
 		case "ticketsLoaded":
-			return { ...state, tickets: action.tickets };
+			return { ...state, tickets: action.tickets, loadFailed: false };
+		case "ticketsLoadFailed":
+			return { ...state, loadFailed: true };
 		case "loadingFinished":
 			return { ...state, isLoading: false };
 		case "ticketSelected":
@@ -163,12 +168,14 @@ function TicketSummary({ ticket, locale, t, children }: { ticket: TicketItem; lo
 
 function TicketsGrid({
 	isLoading,
+	loadFailed,
 	tickets,
 	locale,
 	t,
 	onTicketSelect
 }: {
 	isLoading: boolean;
+	loadFailed: boolean;
 	tickets: TicketItem[];
 	locale: string;
 	t: TicketTranslations;
@@ -177,11 +184,16 @@ function TicketsGrid({
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
 			{isLoading && tickets.length === 0 && (
-				<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px]">
-					<PageSpinner />
+				<div className="flex flex-col items-center justify-center gap-4 p-12 opacity-70 h-[500px] md:col-span-2">
+					<Spinner size="lg" />
+					<p>{t.loadingTickets}</p>
 				</div>
 			)}
-			{!isLoading && tickets.length === 0 ? <p>{t.selectTicketHint}</p> : null}
+			{!isLoading && tickets.length === 0 ? (
+				<p role={loadFailed ? "alert" : undefined} className={`md:col-span-2 py-8 text-center ${loadFailed ? "text-destructive" : "text-muted-foreground"}`}>
+					{loadFailed ? t.loadTicketsFailed : t.noTickets}
+				</p>
+			) : null}
 			{tickets.map(ticket => {
 				const isExpired = isTicketExpired(ticket);
 				const isSoldOut = isTicketSoldOut(ticket);
@@ -425,6 +437,30 @@ const ticketsTranslations = {
 	enterCodeFirst: {
 		"zh-Hant": "請先驗證邀請碼",
 		en: "Please verify invitation code first"
+	},
+	loadingTickets: {
+		"zh-Hant": "載入票種中...",
+		en: "Loading tickets..."
+	},
+	noTickets: {
+		"zh-Hant": "此活動目前沒有可報名的票種",
+		en: "There are no tickets available for this event yet"
+	},
+	loadTicketsFailed: {
+		"zh-Hant": "票種載入失敗，請重新整理頁面再試一次",
+		en: "Failed to load tickets. Please refresh the page and try again"
+	},
+	holdFailed: {
+		"zh-Hant": "無法保留座位：",
+		en: "Couldn't hold your seat: "
+	},
+	unknownError: {
+		"zh-Hant": "發生未知的錯誤",
+		en: "An unknown error occurred"
+	},
+	prepareFailed: {
+		"zh-Hant": "無法開始報名，請稍後再試",
+		en: "Couldn't start the registration. Please try again later"
 	}
 };
 export default function Tickets({ eventId, eventSlug }: TicketsProps) {
@@ -435,7 +471,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	const t = getTranslations(locale, ticketsTranslations);
 
 	const [state, dispatch] = useReducer(ticketsReducer, initialTicketsState);
-	const { tickets, isLoading, selectedTicket, isConfirming, isSubmitting, canRegister, isMounted, invitationCode, isVerifyingCode, codeVerificationStatus, verificationMessage } = state;
+	const { tickets, isLoading, loadFailed, selectedTicket, isConfirming, isSubmitting, canRegister, isMounted, invitationCode, isVerifyingCode, codeVerificationStatus, verificationMessage } = state;
 
 	const ticketAnimationRef = useRef<HTMLDivElement>(null);
 	const ticketConfirmRef = useRef<HTMLDivElement>(null);
@@ -513,6 +549,14 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		dispatch({ type: "submittingChanged", isSubmitting: true });
 
 		try {
+			// Logged-out visitors (e.g. from a referral link) go to login first and come back to this event
+			// A failed session check is not treated as logged out; the hold request below reports real errors.
+			const session = await authAPI.getSession().catch(() => "unknown" as const);
+			if (!session) {
+				router.push(`/login/?returnUrl=${encodeURIComponent(`/${locale}/${eventSlug}`)}`);
+				return;
+			}
+
 			// Store invitation code in localStorage if it was verified
 			if (selectedTicket.requireInviteCode && invitationCode.trim()) {
 				const formData = JSON.parse(localStorage.getItem(formDataStorageKey) || localStorage.getItem(legacyFormDataStorageKey) || "{}");
@@ -540,8 +584,8 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			try {
 				await registrationsAPI.hold({ eventId, ticketId: selectedTicket.id, invitationCode: selectedTicket.requireInviteCode ? invitationCode.trim() : undefined });
 			} catch (error) {
-				const message = error instanceof Error ? error.message : "Unknown error";
-				showAlert(message.includes("已售完") ? t.ticketSoldOut : message, "error");
+				const message = error instanceof Error && error.message ? error.message : t.unknownError;
+				showAlert(message.includes("已售完") ? t.ticketSoldOut : t.holdFailed + message, "error");
 				dispatch({ type: "submittingChanged", isSubmitting: false });
 				return;
 			}
@@ -549,6 +593,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			router.push(`/${eventSlug}/form`);
 		} catch (error) {
 			console.error("Failed to prepare registration:", error);
+			showAlert(t.prepareFailed, "error");
 			dispatch({ type: "submittingChanged", isSubmitting: false });
 		}
 	}
@@ -581,9 +626,12 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 				if (ticketsData.success && Array.isArray(ticketsData.data)) {
 					dispatch({ type: "ticketsLoaded", tickets: ticketsData.data });
+				} else {
+					dispatch({ type: "ticketsLoadFailed" });
 				}
 			} catch (error) {
 				console.error("Failed to load tickets", error);
+				dispatch({ type: "ticketsLoadFailed" });
 			} finally {
 				dispatch({ type: "loadingFinished" });
 			}
@@ -620,9 +668,10 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 			if (await checkAuth()) {
 				await checkRegistrationStatus();
 			}
-
-			dispatch({ type: "mounted" });
 		}
+
+		// The animation ticket is portalled to <body>, which only exists on the client
+		dispatch({ type: "mounted" });
 
 		void init();
 
@@ -641,7 +690,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 	return (
 		<>
 			<div className="max-w-4xl mx-auto w-full">
-				<TicketsGrid isLoading={isLoading} tickets={tickets} locale={locale} t={t} onTicketSelect={handleTicketSelect} />
+				<TicketsGrid isLoading={isLoading} loadFailed={loadFailed} tickets={tickets} locale={locale} t={t} onTicketSelect={handleTicketSelect} />
 				<Confirm isOpen={Boolean(selectedTicket)} onClose={closeConfirm} isConfirming={isConfirming}>
 					{selectedTicket ? (
 						<TicketConfirmContent
@@ -663,8 +712,6 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 				</Confirm>
 				{/* Animation ticket - rendered at body level via portal */}
 				{isMounted && typeof window !== "undefined" && createPortal(<AnimatedTicket selectedTicket={selectedTicket} locale={locale} t={t} ticketAnimationRef={ticketAnimationRef} />, document.body)}
-				{/* Animation ticket */}
-				<AnimatedTicket selectedTicket={selectedTicket} locale={locale} t={t} ticketAnimationRef={ticketAnimationRef} />
 			</div>
 		</>
 	);

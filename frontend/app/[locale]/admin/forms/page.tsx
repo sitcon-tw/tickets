@@ -1,6 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/components/admin/EmptyState";
+import { PageSkeleton } from "@/components/admin/PageSkeleton";
 import { useConfirm } from "@/components/admin/ConfirmProvider";
 import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAlert } from "@/contexts/AlertContext";
 import { Link } from "@/i18n/navigation";
 import { adminEventFormFieldsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useSelectedEventId } from "@/lib/hooks/useSelectedEventId";
 import { AlertCircle, CalendarDays, ClipboardList, Copy, MousePointerClick, Plus, Save, Trash2 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -39,8 +41,8 @@ function errorMessage(error: unknown) {
 	return error instanceof Error ? error.message : String(error);
 }
 
-function assertOk<T extends { success: boolean; message?: string }>(response: T): T {
-	if (!response.success) throw new Error(response.message || "Request failed");
+function assertOk<T extends { success: boolean; message?: string }>(response: T, fallbackMessage: string): T {
+	if (!response.success) throw new Error(response.message || fallbackMessage);
 	return response;
 }
 
@@ -51,6 +53,8 @@ export default function FormsPage() {
 	const confirm = useConfirm();
 	const currentEventId = useSelectedEventId();
 	const isWide = useMediaQuery("(min-width: 1280px)", true);
+	// The selected event (localStorage) and isWide (matchMedia) are only known after hydration.
+	const hydrated = useHydrated();
 
 	const [state, dispatch] = useReducer(formsReducer, initialFormsState);
 	const { questions, baseline, selectedId, eventTickets, allEvents, isLoading, loadError, isSaving } = state;
@@ -59,9 +63,9 @@ export default function FormsPage() {
 	const [copyOpen, setCopyOpen] = useState(false);
 
 	const eventIdRef = useRef(currentEventId);
-	const notifyRef = useRef({ showAlert, loadFailed: t.loadFailed });
+	const notifyRef = useRef({ showAlert, loadFailed: t.loadFailed, requestFailed: t.requestFailed });
 	useEffect(() => {
-		notifyRef.current = { showAlert, loadFailed: t.loadFailed };
+		notifyRef.current = { showAlert, loadFailed: t.loadFailed, requestFailed: t.requestFailed };
 	});
 	const serverRef = useRef<ServerState>({ ids: [], orders: new Map(), maxOrder: -1 });
 
@@ -92,7 +96,7 @@ export default function FormsPage() {
 
 	const loadFields = useCallback(async (eventId: string) => {
 		try {
-			const response = assertOk(await adminEventFormFieldsAPI.getAll({ eventId }));
+			const response = assertOk(await adminEventFormFieldsAPI.getAll({ eventId }), notifyRef.current.requestFailed);
 			if (eventIdRef.current !== eventId) return;
 			const fields = [...(response.data || [])].sort((a, b) => a.order - b.order);
 			serverRef.current = { ids: fields.map(f => f.id), orders: new Map(fields.map(f => [f.id, f.order])), maxOrder: fields.reduce((max, f) => Math.max(max, f.order), -1) };
@@ -185,7 +189,7 @@ export default function FormsPage() {
 
 	async function copyForm(sourceEventId: string) {
 		try {
-			const response = assertOk(await adminEventFormFieldsAPI.getAll({ eventId: sourceEventId }));
+			const response = assertOk(await adminEventFormFieldsAPI.getAll({ eventId: sourceEventId }), t.requestFailed);
 			dispatch({ type: "replaceQuestions", questions: copyFieldsToQuestions(response.data || []) });
 			showAlert(t.copySuccess, "success");
 		} catch (error) {
@@ -216,7 +220,7 @@ export default function FormsPage() {
 			// 1. Remove deleted fields first so their order numbers are free again.
 			const currentIds = new Set(questions.map(q => q.id));
 			const deletedIds = server.ids.filter(id => !currentIds.has(id));
-			const deleteResults = await Promise.allSettled(deletedIds.map(async id => assertOk(await adminEventFormFieldsAPI.delete(id))));
+			const deleteResults = await Promise.allSettled(deletedIds.map(async id => assertOk(await adminEventFormFieldsAPI.delete(id), t.requestFailed)));
 			const deleteErrors: string[] = [];
 			deleteResults.forEach((result, i) => {
 				if (result.status === "fulfilled") {
@@ -235,12 +239,12 @@ export default function FormsPage() {
 				questions.map(async q => {
 					const data = buildFieldData(q);
 					if (!isTempId(q.id)) {
-						assertOk(await adminEventFormFieldsAPI.update(q.id, data));
+						assertOk(await adminEventFormFieldsAPI.update(q.id, data), t.requestFailed);
 						return;
 					}
 					const order = ++nextOrder;
-					const response = assertOk(await adminEventFormFieldsAPI.create({ eventId, order, ...data }));
-					if (!response.data?.id) throw new Error("Missing field id in response");
+					const response = assertOk(await adminEventFormFieldsAPI.create({ eventId, order, ...data }), t.requestFailed);
+					if (!response.data?.id) throw new Error(t.missingFieldId);
 					idMap[q.id] = response.data.id;
 					server.ids.push(response.data.id);
 					server.maxOrder = Math.max(server.maxOrder, order);
@@ -260,7 +264,7 @@ export default function FormsPage() {
 				questions.flatMap(q => {
 					const needsFilters = q.filters?.conditions.some(condition => condition.fieldId && idMap[condition.fieldId]);
 					if (!needsFilters) return [];
-					return [adminEventFormFieldsAPI.update(idMap[q.id] ?? q.id, { filters: serializeFilters(remapFilters(q.filters, idMap)) }).then(assertOk)];
+					return [adminEventFormFieldsAPI.update(idMap[q.id] ?? q.id, { filters: serializeFilters(remapFilters(q.filters, idMap)) }).then(response => assertOk(response, t.requestFailed))];
 				})
 			);
 			const fixErrors = fixResults.flatMap(result => (result.status === "rejected" ? [errorMessage(result.reason)] : []));
@@ -269,7 +273,7 @@ export default function FormsPage() {
 			// 4. Apply the final order in one transaction.
 			const finalIds = questions.map(q => idMap[q.id] ?? q.id);
 			if (finalIds.some((id, index) => server.orders.get(id) !== index)) {
-				assertOk(await adminEventFormFieldsAPI.reorder(eventId, { fieldOrders: finalIds.map((id, index) => ({ id, order: index })) }));
+				assertOk(await adminEventFormFieldsAPI.reorder(eventId, { fieldOrders: finalIds.map((id, index) => ({ id, order: index })) }), t.requestFailed);
 			}
 
 			await loadFields(eventId);
@@ -296,6 +300,15 @@ export default function FormsPage() {
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, []);
+
+	if (!hydrated) {
+		return (
+			<main>
+				<AdminHeader title={t.title} description={t.formInfo} />
+				<PageSkeleton />
+			</main>
+		);
+	}
 
 	if (!currentEventId) {
 		return (

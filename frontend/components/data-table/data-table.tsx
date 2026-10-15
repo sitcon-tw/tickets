@@ -1,6 +1,6 @@
 "use client";
 
-import { RowData, RowSelectionState, SortingState, flexRender, useTable, type Updater } from "@tanstack/react-table";
+import { ColumnFiltersState, PaginationState, RowData, RowSelectionState, SortingState, flexRender, useTable, type Updater } from "@tanstack/react-table";
 import * as React from "react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Inbox } from "lucide-react";
 import { useLocale } from "next-intl";
 
+import { getAriaSort } from "./data-table-column-header";
 import { DataTablePagination } from "./data-table-pagination";
 
 function TableSkeleton({ columns, rows = 5 }: { columns: number; rows?: number }) {
@@ -35,8 +36,15 @@ export function DataTable<TData extends RowData>({
 	getRowId,
 	onRowClick,
 	rowSelection: controlledRowSelection,
-	onRowSelectionChange
-}: DataTableProps<TData>) {
+	onRowSelectionChange,
+	resetPageKey
+}: DataTableProps<TData> & {
+	/**
+	 * For pages that filter `data` themselves (search box, status filter): pass e.g. the search text plus the status.
+	 * Changing it goes back to page 1; other data changes (editing a row) keep the current page.
+	 */
+	resetPageKey?: string;
+}) {
 	const locale = useLocale();
 	const t = getTranslations(locale, {
 		noResults: { "zh-Hant": "沒有符合的資料", en: "No results" }
@@ -44,6 +52,32 @@ export function DataTable<TData extends RowData>({
 
 	const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({});
 	const [sorting, setSorting] = React.useState<SortingState>([]);
+	const [pagination, setPagination] = React.useState<PaginationState>({ pageIndex: 0, pageSize: initialPageSize });
+	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+
+	// A new search or filter starts again from page 1.
+	const [prevResetPageKey, setPrevResetPageKey] = React.useState(resetPageKey);
+	if (prevResetPageKey !== resetPageKey) {
+		setPrevResetPageKey(resetPageKey);
+		setPagination(prev => ({ ...prev, pageIndex: 0 }));
+	}
+
+	// Page index is not auto-reset on data changes (editing a row would jump back to page 1),
+	// so keep it in range ourselves when rows are removed or filtered out.
+	const lastPageIndex = Math.max(Math.ceil(data.length / pagination.pageSize) - 1, 0);
+	if (!isLoading && pagination.pageIndex > lastPageIndex) {
+		setPagination({ ...pagination, pageIndex: lastPageIndex });
+	}
+
+	const handleSortingChange = (updater: Updater<SortingState>) => {
+		setSorting(updater);
+		setPagination(prev => ({ ...prev, pageIndex: 0 }));
+	};
+
+	const handleColumnFiltersChange = (updater: Updater<ColumnFiltersState>) => {
+		setColumnFilters(updater);
+		setPagination(prev => ({ ...prev, pageIndex: 0 }));
+	};
 
 	const isSelectionControlled = controlledRowSelection !== undefined;
 	const rowSelection = isSelectionControlled ? controlledRowSelection : internalRowSelection;
@@ -63,14 +97,18 @@ export function DataTable<TData extends RowData>({
 		data,
 		columns,
 		getRowId,
-		initialState: { pagination: { pageIndex: 0, pageSize: initialPageSize } },
 		state: {
 			sorting,
-			rowSelection
+			rowSelection,
+			pagination,
+			columnFilters
 		},
+		autoResetPageIndex: false,
 		enableRowSelection: hasSelectionColumn,
 		onRowSelectionChange: handleRowSelectionChange,
-		onSortingChange: setSorting
+		onSortingChange: handleSortingChange,
+		onColumnFiltersChange: handleColumnFiltersChange,
+		onPaginationChange: setPagination
 	});
 
 	const rows = table.getRowModel().rows;
@@ -83,7 +121,7 @@ export function DataTable<TData extends RowData>({
 						{table.getHeaderGroups().map(headerGroup => (
 							<TableRow key={headerGroup.id} className="hover:bg-transparent">
 								{headerGroup.headers.map(header => (
-									<TableHead key={header.id} colSpan={header.colSpan} className="whitespace-nowrap">
+									<TableHead key={header.id} colSpan={header.colSpan} aria-sort={header.isPlaceholder ? undefined : getAriaSort(header.column)} className="whitespace-nowrap">
 										{header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
 									</TableHead>
 								))}

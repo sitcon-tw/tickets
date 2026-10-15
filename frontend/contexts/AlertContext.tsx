@@ -29,20 +29,29 @@ export type { Alert, AlertContextType, AlertType };
  * toast.error("Error!");
  * ```
  */
+// Errors stay up longer: they usually need reading and acting on.
+const DEFAULT_DURATIONS: Record<AlertType, number> = {
+	success: 5000,
+	error: 7000,
+	warning: 5000,
+	info: 5000
+};
+
 export function useAlert(): AlertContextType {
-	const showAlert = useCallback((message: string, type: AlertType, duration: number = 5000) => {
+	const showAlert = useCallback((message: string, type: AlertType, duration?: number) => {
+		const options = { duration: duration ?? DEFAULT_DURATIONS[type] };
 		switch (type) {
 			case "success":
-				toast.success(message, { duration });
+				toast.success(message, options);
 				break;
 			case "error":
-				toast.error(message, { duration: duration || 7000 });
+				toast.error(message, options);
 				break;
 			case "warning":
-				toast.warning(message, { duration });
+				toast.warning(message, options);
 				break;
 			case "info":
-				toast.info(message, { duration });
+				toast.info(message, options);
 				break;
 		}
 	}, []);

@@ -12,6 +12,7 @@ export type TicketDisplay = Ticket & {
 	displayName: string;
 	formattedSaleStart: string;
 	formattedSaleEnd: string;
+	formattedPrice: string;
 	statusLabel: string;
 	statusTone: StatusTone;
 };
@@ -82,8 +83,8 @@ export const createTicketsColumns = (actions: ColumnActions): ColumnDef<DataTabl
 		enableSorting: false,
 		header: ({ column }) => <DataTableColumnHeader column={column} title={actions.t.price} />,
 		cell: ({ row }) => {
-			const price = row.original.price;
-			return <div className="whitespace-nowrap tabular-nums">{price > 0 ? `NT$ ${price.toLocaleString()}` : actions.t.free}</div>;
+			const { price, formattedPrice } = row.original;
+			return <div className="whitespace-nowrap tabular-nums">{price > 0 ? formattedPrice : actions.t.free}</div>;
 		}
 	},
 	{

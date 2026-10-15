@@ -15,19 +15,23 @@ import { z } from "zod/v4";
 
 const formDataStorageKey = "formData:v1";
 const legacyFormDataStorageKey = "formData";
+type FailureKind = "event" | "ticket" | "load";
+
 type TicketPageState = {
 	isLoading: boolean;
 	hasError: boolean;
+	failureKind: FailureKind | null;
 	errorMessage: string;
 	isNotYetAvailable: boolean;
 	isReady: boolean;
 };
 
-type TicketPageAction = { type: "loadingFinished" } | { type: "ready" } | { type: "failed"; message?: string; isNotYetAvailable?: boolean } | { type: "reset" };
+type TicketPageAction = { type: "ready" } | { type: "failed"; kind?: FailureKind; message?: string; isNotYetAvailable?: boolean } | { type: "reset" };
 
 const initialTicketPageState: TicketPageState = {
 	isLoading: true,
 	hasError: false,
+	failureKind: null,
 	errorMessage: "",
 	isNotYetAvailable: false,
 	isReady: false
@@ -35,14 +39,13 @@ const initialTicketPageState: TicketPageState = {
 
 function ticketPageReducer(state: TicketPageState, action: TicketPageAction): TicketPageState {
 	switch (action.type) {
-		case "loadingFinished":
-			return { ...state, isLoading: false };
 		case "ready":
 			return { ...state, isLoading: false, isReady: true };
 		case "failed":
 			return {
 				isLoading: false,
 				hasError: true,
+				failureKind: action.kind ?? null,
 				errorMessage: action.message || "",
 				isNotYetAvailable: action.isNotYetAvailable || false,
 				isReady: false
@@ -93,7 +96,7 @@ export default function SetTicket() {
 	const router = useRouter();
 
 	const [state, dispatch] = useReducer(ticketPageReducer, initialTicketPageState);
-	const { isLoading, errorMessage, isNotYetAvailable, isReady } = state;
+	const { isLoading, errorMessage, failureKind, isNotYetAvailable, isReady } = state;
 
 	const t = getTranslations(locale, {
 		ticketSaleEnded: {
@@ -170,7 +173,7 @@ export default function SetTicket() {
 		}
 	});
 
-	const fetchEvent = useCallback(async () => {
+	const fetchEvent = useCallback(async (): Promise<{ ok: true; eventId: string } | { ok: false; kind: FailureKind }> => {
 		const eventSlug = params.event as string;
 		try {
 			const eventsData = await eventsAPI.getAll();
@@ -179,19 +182,16 @@ export default function SetTicket() {
 				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
 
 				if (foundEvent) {
-					return foundEvent.id;
-				} else {
-					showAlert(t.eventNotFound, "error");
-					dispatch({ type: "failed" });
+					return { ok: true, eventId: foundEvent.id };
 				}
-			} else {
-				showAlert(t.loadFailed, "error");
-				dispatch({ type: "failed" });
+				showAlert(t.eventNotFound, "error");
+				return { ok: false, kind: "event" };
 			}
+			showAlert(t.loadFailed, "error");
 		} catch {
 			showAlert(t.loadFailed, "error");
-			dispatch({ type: "failed" });
 		}
+		return { ok: false, kind: "load" };
 	}, [params.event, showAlert, t.eventNotFound, t.loadFailed]);
 
 	const fetchTicket = useCallback(async () => {
@@ -200,24 +200,13 @@ export default function SetTicket() {
 			const ticketData = await ticketsAPI.getTicket(ticketId);
 
 			if (ticketData?.success && ticketData.data) {
-				const foundTicket = ticketData.data;
-
-				if (foundTicket) {
-					return foundTicket;
-				} else {
-					showAlert(t.ticketNotFound, "error");
-					dispatch({ type: "failed" });
-				}
-			} else {
-				showAlert(t.loadFailed, "error");
-				dispatch({ type: "failed" });
+				return ticketData.data;
 			}
+			showAlert(t.ticketNotFound, "error");
 		} catch {
 			showAlert(t.loadFailed, "error");
-			dispatch({ type: "failed" });
-		} finally {
-			dispatch({ type: "loadingFinished" });
 		}
+		return null;
 	}, [params.ticket, showAlert, t.loadFailed, t.ticketNotFound]);
 
 	const handleTicketSelect = useCallback(
@@ -278,25 +267,28 @@ export default function SetTicket() {
 				return true;
 			} catch (error) {
 				console.warn("Unable to access localStorage", error);
+				dispatch({ type: "failed", message: t.error });
 				return false;
 			}
 		},
-		[t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, t.inviteCodeRequired, t.inviteCodeInvalid, showAlert]
+		[t.ticketSaleEnded, t.ticketNotYetAvailable, t.ticketSoldOut, t.inviteCodeRequired, t.inviteCodeInvalid, t.error, showAlert]
 	);
 
 	useEffect(() => {
-		const event = fetchEvent();
-		const ticket = fetchTicket();
-
-		void Promise.all([event, ticket]).then(async values => {
-			const [eventId, ticketData] = values;
-			if (eventId && ticketData) {
-				const isValid = await handleTicketSelect(ticketData, eventId);
-				if (isValid) {
-					dispatch({ type: "ready" });
-				}
-			} else {
-				dispatch({ type: "loadingFinished" });
+		// Stay in the loading state until the event, the ticket and any invite-code check are all settled,
+		// so a half-finished load never flashes an error screen.
+		void Promise.all([fetchEvent(), fetchTicket()]).then(async ([eventResult, ticketData]) => {
+			if (!eventResult.ok) {
+				dispatch({ type: "failed", kind: eventResult.kind });
+				return;
+			}
+			if (!ticketData) {
+				dispatch({ type: "failed", kind: "ticket" });
+				return;
+			}
+			const isValid = await handleTicketSelect(ticketData, eventResult.eventId);
+			if (isValid) {
+				dispatch({ type: "ready" });
 			}
 		});
 	}, [fetchEvent, fetchTicket, handleTicketSelect]);
@@ -329,18 +321,20 @@ export default function SetTicket() {
 				</main>
 			) : (
 				<main className="h-screen flex flex-col items-center justify-center gap-6 p-8">
-					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">{errorMessage ? t.ticketUnavailable : t.eventNotFound}</h1>
+					<h1 className="text-4xl font-bold mb-4 text-center text-foreground">
+						{errorMessage ? t.ticketUnavailable : failureKind === "ticket" ? t.ticketNotFound : failureKind === "event" ? t.eventNotFound : t.loadFailed}
+					</h1>
 					<p className="text-center text-muted-foreground max-w-md">{errorMessage || t.tryToDebug}</p>
 
 					<div className="flex gap-4 mt-4">
 						{isNotYetAvailable && (
-							<Link href={`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`}>
-								<Button variant="default">{t.goToLogin}</Button>
-							</Link>
+							<Button asChild variant="default">
+								<Link href={`/login/?returnUrl=${encodeURIComponent(window.location.pathname)}`}>{t.goToLogin}</Link>
+							</Button>
 						)}
-						<Link href={`/${params.event as string}`}>
-							<Button variant="secondary">{t.backToEvent}</Button>
-						</Link>
+						<Button asChild variant="secondary">
+							<Link href={`/${params.event as string}`}>{t.backToEvent}</Link>
+						</Button>
 					</div>
 				</main>
 			)}

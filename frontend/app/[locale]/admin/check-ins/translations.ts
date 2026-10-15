@@ -38,6 +38,13 @@ export const checkInsTranslations = {
 	},
 	scanFailed: { "zh-Hant": "報到失敗", en: "Check-in failed" },
 	undo: { "zh-Hant": "取消報到", en: "Undo" },
+	undoConfirmTitle: { "zh-Hant": "取消報到？", en: "Undo check-in?" },
+	undoConfirmDescription: {
+		"zh-Hant": "「{name}」將改回未報到，原本的報到時間會被清除且無法復原。之後再次報到會記錄新的時間。",
+		en: "{name} will be marked as not checked in and the original check-in time will be cleared. This cannot be undone; checking in again records a new time."
+	},
+	undoConfirm: { "zh-Hant": "確定取消報到", en: "Undo check-in" },
+	undoKeep: { "zh-Hant": "保留報到", en: "Keep check-in" },
 
 	search: { "zh-Hant": "搜尋姓名、Email、電話、QR 內容、表單資料...", en: "Search name, email, phone, QR content, form data..." },
 	clearSearch: { "zh-Hant": "清除搜尋", en: "Clear search" },

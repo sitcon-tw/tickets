@@ -67,6 +67,10 @@ export default function RolesPage() {
 		delete: { "zh-Hant": "刪除", en: "Delete" },
 		confirmDeleteTitle: { "zh-Hant": "刪除此角色？", en: "Delete this role?" },
 		confirmDeleteDescription: { "zh-Hant": "此操作無法復原。", en: "This can't be undone." },
+		confirmDeleteHolders: {
+			"zh-Hant": "目前仍有 {n} 位使用者使用此角色，需先變更他們的角色才能刪除。",
+			en: "{n} users still have this role. Change their role before deleting it."
+		},
 		noRoles: { "zh-Hant": "還沒有自訂角色", en: "No custom roles yet" },
 		noRolesHint: {
 			"zh-Hant": "內建的管理員、活動管理員、檢視者角色仍可使用。建立自訂角色來做更細緻的權限控管。",
@@ -135,6 +139,7 @@ export default function RolesPage() {
 	const [loadError, setLoadError] = useState(false);
 	const [form, setForm] = useState<RoleForm | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		setLoadError(false);
@@ -216,8 +221,12 @@ export default function RolesPage() {
 	}
 
 	async function handleDelete(role: Role) {
-		if (!(await confirm({ title: t.confirmDeleteTitle, description: `${role.name} — ${t.confirmDeleteDescription}`, destructive: true, confirmLabel: t.delete }))) return;
+		if (deletingId) return;
+		const holders = role.userCount ?? 0;
+		const description = [`${role.name} — ${t.confirmDeleteDescription}`, holders > 0 ? t.confirmDeleteHolders.replace("{n}", String(holders)) : ""].filter(Boolean).join(" ");
+		if (!(await confirm({ title: t.confirmDeleteTitle, description, destructive: true, confirmLabel: t.delete }))) return;
 
+		setDeletingId(role.id);
 		try {
 			const response = await adminRolesAPI.delete(role.id);
 			if (!response.success) {
@@ -228,6 +237,8 @@ export default function RolesPage() {
 			await load();
 		} catch (error) {
 			showAlert(`${t.deleteFailed}: ${getErrorMessage(error)}`, "error");
+		} finally {
+			setDeletingId(null);
 		}
 	}
 
@@ -265,7 +276,17 @@ export default function RolesPage() {
 						</Button>
 					}
 				/>
-			) : !isLoading && roles.length === 0 ? (
+			) : isLoading && roles.length === 0 ? (
+				<ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+					{Array.from({ length: 3 }, (_, index) => (
+						<li key={index} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+							<div className="h-6 w-1/2 animate-pulse rounded-md bg-muted" />
+							<div className="h-4 w-3/4 animate-pulse rounded-md bg-muted" />
+							<div className="mt-2 h-5 w-2/3 animate-pulse rounded-md bg-muted" />
+						</li>
+					))}
+				</ul>
+			) : roles.length === 0 ? (
 				<EmptyState icon={ShieldCheck} title={t.noRoles} description={t.noRolesHint} />
 			) : (
 				<ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy={isLoading}>
@@ -277,10 +298,19 @@ export default function RolesPage() {
 									{role.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{role.description}</p>}
 								</div>
 								<div className="flex shrink-0 gap-1">
-									<Button type="button" variant="ghost" size="icon" aria-label={t.edit} onClick={() => openEdit(role)}>
+									<Button type="button" variant="ghost" size="icon" aria-label={`${t.edit}: ${role.name}`} title={t.edit} onClick={() => openEdit(role)}>
 										<Pencil className="size-4" />
 									</Button>
-									<Button type="button" variant="ghost" size="icon" aria-label={t.delete} onClick={() => void handleDelete(role)}>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										aria-label={`${t.delete}: ${role.name}`}
+										title={t.delete}
+										isLoading={deletingId === role.id}
+										disabled={deletingId !== null}
+										onClick={() => void handleDelete(role)}
+									>
 										<Trash2 className="size-4" />
 									</Button>
 								</div>
@@ -323,7 +353,7 @@ export default function RolesPage() {
 							</Label>
 
 							<fieldset className="space-y-3">
-								<legend className="mb-2 flex w-full items-center justify-between gap-2 text-md font-bold">
+								<legend className="mb-2 flex w-full items-center justify-between gap-2 text-base font-bold">
 									{t.permissionsTitle}
 									<span className="text-xs font-normal text-muted-foreground">{t.permissionCount.replace("{n}", String(form.permissions.size))}</span>
 								</legend>

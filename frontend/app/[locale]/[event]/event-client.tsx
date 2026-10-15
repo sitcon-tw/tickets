@@ -8,6 +8,7 @@ import SponsorSection from "@/components/sponsors/SponsorSection";
 import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { isSameDayUTC8 } from "@/lib/utils/timezone";
 import { PublicEventListItemSchema, PublicTicketListItemSchema, type PublicSponsor, type SponsorSectionTitles } from "@sitcontix/types";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -202,7 +203,7 @@ export default function Main() {
 	const eventName = getLocalizedText(event.name, locale);
 	const coverImage = imageSrc || event.ogImage || "/assets/default.webp";
 	const formatDate = (date: Date) => {
-		return date.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
+		return date.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Taipei" });
 	};
 
 	return (
@@ -226,7 +227,7 @@ export default function Main() {
 										<Calendar size={20} className="shrink-0" />
 										<span className="text-base">
 											{formatDate(event.startDate)}
-											{event.endDate && event.endDate !== event.startDate && ` - ${formatDate(event.endDate)}`}
+											{event.endDate && !isSameDayUTC8(event.startDate, event.endDate) && ` - ${formatDate(event.endDate)}`}
 										</span>
 									</div>
 
@@ -255,7 +256,7 @@ export default function Main() {
 							</div>
 
 							{/* Right: Welcome Box */}
-							<div className="p-8 m-4 mt-0 md:m-0 shadow-lg rounded-b-4xl bg-gray-200 dark:bg-gray-800 h-fit md-mt-8 pt-16 lg:mt-0 lg:pt-8 flex-1">
+							<div className="p-8 m-4 mt-0 md:m-0 shadow-lg rounded-b-4xl bg-gray-200 dark:bg-gray-800 h-fit md:mt-8 pt-16 lg:mt-0 lg:pt-8 flex-1">
 								<Welcome eventId={event.id} eventSlug={eventSlug} />
 							</div>
 						</div>

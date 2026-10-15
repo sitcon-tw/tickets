@@ -11,7 +11,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
 import type { EmailCampaign } from "@sitcontix/types";
-import { Mail, RotateCw } from "lucide-react";
+import { Mail, RefreshCw, RotateCw } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CampaignDialogs } from "./campaign-dialogs";
@@ -20,6 +20,9 @@ import { buildTargetAudience, campaignsReducer, initialCampaignsState, type Audi
 import { campaignTranslations, fmt, getErrorMessage } from "./translations";
 
 const POLL_INTERVAL_MS = 2000;
+// The list endpoint caps `limit` at 100 and its pagination info is not exposed by the API client, so pages are fetched until one comes back short.
+const PAGE_SIZE = 100;
+const MAX_PAGES = 50;
 const STATUS_FILTERS: StatusFilter[] = ["all", "draft", "sending", "sent", "cancelled"];
 
 export default function EmailCampaignsPage() {
@@ -44,6 +47,7 @@ export default function EmailCampaignsPage() {
 	// Campaign ids with a request in flight; guards against double clicks on send / cancel / preview.
 	const busyRef = useRef(new Set<string>());
 	const [busyIds, setBusyIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const acquire = useCallback((id: string) => {
 		if (busyRef.current.has(id)) return false;
 		busyRef.current.add(id);
@@ -60,16 +64,28 @@ export default function EmailCampaignsPage() {
 			const seq = ++loadSeqRef.current;
 			if (!silent) dispatch({ type: "setCampaignsLoading", value: true });
 			try {
-				const response = await adminEmailCampaignsAPI.getAll({ limit: 100 });
-				if (seq !== loadSeqRef.current) return;
-				if (response.success) {
-					dispatch({ type: "campaignsLoaded", campaigns: response.data || [] });
-				} else if (!silent) {
-					showAlert(`${t.loadFailed}: ${response.message}`, "error");
+				const all: EmailCampaign[] = [];
+				for (let page = 1; page <= MAX_PAGES; page++) {
+					const response = await adminEmailCampaignsAPI.getAll({ page, limit: PAGE_SIZE });
+					if (seq !== loadSeqRef.current) return;
+					if (!response.success) {
+						setLoadError(response.message || "");
+						if (!silent) showAlert(`${t.loadFailed}: ${response.message}`, "error");
+						return;
+					}
+					const batch = response.data || [];
+					all.push(...batch);
+					if (batch.length < PAGE_SIZE) break;
 				}
+				// Pages can shift while they are fetched (new campaigns are added at the top), so drop duplicates.
+				const unique = Array.from(new Map(all.map(campaign => [campaign.id, campaign])).values());
+				setLoadError(null);
+				dispatch({ type: "campaignsLoaded", campaigns: unique });
 			} catch (error) {
 				console.error("Failed to load campaigns:", error);
-				if (!silent && seq === loadSeqRef.current) showAlert(`${t.loadFailed}: ${getErrorMessage(error)}`, "error");
+				if (seq !== loadSeqRef.current) return;
+				setLoadError(getErrorMessage(error));
+				if (!silent) showAlert(`${t.loadFailed}: ${getErrorMessage(error)}`, "error");
 			} finally {
 				if (!silent) dispatch({ type: "setCampaignsLoading", value: false });
 			}
@@ -384,10 +400,23 @@ export default function EmailCampaignsPage() {
 			<DataTable
 				columns={columns}
 				data={filteredCampaigns}
+				resetPageKey={statusFilter}
 				isLoading={isLoading && campaigns.length === 0}
 				getRowId={row => row.id}
 				emptyState={
-					campaigns.length === 0 ? (
+					campaigns.length === 0 && loadError !== null ? (
+						<EmptyState
+							icon={Mail}
+							title={t.loadFailed}
+							description={loadError || undefined}
+							action={
+								<Button variant="outline" onClick={() => void loadCampaigns()}>
+									<RefreshCw className="size-4" />
+									{t.retry}
+								</Button>
+							}
+						/>
+					) : campaigns.length === 0 ? (
 						<EmptyState
 							icon={Mail}
 							title={t.emptyTitle}

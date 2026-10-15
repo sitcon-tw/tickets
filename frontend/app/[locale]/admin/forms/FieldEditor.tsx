@@ -62,7 +62,7 @@ export function FieldEditor({ question, questions, eventTickets, issues, locale,
 					{tabs.map(item => (
 						<TabsTrigger key={item.value} value={item.value} className="relative py-1.5">
 							{item.label}
-							{issueCount(item.value) > 0 && <span aria-label={t.hasIssues} className="size-2 rounded-full bg-destructive" />}
+							{issueCount(item.value) > 0 && <span role="img" aria-label={t.hasIssues} className="size-2 rounded-full bg-destructive" />}
 						</TabsTrigger>
 					))}
 				</TabsList>
