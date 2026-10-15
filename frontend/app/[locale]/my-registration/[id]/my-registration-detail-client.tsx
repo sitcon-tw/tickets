@@ -19,18 +19,15 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { registrationsAPI, ticketsAPI } from "@/lib/api/endpoints";
-import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields } from "@/lib/utils/formFields";
+import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields, toFormData } from "@/lib/utils/formFields";
 import { getLocalizedText, getOptionValue } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
+import type { FormDataType } from "@/lib/types/data";
 import { getVisibleFieldIds, Registration, TicketFormField, validateFormData } from "@sitcontix/types";
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock, ExternalLink, MapPin, Pencil, Save, Ticket, X, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { Suspense, useCallback, useEffect, useReducer, useState } from "react";
-
-type FormDataType = {
-	[key: string]: string | boolean | string[];
-};
 
 type RegistrationDetailState = {
 	loading: boolean;
@@ -74,7 +71,7 @@ function registrationDetailReducer(state: RegistrationDetailState, action: Regis
 		case "editStarted":
 			return { ...state, isEditing: true };
 		case "editCancelled":
-			return { ...state, isEditing: false, formData: (state.registration?.formData as FormDataType) || {} };
+			return { ...state, isEditing: false, formData: toFormData(state.registration?.formData) };
 		case "saveStarted":
 			return { ...state, isSaving: true };
 		case "saveFinished":
@@ -85,7 +82,7 @@ function registrationDetailReducer(state: RegistrationDetailState, action: Regis
 						...state,
 						isEditing: false,
 						registration: { ...state.registration, formData: action.formData },
-						formData: action.formData as FormDataType
+						formData: toFormData(action.formData)
 					}
 				: state;
 		case "cancelStarted":
@@ -564,7 +561,7 @@ function MyRegistrationPageContent() {
 					type: "loaded",
 					registration: regData,
 					formFields: processedFields,
-					formData: regData.formData as FormDataType
+					formData: toFormData(regData.formData)
 				});
 			} catch (error) {
 				console.error("Failed to load registration:", error);

@@ -4,6 +4,7 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "@/i18n/helpers";
 import { smsVerificationAPI } from "@/lib/api/endpoints";
+import { errorMessage } from "@/lib/utils/text";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Check, MessageSquare, MessageSquareMore } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -519,9 +520,8 @@ function VerifyPageContent() {
 
 			dispatchVerify({ type: "sendSucceeded" });
 		} catch (err) {
-			const error = err as Error;
-			console.error("Failed to send SMS:", error);
-			dispatchVerify({ type: "sendFailed", error: error.message || t.sendFailed });
+			console.error("Failed to send SMS:", err);
+			dispatchVerify({ type: "sendFailed", error: errorMessage(err, t.sendFailed) });
 			turnstileRef.current?.reset();
 		}
 	}
@@ -615,9 +615,8 @@ function VerifyPageContent() {
 				router.push(redirectUrl);
 			}, 2000);
 		} catch (err) {
-			const error = err as Error;
-			console.error("Verification failed:", error);
-			dispatchVerify({ type: "verifyFailed", error: error.message || t.verifyFail });
+			console.error("Verification failed:", err);
+			dispatchVerify({ type: "verifyFailed", error: errorMessage(err, t.verifyFail) });
 			// The boxes are still disabled at this point; the effect below focuses the first one once they are enabled
 			focusFirstCodeInputRef.current = true;
 		}
@@ -645,9 +644,8 @@ function VerifyPageContent() {
 			dispatchVerify({ type: "sendSucceeded" });
 			codeInputRefs.current[0]?.focus();
 		} catch (err) {
-			const error = err as Error;
-			console.error("Failed to resend SMS:", error);
-			dispatchVerify({ type: "sendFailed", error: error.message || t.resendFailed });
+			console.error("Failed to resend SMS:", err);
+			dispatchVerify({ type: "sendFailed", error: errorMessage(err, t.resendFailed) });
 			turnstileRef.current?.reset();
 		}
 	}

@@ -1,4 +1,5 @@
 import prisma from "#config/database";
+import { eventRefWhere } from "#utils/event-ref";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { getRedisClient } from "#config/redis";
 import { tracer } from "#lib/tracing";
@@ -46,7 +47,7 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 		// Fetch event from database
 		const event = await prisma.event.findFirst({
 			where: {
-				OR: [{ slug: eventSlug }, { id: eventSlug }, ...(eventSlug.length === 6 ? [{ id: { endsWith: eventSlug } }] : [])],
+				...(await eventRefWhere(eventSlug)),
 				isActive: true
 			},
 			select: {
@@ -71,7 +72,7 @@ const generateEventCalendar = async (eventSlug: string): Promise<string> => {
 			if (!jsonField) return "";
 			if (typeof jsonField === "string") return jsonField;
 			if (typeof jsonField === "object" && !Array.isArray(jsonField)) {
-				return toText(jsonField[locale] || jsonField["zh-TW"] || jsonField["en"] || Object.values(jsonField)[0] || "");
+				return toText(jsonField[locale] || jsonField["en"] || Object.values(jsonField)[0] || "");
 			}
 			return String(jsonField);
 		};

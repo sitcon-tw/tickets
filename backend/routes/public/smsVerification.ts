@@ -4,7 +4,7 @@ import { generateVerificationCode, sendVerificationCode } from "#lib/sms";
 import { tracer } from "#lib/tracing";
 import { getClientIP, validateTurnstile } from "#lib/turnstile";
 import { requireAuth } from "#middleware/auth";
-import { Prisma } from "#prisma/generated/prisma";
+import { isPrismaErrorCode } from "#utils/prisma-errors";
 import { smsVerificationSchemas } from "#schemas";
 import { serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeText } from "#utils/sanitize";
@@ -233,15 +233,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
-				if (error instanceof Prisma.PrismaClientKnownRequestError) {
-					const prismaError = error as Prisma.PrismaClientKnownRequestError;
-					if (prismaError.code === "P2034") {
-						request.log.warn({ error }, "SMS verification transaction conflict detected");
-						span.addEvent("sms_verification.transaction_conflict");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
-						const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
-						return reply.code(statusCode).send(response);
-					}
+				if (isPrismaErrorCode(error, "P2034")) {
+					request.log.warn({ error }, "SMS verification transaction conflict detected");
+					span.addEvent("sms_verification.transaction_conflict");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
+					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
 				}
 
 				request.log.error({ error }, "Send SMS verification error");
@@ -369,15 +366,12 @@ const smsVerificationRoutes: FastifyPluginAsync = async fastify => {
 					)
 				);
 			} catch (error) {
-				if (error instanceof Prisma.PrismaClientKnownRequestError) {
-					const prismaError = error as Prisma.PrismaClientKnownRequestError;
-					if (prismaError.code === "P2034") {
-						request.log.warn({ error }, "SMS verification transaction conflict detected");
-						span.addEvent("sms_verification.transaction_conflict");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
-						const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
-						return reply.code(statusCode).send(response);
-					}
+				if (isPrismaErrorCode(error, "P2034")) {
+					request.log.warn({ error }, "SMS verification transaction conflict detected");
+					span.addEvent("sms_verification.transaction_conflict");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
+					const { response, statusCode } = validationErrorResponse("系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
 				}
 
 				request.log.error({ error }, "Verify SMS code error");

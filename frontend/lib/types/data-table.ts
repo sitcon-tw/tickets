@@ -23,10 +23,6 @@ export interface DataTableProps<TData extends RowData> {
 	onRowSelectionChange?: (selection: RowSelectionState) => void;
 }
 
-export interface DataTableViewOptionsProps<TData extends RowData> {
-	table: Table<DataTableFeatures, TData>;
-}
-
 export interface DataTablePaginationProps<TData extends RowData> {
 	table: Table<DataTableFeatures, TData>;
 	/** Show the "x of y selected" counter. */

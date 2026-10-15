@@ -1,3 +1,5 @@
+import type { Translations } from "@/i18n/helpers";
+
 export const webhookTranslations = {
 	title: { "zh-Hant": "Webhook 設定", en: "Webhook Settings" },
 	description: {
@@ -153,7 +155,7 @@ export const webhookTranslations = {
 	tryAgain: { "zh-Hant": "重新載入", en: "Try again" }
 };
 
-export type WebhookT = Record<keyof typeof webhookTranslations, string>;
+export type WebhookT = Translations<typeof webhookTranslations>;
 
 export const webhookEventTypes = [
 	{ value: "registration_confirmed", labelKey: "registrationConfirmed", descKey: "registrationConfirmedDesc" },

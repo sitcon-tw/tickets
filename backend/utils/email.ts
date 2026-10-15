@@ -5,11 +5,15 @@ import { logger } from "#utils/logger";
 import { toText } from "#utils/text";
 import { SendEmailCommand, SESClient, type SESClientConfig } from "@aws-sdk/client-ses";
 import { SpanStatusCode } from "@opentelemetry/api";
-import type { CampaignResult, EmailCampaignContent, EmailRecipient, EmailSender, TargetAudienceFilters } from "@sitcontix/types";
+import { errorMessage } from "#utils/error";
+import { parseJsonObject, safeJsonParse } from "#utils/json";
+import { parseFormFieldOptions } from "#utils/form-fields";
+import { optionValues, TargetAudienceSchema, type CampaignResult, type EmailCampaignContent, type EmailRecipient, type EmailSender, type FormFieldOption, type TargetAudience } from "@sitcontix/types";
 import fs from "fs/promises";
 import { MailtrapClient } from "mailtrap";
 import path from "path";
 import { fileURLToPath } from "url";
+import { z } from "zod/v4";
 
 /**
  * Recipient data used internally for campaign sending.
@@ -34,7 +38,34 @@ const getLocalizedValue = (field: Prisma.JsonValue | undefined, locale = "zh-Han
 	return toText(field);
 };
 
+const optionLabel = (option: FormFieldOption, locale: string): string | undefined => {
+	if (typeof option === "string") return option;
+	const label = "label" in option ? option.label : option;
+	if (typeof label === "string") return label;
+	return label[locale] ?? label["en"] ?? Object.values(label)[0];
+};
+
 const componentLogger = logger.child({ component: "email" });
+
+/** Thrown when a campaign's stored recipient filter is not a valid target audience */
+export class InvalidRecipientFilterError extends Error {
+	constructor() {
+		super("Invalid recipient filter");
+		this.name = "InvalidRecipientFilterError";
+	}
+}
+
+/**
+ * Parse a campaign's stored recipient filter. A broken filter throws instead of falling back to "everyone",
+ * so a corrupt row can never widen the audience.
+ */
+export const parseRecipientFilter = (recipientFilter: string | null): TargetAudience | null => {
+	if (!recipientFilter) return null;
+	const raw = safeJsonParse(recipientFilter, z.unknown(), undefined, "campaign recipient filter");
+	const parsed = TargetAudienceSchema.safeParse(raw);
+	if (!parsed.success) throw new InvalidRecipientFilterError();
+	return parsed.data;
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -194,7 +225,7 @@ export const sendMagicLink = async (email: string, magicLink: string): Promise<b
 			},
 			"Email sending error"
 		);
-		throw new Error(`Failed to send magic link email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+		throw new Error(`Failed to send magic link email: ${errorMessage(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -226,7 +257,7 @@ export const sendRegistrationConfirmation = async (
 		const templatePath = path.join(__dirname, "../email-templates/registered.html");
 		let template = await fs.readFile(templatePath, "utf-8");
 
-		const formData: Record<string, unknown> = typeof registration.formData === "string" ? JSON.parse(registration.formData) : (registration.formData ?? {});
+		const formData = typeof registration.formData === "string" ? parseJsonObject(registration.formData, `confirmation email for ${registration.id}`) : (registration.formData ?? {});
 
 		const formFields = await prisma.eventFormFields.findMany({
 			where: { eventId: event.id },
@@ -246,53 +277,25 @@ export const sendRegistrationConfirmation = async (
 			return fieldId;
 		};
 
-		type FieldOption = string | Record<string, string>;
-		const parseOptions = (values: Prisma.JsonValue): FieldOption[] => (typeof values === "string" ? JSON.parse(values) : values) as FieldOption[];
-		const matchesOption = (opt: FieldOption, v: unknown): boolean => {
-			if (typeof opt === "object" && opt !== null) {
-				return Object.values(opt).some(optValue => optValue === v);
-			}
-			return opt === v;
-		};
-
 		const formatFieldValue = (fieldId: string, value: unknown, locale: string = "zh-Hant"): string => {
 			const field = fieldMap.get(fieldId);
-			if (!field) return String(value);
+			if (!field) return toText(value);
+
+			const options = parseFormFieldOptions(field.values);
+			const localize = (answer: unknown): string => {
+				const option = options.find(opt => optionValues(opt).some(optValue => optValue === answer));
+				return (option && optionLabel(option, locale)) || toText(answer);
+			};
 
 			if (field.type === "checkbox" && Array.isArray(value)) {
-				if (field.values) {
-					try {
-						const options = parseOptions(field.values);
-						const localizedValues = value.map(v => {
-							const option = options.find(opt => matchesOption(opt, v));
-
-							if (option && typeof option === "object") {
-								return option[locale] || option["en"] || Object.values(option)[0] || v;
-							}
-							return v;
-						});
-						return localizedValues.join(", ");
-					} catch {
-						return value.join(", ");
-					}
-				}
-				return value.join(", ");
+				return value.map(localize).join(", ");
 			}
 
-			if ((field.type === "select" || field.type === "radio") && field.values) {
-				try {
-					const options = parseOptions(field.values);
-					const option = options.find(opt => matchesOption(opt, value));
-
-					if (option && typeof option === "object") {
-						return option[locale] || option["en"] || Object.values(option)[0] || String(value);
-					}
-				} catch {
-					return String(value);
-				}
+			if (field.type === "select" || field.type === "radio") {
+				return localize(value);
 			}
 
-			return String(value);
+			return toText(value);
 		};
 
 		let formDataRows = "";
@@ -397,7 +400,7 @@ export const sendRegistrationConfirmation = async (
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send registration confirmation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+		throw new Error(`Failed to send registration confirmation email: ${errorMessage(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -450,7 +453,7 @@ export const sendCancellationEmail = async (email: string, eventNameOrJson: Pris
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send cancellation email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+		throw new Error(`Failed to send cancellation email: ${errorMessage(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
@@ -521,22 +524,21 @@ export const sendInvitationCode = async (
 		});
 
 		componentLogger.error({ error }, "Email sending error");
-		throw new Error(`Failed to send invitation code email: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+		throw new Error(`Failed to send invitation code email: ${errorMessage(error)}`, { cause: error });
 	} finally {
 		span.end();
 	}
 };
 
-export const calculateRecipients = async (targetAudience: string | TargetAudienceFilters | null): Promise<CampaignRecipient[]> => {
+/** Registrations matching `filters` (a campaign's parsed recipient filter), one per email address */
+export const calculateRecipients = async (filters: TargetAudience | null): Promise<CampaignRecipient[]> => {
 	const span = tracer.startSpan("email.calculate_recipients", {
 		attributes: {
-			"email.has_filters": targetAudience !== null
+			"email.has_filters": filters !== null
 		}
 	});
 
 	try {
-		const filters: TargetAudienceFilters | null = typeof targetAudience === "string" ? JSON.parse(targetAudience) : targetAudience;
-
 		const where: Prisma.RegistrationWhereInput = {};
 
 		if (filters?.eventIds && filters.eventIds.length > 0) {
@@ -555,8 +557,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 		}
 		if (filters?.registeredAfter || filters?.registeredBefore) {
 			where.createdAt = {
-				...(filters.registeredAfter && { gte: new Date(filters.registeredAfter) }),
-				...(filters.registeredBefore && { lte: new Date(filters.registeredBefore) })
+				...(filters.registeredAfter && { gte: filters.registeredAfter }),
+				...(filters.registeredBefore && { lte: filters.registeredBefore })
 			};
 		}
 
@@ -573,7 +575,8 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 			registrations = registrations.filter(r => filters.emailDomains!.includes(r.email.split("@")[1]));
 		}
 		if (filters?.roles && filters.roles.length > 0) {
-			registrations = registrations.filter(r => r.user && filters.roles!.includes(r.user.role));
+			const roles = new Set<string>(filters.roles);
+			registrations = registrations.filter(r => r.user && roles.has(r.user.role));
 		}
 		if (filters?.isReferrer !== undefined) {
 			const referrerIds = await prisma.referral.findMany({ select: { registrationId: true } });
@@ -622,7 +625,7 @@ export const calculateRecipients = async (targetAudience: string | TargetAudienc
 const replaceTemplateVariables = (content: string, data: CampaignRecipient): string => {
 	let result = content;
 
-	const formData = JSON.parse(data.formData || "{}") as Record<string, unknown>;
+	const formData = parseJsonObject(data.formData, `campaign email for ${data.id}`);
 
 	// User identity
 	result = result.replace(/\{\{email\}\}/g, data.email ?? "");
@@ -785,7 +788,7 @@ export const sendCampaignEmail = async (
 						return { success: true, email: recipient.email };
 					} catch (error) {
 						componentLogger.error({ error, email: recipient.email }, "Failed to send email to recipient after retries");
-						return { success: false, email: recipient.email, error: error instanceof Error ? error.message : String(error) };
+						return { success: false, email: recipient.email, error: errorMessage(error) };
 					}
 				})
 			);

@@ -1,5 +1,5 @@
 import { fromDateTimeLocalString, toDateTimeLocalString } from "@/lib/utils/timezone";
-import type { EventFormField, FieldFilter, FormFieldOption, FormFieldType, LocalizedText } from "@sitcontix/types";
+import type { EventFormField, FieldFilter, FilterCondition, FormFieldType, LocalizedText } from "@sitcontix/types";
 
 export const LANGS = [
 	{ key: "en", short: "EN", label: "English" },
@@ -13,12 +13,8 @@ export function typeHasOptions(type: FormFieldType) {
 	return type === "select" || type === "radio" || type === "checkbox";
 }
 
-export type FilterConditionState = {
-	type: "ticket" | "field" | "time";
-	ticketId?: string;
-	fieldId?: string;
-	operator?: "equals" | "filled" | "notFilled";
-	value?: string;
+/** A filter condition being edited: the time bounds are `datetime-local` input values. */
+export type FilterConditionState = Omit<FilterCondition, "startTime" | "endTime"> & {
 	startTime?: string;
 	endTime?: string;
 };
@@ -61,48 +57,19 @@ export function newOption(partial: Partial<QuestionOption> = {}): QuestionOption
 	return { id: crypto.randomUUID(), en: "", "zh-Hant": "", ...partial };
 }
 
-function toQuestionOption(opt: FormFieldOption): QuestionOption {
-	if (typeof opt === "string") return newOption({ en: opt });
-	if ("label" in opt && typeof opt.label === "object") {
-		const label = opt.label;
-		return newOption({ en: label["en"] || (typeof opt.value === "string" ? opt.value : "") || "", "zh-Hant": label["zh-Hant"] || "" });
-	}
-	const record = opt as LocalizedText;
-	return newOption({ en: record["en"] || "", "zh-Hant": record["zh-Hant"] || "" });
-}
-
-function parseMaybeJson<T>(raw: unknown): T | undefined {
-	if (typeof raw !== "string") return undefined;
-	try {
-		return JSON.parse(raw) as T;
-	} catch {
-		return undefined;
-	}
-}
-
 function parseOptions(field: EventFormField): QuestionOption[] {
-	const raw: unknown = field.options || field.values;
-	const list = Array.isArray(raw) ? raw : parseMaybeJson<FormFieldOption[]>(raw);
-	return Array.isArray(list) ? (list as FormFieldOption[]).map(toQuestionOption) : [];
+	return (field.options || field.values || []).map(option => newOption({ en: option["en"] || "", "zh-Hant": option["zh-Hant"] || "" }));
 }
 
-function parsePrompts(field: EventFormField): Record<string, string[]> {
-	const raw: unknown = field.prompts;
-	const value = typeof raw === "string" ? parseMaybeJson<Record<string, string[]>>(raw) : raw;
-	if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, string[]>;
-	return {};
-}
-
-function toLocalInput(value: Date | string | undefined): string | undefined {
-	if (!value) return undefined;
-	const date = value instanceof Date ? value : new Date(value);
-	return Number.isNaN(date.getTime()) ? undefined : toDateTimeLocalString(date);
+function toLocalInput(value: Date | null | undefined): string | undefined {
+	if (!value || Number.isNaN(value.getTime())) return undefined;
+	return toDateTimeLocalString(value);
 }
 
 /** Converts an API form field into editable state. */
 export function fieldToQuestion(field: EventFormField, id: string = field.id): Question {
-	const name: LocalizedText = typeof field.name === "object" && field.name !== null ? field.name : { en: String(field.name ?? "") };
-	const description: LocalizedText = field.description && typeof field.description === "object" ? field.description : {};
+	const name = field.name;
+	const description: LocalizedText = field.description ?? {};
 	const fallbackName = name["en"] || Object.values(name).find(Boolean) || "";
 
 	const filters: FieldFilterState | undefined = field.filters
@@ -129,7 +96,7 @@ export function fieldToQuestion(field: EventFormField, id: string = field.id): Q
 		placeholder: field.placeholder || "",
 		validater: field.validater || "",
 		options: parseOptions(field),
-		prompts: parsePrompts(field),
+		prompts: field.prompts ?? {},
 		filters,
 		enableOther: field.enableOther || false
 	};
@@ -140,7 +107,7 @@ export function copyFieldsToQuestions(fields: EventFormField[]): Question[] {
 	const sorted = [...fields].sort((a, b) => a.order - b.order);
 	const idMap = new Map(sorted.map(field => [field.id, newTempId()]));
 	return sorted.map(field => {
-		const question = fieldToQuestion(field, idMap.get(field.id)!);
+		const question = fieldToQuestion(field, idMap.get(field.id) ?? newTempId());
 		if (question.filters) {
 			question.filters = {
 				...question.filters,

@@ -2,6 +2,7 @@ import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
 import { publicInvitationCodeSchemas } from "#schemas";
 import { logger } from "#utils/logger";
+import { publicTicketStock } from "#utils/ticket-availability";
 import { notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema } from "@sitcontix/types";
@@ -143,18 +144,21 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 						soldCount: true,
 						saleStart: true,
 						saleEnd: true,
-						isActive: true
+						isActive: true,
+						showRemaining: true
 					},
 					orderBy: { createdAt: "asc" }
 				});
 
 				const availableTickets = tickets
 					.map(ticket => {
-						const available = ticket.quantity - ticket.soldCount;
+						const { quantity, soldCount, available } = publicTicketStock(ticket);
 						const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd) && ticket.isActive && available > 0;
 
 						return {
 							...ticket,
+							quantity,
+							soldCount,
 							available,
 							isOnSale
 						};
@@ -283,6 +287,12 @@ const invitationCodesRoutes: FastifyPluginAsync = async fastify => {
 				return reply.send(
 					successResponse({
 						...invitationCode,
+						ticket: {
+							event: {
+								...invitationCode.ticket.event,
+								name: LocalizedTextSchema.parse(invitationCode.ticket.event.name)
+							}
+						},
 						isValid: !isExpired && !isNotYetValid && !isUsageExceeded,
 						isExpired,
 						isNotYetValid,

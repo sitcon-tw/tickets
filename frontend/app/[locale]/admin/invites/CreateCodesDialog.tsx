@@ -155,13 +155,20 @@ export function CreateCodesDialog({ tickets, onClose, onCreated }: CreateCodesDi
 		if (validationError) return;
 
 		const limit = unlimited ? undefined : Number(usageLimit);
-		const from = parseTaipeiInput(validFrom)?.toISOString();
-		const until = parseTaipeiInput(validUntil)?.toISOString();
+		const from = parseTaipeiInput(validFrom);
+		const until = parseTaipeiInput(validUntil);
 
 		setIsSaving(true);
 		try {
 			if (mode === "generate") {
-				const response = await adminInvitationCodesAPI.bulkCreate({ ticketId, name: name.trim(), count: Number(count), usageLimit: limit, validFrom: from, validUntil: until });
+				const response = await adminInvitationCodesAPI.bulkCreate({
+					ticketId,
+					name: name.trim(),
+					count: Number(count),
+					usageLimit: limit,
+					validFrom: from ?? undefined,
+					validUntil: until ?? undefined
+				});
 				if (!response.success) throw new Error(t.createFailed);
 				await onCreated();
 				showAlert(t.createSuccess.replace("{count}", String(response.data?.count ?? count)), "success");

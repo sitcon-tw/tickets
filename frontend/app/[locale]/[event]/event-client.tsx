@@ -9,7 +9,7 @@ import { getTranslations } from "@/i18n/helpers";
 import { eventsAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { isSameDayUTC8 } from "@/lib/utils/timezone";
-import { PublicEventListItemSchema, PublicTicketListItemSchema, type PublicSponsor, type SponsorSectionTitles } from "@sitcontix/types";
+import { PublicTicketListItemSchema, type Event, type PublicSponsor, type SponsorSectionTitles } from "@sitcontix/types";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -17,10 +17,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useReducer, useState } from "react";
 import { z } from "zod/v4";
 
-type EventListItem = z.infer<typeof PublicEventListItemSchema>;
 type TicketListItem = z.infer<typeof PublicTicketListItemSchema>;
 type EventPageState = {
-	event: EventListItem | null;
+	event: Event | null;
 	tickets: TicketListItem[];
 	sponsors: PublicSponsor[];
 	sponsorTitles: SponsorSectionTitles;
@@ -32,7 +31,7 @@ type EventPageState = {
 type EventPageAction =
 	| {
 			type: "loaded";
-			event: EventListItem;
+			event: Event;
 			tickets: TicketListItem[];
 			sponsors: PublicSponsor[];
 			sponsorTitles: SponsorSectionTitles;
@@ -109,56 +108,46 @@ export default function Main() {
 	useEffect(() => {
 		async function fetchEvent() {
 			try {
-				const eventsData = await eventsAPI.getAll();
-
-				if (eventsData?.success && Array.isArray(eventsData.data)) {
-					const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
-
-					if (foundEvent) {
-						const eventData = await eventsAPI.getInfo(foundEvent.id);
-						let nextEventDescription = "";
-						if (eventData?.success && eventData.data) {
-							nextEventDescription = getLocalizedText(eventData.data.description, locale);
-						}
-
-						const statsData = await eventsAPI.getStats(foundEvent.id);
-						let nextRegistrationCount = 0;
-						if (statsData?.success && statsData.data) {
-							nextRegistrationCount = statsData.data.confirmedRegistrations;
-						}
-
-						const ticketsData = await eventsAPI.getTickets(foundEvent.id);
-						let nextTickets: TicketListItem[] = [];
-						if (ticketsData.success && Array.isArray(ticketsData.data)) {
-							nextTickets = ticketsData.data;
-						}
-						// Sponsors are decoration: never let a failure here break the event page.
-						let nextSponsors: PublicSponsor[] = [];
-						let nextSponsorTitles: SponsorSectionTitles = {};
-						try {
-							const sponsorsData = await eventsAPI.getSponsors(foundEvent.id);
-							if (sponsorsData.success && sponsorsData.data) {
-								nextSponsors = sponsorsData.data.sponsors;
-								nextSponsorTitles = sponsorsData.data.sectionTitles;
-							}
-						} catch (err) {
-							console.error("Failed to load sponsors:", err);
-						}
-						dispatchEventPage({
-							type: "loaded",
-							event: foundEvent,
-							tickets: nextTickets,
-							sponsors: nextSponsors,
-							sponsorTitles: nextSponsorTitles,
-							registrationCount: nextRegistrationCount,
-							eventDescription: nextEventDescription
-						});
-					} else {
-						dispatchEventPage({ type: "failed", error: t.eventNotFound });
-					}
-				} else {
-					dispatchEventPage({ type: "failed", error: t.failedToLoadEvents });
+				const foundEvent = await eventsAPI.findBySlug(eventSlug);
+				if (!foundEvent) {
+					dispatchEventPage({ type: "failed", error: t.eventNotFound });
+					return;
 				}
+
+				const nextEventDescription = getLocalizedText(foundEvent.description, locale);
+
+				const statsData = await eventsAPI.getStats(foundEvent.id);
+				let nextRegistrationCount = 0;
+				if (statsData?.success && statsData.data) {
+					nextRegistrationCount = statsData.data.confirmedRegistrations;
+				}
+
+				const ticketsData = await eventsAPI.getTickets(foundEvent.id);
+				let nextTickets: TicketListItem[] = [];
+				if (ticketsData.success && Array.isArray(ticketsData.data)) {
+					nextTickets = ticketsData.data;
+				}
+				// Sponsors are decoration: never let a failure here break the event page.
+				let nextSponsors: PublicSponsor[] = [];
+				let nextSponsorTitles: SponsorSectionTitles = {};
+				try {
+					const sponsorsData = await eventsAPI.getSponsors(foundEvent.id);
+					if (sponsorsData.success && sponsorsData.data) {
+						nextSponsors = sponsorsData.data.sponsors;
+						nextSponsorTitles = sponsorsData.data.sectionTitles;
+					}
+				} catch (err) {
+					console.error("Failed to load sponsors:", err);
+				}
+				dispatchEventPage({
+					type: "loaded",
+					event: foundEvent,
+					tickets: nextTickets,
+					sponsors: nextSponsors,
+					sponsorTitles: nextSponsorTitles,
+					registrationCount: nextRegistrationCount,
+					eventDescription: nextEventDescription
+				});
 			} catch (err) {
 				console.error("Failed to load event:", err);
 				dispatchEventPage({ type: "failed", error: t.failedToLoadEvents });

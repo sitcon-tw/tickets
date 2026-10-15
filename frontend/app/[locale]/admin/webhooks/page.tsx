@@ -13,7 +13,7 @@ import { CalendarDays, Pencil, Plus, Webhook } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FailedDeliveries } from "./failed-deliveries";
-import { errorDetail, webhookTranslations, type WebhookT } from "./translations";
+import { errorDetail, webhookTranslations } from "./translations";
 import { WebhookCard } from "./webhook-card";
 import { WebhookDialog } from "./webhook-dialog";
 
@@ -40,7 +40,7 @@ export default function WebhooksPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const confirm = useConfirm();
-	const t = getTranslations(locale, webhookTranslations) as WebhookT;
+	const t = getTranslations(locale, webhookTranslations);
 
 	const currentEventId = useSelectedEventId();
 	const [loaded, setLoaded] = useState<LoadedState | null>(null);

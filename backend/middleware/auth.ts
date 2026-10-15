@@ -1,9 +1,9 @@
-import type { EventAccessRequest, IdParams, Permission, Session, SessionUser, TicketBody, TicketIdParams, TicketIdQuery } from "@sitcontix/types";
+import type { Permission, Session, SessionUser } from "@sitcontix/types";
 import type { FastifyReply, FastifyRequest, preHandlerHookHandler } from "fastify";
 import prisma from "../config/database";
 import { canAccessEvent, resolveAccess, type AccessContext } from "../lib/access";
 import { auth } from "../lib/auth";
-import { safeJsonParse } from "../utils/json";
+import { parseStringList } from "../utils/json";
 import { accountDisabledResponse, errorResponse, forbiddenResponse, notFoundResponse, unauthorizedResponse } from "../utils/response";
 import { fromNodeHeaders } from "better-auth/node";
 
@@ -48,7 +48,7 @@ async function ensureAuth(request: FastifyRequest, reply: FastifyReply): Promise
 	request.user = {
 		...session.user,
 		role: access.role,
-		permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+		permissions: parseStringList(user.permissions, "user permissions"),
 		isActive: user.isActive
 	};
 	request.session = {
@@ -131,6 +131,13 @@ type Guard = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 
 type EventIdResolver = (request: FastifyRequest) => Promise<string | undefined> | string | undefined;
 
+/** Read a string field from params / query / body, which may be missing or not an object at all (e.g. body-less routes) */
+const readString = (source: unknown, key: string): string | undefined => {
+	if (typeof source !== "object" || source === null) return undefined;
+	const value: unknown = (source as Record<string, unknown>)[key];
+	return typeof value === "string" && value !== "" ? value : undefined;
+};
+
 /**
  * Builds an event-scoped guard factory: the user needs `permission`, and the resolved event must be one they may manage.
  * Users without access to the event get a 404 (not a 403) so the frontend does not redirect them.
@@ -151,21 +158,18 @@ const eventGuard = (resolveEventId: EventIdResolver) => {
 
 const eventIdViaRelation = (find: (id: string) => Promise<string | undefined>): EventIdResolver => {
 	return async request => {
-		const { id } = request.params as IdParams;
+		const id = readString(request.params, "id");
 		return id ? find(id) : undefined;
 	};
 };
 
 /** Guard for routes whose event ID is in params (`eventId` / `id`), the query or the body */
-export const requireEventAccess = eventGuard(request => {
-	const query = request.query as EventAccessRequest;
-	const params = request.params as EventAccessRequest;
-	const body = request.body as EventAccessRequest;
-	return params?.eventId || params?.id || query?.eventId || body?.eventId;
-});
+export const requireEventAccess = eventGuard(
+	request => readString(request.params, "eventId") || readString(request.params, "id") || readString(request.query, "eventId") || readString(request.body, "eventId")
+);
 
 /** Authorize the event that a body-based handler will actually use. */
-export const requireEventAccessViaEventBody = eventGuard(request => (request.body as EventAccessRequest)?.eventId);
+export const requireEventAccessViaEventBody = eventGuard(request => readString(request.body, "eventId"));
 
 const eventIdOfTicket = async (ticketId: string | undefined) => {
 	if (!ticketId) return undefined;
@@ -174,13 +178,13 @@ const eventIdOfTicket = async (ticketId: string | undefined) => {
 };
 
 /** Event access via ticketId in the request body */
-export const requireEventAccessViaTicketBody = eventGuard(request => eventIdOfTicket((request.body as TicketBody).ticketId));
+export const requireEventAccessViaTicketBody = eventGuard(request => eventIdOfTicket(readString(request.body, "ticketId")));
 
 /** Event access via ticketId in params */
-export const requireEventAccessViaTicketParam = eventGuard(request => eventIdOfTicket((request.params as TicketIdParams).ticketId));
+export const requireEventAccessViaTicketParam = eventGuard(request => eventIdOfTicket(readString(request.params, "ticketId")));
 
 /** Event access via ticketId in the query string */
-export const requireEventAccessViaTicketQuery = eventGuard(request => eventIdOfTicket((request.query as TicketIdQuery).ticketId));
+export const requireEventAccessViaTicketQuery = eventGuard(request => eventIdOfTicket(readString(request.query, "ticketId")));
 
 /** Event access via ticket ID in params (`:id`) */
 export const requireEventAccessViaTicketId = eventGuard(eventIdViaRelation(eventIdOfTicket));

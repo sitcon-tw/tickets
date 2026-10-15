@@ -1,3 +1,5 @@
+import type { Translations } from "@/i18n/helpers";
+
 export const checkInsTranslations = {
 	title: { "zh-Hant": "報到", en: "Check-ins" },
 	description: {
@@ -72,4 +74,4 @@ export const checkInsTranslations = {
 	updateFailed: { "zh-Hant": "操作失敗", en: "Action failed" }
 };
 
-export type CheckInsT = Record<keyof typeof checkInsTranslations, string>;
+export type CheckInsT = Translations<typeof checkInsTranslations>;

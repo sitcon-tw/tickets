@@ -1,3 +1,5 @@
+import { getServerEvent } from "@/lib/api/server-endpoints";
+import { getMetadataText } from "@/lib/utils/localization";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; event: string }> }): Promise<Metadata> {
@@ -16,64 +18,37 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	};
 	const fallbackDescription = fallbackDescriptionMap[locale] || fallbackDescriptionMap["zh-Hant"];
 
-	try {
-		const backendUrl = process.env.BACKEND_URI || "http://localhost:3000";
-		const response = await fetch(`${backendUrl}/api/events`, {
-			headers: {
-				"Content-Type": "application/json"
+	const foundEvent = await getServerEvent(eventSlug);
+	if (foundEvent) {
+		const eventName = getMetadataText(foundEvent.name, locale, "SITCON Event");
+		const eventDescription = getMetadataText(foundEvent.plainDescription || foundEvent.description, locale, `Register for ${eventName}`);
+		const ogImageUrl = foundEvent.ogImage;
+
+		return {
+			title: `${eventName} - ${siteName}`,
+			description: eventDescription,
+			openGraph: {
+				title: eventName,
+				description: eventDescription,
+				url: `${site}/${locale}/${eventSlug}`,
+				siteName: siteName,
+				locale: locale,
+				type: "website",
+				...(ogImageUrl && {
+					images: [
+						{
+							url: ogImageUrl
+						}
+					]
+				})
+			},
+			twitter: {
+				card: "summary_large_image",
+				title: eventName,
+				description: eventDescription,
+				...(ogImageUrl && { images: [ogImageUrl] })
 			}
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to fetch events: ${response.status}`);
-		}
-
-		const eventsData = await response.json();
-
-		if (eventsData?.success && Array.isArray(eventsData.data)) {
-			// Match by slug first, then fallback to last 6 chars of ID
-			const foundEvent = eventsData.data.find((e: { id: string; slug?: string }) => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
-
-			if (foundEvent) {
-				const getLocalizedText = (text: Record<string, string> | string | undefined, fallback: string): string => {
-					if (!text) return fallback;
-					if (typeof text === "string") return text;
-					return text[locale] || text["zh-Hant"] || text["en"] || Object.values(text)[0] || fallback;
-				};
-
-				const eventName = getLocalizedText(foundEvent.name, "SITCON Event");
-				const eventDescription = getLocalizedText(foundEvent.plainDescription || foundEvent.description, `Register for ${eventName}`);
-				const ogImageUrl = foundEvent.ogImage;
-
-				return {
-					title: `${eventName} - ${siteName}`,
-					description: eventDescription,
-					openGraph: {
-						title: eventName,
-						description: eventDescription,
-						url: `${site}/${locale}/${eventSlug}`,
-						siteName: siteName,
-						locale: locale,
-						type: "website",
-						...(ogImageUrl && {
-							images: [
-								{
-									url: ogImageUrl
-								}
-							]
-						})
-					},
-					twitter: {
-						card: "summary_large_image",
-						title: eventName,
-						description: eventDescription,
-						...(ogImageUrl && { images: [ogImageUrl] })
-					}
-				};
-			}
-		}
-	} catch (error) {
-		console.error("Failed to fetch event for metadata:", error);
+		};
 	}
 
 	return {

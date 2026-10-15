@@ -1,4 +1,5 @@
 import prisma from "#config/database";
+import { eventRefWhere } from "#utils/event-ref";
 import { tracer } from "#lib/tracing";
 import { publicSponsorSchemas } from "#schemas";
 import { logger } from "#utils/logger";
@@ -20,7 +21,7 @@ const publicSponsorsRoutes: FastifyPluginAsync = async fastify => {
 
 			const event = await prisma.event.findFirst({
 				where: {
-					OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
+					...(await eventRefWhere(id)),
 					isActive: true
 				},
 				select: { id: true, sponsorTitles: true }

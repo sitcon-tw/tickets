@@ -1,40 +1,23 @@
-export interface Pagination {
-	page: number;
-	limit: number;
-	total: number;
-	totalPages: number;
-	hasNext: boolean;
-	hasPrev: boolean;
-}
+import type { ApiError, Pagination } from "@sitcontix/types";
 
-export interface ApiResponse<T> {
+/** A successful reply. Narrower than the shared `ApiResponse` (whose `success` is any boolean) so route schemas can use `z.literal(true)`. */
+export interface SuccessResponse<T> {
 	success: true;
 	message: string;
 	data: T;
 }
 
-export interface ApiPaginatedResponse<T> extends ApiResponse<T> {
+export interface SuccessPaginatedResponse<T> extends SuccessResponse<T> {
 	pagination: Pagination;
 }
 
-export interface ApiError {
-	code: string;
-	message: string;
-	details?: unknown;
-}
-
-export interface ApiErrorResponse {
-	success: false;
-	error: ApiError;
-}
-
 export interface ErrorResponseWithStatus<C extends number> {
-	response: ApiErrorResponse;
+	response: ApiError;
 	statusCode: C;
 }
 
-export const successResponse = <T>(data: T, message: string = "操作成功"): ApiResponse<T> => {
-	const response: ApiResponse<T> = {
+export const successResponse = <T>(data: T, message: string = "操作成功"): SuccessResponse<T> => {
+	const response: SuccessResponse<T> = {
 		success: true,
 		message,
 		data
@@ -43,7 +26,7 @@ export const successResponse = <T>(data: T, message: string = "操作成功"): A
 	return response;
 };
 
-export const successPaginatedResponse = <T>(data: T, message: string = "操作成功", pagination: Pagination): ApiPaginatedResponse<T> => {
+export const successPaginatedResponse = <T>(data: T, message: string = "操作成功", pagination: Pagination): SuccessPaginatedResponse<T> => {
 	return {
 		...successResponse(data, message),
 		pagination
@@ -51,7 +34,7 @@ export const successPaginatedResponse = <T>(data: T, message: string = "操作�
 };
 
 export const errorResponse = <C extends number>(code: string, message: string, details: unknown = null, statusCode: C): ErrorResponseWithStatus<C> => {
-	const response: ApiErrorResponse = {
+	const response: ApiError = {
 		success: false,
 		error: {
 			code,

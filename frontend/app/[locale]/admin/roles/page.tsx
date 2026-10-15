@@ -108,7 +108,8 @@ export default function RolesPage() {
 		roles: { "zh-Hant": "角色", en: "Roles" }
 	});
 
-	const actionLabels = getTranslations(locale, {
+	// Looked up by the (open-ended) action name of each permission
+	const actionLabels: Partial<Record<string, string>> = getTranslations(locale, {
 		view: { "zh-Hant": "查看", en: "View" },
 		create: { "zh-Hant": "建立", en: "Create" },
 		update: { "zh-Hant": "編輯", en: "Edit" },
@@ -120,7 +121,7 @@ export default function RolesPage() {
 	});
 
 	// Extra explanation for permissions whose name alone is ambiguous
-	const hints = getTranslations(locale, {
+	const hints: Partial<Record<Permission, string>> = getTranslations(locale, {
 		"events:create": { "zh-Hant": "建立後會自動加入該使用者可管理的活動", en: "New events are added to the creator's assigned events" },
 		"invitationCodes:send": { "zh-Hant": "以電子郵件寄送邀請碼", en: "Email invitation codes" },
 		"webhooks:manage": { "zh-Hant": "設定、測試與重送 Webhook", en: "Configure, test and retry webhooks" },
@@ -374,7 +375,7 @@ export default function RolesPage() {
 													<Label key={permission.key} htmlFor={`perm-${permission.key}`} className="flex cursor-pointer items-start gap-2 py-1 font-normal">
 														<Checkbox id={`perm-${permission.key}`} className="mt-0.5" checked={form.permissions.has(permission.key)} onCheckedChange={() => togglePermission(permission.key)} />
 														<span className="leading-snug">
-															{actionLabels[permission.action]}
+															{actionLabels[permission.action] ?? permission.action}
 															{permission.scope === "global" && group.permissions.some(other => other.scope !== "global") && (
 																<span className="ml-1.5 text-xs text-muted-foreground">({t.globalTag})</span>
 															)}

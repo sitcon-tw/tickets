@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod/v4";
-import { LocalizedTextSchema } from "./common.js";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "./common.js";
 
 /**
  * Ticket entity
@@ -121,15 +121,15 @@ export type TicketReorderRequest = z.infer<typeof TicketReorderRequestSchema>;
  * Ticket analytics
  */
 export const TicketAnalyticsSchema = z.object({
-	totalSoldCount: z.number().int().min(0),
+	totalSold: z.number().int().min(0),
 	totalRevenue: z.number().min(0),
-	availableQuantity: z.number().int().min(0),
-	salesByStatus: z.record(z.string(), z.number().int().min(0)),
+	availableQuantity: z.number().int(),
+	salesByStatus: z.partialRecord(RegistrationStatusSchema, z.number().int().min(0)),
 	dailySales: z.array(
 		z.object({
-			date: z.string(),
+			date: z.coerce.date(),
 			count: z.number().int().min(0),
-			revenue: z.number().min(0)
+			confirmedCount: z.number().int().min(0)
 		})
 	)
 });

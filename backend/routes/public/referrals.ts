@@ -5,7 +5,7 @@ import { publicReferralSchemas, referralSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { errorResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { LocalizedTextSchema } from "@sitcontix/types";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { fromNodeHeaders } from "better-auth/node";
@@ -121,8 +121,10 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("referral.id", referral.id);
 				span.setAttribute("referral.code", referral.code);
 
+				// Same format the frontend builds: /{locale}/{event slug or last 6 chars of the event id}?ref={code}
 				const baseUrl = process.env.FRONTEND_URI || "http://localhost:4321";
-				const referralLink = `${baseUrl}/register?ref=${referral.code}`;
+				const eventPath = registration.event.slug || registration.event.id.slice(-6);
+				const referralLink = `${baseUrl}/zh-Hant/${encodeURIComponent(eventPath)}?ref=${encodeURIComponent(referral.code)}`;
 
 				span.setStatus({ code: SpanStatusCode.OK });
 
@@ -139,7 +141,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					code: SpanStatusCode.ERROR,
 					message: "Failed to get referral link"
 				});
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", (error as Error).message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦連結失敗", null, 500);
 				return reply.code(statusCode).send(response);
 			} finally {
 				span.end();
@@ -251,7 +253,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 
 				const referralList = referralUsages.map(usage => ({
 					id: usage.registration.id,
-					status: usage.registration.status,
+					status: RegistrationStatusSchema.parse(usage.registration.status),
 					ticketName: LocalizedTextSchema.parse(usage.registration.ticket.name),
 					registeredAt: usage.usedAt,
 					email: usage.registration.email.replace(/^(.{1,2}).*?(@.+)$/, (match, start, domain) => {
@@ -281,7 +283,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					code: SpanStatusCode.ERROR,
 					message: "Failed to get referral stats"
 				});
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", (error as Error).message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦統計失敗", null, 500);
 				return reply.code(statusCode).send(response);
 			} finally {
 				span.end();
@@ -340,7 +342,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					code: SpanStatusCode.ERROR,
 					message: "Failed to validate referral code"
 				});
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", (error as Error).message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "驗證推薦碼失敗", null, 500);
 				return reply.code(statusCode).send(response);
 			} finally {
 				span.end();
@@ -467,7 +469,7 @@ const referralRoutes: FastifyPluginAsync = async fastify => {
 					code: SpanStatusCode.ERROR,
 					message: "Failed to get referral ranking"
 				});
-				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦排行榜失敗", (error as Error).message, 500);
+				const { response, statusCode } = errorResponse("INTERNAL_ERROR", "獲取推薦排行榜失敗", null, 500);
 				return reply.code(statusCode).send(response);
 			} finally {
 				span.end();

@@ -10,10 +10,12 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import fastifyMetrics from "fastify-metrics";
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import { jsonSchemaTransform, ResponseSerializationError, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import { z } from "zod/v4";
 
+import { errorMessage } from "#utils/error";
 import { logger } from "#utils/logger";
+import { fromNodeHeaders } from "better-auth/node";
 import prisma from "./config/database";
 import { closeRedis } from "./config/redis";
 import { bodySizeConfig, getCorsConfig, helmetConfig, rateLimitConfig } from "./config/security";
@@ -133,14 +135,15 @@ interface AuthQuerystring {
 	returnUrl?: string;
 }
 
-interface MagicLinkBody {
-	email: string;
-	name?: string;
-	callbackURL?: string;
-	newUserCallbackURL?: string;
-	errorCallbackURL?: string;
-	turnstileToken?: string;
-}
+const MagicLinkBodySchema = z.object({
+	email: z.email(),
+	name: z.string().optional(),
+	callbackURL: z.string().optional(),
+	newUserCallbackURL: z.string().optional(),
+	errorCallbackURL: z.string().optional(),
+	turnstileToken: z.string().optional()
+});
+type MagicLinkBody = z.infer<typeof MagicLinkBodySchema>;
 
 // Custom route for magic link sending with Turnstile validation
 fastify.post<{ Body: MagicLinkBody }>(
@@ -149,14 +152,7 @@ fastify.post<{ Body: MagicLinkBody }>(
 		schema: {
 			description: "Send magic link with Turnstile protection",
 			tags: ["auth"],
-			body: z.object({
-				email: z.email(),
-				name: z.string().optional(),
-				callbackURL: z.string().optional(),
-				newUserCallbackURL: z.string().optional(),
-				errorCallbackURL: z.string().optional(),
-				turnstileToken: z.string().optional()
-			})
+			body: MagicLinkBodySchema
 		},
 		config: {
 			rateLimit: rateLimitConfig.auth
@@ -211,12 +207,14 @@ fastify.post<{ Body: MagicLinkBody }>(
 			// Remove turnstileToken from body before forwarding to BetterAuth
 			const { turnstileToken: _removed, ...bodyWithoutTurnstile } = request.body;
 
+			const headers = fromNodeHeaders(request.headers);
+			headers.set("content-type", "application/json");
+			// The body is re-serialized without turnstileToken, so the original length no longer applies
+			headers.delete("content-length");
+
 			const webRequest = new Request(url, {
 				method: "POST",
-				headers: {
-					...(request.headers as Record<string, string>),
-					"content-type": "application/json"
-				},
+				headers,
 				body: JSON.stringify(bodyWithoutTurnstile)
 			});
 
@@ -280,7 +278,7 @@ fastify.all(
 
 			const webRequest = new Request(url, {
 				method: request.method,
-				headers: request.headers as Record<string, string>,
+				headers: fromNodeHeaders(request.headers),
 				body: body
 			});
 
@@ -338,7 +336,7 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 
 		const webRequest = new Request(authUrl, {
 			method: "GET",
-			headers: request.headers as Record<string, string>
+			headers: fromNodeHeaders(request.headers)
 		});
 
 		let response: Response;
@@ -411,8 +409,8 @@ fastify.get<{ Querystring: AuthQuerystring }>("/api/auth/magic-link/verify", asy
 	} catch (error) {
 		fastify.log.error(
 			{
-				error: (error as Error).message,
-				stack: (error as Error).stack,
+				error: errorMessage(error),
+				stack: error instanceof Error ? error.stack : undefined,
 				query: request.query
 			},
 			"Magic link verification error"
@@ -460,10 +458,10 @@ fastify.setErrorHandler((error: FastifyValidationError, request: FastifyRequest,
 	}
 
 	// Handle response serialization errors (from fastify-type-provider-zod)
-	if (error.message === "Response doesn't match the schema" && error.cause) {
-		// Extract Zod validation issues from the cause
-		const zodError = error.cause as { issues?: Array<{ path: (string | number)[]; message: string; code: string }> };
-		if (zodError.issues) {
+	if (error instanceof ResponseSerializationError) {
+		// The cause is the ZodError describing which parts of the response were wrong
+		const zodError = error.cause;
+		if (Array.isArray(zodError?.issues)) {
 			log.error(
 				{
 					url: request.url,

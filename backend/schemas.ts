@@ -2,13 +2,20 @@
 // ============================================================================
 
 import {
+	AdminEmailCampaignSchema,
+	AdminRegistrationSchema,
+	ApiErrorSchema,
+	ApiResponseSchema,
+	AttendeeRegistrationUpdateRequestSchema,
 	CheckInAttendeeSchema,
 	CheckInResultSchema,
 	CheckInUpdateRequestSchema,
 	EmailCampaignCreateRequestSchema,
-	EmailCampaignSchema,
 	EmailCampaignSendRequestSchema,
+	EmailCampaignStatusResponseSchema,
+	EmailCampaignStatusSchema,
 	EmailCampaignUpdateRequestSchema,
+	EventDashboardDataSchema,
 	EventCreateRequestSchema,
 	EventFormFieldCreateRequestSchema,
 	// Form field schemas
@@ -18,13 +25,18 @@ import {
 	EventSchema,
 	EventStatsSchema,
 	EventUpdateRequestSchema,
+	GoogleSheetsSettingsSchema,
+	InvitationCodeBulkCreateRequestSchema,
 	InvitationCodeCreateRequestSchema,
+	InvitationCodeSendEmailRequestSchema,
+	InvitationCodeInfoSchema,
 	// Invitation code schemas
 	InvitationCodeSchema,
 	InvitationCodeUpdateRequestSchema,
 	InvitationCodeVerificationSchema,
 	InvitationCodeVerifyRequestSchema,
 	LocalizedTextSchema,
+	PaginatedResponseSchema,
 	// Public schemas
 	PublicEventFormFieldSchema,
 	PublicEventListItemSchema,
@@ -62,10 +74,9 @@ import {
 	// Site settings schemas
 	SiteSettingsSchema,
 	SiteSettingsUpdateRequestSchema,
-	// Common schemas
-	SortOrderSchema,
 	// Email campaign schemas
 	TargetAudienceSchema,
+	TicketAnalyticsSchema,
 	TicketCreateRequestSchema,
 	// Ticket schemas
 	TicketSchema,
@@ -100,157 +111,165 @@ export const PaginationQuerySchemaExtended = z.object({
 	limit: z.coerce.number().int().min(1).max(100).default(10).describe("每頁項目數")
 });
 
-export const SearchQuerySchemaExtended = z.object({
-	q: z.string().optional().describe("搜尋關鍵字"),
-	sortBy: z.string().optional().describe("排序欄位"),
-	sortOrder: SortOrderSchema.default("desc").describe("排序方向")
-});
-
 export const SuccessResponseSchema = z.object({
 	success: z.literal(true),
 	message: z.string().describe("回應訊息"),
 	data: z.null().optional().describe("回應資料")
 });
 
-export const ErrorResponseSchema = z.object({
-	success: z.literal(false),
-	error: z.object({
-		code: z.string().describe("錯誤代碼"),
-		message: z.string().describe("錯誤訊息"),
-		details: z.unknown().optional().describe("錯誤詳細資訊")
-	})
-});
+export const ErrorResponseSchema = ApiErrorSchema;
 
-export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
-	z.object({
-		success: z.literal(true),
-		message: z.string(),
-		data: dataSchema,
-		pagination: z.object({
-			page: z.number().int().describe("當前頁數"),
-			limit: z.number().int().describe("每頁項目數"),
-			total: z.number().int().describe("總項目數"),
-			totalPages: z.number().int().describe("總頁數"),
-			hasNext: z.boolean().describe("是否有下一頁"),
-			hasPrev: z.boolean().describe("是否有上一頁")
-		})
-	});
-
-// Re-export common enums for convenience
-export { UserRoleSchema as RoleEnumSchema, RegistrationStatusSchema as StatusEnumSchema };
+/**
+ * Boolean querystring flag. Only "true"/"false" (and the usual 1/0, yes/no, on/off spellings) are accepted;
+ * `z.coerce.boolean()` would turn the string "false" into true.
+ */
+export const QueryBooleanSchema = z.stringbool();
 
 // ----------------------------------------------------------------------------
 // Email Campaign Schemas
 // ----------------------------------------------------------------------------
 
-export const CampaignStatusSchema = z.enum(["draft", "sent", "scheduled"]).describe("活動狀態");
-
-export const EmailCampaignPropertiesSchema = EmailCampaignSchema.extend({
-	eventId: z.string().optional().describe("關聯活動 ID"),
-	targetAudience: TargetAudienceSchema.optional().describe("目標受眾篩選條件"),
-	createdBy: z.string().optional().describe("建立者用戶 ID")
+export const CampaignIdParamSchema = z.object({
+	campaignId: z.string().describe("郵件任務 ID")
 });
 
-export const EmailCampaignCreateBodySchema = EmailCampaignCreateRequestSchema.extend({
-	eventId: z.string().optional().describe("關聯活動 ID"),
+export const EmailCampaignListQuerySchema = z.object({
+	status: EmailCampaignStatusSchema.optional().describe("篩選任務狀態"),
+	eventId: z.string().optional().describe("篩選目標活動 ID"),
+	page: z.coerce.number().int().min(1).default(1).describe("頁數"),
+	limit: z.coerce.number().int().min(1).max(100).default(20).describe("每頁項目數")
+});
+
+export const EmailCampaignCreateBodySchema = EmailCampaignCreateRequestSchema;
+
+export const EmailCampaignUpdateBodySchema = EmailCampaignUpdateRequestSchema;
+
+export const PreviewRecipientsBodySchema = z.object({
 	targetAudience: TargetAudienceSchema.optional().describe("目標受眾篩選條件")
 });
 
-export const EmailCampaignUpdateBodySchema = EmailCampaignUpdateRequestSchema.extend({
-	eventId: z.string().optional().describe("關聯活動 ID"),
-	targetAudience: TargetAudienceSchema.optional().describe("目標受眾篩選條件")
+export const EmailCampaignResponseSchema = ApiResponseSchema(AdminEmailCampaignSchema);
+
+export const EmailCampaignsListResponseSchema = PaginatedResponseSchema(AdminEmailCampaignSchema);
+
+const CampaignRecipientsSchema = z.object({
+	campaignId: z.string().optional(),
+	recipientCount: z.number().int().min(0),
+	recipients: z.array(z.object({ id: z.string(), email: z.string() }))
 });
 
-export const EmailCampaignSendBodySchema = EmailCampaignSendRequestSchema;
-
-export const EmailCampaignResponseSchema = z.object({
-	success: z.literal(true),
-	message: z.string(),
-	data: EmailCampaignPropertiesSchema
-});
-
-export const EmailCampaignsListResponseSchema = z.object({
-	success: z.literal(true),
-	message: z.string(),
-	data: z.array(EmailCampaignPropertiesSchema)
-});
+const campaignErrorResponses = {
+	401: ErrorResponseSchema,
+	403: ErrorResponseSchema,
+	404: ErrorResponseSchema,
+	422: ErrorResponseSchema,
+	500: ErrorResponseSchema
+} as const;
 
 export const emailCampaignSchemas = {
+	listEmailCampaigns: {
+		description: "獲取郵件發送記錄",
+		tags: ["admin/email-campaigns"],
+		querystring: EmailCampaignListQuerySchema,
+		response: {
+			200: EmailCampaignsListResponseSchema,
+			...campaignErrorResponses
+		}
+	},
 	createEmailCampaign: {
-		description: "創建新郵件活動",
+		description: "創建新郵件任務",
 		tags: ["admin/email-campaigns"],
 		body: EmailCampaignCreateBodySchema,
 		response: {
 			201: EmailCampaignResponseSchema,
-			400: ErrorResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			...campaignErrorResponses
 		}
 	},
-
-	getEmailCampaign: {
-		description: "取得郵件活動詳情",
-		tags: ["admin/email-campaigns"],
-		params: IdParamSchema,
-		response: {
-			200: EmailCampaignResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
-		}
-	},
-
 	updateEmailCampaign: {
-		description: "更新郵件活動",
+		description: "更新郵件任務",
 		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema,
 		body: EmailCampaignUpdateBodySchema,
-		params: IdParamSchema,
 		response: {
 			200: EmailCampaignResponseSchema,
-			400: ErrorResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			...campaignErrorResponses
 		}
 	},
-
-	deleteEmailCampaign: {
-		description: "刪除郵件活動",
+	getEmailCampaignStatus: {
+		description: "獲取郵件發送狀態",
 		tags: ["admin/email-campaigns"],
-		params: IdParamSchema,
+		params: CampaignIdParamSchema,
 		response: {
-			200: SuccessResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			200: ApiResponseSchema(EmailCampaignStatusResponseSchema),
+			...campaignErrorResponses
 		}
 	},
-
-	listEmailCampaigns: {
-		description: "取得郵件活動列表",
+	previewEmailCampaign: {
+		description: "預覽郵件內容",
 		tags: ["admin/email-campaigns"],
-		querystring: z.object({
-			status: CampaignStatusSchema.optional().describe("篩選活動狀態"),
-			eventId: z.string().optional().describe("篩選關聯活動 ID")
-		}),
+		params: CampaignIdParamSchema,
 		response: {
-			200: EmailCampaignsListResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
+			200: ApiResponseSchema(
+				z.object({
+					campaignId: z.string(),
+					subject: z.string(),
+					previewHtml: z.string(),
+					previewText: z.string()
+				})
+			),
+			...campaignErrorResponses
 		}
 	},
-
+	calculateRecipients: {
+		description: "計算收件人數量",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema,
+		response: {
+			200: ApiResponseSchema(CampaignRecipientsSchema),
+			...campaignErrorResponses
+		}
+	},
+	previewRecipients: {
+		description: "預覽收件人（不需建立任務）",
+		tags: ["admin/email-campaigns"],
+		body: PreviewRecipientsBodySchema,
+		response: {
+			200: ApiResponseSchema(CampaignRecipientsSchema),
+			...campaignErrorResponses
+		}
+	},
 	sendEmailCampaign: {
-		description: "發送郵件活動",
+		description: "發送郵件",
 		tags: ["admin/email-campaigns"],
-		body: EmailCampaignSendBodySchema,
-		params: IdParamSchema,
+		params: CampaignIdParamSchema,
+		body: EmailCampaignSendRequestSchema,
+		response: {
+			200: ApiResponseSchema(
+				z.object({
+					id: z.string(),
+					status: EmailCampaignStatusSchema,
+					totalCount: z.number().int().min(0),
+					sentCount: z.number().int().min(0)
+				})
+			),
+			...campaignErrorResponses
+		}
+	},
+	cancelEmailCampaign: {
+		description: "取消郵件發送任務",
+		tags: ["admin/email-campaigns"],
+		params: CampaignIdParamSchema,
 		response: {
 			200: EmailCampaignResponseSchema,
-			400: ErrorResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema,
-			404: ErrorResponseSchema
+			...campaignErrorResponses
+		}
+	},
+	listTemplates: {
+		description: "取得郵件模板列表",
+		tags: ["admin/email-campaigns"],
+		response: {
+			200: ApiResponseSchema(z.array(z.object({ id: z.string(), name: z.string(), description: z.string(), content: z.string() }))),
+			...campaignErrorResponses
 		}
 	}
 } as const;
@@ -258,8 +277,6 @@ export const emailCampaignSchemas = {
 // ----------------------------------------------------------------------------
 // Event Schemas
 // ----------------------------------------------------------------------------
-
-export const EventPropertiesSchema = EventSchema;
 
 export const EventCreateBodySchema = EventCreateRequestSchema;
 
@@ -336,7 +353,7 @@ export const eventSchemas = {
 		description: "取得活動列表",
 		tags: ["events"],
 		querystring: z.object({
-			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
+			isActive: QueryBooleanSchema.optional().describe("篩選啟用狀態")
 		}),
 		response: {
 			200: EventsListResponseSchema
@@ -376,8 +393,6 @@ export const eventStatsResponse = {
 // ----------------------------------------------------------------------------
 // Event Form Field Schemas
 // ----------------------------------------------------------------------------
-
-export const EventFormFieldPropertiesSchema = EventFormFieldSchema;
 
 export const EventFormFieldCreateBodySchema = EventFormFieldCreateRequestSchema;
 
@@ -461,8 +476,6 @@ export const eventFormFieldSchemas = {
 // Invitation Code Schemas
 // ----------------------------------------------------------------------------
 
-export const InvitationCodePropertiesSchema = InvitationCodeSchema;
-
 export const InvitationCodeCreateBodySchema = InvitationCodeCreateRequestSchema;
 
 export const InvitationCodeUpdateBodySchema = InvitationCodeUpdateRequestSchema;
@@ -544,7 +557,7 @@ export const invitationCodeSchemas = {
 		tags: ["admin/invitation-codes"],
 		querystring: z.object({
 			ticketId: z.string().optional().describe("篩選票券 ID"),
-			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態"),
+			isActive: QueryBooleanSchema.optional().describe("篩選啟用狀態"),
 			eventId: z.string().optional().describe("篩選活動 ID")
 		}),
 		response: {
@@ -571,14 +584,6 @@ export const invitationCodeSchemas = {
 			404: ErrorResponseSchema
 		}
 	}
-} as const;
-
-export const invitationCodeVerifyResponse = {
-	200: z.object({
-		success: z.literal(true),
-		message: z.string(),
-		data: InvitationCodeVerificationSchema
-	})
 } as const;
 
 // ----------------------------------------------------------------------------
@@ -813,7 +818,7 @@ export const referralSchemas = {
 		tags: ["referrals"],
 		querystring: z.object({
 			eventId: z.string().optional().describe("篩選活動 ID"),
-			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
+			isActive: QueryBooleanSchema.optional().describe("篩選啟用狀態")
 		}),
 		response: {
 			200: ReferralsListResponseSchema,
@@ -854,8 +859,6 @@ export const referralSchemas = {
 // Registration Schemas
 // ----------------------------------------------------------------------------
 
-export const RegistrationPropertiesSchema = RegistrationSchema;
-
 export const RegistrationCreateBodySchema = RegistrationCreateRequestSchema;
 
 export const RegistrationUpdateBodySchema = RegistrationUpdateRequestSchema;
@@ -880,44 +883,7 @@ export const RegistrationHoldResponseSchema = z.object({
 	data: RegistrationHoldSchema
 });
 
-export const RegistrationsListResponseSchema = z.object({
-	success: z.literal(true),
-	message: z.string(),
-	data: z.array(RegistrationSchema)
-});
-
-// Admin registration schema - more permissive for list endpoints
-export const AdminRegistrationSchema = z.object({
-	id: z.string(),
-	userId: z.string(),
-	eventId: z.string(),
-	ticketId: z.string(),
-	email: z.string(),
-	status: RegistrationStatusSchema,
-	referredBy: z.string().nullable().optional(),
-	checkedIn: z.boolean().optional(),
-	checkedInAt: z.date().nullable().optional(),
-	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.date(),
-	updatedAt: z.date(),
-	event: z
-		.object({
-			id: z.string(),
-			name: LocalizedTextSchema,
-			startDate: z.date(),
-			endDate: z.date()
-		})
-		.optional(),
-	ticket: z
-		.object({
-			id: z.string(),
-			name: LocalizedTextSchema,
-			price: z.number()
-		})
-		.optional()
-});
-
-export const AdminRegistrationsListResponseSchema = PaginatedResponseSchema(z.array(AdminRegistrationSchema));
+export const AdminRegistrationsListResponseSchema = PaginatedResponseSchema(AdminRegistrationSchema);
 
 export const userRegistrationsResponse = {
 	200: z.object({
@@ -993,6 +959,22 @@ export const registrationSchemas = {
 		}
 	},
 
+	updateOwnRegistration: {
+		description: "更新自己的報名表單內容",
+		tags: ["registrations"],
+		body: AttendeeRegistrationUpdateRequestSchema,
+		params: IdParamSchema,
+		response: {
+			200: RegistrationResponseSchema,
+			400: ErrorResponseSchema,
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
+	},
+
 	cancelRegistration: {
 		description: "取消報名",
 		tags: ["registrations"],
@@ -1026,26 +1008,41 @@ export const smsVerificationSchemas = {
 	send: {
 		description: "發送簡訊驗證碼",
 		tags: ["sms-verification"],
-		body: SendVerificationRequestSchema
+		body: SendVerificationRequestSchema,
+		response: {
+			200: ApiResponseSchema(z.object({ expiresAt: z.date().describe("驗證碼到期時間") })),
+			401: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	},
 
 	verify: {
 		description: "驗證簡訊驗證碼",
 		tags: ["sms-verification"],
-		body: VerifyCodeRequestSchema
+		body: VerifyCodeRequestSchema,
+		response: {
+			200: ApiResponseSchema(z.object({ verified: z.boolean() })),
+			401: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	},
 
 	status: {
 		description: "取得用戶的手機驗證狀態",
-		tags: ["sms-verification"]
+		tags: ["sms-verification"],
+		response: {
+			200: ApiResponseSchema(z.object({ phoneNumber: z.string().nullable().optional(), phoneVerified: z.boolean() })),
+			401: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
 // ----------------------------------------------------------------------------
 // Ticket Schemas
 // ----------------------------------------------------------------------------
-
-export const TicketPropertiesSchema = TicketSchema;
 
 export const TicketCreateBodySchema = TicketCreateRequestSchema;
 
@@ -1125,7 +1122,7 @@ export const ticketSchemas = {
 		tags: ["admin/tickets"],
 		querystring: z.object({
 			eventId: z.string().optional().describe("篩選活動 ID"),
-			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
+			isActive: QueryBooleanSchema.optional().describe("篩選啟用狀態")
 		}),
 		response: {
 			200: TicketsListResponseSchema,
@@ -1137,8 +1134,6 @@ export const ticketSchemas = {
 // ----------------------------------------------------------------------------
 // User Schemas
 // ----------------------------------------------------------------------------
-
-export const UserPropertiesSchema = UserSchema;
 
 export const UserCreateBodySchema = z.object({
 	name: z.string().min(1).describe("用戶名稱"),
@@ -1252,7 +1247,7 @@ export const userSchemas = {
 		tags: ["admin/users"],
 		querystring: z.object({
 			role: UserRoleSchema.optional().describe("篩選角色"),
-			isActive: z.coerce.boolean().optional().describe("篩選啟用狀態")
+			isActive: QueryBooleanSchema.optional().describe("篩選啟用狀態")
 		}),
 		response: {
 			200: UsersListResponseSchema,
@@ -1344,21 +1339,7 @@ export const PublicTicketIdParamSchema = z.object({
 	id: z.string()
 });
 
-export const PublicTicketResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: PublicTicketDetailSchema.optional()
-});
-
-export const PublicTicketNotFoundResponseSchema = z.object({
-	success: z.boolean(),
-	error: z
-		.object({
-			code: z.string(),
-			message: z.string()
-		})
-		.optional()
-});
+export const PublicTicketResponseSchema = ApiResponseSchema(PublicTicketDetailSchema);
 
 export const publicTicketSchemas = {
 	getPublicTicket: {
@@ -1367,7 +1348,7 @@ export const publicTicketSchemas = {
 		params: PublicTicketIdParamSchema,
 		response: {
 			200: PublicTicketResponseSchema,
-			404: PublicTicketNotFoundResponseSchema,
+			404: ErrorResponseSchema,
 			500: ErrorResponseSchema
 		}
 	}
@@ -1378,8 +1359,8 @@ export const publicTicketSchemas = {
 // ----------------------------------------------------------------------------
 
 export const PublicEventsQuerySchema = z.object({
-	isActive: z.coerce.boolean().optional(),
-	upcoming: z.coerce.boolean().optional()
+	isActive: QueryBooleanSchema.optional(),
+	upcoming: QueryBooleanSchema.optional()
 });
 
 export const TicketFormFieldsResponseSchema = z.object({
@@ -1403,11 +1384,7 @@ export const publicEventSchemas = {
 		description: "獲取所有活動列表",
 		tags: ["events"],
 		querystring: PublicEventsQuerySchema,
-		response: {
-			200: publicEventsListResponse,
-			404: ErrorResponseSchema,
-			500: ErrorResponseSchema
-		}
+		response: publicEventsListResponse
 	}
 } as const;
 
@@ -1415,25 +1392,7 @@ export const publicEventSchemas = {
 // Admin Ticket Analytics Schemas
 // ----------------------------------------------------------------------------
 
-export const TicketAnalyticsResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: z
-		.object({
-			totalSold: z.number().int(),
-			totalRevenue: z.number(),
-			availableQuantity: z.number().int(),
-			salesByStatus: z.record(z.string(), z.number().int()),
-			dailySales: z.array(
-				z.object({
-					date: z.date(),
-					count: z.number().int(),
-					confirmed_count: z.number().int()
-				})
-			)
-		})
-		.optional()
-});
+export const TicketAnalyticsResponseSchema = ApiResponseSchema(TicketAnalyticsSchema);
 
 export const TicketReorderBodySchema = z.object({
 	tickets: z.array(
@@ -1480,7 +1439,7 @@ export const adminTicketSchemas = {
 
 export const RegistrationExportQuerySchema = z.object({
 	eventId: z.string().optional(),
-	status: z.enum(["confirmed", "cancelled", "pending"]).optional(),
+	status: RegistrationStatusSchema.optional(),
 	format: z.enum(["csv", "excel"]).default("csv").optional()
 });
 
@@ -1490,15 +1449,7 @@ export const RegistrationDeleteResponseSchema = z.object({
 	data: z.object({ id: z.string(), email: z.string() }).optional()
 });
 
-export const GoogleSheetsServiceAccountResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: z
-		.object({
-			email: z.string()
-		})
-		.optional()
-});
+export const GoogleSheetsServiceAccountResponseSchema = ApiResponseSchema(z.object({ email: z.string() }));
 
 export const GoogleSheetsSyncBodySchema = z.object({
 	eventId: z.string(),
@@ -1515,24 +1466,9 @@ export const GoogleSheetsSettingsBodySchema = z.object({
 	autoSync: z.boolean()
 });
 
-export const GoogleSheetsSettingsSchema = z.object({
-	sheetsUrl: z.string().nullable(),
-	autoSync: z.boolean(),
-	lastSyncedAt: z.string().nullable(),
-	lastSyncError: z.string().nullable()
-});
+export const GoogleSheetsSettingsResponseSchema = ApiResponseSchema(GoogleSheetsSettingsSchema);
 
-export const GoogleSheetsSettingsResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: GoogleSheetsSettingsSchema.optional()
-});
-
-export const GoogleSheetsSyncResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: GoogleSheetsSettingsSchema.extend({ count: z.number() }).optional()
-});
+export const GoogleSheetsSyncResponseSchema = ApiResponseSchema(GoogleSheetsSettingsSchema.extend({ count: z.number() }));
 
 export const adminCheckInSchemas = {
 	listAttendees: {
@@ -1638,16 +1574,6 @@ export const EventFormFieldReorderResponseSchema = z.object({
 	data: z.null()
 });
 
-export const EventFormFieldReorderErrorResponseSchema = z.object({
-	success: z.boolean(),
-	error: z
-		.object({
-			code: z.string(),
-			message: z.string()
-		})
-		.optional()
-});
-
 export const adminEventFormFieldSchemas = {
 	reorderEventFormFields: {
 		description: "重新排序活動表單欄位",
@@ -1656,7 +1582,10 @@ export const adminEventFormFieldSchemas = {
 		body: EventFormFieldReorderBodySchema,
 		response: {
 			200: EventFormFieldReorderResponseSchema,
-			400: EventFormFieldReorderErrorResponseSchema
+			400: ErrorResponseSchema,
+			404: ErrorResponseSchema,
+			422: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
 	}
 } as const;
@@ -1669,53 +1598,7 @@ export const EventDashboardParamsSchema = z.object({
 	eventId: z.string()
 });
 
-export const EventDashboardResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	data: z
-		.object({
-			event: z.object({
-				id: z.string(),
-				name: LocalizedTextSchema,
-				startDate: z.date(),
-				endDate: z.date(),
-				locationText: LocalizedTextSchema.nullable(),
-				mapLink: z.string().nullable().optional()
-			}),
-			stats: z.object({
-				totalRegistrations: z.number().int(),
-				confirmedRegistrations: z.number().int(),
-				pendingRegistrations: z.number().int(),
-				cancelledRegistrations: z.number().int(),
-				totalRevenue: z.number()
-			}),
-			tickets: z.array(
-				z.object({
-					id: z.string(),
-					name: LocalizedTextSchema,
-					price: z.number().int(),
-					quantity: z.number().int(),
-					soldCount: z.number().int(),
-					revenue: z.number(),
-					available: z.number().int(),
-					salesRate: z.number()
-				})
-			),
-			registrationTrends: z.array(
-				z.object({
-					date: z.string(),
-					count: z.number().int(),
-					confirmed: z.number().int()
-				})
-			),
-			referralStats: z.object({
-				totalReferrals: z.number().int(),
-				activeReferrers: z.number().int(),
-				conversionRate: z.number()
-			})
-		})
-		.optional()
-});
+export const EventDashboardResponseSchema = ApiResponseSchema(EventDashboardDataSchema);
 
 export const eventDashboardSchemas = {
 	getEventDashboard: {
@@ -1723,92 +1606,10 @@ export const eventDashboardSchemas = {
 		tags: ["admin/analytics"],
 		params: EventDashboardParamsSchema,
 		response: {
-			200: EventDashboardResponseSchema
+			200: EventDashboardResponseSchema,
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
 		}
-	}
-} as const;
-
-// ----------------------------------------------------------------------------
-// Admin Email Campaign Additional Schemas
-// ----------------------------------------------------------------------------
-
-export const EmailCampaignListQuerySchema = z.object({
-	status: z.enum(["draft", "sent", "sending"]).optional(),
-	eventId: z.string().optional(),
-	page: z.coerce.number().int().min(1).default(1).optional(),
-	limit: z.coerce.number().int().min(1).max(100).default(20).optional()
-});
-
-export const CampaignIdParamSchema = z.object({
-	campaignId: z.string()
-});
-
-export const EmailCampaignSendBodySchema2 = z.object({
-	sendNow: z.boolean().default(true).optional()
-});
-
-export const PreviewRecipientsBodySchema = z.object({
-	targetAudience: TargetAudienceSchema.optional()
-});
-
-export const EmailCampaignUpdateBodySchema2 = z.object({
-	name: z.string().min(1).optional(),
-	subject: z.string().min(1).optional(),
-	content: z.string().min(1).optional(),
-	targetAudience: TargetAudienceSchema.optional()
-});
-
-export const adminEmailCampaignSchemas = {
-	listEmailCampaigns: {
-		description: "獲取郵件發送記錄",
-		tags: ["admin/email-campaigns"],
-		querystring: EmailCampaignListQuerySchema,
-		response: {
-			200: EmailCampaignsListResponseSchema,
-			401: ErrorResponseSchema,
-			403: ErrorResponseSchema
-		}
-	},
-	getEmailCampaignStatus: {
-		description: "獲取郵件發送狀態",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema
-	},
-	previewEmailCampaign: {
-		description: "預覽郵件內容",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema
-	},
-	calculateRecipients: {
-		description: "計算收件人數量",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema
-	},
-	previewRecipients: {
-		description: "預覽收件人（不需建立任務）",
-		tags: ["admin/email-campaigns"],
-		body: PreviewRecipientsBodySchema
-	},
-	updateEmailCampaign: {
-		description: "更新郵件任務",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema,
-		body: EmailCampaignUpdateBodySchema2
-	},
-	sendEmailCampaign: {
-		description: "發送郵件",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema,
-		body: EmailCampaignSendBodySchema2
-	},
-	cancelEmailCampaign: {
-		description: "取消郵件發送任務",
-		tags: ["admin/email-campaigns"],
-		params: CampaignIdParamSchema
-	},
-	listTemplates: {
-		description: "取得郵件模板列表",
-		tags: ["admin/email-campaigns"]
 	}
 } as const;
 
@@ -1819,20 +1620,67 @@ export const adminEmailCampaignSchemas = {
 export const SmsVerificationLogsQuerySchema = z.object({
 	userId: z.string().optional(),
 	phoneNumber: z.string().optional(),
-	verified: z.coerce.boolean().optional(),
+	verified: QueryBooleanSchema.optional(),
 	page: z.coerce.number().int().min(1).default(1).optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(20).optional()
+});
+
+export const SmsVerificationLogSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	phoneNumber: z.string(),
+	/** Never the real code: "******" once verified, otherwise "EXPIRED" or "PENDING" */
+	code: z.string(),
+	verified: z.boolean(),
+	expiresAt: z.date(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+	user: z.object({
+		id: z.string(),
+		email: z.string(),
+		name: z.string().nullable()
+	})
 });
 
 export const smsVerificationLogsSchemas = {
 	getSmsVerificationLogs: {
 		description: "取得簡訊驗證記錄",
 		tags: ["admin/sms-verification"],
-		querystring: SmsVerificationLogsQuerySchema
+		querystring: SmsVerificationLogsQuerySchema,
+		response: {
+			200: ApiResponseSchema(
+				z.object({
+					logs: z.array(SmsVerificationLogSchema),
+					pagination: z.object({
+						page: z.number().int(),
+						limit: z.number().int(),
+						total: z.number().int(),
+						totalPages: z.number().int()
+					})
+				})
+			),
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	},
 	getSmsVerificationStats: {
 		description: "取得簡訊驗證統計",
-		tags: ["admin/sms-verification"]
+		tags: ["admin/sms-verification"],
+		response: {
+			200: ApiResponseSchema(
+				z.object({
+					totalSent: z.number().int(),
+					totalVerified: z.number().int(),
+					totalExpired: z.number().int(),
+					successRate: z.number().describe("驗證成功率 (0-100)"),
+					recentActivity: z.number().int().describe("近 7 天發送數")
+				})
+			),
+			401: ErrorResponseSchema,
+			403: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
@@ -1939,7 +1787,27 @@ export const publicInvitationCodeSchemas = {
 		description: "獲取邀請碼資訊",
 		tags: ["invitation-codes"],
 		params: InvitationCodeParamSchema,
-		querystring: InvitationCodeTicketIdQuerySchema
+		querystring: InvitationCodeTicketIdQuerySchema,
+		response: {
+			200: ApiResponseSchema(
+				InvitationCodeInfoSchema.pick({ id: true, code: true, name: true, usedCount: true, usageLimit: true, validFrom: true, validUntil: true }).extend({
+					ticket: z.object({
+						event: z.object({
+							name: LocalizedTextSchema,
+							startDate: z.date(),
+							endDate: z.date()
+						})
+					}),
+					isValid: z.boolean(),
+					isExpired: z.boolean(),
+					isNotYetValid: z.boolean(),
+					isUsageExceeded: z.boolean(),
+					remainingUses: z.number().int().min(0).nullable()
+				})
+			),
+			404: ErrorResponseSchema,
+			500: ErrorResponseSchema
+		}
 	}
 } as const;
 
@@ -2010,22 +1878,9 @@ export const adminReferralSchemas = {
 // Admin Invitation Code Bulk Schemas
 // ----------------------------------------------------------------------------
 
-export const InvitationCodeBulkCreateBodySchema = z.object({
-	ticketId: z.string(),
-	name: z.string().min(1),
-	count: z.number().int().min(1).max(100),
-	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.coerce.date().optional(),
-	validUntil: z.coerce.date().optional()
-});
+export const InvitationCodeBulkCreateBodySchema = InvitationCodeBulkCreateRequestSchema;
 
-export const InvitationCodeSendEmailBodySchema = z.object({
-	email: z.email(),
-	code: z.string(),
-	// Codes are only unique per ticket, so callers should pass the ticket the code belongs to
-	ticketId: z.string().optional(),
-	message: z.string().max(5000).default("").optional()
-});
+export const InvitationCodeSendEmailBodySchema = InvitationCodeSendEmailRequestSchema;
 
 export const adminInvitationCodeSchemas = {
 	bulkCreateInvitationCodes: {
@@ -2171,19 +2026,7 @@ export const WebhookTestResultResponseSchema = z.object({
 	data: WebhookTestResponseSchema
 });
 
-export const WebhookDeliveriesListResponseSchema = z.object({
-	success: z.literal(true),
-	message: z.string(),
-	data: z.array(WebhookDeliverySchema),
-	pagination: z.object({
-		page: z.number().int(),
-		limit: z.number().int(),
-		total: z.number().int(),
-		totalPages: z.number().int(),
-		hasNext: z.boolean(),
-		hasPrev: z.boolean()
-	})
-});
+export const WebhookDeliveriesListResponseSchema = PaginatedResponseSchema(WebhookDeliverySchema);
 
 export const webhookSchemas = {
 	getWebhook: {
@@ -2418,80 +2261,3 @@ export const adminSponsorSchemas = {
 		}
 	}
 } as const;
-
-// ----------------------------------------------------------------------------
-// Legacy exports for backwards compatibility
-// ----------------------------------------------------------------------------
-
-export const idParam = IdParamSchema;
-export const paginationQuery = PaginationQuerySchemaExtended;
-export const searchQuery = SearchQuerySchemaExtended;
-export const successResponse = SuccessResponseSchema;
-export const errorResponse = ErrorResponseSchema;
-export const paginatedResponse = PaginatedResponseSchema;
-export const statusEnum = RegistrationStatusSchema;
-export const roleEnum = UserRoleSchema;
-export const campaignStatusEnum = CampaignStatusSchema;
-
-// Email Campaign
-export const emailCampaignProperties = EmailCampaignPropertiesSchema;
-export const emailCampaignCreateBody = EmailCampaignCreateBodySchema;
-export const emailCampaignUpdateBody = EmailCampaignUpdateBodySchema;
-export const emailCampaignSendBody = EmailCampaignSendBodySchema;
-export const emailCampaignResponse = EmailCampaignResponseSchema;
-export const emailCampaignsListResponse = EmailCampaignsListResponseSchema;
-
-// Event
-export const eventProperties = EventPropertiesSchema;
-export const eventCreateBody = EventCreateBodySchema;
-export const eventUpdateBody = EventUpdateBodySchema;
-export const eventResponse = EventResponseSchema;
-export const eventsListResponse = EventsListResponseSchema;
-
-// Event Form Field
-export const eventFormFieldProperties = EventFormFieldPropertiesSchema;
-export const eventFormFieldCreateBody = EventFormFieldCreateBodySchema;
-export const eventFormFieldUpdateBody = EventFormFieldUpdateBodySchema;
-export const eventFormFieldResponse = EventFormFieldResponseSchema;
-export const eventFormFieldsListResponse = EventFormFieldsListResponseSchema;
-
-// Invitation Code
-export const invitationCodeProperties = InvitationCodePropertiesSchema;
-export const invitationCodeCreateBody = InvitationCodeCreateBodySchema;
-export const invitationCodeUpdateBody = InvitationCodeUpdateBodySchema;
-export const invitationCodeValidateBody = InvitationCodeValidateBodySchema;
-export const invitationCodeResponse = InvitationCodeResponseSchema;
-export const invitationCodesListResponse = InvitationCodesListResponseSchema;
-
-// Referral
-export const referralProperties = ReferralPropertiesSchema;
-export const referralCreateBody = ReferralCreateBodySchema;
-export const referralUpdateBody = ReferralUpdateBodySchema;
-export const referralValidateBody = ReferralValidateBodySchema;
-export const referralResponse = ReferralResponseSchema;
-export const referralsListResponse = ReferralsListResponseSchema;
-export const referralUsageListResponse = ReferralUsageListResponseSchema;
-
-// Registration
-export const registrationProperties = RegistrationPropertiesSchema;
-export const registrationCreateBody = RegistrationCreateBodySchema;
-export const registrationUpdateBody = RegistrationUpdateBodySchema;
-export const registrationQuery = RegistrationQuerySchema;
-export const registrationResponse = RegistrationResponseSchema;
-export const registrationsListResponse = RegistrationsListResponseSchema;
-
-// Ticket
-export const ticketProperties = TicketPropertiesSchema;
-export const ticketCreateBody = TicketCreateBodySchema;
-export const ticketUpdateBody = TicketUpdateBodySchema;
-export const ticketResponse = TicketResponseSchema;
-export const ticketsListResponse = TicketsListResponseSchema;
-
-// User
-export const userProperties = UserPropertiesSchema;
-export const userCreateBody = UserCreateBodySchema;
-export const userUpdateBody = UserUpdateBodySchema;
-export const profileUpdateBody = ProfileUpdateBodySchema;
-export const changePasswordBody = ChangePasswordBodySchema;
-export const userResponse = UserResponseSchema;
-export const usersListResponse = UsersListResponseSchema;

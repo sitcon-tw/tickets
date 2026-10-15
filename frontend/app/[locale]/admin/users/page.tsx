@@ -16,13 +16,12 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEventsAPI, adminRolesAPI, adminUsersAPI, authAPI } from "@/lib/api/endpoints";
 import { formatDateTime } from "@/lib/utils/timezone";
-import type { Event, Role, User } from "@sitcontix/types";
+import type { Event, Role, User, UserRole } from "@sitcontix/types";
 import { RefreshCw, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import { createUsersColumns, type UserDisplay } from "./columns";
 
-type UserRole = "admin" | "viewer" | "eventAdmin" | "custom";
 type RoleFilter = UserRole | "all";
 type StatusFilter = "active" | "inactive" | "all";
 

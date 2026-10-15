@@ -1,12 +1,7 @@
 import { getLocalizedText } from "@/lib/utils/localization";
 import { toText } from "@/lib/utils/text";
-import type { EventFormField, Registration } from "@sitcontix/types";
+import type { AdminRegistration, EventFormField, RegistrationStatus } from "@sitcontix/types";
 import type { RegistrationsT } from "./translations";
-
-/** Admin list rows also include the referrer's email */
-export type AdminRegistration = Registration & { referrer?: { email: string } | null };
-
-export type RegistrationStatus = "pending" | "confirmed" | "cancelled";
 
 export const registrationStatuses: RegistrationStatus[] = ["confirmed", "pending", "cancelled"];
 
@@ -17,9 +12,9 @@ export function statusTone(status: string) {
 	return "neutral" as const;
 }
 
-/** Referrer shown in the admin list is the referrer's email (the backend puts it in `referredBy`). */
+/** Email of the attendee who referred this registration (`referredBy` is only the referrer's registration id). */
 export function getReferrer(registration: AdminRegistration): string {
-	return registration.referrer?.email || registration.referredBy || "";
+	return registration.referrer?.email || "";
 }
 
 export type FormDataEntry = { key: string; label: string; value: unknown; field?: EventFormField };

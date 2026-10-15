@@ -26,10 +26,7 @@ export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
 /**
  * Invitation code with extra info
  */
-export const InvitationCodeInfoSchema = InvitationCodeSchema.extend({
-	description: z.string().optional(),
-	expiresAt: z.coerce.date().optional()
-});
+export const InvitationCodeInfoSchema = InvitationCodeSchema;
 export type InvitationCodeInfo = z.infer<typeof InvitationCodeInfoSchema>;
 
 /**
@@ -39,9 +36,10 @@ export const InvitationCodeCreateRequestSchema = z.object({
 	ticketId: z.string(),
 	code: z.string().min(1),
 	name: z.string().optional(),
-	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.coerce.date().optional(),
-	validUntil: z.coerce.date().optional()
+	// null = no limit / no bound (z.coerce.date() alone would turn null into 1970-01-01)
+	usageLimit: z.number().int().min(1).nullable().optional(),
+	validFrom: z.coerce.date().nullable().optional(),
+	validUntil: z.coerce.date().nullable().optional()
 });
 export type InvitationCodeCreateRequest = z.infer<typeof InvitationCodeCreateRequestSchema>;
 
@@ -50,14 +48,40 @@ export type InvitationCodeCreateRequest = z.infer<typeof InvitationCodeCreateReq
  */
 export const InvitationCodeUpdateRequestSchema = z.object({
 	code: z.string().min(1).optional(),
-	name: z.string().optional(),
-	usageLimit: z.number().int().min(1).optional(),
-	validFrom: z.coerce.date().optional(),
-	validUntil: z.coerce.date().optional(),
+	// null clears the value
+	name: z.string().nullable().optional(),
+	usageLimit: z.number().int().min(1).nullable().optional(),
+	validFrom: z.coerce.date().nullable().optional(),
+	validUntil: z.coerce.date().nullable().optional(),
 	isActive: z.boolean().optional(),
 	ticketId: z.string().optional()
 });
 export type InvitationCodeUpdateRequest = z.infer<typeof InvitationCodeUpdateRequestSchema>;
+
+/**
+ * Bulk invitation code create request (codes are generated)
+ */
+export const InvitationCodeBulkCreateRequestSchema = z.object({
+	ticketId: z.string(),
+	name: z.string().min(1),
+	count: z.number().int().min(1).max(100),
+	usageLimit: z.number().int().min(1).optional(),
+	validFrom: z.coerce.date().optional(),
+	validUntil: z.coerce.date().optional()
+});
+export type InvitationCodeBulkCreateRequest = z.infer<typeof InvitationCodeBulkCreateRequestSchema>;
+
+/**
+ * Send an invitation code by email
+ */
+export const InvitationCodeSendEmailRequestSchema = z.object({
+	email: z.email(),
+	code: z.string(),
+	// Codes are only unique per ticket, so callers should pass the ticket the code belongs to
+	ticketId: z.string().optional(),
+	message: z.string().max(5000).default("").optional()
+});
+export type InvitationCodeSendEmailRequest = z.infer<typeof InvitationCodeSendEmailRequestSchema>;
 
 /**
  * Invitation code verify request
@@ -79,13 +103,11 @@ export const InvitationCodeVerificationSchema = z.object({
 			id: z.string(),
 			code: z.string(),
 			name: z.string().nullable().optional(),
-			description: z.string().optional(),
 			usedCount: z.number().int().min(0),
 			usageLimit: z.number().int().min(1).nullable().optional(),
 			validFrom: z.coerce.date().nullable().optional(),
 			validUntil: z.coerce.date().nullable().optional(),
-			ticketId: z.string(),
-			expiresAt: z.coerce.date().optional()
+			ticketId: z.string()
 		})
 		.optional(),
 	availableTickets: z

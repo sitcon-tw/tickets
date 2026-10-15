@@ -1,6 +1,7 @@
 import type { EventFormFields } from "#prisma/generated/prisma/client";
 import { getVisibleFieldIds, pruneFormData, validateFormData, type FormAnswers, type FormErrors, type FormLogicField } from "@sitcontix/types";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { parseFormFieldOptions, parseFormFieldType } from "./form-fields";
 import { validationErrorResponse } from "./response";
 import { toText } from "./text";
 
@@ -114,27 +115,13 @@ export const validateQuery = (schema: ValidationSchema) => {
 	};
 };
 
-/** Parses a JSON column that may have been stored as an array or as a JSON string. */
-const parseJsonArray = (value: unknown): unknown[] => {
-	if (Array.isArray(value)) return value;
-	if (typeof value === "string") {
-		try {
-			const parsed: unknown = JSON.parse(value);
-			return Array.isArray(parsed) ? parsed : [];
-		} catch {
-			return [];
-		}
-	}
-	return [];
-};
-
 /** Map a Prisma form field row (with untyped JSON columns) to the shape used by the shared form logic. */
 export const toFormLogicField = (row: EventFormFields): FormLogicField => ({
 	id: row.id,
-	type: row.type as FormLogicField["type"],
+	type: parseFormFieldType(row.type),
 	required: row.required,
 	validater: row.validater,
-	options: parseJsonArray(row.values) as FormLogicField["options"],
+	options: parseFormFieldOptions(row.values),
 	enableOther: row.enableOther,
 	filters: row.filters
 });

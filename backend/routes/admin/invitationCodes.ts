@@ -302,7 +302,8 @@ const adminInvitationCodesRoutes: FastifyPluginAsync = async (fastify, _options)
 					return reply.code(statusCode).send(response);
 				}
 
-				if (usageLimit !== undefined && usageLimit < existingCode.usedCount) {
+				// null removes the limit, so only a number can conflict with the used count
+				if (usageLimit != null && usageLimit < existingCode.usedCount) {
 					const { response, statusCode } = validationErrorResponse(`使用次數限制不能低於已使用次數 (${existingCode.usedCount})`);
 					return reply.code(statusCode).send(response);
 				}

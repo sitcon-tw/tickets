@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod/v4";
-import { LocalizedTextSchema } from "./common.js";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "./common.js";
 
 /**
  * Webhook event types
@@ -41,12 +41,18 @@ export const AuthHeaderValueSchema = z
 	.regex(/^[\x20-\x7E]+$/, "Auth header value must only contain ASCII characters");
 
 /**
+ * Webhook target URL (HTTPS only)
+ */
+export const WebhookUrlSchema = z.url().startsWith("https://", "Webhook URL must use HTTPS");
+
+/**
  * Webhook endpoint entity
  */
 export const WebhookEndpointSchema = z.object({
 	id: z.string(),
 	eventId: z.string(),
-	url: z.url().startsWith("https://", "Webhook URL must use HTTPS"),
+	// Not re-validated on read: HTTPS is enforced when the URL is written
+	url: z.string(),
 	authHeaderName: z.string().nullable().optional(),
 	authHeaderValue: z.string().nullable().optional(),
 	eventTypes: z.array(WebhookEventTypeSchema),
@@ -63,7 +69,7 @@ export type WebhookEndpoint = z.infer<typeof WebhookEndpointSchema>;
  */
 export const WebhookEndpointCreateRequestSchema = z
 	.object({
-		url: z.url().startsWith("https://", "Webhook URL must use HTTPS"),
+		url: WebhookUrlSchema,
 		authHeaderName: AuthHeaderNameSchema.optional(),
 		authHeaderValue: AuthHeaderValueSchema.optional(),
 		eventTypes: z.array(WebhookEventTypeSchema).min(1, "At least one event type is required")
@@ -86,7 +92,7 @@ export type WebhookEndpointCreateRequest = z.infer<typeof WebhookEndpointCreateR
  */
 export const WebhookEndpointUpdateRequestSchema = z
 	.object({
-		url: z.url().startsWith("https://", "Webhook URL must use HTTPS").optional(),
+		url: WebhookUrlSchema.optional(),
 		authHeaderName: AuthHeaderNameSchema.nullable().optional(),
 		authHeaderValue: AuthHeaderValueSchema.nullable().optional(),
 		eventTypes: z.array(WebhookEventTypeSchema).min(1).optional(),
@@ -151,7 +157,7 @@ export type WebhookEventInfo = z.infer<typeof WebhookEventInfoSchema>;
  */
 export const WebhookRegistrationInfoSchema = z.object({
 	id: z.string(),
-	status: z.string(),
+	status: RegistrationStatusSchema,
 	created_at: z.string(), // ISO datetime string
 	email: z.string(),
 	token: z.string() // SHA-256 hash of registrationId + createdAt for verification
@@ -226,50 +232,10 @@ export const WebhookPayloadSchema = z.object({
 export type WebhookPayload = z.infer<typeof WebhookPayloadSchema>;
 
 /**
- * Test webhook payload (fixed payload for testing)
- */
-export const TestWebhookPayloadSchema = z.object({
-	notifications: z.array(
-		z.object({
-			type: WebhookEventTypeSchema,
-			event: z.object({
-				name: z.object({
-					en: z.string(),
-					"zh-Hant": z.string()
-				}),
-				slug: z.string()
-			}),
-			registration: z.object({
-				id: z.string(),
-				status: z.string(),
-				created_at: z.string().optional(),
-				cancelled_at: z.string().optional(),
-				email: z.string().optional()
-			}),
-			ticket: z
-				.object({
-					price: z.number(),
-					name: z.object({
-						en: z.string(),
-						"zh-Hant": z.string()
-					}),
-					id: z.string(),
-					attendee: z.object({
-						name: z.string(),
-						email: z.string()
-					})
-				})
-				.optional(),
-			formData: z.record(z.string(), z.unknown()).optional()
-		})
-	)
-});
-
-/**
  * Webhook test request
  */
 export const WebhookTestRequestSchema = z.object({
-	url: z.url().startsWith("https://", "Webhook URL must use HTTPS"),
+	url: WebhookUrlSchema,
 	authHeaderName: AuthHeaderNameSchema.optional(),
 	authHeaderValue: AuthHeaderValueSchema.optional()
 });
@@ -285,12 +251,3 @@ export const WebhookTestResponseSchema = z.object({
 	errorMessage: z.string().optional()
 });
 export type WebhookTestResponse = z.infer<typeof WebhookTestResponseSchema>;
-
-/**
- * Failed webhook deliveries list response
- */
-export const WebhookFailedDeliveriesResponseSchema = z.object({
-	deliveries: z.array(WebhookDeliverySchema),
-	total: z.number().int().min(0)
-});
-export type WebhookFailedDeliveriesResponse = z.infer<typeof WebhookFailedDeliveriesResponseSchema>;

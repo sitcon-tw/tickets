@@ -1,17 +1,20 @@
 import { fetchGravatarName } from "@/lib/gravatar";
+import { isHttpStatus } from "@/lib/types/client";
 import {
+	AdminEmailCampaignSchema,
+	AdminRegistrationSchema,
 	ApiResponseSchema,
 	CheckInAttendeeSchema,
 	CheckInResultSchema,
 	EmailCampaignSchema,
+	EmailCampaignStatusResponseSchema,
 	EventDashboardDataSchema,
 	EventFormFieldSchema,
 	EventSchema,
 	EventStatsSchema,
-	ExportDataSchema,
+	GoogleSheetsSettingsSchema,
 	InvitationCodeSchema,
 	InvitationCodeVerificationSchema,
-	LocalizedTextSchema,
 	PasskeySchema,
 	PermissionsResponseSchema,
 	PublicEventFormFieldSchema,
@@ -25,7 +28,6 @@ import {
 	RegistrationHoldSchema,
 	RegistrationSchema,
 	RegistrationStatsSchema,
-	RegistrationStatusSchema,
 	RoleSchema,
 	SessionSchema,
 	SiteSettingsSchema,
@@ -33,7 +35,6 @@ import {
 	SponsorSchema,
 	SponsorSectionTitlesSchema,
 	SponsorWithStatsSchema,
-	TargetAudienceSchema,
 	TicketAnalyticsSchema,
 	TicketSchema,
 	UserRegistrationListItemSchema,
@@ -41,11 +42,27 @@ import {
 	WebhookDeliverySchema,
 	WebhookEndpointSchema,
 	WebhookTestResponseSchema,
+	type AdminUserUpdateRequest,
+	type AttendeeRegistrationUpdateRequest,
+	type EmailCampaignCreateRequest,
+	type EmailCampaignStatus,
+	type EmailCampaignUpdateRequest,
 	type Event,
-	type EventFormField,
+	type EventCreateRequest,
+	type EventFormFieldCreateRequest,
 	type EventFormFieldReorderRequest,
-	type InvitationCodeInfo,
-	type LocalizedText,
+	type EventFormFieldUpdateRequest,
+	type EventUpdateRequest,
+	type InvitationCodeBulkCreateRequest,
+	type InvitationCodeCreateRequest,
+	type InvitationCodeSendEmailRequest,
+	type InvitationCodeUpdateRequest,
+	type InvitationCodeVerifyRequest,
+	type ReferralValidateRequest,
+	type RegistrationCreateRequest,
+	type RegistrationHoldRequest,
+	type RegistrationStatus,
+	type RegistrationUpdateRequest,
 	type RoleCreateRequest,
 	type RoleUpdateRequest,
 	type SiteSettingsUpdateRequest,
@@ -54,10 +71,14 @@ import {
 	type SponsorSectionTitles,
 	type SponsorTrackRequest,
 	type SponsorUpdateRequest,
-	type Ticket,
+	type TargetAudience,
+	type TicketCreateRequest,
 	type TicketReorderRequest,
-	type User,
-	type UserRole
+	type TicketUpdateRequest,
+	type UserRole,
+	type WebhookEndpointCreateRequest,
+	type WebhookEndpointUpdateRequest,
+	type WebhookTestRequest
 } from "@sitcontix/types";
 import z from "zod/v4";
 import { startAuthentication, startRegistration, type PublicKeyCredentialCreationOptionsJSON, type PublicKeyCredentialRequestOptionsJSON } from "@simplewebauthn/browser";
@@ -98,9 +119,22 @@ export const authAPI = {
 
 // Events - Public
 export const eventsAPI = {
+	/** Public event list. Hidden events are left out, so resolve a URL's event with `findBySlug` instead of searching this list. */
 	getAll: (params?: { isActive?: boolean; upcoming?: boolean }) => apiClient.get("/api/events", params, ApiResponseSchema(z.array(PublicEventListItemSchema))),
 
-	getInfo: (id: string) => apiClient.get(`/api/events/${id}/info`, {}, ApiResponseSchema(EventSchema)),
+	/** Accepts an event id, its slug or the last 6 characters of its id. Hidden events resolve too. */
+	getInfo: (idOrSlug: string) => apiClient.get(`/api/events/${encodeURIComponent(idOrSlug)}/info`, {}, ApiResponseSchema(EventSchema)),
+
+	/** Resolves the event a URL segment (slug, id or last 6 characters of the id) points at; null when there is no such event. */
+	findBySlug: async (slug: string): Promise<Event | null> => {
+		try {
+			const response = await eventsAPI.getInfo(slug);
+			return response.success ? response.data : null;
+		} catch (error) {
+			if (isHttpStatus(error, 404)) return null;
+			throw error;
+		}
+	},
 
 	getTickets: (id: string) => apiClient.get(`/api/events/${id}/tickets`, {}, ApiResponseSchema(z.array(PublicTicketListItemSchema))),
 
@@ -134,16 +168,15 @@ export const ticketsAPI = {
 
 // Registrations - Requires Auth
 export const registrationsAPI = {
-	create: (data: { eventId: string; ticketId: string; invitationCode?: string; referralCode?: string; formData: Record<string, unknown> }) =>
-		apiClient.post("/api/registrations", data, ApiResponseSchema(RegistrationSchema)),
+	create: (data: RegistrationCreateRequest) => apiClient.post("/api/registrations", data, ApiResponseSchema(RegistrationSchema)),
 
-	hold: (data: { eventId: string; ticketId: string; invitationCode?: string }) => apiClient.post("/api/registrations/hold", data, ApiResponseSchema(RegistrationHoldSchema)),
+	hold: (data: RegistrationHoldRequest) => apiClient.post("/api/registrations/hold", data, ApiResponseSchema(RegistrationHoldSchema)),
 
 	getAll: (options?: RequestOptions) => apiClient.get("/api/registrations", {}, ApiResponseSchema(z.array(UserRegistrationListItemSchema)), options),
 
 	getById: (id: string) => apiClient.get(`/api/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 
-	update: (id: string, data: Record<string, unknown>) => apiClient.put(`/api/registrations/${id}`, data, ApiResponseSchema(RegistrationSchema)),
+	update: (id: string, data: AttendeeRegistrationUpdateRequest) => apiClient.put(`/api/registrations/${id}`, data, ApiResponseSchema(RegistrationSchema)),
 
 	cancel: (id: string) => apiClient.put(`/api/registrations/${id}/cancel`, {}, ApiResponseSchema(z.null()))
 };
@@ -154,43 +187,14 @@ export const referralsAPI = {
 
 	getStats: (regId: string) => apiClient.get(`/api/registrations/referral-stats/${regId}`, {}, ApiResponseSchema(RegistrationStatsSchema)),
 
-	validate: (data: { code: string; eventId: string }) => apiClient.post("/api/referrals/validate", data, ApiResponseSchema(ReferralValidationSchema)),
+	validate: (data: ReferralValidateRequest) => apiClient.post("/api/referrals/validate", data, ApiResponseSchema(ReferralValidationSchema)),
 
 	getRanking: (eventId: string, limit?: number) => apiClient.get("/api/referrals/ranking", { eventId, limit }, ApiResponseSchema(PublicReferralRankingDataSchema))
 };
 
 // Invitation Codes - Public
 export const invitationCodesAPI = {
-	verify: (data: { code: string; ticketId: string }) => apiClient.post("/api/invitation-codes/verify", data, ApiResponseSchema(InvitationCodeVerificationSchema)),
-
-	getInfo: (code: string, ticketId: string) =>
-		apiClient.get(
-			`/api/invitation-codes/${code}/info`,
-			{ ticketId },
-			ApiResponseSchema(
-				z.object({
-					id: z.string(),
-					code: z.string(),
-					name: z.string().nullable(),
-					usedCount: z.number().int(),
-					usageLimit: z.number().int().nullable(),
-					validFrom: z.date().nullable(),
-					validUntil: z.date().nullable(),
-					ticket: z.object({
-						event: z.object({
-							name: LocalizedTextSchema,
-							startDate: z.date(),
-							endDate: z.date()
-						})
-					}),
-					isValid: z.boolean(),
-					isExpired: z.boolean(),
-					isNotYetValid: z.boolean(),
-					isUsageExceeded: z.boolean(),
-					remainingUses: z.number().int().nullable()
-				})
-			)
-		)
+	verify: (data: InvitationCodeVerifyRequest) => apiClient.post("/api/invitation-codes/verify", data, ApiResponseSchema(InvitationCodeVerificationSchema))
 };
 
 // User // Admin - Analytics
@@ -204,7 +208,7 @@ export const adminUsersAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/users/${id}`, {}, ApiResponseSchema(UserSchema)),
 
-	update: (id: string, data: Partial<User>) => apiClient.put(`/api/admin/users/${id}`, data, ApiResponseSchema(UserSchema))
+	update: (id: string, data: AdminUserUpdateRequest) => apiClient.put(`/api/admin/users/${id}`, data, ApiResponseSchema(UserSchema))
 };
 
 // Admin - Roles
@@ -231,10 +235,9 @@ export const adminEventsAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/events/${id}`, {}, ApiResponseSchema(EventSchema)),
 
-	create: (data: { name: LocalizedText; description?: LocalizedText; startDate: Date; endDate: Date; locationText?: LocalizedText; mapLink?: string }) =>
-		apiClient.post("/api/admin/events", data, ApiResponseSchema(EventSchema)),
+	create: (data: EventCreateRequest) => apiClient.post("/api/admin/events", data, ApiResponseSchema(EventSchema)),
 
-	update: (id: string, data: Partial<Event>) => apiClient.put(`/api/admin/events/${id}`, data, ApiResponseSchema(EventSchema)),
+	update: (id: string, data: EventUpdateRequest) => apiClient.put(`/api/admin/events/${id}`, data, ApiResponseSchema(EventSchema)),
 
 	delete: (id: string) => apiClient.delete(`/api/admin/events/${id}`, ApiResponseSchema(z.null()))
 };
@@ -245,10 +248,9 @@ export const adminTicketsAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/tickets/${id}`, {}, ApiResponseSchema(TicketSchema)),
 
-	create: (data: { eventId: string; name: LocalizedText; description?: LocalizedText; price: number; quantity: number; saleStart?: Date; saleEnd?: Date; requireInviteCode?: boolean }) =>
-		apiClient.post("/api/admin/tickets", data, ApiResponseSchema(TicketSchema)),
+	create: (data: TicketCreateRequest) => apiClient.post("/api/admin/tickets", data, ApiResponseSchema(TicketSchema)),
 
-	update: (id: string, data: Partial<Ticket>) => apiClient.put(`/api/admin/tickets/${id}`, data, ApiResponseSchema(TicketSchema)),
+	update: (id: string, data: TicketUpdateRequest) => apiClient.put(`/api/admin/tickets/${id}`, data, ApiResponseSchema(TicketSchema)),
 
 	delete: (id: string) => apiClient.delete(`/api/admin/tickets/${id}`, ApiResponseSchema(z.null())),
 
@@ -282,90 +284,28 @@ export const adminEventFormFieldsAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/event-form-fields/${id}`, {}, ApiResponseSchema(EventFormFieldSchema)),
 
-	create: (data: {
-		eventId: string;
-		order: number;
-		type: "text" | "textarea" | "select" | "checkbox" | "radio";
-		name: LocalizedText;
-		description?: LocalizedText;
-		placeholder?: string;
-		required?: boolean;
-		validater?: string;
-		values?: LocalizedText[];
-	}) => apiClient.post("/api/admin/event-form-fields", data, ApiResponseSchema(EventFormFieldSchema)),
+	create: (data: EventFormFieldCreateRequest) => apiClient.post("/api/admin/event-form-fields", data, ApiResponseSchema(EventFormFieldSchema)),
 
-	update: (id: string, data: Partial<EventFormField>) => apiClient.put(`/api/admin/event-form-fields/${id}`, data, ApiResponseSchema(EventFormFieldSchema)),
+	update: (id: string, data: EventFormFieldUpdateRequest) => apiClient.put(`/api/admin/event-form-fields/${id}`, data, ApiResponseSchema(EventFormFieldSchema)),
 
 	delete: (id: string) => apiClient.delete(`/api/admin/event-form-fields/${id}`, ApiResponseSchema(z.null())),
 
 	reorder: (eventId: string, data: EventFormFieldReorderRequest) => apiClient.put(`/api/admin/events/${eventId}/form-fields/reorder`, data, ApiResponseSchema(z.null()))
 };
 
-// Admin Registration Schema (for list endpoints)
-const AdminRegistrationSchema = z.object({
-	id: z.string(),
-	userId: z.string(),
-	eventId: z.string(),
-	ticketId: z.string(),
-	email: z.string(),
-	status: RegistrationStatusSchema,
-	referredBy: z.string().nullable().optional(),
-	referrer: z
-		.object({
-			id: z.string(),
-			email: z.string()
-		})
-		.nullable()
-		.optional(),
-	checkedIn: z.boolean().optional(),
-	checkedInAt: z.coerce.date().nullable().optional(),
-	formData: z.record(z.string(), z.unknown()),
-	createdAt: z.coerce.date(),
-	updatedAt: z.coerce.date(),
-	event: z
-		.object({
-			id: z.string(),
-			name: LocalizedTextSchema,
-			startDate: z.coerce.date(),
-			endDate: z.coerce.date()
-		})
-		.optional(),
-	ticket: z
-		.object({
-			id: z.string(),
-			name: LocalizedTextSchema,
-			price: z.number()
-		})
-		.optional()
-});
-
 // Admin - Registrations
-const GoogleSheetsSettingsSchema = z.object({
-	sheetsUrl: z.string().nullable(),
-	autoSync: z.boolean(),
-	lastSyncedAt: z.string().nullable(),
-	lastSyncError: z.string().nullable()
-});
-export type GoogleSheetsSettings = z.infer<typeof GoogleSheetsSettingsSchema>;
-
 export const adminRegistrationsAPI = {
-	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: "pending" | "confirmed" | "cancelled"; userId?: string }) =>
+	getAll: (params?: { page?: number; limit?: number; eventId?: string; status?: RegistrationStatus; userId?: string }) =>
 		apiClient.get("/api/admin/registrations", params, ApiResponseSchema(z.array(AdminRegistrationSchema))),
 
 	getById: (id: string) => apiClient.get(`/api/admin/registrations/${id}`, {}, ApiResponseSchema(RegistrationSchema)),
 
-	update: (
-		id: string,
-		data: {
-			formData?: Record<string, unknown>;
-			status?: "pending" | "confirmed" | "cancelled";
-		}
-	) => apiClient.put(`/api/admin/registrations/${id}`, data, ApiResponseSchema(RegistrationSchema)),
+	update: (id: string, data: RegistrationUpdateRequest) => apiClient.put(`/api/admin/registrations/${id}`, data, ApiResponseSchema(RegistrationSchema)),
 
 	delete: (id: string) => apiClient.delete(`/api/admin/registrations/${id}`, ApiResponseSchema(z.object({ id: z.string(), email: z.string() }))),
 
-	export: (params?: { eventId?: string; status?: "confirmed" | "cancelled" | "pending"; format?: "csv" | "excel" }) =>
-		apiClient.get("/api/admin/registrations/export", params, ApiResponseSchema(ExportDataSchema)),
+	/** The event's registrations as a CSV file. */
+	exportCsv: (params: { eventId: string; status?: RegistrationStatus }) => apiClient.getBlob("/api/admin/registrations/export", { ...params, format: "csv" }),
 
 	getServiceAccountEmail: () => apiClient.get("/api/admin/registrations/google-sheets/service-account", {}, ApiResponseSchema(z.object({ email: z.string() }))),
 
@@ -390,14 +330,13 @@ export const adminInvitationCodesAPI = {
 
 	getById: (id: string) => apiClient.get(`/api/admin/invitation-codes/${id}`, {}, ApiResponseSchema(InvitationCodeSchema)),
 
-	create: (data: { ticketId: string; code: string; name?: string; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
-		apiClient.post("/api/admin/invitation-codes", data, ApiResponseSchema(InvitationCodeSchema)),
+	create: (data: InvitationCodeCreateRequest) => apiClient.post("/api/admin/invitation-codes", data, ApiResponseSchema(InvitationCodeSchema)),
 
-	update: (id: string, data: Partial<InvitationCodeInfo>) => apiClient.put(`/api/admin/invitation-codes/${id}`, data, ApiResponseSchema(InvitationCodeSchema)),
+	update: (id: string, data: InvitationCodeUpdateRequest) => apiClient.put(`/api/admin/invitation-codes/${id}`, data, ApiResponseSchema(InvitationCodeSchema)),
 
 	delete: (id: string) => apiClient.delete(`/api/admin/invitation-codes/${id}`, ApiResponseSchema(z.null())),
 
-	bulkCreate: (data: { ticketId: string; name: string; count: number; usageLimit?: number; validFrom?: string; validUntil?: string }) =>
+	bulkCreate: (data: InvitationCodeBulkCreateRequest) =>
 		apiClient.post(
 			"/api/admin/invitation-codes/bulk",
 			data,
@@ -407,27 +346,10 @@ export const adminInvitationCodesAPI = {
 					codes: z.array(z.string())
 				})
 			)
-		)
-};
+		),
 
-// Email Campaign Properties Schema (extends EmailCampaignSchema with additional fields)
-const EmailCampaignPropertiesSchema = EmailCampaignSchema.extend({
-	eventId: z.string().optional(),
-	targetAudience: TargetAudienceSchema.optional(),
-	createdBy: z.string().optional()
-});
-
-type TargetAudienceInput = {
-	roles?: string[];
-	eventIds?: string[];
-	ticketIds?: string[];
-	registrationStatuses?: string[];
-	hasReferrals?: boolean;
-	isReferrer?: boolean;
-	registeredAfter?: string;
-	registeredBefore?: string;
-	tags?: string[];
-	emailDomains?: string[];
+	/** Emails one invitation code. Codes are only unique per ticket, so pass the ticket the code belongs to. */
+	sendEmail: (data: InvitationCodeSendEmailRequest) => apiClient.post("/api/admin/invitation-codes/send-email", data, ApiResponseSchema(z.null().optional()))
 };
 
 const RecipientSchema = z.object({ email: z.string(), id: z.string() });
@@ -435,25 +357,18 @@ const RecipientsResponseSchema = z.object({ recipientCount: z.number(), recipien
 
 // Admin - Email Campaigns
 export const adminEmailCampaignsAPI = {
-	getAll: (params?: { status?: "draft" | "sent" | "sending"; eventId?: string; page?: number; limit?: number }) =>
-		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(EmailCampaignPropertiesSchema))),
+	getAll: (params?: { status?: EmailCampaignStatus; eventId?: string; page?: number; limit?: number }) =>
+		apiClient.get("/api/admin/email-campaigns", params, ApiResponseSchema(z.array(AdminEmailCampaignSchema))),
 
-	create: (data: { name: string; subject: string; content: string; targetAudience?: TargetAudienceInput }) =>
-		apiClient.post("/api/admin/email-campaigns", data, ApiResponseSchema(EmailCampaignSchema)),
+	create: (data: EmailCampaignCreateRequest) => apiClient.post("/api/admin/email-campaigns", data, ApiResponseSchema(EmailCampaignSchema)),
 
-	update: (campaignId: string, data: { name?: string; subject?: string; content?: string; targetAudience?: TargetAudienceInput }) =>
-		apiClient.patch(`/api/admin/email-campaigns/${campaignId}`, data, ApiResponseSchema(EmailCampaignSchema)),
+	update: (campaignId: string, data: EmailCampaignUpdateRequest) => apiClient.patch(`/api/admin/email-campaigns/${campaignId}`, data, ApiResponseSchema(EmailCampaignSchema)),
 
-	getStatus: (campaignId: string) =>
-		apiClient.get(
-			`/api/admin/email-campaigns/${campaignId}/status`,
-			{},
-			ApiResponseSchema(z.object({ id: z.string(), status: z.string(), sentCount: z.number(), totalRecipients: z.number(), failedCount: z.number() }))
-		),
+	getStatus: (campaignId: string) => apiClient.get(`/api/admin/email-campaigns/${campaignId}/status`, {}, ApiResponseSchema(EmailCampaignStatusResponseSchema)),
 
 	preview: (campaignId: string) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/preview`, {}, ApiResponseSchema(z.object({ previewHtml: z.string() }))),
 
-	previewRecipients: (targetAudience?: TargetAudienceInput) => apiClient.post("/api/admin/email-campaigns/preview-recipients", { targetAudience }, ApiResponseSchema(RecipientsResponseSchema)),
+	previewRecipients: (targetAudience?: TargetAudience) => apiClient.post("/api/admin/email-campaigns/preview-recipients", { targetAudience }, ApiResponseSchema(RecipientsResponseSchema)),
 
 	calculateRecipients: (campaignId: string) => apiClient.post(`/api/admin/email-campaigns/${campaignId}/calculate-recipients`, {}, ApiResponseSchema(RecipientsResponseSchema)),
 
@@ -483,22 +398,16 @@ export const smsVerificationAPI = {
 export const adminWebhooksAPI = {
 	get: (eventId: string) => apiClient.get(`/api/admin/events/${eventId}/webhook`, {}, ApiResponseSchema(WebhookEndpointSchema.nullable())),
 
-	create: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string; eventTypes: string[] }) =>
-		apiClient.post(`/api/admin/events/${eventId}/webhook`, data, ApiResponseSchema(WebhookEndpointSchema)),
+	create: (eventId: string, data: WebhookEndpointCreateRequest) => apiClient.post(`/api/admin/events/${eventId}/webhook`, data, ApiResponseSchema(WebhookEndpointSchema)),
 
-	update: (eventId: string, data: { url?: string; authHeaderName?: string | null; authHeaderValue?: string | null; eventTypes?: string[]; isActive?: boolean }) =>
-		apiClient.put(`/api/admin/events/${eventId}/webhook`, data, ApiResponseSchema(WebhookEndpointSchema)),
+	update: (eventId: string, data: WebhookEndpointUpdateRequest) => apiClient.put(`/api/admin/events/${eventId}/webhook`, data, ApiResponseSchema(WebhookEndpointSchema)),
 
 	delete: (eventId: string) => apiClient.delete(`/api/admin/events/${eventId}/webhook`, ApiResponseSchema(z.null())),
 
-	test: (eventId: string, data: { url: string; authHeaderName?: string; authHeaderValue?: string }) =>
-		apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(WebhookTestResponseSchema)),
+	test: (eventId: string, data: WebhookTestRequest) => apiClient.post(`/api/admin/events/${eventId}/webhook/test`, data, ApiResponseSchema(WebhookTestResponseSchema)),
 
 	getFailedDeliveries: (eventId: string, params?: { page?: number; limit?: number }) =>
 		apiClient.get(`/api/admin/events/${eventId}/webhook/failed-deliveries`, params, ApiResponseSchema(z.array(WebhookDeliverySchema))),
 
 	retryDelivery: (eventId: string, deliveryId: string) => apiClient.post(`/api/admin/events/${eventId}/webhook/deliveries/${deliveryId}/retry`, {}, ApiResponseSchema(z.null()))
 };
-
-// Export schemas for component use
-export const webhookTestSchema = WebhookTestResponseSchema;

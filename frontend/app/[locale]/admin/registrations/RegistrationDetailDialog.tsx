@@ -11,14 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getLocalizedText } from "@/lib/utils/localization";
 import { formatDateTime } from "@/lib/utils/timezone";
-import type { EventFormField } from "@sitcontix/types";
+import type { AdminRegistration, EventFormField, RegistrationStatus, RegistrationUpdateRequest } from "@sitcontix/types";
 import { Check, Copy, Pencil, Trash } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { RegistrationsT } from "./translations";
-import { formatFormValue, getFormDataEntries, getReferrer, registrationStatuses, statusTone, type AdminRegistration, type FormDataEntry, type RegistrationStatus } from "./utils";
+import { formatFormValue, getFormDataEntries, getReferrer, registrationStatuses, statusTone, type FormDataEntry } from "./utils";
 
-export type RegistrationChanges = { status?: RegistrationStatus; formData?: Record<string, unknown> };
+export type RegistrationChanges = RegistrationUpdateRequest;
 
 type BodyState = { dirty: boolean; busy: boolean };
 

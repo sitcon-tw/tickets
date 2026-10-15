@@ -31,6 +31,14 @@ export function getLocalizedText(obj: LocalizedText | string | undefined | null,
 }
 
 /**
+ * Text for page metadata: the requested locale, then zh-Hant, en, then any translation
+ */
+export function getMetadataText(text: LocalizedText | null | undefined, locale: string, fallback: string): string {
+	if (!text) return fallback;
+	return text[locale] || text["zh-Hant"] || text["en"] || Object.values(text)[0] || fallback;
+}
+
+/**
  * Normalize a form field option (plain string, localized record, or legacy `{ label, value }`) into a localized record
  */
 export function normalizeFormFieldOption(opt: FormFieldOption): LocalizedText {

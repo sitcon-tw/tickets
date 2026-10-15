@@ -10,3 +10,8 @@ export const toText = (value: unknown): string => {
 	if (value instanceof Date) return value.toString();
 	return JSON.stringify(value) ?? "";
 };
+
+/** The message of a thrown error, or `fallback` when it is not an `Error` or has no message. */
+export function errorMessage(error: unknown, fallback = ""): string {
+	return error instanceof Error && error.message ? error.message : fallback;
+}

@@ -16,7 +16,7 @@ export async function getServerSession(): Promise<Session | null> {
 
 		if (!response.ok) return null;
 
-		const data = await response.json();
+		const data: unknown = await response.json();
 		const parsed = SessionSchema.nullable().optional().safeParse(data);
 		return parsed.success ? parsed.data || null : null;
 	} catch {

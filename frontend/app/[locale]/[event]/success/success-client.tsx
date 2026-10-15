@@ -359,8 +359,7 @@ function SuccessContent() {
 		const loadSuccessInfo = async () => {
 			let eventRegistration;
 			try {
-				const eventsData = await eventsAPI.getAll();
-				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
+				const foundEvent = await eventsAPI.findBySlug(eventSlug);
 
 				if (!foundEvent) {
 					dispatchRegistration({ type: "eventNotFound" });

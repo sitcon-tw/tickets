@@ -1,4 +1,4 @@
-import type { EventFormField, EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
+import type { EventFormFieldCreateRequest, EventFormFieldUpdateRequest } from "@sitcontix/types";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import prisma from "#config/database";
@@ -6,6 +6,7 @@ import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessViaFieldId, requireEventListAccess } from "#middleware/auth";
 import { Prisma } from "#prisma/generated/prisma/client";
 import { adminEventFormFieldSchemas, eventFormFieldSchemas } from "#schemas";
+import { toEventFormField } from "#utils/form-fields";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
@@ -64,7 +65,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				span.addEvent("field.create.start");
 
-				const formField = (await prisma.eventFormFields.create({
+				const formField = await prisma.eventFormFields.create({
 					data: {
 						eventId,
 						order,
@@ -79,18 +80,12 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 						filters: !filters || Object.keys(filters).length === 0 ? Prisma.DbNull : filters,
 						prompts: !prompts || (Array.isArray(prompts) && prompts.length === 0) ? Prisma.DbNull : prompts
 					}
-				})) as EventFormField;
+				});
 
 				span.setAttribute("field.id", formField.id);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				// Normalize filters: convert empty/invalid filters to null
-				const normalizedField = {
-					...formField,
-					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
-				};
-
-				return reply.code(201).send(successResponse(normalizedField, "表單欄位創建成功"));
+				return reply.code(201).send(successResponse(toEventFormField(formField), "表單欄位創建成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Create event form field error");
 				span.recordException(error as Error);
@@ -127,9 +122,9 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				span.addEvent("query.field.start");
 
-				const formField = (await prisma.eventFormFields.findUnique({
+				const formField = await prisma.eventFormFields.findUnique({
 					where: { id }
-				})) as EventFormField | null;
+				});
 
 				if (!formField) {
 					span.addEvent("field.not_found");
@@ -141,13 +136,7 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 				span.setAttribute("field.required", formField.required);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				// Normalize filters: convert empty/invalid filters to null
-				const normalizedField = {
-					...formField,
-					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
-				};
-
-				return reply.send(successResponse(normalizedField));
+				return reply.send(successResponse(toEventFormField(formField)));
 			} catch (error) {
 				componentLogger.error({ error }, "Get event form field error");
 				span.recordException(error as Error);
@@ -234,20 +223,14 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				span.addEvent("field.update.start");
 
-				const formField = (await prisma.eventFormFields.update({
+				const formField = await prisma.eventFormFields.update({
 					where: { id },
 					data
-				})) as EventFormField;
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				// Normalize filters: convert empty/invalid filters to null
-				const normalizedField = {
-					...formField,
-					filters: formField.filters && typeof formField.filters === "object" && "enabled" in formField.filters ? formField.filters : null
-				};
-
-				return reply.send(successResponse(normalizedField, "表單欄位更新成功"));
+				return reply.send(successResponse(toEventFormField(formField), "表單欄位更新成功"));
 			} catch (error) {
 				componentLogger.error({ error }, "Update event form field error");
 				span.recordException(error as Error);
@@ -368,21 +351,16 @@ const adminEventFormFieldsRoutes: FastifyPluginAsync = async (fastify, _options)
 
 				span.addEvent("query.fields.start");
 
-				const formFields = (await prisma.eventFormFields.findMany({
+				const formFields = await prisma.eventFormFields.findMany({
 					where,
 					orderBy: [{ eventId: "asc" }, { order: "asc" }]
-				})) as EventFormField[];
+				});
 
 				span.setAttribute("fields.count", formFields.length);
 				span.setStatus({ code: SpanStatusCode.OK });
 
-				// Normalize filters: convert empty/invalid filters to null
-				const normalizedFields = formFields.map(field => ({
-					...field,
-					filters: field.filters && typeof field.filters === "object" && "enabled" in field.filters ? field.filters : null
-				}));
-
-				return reply.send(successResponse(normalizedFields));
+				// Invalid stored JSON (e.g. an empty filter object) is returned as null
+				return reply.send(successResponse(formFields.map(toEventFormField)));
 			} catch (error) {
 				componentLogger.error({ error }, "List event form fields error");
 				span.recordException(error as Error);

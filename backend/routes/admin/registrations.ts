@@ -9,12 +9,10 @@ import { requireEventAccess, requireEventAccessViaEventBody, requireEventAccessV
 import { adminRegistrationSchemas, registrationSchemas } from "#schemas";
 import { extractSpreadsheetId, getServiceAccountEmail, resetSheetsSyncBackoff, spreadsheetUrl, syncRegistrationsToSheet } from "#utils/google-sheets";
 import { buildRegistrationExportTable, type ExportTable } from "#utils/registration-export";
-import { logger } from "#utils/logger";
+import { parseJsonObject } from "#utils/json";
 import { createPagination, notFoundResponse, serverErrorResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
-
-const componentLogger = logger.child({ component: "admin/registrations" });
+import { LocalizedTextSchema, RegistrationStatusSchema, type AdminRegistration, type GoogleSheetsSettings } from "@sitcontix/types";
 
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -86,12 +84,16 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 								code: true
 							}
 						},
+						referrer: {
+							select: { id: true, email: true }
+						},
+						// Older registrations may only record the referral through its usage row
 						referralUsage: {
 							select: {
 								referral: {
 									select: {
 										registration: {
-											select: { email: true }
+											select: { id: true, email: true }
 										}
 									}
 								}
@@ -107,36 +109,29 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 				span.addEvent("registrations.parse");
 
-				const parsedRegistrations = registrations.map(reg => {
-					let parsedFormData = {};
-					try {
-						if (reg.formData) {
-							parsedFormData = JSON.parse(reg.formData);
-						}
-					} catch (error) {
-						componentLogger.error({ error, registrationId: reg.id }, "Failed to parse formData for registration");
-						componentLogger.error({ rawData: reg.formData }, "Raw formData");
-					}
-
+				const parsedRegistrations = registrations.map((reg): AdminRegistration => {
 					const status = RegistrationStatusSchema.parse(reg.status);
+					const referrer = reg.referrer ?? reg.referralUsage[0]?.referral?.registration ?? null;
 
-					const plainReg = {
+					return {
 						id: reg.id,
 						userId: reg.userId,
 						eventId: reg.eventId,
 						ticketId: reg.ticketId,
 						email: reg.email,
 						status,
-						referredBy: reg.referralUsage[0]?.referral?.registration?.email ?? null,
+						// Registration id of the referrer, like everywhere else; the email is in `referrer`
+						referredBy: reg.referredBy ?? referrer?.id ?? null,
+						referrer: referrer ? { id: referrer.id, email: referrer.email } : null,
 						checkedIn: reg.checkedIn,
 						checkedInAt: reg.checkedInAt,
-						formData: parsedFormData,
+						formData: parseJsonObject(reg.formData, `admin registration list ${reg.id}`),
 						createdAt: reg.createdAt,
 						updatedAt: reg.updatedAt,
 						event: reg.event
 							? {
 									id: reg.event.id,
-									name: reg.event.name as Record<string, string>,
+									name: LocalizedTextSchema.parse(reg.event.name),
 									startDate: reg.event.startDate,
 									endDate: reg.event.endDate
 								}
@@ -144,13 +139,11 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						ticket: reg.ticket
 							? {
 									id: reg.ticket.id,
-									name: reg.ticket.name as Record<string, string>,
+									name: LocalizedTextSchema.parse(reg.ticket.name),
 									price: reg.ticket.price
 								}
 							: undefined
 					};
-
-					return plainReg;
 				});
 
 				const pagination = createPagination(page, limit, total);
@@ -255,7 +248,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 						name: LocalizedTextSchema.parse(registration.ticket.name),
 						description: LocalizedTextSchema.nullable().parse(registration.ticket.description)
 					},
-					formData: registration.formData ? JSON.parse(registration.formData) : {}
+					formData: parseJsonObject(registration.formData, `admin registration ${registration.id}`)
 				};
 
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -387,7 +380,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					referredBy: registration.referredBy ?? null,
 					checkedIn: registration.checkedIn,
 					checkedInAt: registration.checkedInAt,
-					formData: registration.formData ? JSON.parse(registration.formData) : {},
+					formData: parseJsonObject(registration.formData, `admin registration ${registration.id}`),
 					createdAt: registration.createdAt,
 					updatedAt: registration.updatedAt,
 					event: registration.event
@@ -401,7 +394,7 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 					ticket: registration.ticket
 						? {
 								id: registration.ticket.id,
-								name: registration.ticket.name as Record<string, string>,
+								name: LocalizedTextSchema.parse(registration.ticket.name),
 								price: registration.ticket.price
 							}
 						: undefined
@@ -585,10 +578,10 @@ const adminRegistrationsRoutes: FastifyPluginAsync = async (fastify, _options) =
 
 	const sheetsSettingsSelect = { googleSheetsUrl: true, googleSheetsAutoSync: true, googleSheetsSyncedAt: true, googleSheetsSyncError: true } as const;
 	type SheetsSettingsRow = { googleSheetsUrl: string | null; googleSheetsAutoSync: boolean; googleSheetsSyncedAt: Date | null; googleSheetsSyncError: string | null };
-	const toSheetsSettings = (event: SheetsSettingsRow) => ({
+	const toSheetsSettings = (event: SheetsSettingsRow): GoogleSheetsSettings => ({
 		sheetsUrl: event.googleSheetsUrl,
 		autoSync: event.googleSheetsAutoSync,
-		lastSyncedAt: event.googleSheetsSyncedAt?.toISOString() ?? null,
+		lastSyncedAt: event.googleSheetsSyncedAt,
 		lastSyncError: event.googleSheetsSyncError
 	});
 

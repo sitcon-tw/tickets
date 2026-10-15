@@ -1,6 +1,6 @@
-import { APIError, ApiResponseError, RetryConfig } from "@/lib/types/client";
+import { ApiResponseError, HttpError, type APIError, type RetryConfig } from "@/lib/types/client";
 import { toText } from "@/lib/utils/text";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export type RequestOptions = {
 	/**
@@ -9,6 +9,10 @@ export type RequestOptions = {
 	 */
 	skipAuthRedirect?: boolean;
 };
+
+const BLOB_TIMEOUT_MS = 5 * 60 * 1000;
+
+const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD", "PUT", "DELETE"]);
 
 class APIClient {
 	private baseURL: string;
@@ -20,7 +24,8 @@ class APIClient {
 			maxRetries: 3,
 			baseDelay: 1000,
 			maxDelay: 10000,
-			retryableStatusCodes: new Set([408, 429, 500, 502, 503, 504]),
+			// Transient statuses only: a 500 is usually a deterministic server error, and retrying it just delays the message
+			retryableStatusCodes: new Set([408, 429, 502, 503, 504]),
 			timeoutMs: 30000
 		};
 	}
@@ -39,9 +44,10 @@ class APIClient {
 		return Math.min(exponentialDelay + jitter, this.retryConfig.maxDelay);
 	}
 
-	private isRetryableError(error: unknown, response?: Response): boolean {
-		if (response) {
-			return this.retryConfig.retryableStatusCodes.has(response.status);
+	private isRetryableError(error: unknown): boolean {
+		// An HTTP error response: decide by status alone (its message is server text and says nothing about the transport)
+		if (error instanceof HttpError) {
+			return this.retryConfig.retryableStatusCodes.has(error.status);
 		}
 
 		if (error instanceof Error) {
@@ -52,9 +58,9 @@ class APIClient {
 		return false;
 	}
 
-	private async fetchWithTimeout(url: string, config: RequestInit): Promise<Response> {
+	private async fetchWithTimeout(url: string, config: RequestInit, timeoutMs: number = this.retryConfig.timeoutMs): Promise<Response> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), this.retryConfig.timeoutMs);
+		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
 		try {
 			const response = await fetch(url, {
@@ -66,7 +72,7 @@ class APIClient {
 		} catch (error) {
 			clearTimeout(timeoutId);
 			if (error instanceof Error && error.name === "AbortError") {
-				throw new Error(`Request timeout after ${this.retryConfig.timeoutMs}ms`, { cause: error });
+				throw new Error(`Request timeout after ${timeoutMs}ms`, { cause: error });
 			}
 			throw error;
 		}
@@ -113,12 +119,12 @@ class APIClient {
 
 		if (response.status === 401) {
 			redirect();
-			return new Error("Unauthorized - please login");
+			return new HttpError("Unauthorized - please login", response.status);
 		}
 
 		if (response.status === 423) {
 			redirect();
-			return new Error("Account disabled");
+			return new HttpError("Account disabled", response.status);
 		}
 
 		if (response.status === 403) {
@@ -128,10 +134,10 @@ class APIClient {
 				.json()
 				.catch(() => null);
 			if (body?.error?.code === "PERMISSION_DENIED") {
-				return new Error(body.error.message);
+				return new HttpError(body.error.message ?? "Permission denied", response.status);
 			}
 			redirect();
-			return new Error("Forbidden access");
+			return new HttpError("Forbidden access", response.status);
 		}
 
 		const errorData: APIError = await response.json().catch(() => ({
@@ -139,18 +145,20 @@ class APIClient {
 		}));
 
 		if (errorData.error && errorData.error.message) {
-			return errorData.error.details === undefined ? new Error(errorData.error.message) : new ApiResponseError(errorData.error.message, errorData.error.code, errorData.error.details);
+			return errorData.error.details === undefined
+				? new HttpError(errorData.error.message, response.status)
+				: new ApiResponseError(errorData.error.message, response.status, errorData.error.code, errorData.error.details);
 		}
 		if (errorData.message) {
-			return new Error(errorData.message);
+			return new HttpError(errorData.message, response.status);
 		}
 		if (typeof errorData.detail === "string") {
-			return new Error(errorData.detail);
+			return new HttpError(errorData.detail, response.status);
 		}
 		if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
-			return new Error(errorData.detail.map(d => d.msg).join(", "));
+			return new HttpError(errorData.detail.map(d => d.msg).join(", "), response.status);
 		}
-		return new Error(`HTTP ${response.status}: ${response.statusText}`);
+		return new HttpError(`HTTP ${response.status}: ${response.statusText}`, response.status);
 	}
 
 	private async parseResponse<T>(response: Response, endpoint: string, schema?: z.ZodType<T>): Promise<T> {
@@ -197,7 +205,8 @@ class APIClient {
 			return await this.requestAttempt(endpoint, url, config, schema, requestOptions);
 		} catch (error) {
 			const errorInstance = error instanceof Error ? error : new Error("網路發生問題 [C]");
-			if (attempt > this.retryConfig.maxRetries || !this.isRetryableError(errorInstance)) {
+			// A POST/PATCH that timed out may still have been applied (e.g. an email sent), so only idempotent methods are retried
+			if (attempt > this.retryConfig.maxRetries || !IDEMPOTENT_METHODS.has(config.method ?? "GET") || !this.isRetryableError(errorInstance)) {
 				throw errorInstance;
 			}
 
@@ -221,19 +230,30 @@ class APIClient {
 		return this.retryRequest(endpoint, url, config, schema, 1, requestOptions);
 	}
 
+	private withQuery(endpoint: string, params?: Record<string, unknown>): string {
+		if (!params) return endpoint;
+		const searchParams = new URLSearchParams();
+		Object.entries(params).forEach(([key, value]) => {
+			if (value !== undefined && value !== null) {
+				searchParams.append(key, toText(value));
+			}
+		});
+		const queryString = searchParams.toString();
+		return queryString ? `${endpoint}?${queryString}` : endpoint;
+	}
+
 	async get<T>(endpoint: string, params?: Record<string, unknown>, schema?: z.ZodType<T>, requestOptions?: RequestOptions): Promise<T> {
-		let finalEndpoint = endpoint;
-		if (params) {
-			const searchParams = new URLSearchParams();
-			Object.entries(params).forEach(([key, value]) => {
-				if (value !== undefined && value !== null) {
-					searchParams.append(key, toText(value));
-				}
-			});
-			const queryString = searchParams.toString();
-			finalEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
+		return this.request<T>(this.withQuery(endpoint, params), { method: "GET" }, schema, requestOptions);
+	}
+
+	/** GET a file download (non-JSON body), with the same error and auth-redirect handling as the JSON requests. */
+	async getBlob(endpoint: string, params?: Record<string, unknown>, requestOptions?: RequestOptions): Promise<Blob> {
+		// Exports of large events can take a while to generate, so allow longer than the JSON requests
+		const response = await this.fetchWithTimeout(`${this.baseURL}${this.withQuery(endpoint, params)}`, { method: "GET", credentials: "include" }, BLOB_TIMEOUT_MS);
+		if (!response.ok) {
+			throw await this.getResponseError(response, requestOptions);
 		}
-		return this.request<T>(finalEndpoint, { method: "GET" }, schema, requestOptions);
+		return response.blob();
 	}
 
 	async post<T>(endpoint: string, data?: unknown, schema?: z.ZodType<T>): Promise<T> {

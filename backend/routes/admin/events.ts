@@ -3,19 +3,39 @@ import { LocalizedTextSchema, type Event } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 
 import prisma from "#config/database";
-import type { Prisma } from "#prisma/generated/prisma/client";
+import type { Event as EventRow, Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventListAccess, requirePermission } from "#middleware/auth";
 import { eventSchemas } from "#schemas";
+import { isUniqueConstraintError } from "#utils/prisma-errors";
 import { conflictResponse, notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { sanitizeObject } from "#utils/sanitize";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
-const isSlugConflict = (error: unknown) => {
-	const prismaError = error as { code?: string; meta?: { target?: string | string[] } };
-	const target = prismaError?.meta?.target;
-	return prismaError?.code === "P2002" && (Array.isArray(target) ? target.includes("slug") : (target?.includes("slug") ?? false));
-};
+const isSlugConflict = (error: unknown) => isUniqueConstraintError(error, "slug");
+
+/** Map an event row to the API shape, validating the localized JSON columns */
+const toEvent = (row: EventRow): Event => ({
+	id: row.id,
+	slug: row.slug,
+	name: LocalizedTextSchema.parse(row.name),
+	description: LocalizedTextSchema.nullable().parse(row.description),
+	plainDescription: LocalizedTextSchema.nullable().parse(row.plainDescription),
+	locationText: LocalizedTextSchema.nullable().parse(row.locationText),
+	mapLink: row.mapLink,
+	startDate: row.startDate,
+	endDate: row.endDate,
+	editDeadline: row.editDeadline,
+	ogImage: row.ogImage,
+	landingPage: row.landingPage,
+	googleSheetsUrl: row.googleSheetsUrl,
+	isActive: row.isActive,
+	hideEvent: row.hideEvent,
+	useOpass: row.useOpass,
+	opassEventId: row.opassEventId,
+	createdAt: row.createdAt,
+	updatedAt: row.updatedAt
+});
 
 const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// Create new event
@@ -98,18 +118,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					});
 				}
 
-				const event: Event = {
-					...createdEvent,
-					name: createdEvent.name as Record<string, string>,
-					description: createdEvent.description as Record<string, string> | undefined,
-					plainDescription: createdEvent.plainDescription as Record<string, string> | undefined,
-					locationText: createdEvent.locationText as Record<string, string> | undefined,
-					startDate: createdEvent.startDate,
-					endDate: createdEvent.endDate,
-					editDeadline: createdEvent.editDeadline ?? null,
-					createdAt: createdEvent.createdAt,
-					updatedAt: createdEvent.updatedAt
-				};
+				const event = toEvent(createdEvent);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.code(201).send(successResponse(event, "活動創建成功"));
@@ -170,7 +179,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					return reply.code(statusCode).send(response);
 				}
 
-				const event = eventData as Event;
+				const event = toEvent(eventData);
 
 				span.setAttribute("event.tickets_count", eventData.tickets?.length || 0);
 				span.setAttribute("event.registrations_count", eventData._count?.registrations || 0);
@@ -288,18 +297,7 @@ const adminEventsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 
 				span.addEvent("event.updated");
 
-				const event: Event = {
-					...updatedEvent,
-					name: updatedEvent.name as Record<string, string>,
-					description: updatedEvent.description as Record<string, string> | undefined,
-					plainDescription: updatedEvent.plainDescription as Record<string, string> | undefined,
-					locationText: updatedEvent.locationText as Record<string, string> | undefined,
-					startDate: updatedEvent.startDate,
-					endDate: updatedEvent.endDate,
-					editDeadline: updatedEvent.editDeadline ?? null,
-					createdAt: updatedEvent.createdAt,
-					updatedAt: updatedEvent.updatedAt
-				};
+				const event = toEvent(updatedEvent);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return reply.send(successResponse(event, "活動更新成功"));

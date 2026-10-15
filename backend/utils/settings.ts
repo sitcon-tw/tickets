@@ -1,10 +1,11 @@
 import prisma from "#config/database";
 import { defaultSiteSettings, SiteSettingsSchema, type SiteSettings, type SiteSettingsUpdateRequest } from "@sitcontix/types";
+import { z } from "zod/v4";
 import { safeJsonParse } from "./json";
 
 export async function getSiteSettings(): Promise<SiteSettings> {
 	const rows = await prisma.siteSetting.findMany();
-	const stored = Object.fromEntries(rows.map(row => [row.key, safeJsonParse<unknown>(row.value, undefined, `site setting ${row.key}`)]).filter(([, value]) => value !== undefined));
+	const stored = Object.fromEntries(rows.map(row => [row.key, safeJsonParse(row.value, z.unknown(), undefined, `site setting ${row.key}`)]).filter(([, value]) => value !== undefined));
 	const parsed = SiteSettingsSchema.safeParse({ ...defaultSiteSettings, ...stored });
 	return parsed.success ? parsed.data : defaultSiteSettings;
 }

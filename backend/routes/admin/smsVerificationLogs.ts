@@ -71,8 +71,15 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 				span.addEvent("sms_logs.sanitize");
 
 				const sanitizedLogs = logs.map(log => ({
-					...log,
-					code: log.verified ? "******" : log.expiresAt < new Date() ? "EXPIRED" : "PENDING"
+					id: log.id,
+					userId: log.userId,
+					phoneNumber: log.phoneNumber,
+					code: log.verified ? "******" : log.expiresAt < new Date() ? "EXPIRED" : "PENDING",
+					verified: log.verified,
+					expiresAt: log.expiresAt,
+					createdAt: log.createdAt,
+					updatedAt: log.updatedAt,
+					user: log.user
 				}));
 
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -143,8 +150,9 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("sms_stats.total_verified", totalVerified);
 				span.setAttribute("sms_stats.total_expired", totalExpired);
 
-				const successRate = totalSent > 0 ? ((totalVerified / totalSent) * 100).toFixed(2) : 0;
-				span.setAttribute("sms_stats.success_rate", parseFloat(successRate as string));
+				// Percentage rounded to 2 decimals
+				const successRate = totalSent > 0 ? Math.round((totalVerified / totalSent) * 10000) / 100 : 0;
+				span.setAttribute("sms_stats.success_rate", successRate);
 
 				const sevenDaysAgo = nowInUTC8();
 				sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -166,7 +174,7 @@ const adminSmsVerificationLogsRoutes: FastifyPluginAsync = async fastify => {
 						totalSent,
 						totalVerified,
 						totalExpired,
-						successRate: parseFloat(successRate as string),
+						successRate,
 						recentActivity: recentCount
 					})
 				);

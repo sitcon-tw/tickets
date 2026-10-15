@@ -2,6 +2,9 @@ import { routing } from "./routing";
 
 type TranslationRecord = Record<string, Record<string, string>>;
 
+/** The translated strings of a translation record, keyed by its keys (so a misspelled key is a type error). */
+export type Translations<T extends TranslationRecord> = { [K in keyof T]: string };
+
 /**
  * Helper function to get translations for a given locale
  * Similar to the old i18n.t function but works with any locale string
@@ -17,8 +20,8 @@ type TranslationRecord = Record<string, Record<string, string>>;
  * });
  * console.log(t.title); // "Title"
  */
-export function getTranslations(locale: string, data: TranslationRecord): Record<string, string> {
-	const result: Record<string, string> = {};
+export function getTranslations<T extends TranslationRecord>(locale: string, data: T): Translations<T> {
+	const result = {} as Translations<T>;
 
 	for (const key in data) {
 		result[key] = data[key][locale] || data[key][routing.defaultLocale];

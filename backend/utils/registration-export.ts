@@ -1,8 +1,10 @@
 import prisma from "#config/database";
 import type { Prisma } from "#prisma/generated/prisma/client";
+import { parseFormFieldOptions } from "#utils/form-fields";
+import { parseJsonObject } from "#utils/json";
 import { toText } from "#utils/text";
+import { LocalizedTextSchema, optionValues, type FormFieldOption, type LocalizedText } from "@sitcontix/types";
 
-type FieldOption = string | Record<string, string>;
 type FieldInfo = { name: string; type: string; values: Prisma.JsonValue };
 
 export type ExportCell = string | number;
@@ -13,43 +15,33 @@ export interface ExportTable {
 
 const LOCALE = "zh-Hant";
 
+const pickLocale = (text: LocalizedText): string | undefined => text[LOCALE] || text["en"] || Object.values(text)[0];
+
 function getLocalizedName(json: Prisma.JsonValue | undefined, fallback = ""): string {
 	if (typeof json === "string") return json;
-	if (!json || typeof json !== "object" || Array.isArray(json)) return fallback;
-	const nameObj = json as Record<string, string>;
-	return nameObj[LOCALE] || nameObj["en"] || Object.values(nameObj)[0] || fallback;
+	const parsed = LocalizedTextSchema.safeParse(json);
+	return (parsed.success && pickLocale(parsed.data)) || fallback;
 }
 
-function parseFormData(raw: string | null): Record<string, unknown> {
-	if (!raw) return {};
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
-	} catch {
-		return {};
-	}
+/** Display label of an option: plain string, localized record, or legacy `{ label, value }` */
+function optionLabel(option: FormFieldOption): string | undefined {
+	if (typeof option === "string") return option;
+	if ("label" in option && option.label !== undefined) return typeof option.label === "string" ? option.label : pickLocale(option.label);
+	const localized = LocalizedTextSchema.safeParse(option);
+	return localized.success ? pickLocale(localized.data) : undefined;
 }
 
-function parseOptions(values: Prisma.JsonValue): FieldOption[] {
-	try {
-		const parsed: unknown = typeof values === "string" ? JSON.parse(values) : values;
-		return Array.isArray(parsed) ? (parsed as FieldOption[]) : [];
-	} catch {
-		return [];
-	}
-}
-
-function localizeOption(options: FieldOption[], value: unknown): string {
-	const option = options.find(opt => (typeof opt === "object" && opt !== null ? Object.values(opt).some(optValue => optValue === value) : opt === value));
-	if (option && typeof option === "object") return option[LOCALE] || option["en"] || Object.values(option)[0] || toText(value);
-	return value === null || value === undefined ? "" : toText(value);
+function localizeOption(options: FormFieldOption[], value: unknown): string {
+	if (value === null || value === undefined) return "";
+	const option = typeof value === "string" ? options.find(opt => optionValues(opt).includes(value)) : undefined;
+	return (option && optionLabel(option)) || toText(value);
 }
 
 function formatFieldValue(field: FieldInfo | undefined, value: unknown): string {
 	if (value === null || value === undefined) return "";
 
 	if (field?.values && ["checkbox", "select", "radio"].includes(field.type)) {
-		const options = parseOptions(field.values);
+		const options = parseFormFieldOptions(field.values);
 		if (Array.isArray(value)) return value.map(v => localizeOption(options, v)).join(", ");
 		return localizeOption(options, value);
 	}
@@ -92,7 +84,7 @@ export async function buildRegistrationExportTable(where: Prisma.RegistrationWhe
 
 	const fieldMap = new Map<string, FieldInfo>(formFields.map(field => [field.id, { name: getLocalizedName(field.name, field.id), type: field.type, values: field.values }]));
 
-	const parsed = registrations.map(reg => ({ reg, formData: parseFormData(reg.formData) }));
+	const parsed = registrations.map(reg => ({ reg, formData: parseJsonObject(reg.formData, `export ${reg.id}`) }));
 
 	const usedKeys = new Set<string>();
 	for (const { formData } of parsed) for (const key of Object.keys(formData)) usedKeys.add(key);

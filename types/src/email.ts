@@ -3,23 +3,22 @@
  */
 
 import { z } from "zod/v4";
-import { EmailCampaignStatusSchema } from "./common.js";
-import { EventSchema } from "./event.js";
-import { TicketSchema } from "./ticket.js";
+import { EmailCampaignStatusSchema, RegistrationStatusSchema, UserRoleSchema } from "./common.js";
 
 /**
- * Target audience filters
+ * Target audience filters.
+ * Strict, because a stored filter whose keys were all stripped would become `{}`, i.e. "everyone".
  */
-export const TargetAudienceSchema = z.object({
-	roles: z.array(z.string()).optional(),
+export const TargetAudienceSchema = z.strictObject({
+	roles: z.array(UserRoleSchema).optional(),
 	eventIds: z.array(z.string()).optional(),
 	ticketIds: z.array(z.string()).optional(),
-	registrationStatuses: z.array(z.string()).optional(),
+	registrationStatuses: z.array(RegistrationStatusSchema).optional(),
 	hasReferrals: z.boolean().optional(),
 	isReferrer: z.boolean().optional(),
-	registeredAfter: z.coerce.date().optional(),
-	registeredBefore: z.coerce.date().optional(),
-	tags: z.array(z.string()).optional(),
+	// null = no bound (z.coerce.date() alone would turn null into 1970-01-01)
+	registeredAfter: z.coerce.date().nullable().optional(),
+	registeredBefore: z.coerce.date().nullable().optional(),
 	emailDomains: z.array(z.string()).optional()
 });
 export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
@@ -51,6 +50,16 @@ export const EmailCampaignSchema = z.object({
 export type EmailCampaign = z.infer<typeof EmailCampaignSchema>;
 
 /**
+ * Email campaign as returned by the admin API (adds the event and audience it targets)
+ */
+export const AdminEmailCampaignSchema = EmailCampaignSchema.extend({
+	eventId: z.string().optional(),
+	targetAudience: TargetAudienceSchema.optional(),
+	createdBy: z.string().optional()
+});
+export type AdminEmailCampaign = z.infer<typeof AdminEmailCampaignSchema>;
+
+/**
  * Email campaign create request
  */
 export const EmailCampaignCreateRequestSchema = z.object({
@@ -58,7 +67,8 @@ export const EmailCampaignCreateRequestSchema = z.object({
 	subject: z.string().min(1),
 	content: z.string().min(1),
 	recipientFilter: z.string().optional(),
-	scheduledAt: z.coerce.date().optional()
+	targetAudience: TargetAudienceSchema.optional(),
+	scheduledAt: z.coerce.date().nullable().optional()
 });
 export type EmailCampaignCreateRequest = z.infer<typeof EmailCampaignCreateRequestSchema>;
 
@@ -70,7 +80,8 @@ export const EmailCampaignUpdateRequestSchema = z.object({
 	subject: z.string().min(1).optional(),
 	content: z.string().min(1).optional(),
 	recipientFilter: z.string().optional(),
-	scheduledAt: z.coerce.date().optional()
+	targetAudience: TargetAudienceSchema.optional(),
+	scheduledAt: z.coerce.date().nullable().optional()
 });
 export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateRequestSchema>;
 
@@ -79,7 +90,7 @@ export type EmailCampaignUpdateRequest = z.infer<typeof EmailCampaignUpdateReque
  */
 export const EmailCampaignSendRequestSchema = z.object({
 	sendNow: z.boolean().optional().default(false),
-	scheduledAt: z.coerce.date().optional()
+	scheduledAt: z.coerce.date().nullable().optional()
 });
 export type EmailCampaignSendRequest = z.infer<typeof EmailCampaignSendRequestSchema>;
 
@@ -124,23 +135,6 @@ export const EmailRecipientSchema = z.object({
 	email: z.email()
 });
 export type EmailRecipient = z.infer<typeof EmailRecipientSchema>;
-
-/**
- * Recipient data
- */
-export const RecipientDataSchema = z.object({
-	email: z.email(),
-	id: z.string(),
-	formData: z.string().nullable().optional(),
-	event: EventSchema.partial().optional(),
-	ticket: TicketSchema.partial().optional()
-});
-export type RecipientData = z.infer<typeof RecipientDataSchema>;
-
-/**
- * Target audience filters (alias for backwards compatibility)
- */
-export type TargetAudienceFilters = TargetAudience;
 
 /**
  * Email campaign content

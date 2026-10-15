@@ -1,14 +1,16 @@
 import prisma from "#config/database";
+import { eventRefWhere } from "#utils/event-ref";
 import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { eventSchemas, eventStatsResponse, eventTicketsResponse, publicEventSchemas, publicEventsListResponse } from "#schemas";
 import { logger } from "#utils/logger";
+import { publicTicketStock } from "#utils/ticket-availability";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { FieldFilterSchema, FormFieldOptionSchema, FormFieldTypeSchema, LocalizedTextSchema } from "@sitcontix/types";
+import { FieldFilterSchema, LocalizedTextSchema } from "@sitcontix/types";
+import { parseFormFieldOptions, parseFormFieldType, parseOrNull, PromptsSchema } from "#utils/form-fields";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { z } from "zod";
 
 const componentLogger = logger.child({ component: "public/events" });
 
@@ -30,7 +32,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
+						...(await eventRefWhere(id)),
 						isActive: true
 					},
 					select: {
@@ -106,7 +108,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				span.addEvent("event.lookup");
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
+						...(await eventRefWhere(id)),
 						isActive: true
 					}
 				});
@@ -148,8 +150,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const now = new Date();
 				const ticketsWithStatus = tickets.map(ticket => {
-					const available = ticket.showRemaining ? ticket.quantity - ticket.soldCount : ticket.quantity - ticket.soldCount == 0 ? 0 : 1;
-					const quantity = ticket.showRemaining ? ticket.quantity : 1;
+					const { available, quantity } = publicTicketStock(ticket);
 					const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 					const isSoldOut = available <= 0;
 
@@ -316,7 +317,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 				span.addEvent("event.lookup");
 				const event = await prisma.event.findFirst({
 					where: {
-						OR: [{ id }, { slug: id }, ...(id.length === 6 ? [{ id: { endsWith: id } }] : [])],
+						...(await eventRefWhere(id)),
 						isActive: true
 					},
 					select: {
@@ -326,6 +327,7 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 							select: {
 								quantity: true,
 								soldCount: true,
+								showRemaining: true,
 								isActive: true
 							},
 							where: {
@@ -352,11 +354,13 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				span.setAttribute("event.id", event.id);
 
-				const activeTickets = event.tickets.filter(t => t.isActive);
+				// Summed from the public view of each ticket, so tickets with showRemaining off don't leak their stock here
+				const activeTickets = event.tickets.filter(t => t.isActive).map(publicTicketStock);
 				const totalTickets = activeTickets.reduce((sum, ticket) => sum + ticket.quantity, 0);
 				const soldTickets = activeTickets.reduce((sum, ticket) => sum + ticket.soldCount, 0);
-				const availableTickets = totalTickets - soldTickets;
-				const registrationRate = totalTickets > 0 ? soldTickets / totalTickets : 0;
+				const availableTickets = activeTickets.reduce((sum, ticket) => sum + ticket.available, 0);
+				// Percentage (0-100), as EventStatsSchema defines it; capped because soldCount can exceed a lowered quantity
+				const registrationRate = totalTickets > 0 ? Math.min(100, (soldTickets / totalTickets) * 100) : 0;
 
 				span.setAttribute("stats.total_tickets", totalTickets);
 				span.setAttribute("stats.sold_tickets", soldTickets);
@@ -451,16 +455,17 @@ const publicEventsRoutes: FastifyPluginAsync = async fastify => {
 
 				const transformedFields = formFields.map(field => ({
 					id: field.id,
-					name: LocalizedTextSchema.parse(field.name),
-					description: LocalizedTextSchema.nullable().parse(field.description),
-					type: FormFieldTypeSchema.parse(field.type),
+					// Same lenient mapping as the admin side (utils/form-fields.ts), so one bad row can't fail the whole form
+					name: parseOrNull(LocalizedTextSchema, field.name) ?? {},
+					description: parseOrNull(LocalizedTextSchema, field.description),
+					type: parseFormFieldType(field.type),
 					required: field.required,
 					validater: field.validater,
 					placeholder: field.placeholder,
-					options: z.array(FormFieldOptionSchema).parse(field.values || []),
+					options: parseFormFieldOptions(field.values),
 					order: field.order,
-					filters: FieldFilterSchema.safeParse(field.filters).data ?? null,
-					prompts: z.record(z.string(), z.array(z.string())).nullable().parse(field.prompts),
+					filters: parseOrNull(FieldFilterSchema, field.filters),
+					prompts: parseOrNull(PromptsSchema, field.prompts),
 					enableOther: field.enableOther || false
 				}));
 

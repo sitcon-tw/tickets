@@ -3,26 +3,39 @@
  */
 
 import { z } from "zod/v4";
-import { SortOrderSchema } from "./common.js";
 
 /**
- * Standard API response wrapper
+ * Pagination metadata (response side, so `limit` is whatever the request asked for)
+ */
+export const PaginationSchema = z.object({
+	page: z.number().int().min(1),
+	limit: z.number().int().min(1),
+	total: z.number().int().min(0),
+	totalPages: z.number().int().min(0),
+	hasNext: z.boolean(),
+	hasPrev: z.boolean()
+});
+export type Pagination = z.infer<typeof PaginationSchema>;
+
+/**
+ * Standard API response wrapper. List endpoints also carry `pagination`.
  */
 export const ApiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
 	z.object({
 		success: z.boolean(),
 		message: z.string(),
-		data: dataSchema
+		data: dataSchema,
+		pagination: PaginationSchema.optional()
 	});
 
 /**
- * Generic API response type
+ * Generic API response type (matches `ApiResponseSchema`)
  */
 export type ApiResponse<T> = {
 	success: boolean;
 	message: string;
 	data: T;
-	pagination?: Pagination | null;
+	pagination?: Pagination;
 };
 
 /**
@@ -39,45 +52,12 @@ export const ApiErrorSchema = z.object({
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
 /**
- * Pagination metadata
+ * Paginated list response: `data` is an array of `itemSchema` and `pagination` is required
  */
-export const PaginationSchema = z.object({
-	page: z.number().int().min(1),
-	limit: z.number().int().min(1).max(100),
-	total: z.number().int().min(0),
-	totalPages: z.number().int().min(0),
-	hasNext: z.boolean(),
-	hasPrev: z.boolean()
-});
-export type Pagination = z.infer<typeof PaginationSchema>;
-
-/**
- * Paginated response wrapper
- */
-export const PaginatedResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
+export const PaginatedResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
 	z.object({
 		success: z.boolean(),
 		message: z.string(),
-		data: z.array(dataSchema),
-		pagination: PaginationSchema.optional()
+		data: z.array(itemSchema),
+		pagination: PaginationSchema
 	});
-
-/**
- * Pagination query parameters
- */
-export const PaginationQuerySchema = z.object({
-	page: z.number().int().min(1).optional().default(1),
-	limit: z.number().int().min(1).max(100).optional().default(10)
-});
-export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
-
-/**
- * Search query parameters
- */
-export const SearchQuerySchema = z.object({
-	q: z.string().optional(),
-	sortBy: z.string().optional(),
-	sortOrder: SortOrderSchema.optional(),
-	filters: z.record(z.string(), z.unknown()).optional()
-});
-export type SearchQuery = z.infer<typeof SearchQuerySchema>;

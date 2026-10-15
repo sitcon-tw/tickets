@@ -1,4 +1,4 @@
-import { getServerPublicEvents, getServerReferralRanking, getServerRegistrations } from "@/lib/api/server-endpoints";
+import { getServerEvent, getServerReferralRanking, getServerRegistrations } from "@/lib/api/server-endpoints";
 import { redirect } from "next/navigation";
 import { generateMetadata as generateEventMetadata } from "../layout";
 import { findEventRegistration } from "../registration-utils";
@@ -13,8 +13,8 @@ type ReferralRankingRoutePageProps = {
 };
 
 export default async function ReferralRankingRoutePage({ params }: ReferralRankingRoutePageProps) {
-	const [{ locale, event }, events, registrations] = await Promise.all([params, getServerPublicEvents(), getServerRegistrations()]);
-	const foundEvent = events?.find(item => item.slug === event || item.id.slice(-6) === event);
+	const { locale, event } = await params;
+	const [foundEvent, registrations] = await Promise.all([getServerEvent(event), getServerRegistrations()]);
 	if (!foundEvent) {
 		redirect(`/${locale}/`);
 	}

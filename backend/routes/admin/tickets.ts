@@ -6,7 +6,7 @@ import { adminTicketSchemas, ticketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { LocalizedTextSchema } from "@sitcontix/types";
+import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
@@ -557,14 +557,15 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 						where: { ticketId: id },
 						_count: { id: true }
 					}),
+					// Columns are camelCase in Postgres, so they must be quoted; the table is mapped to "registration"
 					prisma.$queryRaw<{ date: Date; count: bigint; confirmed_count: bigint }[]>`
 						SELECT
-							DATE(createdAt) as date,
-							COUNT(*) as count,
-							SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_count
-						FROM Registration
-						WHERE ticketId = ${id}
-						GROUP BY DATE(createdAt)
+							DATE("createdAt") AS date,
+							COUNT(*) AS count,
+							SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed_count
+						FROM "registration"
+						WHERE "ticketId" = ${id}
+						GROUP BY DATE("createdAt")
 						ORDER BY date DESC
 						LIMIT 30
 					`
@@ -583,8 +584,13 @@ const adminTicketsRoutes: FastifyPluginAsync = async fastify => {
 					totalSold,
 					totalRevenue,
 					availableQuantity,
-					salesByStatus: Object.fromEntries(salesByStatus.map(item => [item.status, item._count.id])),
-					dailySales: dailySales.map(day => ({ date: day.date, count: Number(day.count), confirmed_count: Number(day.confirmed_count) }))
+					salesByStatus: Object.fromEntries(
+						salesByStatus.flatMap(item => {
+							const status = RegistrationStatusSchema.safeParse(item.status);
+							return status.success ? [[status.data, item._count.id] as const] : [];
+						})
+					),
+					dailySales: dailySales.map(day => ({ date: day.date, count: Number(day.count), confirmedCount: Number(day.confirmed_count) }))
 				};
 
 				span.setStatus({ code: SpanStatusCode.OK });

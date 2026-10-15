@@ -14,8 +14,8 @@ export const FilterConditionSchema = z.object({
 	fieldId: z.string().optional(),
 	operator: z.enum(["equals", "filled", "notFilled"]).optional(),
 	value: z.string().optional(),
-	startTime: z.coerce.date().optional(),
-	endTime: z.coerce.date().optional()
+	startTime: z.coerce.date().nullable().optional(),
+	endTime: z.coerce.date().nullable().optional()
 });
 export type FilterCondition = z.infer<typeof FilterConditionSchema>;
 
@@ -135,39 +135,3 @@ export type EventFormFieldReorderRequest = z.infer<typeof EventFormFieldReorderR
 
 // Backward compatibility aliases
 export type TicketFormField = EventFormField;
-export type TicketFormFieldReorder = EventFormFieldReorderRequest;
-
-/**
- * Form validation rules
- */
-export const FormValidationRulesSchema = z.object({
-	required: z.boolean().optional(),
-	minLength: z.number().int().min(0).optional(),
-	maxLength: z.number().int().min(0).optional(),
-	pattern: z.union([z.instanceof(RegExp), z.string()]).optional(),
-	email: z.string().optional(),
-	phone: z.string().optional(),
-	min: z.number().optional(),
-	max: z.number().optional(),
-	options: z.array(z.string()).optional(),
-	customMessage: z.string().optional()
-});
-export type FormValidationRules = z.infer<typeof FormValidationRulesSchema>;
-
-/**
- * Field validation error
- */
-export const FieldValidationErrorSchema = z.object({
-	field: z.string(),
-	messages: z.array(z.string())
-});
-export type FieldValidationError = z.infer<typeof FieldValidationErrorSchema>;
-
-/**
- * Validation result
- */
-export const ValidationResultSchema = z.object({
-	isValid: z.boolean(),
-	errors: z.record(z.string(), z.array(z.string()))
-});
-export type ValidationResult = z.infer<typeof ValidationResultSchema>;

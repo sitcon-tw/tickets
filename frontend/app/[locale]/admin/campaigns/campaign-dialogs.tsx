@@ -12,10 +12,10 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import type { Ticket } from "@sitcontix/types";
 import { FileText, Users } from "lucide-react";
 import type { Dispatch, RefObject } from "react";
-import type { AudienceListField, CampaignsAction, CampaignsState, CreateTab, PreviewTab, Template } from "./state";
+import type { AudienceToggle, CampaignsAction, CampaignsState, CreateTab, PreviewTab, Template } from "./state";
 import type { CampaignTranslations } from "./translations";
 
-const TEMPLATE_VARIABLES: Array<{ key: string; label: string; category: string }> = [
+const TEMPLATE_VARIABLES: Array<{ key: string; label: keyof CampaignTranslations; category: string }> = [
 	{ key: "{{email}}", label: "varEmail", category: "identity" },
 	{ key: "{{name}}", label: "varName", category: "identity" },
 	{ key: "{{eventName}}", label: "varEventName", category: "event" },
@@ -43,7 +43,7 @@ type CampaignDialogsProps = {
 	locale: string;
 	t: CampaignTranslations;
 	dispatch: Dispatch<CampaignsAction>;
-	toggleCheckbox: (field: AudienceListField, id: string, checked: boolean) => void;
+	toggleCheckbox: (toggle: AudienceToggle, checked: boolean) => void;
 	insertVariable: (variable: string) => void;
 	handlePreviewRecipients: () => void;
 	handleCreate: () => void;
@@ -195,7 +195,7 @@ export function CampaignDialogs({
 								<div className="max-h-36 space-y-2 overflow-y-auto rounded-md border p-3">
 									{events.map(event => (
 										<Label key={event.id} className="flex cursor-pointer items-center gap-2 font-normal">
-											<Checkbox checked={formData.targetAudience.eventIds.includes(event.id)} onCheckedChange={checked => toggleCheckbox("eventIds", event.id, !!checked)} />
+											<Checkbox checked={formData.targetAudience.eventIds.includes(event.id)} onCheckedChange={checked => toggleCheckbox({ field: "eventIds", id: event.id }, !!checked)} />
 											<span className="text-sm">{getLocalizedText(event.name, locale)}</span>
 										</Label>
 									))}
@@ -208,7 +208,7 @@ export function CampaignDialogs({
 								<div className="max-h-36 space-y-2 overflow-y-auto rounded-md border p-3">
 									{visibleTickets.map(ticket => (
 										<Label key={ticket.id} className="flex cursor-pointer items-center gap-2 font-normal">
-											<Checkbox checked={formData.targetAudience.ticketIds.includes(ticket.id)} onCheckedChange={checked => toggleCheckbox("ticketIds", ticket.id, !!checked)} />
+											<Checkbox checked={formData.targetAudience.ticketIds.includes(ticket.id)} onCheckedChange={checked => toggleCheckbox({ field: "ticketIds", id: ticket.id }, !!checked)} />
 											<span className="text-sm">{getLocalizedText(ticket.name, locale)}</span>
 										</Label>
 									))}
@@ -221,7 +221,10 @@ export function CampaignDialogs({
 								<div className="flex flex-wrap gap-4">
 									{REGISTRATION_STATUSES.map(status => (
 										<Label key={status} className="flex cursor-pointer items-center gap-2 font-normal">
-											<Checkbox checked={formData.targetAudience.registrationStatuses.includes(status)} onCheckedChange={checked => toggleCheckbox("registrationStatuses", status, !!checked)} />
+											<Checkbox
+												checked={formData.targetAudience.registrationStatuses.includes(status)}
+												onCheckedChange={checked => toggleCheckbox({ field: "registrationStatuses", id: status }, !!checked)}
+											/>
 											{t[status]}
 										</Label>
 									))}

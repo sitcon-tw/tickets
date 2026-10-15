@@ -1,9 +1,9 @@
-import type { EmailCampaign, Event, Ticket } from "@sitcontix/types";
+import type { AdminEmailCampaign, Event, RegistrationStatus, TargetAudience, Ticket } from "@sitcontix/types";
 
 export type TargetAudienceForm = {
 	eventIds: string[];
 	ticketIds: string[];
-	registrationStatuses: string[];
+	registrationStatuses: RegistrationStatus[];
 	hasReferrals: boolean | undefined;
 	isReferrer: boolean | undefined;
 	emailDomains: string[];
@@ -20,10 +20,13 @@ export type Template = { id: string; name: string; description: string; content:
 export type Recipient = { email: string; id: string };
 export type PreviewTab = "html" | "recipients";
 export type CreateTab = "edit" | "preview";
-export type StatusFilter = "all" | EmailCampaign["status"];
-export type AudienceListField = keyof Pick<TargetAudienceForm, "eventIds" | "ticketIds" | "registrationStatuses">;
+export type StatusFilter = "all" | AdminEmailCampaign["status"];
+/** One checkbox of the audience filter: an event / ticket id, or a registration status. */
+export type AudienceToggle = { field: "eventIds" | "ticketIds"; id: string } | { field: "registrationStatuses"; id: RegistrationStatus };
 
-export const buildTargetAudience = (ta: TargetAudienceForm) => ({
+const toggleItem = <T>(list: T[], item: T, checked: boolean): T[] => (checked ? [...list, item] : list.filter(x => x !== item));
+
+export const buildTargetAudience = (ta: TargetAudienceForm): TargetAudience => ({
 	...(ta.eventIds.length > 0 && { eventIds: ta.eventIds }),
 	...(ta.ticketIds.length > 0 && { ticketIds: ta.ticketIds }),
 	...(ta.registrationStatuses.length > 0 && { registrationStatuses: ta.registrationStatuses }),
@@ -47,7 +50,7 @@ export const INITIAL_FORM: FormData = {
 };
 
 export type CampaignsState = {
-	campaigns: EmailCampaign[];
+	campaigns: AdminEmailCampaign[];
 	isLoading: boolean;
 	statusFilter: StatusFilter;
 	showCreateModal: boolean;
@@ -61,7 +64,7 @@ export type CampaignsState = {
 	templates: Template[];
 	showTemplateModal: boolean;
 	showPreviewModal: boolean;
-	selectedCampaign: EmailCampaign | null;
+	selectedCampaign: AdminEmailCampaign | null;
 	previewHtml: string;
 	previewRecipients: Recipient[];
 	previewTab: PreviewTab;
@@ -71,8 +74,8 @@ export type CampaignsState = {
 
 export type CampaignsAction =
 	| { type: "setCampaignsLoading"; value: boolean }
-	| { type: "campaignsLoaded"; campaigns: EmailCampaign[] }
-	| { type: "patchCampaign"; id: string; patch: Partial<EmailCampaign> }
+	| { type: "campaignsLoaded"; campaigns: AdminEmailCampaign[] }
+	| { type: "patchCampaign"; id: string; patch: Partial<AdminEmailCampaign> }
 	| { type: "setStatusFilter"; value: StatusFilter }
 	| { type: "eventsLoaded"; events: Event[] }
 	| { type: "ticketsLoaded"; tickets: Ticket[] }
@@ -80,14 +83,14 @@ export type CampaignsAction =
 	| { type: "setCreateModal"; value: boolean }
 	| { type: "setCreateTab"; value: CreateTab }
 	| { type: "setFormField"; field: keyof Pick<FormData, "name" | "subject" | "content">; value: string }
-	| { type: "toggleTargetAudience"; field: AudienceListField; id: string; checked: boolean }
+	| ({ type: "toggleTargetAudience"; checked: boolean } & AudienceToggle)
 	| { type: "recipientPreviewStarted" }
 	| { type: "recipientPreviewLoaded"; count: number; recipients: Recipient[] }
 	| { type: "recipientPreviewFailed" }
 	| { type: "setRecipientsModal"; value: boolean }
 	| { type: "setSaving"; value: boolean }
 	| { type: "campaignCreated" }
-	| { type: "previewLoaded"; campaign: EmailCampaign; html: string; recipients: Recipient[] }
+	| { type: "previewLoaded"; campaign: AdminEmailCampaign; html: string; recipients: Recipient[] }
 	| { type: "setPreviewModal"; value: boolean }
 	| { type: "setPreviewTab"; value: PreviewTab }
 	| { type: "setTemplateModal"; value: boolean }
@@ -139,14 +142,19 @@ export function campaignsReducer(state: CampaignsState, action: CampaignsAction)
 		case "setFormField":
 			return { ...state, formData: { ...state.formData, [action.field]: action.value } };
 		case "toggleTargetAudience": {
-			const current = state.formData.targetAudience[action.field];
-			const next = action.checked ? [...current, action.id] : current.filter(x => x !== action.id);
-			const targetAudience = { ...state.formData.targetAudience, [action.field]: next };
-			if (action.field === "eventIds" && next.length > 0) {
-				targetAudience.ticketIds = targetAudience.ticketIds.filter(ticketId => {
-					const ticket = state.tickets.find(t => t.id === ticketId);
-					return ticket && next.includes(ticket.eventId);
-				});
+			const current = state.formData.targetAudience;
+			let targetAudience: TargetAudienceForm;
+			if (action.field === "registrationStatuses") {
+				targetAudience = { ...current, registrationStatuses: toggleItem(current.registrationStatuses, action.id, action.checked) };
+			} else {
+				const next = toggleItem(current[action.field], action.id, action.checked);
+				targetAudience = { ...current, [action.field]: next };
+				if (action.field === "eventIds" && next.length > 0) {
+					targetAudience.ticketIds = targetAudience.ticketIds.filter(ticketId => {
+						const ticket = state.tickets.find(t => t.id === ticketId);
+						return ticket && next.includes(ticket.eventId);
+					});
+				}
 			}
 			return { ...state, formData: { ...state.formData, targetAudience }, recipientCount: null, recipientList: [], isCalculating: false };
 		}

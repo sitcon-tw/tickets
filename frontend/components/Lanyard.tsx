@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 "use client";
 import { Environment, Lightformer, Text, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, extend, useFrame, useThree, type ObjectMap, type ThreeEvent } from "@react-three/fiber";
@@ -52,10 +50,20 @@ const MeshLineMaterialElement = "meshLineMaterial";
 
 type LerpedRigidBody = RapierRigidBody & { lerped?: THREE.Vector3 };
 
-type CardGLTF = {
-	nodes: { card: THREE.Mesh; clip: THREE.Mesh; clamp: THREE.Mesh };
-	materials: { base: THREE.MeshStandardMaterial; metal: THREE.Material };
-};
+/** A node of card.glb that has to be a mesh. */
+function getMesh(nodes: ObjectMap["nodes"], name: string): THREE.Mesh {
+	const node = nodes[name];
+	if (!(node instanceof THREE.Mesh)) throw new Error(`${cardGLB} has no mesh named "${name}"`);
+	return node;
+}
+
+/**
+ * The rapier joint hooks are typed with `RefObject<RigidBody>` (the pre-React 19 ref typing) but only create the joint
+ * once both `.current` values are set, so a ref that is still null is fine to pass.
+ */
+function jointBody(ref: RefObject<RapierRigidBody | null>): RefObject<RapierRigidBody> {
+	return ref as RefObject<RapierRigidBody>;
+}
 
 interface LanyardProps {
 	position?: [number, number, number];
@@ -154,16 +162,22 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 	const rot = new THREE.Vector3();
 	const dir = new THREE.Vector3();
 
-	const { nodes, materials } = useGLTF(cardGLB) as ObjectMap & CardGLTF;
+	const { nodes, materials } = useGLTF(cardGLB);
+	const cardMesh = getMesh(nodes, "card");
+	const clipMesh = getMesh(nodes, "clip");
+	const clampMesh = getMesh(nodes, "clamp");
+	const baseMaterial = materials["base"];
+	const cardMap = baseMaterial instanceof THREE.MeshStandardMaterial ? baseMaterial.map : null;
+	const metalMaterial = materials["metal"];
 	const texture = useTexture(lanyard);
 	const [curve] = useState(() => new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]));
 	const [dragged, drag] = useState<false | THREE.Vector3>(false);
 	const [hovered, hover] = useState(false);
 
-	useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
-	useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
-	useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
-	useSphericalJoint(j3, card, [
+	useRopeJoint(jointBody(fixed), jointBody(j1), [[0, 0, 0], [0, 0, 0], 1]);
+	useRopeJoint(jointBody(j1), jointBody(j2), [[0, 0, 0], [0, 0, 0], 1]);
+	useRopeJoint(jointBody(j2), jointBody(j3), [[0, 0, 0], [0, 0, 0], 1]);
+	useSphericalJoint(jointBody(j3), jointBody(card), [
 		[0, 0, 0],
 		[0, 1.45, 0]
 	]);
@@ -247,11 +261,11 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, name }: BandProps
 							drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
 						}}
 					>
-						<Mesh geometry={nodes.card.geometry}>
-							<MeshPhysicalMaterial map={materials.base.map} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
+						<Mesh geometry={cardMesh.geometry}>
+							<MeshPhysicalMaterial map={cardMap} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
 						</Mesh>
-						<Mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
-						<Mesh geometry={nodes.clamp.geometry} material={materials.metal} />
+						<Mesh geometry={clipMesh.geometry} material={metalMaterial} material-roughness={0.3} />
+						<Mesh geometry={clampMesh.geometry} material={metalMaterial} />
 						{name && (
 							<Text
 								position={[0, 0.5, 0.01]}

@@ -127,10 +127,17 @@ export type RegistrationHold = z.infer<typeof RegistrationHoldSchema>;
  */
 export const RegistrationUpdateRequestSchema = z.object({
 	formData: z.record(z.string(), z.unknown()).optional(),
-	status: RegistrationStatusSchema.optional(),
-	tags: z.array(z.string()).optional()
+	status: RegistrationStatusSchema.optional()
 });
 export type RegistrationUpdateRequest = z.infer<typeof RegistrationUpdateRequestSchema>;
+
+/**
+ * Attendee's own registration update (only the form answers are editable)
+ */
+export const AttendeeRegistrationUpdateRequestSchema = z.object({
+	formData: z.record(z.string(), z.unknown())
+});
+export type AttendeeRegistrationUpdateRequest = z.infer<typeof AttendeeRegistrationUpdateRequestSchema>;
 
 /**
  * Registration statistics
@@ -141,7 +148,7 @@ export const RegistrationStatsSchema = z.object({
 	referralList: z.array(
 		z.object({
 			id: z.string(),
-			status: z.string(),
+			status: RegistrationStatusSchema,
 			ticketName: LocalizedTextSchema,
 			registeredAt: z.coerce.date(),
 			email: z.string() // Masked email (e.g., "ab***@domain.com"), not a valid email format
@@ -153,3 +160,56 @@ export const RegistrationStatsSchema = z.object({
 	})
 });
 export type RegistrationStats = z.infer<typeof RegistrationStatsSchema>;
+
+/**
+ * Registration as listed in the admin registrations table
+ */
+export const AdminRegistrationSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	eventId: z.string(),
+	ticketId: z.string(),
+	email: z.string(),
+	status: RegistrationStatusSchema,
+	/** Registration id of the referrer */
+	referredBy: z.string().nullable().optional(),
+	referrer: z
+		.object({
+			id: z.string(),
+			email: z.string()
+		})
+		.nullable()
+		.optional(),
+	checkedIn: z.boolean().optional(),
+	checkedInAt: z.coerce.date().nullable().optional(),
+	formData: z.record(z.string(), z.unknown()),
+	createdAt: z.coerce.date(),
+	updatedAt: z.coerce.date(),
+	event: z
+		.object({
+			id: z.string(),
+			name: LocalizedTextSchema,
+			startDate: z.coerce.date(),
+			endDate: z.coerce.date()
+		})
+		.optional(),
+	ticket: z
+		.object({
+			id: z.string(),
+			name: LocalizedTextSchema,
+			price: z.number()
+		})
+		.optional()
+});
+export type AdminRegistration = z.infer<typeof AdminRegistrationSchema>;
+
+/**
+ * Google Sheets export settings for an event
+ */
+export const GoogleSheetsSettingsSchema = z.object({
+	sheetsUrl: z.string().nullable(),
+	autoSync: z.boolean(),
+	lastSyncedAt: z.coerce.date().nullable(),
+	lastSyncError: z.string().nullable()
+});
+export type GoogleSheetsSettings = z.infer<typeof GoogleSheetsSettingsSchema>;

@@ -1,18 +1,25 @@
 import crypto from "crypto";
+import { z } from "zod/v4";
 
 function md5(input: string): string {
 	return crypto.createHash("md5").update(input).digest("hex");
 }
 
-export interface GravatarProfile {
-	displayName?: string;
-	name?: {
-		formatted?: string;
-		givenName?: string;
-		familyName?: string;
-	};
-	preferredUsername?: string;
-}
+const GravatarProfileSchema = z.object({
+	displayName: z.string().optional().catch(undefined),
+	name: z
+		.object({
+			formatted: z.string().optional().catch(undefined),
+			givenName: z.string().optional().catch(undefined),
+			familyName: z.string().optional().catch(undefined)
+		})
+		.optional()
+		.catch(undefined),
+	preferredUsername: z.string().optional().catch(undefined)
+});
+export type GravatarProfile = z.infer<typeof GravatarProfileSchema>;
+
+const GravatarResponseSchema = z.object({ entry: z.array(GravatarProfileSchema).optional() });
 
 export async function fetchGravatarName(email: string): Promise<string | null> {
 	try {
@@ -24,8 +31,8 @@ export async function fetchGravatarName(email: string): Promise<string | null> {
 			return null;
 		}
 
-		const data = await response.json();
-		const profile = data.entry?.[0] as GravatarProfile;
+		const parsed = GravatarResponseSchema.safeParse(await response.json());
+		const profile = parsed.success ? parsed.data.entry?.[0] : undefined;
 
 		if (!profile) {
 			return null;

@@ -17,10 +17,9 @@ import { CheckCircle2, Ticket as TicketIcon, XCircle } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useEffect, useReducer, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { readStoredTicketSelection, writeStoredTicketSelection } from "@/lib/utils/ticketSelection";
 import { z } from "zod/v4";
 
-const formDataStorageKey = "formData:v1";
-const legacyFormDataStorageKey = "formData";
 type TicketItem = z.infer<typeof PublicTicketListItemSchema>;
 type CodeVerificationStatus = "idle" | "valid" | "invalid";
 
@@ -519,13 +518,11 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 		dispatch({ type: "ticketSelected", ticket });
 
 		try {
-			const formData = {
+			writeStoredTicketSelection({
 				ticketId: ticket.id,
 				eventId: eventId,
 				referralCode: localStorage.getItem("referralCode") || undefined
-			};
-			localStorage.setItem(formDataStorageKey, JSON.stringify(formData));
-			localStorage.removeItem(legacyFormDataStorageKey);
+			});
 		} catch (error) {
 			console.warn("Unable to access localStorage", error);
 		}
@@ -559,10 +556,7 @@ export default function Tickets({ eventId, eventSlug }: TicketsProps) {
 
 			// Store invitation code in localStorage if it was verified
 			if (selectedTicket.requireInviteCode && invitationCode.trim()) {
-				const formData = JSON.parse(localStorage.getItem(formDataStorageKey) || localStorage.getItem(legacyFormDataStorageKey) || "{}");
-				formData.invitationCode = invitationCode.trim();
-				localStorage.setItem(formDataStorageKey, JSON.stringify(formData));
-				localStorage.removeItem(legacyFormDataStorageKey);
+				writeStoredTicketSelection({ ...readStoredTicketSelection(), invitationCode: invitationCode.trim() });
 			}
 
 			let needsVerification = false;

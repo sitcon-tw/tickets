@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
-import { adminEventsAPI } from "@/lib/api/endpoints";
+import { adminEventsAPI, adminInvitationCodesAPI } from "@/lib/api/endpoints";
 import { getLocalizedText } from "@/lib/utils/localization";
 import type { Ticket } from "@sitcontix/types";
 import { useLocale } from "next-intl";
@@ -190,16 +190,7 @@ export function SendEmailDialog({ codes, tickets, eventId, onClose, onSent }: Se
 		try {
 			const results = await runInChunks(validPairs, async pair => {
 				try {
-					const response = await fetch("/api/admin/invitation-codes/send-email", {
-						method: "POST",
-						credentials: "include",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ email: pair.email, code: pair.code.code, ticketId: pair.code.ticketId, message: message.trim() })
-					});
-					if (!response.ok) {
-						const body = await response.json().catch(() => null);
-						throw new Error(body?.error?.message || body?.message || `HTTP ${response.status}`);
-					}
+					await adminInvitationCodesAPI.sendEmail({ email: pair.email, code: pair.code.code, ticketId: pair.code.ticketId, message: message.trim() });
 					return { pair, ok: true as const };
 				} catch (err) {
 					return { pair, ok: false as const, reason: errorMessage(err) };

@@ -6,13 +6,12 @@ import { z } from "zod/v4";
 import { UserRoleSchema } from "./common.js";
 
 /**
- * SMS verification record
+ * SMS verification record, as exposed by the API (the one-time code is never included)
  */
 export const SmsVerificationSchema = z.object({
 	id: z.string(),
 	userId: z.string(),
 	phoneNumber: z.string(),
-	code: z.string(),
 	verified: z.boolean(),
 	expiresAt: z.coerce.date(),
 	createdAt: z.coerce.date(),

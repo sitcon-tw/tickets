@@ -95,12 +95,14 @@ async function sendViaKot(phoneNumber: string, message: string, span: Span): Pro
 
 	let data: Record<string, unknown> = {};
 	try {
-		data = JSON.parse(body);
+		const parsed: unknown = JSON.parse(body);
+		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) data = parsed as Record<string, unknown>;
 	} catch {
 		// Response body is not JSON; a 2xx status is treated as success
 	}
 
-	const msgid = String(data.msgid ?? data.id ?? data.messageId ?? "");
+	const rawMsgid = data.msgid ?? data.id ?? data.messageId;
+	const msgid = typeof rawMsgid === "string" || typeof rawMsgid === "number" ? String(rawMsgid) : "";
 	span.setAttribute("sms.msgid", msgid);
 
 	return {

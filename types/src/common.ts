@@ -43,7 +43,7 @@ export const FormFieldTypeSchema = z.enum(["text", "textarea", "select", "checkb
 export type FormFieldType = z.infer<typeof FormFieldTypeSchema>;
 
 /**
- * Supported locales for SMS
+ * Supported locales
  */
 export const LocaleSchema = z.enum(["zh-Hant", "en"]);
 export type Locale = z.infer<typeof LocaleSchema>;

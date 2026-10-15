@@ -6,6 +6,7 @@ import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { eventsAPI, invitationCodesAPI, ticketsAPI } from "@/lib/api/endpoints";
+import { writeStoredTicketSelection } from "@/lib/utils/ticketSelection";
 import { PublicTicketDetailSchema } from "@sitcontix/types";
 import { useLocale } from "next-intl";
 import Image from "next/image";
@@ -13,8 +14,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { z } from "zod/v4";
 
-const formDataStorageKey = "formData:v1";
-const legacyFormDataStorageKey = "formData";
 type FailureKind = "event" | "ticket" | "load";
 
 type TicketPageState = {
@@ -176,18 +175,12 @@ export default function SetTicket() {
 	const fetchEvent = useCallback(async (): Promise<{ ok: true; eventId: string } | { ok: false; kind: FailureKind }> => {
 		const eventSlug = params.event as string;
 		try {
-			const eventsData = await eventsAPI.getAll();
-
-			if (eventsData?.success && Array.isArray(eventsData.data)) {
-				const foundEvent = eventsData.data.find(e => e.slug === eventSlug || e.id.slice(-6) === eventSlug);
-
-				if (foundEvent) {
-					return { ok: true, eventId: foundEvent.id };
-				}
-				showAlert(t.eventNotFound, "error");
-				return { ok: false, kind: "event" };
+			const foundEvent = await eventsAPI.findBySlug(eventSlug);
+			if (foundEvent) {
+				return { ok: true, eventId: foundEvent.id };
 			}
-			showAlert(t.loadFailed, "error");
+			showAlert(t.eventNotFound, "error");
+			return { ok: false, kind: "event" };
 		} catch {
 			showAlert(t.loadFailed, "error");
 		}
@@ -256,14 +249,12 @@ export default function SetTicket() {
 			}
 
 			try {
-				const formData = {
+				writeStoredTicketSelection({
 					ticketId: ticket.id,
 					eventId: eventId,
 					referralCode: referralCode || localStorage.getItem("referralCode") || undefined,
 					invitationCode: invitationCode || undefined
-				};
-				localStorage.setItem(formDataStorageKey, JSON.stringify(formData));
-				localStorage.removeItem(legacyFormDataStorageKey);
+				});
 				return true;
 			} catch (error) {
 				console.warn("Unable to access localStorage", error);

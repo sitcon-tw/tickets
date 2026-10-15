@@ -1,59 +1,31 @@
 import { getTranslations } from "@/i18n/helpers";
 import { normalizeFormFieldOption } from "@/lib/utils/localization";
 import { ApiResponseError } from "@/lib/types/client";
-import type { FormErrorCode, FormErrors, FormFieldOption, LocalizedText, TicketFormField } from "@sitcontix/types";
+import type { FormDataType } from "@/lib/types/data";
+import type { FormErrorCode, FormErrors, PublicEventFormField, TicketFormField } from "@sitcontix/types";
 
-export type RawTicketFormField = Omit<TicketFormField, "eventId" | "options"> &
-	Partial<Pick<TicketFormField, "eventId">> & {
-		options?: FormFieldOption[] | null;
-	};
+/** Turns the public form-fields payload into the shape the form components use (options normalized to localized records). */
+export function normalizeTicketFormFields(fields: PublicEventFormField[], eventId: string): TicketFormField[] {
+	return fields.map(field => ({
+		...field,
+		eventId,
+		options: field.options.map(normalizeFormFieldOption)
+	}));
+}
 
-/** Turns the public form-fields payload into the shape the form components use (legacy JSON-string names/descriptions included). */
-export function normalizeTicketFormFields(fields: RawTicketFormField[], eventId: string): TicketFormField[] {
-	return fields.map(field => {
-		let name: LocalizedText = field.name;
-		if (typeof name === "string" && name === "[object Object]") {
-			name = { en: typeof field.description === "string" ? field.description : "field" };
-		} else if (typeof name === "string") {
-			const rawName = name;
-			try {
-				name = JSON.parse(rawName);
-			} catch {
-				name = { en: rawName };
-			}
-		}
-
-		// Legacy data may still store the description as a (JSON) string
-		let description = (field.description ?? undefined) as LocalizedText | string | undefined;
-		if (typeof description === "string" && description.startsWith("{")) {
-			const originalStr = description;
-			try {
-				description = JSON.parse(description);
-			} catch {
-				description = { en: originalStr };
-			}
-		} else if (typeof description === "string") {
-			description = { en: description };
-		}
-
-		let filters = field.filters;
-		if (typeof filters === "string") {
-			try {
-				filters = JSON.parse(filters);
-			} catch {
-				filters = undefined;
-			}
-		}
-
-		return {
-			...field,
-			eventId,
-			name,
-			description: description as LocalizedText | undefined,
-			options: (field.options || []).map(normalizeFormFieldOption),
-			filters
-		};
-	});
+/**
+ * Stored answers as form state: strings, booleans and string lists are kept, numbers become strings,
+ * and anything else (objects, null, mixed lists) is dropped instead of being rendered as-is.
+ */
+export function toFormData(raw: unknown): FormDataType {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+	const formData: FormDataType = {};
+	for (const [key, value] of Object.entries(raw)) {
+		if (typeof value === "string" || typeof value === "boolean") formData[key] = value;
+		else if (typeof value === "number" && Number.isFinite(value)) formData[key] = String(value);
+		else if (Array.isArray(value)) formData[key] = value.filter((item): item is string => typeof item === "string");
+	}
+	return formData;
 }
 
 const formErrorTranslations = {

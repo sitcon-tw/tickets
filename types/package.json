@@ -71,13 +71,25 @@
 			"types": "./dist/validation.d.ts",
 			"import": "./dist/validation.js"
 		},
-		"./system": {
-			"types": "./dist/system.d.ts",
-			"import": "./dist/system.js"
+		"./checkIn": {
+			"types": "./dist/checkIn.d.ts",
+			"import": "./dist/checkIn.js"
 		},
-		"./helpers": {
-			"types": "./dist/helpers.d.ts",
-			"import": "./dist/helpers.js"
+		"./formLogic": {
+			"types": "./dist/formLogic.d.ts",
+			"import": "./dist/formLogic.js"
+		},
+		"./permissions": {
+			"types": "./dist/permissions.d.ts",
+			"import": "./dist/permissions.js"
+		},
+		"./settings": {
+			"types": "./dist/settings.d.ts",
+			"import": "./dist/settings.js"
+		},
+		"./webhook": {
+			"types": "./dist/webhook.d.ts",
+			"import": "./dist/webhook.js"
 		}
 	},
 	"main": "./dist/index.js",
@@ -88,10 +100,10 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"typescript": "^7.0.2",
 		"zod": "^4.6.5"
 	},
 	"devDependencies": {
+		"typescript": "^7.0.2",
 		"vitest": "^5.0.2"
 	}
 }

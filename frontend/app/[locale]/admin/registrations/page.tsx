@@ -18,7 +18,7 @@ import { getLocalizedText } from "@/lib/utils/localization";
 import { toText } from "@/lib/utils/text";
 import { formatDateTime } from "@/lib/utils/timezone";
 import { cn } from "@/lib/utils";
-import type { EventFormField } from "@sitcontix/types";
+import type { AdminRegistration, EventFormField } from "@sitcontix/types";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { CircleAlert, Download, FileSpreadsheet, RotateCw, UserX, X } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -27,7 +27,7 @@ import { createRegistrationsColumns, type RegistrationDisplay } from "./columns"
 import { GoogleSheetsExportDialog } from "./GoogleSheetsExportDialog";
 import { RegistrationDetailDialog, type RegistrationChanges } from "./RegistrationDetailDialog";
 import { registrationsTranslations, type RegistrationsT } from "./translations";
-import { buildRegistrationsCsv, downloadBlob, errorMessage, getReferrer, timestampForFilename, type AdminRegistration } from "./utils";
+import { buildRegistrationsCsv, downloadBlob, errorMessage, getReferrer, timestampForFilename } from "./utils";
 
 type StatusFilter = "all" | "confirmed" | "pending" | "cancelled";
 
@@ -60,11 +60,27 @@ function StatsCards({ stats, statusFilter, onSelect, t }: { stats: Record<Status
 	);
 }
 
+const PAGE_SIZE = 500;
+const MAX_PAGES = 200;
+
+/** Every registration of the event, fetched page by page so large events are not cut off. */
+async function fetchAllRegistrations(eventId: string): Promise<{ ok: true; registrations: AdminRegistration[] } | { ok: false; message: string }> {
+	const all: AdminRegistration[] = [];
+	for (let page = 1; page <= MAX_PAGES; page++) {
+		const response = await adminRegistrationsAPI.getAll({ page, limit: PAGE_SIZE, eventId });
+		if (!response.success) return { ok: false, message: response.message };
+		all.push(...response.data);
+		if (!(response.pagination ? response.pagination.hasNext : response.data.length === PAGE_SIZE)) break;
+	}
+	// New registrations can shift rows between pages while they are fetched, so drop duplicates.
+	return { ok: true, registrations: Array.from(new Map(all.map(registration => [registration.id, registration])).values()) };
+}
+
 function useRegistrationsPage() {
 	const locale = useLocale();
 	const { showAlert } = useAlert();
 	const currentEventId = useSelectedEventId();
-	const t = useMemo(() => getTranslations(locale, registrationsTranslations) as RegistrationsT, [locale]);
+	const t = useMemo(() => getTranslations(locale, registrationsTranslations), [locale]);
 
 	const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
 	const [ticketHashes, setTicketHashes] = useState<Record<string, string>>({});
@@ -102,16 +118,16 @@ function useRegistrationsPage() {
 		setIsLoading(true);
 		setLoadError(null);
 		try {
-			const response = await adminRegistrationsAPI.getAll({ limit: 9999, eventId: currentEventId });
+			const result = await fetchAllRegistrations(currentEventId);
 			if (requestId !== requestIdRef.current) return;
-			if (!response.success) {
-				const message = response.message || t.unknownError;
+			if (!result.ok) {
+				const message = result.message || t.unknownError;
 				setLoadError(message);
 				showAlert(message, "error");
 				return;
 			}
 
-			const loaded = response.data || [];
+			const loaded = result.registrations;
 			const hashes = await Promise.all(loaded.map(async r => [r.id, await generateHash(r.id, r.createdAt)] as const));
 			if (requestId !== requestIdRef.current) return;
 
@@ -221,10 +237,8 @@ function useRegistrationsPage() {
 		}
 		setIsExporting(true);
 		try {
-			const query = new URLSearchParams({ format: "csv", eventId: currentEventId });
-			const response = await fetch(`/api/admin/registrations/export?${query.toString()}`, { credentials: "include" });
-			if (!response.ok) throw new Error(`HTTP ${response.status}`);
-			downloadBlob(await response.blob(), `registrations_${timestampForFilename()}.csv`);
+			const csv = await adminRegistrationsAPI.exportCsv({ eventId: currentEventId });
+			downloadBlob(csv, `registrations_${timestampForFilename()}.csv`);
 			showAlert(t.exportCsvSuccess, "success");
 		} catch (error) {
 			console.error("Failed to export registrations:", error);

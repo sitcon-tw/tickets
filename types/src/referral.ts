@@ -61,96 +61,6 @@ export const ReferralUsageSchema = z.object({
 export type ReferralUsage = z.infer<typeof ReferralUsageSchema>;
 
 /**
- * Referral overview
- */
-export const ReferralOverviewSchema = z.object({
-	totalReferrals: z.number().int().min(0),
-	successfulReferrals: z.number().int().min(0),
-	conversionRate: z.number().min(0).max(100),
-	topReferrers: z.array(
-		z.object({
-			id: z.string(),
-			email: z.email(),
-			referralCount: z.number().int().min(0)
-		})
-	)
-});
-export type ReferralOverview = z.infer<typeof ReferralOverviewSchema>;
-
-/**
- * Referral leaderboard
- */
-export const ReferralLeaderboardSchema = z.object({
-	ranking: z.array(
-		z.object({
-			rank: z.number().int().min(1),
-			registrationId: z.string(),
-			email: z.email(),
-			referralCount: z.number().int().min(0),
-			successfulReferrals: z.number().int().min(0)
-		})
-	)
-});
-export type ReferralLeaderboard = z.infer<typeof ReferralLeaderboardSchema>;
-
-/**
- * Referral tree
- */
-export interface ReferralTreeChild {
-	id: string;
-	email: string;
-	status: string;
-	registeredAt: Date;
-	children?: ReferralTreeChild[];
-}
-const ReferralTreeChildSchema: z.ZodType<ReferralTreeChild> = z.lazy(() =>
-	z.object({
-		id: z.string(),
-		email: z.email(),
-		status: z.string(),
-		registeredAt: z.coerce.date(),
-		children: z.array(ReferralTreeChildSchema).optional()
-	})
-);
-export const ReferralTreeSchema = z.object({
-	root: z.object({
-		id: z.string(),
-		email: z.email(),
-		status: z.string()
-	}),
-	children: z.array(ReferralTreeChildSchema)
-});
-export type ReferralTree = z.infer<typeof ReferralTreeSchema>;
-
-/**
- * Qualified referrer
- */
-export const QualifiedReferrerSchema = z.object({
-	id: z.string(),
-	email: z.email(),
-	referralCount: z.number().int().min(0),
-	isQualified: z.boolean(),
-	qualificationThreshold: z.number().int().min(0)
-});
-export type QualifiedReferrer = z.infer<typeof QualifiedReferrerSchema>;
-
-/**
- * Draw result
- */
-export const DrawResultSchema = z.object({
-	winners: z.array(
-		z.object({
-			id: z.string(),
-			email: z.email(),
-			referralCount: z.number().int().min(0)
-		})
-	),
-	drawDate: z.coerce.date(),
-	totalParticipants: z.number().int().min(0)
-});
-export type DrawResult = z.infer<typeof DrawResultSchema>;
-
-/**
  * Referral tree node (recursive structure)
  */
 export interface ReferralTreeNode {
@@ -171,15 +81,6 @@ export const ReferralTreeNodeSchema: z.ZodType<ReferralTreeNode> = z.lazy(() =>
 		children: z.array(ReferralTreeNodeSchema)
 	})
 );
-
-/**
- * Prisma date filter type
- */
-export const PrismaDateFilterSchema = z.object({
-	gte: z.coerce.date().optional(),
-	lte: z.coerce.date().optional()
-});
-export type PrismaDateFilter = z.infer<typeof PrismaDateFilterSchema>;
 
 /**
  * Public referral ranking item

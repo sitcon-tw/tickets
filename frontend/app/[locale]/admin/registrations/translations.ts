@@ -1,3 +1,5 @@
+import type { Translations } from "@/i18n/helpers";
+
 export const registrationsTranslations = {
 	title: { "zh-Hant": "報名資料", en: "Registrations" },
 	description: { "zh-Hant": "檢視、搜尋、編輯與匯出此活動的報名資料。", en: "View, search, edit and export registrations for this event." },
@@ -126,4 +128,4 @@ export const registrationsTranslations = {
 	csvCreatedAt: { "zh-Hant": "報名時間", en: "Created At" }
 };
 
-export type RegistrationsT = Record<keyof typeof registrationsTranslations, string>;
+export type RegistrationsT = Translations<typeof registrationsTranslations>;

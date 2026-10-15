@@ -7,7 +7,7 @@ import { tracer } from "#lib/tracing";
 import { requireEventAccess, requireEventAccessViaRegistrationId } from "#middleware/auth";
 import { adminCheckInSchemas } from "#schemas";
 import { notFoundResponse, successResponse, validationErrorResponse } from "#utils/response";
-import { safeJsonParse } from "#utils/json";
+import { parseJsonObject } from "#utils/json";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, RegistrationStatusSchema } from "@sitcontix/types";
 import type { FastifyPluginAsync } from "fastify";
@@ -60,7 +60,7 @@ const adminCheckInsRoutes: FastifyPluginAsync = async fastify => {
 					phoneNumber: registration.user.phoneNumber || null,
 					status: RegistrationStatusSchema.parse(registration.status),
 					ticketName: LocalizedTextSchema.parse(registration.ticket.name),
-					formData: safeJsonParse<Record<string, unknown>>(registration.formData, {}, `check-in list for ${registration.id}`),
+					formData: parseJsonObject(registration.formData, `check-in list for ${registration.id}`),
 					qrToken: getQrToken(registration.id, registration.createdAt),
 					checkedIn: registration.checkedIn,
 					checkedInAt: registration.checkedInAt,

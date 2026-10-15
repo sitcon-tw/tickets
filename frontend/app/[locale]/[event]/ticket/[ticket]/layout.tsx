@@ -1,4 +1,6 @@
+import { getServerTicket } from "@/lib/api/server-endpoints";
 import type { Metadata } from "next";
+import { getMetadataText } from "@/lib/utils/localization";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; event: string; ticket: string }> }): Promise<Metadata> {
 	const { locale, event: eventSlug, ticket: ticketId } = await params;
@@ -16,50 +18,28 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 	};
 	const fallbackDescription = fallbackDescriptionMap[locale] || fallbackDescriptionMap["zh-Hant"];
 
-	try {
-		const backendUrl = process.env.BACKEND_URI || "http://localhost:3000";
+	const ticket = await getServerTicket(ticketId);
+	if (ticket) {
+		const ticketName = getMetadataText(ticket.name, locale, "Ticket");
+		const ticketDescription = getMetadataText(ticket.plainDescription || ticket.description, locale, `Register for ${ticketName}`);
 
-		const ticketResponse = await fetch(`${backendUrl}/api/tickets/${ticketId}`, {
-			headers: { "Content-Type": "application/json" }
-		});
-
-		if (!ticketResponse.ok) {
-			throw new Error("Failed to fetch ticket data");
-		}
-
-		const ticketData = await ticketResponse.json();
-
-		const getLocalizedText = (text: Record<string, string> | string | undefined, fallback: string): string => {
-			if (!text) return fallback;
-			if (typeof text === "string") return text;
-			return text[locale] || text["zh-Hant"] || text["en"] || Object.values(text)[0] || fallback;
-		};
-
-		if (ticketData?.success && ticketData.data) {
-			const ticket = ticketData.data;
-			const ticketName = getLocalizedText(ticket.name, "Ticket");
-			const ticketDescription = getLocalizedText(ticket.plainDescription || ticket.description, `Register for ${ticketName}`);
-
-			return {
-				title: `${ticketName} - ${siteName}`,
+		return {
+			title: `${ticketName} - ${siteName}`,
+			description: ticketDescription,
+			openGraph: {
+				title: ticketName,
 				description: ticketDescription,
-				openGraph: {
-					title: ticketName,
-					description: ticketDescription,
-					url: `${site}/${locale}/${eventSlug}/ticket/${ticketId}`,
-					siteName: siteName,
-					locale: locale,
-					type: "website"
-				},
-				twitter: {
-					card: "summary_large_image",
-					title: ticketName,
-					description: ticketDescription
-				}
-			};
-		}
-	} catch (error) {
-		console.error("Failed to fetch ticket metadata:", error);
+				url: `${site}/${locale}/${eventSlug}/ticket/${ticketId}`,
+				siteName: siteName,
+				locale: locale,
+				type: "website"
+			},
+			twitter: {
+				card: "summary_large_image",
+				title: ticketName,
+				description: ticketDescription
+			}
+		};
 	}
 
 	return {

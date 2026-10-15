@@ -1,3 +1,5 @@
+import type { Translations } from "@/i18n/helpers";
+
 export const campaignTranslations = {
 	title: { "zh-Hant": "郵件發送", en: "Email Campaigns" },
 	description: {
@@ -110,7 +112,7 @@ export const campaignTranslations = {
 	varRegistrationId: { "zh-Hant": "報名 ID", en: "Registration ID" }
 };
 
-export type CampaignTranslations = Record<string, string>;
+export type CampaignTranslations = Translations<typeof campaignTranslations>;
 
 /** Replaces `{key}` placeholders in a translated string. */
 export function fmt(template: string, values: Record<string, string | number>): string {

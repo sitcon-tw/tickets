@@ -5,18 +5,23 @@
 
 import prisma from "#config/database";
 import type { Prisma, WebhookDelivery as WebhookDeliveryRecord } from "#prisma/generated/prisma/client";
+import { errorMessage } from "#utils/error";
+import { parseJsonObject } from "#utils/json";
 import { logger } from "#utils/logger";
-import type {
-	LocalizedText,
-	WebhookAttendee,
-	WebhookEventInfo,
-	WebhookEventType,
-	WebhookNotification,
-	WebhookPayload,
-	WebhookRegistrationCancelledNotification,
-	WebhookRegistrationConfirmedNotification,
-	WebhookTestResponse,
-	WebhookTicketInfo
+import {
+	LocalizedTextSchema,
+	RegistrationStatusSchema,
+	WebhookPayloadSchema,
+	type LocalizedText,
+	type WebhookAttendee,
+	type WebhookEventInfo,
+	type WebhookEventType,
+	type WebhookNotification,
+	type WebhookPayload,
+	type WebhookRegistrationCancelledNotification,
+	type WebhookRegistrationConfirmedNotification,
+	type WebhookTestResponse,
+	type WebhookTicketInfo
 } from "@sitcontix/types";
 
 import crypto from "crypto";
@@ -128,13 +133,35 @@ export async function testWebhookEndpoint(url: string, authHeaderName?: string, 
 			errorMessage: response.status !== 200 ? `HTTP ${response.status}: ${response.statusText}` : undefined
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
+		const message = errorMessage(error);
 		return {
 			success: false,
-			errorMessage: errorMessage.includes("abort") ? "Request timeout" : errorMessage
+			errorMessage: message.includes("abort") ? "Request timeout" : message
 		};
 	}
 }
+
+/** Stored localized names are Prisma Json; anything that is not a locale → text record becomes `{}` */
+const toLocalizedText = (value: Prisma.JsonValue): LocalizedText => {
+	const parsed = LocalizedTextSchema.safeParse(value);
+	return parsed.success ? parsed.data : {};
+};
+
+/** Parse a stored webhook payload so a corrupt row is skipped instead of sent */
+const parseStoredPayload = (delivery: { id: string; payload: string }): WebhookPayload | null => {
+	let raw: unknown;
+	try {
+		raw = JSON.parse(delivery.payload);
+	} catch {
+		raw = undefined;
+	}
+	const parsed = WebhookPayloadSchema.safeParse(raw);
+	if (!parsed.success) {
+		componentLogger.error({ deliveryId: delivery.id, issues: parsed.error.issues }, "Stored webhook payload is invalid, skipping retry");
+		return null;
+	}
+	return parsed.data;
+};
 
 /**
  * Build webhook notification for registration confirmed
@@ -144,7 +171,7 @@ export function buildRegistrationConfirmedNotification(
 	registration: { id: string; status: string; createdAt: Date; email: string; formData: string | null },
 	ticket: { id: string; name: Prisma.JsonValue; price: number }
 ): WebhookRegistrationConfirmedNotification {
-	const formData: Record<string, unknown> = registration.formData ? JSON.parse(registration.formData) : {};
+	const formData = parseJsonObject(registration.formData, "webhook formData");
 
 	const attendee: WebhookAttendee = {
 		name: typeof formData.name === "string" && formData.name ? formData.name : undefined,
@@ -153,13 +180,13 @@ export function buildRegistrationConfirmedNotification(
 
 	const ticketInfo: WebhookTicketInfo = {
 		price: ticket.price,
-		name: ticket.name as LocalizedText,
+		name: toLocalizedText(ticket.name),
 		id: ticket.id,
 		attendee
 	};
 
 	const eventInfo: WebhookEventInfo = {
-		name: event.name as LocalizedText,
+		name: toLocalizedText(event.name),
 		slug: event.slug
 	};
 
@@ -171,7 +198,8 @@ export function buildRegistrationConfirmedNotification(
 		event: eventInfo,
 		registration: {
 			id: registration.id,
-			status: registration.status,
+			// This notification is only sent for confirmed registrations
+			status: RegistrationStatusSchema.catch("confirmed").parse(registration.status),
 			created_at: createdAtIso,
 			email: registration.email,
 			token
@@ -189,7 +217,7 @@ export function buildRegistrationCancelledNotification(
 	registration: { id: string; createdAt: Date; updatedAt: Date }
 ): WebhookRegistrationCancelledNotification {
 	const eventInfo: WebhookEventInfo = {
-		name: event.name as LocalizedText,
+		name: toLocalizedText(event.name),
 		slug: event.slug
 	};
 
@@ -249,10 +277,10 @@ async function sendWebhookRequest(
 			errorMessage: response.status !== 200 ? `HTTP ${response.status}: ${response.statusText}` : undefined
 		};
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
+		const message = errorMessage(error);
 		return {
 			success: false,
-			errorMessage: errorMessage.includes("abort") ? "Request timeout" : errorMessage
+			errorMessage: message.includes("abort") ? "Request timeout" : message
 		};
 	}
 }
@@ -415,7 +443,15 @@ export async function processWebhookRetries(): Promise<void> {
 			continue;
 		}
 
-		const payload: WebhookPayload = JSON.parse(delivery.payload);
+		const payload = parseStoredPayload(delivery);
+		if (!payload) {
+			// Stop retrying a payload that can never be sent
+			await prisma.webhookDelivery.update({
+				where: { id: delivery.id },
+				data: { retryCount: MAX_RETRIES, nextRetryAt: null, errorMessage: "Invalid stored payload" }
+			});
+			continue;
+		}
 
 		const result = await sendWebhookRequest(delivery.webhook.url, payload, delivery.webhook.authHeaderName, delivery.webhook.authHeaderValue);
 
@@ -536,7 +572,10 @@ export async function retryFailedDelivery(deliveryId: string, eventId?: string):
 		return false;
 	}
 
-	const payload: WebhookPayload = JSON.parse(delivery.payload);
+	const payload = parseStoredPayload(delivery);
+	if (!payload) {
+		return false;
+	}
 	const result = await sendWebhookRequest(delivery.webhook.url, payload, delivery.webhook.authHeaderName, delivery.webhook.authHeaderValue);
 
 	if (result.success) {

@@ -2,6 +2,7 @@ import prisma from "#config/database";
 import { tracer } from "#lib/tracing";
 import { publicTicketSchemas } from "#schemas";
 import { logger } from "#utils/logger";
+import { publicTicketStock } from "#utils/ticket-availability";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
 import { LocalizedTextSchema, PublicTicketDetailSchema } from "@sitcontix/types";
@@ -60,20 +61,29 @@ const publicTicketsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("ticket.require_sms_verification", ticket.requireSmsVerification);
 
 				const now = new Date();
-				const available = ticket.quantity - ticket.soldCount;
+				// Same masking as the event ticket list, so hidden stock can't be read from this endpoint either
+				const { quantity, available, soldCount } = publicTicketStock(ticket);
 				const isOnSale = (!ticket.saleStart || now >= ticket.saleStart) && (!ticket.saleEnd || now <= ticket.saleEnd);
 				const isSoldOut = available <= 0;
 
-				span.setAttribute("ticket.available", available);
+				span.setAttribute("ticket.available", Math.max(0, ticket.quantity - ticket.soldCount));
 
 				const ticketWithStatus = {
-					...ticket,
+					id: ticket.id,
 					name: LocalizedTextSchema.parse(ticket.name),
 					description: LocalizedTextSchema.nullable().parse(ticket.description),
 					plainDescription: LocalizedTextSchema.nullable().parse(ticket.plainDescription),
+					price: ticket.price,
+					quantity,
+					soldCount,
 					available,
+					saleStart: ticket.saleStart,
+					saleEnd: ticket.saleEnd,
 					isOnSale,
-					isSoldOut
+					isSoldOut,
+					requireInviteCode: ticket.requireInviteCode,
+					requireSmsVerification: ticket.requireSmsVerification,
+					showRemaining: ticket.showRemaining
 				} satisfies z.infer<typeof PublicTicketDetailSchema>;
 
 				span.setStatus({ code: SpanStatusCode.OK });

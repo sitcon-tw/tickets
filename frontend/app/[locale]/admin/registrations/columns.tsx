@@ -5,9 +5,10 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableFeatures } from "@/lib/data-table-features";
+import type { AdminRegistration } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 import type { RegistrationsT } from "./translations";
-import { statusTone, type AdminRegistration } from "./utils";
+import { statusTone } from "./utils";
 
 export type RegistrationDisplay = AdminRegistration & {
 	displayId: string;

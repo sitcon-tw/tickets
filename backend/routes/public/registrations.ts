@@ -2,11 +2,11 @@ import prisma from "#config/database";
 import { auth } from "#lib/auth";
 import { tracer } from "#lib/tracing";
 import { requireAuth } from "#middleware/auth";
-import { Prisma } from "#prisma/generated/prisma";
 import { registrationSchemas } from "#schemas";
 import { sendCancellationEmail, sendRegistrationConfirmation } from "#utils/email.js";
-import { safeJsonParse, safeJsonStringify } from "#utils/json";
+import { parseJsonObject, safeJsonStringify } from "#utils/json";
 import { conflictResponse, notFoundResponse, serverErrorResponse, successResponse, unauthorizedResponse, validationErrorResponse } from "#utils/response";
+import { isPrismaErrorCode, isUniqueConstraintError } from "#utils/prisma-errors";
 import { PurchaseError, REGISTRATION_HOLD_MS, releaseExpiredHolds, releaseHold, resolveTicketPurchase } from "#utils/registration-hold";
 import { sanitizeObject } from "#utils/sanitize";
 import { resolveRegistrationAnswers } from "#utils/validation";
@@ -38,6 +38,31 @@ const registrationInclude = {
 		}
 	}
 } as const;
+
+/** Reply for a PurchaseError; its message is written for the user */
+const purchaseErrorResponse = (error: PurchaseError) =>
+	error.kind === "unauthorized"
+		? unauthorizedResponse(error.message)
+		: error.kind === "notFound"
+			? notFoundResponse(error.message)
+			: error.kind === "conflict"
+				? conflictResponse(error.message)
+				: validationErrorResponse(error.message);
+
+// Reasons a seat can no longer be taken, found while re-checking inside the transaction
+const holdExpiredError = () => new PurchaseError("conflict", "保留時間已過，請重新選擇票券");
+const alreadyRegisteredError = () => new PurchaseError("conflict", "您已經報名此活動");
+const ticketSoldOutError = () => new PurchaseError("conflict", "票券已售完");
+const invitationCodeInvalidError = () => new PurchaseError("validation", "邀請碼已失效");
+const invitationCodeLimitError = () => new PurchaseError("validation", "邀請碼已達使用上限");
+
+/** The registration was cancelled (or never confirmed) by the time the cancellation transaction ran */
+class AlreadyCancelledError extends Error {
+	constructor() {
+		super("Registration is no longer cancellable");
+		this.name = "AlreadyCancelledError";
+	}
+}
 
 const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.addHook("preHandler", requireAuth);
@@ -167,7 +192,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							});
 
 							if (claimed.count === 0) {
-								throw new Error("HOLD_EXPIRED");
+								throw holdExpiredError();
 							}
 
 							if (referralCodeId) {
@@ -187,7 +212,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 
 							return {
 								...registration,
-								formData: safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response")
+								formData: parseJsonObject(registration.formData, "registration response")
 							};
 						})
 					: await prisma.$transaction(
@@ -201,7 +226,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								});
 
 								if (existingInTx) {
-									throw new Error("ALREADY_REGISTERED");
+									throw alreadyRegisteredError();
 								}
 
 								// Re-check ticket availability
@@ -211,7 +236,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								});
 
 								if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
-									throw new Error("TICKET_SOLD_OUT");
+									throw ticketSoldOutError();
 								}
 
 								// Re-check invitation code
@@ -222,11 +247,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 									});
 
 									if (!currentCode || !currentCode.isActive) {
-										throw new Error("INVITATION_CODE_INVALID");
+										throw invitationCodeInvalidError();
 									}
 
 									if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
-										throw new Error("INVITATION_CODE_LIMIT_REACHED");
+										throw invitationCodeLimitError();
 									}
 								}
 
@@ -266,7 +291,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 									});
 								}
 
-								const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration response");
+								const parsedFormData = parseJsonObject(registration.formData, "registration response");
 
 								return {
 									...registration,
@@ -283,8 +308,9 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				});
 				span.setAttribute("registration.id", result.id);
 
-				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:3000";
-				const ticketUrl = `${frontendUrl}/${event.slug}/success`;
+				const frontendUrl = process.env.FRONTEND_URI || "http://localhost:4321";
+				// Events without a slug are addressed by the last 6 characters of their id (same as the referral link)
+				const ticketUrl = `${frontendUrl}/${event.slug || event.id.slice(-6)}/success`;
 
 				span.addEvent("sending_confirmation_email");
 				await sendRegistrationConfirmation(result, event, ticket, ticketUrl).catch(error => {
@@ -323,82 +349,27 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				request.log.error({ error }, "Create registration error");
 				span.recordException(error as Error);
 
-				const errorMessage = (error as Error).message;
-
 				if (error instanceof PurchaseError) {
 					span.addEvent("purchase_check.failed", { "purchase.error_kind": error.kind });
 					span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-					const { response, statusCode } =
-						error.kind === "unauthorized"
-							? unauthorizedResponse(error.message)
-							: error.kind === "notFound"
-								? notFoundResponse(error.message)
-								: error.kind === "conflict"
-									? conflictResponse(error.message)
-									: validationErrorResponse(error.message);
+					const { response, statusCode } = purchaseErrorResponse(error);
 					return reply.code(statusCode).send(response);
 				}
 
-				if (errorMessage === "HOLD_EXPIRED") {
-					span.addEvent("transaction_error.hold_expired");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Seat hold expired" });
-					const { response, statusCode } = conflictResponse("保留時間已過，請重新選擇票券");
+				if (isPrismaErrorCode(error, "P2034")) {
+					request.log.warn({ error }, "Transaction conflict detected");
+					span.addEvent("transaction_error.conflict", {
+						"prisma.error_code": "P2034"
+					});
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
+					const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
 
-				if (errorMessage === "TICKET_SOLD_OUT") {
-					span.addEvent("transaction_error.ticket_sold_out");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Ticket sold out in transaction" });
-					const { response, statusCode } = conflictResponse("票券已售完");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (errorMessage === "ALREADY_REGISTERED") {
-					span.addEvent("transaction_error.already_registered");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Already registered in transaction" });
-					const { response, statusCode } = conflictResponse("您已經報名此活動");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (errorMessage === "INVITATION_CODE_INVALID") {
-					span.addEvent("transaction_error.invitation_code_invalid");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code invalid in transaction" });
-					const { response, statusCode } = validationErrorResponse("邀請碼已失效");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (errorMessage === "INVITATION_CODE_LIMIT_REACHED") {
-					span.addEvent("transaction_error.invitation_code_limit");
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Invitation code limit reached in transaction" });
-					const { response, statusCode } = validationErrorResponse("邀請碼已達使用上限");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (error instanceof Prisma.PrismaClientKnownRequestError) {
-					const prismaError = error as Prisma.PrismaClientKnownRequestError;
-
-					if (prismaError.code === "P2034") {
-						request.log.warn({ error }, "Transaction conflict detected");
-						span.addEvent("transaction_error.conflict", {
-							"prisma.error_code": prismaError.code
-						});
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
-						const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
-						return reply.code(statusCode).send(response);
-					}
-
-					if (prismaError.code === "P2002" && (prismaError.meta?.target as string[])?.includes("email")) {
-						span.addEvent("transaction_error.duplicate_email");
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Duplicate email" });
-						const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
-						return reply.code(statusCode).send(response);
-					}
-				}
-
-				const standardError = error as Error;
-				if (standardError.name === "ValidationError" || standardError.message?.includes("必填") || standardError.message?.includes("驗證失敗") || standardError.message?.includes("required")) {
-					span.setStatus({ code: SpanStatusCode.ERROR, message: "Validation error" });
-					const { response, statusCode } = validationErrorResponse((error as Error).message || "表單驗證失敗");
+				if (isUniqueConstraintError(error, "email")) {
+					span.addEvent("transaction_error.duplicate_email");
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Duplicate email" });
+					const { response, statusCode } = conflictResponse("此信箱已經報名過此活動");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -472,7 +443,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							where: { email: user.email, eventId, status: { not: "cancelled" } }
 						});
 						if (existingInTx) {
-							throw new Error("ALREADY_REGISTERED");
+							throw alreadyRegisteredError();
 						}
 
 						const currentTicket = await tx.ticket.findUnique({
@@ -480,7 +451,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 							select: { soldCount: true, quantity: true }
 						});
 						if (!currentTicket || currentTicket.soldCount >= currentTicket.quantity) {
-							throw new Error("TICKET_SOLD_OUT");
+							throw ticketSoldOutError();
 						}
 
 						if (invitationCodeId) {
@@ -489,10 +460,10 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 								select: { usedCount: true, usageLimit: true, isActive: true }
 							});
 							if (!currentCode || !currentCode.isActive) {
-								throw new Error("INVITATION_CODE_INVALID");
+								throw invitationCodeInvalidError();
 							}
 							if (currentCode.usageLimit && currentCode.usedCount >= currentCode.usageLimit) {
-								throw new Error("INVITATION_CODE_LIMIT_REACHED");
+								throw invitationCodeLimitError();
 							}
 						}
 
@@ -528,32 +499,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to hold seat" });
 
 				if (error instanceof PurchaseError) {
-					const { response, statusCode } =
-						error.kind === "unauthorized"
-							? unauthorizedResponse(error.message)
-							: error.kind === "notFound"
-								? notFoundResponse(error.message)
-								: error.kind === "conflict"
-									? conflictResponse(error.message)
-									: validationErrorResponse(error.message);
+					const { response, statusCode } = purchaseErrorResponse(error);
 					return reply.code(statusCode).send(response);
 				}
 
-				const errorMessage = (error as Error).message;
-				const conflictMessages: Record<string, string> = {
-					TICKET_SOLD_OUT: "票券已售完",
-					ALREADY_REGISTERED: "您已經報名此活動"
-				};
-				if (conflictMessages[errorMessage]) {
-					const { response, statusCode } = conflictResponse(conflictMessages[errorMessage]);
-					return reply.code(statusCode).send(response);
-				}
-				if (errorMessage === "INVITATION_CODE_INVALID" || errorMessage === "INVITATION_CODE_LIMIT_REACHED") {
-					const { response, statusCode } = validationErrorResponse(errorMessage === "INVITATION_CODE_INVALID" ? "邀請碼已失效" : "邀請碼已達使用上限");
-					return reply.code(statusCode).send(response);
-				}
-
-				if (error instanceof Prisma.PrismaClientKnownRequestError && (error as Prisma.PrismaClientKnownRequestError).code === "P2034") {
+				if (isPrismaErrorCode(error, "P2034")) {
 					const { response, statusCode } = conflictResponse("報名系統繁忙，請稍後再試");
 					return reply.code(statusCode).send(response);
 				}
@@ -621,7 +571,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				// Parse form data and add status indicators
 				const registrationsWithStatus = registrations.map(reg => {
 					const now = new Date();
-					const parsedFormData = safeJsonParse<Record<string, unknown>>(reg.formData, {}, `user registrations for ${reg.id}`);
+					const parsedFormData = parseJsonObject(reg.formData, `user registrations for ${reg.id}`);
 
 					return {
 						id: reg.id,
@@ -740,7 +690,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("ticket.id", registration.ticket.id);
 
 				const now = new Date();
-				const parsedFormData = safeJsonParse<Record<string, unknown>>(registration.formData, {}, `single registration ${registration.id}`);
+				const parsedFormData = parseJsonObject(registration.formData, `single registration ${registration.id}`);
 
 				const registrationWithStatus = {
 					...registration,
@@ -783,11 +733,11 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 	fastify.withTypeProvider<ZodTypeProvider>().put(
 		"/registrations/:id",
 		{
-			schema: registrationSchemas.updateRegistration
+			schema: registrationSchemas.updateOwnRegistration
 		},
 		async (request, reply) => {
 			const session = await auth.api.getSession({
-				headers: request.headers
+				headers: fromNodeHeaders(request.headers)
 			});
 			const userId = session?.user?.id;
 			const id = request.params.id;
@@ -883,7 +833,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				}
 
 				span.addEvent("validating_form_data");
-				const previousAnswers = safeJsonParse<Record<string, unknown>>(registration.formData, {}, "registration edit baseline");
+				const previousAnswers = parseJsonObject(registration.formData, "registration edit baseline");
 				const { errors: formErrors, answers: registrationAnswers } = resolveRegistrationAnswers(formFields, registration.ticketId, sanitizedFormData, previousAnswers);
 				if (formErrors) {
 					span.addEvent("form_validation.failed");
@@ -926,7 +876,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				span.setAttribute("event.id", updatedRegistration.event.id);
 				span.setAttribute("ticket.id", updatedRegistration.ticket.id);
 
-				const parsedFormData = safeJsonParse<Record<string, unknown>>(updatedRegistration.formData, {}, "updated registration response");
+				const parsedFormData = parseJsonObject(updatedRegistration.formData, "updated registration response");
 
 				const responseData = {
 					...updatedRegistration,
@@ -1031,7 +981,7 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 						});
 
 						if (!currentReg || (currentReg.status !== "confirmed" && currentReg.status !== "pending")) {
-							throw new Error("ALREADY_CANCELLED");
+							throw new AlreadyCancelledError();
 						}
 
 						await tx.registration.update({
@@ -1096,24 +1046,21 @@ const publicRegistrationsRoutes: FastifyPluginAsync = async fastify => {
 				request.log.error({ error }, "Cancel registration error");
 				span.recordException(error as Error);
 
-				if ((error as Error).message === "ALREADY_CANCELLED") {
+				if (error instanceof AlreadyCancelledError) {
 					span.addEvent("transaction_error.already_cancelled");
 					span.setStatus({ code: SpanStatusCode.ERROR, message: "Already cancelled" });
 					const { response, statusCode } = conflictResponse("報名已被取消");
 					return reply.code(statusCode).send(response);
 				}
 
-				if (error instanceof Prisma.PrismaClientKnownRequestError) {
-					const prismaError = error as Prisma.PrismaClientKnownRequestError;
-					if (prismaError.code === "P2034") {
-						request.log.warn({ error }, "Cancellation conflict detected");
-						span.addEvent("transaction_error.conflict", {
-							"prisma.error_code": prismaError.code
-						});
-						span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
-						const { response, statusCode } = conflictResponse("取消系統繁忙，請稍後再試");
-						return reply.code(statusCode).send(response);
-					}
+				if (isPrismaErrorCode(error, "P2034")) {
+					request.log.warn({ error }, "Cancellation conflict detected");
+					span.addEvent("transaction_error.conflict", {
+						"prisma.error_code": "P2034"
+					});
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Transaction conflict" });
+					const { response, statusCode } = conflictResponse("取消系統繁忙，請稍後再試");
+					return reply.code(statusCode).send(response);
 				}
 
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to cancel registration" });

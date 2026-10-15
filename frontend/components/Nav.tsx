@@ -9,21 +9,20 @@ import { getTranslations } from "@/i18n/helpers";
 import { Link, useRouter } from "@/i18n/navigation";
 import { authAPI } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
+import type { PermissionsResponse, Session } from "@sitcontix/types";
 import crypto from "crypto";
 import { LogOut, Menu, Shield, Ticket, UserRound, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useReducer, useState } from "react";
-type SessionUser = {
-	name?: string;
-	email?: string;
-	role?: string | string[];
+type NavUser = Session["user"] & {
+	role?: PermissionsResponse["role"];
 	/** Whether the user holds at least one admin permission (covers custom roles) */
 	hasAdminPermissions?: boolean;
 };
 
-type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: SessionUser };
+type SessionState = { status: "loading" } | { status: "anonymous" } | { status: "authenticated"; user: NavUser };
 type NavUiState = {
 	isMobile: boolean;
 	isScrolled: boolean;

@@ -292,7 +292,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onDirtyChange
 			requireSmsVerification: values.requireSmsVerification,
 			hidden: values.hidden,
 			showRemaining: values.showRemaining,
-			// null clears a sale boundary on update; on create an omitted value means "no limit"
+			// null means "no limit" (and clears a sale boundary on update)
 			saleStart,
 			saleEnd
 		};
@@ -303,7 +303,7 @@ function TicketForm({ ticket, eventId, eventStart, onSavingChange, onDirtyChange
 				if (!response.success) throw new Error(response.message);
 				showAlert(t.updated, "success");
 			} else {
-				const response = await adminTicketsAPI.create({ eventId, ...common, saleStart: saleStart ?? undefined, saleEnd: saleEnd ?? undefined });
+				const response = await adminTicketsAPI.create({ eventId, ...common });
 				if (!response.success) throw new Error(response.message);
 				showAlert(t.created, "success");
 			}

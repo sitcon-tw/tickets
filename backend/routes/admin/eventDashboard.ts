@@ -6,7 +6,9 @@ import { logger } from "#utils/logger";
 import { notFoundResponse, serverErrorResponse, successResponse } from "#utils/response";
 import { formatDateOnly, nowInUTC8 } from "#utils/timezone";
 import { SpanStatusCode } from "@opentelemetry/api";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { LocalizedTextSchema, type EventDashboardData } from "@sitcontix/types";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 const componentLogger = logger.child({ component: "admin/eventDashboard" });
 
@@ -14,12 +16,12 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	fastify.addHook("preHandler", requireEventAccess("dashboard:view"));
 
 	// Get per-event dashboard data
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/events/:eventId/dashboard",
 		{
 			schema: eventDashboardSchemas.getEventDashboard
 		},
-		async (request: FastifyRequest<{ Params: { eventId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.event_dashboard.get", {
 				attributes: {
 					"event.id": request.params.eventId
@@ -82,7 +84,11 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 					const salesRate = ticket.quantity > 0 ? (ticket.soldCount / ticket.quantity) * 100 : 0;
 
 					return {
-						...ticket,
+						id: ticket.id,
+						name: LocalizedTextSchema.parse(ticket.name),
+						price: ticket.price,
+						quantity: ticket.quantity,
+						soldCount: ticket.soldCount,
 						revenue,
 						available,
 						salesRate: Number(salesRate.toFixed(2))
@@ -154,13 +160,13 @@ const eventDashboardRoutes: FastifyPluginAsync = async (fastify, _options) => {
 				span.setAttribute("referrals.active_referrers", activeReferrers);
 				span.setAttribute("referrals.conversion_rate", conversionRate);
 
-				const dashboardData = {
+				const dashboardData: EventDashboardData = {
 					event: {
 						id: event.id,
-						name: event.name,
+						name: LocalizedTextSchema.parse(event.name),
 						startDate: event.startDate,
 						endDate: event.endDate,
-						locationText: event.locationText,
+						locationText: LocalizedTextSchema.nullable().parse(event.locationText),
 						mapLink: event.mapLink
 					},
 					stats: {

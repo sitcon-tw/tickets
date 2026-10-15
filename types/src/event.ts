@@ -44,19 +44,20 @@ export type EventListItem = z.infer<typeof EventListItemSchema>;
 /**
  * Public event list item (for public API - subset of fields)
  */
-export const PublicEventListItemSchema = z.object({
-	id: z.string(),
-	slug: z.string().nullable().optional(),
-	name: LocalizedTextSchema,
-	description: LocalizedTextSchema.nullable().optional(),
-	plainDescription: LocalizedTextSchema.nullable().optional(),
-	locationText: LocalizedTextSchema.nullable().optional(),
-	mapLink: z.string().nullable().optional(),
-	startDate: z.coerce.date(),
-	endDate: z.coerce.date(),
-	ogImage: z.string().nullable().optional(),
-	useOpass: z.boolean().optional(),
-	opassEventId: z.string().nullable().optional(),
+export const PublicEventListItemSchema = EventSchema.pick({
+	id: true,
+	slug: true,
+	name: true,
+	description: true,
+	plainDescription: true,
+	locationText: true,
+	mapLink: true,
+	startDate: true,
+	endDate: true,
+	ogImage: true,
+	useOpass: true,
+	opassEventId: true
+}).extend({
 	ticketCount: z.number().int().min(0),
 	registrationCount: z.number().int().min(0),
 	hasAvailableTickets: z.boolean()
@@ -81,7 +82,8 @@ export const EventCreateRequestSchema = z.object({
 	plainDescription: LocalizedTextSchema.optional(),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	editDeadline: z.coerce.date().optional(),
+	// null = no deadline (z.coerce.date() alone would turn null into 1970-01-01)
+	editDeadline: z.coerce.date().nullable().optional(),
 	locationText: LocalizedTextSchema.optional(),
 	mapLink: z.string().optional(),
 	ogImage: z.string().optional(),

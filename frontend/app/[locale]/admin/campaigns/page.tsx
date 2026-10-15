@@ -10,17 +10,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAlert } from "@/contexts/AlertContext";
 import { getTranslations } from "@/i18n/helpers";
 import { adminEmailCampaignsAPI, adminEventsAPI, adminTicketsAPI } from "@/lib/api/endpoints";
-import type { EmailCampaign } from "@sitcontix/types";
+import type { AdminEmailCampaign } from "@sitcontix/types";
 import { Mail, RefreshCw, RotateCw } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { CampaignDialogs } from "./campaign-dialogs";
 import { createCampaignsColumns } from "./columns";
-import { buildTargetAudience, campaignsReducer, initialCampaignsState, type AudienceListField, type StatusFilter, type Template } from "./state";
+import { buildTargetAudience, campaignsReducer, initialCampaignsState, type AudienceToggle, type StatusFilter, type Template } from "./state";
 import { campaignTranslations, fmt, getErrorMessage } from "./translations";
 
 const POLL_INTERVAL_MS = 2000;
-// The list endpoint caps `limit` at 100 and its pagination info is not exposed by the API client, so pages are fetched until one comes back short.
+// The list endpoint caps `limit` at 100, so pages are fetched until the pagination info says there are no more.
 const PAGE_SIZE = 100;
 const MAX_PAGES = 50;
 const STATUS_FILTERS: StatusFilter[] = ["all", "draft", "sending", "sent", "cancelled"];
@@ -64,7 +64,7 @@ export default function EmailCampaignsPage() {
 			const seq = ++loadSeqRef.current;
 			if (!silent) dispatch({ type: "setCampaignsLoading", value: true });
 			try {
-				const all: EmailCampaign[] = [];
+				const all: AdminEmailCampaign[] = [];
 				for (let page = 1; page <= MAX_PAGES; page++) {
 					const response = await adminEmailCampaignsAPI.getAll({ page, limit: PAGE_SIZE });
 					if (seq !== loadSeqRef.current) return;
@@ -75,7 +75,7 @@ export default function EmailCampaignsPage() {
 					}
 					const batch = response.data || [];
 					all.push(...batch);
-					if (batch.length < PAGE_SIZE) break;
+					if (!(response.pagination ? response.pagination.hasNext : batch.length === PAGE_SIZE)) break;
 				}
 				// Pages can shift while they are fetched (new campaigns are added at the top), so drop duplicates.
 				const unique = Array.from(new Map(all.map(campaign => [campaign.id, campaign])).values());
@@ -149,7 +149,7 @@ export default function EmailCampaignsPage() {
 						const res = await adminEmailCampaignsAPI.getStatus(id);
 						if (cancelled || !res.success) return;
 						const { status, sentCount, totalRecipients, failedCount } = res.data;
-						dispatch({ type: "patchCampaign", id, patch: { status: status as EmailCampaign["status"], sentCount, totalCount: totalRecipients } });
+						dispatch({ type: "patchCampaign", id, patch: { status, sentCount, totalCount: totalRecipients } });
 						if (status === "sending") return;
 						finished = true;
 						const name = campaignsRef.current.find(c => c.id === id)?.name ?? "";
@@ -232,7 +232,7 @@ export default function EmailCampaignsPage() {
 	};
 
 	const handlePreview = useCallback(
-		async (campaign: EmailCampaign) => {
+		async (campaign: AdminEmailCampaign) => {
 			if (!acquire(campaign.id)) return;
 			try {
 				const [previewRes, recipientsRes] = await Promise.allSettled([adminEmailCampaignsAPI.preview(campaign.id), adminEmailCampaignsAPI.calculateRecipients(campaign.id)]);
@@ -253,7 +253,7 @@ export default function EmailCampaignsPage() {
 	);
 
 	const handleSend = useCallback(
-		async (campaign: EmailCampaign) => {
+		async (campaign: AdminEmailCampaign) => {
 			if (!acquire(campaign.id)) return;
 			try {
 				// Recalculate right now: the stored count can be stale if registrations changed since the draft was saved.
@@ -294,7 +294,7 @@ export default function EmailCampaignsPage() {
 	);
 
 	const handleCancel = useCallback(
-		async (campaign: EmailCampaign) => {
+		async (campaign: AdminEmailCampaign) => {
 			if (!acquire(campaign.id)) return;
 			try {
 				const ok = await confirm({
@@ -347,10 +347,10 @@ export default function EmailCampaignsPage() {
 		});
 	};
 
-	const toggleCheckbox = (field: AudienceListField, id: string, checked: boolean) => {
+	const toggleCheckbox = (toggle: AudienceToggle, checked: boolean) => {
 		// Invalidate any recipient calculation still in flight for the previous filters.
 		previewSeqRef.current++;
-		dispatch({ type: "toggleTargetAudience", field, id, checked });
+		dispatch({ type: "toggleTargetAudience", ...toggle, checked });
 	};
 
 	const statusCounts = useMemo(() => {

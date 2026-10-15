@@ -7,7 +7,7 @@ import { missingPermissions, parsePermissionList } from "#lib/access";
 import { tracer } from "#lib/tracing";
 import { requirePermission } from "#middleware/auth";
 import { userSchemas } from "#schemas";
-import { safeJsonParse } from "#utils/json";
+import { parseStringList } from "#utils/json";
 import { logger } from "#utils/logger";
 import { conflictResponse, forbiddenResponse, notFoundResponse, serverErrorResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
@@ -57,7 +57,10 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 						phoneVerified: true,
 						createdAt: true,
 						updatedAt: true,
-						smsVerifications: true
+						// Never select the one-time code: admins only need the numbers the user verified with
+						smsVerifications: {
+							select: { id: true, userId: true, phoneNumber: true, verified: true, expiresAt: true, createdAt: true, updatedAt: true }
+						}
 					},
 					orderBy: { createdAt: "desc" }
 				});
@@ -68,7 +71,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const usersWithParsedPermissions = users.map(user => ({
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+					permissions: parseStringList(user.permissions, "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt,
@@ -163,7 +166,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const userWithParsedPermissions = {
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+					permissions: parseStringList(user.permissions, "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt
@@ -334,7 +337,7 @@ const adminUsersRoutes: FastifyPluginAsync = async fastify => {
 				const userWithParsedPermissions = {
 					...user,
 					role: UserRoleSchema.parse(user.role),
-					permissions: safeJsonParse<string[]>(user.permissions, [], "user permissions"),
+					permissions: parseStringList(user.permissions, "user permissions"),
 					phoneVerified: user.phoneVerified ?? false,
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt

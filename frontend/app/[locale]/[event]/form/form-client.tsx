@@ -10,16 +10,32 @@ import { getTranslations } from "@/i18n/helpers";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { eventsAPI, referralsAPI, registrationsAPI, smsVerificationAPI, ticketsAPI } from "@/lib/api/endpoints";
 import type { FormDataType } from "@/lib/types/data";
-import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields } from "@/lib/utils/formFields";
+import { focusFormField, getFormErrorMessages, getFormErrorsFromApiError, normalizeTicketFormFields, toFormData } from "@/lib/utils/formFields";
 import { getLocalizedText } from "@/lib/utils/localization";
+import { legacyTicketSelectionStorageKey, readStoredTicketSelection, ticketSelectionStorageKey } from "@/lib/utils/ticketSelection";
 import { getVisibleFieldIds, LocalizedText, pruneFormData, TicketFormField, validateFormData } from "@sitcontix/types";
 import { ChevronLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { z } from "zod/v4";
 
-const formDataStorageKey = "formData:v1";
-const legacyFormDataStorageKey = "formData";
+const AutosaveSchema = z.object({
+	formData: z.unknown().optional(),
+	referralCode: z.string().optional().catch(undefined),
+	savedAt: z.number().optional().catch(undefined)
+});
+
+/** The autosaved draft, or null when it is not valid JSON of the expected shape. */
+function parseAutosave(raw: string): z.infer<typeof AutosaveSchema> | null {
+	try {
+		const parsed = AutosaveSchema.safeParse(JSON.parse(raw));
+		return parsed.success ? parsed.data : null;
+	} catch {
+		return null;
+	}
+}
+
 const TERMS_FIELD_ID = "agreeToTerms";
 const VISIBILITY_REFRESH_MS = 30_000;
 
@@ -514,8 +530,8 @@ export default function FormPage() {
 			const result = await registrationsAPI.create(registrationData);
 
 			if (result.success) {
-				localStorage.removeItem(formDataStorageKey);
-				localStorage.removeItem(legacyFormDataStorageKey);
+				localStorage.removeItem(ticketSelectionStorageKey);
+				localStorage.removeItem(legacyTicketSelectionStorageKey);
 				localStorage.removeItem("referralCode");
 				localStorage.removeItem("invitationCode");
 				// Clear autosaved form data on successful submission
@@ -552,22 +568,15 @@ export default function FormPage() {
 	useEffect(() => {
 		async function initForm() {
 			try {
-				const storedData = localStorage.getItem(formDataStorageKey) || localStorage.getItem(legacyFormDataStorageKey);
-				let parsedData: { ticketId?: string; eventId?: string; referralCode?: string; invitationCode?: string } | null = null;
-				try {
-					parsedData = storedData ? JSON.parse(storedData) : null;
-				} catch {
-					parsedData = null;
-				}
+				const parsedData = readStoredTicketSelection();
 				if (!parsedData?.ticketId || !parsedData.eventId) {
 					dispatchFormPage({ type: "unavailable", message: t.noTicketAlert });
 					return;
 				}
 
-				const [eventsResponse, ticketResponse] = await Promise.all([eventsAPI.getAll(), ticketsAPI.getTicket(parsedData.ticketId)]);
+				const [currentEvent, ticketResponse] = await Promise.all([eventsAPI.findBySlug(eventSlug), ticketsAPI.getTicket(parsedData.ticketId)]);
 
 				// The stored ticket must belong to the event in the URL, otherwise it is left over from another event.
-				const currentEvent = eventsResponse.success ? eventsResponse.data.find(event => event.slug === eventSlug || event.id.slice(-6) === eventSlug) : undefined;
 				if (!currentEvent) {
 					dispatchFormPage({ type: "loadFailed", message: t.eventNotFound });
 					return;
@@ -680,15 +689,15 @@ export default function FormPage() {
 		try {
 			const savedData = localStorage.getItem(autosaveKey);
 			if (savedData) {
-				const parsed = JSON.parse(savedData);
+				const parsed = parseAutosave(savedData);
 
 				const twentyFourHours = 24 * 60 * 60 * 1000;
-				if (parsed.savedAt && Date.now() - parsed.savedAt < twentyFourHours) {
+				if (parsed?.savedAt && Date.now() - parsed.savedAt < twentyFourHours) {
 					// Only answers to fields that still exist can be restored.
 					const fieldIds = new Set(formFields.map(field => field.id));
-					const savedAnswers: FormDataType = parsed.formData && typeof parsed.formData === "object" ? parsed.formData : {};
+					const savedAnswers = toFormData(parsed.formData);
 					const restoredAnswers = Object.fromEntries(Object.entries(savedAnswers).filter(([fieldId]) => fieldIds.has(fieldId)));
-					const restoredReferralCode = typeof parsed.referralCode === "string" ? parsed.referralCode : "";
+					const restoredReferralCode = parsed.referralCode ?? "";
 
 					if (Object.keys(restoredAnswers).length > 0 || restoredReferralCode) {
 						dispatchAutosavedForm({ type: "restore", formData: restoredAnswers, referralCode: restoredReferralCode });

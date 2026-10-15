@@ -1,67 +1,94 @@
-import type { PaginationQuery } from "@sitcontix/types";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import prisma from "#config/database";
+import type { Prisma } from "#prisma/generated/prisma/client";
 import { tracer } from "#lib/tracing";
 import { requirePermission } from "#middleware/auth";
-import { adminEmailCampaignSchemas, EmailCampaignCreateBodySchema, emailCampaignSchemas, EmailCampaignUpdateBodySchema2, PreviewRecipientsBodySchema } from "#schemas";
-import { calculateRecipients, getAvailableTemplates, previewCampaignEmail, sendCampaignEmail } from "#utils/email";
+import { emailCampaignSchemas } from "#schemas";
+import { calculateRecipients, getAvailableTemplates, InvalidRecipientFilterError, parseRecipientFilter, previewCampaignEmail, sendCampaignEmail } from "#utils/email";
 import { logger } from "#utils/logger";
-import { successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
+import { createPagination, notFoundResponse, successPaginatedResponse, successResponse, validationErrorResponse } from "#utils/response";
 import { SpanStatusCode } from "@opentelemetry/api";
-import { z } from "zod/v4";
+import { EmailCampaignStatusSchema, type AdminEmailCampaign, type TargetAudience } from "@sitcontix/types";
 
 const componentLogger = logger.child({ component: "admin/emailCampaigns" });
 
-type EmailCampaignCreateBody = z.infer<typeof EmailCampaignCreateBodySchema>;
-type PreviewRecipientsBody = z.infer<typeof PreviewRecipientsBodySchema>;
-type EmailCampaignUpdateBody = z.infer<typeof EmailCampaignUpdateBodySchema2>;
+type EmailCampaignRow = Prisma.EmailCampaignGetPayload<{ include: { user: { select: { name: true; email: true } } } }> | Prisma.EmailCampaignGetPayload<object>;
+
+/** Map a stored campaign to the admin API shape; the recipient filter is exposed as the parsed target audience */
+const toAdminEmailCampaign = (campaign: EmailCampaignRow): AdminEmailCampaign => {
+	let targetAudience: TargetAudience | undefined;
+	try {
+		targetAudience = parseRecipientFilter(campaign.recipientFilter) ?? undefined;
+	} catch (error) {
+		if (!(error instanceof InvalidRecipientFilterError)) throw error;
+		componentLogger.warn({ campaignId: campaign.id }, "Campaign has an invalid recipient filter");
+	}
+
+	return {
+		id: campaign.id,
+		userId: campaign.userId,
+		name: campaign.name,
+		subject: campaign.subject,
+		content: campaign.content,
+		recipientFilter: campaign.recipientFilter,
+		status: EmailCampaignStatusSchema.catch("draft").parse(campaign.status),
+		sentCount: campaign.sentCount,
+		totalCount: campaign.totalCount,
+		scheduledAt: campaign.scheduledAt,
+		sentAt: campaign.sentAt,
+		createdAt: campaign.createdAt,
+		updatedAt: campaign.updatedAt,
+		createdBy: campaign.userId,
+		targetAudience,
+		...("user" in campaign && campaign.user && { user: { name: campaign.user.name, email: campaign.user.email } })
+	};
+};
+
+const invalidFilterResponse = () => validationErrorResponse("郵件任務的收件人篩選條件無效");
 
 const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) => {
 	// List campaigns
-	fastify.get<{
-		Querystring: Partial<PaginationQuery>;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/email-campaigns",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.listEmailCampaigns
+			schema: emailCampaignSchemas.listEmailCampaigns
 		},
-		async (request: FastifyRequest<{ Querystring: Partial<PaginationQuery> }>, reply: FastifyReply) => {
+		async (request, reply) => {
+			const { page, limit, status, eventId } = request.query;
 			const span = tracer.startSpan("route.admin.email_campaigns.list", {
 				attributes: {
-					"pagination.page": request.query.page || 1,
-					"pagination.limit": request.query.limit || 20
+					"pagination.page": page,
+					"pagination.limit": limit
 				}
 			});
 
 			try {
-				const { page = 1, limit = 20 } = request.query;
-				const skip = (page - 1) * limit;
-
-				const campaigns = await prisma.emailCampaign.findMany({
-					skip,
-					take: limit,
-					include: {
-						user: {
-							select: { name: true, email: true }
-						}
-					},
-					orderBy: { createdAt: "desc" }
-				});
-				const total = await prisma.emailCampaign.count();
-
-				const pagination = {
-					page,
-					limit,
-					total,
-					totalPages: Math.ceil(total / limit),
-					hasNext: page < Math.ceil(total / limit),
-					hasPrev: page > 1
+				const where: Prisma.EmailCampaignWhereInput = {
+					...(status && { status }),
+					// Campaigns have no event column; the event they target lives in the stored filter's `eventIds` (cuids, so the quoted match is exact)
+					...(eventId && { recipientFilter: { contains: JSON.stringify(eventId) } })
 				};
 
+				const [campaigns, total] = await Promise.all([
+					prisma.emailCampaign.findMany({
+						where,
+						skip: (page - 1) * limit,
+						take: limit,
+						include: {
+							user: {
+								select: { name: true, email: true }
+							}
+						},
+						orderBy: { createdAt: "desc" }
+					}),
+					prisma.emailCampaign.count({ where })
+				]);
+
 				span.setStatus({ code: SpanStatusCode.OK });
-				return reply.send(successPaginatedResponse(campaigns, "取得郵件發送記錄成功", pagination));
+				return reply.send(successPaginatedResponse(campaigns.map(toAdminEmailCampaign), "取得郵件發送記錄成功", createPagination(page, limit, total)));
 			} catch (error) {
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to list email campaigns" });
@@ -73,34 +100,40 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Create campaign
-	fastify.post<{
-		Body: EmailCampaignCreateBody;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/email-campaigns",
 		{
 			preHandler: requirePermission("emailCampaigns:create"),
 			schema: emailCampaignSchemas.createEmailCampaign
 		},
-		async (request: FastifyRequest<{ Body: EmailCampaignCreateBody }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.create");
 
 			try {
-				const { name, subject, content, targetAudience } = request.body;
+				const { name, subject, content, targetAudience, recipientFilter: rawRecipientFilter, scheduledAt } = request.body;
 
-				if (!content) {
-					const { response, statusCode } = validationErrorResponse("必須提供郵件內容");
-					return reply.code(statusCode).send(response);
+				// `targetAudience` wins; a raw `recipientFilter` string must itself be a valid target audience
+				let audience: TargetAudience | null = targetAudience ?? null;
+				if (!targetAudience && rawRecipientFilter) {
+					try {
+						audience = parseRecipientFilter(rawRecipientFilter);
+					} catch (error) {
+						if (!(error instanceof InvalidRecipientFilterError)) throw error;
+						const { response, statusCode } = invalidFilterResponse();
+						return reply.code(statusCode).send(response);
+					}
 				}
 
-				const recipientFilter = targetAudience ? JSON.stringify(targetAudience) : null;
+				const recipientFilter = audience ? JSON.stringify(audience) : null;
 
 				// Pre-calculate recipient count so the list shows it immediately for drafts
 				let totalCount = 0;
 				try {
-					const recipients = await calculateRecipients(recipientFilter);
+					const recipients = await calculateRecipients(audience);
 					totalCount = recipients.length;
-				} catch {
+				} catch (error) {
 					// Non-fatal
+					componentLogger.warn({ error }, "Failed to pre-calculate campaign recipients");
 				}
 
 				const campaign = await prisma.emailCampaign.create({
@@ -111,12 +144,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 						content,
 						recipientFilter,
 						totalCount,
+						scheduledAt: scheduledAt ?? null,
 						status: "draft"
 					}
 				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return reply.status(201).send(successResponse(campaign, "郵件發送任務已建立"));
+				return reply.status(201).send(successResponse(toAdminEmailCampaign(campaign), "郵件發送任務已建立"));
 			} catch (error) {
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to create email campaign" });
@@ -128,25 +162,22 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Update campaign
-	fastify.patch<{
-		Params: { campaignId: string };
-		Body: EmailCampaignUpdateBody;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().patch(
 		"/email-campaigns/:campaignId",
 		{
 			preHandler: requirePermission("emailCampaigns:update"),
-			schema: adminEmailCampaignSchemas.updateEmailCampaign
+			schema: emailCampaignSchemas.updateEmailCampaign
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: EmailCampaignUpdateBody }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.update");
 
 			try {
 				const { campaignId } = request.params;
-				const { name, subject, content, targetAudience } = request.body;
+				const { name, subject, content, targetAudience, recipientFilter: rawRecipientFilter, scheduledAt } = request.body;
 
 				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 				if (campaign.status !== "draft") {
@@ -154,13 +185,25 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					return reply.code(statusCode).send(response);
 				}
 
-				let newTotalCount: number | undefined;
-				if (targetAudience !== undefined) {
+				let audience: TargetAudience | null | undefined = targetAudience;
+				if (audience === undefined && rawRecipientFilter !== undefined) {
 					try {
-						const recipients = await calculateRecipients(JSON.stringify(targetAudience));
+						audience = parseRecipientFilter(rawRecipientFilter);
+					} catch (error) {
+						if (!(error instanceof InvalidRecipientFilterError)) throw error;
+						const { response, statusCode } = invalidFilterResponse();
+						return reply.code(statusCode).send(response);
+					}
+				}
+
+				let newTotalCount: number | undefined;
+				if (audience !== undefined) {
+					try {
+						const recipients = await calculateRecipients(audience);
 						newTotalCount = recipients.length;
-					} catch {
+					} catch (error) {
 						// Non-fatal
+						componentLogger.warn({ error, campaignId }, "Failed to recalculate campaign recipients");
 					}
 				}
 
@@ -170,14 +213,16 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 						...(name !== undefined && { name }),
 						...(subject !== undefined && { subject }),
 						...(content !== undefined && { content }),
-						...(targetAudience !== undefined && { recipientFilter: JSON.stringify(targetAudience) }),
+						...(audience !== undefined && { recipientFilter: audience ? JSON.stringify(audience) : null }),
 						...(newTotalCount !== undefined && { totalCount: newTotalCount }),
+						// null clears the schedule
+						...(scheduledAt !== undefined && { scheduledAt }),
 						updatedAt: new Date()
 					}
 				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return reply.send(successResponse(updated, "郵件任務已更新"));
+				return reply.send(successResponse(toAdminEmailCampaign(updated), "郵件任務已更新"));
 			} catch (error) {
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to update email campaign" });
@@ -189,20 +234,18 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Preview recipients without creating a campaign
-	fastify.post<{
-		Body: PreviewRecipientsBody;
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/email-campaigns/preview-recipients",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.previewRecipients
+			schema: emailCampaignSchemas.previewRecipients
 		},
-		async (request: FastifyRequest<{ Body: PreviewRecipientsBody }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.preview_recipients");
 
 			try {
 				const { targetAudience } = request.body;
-				const recipients = await calculateRecipients(targetAudience || null);
+				const recipients = await calculateRecipients(targetAudience ?? null);
 
 				span.setAttribute("recipients.count", recipients.length);
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -227,13 +270,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// List email templates
-	fastify.get(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/email-campaigns/templates",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.listTemplates
+			schema: emailCampaignSchemas.listTemplates
 		},
-		async (_request: FastifyRequest, reply: FastifyReply) => {
+		async (_request, reply) => {
 			try {
 				const templates = await getAvailableTemplates();
 				return reply.send(successResponse(templates, "取得模板列表成功"));
@@ -245,26 +288,21 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Get campaign status (for progress polling)
-	fastify.get<{
-		Params: { campaignId: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().get(
 		"/email-campaigns/:campaignId/status",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.getEmailCampaignStatus
+			schema: emailCampaignSchemas.getEmailCampaignStatus
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.get_status");
 
 			try {
 				const { campaignId } = request.params;
-				const campaign = await prisma.emailCampaign.findUnique({
-					where: { id: campaignId },
-					include: { user: { select: { name: true, email: true } } }
-				});
+				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -272,13 +310,10 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				return reply.send(
 					successResponse({
 						id: campaign.id,
-						name: campaign.name,
-						status: campaign.status,
+						status: EmailCampaignStatusSchema.catch("draft").parse(campaign.status),
 						sentCount: campaign.sentCount,
-						failedCount: campaign.totalCount > 0 ? campaign.totalCount - campaign.sentCount : 0,
-						totalRecipients: campaign.totalCount,
-						sentAt: campaign.sentAt,
-						createdAt: campaign.createdAt
+						failedCount: Math.max(0, campaign.totalCount - campaign.sentCount),
+						totalRecipients: campaign.totalCount
 					})
 				);
 			} catch (error) {
@@ -292,15 +327,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Preview email content
-	fastify.post<{
-		Params: { campaignId: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/email-campaigns/:campaignId/preview",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.previewEmailCampaign
+			schema: emailCampaignSchemas.previewEmailCampaign
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.preview");
 
 			try {
@@ -308,7 +341,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -327,15 +360,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Calculate recipient count for an existing campaign
-	fastify.post<{
-		Params: { campaignId: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/email-campaigns/:campaignId/calculate-recipients",
 		{
 			preHandler: requirePermission("emailCampaigns:view"),
-			schema: adminEmailCampaignSchemas.calculateRecipients
+			schema: emailCampaignSchemas.calculateRecipients
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.calculate_recipients");
 
 			try {
@@ -343,11 +374,11 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 
-				const recipients = await calculateRecipients(campaign.recipientFilter);
+				const recipients = await calculateRecipients(parseRecipientFilter(campaign.recipientFilter));
 				span.setAttribute("recipients.count", recipients.length);
 				span.setStatus({ code: SpanStatusCode.OK });
 
@@ -362,6 +393,11 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					)
 				);
 			} catch (error) {
+				if (error instanceof InvalidRecipientFilterError) {
+					span.setStatus({ code: SpanStatusCode.ERROR, message: "Invalid recipient filter" });
+					const { response, statusCode } = invalidFilterResponse();
+					return reply.code(statusCode).send(response);
+				}
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to calculate recipients" });
 				throw error;
@@ -372,25 +408,29 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Send email campaign
-	fastify.post<{
-		Params: { campaignId: string };
-		Body: { sendNow?: boolean };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().post(
 		"/email-campaigns/:campaignId/send",
 		{
 			preHandler: requirePermission("emailCampaigns:send"),
-			schema: adminEmailCampaignSchemas.sendEmailCampaign
+			schema: emailCampaignSchemas.sendEmailCampaign
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string }; Body: { sendNow?: boolean } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.send");
 
 			try {
 				const { campaignId } = request.params;
+				const { sendNow, scheduledAt } = request.body;
+
+				// There is no scheduler yet, so a campaign can only be sent right away
+				if (!sendNow && scheduledAt) {
+					const { response, statusCode } = validationErrorResponse("目前尚不支援排程發送");
+					return reply.code(statusCode).send(response);
+				}
 
 				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -410,7 +450,15 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				}
 
 				// Calculate recipients
-				const recipients = await calculateRecipients(campaign.recipientFilter);
+				let audience: TargetAudience | null;
+				try {
+					audience = parseRecipientFilter(campaign.recipientFilter);
+				} catch (error) {
+					if (!(error instanceof InvalidRecipientFilterError)) throw error;
+					const { response, statusCode } = invalidFilterResponse();
+					return reply.code(statusCode).send(response);
+				}
+				const recipients = await calculateRecipients(audience);
 
 				if (recipients.length === 0) {
 					const { response, statusCode } = validationErrorResponse("沒有符合條件的收件人");
@@ -428,7 +476,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 					successResponse(
 						{
 							id: campaign.id,
-							status: "sending",
+							status: "sending" as const,
 							totalCount: recipients.length,
 							sentCount: 0
 						},
@@ -473,6 +521,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				})();
 
 				span.setStatus({ code: SpanStatusCode.OK });
+				return reply;
 			} catch (error) {
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to send email campaign" });
@@ -484,15 +533,13 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 	);
 
 	// Cancel email campaign
-	fastify.delete<{
-		Params: { campaignId: string };
-	}>(
+	fastify.withTypeProvider<ZodTypeProvider>().delete(
 		"/email-campaigns/:campaignId",
 		{
 			preHandler: requirePermission("emailCampaigns:delete"),
-			schema: adminEmailCampaignSchemas.cancelEmailCampaign
+			schema: emailCampaignSchemas.cancelEmailCampaign
 		},
-		async (request: FastifyRequest<{ Params: { campaignId: string } }>, reply: FastifyReply) => {
+		async (request, reply) => {
 			const span = tracer.startSpan("route.admin.email_campaigns.cancel");
 
 			try {
@@ -500,7 +547,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				const campaign = await prisma.emailCampaign.findUnique({ where: { id: campaignId } });
 
 				if (!campaign) {
-					const { response, statusCode } = validationErrorResponse("找不到指定的郵件發送任務");
+					const { response, statusCode } = notFoundResponse("找不到指定的郵件發送任務");
 					return reply.code(statusCode).send(response);
 				}
 
@@ -520,7 +567,7 @@ const adminEmailCampaignsRoutes: FastifyPluginAsync = async (fastify, _options) 
 				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
-				return reply.send(successResponse(updatedCampaign, "郵件發送任務已取消"));
+				return reply.send(successResponse(toAdminEmailCampaign(updatedCampaign), "郵件發送任務已取消"));
 			} catch (error) {
 				span.recordException(error as Error);
 				span.setStatus({ code: SpanStatusCode.ERROR, message: "Failed to cancel email campaign" });

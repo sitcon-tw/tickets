@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { DataTableFeatures } from "@/lib/data-table-features";
 import { formatDateTime } from "@/lib/utils/timezone";
-import type { EmailCampaign } from "@sitcontix/types";
+import type { AdminEmailCampaign } from "@sitcontix/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { Ban, Eye, Send } from "lucide-react";
 import { fmt, type CampaignTranslations } from "./translations";
@@ -21,15 +21,15 @@ const STATUS_TONES: Record<string, StatusTone> = {
 export const getStatusTone = (status: string): StatusTone => STATUS_TONES[status] ?? "neutral";
 
 interface ColumnActions {
-	onPreview: (campaign: EmailCampaign) => void;
-	onSend: (campaign: EmailCampaign) => void;
-	onCancel: (campaign: EmailCampaign) => void;
+	onPreview: (campaign: AdminEmailCampaign) => void;
+	onSend: (campaign: AdminEmailCampaign) => void;
+	onCancel: (campaign: AdminEmailCampaign) => void;
 	/** Campaign ids with a request in flight. */
 	busyIds: ReadonlySet<string>;
 	t: CampaignTranslations;
 }
 
-function RecipientsCell({ campaign, t }: { campaign: EmailCampaign; t: CampaignTranslations }) {
+function RecipientsCell({ campaign, t }: { campaign: AdminEmailCampaign; t: CampaignTranslations }) {
 	const sent = campaign.sentCount || 0;
 	const total = campaign.totalCount || 0;
 
@@ -57,7 +57,7 @@ function RecipientsCell({ campaign, t }: { campaign: EmailCampaign; t: CampaignT
 	return <span className="text-sm tabular-nums text-muted-foreground">{campaign.status === "draft" ? fmt(t.estimatedRecipients, { count: total }) : total}</span>;
 }
 
-export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, EmailCampaign>[] => [
+export const createCampaignsColumns = (actions: ColumnActions): ColumnDef<DataTableFeatures, AdminEmailCampaign>[] => [
 	{
 		accessorKey: "name",
 		header: ({ column }) => <DataTableColumnHeader column={column} title={actions.t.name} />,

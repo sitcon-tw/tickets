@@ -6,21 +6,6 @@ import { z } from "zod/v4";
 import { LocalizedTextSchema } from "./common.js";
 
 /**
- * Analytics data
- */
-export const AnalyticsDataSchema = z.object({
-	totalRegistrations: z.number().int().min(0),
-	confirmedRegistrations: z.number().int().min(0),
-	pendingRegistrations: z.number().int().min(0),
-	cancelledRegistrations: z.number().int().min(0),
-	checkedInCount: z.number().int().min(0),
-	registrationsByDate: z.record(z.string(), z.unknown()),
-	ticketSales: z.record(z.string(), z.unknown()),
-	referralStats: z.record(z.string(), z.unknown())
-});
-export type AnalyticsData = z.infer<typeof AnalyticsDataSchema>;
-
-/**
  * Event dashboard data
  */
 export const EventDashboardDataSchema = z.object({
@@ -29,7 +14,8 @@ export const EventDashboardDataSchema = z.object({
 		name: LocalizedTextSchema,
 		startDate: z.coerce.date(),
 		endDate: z.coerce.date(),
-		location: z.string().nullable().optional()
+		locationText: LocalizedTextSchema.nullable(),
+		mapLink: z.string().nullable().optional()
 	}),
 	stats: z.object({
 		totalRegistrations: z.number().int().min(0),
@@ -46,8 +32,9 @@ export const EventDashboardDataSchema = z.object({
 			quantity: z.number().int().min(0),
 			soldCount: z.number().int().min(0),
 			revenue: z.number().min(0),
-			available: z.number().int().min(0),
-			salesRate: z.number().min(0).max(100)
+			// Negative/over 100 when an admin lowers quantity below soldCount
+			available: z.number().int(),
+			salesRate: z.number().min(0)
 		})
 	),
 	registrationTrends: z.array(

@@ -56,7 +56,7 @@ function useCheckInsPage() {
 	const { showAlert } = useAlert();
 	const confirm = useConfirm();
 	const currentEventId = useSelectedEventId();
-	const t = useMemo(() => getTranslations(locale, checkInsTranslations) as CheckInsT, [locale]);
+	const t = useMemo(() => getTranslations(locale, checkInsTranslations), [locale]);
 
 	const [attendees, setAttendees] = useState<CheckInAttendee[]>([]);
 	const [isLoading, setIsLoading] = useState(false);

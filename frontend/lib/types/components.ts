@@ -31,21 +31,6 @@ export interface AdminHeaderProps {
 	actions?: React.ReactNode;
 }
 
-// Lanyard
-export interface LanyardProps {
-	position?: [number, number, number];
-	gravity?: [number, number, number];
-	fov?: number;
-	transparent?: boolean;
-	name?: string;
-}
-
-export interface BandProps {
-	maxSpeed?: number;
-	minSpeed?: number;
-	name?: string;
-}
-
 // Form Field
 export interface FormFieldProps {
 	field: TicketFormField;
@@ -64,17 +49,9 @@ export interface WelcomeProps {
 	eventSlug: string;
 }
 
-export interface HeaderProps {
-	eventId: string;
-}
-
 export interface TicketsProps {
 	eventId: string;
 	eventSlug: string;
-}
-
-export interface InfoProps {
-	eventId: string;
 }
 
 // Button - Note: buttonVariants must be imported from the button component itself
